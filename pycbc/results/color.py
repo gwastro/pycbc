@@ -14,7 +14,7 @@ _source_color_map = {
     'BNS': '#A2C8F5',   # light blue
     'NSBH': '#FFB482',  # light orange
     'BBH': '#FE9F9B',   # light red
-    'Mass Gap': '#8EE5A1', # light green
+    'Mass Gap': '#8EE5A1',  # light green
     'GNS': '#98D6CB',   # turquoise
     'GG': '#79BB87',    # green
     'BHG': '#C6C29E'    # dark khaki
@@ -23,6 +23,7 @@ _source_color_map = {
 
 def ifo_color(ifo):
     return _ifo_color_map[ifo]
+
 
 def source_color(source):
     return _source_color_map[source]

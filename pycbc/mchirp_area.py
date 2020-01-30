@@ -1,4 +1,4 @@
-# Module with utilities for estimating candidate events source probabilities 
+# Module with utilities for estimating candidate events source probabilities
 # Initial code by A. Curiel Barroso, August 2019
 # Modified by V. Villa-Ortega, January 2020
 
@@ -51,7 +51,8 @@ def insert_args(parser):
                                    'from the estimated luminosity distance and'
                                    ' the coinc snr by delta_lum = D_lum * '
                                    'exp(b0) * coinc_snr ** b1.')
-    mchirp_group.add_argument('--src-class-mass-gap-separate', action='store_true',
+    mchirp_group.add_argument('--src-class-mass-gap-separate',
+                              action='store_true',
                               help='Gives separate probabilities for each kind'
                                    ' of mass gap CBC sources: GNS, GG, BHG.')
 
@@ -79,7 +80,7 @@ def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
 
 
 def intmc(mc, x_min, x_max):
-    """Returns the integral of a component mass as a function of the mass of 
+    """Returns the integral of a component mass as a function of the mass of
        the other component, taking mchirp as an argument.
     """
     integral = quad(lambda x, mc: m2mcm1(mc, x), x_min, x_max, args=mc)
@@ -296,7 +297,7 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     """Computes the different probabilities that a candidate event belongs to
        each CBC source category taking as arguments the chirp mass, the
        coincident SNR and the effective distance, and estimating the
-       chirp mass uncertainty, the luminosity distance (and its uncertainty) 
+       chirp mass uncertainty, the luminosity distance (and its uncertainty)
        and the redshift (and its uncertainty). Probability estimation is done
        assuming it is directly proportional to the area laying in the
        correspondent CBC region.
