@@ -33,7 +33,7 @@ import os
 import cpnest
 import cpnest.model as cpm
 from pycbc.inference.io import (CPNestFile, validate_checkpoint_files)
-from .base import (BaseSampler, setup_output)
+from .base import (BaseSampler, setup_output, initial_dist_from_config)
 from .base_mcmc import get_optional_arg_from_config
 
 
@@ -99,7 +99,7 @@ class CPNestSampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """
         Loads the sampler from the given config file.
         """
@@ -117,6 +117,13 @@ class CPNestSampler(BaseSampler):
         obj = cls(model, nlive=nlive, maxmcmc=maxmcmc, nthreads=nthreads,
                   verbose=verbose,
                   loglikelihood_function=loglikelihood_function)
+
+        new_checkpoint = setup_output(obj, output_file)
+        if not new_checkpoint:
+            objresume_from_checkpoint(cp)
+        else:
+            init_prior = initial_dist_from_config(cp,
+                obj.variable_params)
         return obj
 
     def checkpoint(self):
@@ -156,6 +163,9 @@ class CPNestSampler(BaseSampler):
 
         Should also set the sampler's random state.
         """
+        pass
+
+    def resume_from_checkpoint(self):
         pass
 
     def setup_output(self, output_file, force=False):

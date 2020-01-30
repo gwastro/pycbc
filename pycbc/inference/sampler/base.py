@@ -69,7 +69,7 @@ class BaseSampler(object):
 
     # @classmethod <--uncomment when we move to python 3.3
     @abstractmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, filename, nprocesses=1, use_mpi=False):
         """This should initialize the sampler given a config file.
         """
         pass
@@ -150,10 +150,10 @@ class BaseSampler(object):
         pass
 
     @abstractmethod
-    def setup_output(self, output_file, force=False):
-        """Sets up the sampler's checkpoint and output files.
+    def resume_from_checkpoint(self):
+        """Resume the sampler from the output file.
         """
-
+        pass
 
 #
 # =============================================================================
@@ -182,13 +182,6 @@ def setup_output(sampler, output_file, force=False):
     force : bool, optional
         If the output file already exists, overwrite it.
     """
-    # check that the output file doesn't already exist
-    if os.path.exists(output_file):
-        if force:
-            os.remove(output_file)
-        else:
-            raise OSError("output-file already exists; use force if you "
-                          "wish to overwrite it.")
     # check for backup file(s)
     checkpoint_file = output_file + '.checkpoint'
     backup_file = output_file + '.bkup'
@@ -198,12 +191,12 @@ def setup_output(sampler, output_file, force=False):
                                                  backup_file)
     # Create a new file if the checkpoint doesn't exist, or if it is
     # corrupted
-    sampler.new_checkpoint = False  # keeps track if this is a new file or not
+    new_checkpoint = False  # keeps track if this is a new file or not
     if not checkpoint_valid:
         logging.info("Checkpoint not found or not valid")
         create_new_output_file(sampler, checkpoint_file)
         # now the checkpoint is valid
-        sampler.new_checkpoint = True
+        new_checkpoint = True
         # copy to backup
         shutil.copy(checkpoint_file, backup_file)
     # write the command line, startup
@@ -214,7 +207,8 @@ def setup_output(sampler, output_file, force=False):
     # store
     sampler.checkpoint_file = checkpoint_file
     sampler.backup_file = backup_file
-    sampler.checkpoint_valid = checkpoint_valid
+    #sampler.checkpoint_valid = checkpoint_valid
+    return new_checkpoint
 
 
 def create_new_output_file(sampler, filename, **kwargs):

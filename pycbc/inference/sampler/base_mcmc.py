@@ -455,9 +455,9 @@ class BaseMCMC(object):
         else:
             # try to load an initial distribution from the config file
             initial_distribution = initial_dist_from_config(cp,
-                                       self.variable_params)
+                self.variable_params)
 
-        self.set_p0(samples_file=samples_file, prior=initial_distribution)
+        self.set_p0(samples_file = samples_file, prior=initial_distribution)
         # if a samples file was provided, use it to set the state of the
         # sampler
         if samples_file is not None:
@@ -468,6 +468,14 @@ class BaseMCMC(object):
         """Sets the state of the sampler to the instance saved in a file.
         """
         pass
+
+    def resume_from_checkpoint(self,filename):
+        """
+        """
+        with self.io(self.checkpoint_file, "r") as fp:
+            self._lastclear = fp.niterations
+        self.set_p0(samples_file=self.checkpoint_file)
+        self.set_state_from_file(self.checkpoint_file)
 
     def run(self):
         """Runs the sampler."""
@@ -565,26 +573,6 @@ class BaseMCMC(object):
         """Should write all samples currently in memory to the given file."""
         pass
 
-    def setup_output(self, output_file, force=False):
-        """Sets up the sampler's checkpoint and output files.
-
-        The checkpoint file has the same name as the output file, but with
-        ``.checkpoint`` appended to the name. A backup file will also be
-        created.
-
-        If the output file already exists, an ``OSError`` will be raised.
-        This can be overridden by setting ``force`` to ``True``.
-
-        Parameters
-        ----------
-        sampler : sampler instance
-            Sampler
-        output_file : str
-            Name of the output file.
-        force : bool, optional
-            If the output file already exists, overwrite it.
-        """
-        setup_output(self, output_file, force=force)
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""

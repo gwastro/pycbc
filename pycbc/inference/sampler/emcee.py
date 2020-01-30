@@ -32,7 +32,7 @@ import numpy
 import emcee
 from pycbc.pool import choose_pool
 
-from .base import BaseSampler
+from .base import (BaseSampler, setup_output, initial_dist_from_config)
 from .base_mcmc import (BaseMCMC, MCMCAutocorrSupport, raw_samples_to_dict,
                         blob_data_to_dict, get_optional_arg_from_config)
 from ..burn_in import MCMCBurnInTests
@@ -191,7 +191,7 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         pass
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """Loads the sampler from the given config file."""
         section = "sampler"
         # check name
@@ -215,4 +215,13 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         obj.set_burn_in_from_config(cp)
         # set prethin options
         obj.set_thin_interval_from_config(cp, section)
+        # Set up the output file
+        new_checkpoint = setup_output(obj, output_file)
+        if not new_checkpoint:
+            objresume_from_checkpoint(cp)
+        else:
+            init_prior = initial_dist_from_config(cp,
+                obj.variable_params)
+            obj.set_p0(prior=init_prior)
+            obj._lastclear = 0
         return obj

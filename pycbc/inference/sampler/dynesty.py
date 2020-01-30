@@ -36,7 +36,7 @@ import dynesty
 from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
-from .base import (BaseSampler, setup_output)
+from .base import (BaseSampler, setup_output, initial_dist_from_config)
 from .base_mcmc import get_optional_arg_from_config
 from .. import models
 
@@ -109,7 +109,7 @@ class DynestySampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, loglikelihood_function=None,
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, loglikelihood_function=None,
                     use_mpi=False):
         """
         Loads the sampler from the given config file.
@@ -138,9 +138,18 @@ class DynestySampler(BaseSampler):
         obj = cls(model, nlive=nlive, dlogz=dlogz, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
                   use_mpi=use_mpi, **extra)
+        new_checkpoint = setup_output(obj, output_file)
+        if not new_checkpoint:
+            objresume_from_checkpoint(cp)
+        else:
+            init_prior = initial_dist_from_config(cp,
+                obj.variable_params)
         return obj
 
     def checkpoint(self):
+        pass
+
+    def resume_from_checkpoint(self):
         pass
 
     def finalize(self):
@@ -226,7 +235,7 @@ class DynestySampler(BaseSampler):
         """
 
         dynesty_samples = self._sampler.results['samples']
-        wt = numpy.exp(self._sampler.results['logwt'] - 
+        wt = numpy.exp(self._sampler.results['logwt'] -
                        self._sampler.results['logz'][-1])
         # Make sure that sum of weights equal to 1
         weights = wt/numpy.sum(wt)

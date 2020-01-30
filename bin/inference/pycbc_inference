@@ -91,6 +91,15 @@ fft.verify_fft_options(opts, parser)
 opt.verify_optimization_options(opts, parser)
 scheme.verify_processing_options(opts, parser)
 
+# check that the output file doesn't already exist
+if os.path.exists(opts.output_file):
+    if force:
+        pass
+        #os.remove(opts.output_file)
+    else:
+        raise OSError("output-file already exists; use force if you "
+                      "wish to overwrite it.")
+
 # set seed
 numpy.random.seed(opts.seed)
 logging.info("Using seed %i", opts.seed)
@@ -129,12 +138,7 @@ with ctx:
     # unless you enjoy angering your cluster admins,
     # NO SAMPLES FILE IO SHOULD BE DONE PRIOR TO THIS POINT!!!
     sampler = inference.sampler.load_from_config(
-        cp, model, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
-
-    # set up output/checkpoint file
-    sampler.setup_output(opts.output_file, force=opts.force)
-
-    sampler.set_initial_conditions(cp)
+        cp, model, output_file=opts.output_file, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
 
     # Run the sampler
     sampler.run()
