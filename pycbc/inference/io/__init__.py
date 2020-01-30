@@ -649,7 +649,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
             logging.info("Loading samples")
 
             # read samples from file
-            samples = fp.samples_from_cli(opts, parameters=file_parameters,
+            samples = fp.samples_from_cli(opts, parameters=opts.parameters,
                                           **kwargs)
 
             logging.info("Loaded {} samples".format(samples.size))
