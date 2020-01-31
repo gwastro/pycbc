@@ -106,6 +106,7 @@ popd
 
 ## Run inference using single template model
 pushd examples/inference/single
+bash -e get.sh
 bash -e run.sh
 if test $? -ne 0 ; then
     RESULT=1
