@@ -24,14 +24,17 @@ from pycbc.distributions import bounded
 import pycbc.transforms
 
 class Arbitrary(bounded.BoundedDist):
-    """A distribution constructed from a set of parameter values using a kde.
+    r"""A distribution constructed from a set of parameter values using a kde.
     Bounds may be optionally provided to limit the range.
 
     Parameters
     ----------
-    bounds : {None, dict}
+    bounds : dict, optional
         Independent bounds on one or more parameters may be provided to limit
         the range of the kde.
+    bandwidth : str, optional
+        Set the bandwidth method for the KDE. See
+        :py:func:`scipy.stats.gaussian_kde` for details. Default is "scott".
     \**params :
         The keyword arguments should provide the names of the parameters and
         a list of their parameter values. If multiple parameters are provided,
@@ -194,7 +197,7 @@ class Arbitrary(bounded.BoundedDist):
 
 
 class FromFile(Arbitrary):
-    """A distribution that reads the values of the parameter(s) from an hdf
+    r"""A distribution that reads the values of the parameter(s) from an hdf
     file, computes the kde to construct the pdf, and draws random variables
     from it.
 
