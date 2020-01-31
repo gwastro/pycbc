@@ -1,5 +1,8 @@
 .. _inference_example_bbh:
 
+.. |GaussianNoise| replace:: :py:class:`GaussianNoise <pycbc.inference.models.gaussian_noise.GaussianNoise>`
+.. |MarginalizedPhaseGaussianNoise| replace:: :py:class:`MarginalizedPhaseGaussianNoise <pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise>`
+
 ---------------------
 Simulated BBH example
 ---------------------
@@ -116,7 +119,7 @@ to the ``trigger-time``. The analyzed data should be long enough such that it
 encompasses the longest waveform admitted by our prior, plus our timing
 uncertainty (which is determined by the prior on ``delta_tc``). Waveform
 duration is approximately determined by the total mass of a system. The lowest
-total mass (`= mass1 + mass2`) admitted by our prior is 20 solar masses. This
+total mass (``= mass1 + mass2``) admitted by our prior is 20 solar masses. This
 corresponds to a duration of ~6 seconds, so we start the analysis time 6
 seconds before the trigger time. (See the :py:mod:`pycbc.waveform` module for
 utilities to estimate waveform duration.) Since the trigger time is
