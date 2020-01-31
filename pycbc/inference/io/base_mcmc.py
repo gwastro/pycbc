@@ -63,17 +63,26 @@ class MCMCMetadataIO(object):
         return self[self.sampler_group].attrs['nwalkers']
 
     def thin(self, thin_interval):
-        """Thins the samples on disk using the given thinning interval.
+        """Thins the samples on disk to the given thinning interval.
+
+        The interval must be a multiple of the file's current ``thinned_by``.
 
         Parameters
         ----------
         thin_interval : int
-            The interval to thin by.
+            The interval the samples on disk should be thinned by.
         """
+        # get the new interval to thin by
+        new_interval = thin_interval / self.thinned_by
+        if new_interval % 1:
+            raise ValueError("thin interval ({}) must be a multiple of the "
+                             "current thinned_by ({})"
+                             .format(thin_interval, self.thinned_by))
+        new_interval = int(new_interval)
         # read thinned samples into memory
         params = self[self.samples_group].keys()
         samples = self.read_raw_samples(params, thin_start=0,
-                                        thin_interval=thin_interval,
+                                        thin_interval=new_interval,
                                         thin_end=None,
                                         flatten=False)
         # now resize and write the data back to disk
@@ -85,13 +94,13 @@ class MCMCMetadataIO(object):
             # and write
             group[param][:] = data
         # store the interval that samples were thinned by
-        self.thinned_by *= thin_interval
+        self.thinned_by = thin_interval
         # If a default thin interval and thin start exist, reduce them by the
         # thinned interval. If the thin interval is not an integer multiple
         # of the original, we'll round up, to avoid getting samples from
         # before the burn in / at an interval less than the ACL.
-        self.thin_start = int(numpy.ceil(self.thin_start/thin_interval))
-        self.thin_interval = int(numpy.ceil(self.thin_interval/thin_interval))
+        self.thin_start = int(numpy.ceil(self.thin_start/new_interval))
+        self.thin_interval = int(numpy.ceil(self.thin_interval/new_interval))
 
     @property
     def thinned_by(self):
