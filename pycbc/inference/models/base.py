@@ -621,7 +621,7 @@ class BaseModel(object):
         return p0
 
     def _transform_params(self, **params):
-        """Applies sampling transforms and boundary conditions to some params.
+        """Applies sampling transforms and boundary conditions to parameters.
 
         Parameters
         ----------
