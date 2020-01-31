@@ -18,6 +18,14 @@ This example demonstrates using the ``single_template`` model with the
 
 :download:`Download <../../../examples/inference/single/single.ini>`
 
+For this example, we'll need to download gravitation-wave data for GW170817:
+
+.. literalinclude:: ../../../examples/inference/single/get.sh
+   :language: bash
+   
+.. program-output:: bash ../../../examples/inference/single/get.sh
+
+
 By setting the model name to ``single_template`` we are using
 :py:class:`SingleTemplate <pycbc.inference.models.SingleTemplate>`.
 
