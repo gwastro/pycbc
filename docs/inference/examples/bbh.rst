@@ -166,7 +166,7 @@ dump results to file) every 2000 iterations. Since we have provided an
 after burn-in, which is determined by a combination of the :py:meth:`nacl
 <pycbc.inference.burn_in.MCMCBurnInTests.nacl>` and
 :py:meth:`max_posterior
-<<pycbc.inference.burn_in.MCMCBurnInTests.max_posterior>>` tests;
+<pycbc.inference.burn_in.MCMCBurnInTests.max_posterior>` tests;
 i.e., the sampler will be considered converged when both of these tests are
 satisfied.
 
