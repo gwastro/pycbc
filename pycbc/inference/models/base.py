@@ -480,7 +480,7 @@ class BaseModel(object):
         return self._current_stats.getstatsdict(self.default_stats)
 
     def _trytoget(self, statname, fallback, apply_transforms=False, **kwargs):
-        """Helper function to get a stat from ``_current_stats``.
+        r"""Helper function to get a stat from ``_current_stats``.
 
         If the statistic hasn't been calculated, ``_current_stats`` will raise
         an ``AttributeError``. In that case, the ``fallback`` function will
