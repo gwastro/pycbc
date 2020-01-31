@@ -104,6 +104,19 @@ else
 fi
 popd
 
+## Run inference using single template model
+pushd examples/inference/single
+bash -e get.sh
+bash -e run.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+popd
+
 echo -e "\\n>> [`date`] Building documentation"
 
 python setup.py build_gh_pages &> $LOG_FILE
