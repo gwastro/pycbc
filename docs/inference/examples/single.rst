@@ -18,7 +18,7 @@ This example demonstrates using the ``single_template`` model with the
 
 :download:`Download <../../../examples/inference/single/single.ini>`
 
-For this example, we'll need to download gravitation-wave data for GW170817:
+For this example, we'll need to download gravitational-wave data for GW170817:
 
 .. literalinclude:: ../../../examples/inference/single/get.sh
    :language: bash
@@ -39,9 +39,8 @@ Now run:
 
 :download:`Download <../../../examples/inference/single/run.sh>`
 
-This will run the ``emcee_pt`` sampler on the 2D analytic normal distribution with
-5000 walkers for 100 iterations. When it is done, you will have a file called
-``normal2d.hdf`` which contains the results. It should take about a minute to
+This will run the ``emcee_pt`` sampler. When it is done, you will have a file called
+``single.hdf`` which contains the results. It should take about a minute or two to
 run.
 
 To plot the posterior distribution after the last iteration, run:
