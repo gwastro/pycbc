@@ -202,6 +202,9 @@ class Array(object):
             ret = self._return(ret)
         return ret
 
+    def __array__(self):
+        return self.numpy()
+
     @property
     def shape(self):
         return self._data.shape
