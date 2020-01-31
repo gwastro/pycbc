@@ -74,7 +74,9 @@ There are also options for thinning the chains of samples from the command line,
                      spin2_a spin2_azimuthal spin2_polar \
                      "inclination*180/pi:$\iota$ (deg)" distance \
                      "coa_phase*180/pi:$\phi_0$ (deg)" tc
-                     
+           
+.. _inference_make_movie: 
+         
 ===============================================
 Making a movie (``pycbc_inference_plot_movie``)
 ===============================================       
