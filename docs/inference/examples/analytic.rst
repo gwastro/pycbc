@@ -1,3 +1,5 @@
+.. _inference_example_analytic:
+
 -----------------------------------
 Running on an analytic distribution
 -----------------------------------

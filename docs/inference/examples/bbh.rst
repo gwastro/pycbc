@@ -164,9 +164,9 @@ dump results to file) every 2000 iterations. Since we have provided an
 ``effective-nsamples`` argument and a ``[sampler-burn_in]`` section,
 ``pycbc_inference`` will run until it has acquired 1000 independent samples
 after burn-in, which is determined by a combination of the :py:meth:`nacl
-<pycbc.inference.burn_in.MultiTemperedMCMCBurnInTests.nacl>` and
+<pycbc.inference.burn_in.MCMCBurnInTests.nacl>` and
 :py:meth:`max_posterior
-<pycbc.inference.burn_in.MultiTemperedMCMCBurnInTests.max_posterior>` tests;
+<<pycbc.inference.burn_in.MCMCBurnInTests.max_posterior>>` tests;
 i.e., the sampler will be considered converged when both of these tests are
 satisfied.
 
@@ -190,8 +190,8 @@ To perform the analysis, run:
 
 
 Since we are generating waveforms and analyzing a 15 dimensional parameter
-space, this run will be much more computationally expensive than the analytic
-example above. We recommend running this on a cluster or a computer with a
+space, this run will be much more computationally expensive than the :ref:`analytic
+example<inference_example_analytic>`. We recommend running this on a cluster or a computer with a
 large number of cores. In the example, we have set the parallelization to use
 10 cores. With these settings, it should checkpoint approximately every hour or
 two. The run should complete in a few hours. If you would like to acquire more
