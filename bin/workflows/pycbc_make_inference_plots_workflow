@@ -103,30 +103,6 @@ def symlink_path(f, path):
     except OSError:
         pass
 
-def get_plot_group(cp, section_tag):
-    """Gets plotting groups from [workflow-section_tag]."""
-    group_prefix = "plot-group-"
-    # parameters for the summary plots
-    plot_groups = {}
-    opts = [opt for opt in cp.options("workflow-{}".format(section_tag))
-            if opt.startswith(group_prefix)]
-    for opt in opts:
-        group = opt.replace(group_prefix, "").replace("-", "_")
-        plot_groups[group] = cp.get_opt_tag("workflow", opt, section_tag)
-    return plot_groups
-
-
-def get_posterior_params(cp, section='workflow-posterior_parameters'):
-    """Gets the posterior parameters from the given config file."""
-    params = []
-    for opt in cp.options(section):
-        val = cp.get(section, opt)
-        if val == '':
-            val = opt
-        params.append('{}:{}'.format(val, opt))
-    return params
-
-
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
 
@@ -204,16 +180,8 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 origdir = os.path.abspath(os.curdir)
 os.chdir(opts.output_dir)
 
-# figure out if we are making a skymap
-make_skymap = ("create_fits_file" in workflow.cp.options("executables") and
-               "inference_skymap" in workflow.cp.options("executables"))
-
 # figure out what diagnostic jobs there are
-diagnostics = []
-if "inference_samples" in workflow.cp.options("executables"):
-    diagnostics.append('samples')
-if "inference_rate" in workflow.cp.options("executables"):
-    diagnostics.append('acceptance_rate')
+diagnostics = inffu.get_diagnostic_plots(workflow)
 
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
@@ -243,29 +211,8 @@ logging.getLogger("").addHandler(log_file)
 logging.info("Created log file %s" % log_file_txt.storage_path)
 
 
-# get the parameters that will be used for posterior files and plots
-posterior_params = get_posterior_params(workflow.cp)
-
-# figure out what parameters user wants to plot from workflow configuration
-group_prefix = "plot-group-"
-# parameters for the summary plots
-summary_plot_params = get_plot_group(workflow.cp, 'summary_plots')
-# parameters to plot in large corner plots
-plot_params = get_plot_group(workflow.cp, 'plot_parameters')
-# get parameters for the summary tables
-table_params = workflow.cp.get_opt_tag('workflow', 'table-parameters',
-                                       'summary_table')
-# get any metadata that should be printed
-if workflow.cp.has_option('workflow-summary_table', 'print-metadata'):
-    table_metadata = workflow.cp.get_opt_tag('workflow', 'print-metadata',
-                                             'summary_table')
-else:
-    table_metadata = None
-
-psd_page = []
 config_files = {}
 for num_event, samples_filelist in enumerate(samples_files):
-    summary_page = []
     label = elabels[num_event]
     if label is None:
         label = 'Event {}'.format(num_event)
@@ -292,105 +239,33 @@ for num_event, samples_filelist in enumerate(samples_files):
         samples_filelist[ii] = pfile
     samples_filelist = core.FileList(samples_filelist)
 
-    analysis_index = segments.segment(num_event, num_event+1)
+    # create the posterior file and plots
+    posterior_file, summary_files, _, _ = inffu.make_poseterior_workflow(
+        workflow, samples_filelist, config_file, label, rdir,
+        posterior_file_dir=posterior_file_dir, tags=opts.tags)
 
-    # make node for running extract samples
-    posterior_file = inffu.create_posterior_files(
-        workflow, samples_filelist, posterior_file_dir,
-        parameters=posterior_params, analysis_seg=analysis_index,
-        tags=opts.tags+[label])[0]
-
-    # summary table
-    summary_page += (inffu.make_inference_summary_table(
-        workflow, posterior_file, rdir.base,
-        parameters=table_params, print_metadata=table_metadata,
-        analysis_seg=analysis_index,
-        tags=opts.tags+[label]),)
-
-    # summary posteriors
-    summary_plots = []
-    for group, params in summary_plot_params.items():
-        summary_plots += inffu.make_inference_posterior_plot(
-            workflow, posterior_file, rdir.base,
-            name='inference_posterior_summary',
-            parameters=params, plot_prior_from_file=config_file,
-            analysis_seg=analysis_index,
-            tags=opts.tags+[label, group])
-
-    # sky map
-    if make_skymap:
-        # create the fits file
-        fits_file = inffu.create_fits_file(
-            workflow, posterior_file, rdir.base,
-            analysis_seg=analysis_index,
-            tags=opts.tags+[label])[0]
-        # now plot the skymap
-        skymap_plot = inffu.make_inference_skymap(
-            workflow, fits_file, rdir.base,
-            analysis_seg=analysis_index,
-            tags=opts.tags+[label])
-        summary_plots += skymap_plot
-
-    summary_page += list(layout.grouper(summary_plots, 2))
+    # create the diagnostic plots
+    _ = inffu.make_diagnostic_plots(workflow, diagnostics, samples_filelist,
+                                    label, rdir)
 
     # files for detector_sensitivity summary subsection
     base = "detector_sensitivity"
     # we'll just use the first file, and assume the rest are the same
-    psd_page.append(plotting.make_spectrum_plot(
+    psd_plot = plotting.make_spectrum_plot(
         workflow, [samples_filelist[0]], rdir[base],
         tags=opts.tags+[label],
-        hdf_group="data"))
-
-    # files for priors summary section
-    base = "priors/{}".format(label)
-    prior_plots = inffu.make_inference_prior_plot(
-        workflow, config_file, rdir[base],
-        analysis_seg=workflow.analysis_time,
-        tags=opts.tags+[label])
-    layout.single_layout(rdir[base], prior_plots)
-
-    # files for posteriors summary subsection
-    base = "posteriors/{}".format(label)
-    posterior_plots = []
-    for group, params in plot_params.items():
-        posterior_plots += inffu.make_inference_posterior_plot(
-            workflow, posterior_file, rdir[base],
-            parameters=params, plot_prior_from_file=config_file,
-            analysis_seg=analysis_index,
-            tags=opts.tags+[label, group])
-    layout.single_layout(rdir[base], posterior_plots)
-
-    # files for diagnostics section
-    # Note: all diagnositics plots use the samples files, not the posteriors
-    if 'samples' in diagnostics:
-        # files for samples summary subsection
-        base = "samples/{}".format(label)
-        samples_plots = []
-        for kk, sf in enumerate(samples_filelist):
-            samples_plots += inffu.make_inference_samples_plot(
-                workflow, sf, rdir[base],
-                analysis_seg=analysis_index,
-                tags=opts.tags+[label, group, str(kk)])
-        layout.group_layout(rdir[base], samples_plots)
-
-    if 'acceptance_rate' in diagnostics:
-        # files for samples acceptance_rate subsection
-        base = "acceptance_rate/{}".format(label)
-        for kk, sf in enumerate(samples_filelist):
-            acceptance_plot = inffu.make_inference_acceptance_rate_plot(
-                workflow, sf, rdir[base],
-                analysis_seg=analysis_index,
-                tags=opts.tags+[label, str(kk)])
-        layout.single_layout(rdir[base], acceptance_plot)
+        hdf_group="data")
 
     # build the summary page
     zpad = int(numpy.ceil(numpy.log10(len(samples_files))))
-    layout.two_column_layout(rdir.base, summary_page,
+    layout.two_column_layout(rdir.base, summary_files,
                              unique=str(num_event).zfill(zpad),
                              title=summary_label, collapse=True)
 
-# build the psd page
-layout.group_layout(rdir['detector_sensitivity'], psd_page)
+    # build the psd page
+    layout.single_layout(rdir['detector_sensitivity'], [psd_plot],
+                         unique=str(num_event).zfill(zpad),
+                         title=summary_label, collapse=True)
 
 # build the config page
 

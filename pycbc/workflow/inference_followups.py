@@ -18,10 +18,12 @@ Module that contains functions for setting up the inference workflow.
 """
 
 import logging, os.path
-from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
+from Pegasus import DAX3 as dax
+from pycbc.workflow.core import (Executable, FileList, Node, makedir, File,
+                                 Workflow)
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 from pycbc.workflow import WorkflowConfigParser
-from Pegasus import DAX3 as dax
+from pycbc.results import layout
 from pycbc.workflow import pegasus_workflow as wdax
 
 def setup_foreground_inference(workflow, coinc_file, single_triggers,
@@ -320,7 +322,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
                     parameters=None, print_metadata=None,
                     name="inference_table",
                     analysis_seg=None, tags=None):
-    """ Sets up the corner plot of the posteriors in the workflow.
+    """Sets up the corner plot of the posteriors in the workflow.
 
     Parameters
     ----------
@@ -571,6 +573,319 @@ def make_inference_inj_plots(workflow, inference_files, output_dir,
         output_files += node.output_files
 
     return output_files
+
+
+def get_posterior_params(cp, section='workflow-posterior_params'):
+    """Gets the posterior parameters from the given config file.
+
+    The posterior parameters are read from the given ``section``. Parameters
+    should be specified as ``OUTPUT = [INPUT]``, where ``OUTPUT`` is what
+    the parameter should be named in the posterior file and ``INPUT`` is the
+    (function of) parameter(s) to read from the samples file. If no ``INPUT``
+    is provided, the ``INPUT`` name will assumed to be the same as the
+    ``OUTPUT``. Example:
+
+    .. code-block:: ini
+
+       [workflow-posterior_params]
+       mass1 = primary_mass(mass1, mass2)
+       mass2 = secondary_mass(mass1, mass2)
+       distance =
+
+    Parameters
+    ----------
+    cp : pycbc.workflow.configuration.WorkflowConfigParser
+        Config parser to read.
+    section : str, optional
+        The name of the section to load the parameters from. Default is
+        ``workflow-posterior_params``.
+
+    Returns
+    -------
+    list :
+        List of strings giving ``INPUT:OUTPUT``. This can be passed as the
+        ``parameters`` argument to :py:func:`create_posterior_files`.
+    """
+    params = []
+    for opt in cp.options(section):
+        val = cp.get(section, opt)
+        if val == '':
+            val = opt
+        params.append('{}:{}'.format(val, opt))
+    return params
+
+
+def get_plot_group(cp, section_tag):
+    """Gets plotting groups from ``[workflow-section_tag]``."""
+    group_prefix = "plot-group-"
+    # parameters for the summary plots
+    plot_groups = {}
+    opts = [opt for opt in cp.options("workflow-{}".format(section_tag))
+            if opt.startswith(group_prefix)]
+    for opt in opts:
+        group = opt.replace(group_prefix, "").replace("-", "_")
+        plot_groups[group] = cp.get_opt_tag("workflow", opt, section_tag)
+    return plot_groups
+
+
+def get_diagnostics_plots(workflow):
+    """Determines what diagnostic plots to create based on workflow.
+
+    The plots to create are based on what executable's are specified in the
+    workflow's config file. A list of strings is returned giving the diagnostic
+    plots to create. This list may contain:
+
+    * ``samples``: For MCMC samplers, a plot of the sample chains as a function
+      of iteration. This will be created if ``inference_samples`` is in the
+      executables section.
+    * ``acceptance_rate``: For MCMC samplers, a plot of the acceptance rate.
+      This will be created if ``inference_rate`` is in the executables section.
+
+    Returns
+    -------
+    list :
+        List of names of diagnostic plots.
+    """
+    diagnostics = []
+    if "inference_samples" in workflow.cp.options("executables"):
+        diagnostics.append('samples')
+    if "inference_rate" in workflow.cp.options("executables"):
+        diagnostics.append('acceptance_rate')
+    return diagnostics
+
+
+def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir):
+    """Makes diagnostic plots.
+
+    Diagnostic plots are sampler-specific plots the provide information on
+    how the sampler performed. All diagnostic plots use the output file
+    produced by ``pycbc_inference`` as their input. Diagnostic plots are added
+    to the results directory ``rdir/NAME`` where ``NAME`` is the name of the
+    diagnostic given in ``diagnostics``.
+
+    Parameters
+    ----------
+    workflow : pycbc.workflow.core.Workflow
+        The workflow to add the plotting jobs to.
+    diagnostics : list of str
+        The names of the diagnostic plots to create. See
+        :py:func:`get_diagnostic_plots` for recognized names.
+    samples_file : (list of) pycbc.workflow.File
+        One or more samples files with which to create the diagnostic plots.
+        If a list of files is provided, a diagnostic plot for each file will
+        be created.
+    label : str
+        Event label for the diagnostic plots.
+    rdir : pycbc.results.layout.SectionNumber
+        Results directory layout.
+
+    Returns
+    -------
+    dict :
+        Dictionary of diagnostic name -> list of files giving the plots that
+        will be created.
+    """
+    out = {}
+    if not isinstance(samples_file, list):
+        samples_file = [samples_file]
+    if 'samples' in diagnostics:
+        # files for samples summary subsection
+        base = "samples/{}".format(label)
+        samples_plots = []
+        for kk, sf in enumerate(samples_file):
+            samples_plots += make_inference_samples_plot(
+                workflow, sf, rdir[base],
+                analysis_seg=workflow.analysis_time,
+                tags=tags+[label, str(kk)])
+        out['samples'] = samples_plots
+        layout.group_layout(rdir[base], samples_plots)
+
+    if 'acceptance_rate' in diagnostics:
+        # files for samples acceptance_rate subsection
+        base = "acceptance_rate/{}".format(label)
+        acceptance_plots = []
+        for kk, sf in enumerate(samples_file):
+            acceptance_plots += make_inference_acceptance_rate_plot(
+                workflow, sf, rdir[base],
+                analysis_seg=workflow.analysis_time,
+                tags=tags+[label, str(kk)])
+        out['acceptance_rate'] = acceptance_plots
+        layout.single_layout(rdir[base], acceptance_plots)
+
+    return out
+
+
+def make_posterior_workflow(workflow, samples_files, config_file, label,
+                            rdir, posterior_file_dir='posterior_files',
+                            tags=None):
+    """Adds jobs to a workflow that make a posterior file and subsequent plots.
+
+    The parameters to be written to the posterior file are read from the
+    ``[workflow-posterior_params]`` section of the workflow's config file; see
+    :py:func:`get_posterior_params` for details.
+
+    Except for prior plots (which use the given inference config file), all
+    subsequent jobs use the posterior file, and so may use the parameters
+    provided in ``[workflow-posterior_params]``. The following are created:
+
+    * **Summary table**: an html table created using the ``inference_table``
+      executable. The parameters to print in the table are retrieved from the
+      ``table-params`` option in the ``[workflow-summary_table]`` section.
+      Metadata may also be printed by adding a ``print-metadata`` option to
+      that section.
+    * **Summary posterior plots**: a collection of posterior plots to include
+      in the summary page, after the summary table. The parameters to plot
+      are read from ``[workflow-summary_plots]``. Parameters should be grouped
+      together by providing
+      ``plot-group-NAME = PARAM1[:LABEL1] PARAM2[:LABEL2]`` in that section,
+      where ``NAME`` is a unique name for each group. One posterior plot will
+      be created for each plot group. For clarity, only one or two parameters
+      should be plotted in each summary group, but this is not enforced.
+      Settings for the plotting executable are read from the
+      ``inference_posterior_summary`` section; likewise, the executable used
+      is read from ``inference_posterior_summary`` in the
+      ``[executables]`` section.
+    * **Sky maps**: if *both* ``create_fits_file`` and ``inference_skymap``
+      are listed in the ``[executables]`` section, then a ``.fits`` file and
+      sky map plot will be produced. The sky map plot will be included in
+      the summary plots. You must be running in a python 3 environment to
+      create these.
+    * **Prior plots**: plots of the prior will be created using the
+      ``inference_prior`` executable. By default, all of the variable
+      parameters will be plotted. The prior plots are added to
+      ``priors/LALBEL/`` in the results directory, where ``LABEL`` is the
+      given ``label``.
+    * **Posterior plots**: additional posterior plots are created using the
+      ``inference_posterior`` executable. The parameters to plot are
+      read from ``[workflow-plot_params]`` section. As with the summary
+      posterior plots, parameters are grouped together by providing
+      ``plot-group-NAME`` options in that section. A posterior plot will be
+      created for each group, and added to the ``posteriors/LABEL/`` directory.
+      Plot settings are read from the ``[inference_posterior]`` section; this
+      is kept separate from the posterior summary so that different settings
+      can be used. For example, you may want to make a density plot for the
+      summary plots, but a scatter plot colored by SNR for the posterior plots.
+
+
+    Parameters
+    ----------
+    samples_file : pycbc.workflow.core.FileList
+        List of samples files to combine into a single posterior file.
+    config_file : pycbc.worfkow.File
+        The inference configuration file used to generate the samples file(s).
+        This is needed to make plots of the prior.
+    label : str
+        Unique label for the plots. Used in file names.
+    rdir : pycbc.results.layout.SectionNumber
+        The results directory to save the plots to.
+    posterior_file_dir : str, optional
+        The name of the directory to save the posterior file to. Default is
+        ``posterior_files``.
+    tags : list of str, optional
+        Additional tags to add to the file names.
+
+    Returns
+    -------
+    posterior_file : pycbc.workflow.File
+        The posterior file that was created.
+    summary_files : list
+        List of files to go on the summary results page.
+    prior_plots : list
+        List of prior plots that will be created. These will be saved to
+        ``priors/LABEL/`` in the resuls directory, where ``LABEL`` is the
+        provided label.
+    posterior_plots : list
+        List of posterior plots that will be created. These will be saved to
+        ``posteriors/LABEL/`` in the results directory.
+    """
+    # the list of plots to go in the summary
+    summary_files = []
+
+    if tags is None:
+        tags = []
+
+    analysis_seg = workflow.analysis_time
+
+    # get the parameters that will be used for posterior files and plots
+    posterior_params = get_posterior_params(workflow.cp)
+
+    # figure out what parameters user wants to plot from workflow configuration
+    group_prefix = "plot-group-"
+    # parameters for the summary plots
+    summary_plot_params = get_plot_group(workflow.cp, 'summary_plots')
+    # parameters to plot in large corner plots
+    plot_params = get_plot_group(workflow.cp, 'plot_params')
+    # get parameters for the summary tables
+    table_params = workflow.cp.get_opt_tag('workflow', 'table-params',
+                                           'summary_table')
+    # get any metadata that should be printed
+    if workflow.cp.has_option('workflow-summary_table', 'print-metadata'):
+        table_metadata = workflow.cp.get_opt_tag('workflow', 'print-metadata',
+                                                 'summary_table')
+    else:
+        table_metadata = None
+
+    # figure out if we are making a skymap
+    make_skymap = ("create_fits_file" in workflow.cp.options("executables") and
+                   "inference_skymap" in workflow.cp.options("executables"))
+
+    # make node for running extract samples
+    posterior_file = create_posterior_files(
+        workflow, samples_files, posterior_file_dir,
+        parameters=posterior_params, analysis_seg=analysis_seg,
+        tags=tags+[label])[0]
+
+    # summary table
+    summary_files += (make_inference_summary_table(
+        workflow, posterior_file, rdir.base,
+        parameters=table_params, print_metadata=table_metadata,
+        analysis_seg=analysis_seg,
+        tags=tags+[label]),)
+
+    # summary posteriors
+    summary_plots = []
+    for group, params in summary_plot_params.items():
+        summary_plots += make_inference_posterior_plot(
+            workflow, posterior_file, rdir.base,
+            name='inference_posterior_summary',
+            parameters=params, plot_prior_from_file=config_file,
+            analysis_seg=analysis_seg,
+            tags=tags+[label, group])
+
+    # sky map
+    if make_skymap:
+        # create the fits file
+        fits_file = create_fits_file(
+            workflow, posterior_file, rdir.base, analysis_seg=analysis_seg,
+            tags=tags+[label])[0]
+        # now plot the skymap
+        skymap_plot = make_inference_skymap(
+            workflow, fits_file, rdir.base, analysis_seg=analysis_seg,
+            tags=tags+[label])
+        summary_plots += skymap_plot
+
+    summary_files += list(layout.grouper(summary_plots, 2))
+
+    # files for priors summary section
+    base = "priors/{}".format(label)
+    prior_plots = make_inference_prior_plot(
+        workflow, config_file, rdir[base],
+        analysis_seg=workflow.analysis_time,
+        tags=tags+[label])
+    layout.single_layout(rdir[base], prior_plots)
+
+    # files for posteriors summary subsection
+    base = "posteriors/{}".format(label)
+    posterior_plots = []
+    for group, params in plot_params.items():
+        posterior_plots += make_inference_posterior_plot(
+            workflow, posterior_file, rdir[base],
+            parameters=params, plot_prior_from_file=config_file,
+            analysis_seg=analysis_seg,
+            tags=opts.tags+[label, group])
+    layout.single_layout(rdir[base], posterior_plots)
+
+    return posterior_file, summary_files, prior_plots, posterior_plots
 
 
 def _params_for_pegasus(parameters):
