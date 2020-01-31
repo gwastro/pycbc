@@ -445,13 +445,13 @@ echo
 rm -f submitdir
 ln -sf $SUBMIT_DIR submitdir
 
-echo pegasus-status --verbose --long $SUBMIT_DIR/work > status
+echo "pegasus-status --verbose --long $SUBMIT_DIR/work \$@" > status
 chmod 755 status
 
-echo pegasus-analyzer -r -v $SUBMIT_DIR/work > debug
+echo "pegasus-analyzer -r -v $SUBMIT_DIR/work \$@" > debug
 chmod 755 debug
 
-echo pegasus-remove $SUBMIT_DIR/work > stop
+echo "pegasus-remove $SUBMIT_DIR/work \$@" > stop
 chmod 755 stop
 
 if [ -z "${NO_GRID}" ] ; then
@@ -490,7 +490,7 @@ fi
 EOF
 fi
 
-echo pegasus-run $SUBMIT_DIR/work > start
+echo "pegasus-run $SUBMIT_DIR/work \$@" > start
 
 chmod 755 start
 
