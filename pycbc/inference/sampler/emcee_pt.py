@@ -175,7 +175,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         #with obj.io(obj.io.checkpoint_file, "a") as fp:
         new_checkpoint = setup_output(obj, output_file)
         if not new_checkpoint:
-            objresume_from_checkpoint(cp)
+            obj.resume_from_checkpoint(cp)
         else:
             init_prior = initial_dist_from_config(cp, 
                 obj.variable_params)

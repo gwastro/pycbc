@@ -218,10 +218,9 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         # Set up the output file
         new_checkpoint = setup_output(obj, output_file)
         if not new_checkpoint:
-            objresume_from_checkpoint(cp)
+            obj.resume_from_checkpoint(cp)
         else:
-            init_prior = initial_dist_from_config(cp,
-                obj.variable_params)
+            init_prior = initial_dist_from_config(cp, obj.variable_params)
             obj.set_p0(prior=init_prior)
             obj._lastclear = 0
         return obj

@@ -457,7 +457,7 @@ class BaseMCMC(object):
             initial_distribution = initial_dist_from_config(cp,
                 self.variable_params)
 
-        self.set_p0(samples_file = samples_file, prior=initial_distribution)
+        self.set_p0(samples_file=samples_file, prior=initial_distribution)
         # if a samples file was provided, use it to set the state of the
         # sampler
         if samples_file is not None:
@@ -469,8 +469,8 @@ class BaseMCMC(object):
         """
         pass
 
-    def resume_from_checkpoint(self,filename):
-        """
+    def resume_from_checkpoint(self, filename):
+        """Resume the sampler from the checkpoint file
         """
         with self.io(self.checkpoint_file, "r") as fp:
             self._lastclear = fp.niterations

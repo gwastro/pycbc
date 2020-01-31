@@ -99,7 +99,8 @@ class CPNestSampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
         """
         Loads the sampler from the given config file.
         """
@@ -120,10 +121,9 @@ class CPNestSampler(BaseSampler):
 
         new_checkpoint = setup_output(obj, output_file)
         if not new_checkpoint:
-            objresume_from_checkpoint(cp)
+            obj.resume_from_checkpoint(cp)
         else:
-            init_prior = initial_dist_from_config(cp,
-                obj.variable_params)
+            init_prior = initial_dist_from_config(cp, obj.variable_params)
         return obj
 
     def checkpoint(self):

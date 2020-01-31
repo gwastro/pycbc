@@ -36,7 +36,7 @@ from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
 from pycbc.pool import is_main_process
 from pycbc.transforms import apply_transforms
-from .base import (BaseSampler, setup_output)
+from .base import (BaseSampler, setup_output, initial_dist_from_config)
 from .base_mcmc import get_optional_arg_from_config
 
 
@@ -243,8 +243,8 @@ class MultinestSampler(BaseSampler):
         """Runs the sampler until the specified evidence tolerance
         is reached.
         """
-        if self.new_checkpoint:
-            self._itercount = 0
+        #if self.new_checkpoint:
+        #    self._itercount = 0
         else:
             self.set_initial_conditions(samples_file=self.checkpoint_file)
             with self.io(self.checkpoint_file, "r") as f_p:
@@ -348,7 +348,7 @@ class MultinestSampler(BaseSampler):
             If the output file already exists, overwrite it.
         """
         if self.is_main_process:
-            setup_output(self, output_file, force=force)
+            self.new_checkpoint = setup_output(self, output_file, force=force)
         else:
             # child processes just store filenames
             checkpoint_file = output_file + '.checkpoint'
@@ -364,7 +364,7 @@ class MultinestSampler(BaseSampler):
         pass
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """Loads the sampler from the given config file."""
         section = "sampler"
         # check name
@@ -396,4 +396,10 @@ class MultinestSampler(BaseSampler):
                            v is not None}
         obj = cls(model, nlivepoints, constraints=constraints,
                   **optional_kwargs)
+        obj.setup_output(obj, output_file)
+        if not obj.new_checkpoint:
+            obj.resume_from_checkpoint(cp)
+        else:
+            init_prior = initial_dist_from_config(cp,
+                obj.variable_params)
         return obj

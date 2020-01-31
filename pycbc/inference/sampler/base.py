@@ -28,7 +28,6 @@ Defines the base sampler class to be inherited by all samplers.
 from __future__ import absolute_import
 
 from abc import ABCMeta, abstractmethod, abstractproperty
-import os
 import shutil
 import logging
 
@@ -69,7 +68,7 @@ class BaseSampler(object):
 
     # @classmethod <--uncomment when we move to python 3.3
     @abstractmethod
-    def from_config(cls, cp, model, filename, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
         """This should initialize the sampler given a config file.
         """
         pass
@@ -164,7 +163,7 @@ class BaseSampler(object):
 #
 
 def setup_output(sampler, output_file, force=False):
-    """Sets up the sampler's checkpoint and output files.
+    r"""Sets up the sampler's checkpoint and output files.
 
     The checkpoint file has the same name as the output file, but with
     ``.checkpoint`` appended to the name. A backup file will also be
@@ -207,7 +206,6 @@ def setup_output(sampler, output_file, force=False):
     # store
     sampler.checkpoint_file = checkpoint_file
     sampler.backup_file = backup_file
-    #sampler.checkpoint_valid = checkpoint_valid
     return new_checkpoint
 
 
