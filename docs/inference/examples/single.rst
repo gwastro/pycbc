@@ -23,18 +23,19 @@ For this example, we'll need to download gravitation-wave data for GW170817:
 .. literalinclude:: ../../../examples/inference/single/get.sh
    :language: bash
    
-.. program-output:: bash ../../../examples/inference/single/get.sh
+.. program-output:: bash ../examples/inference/single/get.sh
+   :ellipsis: 2,-2
 
 
 By setting the model name to ``single_template`` we are using
-:py:class:`SingleTemplate <pycbc.inference.models.SingleTemplate>`.
+:py:class:`SingleTemplate <pycbc.inference.models.single_template.SingleTemplate>`.
 
 Now run:
 
 .. literalinclude:: ../../../examples/inference/single/run.sh
    :language: bash
    
-.. program-output:: bash ../../../examples/inference/single/run.sh
+.. program-output:: bash ../examples/inference/single/run.sh
 
 :download:`Download <../../../examples/inference/single/run.sh>`
 
@@ -45,16 +46,16 @@ run.
 
 To plot the posterior distribution after the last iteration, run:
 
-.. program-output:: bash ../../../examples/inference/single/plot.sh
-
 .. literalinclude:: ../../../examples/inference/single/plot.sh
    :language: bash
 
-:download:`Download <../examples/inference/single/plot.sh>`
+.. program-output:: bash ../examples/inference/single/plot.sh
+
+:download:`Download <../../../examples/inference/single/plot.sh>`
 
 This will create the following plot:
 
-.. image:: single.png
+.. image:: ../../single.png
    :scale: 30
    :align: center
 
