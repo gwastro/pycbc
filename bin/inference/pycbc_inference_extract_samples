@@ -69,6 +69,15 @@ parser = ResultsArgumentParser(defaultparams='all', autoparamlabels=False,
 
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output file to create.")
+parser.add_argument("-g", "--greedy", action="store_true", default=False,
+                    help="Add any parameters not used in the parameters "
+                         "option to the output. For example, if the file "
+                         "contains mass1, mass2, and distance and "
+                         "--parameters is set to "
+                         "'primary_mass(mass1, mass2):mass1', then the output "
+                         "will contain mass1 and distance if this flag is "
+                         "turned on. Otherwise, the output would just contain "
+                         "mass1.")
 parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an IOError is raised.")
