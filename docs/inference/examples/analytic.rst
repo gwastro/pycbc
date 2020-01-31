@@ -11,7 +11,7 @@ This example demonstrates how to sample a 2D normal distribution with the
 .. literalinclude:: ../../../examples/inference/analytic-normal2d/normal2d.ini
    :language: ini
 
-:download:`Download <../examples/inference/analytic-normal2d/normal2d.ini>`
+:download:`Download <../../../examples/inference/analytic-normal2d/normal2d.ini>`
 
 By setting the model name to ``test_normal`` we are using
 :py:class:`TestNormal <pycbc.inference.models.analytic.TestNormal>`.
@@ -24,7 +24,7 @@ Now run:
 .. literalinclude:: ../../../examples/inference/analytic-normal2d/run.sh
    :language: bash
 
-:download:`Download <../examples/inference/analytic-normal2d/run.sh>`
+:download:`Download <../../../examples/inference/analytic-normal2d/run.sh>`
 
 This will run the ``emcee`` sampler on the 2D analytic normal distribution with
 5000 walkers for 100 iterations. When it is done, you will have a file called
@@ -37,7 +37,7 @@ To plot the posterior distribution after the last iteration, run:
 .. literalinclude:: ../../../examples/inference/analytic-normal2d/plot.sh
    :language: bash
 
-:download:`Download <../examples/inference/analytic-normal2d/plot.sh>`
+:download:`Download <../../../examples/inference/analytic-normal2d/plot.sh>`
 
 This will create the following plot:
 
