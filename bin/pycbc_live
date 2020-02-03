@@ -31,6 +31,7 @@ from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
+from pycbc import mchirp_area
 
 
 def ppdets(ifos):
@@ -63,7 +64,7 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
 
 
 class LiveEventManager(object):
-    def __init__(self, output_path,
+    def __init__(self, output_path, mc_area_args,
                  use_date_prefix=False,
                  ifar_upload_threshold=None,
                  pval_livetime=None,
@@ -71,6 +72,7 @@ class LiveEventManager(object):
                  gracedb_testing=True,
                  run_snr_optimization=False):
         self.path = output_path
+        self.mc_area_args = mc_area_args
 
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
@@ -241,7 +243,8 @@ class LiveEventManager(object):
             event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
-                                          channel_names=args.channel_name)
+                                          channel_names=args.channel_name,
+                                          mc_area_args=self.mc_area_args)
 
             end_time = int(coinc_results['foreground/%s/end_time'
                                          % coinc_ifos[0]])
@@ -606,6 +609,7 @@ LiveSingle.insert_args(parser)
 fft.insert_fft_option_group(parser)
 Coincer.insert_args(parser)
 SingleDetSGChisq.insert_option_group(parser)
+mchirp_area.insert_args(parser)
 args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
@@ -641,7 +645,8 @@ evnt = LiveEventManager(args.output_path,
                         pval_livetime=args.pvalue_combination_livetime,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
-                        run_snr_optimization=args.run_snr_optimization)
+                        run_snr_optimization=args.run_snr_optimization,
+                        mc_area_args=mchirp_area.from_cli(args))
 
 sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
