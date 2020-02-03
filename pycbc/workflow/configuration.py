@@ -1082,9 +1082,10 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         value: 
             The parsed value for this option
         """
-        import argumentparser        
+        import argparse        
         optstr = self.section_to_cli(section)
-        parser = argumentparser.ArgumentParser()
-        parser.add_argument("--" + option_name.replace('_', '-'), **kwds)                 
-        args = parser.parse_args()
-        return getattr(args, 'option_name')
+        parser = argparse.ArgumentParser()
+        name = "--" + option_name.replace('_', '-')
+        parser.add_argument(name, **kwds)                 
+        args, u = parser.parse_known_args(optstr.split())
+        return getattr(args, option_name)

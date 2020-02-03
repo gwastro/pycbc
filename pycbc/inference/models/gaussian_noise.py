@@ -132,13 +132,17 @@ class BaseGaussianNoise(BaseDataModel):
         # store the number of samples in the time domain
         self._N = int(1./(dts[0]*dfs[0]))
         # Set low frequency cutoff
-        self._f_lower = low_frequency_cutoff
+        self.low_frequency_cutoff = self._f_lower = low_frequency_cutoff
         # set upper frequency cutoff
         self._f_upper = None
         self.high_frequency_cutoff = high_frequency_cutoff
         # Set the cutoff indices
         self._kmin = {}
         self._kmax = {}
+        
+        print (self._f_lower)
+        print (self._f_upper)
+        
         for (det, d) in self._data.items():
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
                                                      self._f_upper[det],
@@ -519,8 +523,11 @@ class BaseGaussianNoise(BaseDataModel):
                 ignore_args.append(option)
                 name = option.replace('-', '_')
                 args[name] = cp.get_cli_option('model', name,
-                                               nargs='+',
+                                               nargs='+', type=float,
                                                action=MultiDetOptionAction)
+        if 'low_frequency_cutoff' not in args:
+            raise ValueError("low-frequency-cutoff must be provided in the"
+                             " model section, but is not found!")
 
         # data args
         bool_args = ['check-for-valid-times', 'shift-psd-times-to-valid',
@@ -529,7 +536,8 @@ class BaseGaussianNoise(BaseDataModel):
                      if cp.has_option('model', arg)}
         ignore_args += bool_args
         # load the data
-        opts = data_opts_from_config(cp, data_section, flow)
+        opts = data_opts_from_config(cp, data_section,
+                                     args['low_frequency_cutoff'])
         strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
         # convert to frequency domain and get psds
         stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
