@@ -272,11 +272,14 @@ def build_includes():
     print("Running scripts in _include:")
     cwd = os.getcwd()
     os.chdir('_include')
-    pyfiles = glob.glob('*.py')
+    pyfiles = glob.glob('*.py') + glob.glob('*.sh')
     for fn in pyfiles:
         if not fn.startswith('_'):
             print(' {}'.format(fn))
-            subprocess.check_output(['python', fn])
+            if fn.endswith('.py'):
+                subprocess.check_output(['python', fn])
+            elif fn.endswith('.sh'):
+                subprocess.check_output(['bash', fn])
     os.chdir(cwd)
 
 build_includes()

@@ -22,10 +22,6 @@ For this example, we'll need to download gravitational-wave data for GW170817:
 
 .. literalinclude:: ../../../examples/inference/single/get.sh
    :language: bash
-   
-.. program-output:: bash ../examples/inference/single/get.sh
-   :ellipsis: 2,-2
-
 
 By setting the model name to ``single_template`` we are using
 :py:class:`SingleTemplate <pycbc.inference.models.single_template.SingleTemplate>`.
@@ -35,8 +31,6 @@ Now run:
 .. literalinclude:: ../../../examples/inference/single/run.sh
    :language: bash
    
-.. program-output:: bash ../examples/inference/single/run.sh
-
 :download:`Download <../../../examples/inference/single/run.sh>`
 
 This will run the ``emcee_pt`` sampler. When it is done, you will have a file called
@@ -48,13 +42,11 @@ To plot the posterior distribution after the last iteration, run:
 .. literalinclude:: ../../../examples/inference/single/plot.sh
    :language: bash
 
-.. program-output:: bash ../examples/inference/single/plot.sh
-
 :download:`Download <../../../examples/inference/single/plot.sh>`
 
 This will create the following plot:
 
-.. image:: ../../single.png
+.. image:: ../../_include/single.png
    :scale: 30
    :align: center
 
