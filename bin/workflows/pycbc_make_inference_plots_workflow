@@ -100,7 +100,7 @@ def read_events_from_config(cp):
         sf = shlex.split(cp.get(section, 'samples-files'))
         labels.append(label)
         config_files.append(list(map(os.path.abspath, cf)))
-        samples_files.append(list(map(os.path.abspath, cf)))
+        samples_files.append(list(map(os.path.abspath, sf)))
     return labels, config_files, samples_files
 
 
@@ -215,7 +215,6 @@ log_file.setFormatter(formatter)
 logging.getLogger("").addHandler(log_file)
 logging.info("Created log file %s" % log_file_txt.storage_path)
 
-
 config_files = {}
 for num_event, samples_filelist in enumerate(samples_files):
     label = elabels[num_event]
@@ -269,8 +268,6 @@ for num_event, samples_filelist in enumerate(samples_files):
     layout.single_layout(rdir['detector_sensitivity'], [psd_plot],
                          unique=str(num_event).zfill(zpad),
                          title=summary_label, collapse=True)
-
-# build the config page
 
 # create versioning HTML pages
 results.create_versioning_page(rdir["workflow/version"], container.cp)
