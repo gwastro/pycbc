@@ -61,7 +61,8 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
 
     # check if configuration file has inference section
     if not workflow.cp.has_section("workflow-inference"):
-        logging.info("There is no [workflow-inference] section in configuration file")
+        logging.info("There is no [workflow-inference] section in "
+                     "configuration file")
         logging.info("Leaving inference module")
         return
 
@@ -114,7 +115,8 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     # and add it to the workflow
     fil = node.output_files[0]
     job = dax.DAX(fil)
-    job.addArguments("--basename %s" % os.path.splitext(os.path.basename(name))[0])
+    job.addArguments("--basename {}".format(
+        os.path.splitext(os.path.basename(name))[0]))
     Workflow.set_job_properties(job, map_file, tc_file)
     workflow._adag.addJob(job)
 
