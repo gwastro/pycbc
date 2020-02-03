@@ -106,7 +106,7 @@ def read_events_from_config(cp):
 
 def label_slug(label):
     """Slugifies an event label."""
-    label.replace(' ', '_').replace(':', '_').replace('+', '_')
+    return label.replace(' ', '_').replace(':', '_').replace('+', '_')
 
 
 def symlink_path(f, path):
@@ -144,17 +144,6 @@ parser.add_argument("--transformation-catalog", default=None,
 parser.add_argument("--dax-file", default=None,
                     help="Path to DAX file. Default is to write to the "
                          "output directory with name {workflow-name}.dax.")
-# inference options
-parser.add_argument("--seed", type=int, default=0,
-                    help="Seed to use for inference job(s). If multiple "
-                         "events are analyzed, the seed will be incremented "
-                         "by one for each event.")
-# input configuration file options
-parser.add_argument("--samples-file-cache", required=True,
-                    help="Text file listing a label, the inference config "
-                         "file used, and the samples "
-                         "file(s) to create posteriors for."
-                    )
 # add option groups
 configuration.add_workflow_command_line_group(parser)
 
@@ -254,7 +243,7 @@ for num_event, samples_filelist in enumerate(samples_files):
     samples_filelist = core.FileList(samples_filelist)
 
     # create the posterior file and plots
-    posterior_file, summary_files, _, _ = inffu.make_poseterior_workflow(
+    posterior_file, summary_files, _, _ = inffu.make_posterior_workflow(
         workflow, samples_filelist, config_file, label, rdir,
         posterior_file_dir=posterior_file_dir, tags=opts.tags)
 

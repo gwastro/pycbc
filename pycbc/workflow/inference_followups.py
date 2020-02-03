@@ -630,7 +630,7 @@ def get_plot_group(cp, section_tag):
     return plot_groups
 
 
-def get_diagnostics_plots(workflow):
+def get_diagnostic_plots(workflow):
     """Determines what diagnostic plots to create based on workflow.
 
     The plots to create are based on what executable's are specified in the
@@ -884,7 +884,7 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
             workflow, posterior_file, rdir[base],
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_seg,
-            tags=opts.tags+[label, group])
+            tags=tags+[label, group])
     layout.single_layout(rdir[base], posterior_plots)
 
     return posterior_file, summary_files, prior_plots, posterior_plots
