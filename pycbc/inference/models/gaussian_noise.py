@@ -112,16 +112,16 @@ class BaseGaussianNoise(BaseDataModel):
         for ifo in self.data.keys():
             if low_frequency_cutoff[ifo] is None:
                 raise ValueError(
-                       "A low-frequency-cutoff must be provided for every "
-                       "detector for which data has been provided. If "
-                       "loading the model settings from "
-                       "a config file, please provide "
-                       "`{DETECTOR}:low-frequency-cutoff` options for "
-                       "every detector in the `[model]` section, where "
-                       "`{DETECTOR} is the name of the detector,"
-                       "or provide a single low-frequency-cutoff option"
-                       "which will be used for all detectors")
- 
+                    "A low-frequency-cutoff must be provided for every "
+                    "detector for which data has been provided. If "
+                    "loading the model settings from "
+                    "a config file, please provide "
+                    "`{DETECTOR}:low-frequency-cutoff` options for "
+                    "every detector in the `[model]` section, where "
+                    "`{DETECTOR} is the name of the detector,"
+                    "or provide a single low-frequency-cutoff option"
+                    "which will be used for all detectors")
+
         # check that the data sets all have the same delta fs and delta ts
         dts = numpy.array([d.delta_t for d in self.data.values()])
         dfs = numpy.array([d.delta_f for d in self.data.values()])
