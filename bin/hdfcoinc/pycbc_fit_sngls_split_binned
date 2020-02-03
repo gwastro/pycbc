@@ -124,11 +124,19 @@ extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration']
 
 for ex_p in extparams:
     logging.info('calculating {}'.format(ex_p))
+    manual_duration_calc = False
     if ex_p == 'template_duration':
         logging.info('using duration from trigger file')
         params[ex_p] = np.array([trigf[args.ifo + '/template_duration'][ref][0]
                                  for ref in trigf[args.ifo + '/template_duration_template'][:]])
-    else:
+        if any(params[ex_p] == 0):
+            # Some of the templates didn't get any triggers.
+            # This will produce zeros in template duration, so recalculate.
+            logging.warn('Some templates contained no triggers. This plot '
+                         'is only sensible for large statistics. Calculating '
+                         'template duration manually.')
+            manual_duration_calc = True
+    if ex_p != 'template_duration' or manual_duration_calc:
         params[ex_p] = trigs.get_param(ex_p, args, params['mass1'],
                                        params['mass2'], params['spin1z'],
                                        params['spin2z'])
