@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Creates a DAX for a parameter estimation workflow.
+"""Creates a DAX for that generates a posterior file and plots from one or more
+inference samples files.
 """
 
 import argparse
@@ -28,6 +29,7 @@ import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import socket
 import sys
+import shlex
 import numpy
 from ligo import segments
 from pycbc import results
@@ -43,55 +45,69 @@ from pycbc import __version__
 import pycbc.workflow.inference_followups as inffu
 
 
-def load_samples_cache(samples_cache):
-    """Loads samples files from the given config file.
-    
-    Each line in the cache file should be a comma-separated list of label,
-    config file(s), samples file(s). The config file(s) are needed in order to
-    plot the prior. Multiple config and samples files should be space
-    separated. For example::
+def read_events_from_config(cp):
+    """Gets events to load from a config file.
 
-        Event 1,config.ini,samples1.hdf samples2.hdf
+    Each event should have its own section with header ``[event-{{NAME}}]``,
+    where ``NAME`` is a unique identifier. The section must have a
+    ``config-files`` option which gives the configuration file(s) that were
+    used for the event, and a ``samples-files`` option which gives one or
+    more samples files from which to extract a posterior. The section may also
+    have a ``label`` option that provides a human-readable label for the
+    results page. If no ``label`` option is provided, the ``{{NAME}}``
+    will be used.
 
-    Labels must be unique across all events. Otherwise, a ``ValueError`` is
-    raised.
+    To specify multiple configuration or samples files, the files should be
+    space (or new-line) separated. Relative or absolute paths may be used.
+
+    Example:
+
+    .. code-block:: ini
+
+       [event-gw150914_09_50_45]
+       label = GW150914+09:50:45UTC
+       config-files = inference-150914_09h_50m_45UTC.ini
+       samples-files = run1/H1L1-INFERENCE_150914_09H_50M_45UTC-5-1.hdf
+                       run2/H1L1-INFERENCE_150914_09H_50M_45UTC-5-1.hdf
+                       run3/H1L1-INFERENCE_150914_09H_50M_45UTC-5-1.hdf
 
     Parameters
     ----------
-    config_cache : str
-        The name of the cache file.
+    cp : pycbc.workflow.configuration.WorkflowConfigParser
+        Configuration file giving the events.
 
     Returns
     -------
-    labels : list
-        List of strings giving a label for each event.
-    config_files : list
-        List of the config files. Each element is itself a list providing
-        all of the config files to combine.
-    samples_files : list
-        List of the samples files. Each element is itself a list providing
-        all of the samples files to combine.
+    labels : list of str
+        The labels to use for the event(s) that were given in the config file.
+    config-files : list of lists
+        List of the configuration file(s) for each event.
+    samples-files : lsit of lists
+        List of the samples file(s) for each event.
     """
+    # get the events
+    events = cp.get_subsections('event')
     labels = []
     config_files = []
     samples_files = []
-    with open(samples_cache, 'r') as fp:
-        for line in fp:
-            if line.startswith('#'):
-                continue
-            line = line.replace('\n', '')
-            lbl, cfs, smps = line.split(',')
-            cfs = list(map(os.path.abspath, cfs.strip().split()))
-            smps = list(map(os.path.abspath, smps.strip().split()))
-            labels.append(lbl.strip())
-            config_files.append(cfs)
-            samples_files.append(smps)
-    if len(samples_files) == 0:
-        raise ValueError("no samples files found in given cache")
-    # check that the labels are unique
-    if not len(set(labels)) == len(labels):
-        raise ValueError("all labels in config cache must be unique")
+    for event in events:
+        section = '-'.join(['event', event])
+        if cp.has_option(section, 'label'):
+            label = cp.get(section, 'label')
+        else:
+            label = event
+        cf = shlex.split(cp.get(section, 'config-files'))
+        sf = shlex.split(cp.get(section, 'samples-files'))
+        labels.append(label)
+        config_files.append(list(map(os.path.abspath, cf)))
+        samples_files.append(list(map(os.path.abspath, cf)))
     return labels, config_files, samples_files
+
+
+def label_slug(label):
+    """Slugifies an event label."""
+    label.replace(' ', '_').replace(':', '_').replace('+', '_')
+
 
 def symlink_path(f, path):
     """ Symlinks a path.
@@ -102,6 +118,7 @@ def symlink_path(f, path):
         os.symlink(f.storage_path, os.path.join(path, f.name))
     except OSError:
         pass
+
 
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -144,10 +161,6 @@ configuration.add_workflow_command_line_group(parser)
 # parser command line
 opts = parser.parse_args()
 
-# get posterior files and labels
-elabels, infconfig_files, samples_files = \
-    load_samples_cache(opts.samples_file_cache)
-
 posterior_file_dir = 'posterior_files'
 config_file_dir = 'config_files'
 config_file_tmplt = 'inference-{}.ini'
@@ -175,6 +188,9 @@ logging.basicConfig(format=log_format, level=logging.INFO)
 container = core.Workflow(opts, opts.workflow_name)
 workflow = core.Workflow(opts, opts.workflow_name + "-main")
 finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
+
+# get the events
+elabels, infconfig_files, samples_files = read_events_from_config(workflow.cp)
 
 # change working directory to the output
 origdir = os.path.abspath(os.curdir)
@@ -214,10 +230,8 @@ logging.info("Created log file %s" % log_file_txt.storage_path)
 config_files = {}
 for num_event, samples_filelist in enumerate(samples_files):
     label = elabels[num_event]
-    if label is None:
-        label = 'Event {}'.format(num_event)
     summary_label = label
-    label = label.replace(' ', '_').replace(':', '_').replace('+', '_')
+    label = label_slug(label)
 
     config_fnames = infconfig_files[num_event]
 
