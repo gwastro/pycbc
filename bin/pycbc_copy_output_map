@@ -74,6 +74,10 @@ do
 	echo "A line contained ${#ARRAY[@]} space seperated entries."
 	echo "A map file should contain 3 per line"
 	exit 1
+    elif [[ "${ARRAY[1]}" == *.dax ]] || [[ "${ARRAY[1]}" == *.dax.map ]] || [[ "${ARRAY[1]}" == *.tc.txt ]]
+    then
+	echo "Skipping subdax file: ${ARRAY[1]}"
+	continue
     elif [ -s "${ARRAY[1]}" ]
     then
 	echo "$LINE" >> "$OUTPUT_FILE"
