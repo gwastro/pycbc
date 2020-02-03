@@ -1044,7 +1044,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         except ConfigParser.Error:
             return False
 
-    def section_to_cli(self, section):
+    def section_to_cli(self, section, skip_opts=None):
         """Converts a section into a command-line string.
 
         For example:
@@ -1056,9 +1056,26 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             bar = 10
 
         yields: `'--foo --bar 10'`.
+
+        Parameters
+        ----------
+        section : str
+            The name of the section to convert.
+        skip_opts : list, optional
+            List of options to skip. Default (None) results in all options
+            in the section being converted.
+
+        Returns
+        -------
+        str :
+            The options as a command-line string.
         """
+        if skip_opts is None:
+            skip_opts = []
+        read_opts = [opt for opt in self.options(section)
+                     if opt not in skip_opts]
         opts = []
-        for opt in self.options(section):
+        for opt in read_opts:
             opts.append('--{}'.format(opt))
             val = self.get(section, opt)
             if val != '':
