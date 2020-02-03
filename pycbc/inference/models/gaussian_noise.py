@@ -28,6 +28,7 @@ from pycbc.types import Array, FrequencySeries
 from pycbc.strain import gates_from_cli
 from pycbc.strain.calibration import Recalibrate
 from pycbc.inject import InjectionSet
+from pycbc.types.optparse import MultiDetOptionAction
 
 from .base import ModelStats
 from .base_data import BaseDataModel
@@ -108,14 +109,19 @@ class BaseGaussianNoise(BaseDataModel):
                                                 **kwargs)
         # check if low frequency cutoff has been provided for every IFO with
         # data
-        if set(self.data.keys()) - set(low_frequency_cutoff.keys()):
-            raise KeyError("A low-frequency-cutoff must be provided for every "
-                           "detector for which data has been provided. If "
-                           "loading the model settings from "
-                           "a config file, please provide "
-                           "`{DETECTOR}-low-frequency-cutoff` options for "
-                           "every detector in the `[model]` section, where "
-                           "`{DETECTOR} is the name of the detector.")
+        for key in self.data.keys():
+            if key not in low_frequency_cutoff:
+                raise KeyError(
+                       "A low-frequency-cutoff must be provided for every "
+                       "detector for which data has been provided. If "
+                       "loading the model settings from "
+                       "a config file, please provide "
+                       "`{DETECTOR}:low-frequency-cutoff` options for "
+                       "every detector in the `[model]` section, where "
+                       "`{DETECTOR} is the name of the detector,"
+                       "or provide a single low-frequency-cutoff option"
+                       "which will be used for all detectors")
+ 
         # check that the data sets all have the same delta fs and delta ts
         dts = numpy.array([d.delta_t for d in self.data.values()])
         dfs = numpy.array([d.delta_f for d in self.data.values()])
@@ -126,8 +132,7 @@ class BaseGaussianNoise(BaseDataModel):
         # store the number of samples in the time domain
         self._N = int(1./(dts[0]*dfs[0]))
         # Set low frequency cutoff
-        self._f_lower = None
-        self.low_frequency_cutoff = low_frequency_cutoff
+        self._f_lower = low_frequency_cutoff
         # set upper frequency cutoff
         self._f_upper = None
         self.high_frequency_cutoff = high_frequency_cutoff
@@ -155,28 +160,6 @@ class BaseGaussianNoise(BaseDataModel):
         self.normalize = normalize
         # store the psds and whiten the data
         self.psds = psds
-
-    @property
-    def low_frequency_cutoff(self):
-        """The low frequency cutoff of the inner product."""
-        return self._f_lower
-
-    @low_frequency_cutoff.setter
-    def low_frequency_cutoff(self, low_frequency_cutoff):
-        """Sets the lower frequency cutoff.
-
-        Parameters
-        ----------
-        low_frequency_cutoff : dict
-            Dictionary mapping detector names to frequencies. A cutoff
-            must be provided for every detector.
-        """
-        # check that all the detectors are accounted for
-        missing = set(self._data.keys()) - set(low_frequency_cutoff.keys())
-        if any(missing):
-            raise ValueError("Missing low frequency cutoffs for detector(s) "
-                             "{}".format(', '.join(list(missing))))
-        self._f_lower = low_frequency_cutoff.copy()
 
     @property
     def high_frequency_cutoff(self):
@@ -526,19 +509,19 @@ class BaseGaussianNoise(BaseDataModel):
             provided keyword will over ride what is in the config file.
         """
         args = cls._init_args_from_config(cp)
-        flow = low_frequency_cutoff_from_config(cp)
-        fhigh = high_frequency_cutoff_from_config(cp)
-        args['low_frequency_cutoff'] = flow
-        args['high_frequency_cutoff'] = fhigh
         # check if normalize is set
         if cp.has_option('model', 'normalize'):
             args['normalize'] = True
         # get any other keyword arguments provided in the model section
         ignore_args = ['name', 'normalize']
         for option in cp.options("model"):
-            if any([option.endswith("-low-frequency-cutoff"),
-                    option.endswith("-high-frequency-cutoff")]):
+            if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)
+                name = option.replace('-', '_')
+                args[name] = cp.get_cli_option('model', name,
+                                               nargs='+',
+                                               action=MultiDetOptionAction)
+
         # data args
         bool_args = ['check-for-valid-times', 'shift-psd-times-to-valid',
                      'err-on-missing-detectors']
@@ -557,7 +540,7 @@ class BaseGaussianNoise(BaseDataModel):
             for det in psds:
                 psds[det].psd_segment = (_tdict[det].start_time,
                                          _tdict[det].end_time)
-        # gate overwhitened if desiered
+        # gate overwhitened if desired
         if opts.gate_overwhitened and opts.gate is not None:
             stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
         args.update({'data': stilde_dict, 'psds': psds})
@@ -1040,70 +1023,3 @@ def create_waveform_generator(variable_params, data, waveform_transforms=None,
         recalib=recalibration, gates=gates,
         **static_params)
     return waveform_generator
-
-
-def low_frequency_cutoff_from_config(cp):
-    """Gets the low frequency cutoff for all detectors to be used from the
-    given config file.
-
-    The low-frequency-cutoff for each detector should be provided using an
-    option ``IFO-low-frequency-cutoff`` in the ``[model]`` section, where IFO
-    is the name of the detector. The low frequency cutoff value is then casted
-    to float. If the casting to float fails, an error is raised.
-
-    Parameters
-    ----------
-    cp : WorkflowConfigParser
-        Config file parser to read.
-
-    Returns
-    -------
-    dict :
-        Dictionary with the IFO names as the keys and the respective low
-        frequency cutoffs to be used in the likelihood calculation as the
-        values.
-    """
-    low_frequency_cutoff = {}
-    for option in cp.options("model"):
-        if option.endswith("-low-frequency-cutoff"):
-            ifo = option.rsplit("-low-frequency-cutoff")[0].upper()
-            try:
-                low_frequency_cutoff[ifo] = float(cp.get("model", option))
-            except Exception as e:
-                logging.warning("Low frequency cutoff of %s could not be "
-                                "converted to float", ifo)
-                raise e
-    return low_frequency_cutoff
-
-
-def high_frequency_cutoff_from_config(cp):
-    """Gets the high frequency cutoff, if one is provided for a detector from
-    the given config file for likelihood computation.
-
-    This looks for options ``IFO-high-frequency-cutoff`` in the ``[model]``
-    section, where IFO is the name of the detector, and casts it to float.
-
-    Parameters
-    ----------
-    cp : WorkflowConfigParser
-        Config file parser to read.
-
-    Returns
-    -------
-    dict or None :
-        Dictionary with the IFO names as the keys and the respective high
-        frequency cutoffs to be used in the likelihood calculation as the
-        values. If high frequency cutoffs for no detectors are provided,
-        returns an empty dictionary.
-    """
-    high_frequency_cutoff = {}
-    for option in cp.options("model"):
-        if option.endswith("-high-frequency-cutoff"):
-            ifo = option.rsplit("-high-frequency-cutoff")[0].upper()
-            try:
-                high_frequency_cutoff[ifo] = float(cp.get("model", option))
-            except Exception as e:
-                logging.warning("High frequency cutoff of %s could not be "
-                                "converted to float", ifo)
-                raise e
-    return high_frequency_cutoff
