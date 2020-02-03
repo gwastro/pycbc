@@ -33,6 +33,7 @@ from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
 from pycbc import mchirp_area
 
+
 def ptof(p, ft):
     """Convert p-value to FAR via foreground time `ft`.
     """
@@ -55,7 +56,7 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
 
 
 class LiveEventManager(object):
-    def __init__(self, output_path,
+    def __init__(self, output_path, mc_area_args,
                  use_date_prefix=False,
                  ifar_upload_threshold=None,
                  pval_livetime=None,
@@ -63,6 +64,7 @@ class LiveEventManager(object):
                  gracedb_testing=True,
                  run_snr_optimization=False):
         self.path = output_path
+        self.mc_area_args = mc_area_args
 
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
@@ -192,7 +194,7 @@ class LiveEventManager(object):
 
 
     def check_coincs(self, ifos, coinc_results, psds, f_low,
-                     data_readers, bank, mc_area_args):
+                     data_readers, bank):
         """ Perform any followup and save zerolag triggers to a coinc xml file
         """
         #check for hardware injection
@@ -228,7 +230,7 @@ class LiveEventManager(object):
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
-                                          mc_area_args=mc_area_args)
+                                          mc_area_args=self.mc_area_args)
 
             end_time = int(coinc_results['foreground/%s/end_time'
                                          % coinc_ifos[0]])
@@ -597,7 +599,6 @@ pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
-mc_area_args = mchirp_area.from_cli(args)
 
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
@@ -621,7 +622,8 @@ evnt = LiveEventManager(args.output_path,
                         pval_livetime=args.pvalue_combination_livetime,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
-                        run_snr_optimization=args.run_snr_optimization)
+                        run_snr_optimization=args.run_snr_optimization,
+                        mc_area_args=mchirp_area.from_cli(args))
 
 sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
@@ -802,7 +804,7 @@ with ctx:
 
                 evnt.check_coincs(list(results.keys()), best_coinc,
                                   psds, args.low_frequency_cutoff,
-                                  data_reader, bank, mc_area_args)
+                                  data_reader, bank)
 
             # Check for singles
             if args.enable_single_detector_background:
