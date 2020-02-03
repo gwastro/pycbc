@@ -109,9 +109,9 @@ class BaseGaussianNoise(BaseDataModel):
                                                 **kwargs)
         # check if low frequency cutoff has been provided for every IFO with
         # data
-        for key in self.data.keys():
-            if key not in low_frequency_cutoff:
-                raise KeyError(
+        for ifo in self.data.keys():
+            if low_frequency_cutoff[ifo] is None:
+                raise ValueError(
                        "A low-frequency-cutoff must be provided for every "
                        "detector for which data has been provided. If "
                        "loading the model settings from "
@@ -139,10 +139,7 @@ class BaseGaussianNoise(BaseDataModel):
         # Set the cutoff indices
         self._kmin = {}
         self._kmax = {}
-        
-        print (self._f_lower)
-        print (self._f_upper)
-        
+
         for (det, d) in self._data.items():
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
                                                      self._f_upper[det],
