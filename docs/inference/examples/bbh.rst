@@ -63,9 +63,8 @@ Here are the model and prior settings we will use:
 
 In the ``[model]`` section we have set the model to be ``gaussian_noise``.  As
 described above, this is the standard model to use for CBC signals. It assumes
-that the noise is wide-sense stationary Gaussian noise. Notice that we had to
-provide additional arguments for the low frequency cutoff to use in each
-detector. These values are the lower cutoffs used for the likelihood integral.
+that the noise is wide-sense stationary Gaussian noise. Notice that we provide
+a low frequency argument which is the lower bound for the likelihood integral.
 (See the |GaussianNoise| docs for details.)
 
 The |GaussianNoise| model will need to generate model waveforms in order to
