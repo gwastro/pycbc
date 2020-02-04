@@ -172,10 +172,12 @@ def istext(s, text_characters=None, threshold=0.3):
     # s is 'text' if less than 30% of its characters are non-text ones:
     return len(t)/float(len(s)) <= threshold
 
-def resolve_url(url, directory=None, permissions=None):
-    """
-    Resolves a URL to a local file, and returns the path to
-    that file.
+def resolve_url(url, directory=None, permissions=None, copy_to_cwd=False):
+    """Resolves a URL to a local file, and returns the path to that file.
+
+    If a URL is given, the file will be copied to the current working
+    directory. If a local file path is given, the file will only be copied
+    to the current working directory if ``copy_to_cwd`` is ``True``.
     """
 
     u = urlparse(url)
@@ -183,11 +185,15 @@ def resolve_url(url, directory=None, permissions=None):
     # create the name of the destination file
     if directory is None:
         directory = os.getcwd()
-    filename = os.path.join(directory,os.path.basename(u.path))
+    filename = os.path.join(directory, os.path.basename(u.path))
 
     if u.scheme == '' or u.scheme == 'file':
-        # for regular files, make a direct copy
-        if os.path.isfile(u.path):
+        # check that the file exists
+        if not os.path.isfile(u.path):
+            errmsg  = "Cannot open file %s from URL %s" % (u.path, url)
+            raise ValueError(errmsg)
+        # for regular files, make a direct copy if requested
+        elif copy_to_cwd:
             if os.path.isfile(filename):
                 # check to see if src and dest are the same file
                 src_inode = os.stat(u.path)[stat.ST_INO]
@@ -196,9 +202,6 @@ def resolve_url(url, directory=None, permissions=None):
                     shutil.copy(u.path, filename)
             else:
                 shutil.copy(u.path, filename)
-        else:
-            errmsg  = "Cannot open file %s from URL %s" % (u.path, url)
-            raise ValueError(errmsg)
 
     elif u.scheme == 'http' or u.scheme == 'https':
         s = requests.Session()
@@ -339,7 +342,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
     """
-    def __init__(self, configFiles=None, overrideTuples=None, parsedFilePath=None, deleteTuples=None):
+    def __init__(self, configFiles=None, overrideTuples=None,
+                 parsedFilePath=None, deleteTuples=None, copy_to_cwd=False):
         """
         Initialize an WorkflowConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
@@ -359,6 +363,11 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             Delete the (section, option) pairs provided
             in this list from provided .ini file(s). If the section only
             is provided, the entire section will be deleted.
+        copy_to_cwd : bool, optional
+            Copy the configuration files to the current working directory if
+            they are not already there, even if they already exist locally.
+            If False, files will only be copied to the current working
+            directory if they are remote. Default is False.
 
         Returns
         --------
@@ -376,7 +385,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Enable case sensitive options
         self.optionxform = str
 
-        configFiles = [resolve_url(cFile) for cFile in configFiles]
+        configFiles = [resolve_url(cFile, copy_to_cwd=copy_to_cwd)
+                       for cFile in configFiles]
 
         self.read_ini_file(configFiles)
 
