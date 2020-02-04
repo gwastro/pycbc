@@ -360,9 +360,8 @@ def data_opts_from_config(cp, section, filter_flow):
             raise ValueError("data conditioning low frequency cutoff must "
                              "be less than the filter low frequency "
                              "cutoff")
-    # have to clear to remove the random string thing in DictWithDefaultReturn
-    opts.low_frequency_cutoff.clear()
-    opts.low_frequency_cutoff.update(low_freq_cutoff)
+    opts.low_frequency_cutoff = low_freq_cutoff
+
     # verify options are sane
     verify_psd_options_multi_ifo(opts, parser, opts.instruments)
     verify_strain_options_multi_ifo(opts, parser, opts.instruments)

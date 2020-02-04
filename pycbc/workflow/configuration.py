@@ -1064,3 +1064,28 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             if val != '':
                 opts.append(val)
         return ' '.join(opts)
+
+    def get_cli_option(self, section, option_name, **kwds):
+        """Return option using CLI action parsing
+
+        Parameters
+        ----------
+        section: str
+            Section to find option to parse
+        option_name: str
+            Name of the option to parse from the config file
+        kwds: keywords
+            Additional keywords are passed directly to the argument parser.
+
+        Returns
+        -------
+        value:
+            The parsed value for this option
+        """
+        import argparse
+        optstr = self.section_to_cli(section)
+        parser = argparse.ArgumentParser()
+        name = "--" + option_name.replace('_', '-')
+        parser.add_argument(name, **kwds)
+        args, _ = parser.parse_known_args(optstr.split())
+        return getattr(args, option_name)
