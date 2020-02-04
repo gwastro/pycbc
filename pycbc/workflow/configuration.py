@@ -182,12 +182,18 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=False):
 
     u = urlparse(url)
 
-    # create the name of the destination file
-    if directory is None:
-        directory = os.getcwd()
-    filename = os.path.join(directory, os.path.basename(u.path))
+    # determine whether the file exists locally
+    islocal = u.scheme == '' or u.scheme == 'file'
 
-    if u.scheme == '' or u.scheme == 'file':
+    if not islocal or copy_to_cwd:
+        # create the name of the destination file
+        if directory is None:
+            directory = os.getcwd()
+        filename = os.path.join(directory, os.path.basename(u.path))
+    else:
+        filename = u.path
+
+    if islocal:
         # check that the file exists
         if not os.path.isfile(u.path):
             errmsg  = "Cannot open file %s from URL %s" % (u.path, url)
