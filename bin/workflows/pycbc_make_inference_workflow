@@ -22,6 +22,7 @@ import argparse
 import h5py
 import logging
 import os
+import shlex
 import Pegasus.DAX3 as dax
 import pycbc
 import pycbc.workflow.minifollowups as mini
@@ -123,11 +124,12 @@ def read_events_from_config(cp):
         cpopts.append(cfparser.parse_args(shlex.split(cli)))
         # get the number of times to run the event
         if cp.has_option(section, 'nruns'):
-            nruns = int(cp.get(section, 'nruns'))
+            nrun = int(cp.get(section, 'nruns'))
         else:
-            nruns = 1
-        if nrns < 1:
+            nrun = 1
+        if nrun < 1:
             raise ValueError('nruns must be >= 1')
+        nruns.append(nrun)
     return events, labels, cpopts, nruns
 
 
@@ -285,7 +287,7 @@ for num_event, event in enumerate(events):
                                     ifos=sub_workflow.ifos,
                                     out_dir=samples_file_dir)
     for nn in range(nrun):
-        tags = opts.tag + [event]
+        tags = opts.tags + [event]
         if nrun > 1:
             tags.append(str(nn))
         node = inference_exe.create_node()
@@ -331,15 +333,6 @@ for num_event, event in enumerate(events):
     # add the sub workflow to the main workflow
     workflow += sub_workflow
 
-    # build the summary page
-    zpad = int(numpy.ceil(numpy.log10(len(infconfig_files))))
-    layout.two_column_layout(rdir.base, summary_page,
-                             unique=str(num_event).zfill(zpad),
-                             title=label, collapse=True)
-
-
-# build the psd page
-layout.group_layout(rdir['detector_sensitivity'], psd_page)
 
 # create versioning HTML pages
 results.create_versioning_page(rdir["workflow/version"], container.cp)
