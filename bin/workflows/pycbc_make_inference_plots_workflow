@@ -78,6 +78,8 @@ def read_events_from_config(cp):
 
     Returns
     -------
+    events : list of str
+        The names of the event(s) that were given in the config file.
     labels : list of str
         The labels to use for the event(s) that were given in the config file.
     config-files : list of lists
@@ -101,10 +103,10 @@ def read_events_from_config(cp):
         labels.append(label)
         config_files.append(list(map(os.path.abspath, cf)))
         samples_files.append(list(map(os.path.abspath, sf)))
-    return labels, config_files, samples_files
+    return events, labels, config_files, samples_files
 
 
-def label_slug(label):
+def event_slug(label):
     """Slugifies an event label."""
     return label.replace(' ', '_').replace(':', '_').replace('+', '_')
 
@@ -179,7 +181,8 @@ workflow = core.Workflow(opts, opts.workflow_name + "-main")
 finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 
 # get the events
-elabels, infconfig_files, samples_files = read_events_from_config(workflow.cp)
+events, labels, infconfig_files, samples_files = \
+    read_events_from_config(workflow.cp)
 
 # change working directory to the output
 origdir = os.path.abspath(os.curdir)
@@ -216,19 +219,20 @@ logging.getLogger("").addHandler(log_file)
 logging.info("Created log file %s" % log_file_txt.storage_path)
 
 config_files = {}
-for num_event, samples_filelist in enumerate(samples_files):
-    label = elabels[num_event]
-    summary_label = label
-    label = label_slug(label)
+for num_event, event in enumerate(events):
+    # slugify the event name so it can be used in file names
+    event = event_slug(event)
+    label = labels[num_event]
+    samples_filelist = samples_files[num_event]
 
     config_fnames = infconfig_files[num_event]
 
     # write the configuration file to the config files directory
     cp = configuration.WorkflowConfigParser(config_fnames)
-    config_file = workflow.save_config(config_file_tmplt.format(label),
+    config_file = workflow.save_config(config_file_tmplt.format(event),
                                            config_file_dir, cp)[0]
     # create sym links to config file for results page
-    base = "config_files/{}".format(label)
+    base = "config_files/{}".format(event)
     layout.single_layout(rdir[base], [config_file])
     symlink_path(config_file, rdir[base])
 
@@ -243,31 +247,31 @@ for num_event, samples_filelist in enumerate(samples_files):
 
     # create the posterior file and plots
     posterior_file, summary_files, _, _ = inffu.make_posterior_workflow(
-        workflow, samples_filelist, config_file, label, rdir,
+        workflow, samples_filelist, config_file, event, rdir,
         posterior_file_dir=posterior_file_dir, tags=opts.tags)
 
     # create the diagnostic plots
     _ = inffu.make_diagnostic_plots(workflow, diagnostics, samples_filelist,
-                                    label, rdir)
+                                    event, rdir)
 
     # files for detector_sensitivity summary subsection
     base = "detector_sensitivity"
     # we'll just use the first file, and assume the rest are the same
     psd_plot = plotting.make_spectrum_plot(
         workflow, [samples_filelist[0]], rdir[base],
-        tags=opts.tags+[label],
+        tags=opts.tags+[event],
         hdf_group="data")
 
     # build the summary page
     zpad = int(numpy.ceil(numpy.log10(len(samples_files))))
     layout.two_column_layout(rdir.base, summary_files,
                              unique=str(num_event).zfill(zpad),
-                             title=summary_label, collapse=True)
+                             title=label, collapse=True)
 
     # build the psd page
     layout.single_layout(rdir['detector_sensitivity'], [psd_plot],
                          unique=str(num_event).zfill(zpad),
-                         title=summary_label, collapse=True)
+                         title=label, collapse=True)
 
 # create versioning HTML pages
 results.create_versioning_page(rdir["workflow/version"], container.cp)
