@@ -330,22 +330,13 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # convert to a list of tuples so we can use map function
         params = list(flattened_samples.keys())
         size = flattened_samples[params[0]].size
-        samples_list = [[flattened_samples[p][ii] for p in params]
-                        for ii in range(size)]
-        # we'll parallelize calculating this to make it faster
-        if True:#self.pool is None:
-            mapfunc = map
-            model = self.model
-        else:
-            mapfunc = self.pool.map
-            model = models._global_instance.model
-        def getjacobian(these_samples):
-            these_samples = dict(zip(params, these_samples))
-            these_samples = model.sampling_transforms.apply(these_samples)
-            model.update(**these_samples)
-            return model.logjacobian
-        logj = mapfunc(getjacobian, samples_list)
-        return numpy.array(logj).reshape(orig_shape)
+        logj = numpy.zeros(size)
+        for ii in range(size):
+            these_samples = {p: flattened_samples[p][ii] for p in params}
+            these_samples = self.model.sampling_transforms.apply(these_samples)
+            self.model.update(**these_samples)
+            logj[ii] = self.model.logjacobian
+        return logj.reshape(orig_shape)
 
     def finalize(self):
         """Calculates the log evidence and writes to the checkpoint file.
