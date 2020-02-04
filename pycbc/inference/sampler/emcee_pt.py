@@ -317,7 +317,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
     def _correctjacobian(self, samples):
         """Corrects the log jacobian values stored on disk.
-        
+
         Parameters
         ----------
         samples : dict
@@ -355,7 +355,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                                               thin_start=0,
                                               thin_interval=1, thin_end=None,
                                               temps='all', flatten=False)
-            logjacobian = self._correctjacobian(samples) 
+            logjacobian = self._correctjacobian(samples)
             # write them back out
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
