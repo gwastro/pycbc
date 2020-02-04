@@ -95,6 +95,12 @@ parser.add_argument("--prune-number", type=int, default=0,
 parser.add_argument("--prune-window", type=float, default=0.1,
                     help="Time (s) to remove all triggers around a trigger "
                          "which is loudest in each split, default 0.1s")
+parser.add_argument("--f-lower", type=float, default=20.,
+                    help="Lower bound for signal frequency when calculating "
+                         "template duration - needed if calculating duration "
+                         "from template bank parameters. Default 20Hz")
+parser.add_argument("--min-duration", type=float, default=0.1,
+                    help="Minimum template duration used. Default 0.1s")
 args = parser.parse_args()
 
 if args.verbose:
@@ -126,7 +132,7 @@ for ex_p in extparams:
     logging.info('calculating {}'.format(ex_p))
     manual_duration_calc = False
     if ex_p == 'template_duration':
-        logging.info('using duration from trigger file')
+        logging.info('atempting to use duration from trigger file')
         params[ex_p] = np.array([trigf[args.ifo + '/template_duration'][ref][0]
                                  for ref in trigf[args.ifo + '/template_duration_template'][:]])
         if any(params[ex_p] == 0):
