@@ -91,7 +91,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         if pool is not None:
             pool.count = nprocesses
-
+        self.pool = pool
         # construct the sampler: PTSampler needs the likelihood and prior
         # functions separately
         ndim = len(model.variable_params)
@@ -315,12 +315,51 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         return dummy_sampler.thermodynamic_integration_log_evidence(
             logls=logls, fburnin=0.)
 
+    def _correctjacobian(self, samples):
+        """Corrects the log jacobian values stored on disk.
+
+        Parameters
+        ----------
+        samples : dict
+            Dictionary of the samples.
+        """
+        # flatten samples for evaluating
+        orig_shape = list(samples.values())[0].shape
+        flattened_samples = {p: arr.ravel()
+                             for p, arr in list(samples.items())}
+        # convert to a list of tuples so we can use map function
+        params = list(flattened_samples.keys())
+        size = flattened_samples[params[0]].size
+        logj = numpy.zeros(size)
+        for ii in range(size):
+            these_samples = {p: flattened_samples[p][ii] for p in params}
+            these_samples = self.model.sampling_transforms.apply(these_samples)
+            self.model.update(**these_samples)
+            logj[ii] = self.model.logjacobian
+        return logj.reshape(orig_shape)
+
     def finalize(self):
         """Calculates the log evidence and writes to the checkpoint file.
+
+        If sampling transforms were used, this also corrects the jacobian
+        stored on disk.
 
         The thin start/interval/end for calculating the log evidence are
         retrieved from the checkpoint file's thinning attributes.
         """
+        if self.model.sampling_transforms is not None:
+            # fix the lobjacobian values stored on disk
+            logging.info("Correcting logjacobian values on disk")
+            with self.io(self.checkpoint_file, 'r') as fp:
+                samples = fp.read_raw_samples(self.variable_params,
+                                              thin_start=0,
+                                              thin_interval=1, thin_end=None,
+                                              temps='all', flatten=False)
+            logjacobian = self._correctjacobian(samples)
+            # write them back out
+            for fn in [self.checkpoint_file, self.backup_file]:
+                with self.io(fn, "a") as fp:
+                    fp[fp.samples_group]['logjacobian'][()] = logjacobian
         logging.info("Calculating log evidence")
         # get the thinning settings
         with self.io(self.checkpoint_file, 'r') as fp:
