@@ -202,6 +202,12 @@ class Array(object):
             ret = self._return(ret)
         return ret
 
+    def __array__(self, dtype=None):
+        arr = self.numpy()
+        if dtype is not None:
+            arr = arr.astype(dtype)
+        return arr
+
     @property
     def shape(self):
         return self._data.shape
