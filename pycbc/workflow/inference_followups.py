@@ -656,7 +656,8 @@ def get_diagnostic_plots(workflow):
     return diagnostics
 
 
-def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir):
+def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir,
+                          tags=None):
     """Makes diagnostic plots.
 
     Diagnostic plots are sampler-specific plots the provide information on
@@ -680,6 +681,8 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir):
         Event label for the diagnostic plots.
     rdir : pycbc.results.layout.SectionNumber
         Results directory layout.
+    tags : list of str, optional
+        Additional tags to add to the file names.
 
     Returns
     -------
@@ -687,6 +690,9 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir):
         Dictionary of diagnostic name -> list of files giving the plots that
         will be created.
     """
+    if tags is None:
+        tags = []
+
     out = {}
     if not isinstance(samples_file, list):
         samples_file = [samples_file]
