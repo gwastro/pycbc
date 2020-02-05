@@ -252,7 +252,7 @@ for num_event, event in enumerate(events):
 
     # create the diagnostic plots
     _ = inffu.make_diagnostic_plots(workflow, diagnostics, samples_filelist,
-                                    event, rdir)
+                                    event, rdir, tags=opts.tags)
 
     # files for detector_sensitivity summary subsection
     base = "detector_sensitivity"

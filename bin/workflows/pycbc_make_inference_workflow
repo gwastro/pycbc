@@ -308,9 +308,8 @@ for num_event, event in enumerate(events):
         posterior_file_dir=posterior_file_dir, tags=opts.tags)
 
     # create the diagnostic plots
-    _ = inffu.make_diagnostic_plots(sub_workflow, diagnostics,
-                                    samples_files,
-                                    event, rdir)
+    _ = inffu.make_diagnostic_plots(sub_workflow, diagnostics, samples_files,
+                                    event, rdir, tags=opts.tags)
 
     # files for detector_sensitivity summary subsection
     base = "detector_sensitivity"
