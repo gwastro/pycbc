@@ -31,7 +31,7 @@ def make_inference_plot(workflow, input_file, output_dir,
                         name, analysis_seg=None,
                         tags=None, input_file_opt='input-file',
                         output_file_extension='.png',
-                        add_to_workflow=True):
+                        add_to_workflow=False):
     """Boiler-plate function for creating a standard plotting job.
 
     Parameters
@@ -57,8 +57,8 @@ def make_inference_plot(workflow, input_file, output_dir,
         What file type to create. Default is ``.png``.
     add_to_workflow : bool, optional
         If True, the node will be added to the workflow before being returned.
-        This means that no new file input or output options may be added
-        afterward. Default is True.
+        **This means that no options may be added to the node afterward.**
+        Default is ``False``.
 
     Returns
     -------
@@ -130,7 +130,8 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     """
     node = make_inference_plot(workflow, config_file, output_dir,
                                name, analysis_seg=analysis_seg, tags=tags,
-                               input_file_opt='config-file')
+                               input_file_opt='config-file',
+                               add_to_worfklow=True)
     return node.output_files
 
 
@@ -257,7 +258,8 @@ def make_inference_skymap(workflow, fits_file, output_dir,
         A list of result and output files.
     """
     node = make_inference_plot(workflow, fits_file, output_dir,
-                               name, analysis_seg=analysis_seg, tags=tags)
+                               name, analysis_seg=analysis_seg, tags=tags,
+                               add_to_workflow=True)
     return node.output_files
 
 
@@ -300,7 +302,8 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
     # setup is the same, we just change the file extension
     node = make_inference_plot(workflow, inference_file, output_dir,
                                name, analysis_seg=analysis_seg, tags=tags,
-                               output_file_extension='.html')
+                               output_file_extension='.html',
+                               add_to_workflow=False)
     # now add the parameters and print metadata options; these are pulled
     # from separate sections in the workflow config file, which is why we
     # add them separately here
@@ -308,6 +311,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
         node.add_opt("--parameters", _params_for_pegasus(parameters))
     if print_metadata is not None:
         node.add_opt("--print-metadata", _params_for_pegasus(print_metadata))
+    workflow += node
     return node.output_files
 
 
@@ -387,7 +391,8 @@ def make_inference_samples_plot(workflow, inference_file, output_dir,
         A list of output files.
     """
     node = make_inference_plot(workflow, inference_file, output_dir,
-                               name, analysis_seg=analysis_seg, tags=tags)
+                               name, analysis_seg=analysis_seg, tags=tags,
+                               add_to_workflow=True)
     return node.output_files
 
 
@@ -420,7 +425,8 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
         A list of output files.
     """
     node = make_inference_plot(workflow, inference_file, output_dir,
-                               name, analysis_seg=analysis_seg, tags=tags)
+                               name, analysis_seg=analysis_seg, tags=tags,
+                               add_to_workflow=True)
     return node.output_files
 
 
