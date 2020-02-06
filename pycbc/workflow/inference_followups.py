@@ -101,7 +101,7 @@ def make_inference_plot(workflow, input_file, output_dir,
 
 
 def make_inference_prior_plot(workflow, config_file, output_dir,
-                              name="inference_prior",
+                              name="plot_prior",
                               analysis_seg=None, tags=None):
     """Sets up the corner plot of the priors in the workflow.
 
@@ -116,7 +116,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     name: str
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``inference_prior``.
+        the executable. Default is ``plot_prior``.
     analysis_segs: ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -263,7 +263,7 @@ def make_inference_skymap(workflow, fits_file, output_dir,
 
 def make_inference_summary_table(workflow, inference_file, output_dir,
                                  parameters=None, print_metadata=None,
-                                 name="inference_table",
+                                 name="table_summary",
                                  analysis_seg=None, tags=None):
     """Sets up the html table summarizing parameter estimates.
 
@@ -284,7 +284,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
     name: str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``inference_table``.
+        the executable. Default is ``table_summary``.
     analysis_segs: ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -313,7 +313,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
 
 def make_inference_posterior_plot(workflow, inference_file, output_dir,
                                   parameters=None, plot_prior_from_file=None,
-                                  name="inference_posterior",
+                                  name="plot_posterior",
                                   analysis_seg=None, tags=None):
     """Sets up the corner plot of the posteriors in the workflow.
 
@@ -332,7 +332,7 @@ def make_inference_posterior_plot(workflow, inference_file, output_dir,
     name: str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``inference_posterior``.
+        the executable. Default is ``plot_posterior``.
     analysis_segs: ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -359,7 +359,7 @@ def make_inference_posterior_plot(workflow, inference_file, output_dir,
 
 
 def make_inference_samples_plot(workflow, inference_file, output_dir,
-                                name="inference_samples",
+                                name="plot_samples",
                                 analysis_seg=None, tags=None):
     """Sets up a plot of the samples versus iteration (for MCMC samplers).
 
@@ -374,7 +374,7 @@ def make_inference_samples_plot(workflow, inference_file, output_dir,
     name: str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``inference_samples``.
+        the executable. Default is ``plot_samples``.
     analysis_segs: ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -392,7 +392,7 @@ def make_inference_samples_plot(workflow, inference_file, output_dir,
 
 
 def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
-                                        name="inference_acceptance_rate",
+                                        name="plot_acceptance_rate",
                                         analysis_seg=None, tags=None):
     """Sets up a plot of the acceptance rate (for MCMC samplers).
 
@@ -407,7 +407,7 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
     name: str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``inference_acceptance_rate``.
+        the executable. Default is ``plot_acceptance_rate``.
     analysis_segs: ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -539,10 +539,11 @@ def get_diagnostic_plots(workflow):
     plots to create. This list may contain:
 
     * ``samples``: For MCMC samplers, a plot of the sample chains as a function
-      of iteration. This will be created if ``inference_samples`` is in the
+      of iteration. This will be created if ``plot_samples`` is in the
       executables section.
     * ``acceptance_rate``: For MCMC samplers, a plot of the acceptance rate.
-      This will be created if ``inference_acceptance_rate`` is in the executables section.
+      This will be created if ``plot_acceptance_rate`` is in the executables
+      section.
 
     Returns
     -------
@@ -550,9 +551,9 @@ def get_diagnostic_plots(workflow):
         List of names of diagnostic plots.
     """
     diagnostics = []
-    if "inference_samples" in workflow.cp.options("executables"):
+    if "plot_samples" in workflow.cp.options("executables"):
         diagnostics.append('samples')
-    if "inference_acceptance_rate" in workflow.cp.options("executables"):
+    if "plot_acceptance_rate" in workflow.cp.options("executables"):
         diagnostics.append('acceptance_rate')
     return diagnostics
 
@@ -636,7 +637,7 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
     subsequent jobs use the posterior file, and so may use the parameters
     provided in ``[workflow-posterior_params]``. The following are created:
 
-    * **Summary table**: an html table created using the ``inference_table``
+    * **Summary table**: an html table created using the ``table_summary``
       executable. The parameters to print in the table are retrieved from the
       ``table-params`` option in the ``[workflow-summary_table]`` section.
       Metadata may also be printed by adding a ``print-metadata`` option to
@@ -650,8 +651,8 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
       be created for each plot group. For clarity, only one or two parameters
       should be plotted in each summary group, but this is not enforced.
       Settings for the plotting executable are read from the
-      ``inference_posterior_summary`` section; likewise, the executable used
-      is read from ``inference_posterior_summary`` in the
+      ``plot_posterior_summary`` section; likewise, the executable used
+      is read from ``plot_posterior_summary`` in the
       ``[executables]`` section.
     * **Sky maps**: if *both* ``create_fits_file`` and ``inference_skymap``
       are listed in the ``[executables]`` section, then a ``.fits`` file and
@@ -659,17 +660,17 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
       the summary plots. You must be running in a python 3 environment to
       create these.
     * **Prior plots**: plots of the prior will be created using the
-      ``inference_prior`` executable. By default, all of the variable
+      ``plot_prior`` executable. By default, all of the variable
       parameters will be plotted. The prior plots are added to
       ``priors/LALBEL/`` in the results directory, where ``LABEL`` is the
       given ``label``.
     * **Posterior plots**: additional posterior plots are created using the
-      ``inference_posterior`` executable. The parameters to plot are
+      ``plot_posterior`` executable. The parameters to plot are
       read from ``[workflow-plot_params]`` section. As with the summary
       posterior plots, parameters are grouped together by providing
       ``plot-group-NAME`` options in that section. A posterior plot will be
       created for each group, and added to the ``posteriors/LABEL/`` directory.
-      Plot settings are read from the ``[inference_posterior]`` section; this
+      Plot settings are read from the ``[plot_posterior]`` section; this
       is kept separate from the posterior summary so that different settings
       can be used. For example, you may want to make a density plot for the
       summary plots, but a scatter plot colored by SNR for the posterior plots.
@@ -754,7 +755,7 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
     for group, params in summary_plot_params.items():
         summary_plots += make_inference_posterior_plot(
             workflow, posterior_file, rdir.base,
-            name='inference_posterior_summary',
+            name='plot_posterior_summary',
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_seg,
             tags=tags+[label, group])
