@@ -79,8 +79,8 @@ def make_inference_plot(workflow, input_file, output_dir,
     # properly (see _params_for_pegasus for details).
     parameters = None
     if workflow.cp.has_option(name, 'parameters'):
-        parameters = cp.get(name, 'parameters')
-        cp.remove_option(name, 'parameters')
+        parameters = workflow.cp.get(name, 'parameters')
+        workflow.cp.remove_option(name, 'parameters')
     # make a node for plotting the posterior as a corner plot
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
                           out_dir=output_dir,
@@ -89,7 +89,7 @@ def make_inference_plot(workflow, input_file, output_dir,
     if parameters is not None:
         node.add_opt("--parameters", _params_for_pegasus(parameters))
         # and put the opt back in the config file in memory
-        cp.set(name, 'parameters', parameters)
+        workflow.cp.set(name, 'parameters', parameters)
     # add input and output options
     node.add_input_opt("--{}".format(input_file_opt), input_file)
     node.new_output_file_opt(analysis_seg, output_file_extension,
