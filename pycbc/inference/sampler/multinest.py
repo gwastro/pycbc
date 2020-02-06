@@ -243,8 +243,8 @@ class MultinestSampler(BaseSampler):
         """Runs the sampler until the specified evidence tolerance
         is reached.
         """
-        #if self.new_checkpoint:
-        #    self._itercount = 0
+        if self.new_checkpoint:
+            self._itercount = 0
         else:
             self.set_initial_conditions(samples_file=self.checkpoint_file)
             with self.io(self.checkpoint_file, "r") as f_p:

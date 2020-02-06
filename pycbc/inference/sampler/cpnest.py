@@ -119,8 +119,8 @@ class CPNestSampler(BaseSampler):
                   verbose=verbose,
                   loglikelihood_function=loglikelihood_function)
 
-        new_checkpoint = setup_output(obj, output_file)
-        if not new_checkpoint:
+        setup_output(obj, output_file)
+        if not obj.new_checkpoint:
             obj.resume_from_checkpoint(cp)
         else:
             init_prior = initial_dist_from_config(cp, obj.variable_params)
@@ -165,7 +165,7 @@ class CPNestSampler(BaseSampler):
         """
         pass
 
-    def resume_from_checkpoint(self):
+    def resume_from_checkpoint(self,filename):
         pass
 
     def setup_output(self, output_file, force=False):

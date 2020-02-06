@@ -469,7 +469,7 @@ class BaseMCMC(object):
         """
         pass
 
-    def resume_from_checkpoint(self, filename):
+    def resume_from_checkpoint(self):
         """Resume the sampler from the checkpoint file
         """
         with self.io(self.checkpoint_file, "r") as fp:
@@ -486,14 +486,6 @@ class BaseMCMC(object):
         # "nsamples" keeps track of the number of samples we've obtained (if
         # target_eff_nsamples is not None, this is the effective number of
         # samples; otherwise, this is the total number of samples).
-        # _lastclear is the number of iterations that the file already
-        # contains (either due to sampler burn-in, or a previous checkpoint)
-        if self.new_checkpoint:
-            self._lastclear = 0
-        else:
-            with self.io(self.checkpoint_file, "r") as fp:
-                self._lastclear = fp.niterations
-                self.thin_interval = fp.thinned_by
         if self.target_eff_nsamples is not None:
             target_nsamples = self.target_eff_nsamples
             with self.io(self.checkpoint_file, "r") as fp:

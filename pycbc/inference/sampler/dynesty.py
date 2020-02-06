@@ -109,8 +109,8 @@ class DynestySampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1, loglikelihood_function=None,
-                    use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False, loglikelihood_function=None):
         """
         Loads the sampler from the given config file.
         """
@@ -138,8 +138,8 @@ class DynestySampler(BaseSampler):
         obj = cls(model, nlive=nlive, dlogz=dlogz, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
                   use_mpi=use_mpi, **extra)
-        new_checkpoint = setup_output(obj, output_file)
-        if not new_checkpoint:
+        setup_output(obj, output_file)
+        if not obj.new_checkpoint:
             obj.resume_from_checkpoint(cp)
         else:
             init_prior = initial_dist_from_config(cp, obj.variable_params)
@@ -148,7 +148,7 @@ class DynestySampler(BaseSampler):
     def checkpoint(self):
         pass
 
-    def resume_from_checkpoint(self):
+    def resume_from_checkpoint(selfi,filename):
         pass
 
     def finalize(self):

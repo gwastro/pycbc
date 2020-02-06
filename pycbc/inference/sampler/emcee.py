@@ -216,8 +216,8 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         # set prethin options
         obj.set_thin_interval_from_config(cp, section)
         # Set up the output file
-        new_checkpoint = setup_output(obj, output_file)
-        if not new_checkpoint:
+        setup_output(obj, output_file)
+        if not obj.new_checkpoint:
             obj.resume_from_checkpoint(cp)
         else:
             init_prior = initial_dist_from_config(cp, obj.variable_params)

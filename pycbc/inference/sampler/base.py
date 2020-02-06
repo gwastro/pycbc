@@ -190,12 +190,12 @@ def setup_output(sampler, output_file, force=False):
                                                  backup_file)
     # Create a new file if the checkpoint doesn't exist, or if it is
     # corrupted
-    new_checkpoint = False  # keeps track if this is a new file or not
+    sampler.new_checkpoint = False  # keeps track if this is a new file or not
     if not checkpoint_valid:
         logging.info("Checkpoint not found or not valid")
         create_new_output_file(sampler, checkpoint_file)
         # now the checkpoint is valid
-        new_checkpoint = True
+        sampler.new_checkpoint = True
         # copy to backup
         shutil.copy(checkpoint_file, backup_file)
     # write the command line, startup
@@ -206,7 +206,7 @@ def setup_output(sampler, output_file, force=False):
     # store
     sampler.checkpoint_file = checkpoint_file
     sampler.backup_file = backup_file
-    return new_checkpoint
+    #return new_checkpoint
 
 
 def create_new_output_file(sampler, filename, **kwargs):
