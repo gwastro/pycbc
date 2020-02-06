@@ -131,7 +131,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     node = make_inference_plot(workflow, config_file, output_dir,
                                name, analysis_seg=analysis_seg, tags=tags,
                                input_file_opt='config-file',
-                               add_to_worfklow=True)
+                               add_to_workflow=True)
     return node.output_files
 
 
