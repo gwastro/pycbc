@@ -229,7 +229,7 @@ def create_fits_file(workflow, inference_file, output_dir,
 
 
 def make_inference_skymap(workflow, fits_file, output_dir,
-                          name="inference_skymap", analysis_seg=None,
+                          name="plot_skymap", analysis_seg=None,
                           tags=None):
     """Sets up the skymap plot.
 
@@ -244,7 +244,7 @@ def make_inference_skymap(workflow, fits_file, output_dir,
     name: str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``inference_skymap``.
+        the executable. Default is ``plot_skymap``.
     analysis_segs: ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -654,7 +654,7 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
       ``plot_posterior_summary`` section; likewise, the executable used
       is read from ``plot_posterior_summary`` in the
       ``[executables]`` section.
-    * **Sky maps**: if *both* ``create_fits_file`` and ``inference_skymap``
+    * **Sky maps**: if *both* ``create_fits_file`` and ``plot_skymap``
       are listed in the ``[executables]`` section, then a ``.fits`` file and
       sky map plot will be produced. The sky map plot will be included in
       the summary plots. You must be running in a python 3 environment to
@@ -735,7 +735,7 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
 
     # figure out if we are making a skymap
     make_skymap = ("create_fits_file" in workflow.cp.options("executables") and
-                   "inference_skymap" in workflow.cp.options("executables"))
+                   "plot_skymap" in workflow.cp.options("executables"))
 
     # make node for running extract samples
     posterior_file = create_posterior_files(
