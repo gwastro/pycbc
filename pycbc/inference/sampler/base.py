@@ -68,7 +68,8 @@ class BaseSampler(object):
 
     # @classmethod <--uncomment when we move to python 3.3
     @abstractmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
         """This should initialize the sampler given a config file.
         """
         pass
@@ -162,6 +163,7 @@ class BaseSampler(object):
 # =============================================================================
 #
 
+
 def setup_output(sampler, output_file, force=False):
     r"""Sets up the sampler's checkpoint and output files.
 
@@ -206,7 +208,6 @@ def setup_output(sampler, output_file, force=False):
     # store
     sampler.checkpoint_file = checkpoint_file
     sampler.backup_file = backup_file
-    #return new_checkpoint
 
 
 def create_new_output_file(sampler, filename, **kwargs):

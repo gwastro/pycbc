@@ -148,7 +148,7 @@ class DynestySampler(BaseSampler):
     def checkpoint(self):
         pass
 
-    def resume_from_checkpoint(selfi,filename):
+    def resume_from_checkpoint(self):
         pass
 
     def finalize(self):

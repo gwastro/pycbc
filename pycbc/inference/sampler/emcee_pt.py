@@ -116,7 +116,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         return self._sampler.betas
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
         """
         Loads the sampler from the given config file.
 
@@ -176,8 +177,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         if not obj.new_checkpoint:
             obj.resume_from_checkpoint(cp)
         else:
-            init_prior = initial_dist_from_config(cp, 
-                obj.variable_params)
+            init_prior = initial_dist_from_config(cp, obj.variable_params)
             obj.set_p0(prior=init_prior)
             obj._lastclear = 0
         return obj

@@ -165,7 +165,7 @@ class CPNestSampler(BaseSampler):
         """
         pass
 
-    def resume_from_checkpoint(self,filename):
+    def resume_from_checkpoint(self):
         pass
 
     def setup_output(self, output_file, force=False):

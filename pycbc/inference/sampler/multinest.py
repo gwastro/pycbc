@@ -348,7 +348,7 @@ class MultinestSampler(BaseSampler):
             If the output file already exists, overwrite it.
         """
         if self.is_main_process:
-            self.new_checkpoint = setup_output(self, output_file, force=force)
+            setup_output(self, output_file, force=force)
         else:
             # child processes just store filenames
             checkpoint_file = output_file + '.checkpoint'
@@ -364,7 +364,8 @@ class MultinestSampler(BaseSampler):
         pass
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
         """Loads the sampler from the given config file."""
         section = "sampler"
         # check name
@@ -400,6 +401,5 @@ class MultinestSampler(BaseSampler):
         if not obj.new_checkpoint:
             obj.resume_from_checkpoint(cp)
         else:
-            init_prior = initial_dist_from_config(cp,
-                obj.variable_params)
+            init_prior = initial_dist_from_config(cp, obj.variable_params)
         return obj
