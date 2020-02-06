@@ -172,12 +172,13 @@ def istext(s, text_characters=None, threshold=0.3):
     # s is 'text' if less than 30% of its characters are non-text ones:
     return len(t)/float(len(s)) <= threshold
 
-def resolve_url(url, directory=None, permissions=None, copy_to_cwd=False):
+def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
     """Resolves a URL to a local file, and returns the path to that file.
 
     If a URL is given, the file will be copied to the current working
     directory. If a local file path is given, the file will only be copied
-    to the current working directory if ``copy_to_cwd`` is ``True``.
+    to the current working directory if ``copy_to_cwd`` is ``True``
+    (the default).
     """
 
     u = urlparse(url)
