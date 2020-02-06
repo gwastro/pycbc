@@ -234,8 +234,8 @@ def create_posterior_files(workflow, samples_files, output_dir,
 
 
 def create_fits_file(workflow, inference_file, output_dir,
-                      name="create_fits_file",
-                      analysis_seg=None, tags=None):
+                     name="create_fits_file",
+                     analysis_seg=None, tags=None):
     """Sets up job to create fits files from some given samples files.
 
     Parameters
@@ -321,9 +321,9 @@ def make_inference_skymap(workflow, fits_file, output_dir,
 
 
 def make_inference_summary_table(workflow, inference_file, output_dir,
-                    parameters=None, print_metadata=None,
-                    name="inference_table",
-                    analysis_seg=None, tags=None):
+                                 parameters=None, print_metadata=None,
+                                 name="inference_table",
+                                 analysis_seg=None, tags=None):
     """Sets up the corner plot of the posteriors in the workflow.
 
     Parameters
@@ -512,7 +512,7 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
 
     # make a node for plotting the acceptance rate
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                      out_dir=output_dir, tags=tags).create_node()
+                          out_dir=output_dir, tags=tags).create_node()
 
     # add command line options
     node.add_input_opt("--input-file", inference_file)
@@ -818,7 +818,6 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
     posterior_params = get_posterior_params(workflow.cp)
 
     # figure out what parameters user wants to plot from workflow configuration
-    group_prefix = "plot-group-"
     # parameters for the summary plots
     summary_plot_params = get_plot_group(workflow.cp, 'summary_plots')
     # parameters to plot in large corner plots
