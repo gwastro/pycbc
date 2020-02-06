@@ -392,7 +392,7 @@ def make_inference_samples_plot(workflow, inference_file, output_dir,
 
 
 def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
-                                        name="inference_rate",
+                                        name="inference_acceptance_rate",
                                         analysis_seg=None, tags=None):
     """Sets up a plot of the acceptance rate (for MCMC samplers).
 
@@ -407,7 +407,7 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
     name: str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``inference_rate``.
+        the executable. Default is ``inference_acceptance_rate``.
     analysis_segs: ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -542,7 +542,7 @@ def get_diagnostic_plots(workflow):
       of iteration. This will be created if ``inference_samples`` is in the
       executables section.
     * ``acceptance_rate``: For MCMC samplers, a plot of the acceptance rate.
-      This will be created if ``inference_rate`` is in the executables section.
+      This will be created if ``inference_acceptance_rate`` is in the executables section.
 
     Returns
     -------
@@ -552,7 +552,7 @@ def get_diagnostic_plots(workflow):
     diagnostics = []
     if "inference_samples" in workflow.cp.options("executables"):
         diagnostics.append('samples')
-    if "inference_rate" in workflow.cp.options("executables"):
+    if "inference_acceptance_rate" in workflow.cp.options("executables"):
         diagnostics.append('acceptance_rate')
     return diagnostics
 
