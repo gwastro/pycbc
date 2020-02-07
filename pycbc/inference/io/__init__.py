@@ -37,6 +37,7 @@ from .epsie import EpsieFile
 from .cpnest import CPNestFile
 from .multinest import MultinestFile
 from .dynesty import DynestyFile
+from .ultranest import UltranestFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
 
@@ -47,7 +48,8 @@ filetypes = {
     CPNestFile.name: CPNestFile,
     MultinestFile.name: MultinestFile,
     DynestyFile.name: DynestyFile,
-    PosteriorFile.name: PosteriorFile
+    PosteriorFile.name: PosteriorFile,
+    UltranestFile.name: UltranestFile,
 }
 
 

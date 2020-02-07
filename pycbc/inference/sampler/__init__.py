@@ -24,13 +24,15 @@ from .emcee import EmceeEnsembleSampler
 from .emcee_pt import EmceePTSampler
 from .epsie import EpsieSampler
 from .multinest import MultinestSampler
+from .ultranest import UltranestSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
     EmceeEnsembleSampler,
     EmceePTSampler,
     EpsieSampler,
-    MultinestSampler
+    MultinestSampler,
+    UltranestSampler,
 )}
 
 try:
