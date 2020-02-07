@@ -27,7 +27,7 @@ import h5py
 import logging
 from pycbc.pool import choose_pool
 
-from .base import (BaseSampler, setup_output, initial_dist_from_config)
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
                         get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,

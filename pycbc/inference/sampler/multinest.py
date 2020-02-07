@@ -36,7 +36,7 @@ from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
 from pycbc.pool import is_main_process
 from pycbc.transforms import apply_transforms
-from .base import (BaseSampler, setup_output, initial_dist_from_config)
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 
 
@@ -202,7 +202,9 @@ class MultinestSampler(BaseSampler):
             self.set_state_from_file(samples_file)
 
     def resume_from_ceckpoint(self):
-        pass 
+        """Resume sampler from checkpoint
+        """
+        pass
 
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file.

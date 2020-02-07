@@ -32,7 +32,7 @@ import numpy
 import emcee
 from pycbc.pool import choose_pool
 
-from .base import (BaseSampler, setup_output, initial_dist_from_config)
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, MCMCAutocorrSupport, raw_samples_to_dict,
                         blob_data_to_dict, get_optional_arg_from_config)
 from ..burn_in import MCMCBurnInTests
