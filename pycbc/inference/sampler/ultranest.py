@@ -78,13 +78,14 @@ class UltranestSampler(BaseSampler):
                                               list(self.model.variable_params),
                                               log_likelihood_call,
                                               prior_call)
-                                             
+
         self.nlive = 0
         self.ndim = len(self.model.variable_params)
         self.results = None
+        self.kwargs = kwargs # Keywords for the run method of ultranest
 
     def run(self):
-        self.result = self._sampler.run()
+        self.result = self._sampler.run(**self.kwargs)
 
     @property
     def io(self):
@@ -99,7 +100,27 @@ class UltranestSampler(BaseSampler):
         """
         Loads the sampler from the given config file.
         """
-        return cls(model)
+        skeys = {}
+        opts = {'update_interval_iter_fraction': float,
+                'update_interval_ncall': int,
+                'log_interval': int,
+                'show_status': bool,
+                'dlogz': float,
+                'dKL': float,
+                'frac_remain': float,
+                'Lepsilon': float,
+                'min_ess': int,
+                'max_iters': int,
+                'max_ncalls': int,
+                'max_num_improvement_loops': int,
+                'min_num_live_points': int,
+                'cluster_num_live_points:': int,
+               }
+        for opt_name in opts:
+            if cp.has_option('sampler', opt_name):
+                value = cp.get('sampler', opt_name)
+                skeys[opt_name] = opts[opt_name](value)
+        return cls(model, **skeys)
 
     def checkpoint(self):
         pass
