@@ -19,9 +19,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }} 
     - run: sudo apt-get install *fftw3*
-      if: matrix.os == ubuntu-latest
+      if: matrix.os == 'ubuntu-latest'
     - run: conda install fftw
-      if: matrix.os == ubuntu-latest
+      if: matrix.os == 'macos-latest'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools
