@@ -469,7 +469,7 @@ class BaseMCMC(object):
         """
         pass
 
-    def resume_from_checkpoint(self,output_file):
+    def resume_from_checkpoint(self):
         """Resume the sampler from the checkpoint file
         """
         with self.io(self.checkpoint_file, "r") as fp:

@@ -140,9 +140,7 @@ class DynestySampler(BaseSampler):
                   use_mpi=use_mpi, **extra)
         setup_output(obj, output_file)
         if not obj.new_checkpoint:
-            obj.resume_from_checkpoint(cp)
-        else:
-            init_prior = initial_dist_from_config(cp, obj.variable_params)
+            obj.resume_from_checkpoint()
         return obj
 
     def checkpoint(self):

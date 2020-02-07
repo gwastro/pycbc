@@ -150,7 +150,7 @@ class BaseSampler(object):
         pass
 
     @abstractmethod
-    def resume_from_checkpoint(self,output_file):
+    def resume_from_checkpoint(self):
         """Resume the sampler from the output file.
         """
         pass
