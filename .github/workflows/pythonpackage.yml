@@ -17,11 +17,10 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Intall os depdencies
-      run:  sudo apt-get install *fftw3*
+        python-version: ${{ matrix.python-version }} 
+    - run:  sudo apt-get install *fftw3*
       if:   matrix.os == ubuntu-latest
-      run:  conda install fftw
+    - run:  conda install fftw
       if:   matrix.os == macos-latest
     - name: Install dependencies
       run: |
