@@ -221,7 +221,5 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         if not obj.new_checkpoint:
             obj.resume_from_checkpoint()
         else:
-            init_prior = initial_dist_from_config(cp, obj.variable_params)
-            obj.set_p0(prior=init_prior)
-            obj._lastclear = 0
+            obj.set_start_from_config(cp)
         return obj

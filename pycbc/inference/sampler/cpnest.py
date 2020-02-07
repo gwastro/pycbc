@@ -33,7 +33,7 @@ import os
 import cpnest
 import cpnest.model as cpm
 from pycbc.inference.io import (CPNestFile, validate_checkpoint_files)
-from .base import (BaseSampler, setup_output, initial_dist_from_config)
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 
 

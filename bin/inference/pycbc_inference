@@ -134,8 +134,9 @@ with ctx:
     # Note: the pool is created at this point. This means that,
     # unless you enjoy angering your cluster admins,
     # NO SAMPLES FILE IO SHOULD BE DONE PRIOR TO THIS POINT!!!
-    sampler = inference.sampler.load_from_config(
-        cp, model, output_file=opts.output_file, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
+    sampler = inference.sampler.load_from_config(cp, model,
+        output_file=opts.output_file, nprocesses=opts.nprocesses,
+        use_mpi=opts.use_mpi)
 
     # Run the sampler
     sampler.run()

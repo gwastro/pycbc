@@ -129,15 +129,6 @@ class BaseSampler(object):
         pass
 
     @abstractmethod
-    def set_initial_conditions(self, initial_distribution=None,
-                               samples_file=None):
-        """Sets up the starting point for the sampler.
-
-        Should also set the sampler's random state.
-        """
-        pass
-
-    @abstractmethod
     def checkpoint(self):
         """The sampler must have a checkpoint method for dumping raw samples
         and stats to the file type defined by ``io``.

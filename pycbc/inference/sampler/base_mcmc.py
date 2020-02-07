@@ -436,38 +436,17 @@ class BaseMCMC(object):
         self._p0 = p0
         return self.p0
 
-    def set_initial_conditions(self, cp):
-        """Sets the initial starting point for the MCMC.
-
-        If a starting samples file is provided, will also load the random
-        state from it.
-        Parameters:
-        ----------
-         cp : ConfigParser
-              Open config parser to retrieve the argument from.
-        """
-        # use the checkpoint file instead if resume from checkpoint
-        if not self.new_checkpoint:
-            samples_file = self.checkpoint_file
-            logging.info("Initial positions taken from last iteration in %s",
-                         samples_file)
-            initial_distribution = None
-        else:
-            # try to load an initial distribution from the config file
-            initial_distribution = initial_dist_from_config(cp,
-                self.variable_params)
-
-        self.set_p0(samples_file=samples_file, prior=initial_distribution)
-        # if a samples file was provided, use it to set the state of the
-        # sampler
-        if samples_file is not None:
-            self.set_state_from_file(samples_file)
-
     @abstractmethod
     def set_state_from_file(self, filename):
         """Sets the state of the sampler to the instance saved in a file.
         """
         pass
+
+    def set_start_from_config(self, cp):
+        """Sets the initial state of the sampler from config file
+        """
+        init_prior = initial_dist_from_config(cp, self.variable_params)
+        self.set_p0(prior=init_prior)
 
     def resume_from_checkpoint(self):
         """Resume the sampler from the checkpoint file
@@ -486,6 +465,13 @@ class BaseMCMC(object):
         # "nsamples" keeps track of the number of samples we've obtained (if
         # target_eff_nsamples is not None, this is the effective number of
         # samples; otherwise, this is the total number of samples).
+        # contains (either due to sampler burn-in, or a previous checkpoint)
+        if self.new_checkpoint:
+            self._lastclear = 0
+        else:
+            with self.io(self.checkpoint_file, "r") as fp:
+                self._lastclear = fp.niterations
+                self.thin_interval = fp.thinned_by
         if self.target_eff_nsamples is not None:
             target_nsamples = self.target_eff_nsamples
             with self.io(self.checkpoint_file, "r") as fp:
