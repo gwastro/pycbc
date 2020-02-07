@@ -1165,10 +1165,10 @@ class LambdaFromTOVFile(BaseTransform):
                 try:
                     d = maps['distance']
                 except KeyError as e:
-                    logging.warning("Either provide `distance` samples in the "
+                    logging.warning("Either provide distance samples in the "
                                     "list of samples to be transformed, or "
-                                    "provide a fixed `distance` value as input "
-                                    "when initializing `LambdaFromTOVFile`.")
+                                    "provide a fixed distance value as input "
+                                    "when initializing LambdaFromTOVFile.")
                     raise e
             shift = 1./(1.0 + cosmology.redshift(abs(d)))
         else:
@@ -1189,7 +1189,6 @@ class LambdaFromTOVFile(BaseTransform):
         return super(LambdaFromTOVFile, cls).from_config(
             cp, section, outputs, skip_opts=skip_opts,
             additional_opts=additional_opts)
-
 
 
 class LambdaFromMultipleTOVFiles(BaseTransform):
