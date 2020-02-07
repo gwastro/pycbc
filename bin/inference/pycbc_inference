@@ -92,13 +92,10 @@ opt.verify_optimization_options(opts, parser)
 scheme.verify_processing_options(opts, parser)
 
 # check that the output file doesn't already exist
-if os.path.exists(opts.output_file):
-    if force:
-        pass
-        #os.remove(opts.output_file)
-    else:
-        raise OSError("output-file already exists; use force if you "
-                      "wish to overwrite it.")
+if os.path.exists(opts.output_file) and not opts.force:
+    raise OSError("output-file already exists; use force if you "
+                  "wish to overwrite it.")
+
 
 # set seed
 numpy.random.seed(opts.seed)
