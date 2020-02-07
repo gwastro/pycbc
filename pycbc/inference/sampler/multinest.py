@@ -201,6 +201,9 @@ class MultinestSampler(BaseSampler):
         if samples_file is not None:
             self.set_state_from_file(samples_file)
 
+    def resume_from_ceckpoint(self):
+        pass 
+
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file.
         """
@@ -399,7 +402,5 @@ class MultinestSampler(BaseSampler):
                   **optional_kwargs)
         obj.setup_output(obj, output_file)
         if not obj.new_checkpoint:
-            obj.resume_from_checkpoint(cp)
-        else:
-            init_prior = initial_dist_from_config(cp, obj.variable_params)
+            obj.resume_from_checkpoint()
         return obj
