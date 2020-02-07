@@ -20,7 +20,7 @@ jobs:
         python-version: ${{ matrix.python-version }} 
     - run: sudo apt-get install *fftw3*
       if: matrix.os == 'ubuntu-latest'
-    - run: conda install fftw
+    - run: brew install fftw
       if: matrix.os == 'macos-latest'
     - name: Install dependencies
       run: |
