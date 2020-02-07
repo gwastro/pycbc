@@ -469,7 +469,7 @@ class BaseMCMC(object):
         """
         pass
 
-    def resume_from_checkpoint(self):
+    def resume_from_checkpoint(self,output_file):
         """Resume the sampler from the checkpoint file
         """
         with self.io(self.checkpoint_file, "r") as fp:
@@ -564,7 +564,6 @@ class BaseMCMC(object):
     def write_results(self, filename):
         """Should write all samples currently in memory to the given file."""
         pass
-
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
