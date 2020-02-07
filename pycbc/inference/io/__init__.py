@@ -299,6 +299,12 @@ def get_common_parameters(input_files, collection=None):
     if parameters == []:
         raise ValueError("no common parameters found for collection {} in "
                          "files {}".format(collection, ', '.join(input_files)))
+    # if using python 3 to read a file created in python 2, need to convert
+    # parameters to strs
+    try:
+        parameters = [p.decode() for p in parameters]
+    except AttributeError:
+        pass
     return parameters
 
 
