@@ -30,6 +30,9 @@ else:
         tdiff_str = '%s - %s time (ms)' % (f.attrs['detector_1'], f.attrs['detector_2'])
         ids = {f.attrs['detector_1']: found['trigger_id1'][:],
                f.attrs['detector_2']: found['trigger_id2'][:],}
+        found_cols = [tdiff, found['stat'], found['ifar'], found['ifar_exc']]
+        found_names = [tdiff_str, 'Ranking Stat.', 'Inc. IFAR (yrs)', 'Exc. IFAR']
+        found_formats =  ['##.##', '##.##', '##', '##']
 
     else:
         detectors = ['L1','H1','V1','K1','I1']
@@ -44,16 +47,18 @@ else:
         tdiff_str = []
         tdiff_format =[]
         for i in range(len(detectors_two_combinations)):
-            tdiff_1 = ((found[detectors_two_combinations[i,0]+'/time'][:] - found[detectors_two_combinations[i,1]+'/time'][:])*1000)
+            time_1 = found[detectors_two_combinations[i,0]+'/time'][:]
+            time_2 = found[detectors_two_combinations[i,1]+'/time'][:]
+            tdiff_1 = ['{:.2f}'.format((t1 - t2)*1000) if t1 > 0 and t2 > 0 else 'n/a' for t1,t2 in zip(time_1, time_2)]
             tdiff.append(tdiff_1)
             tdiff_head= '%s - %s time (ms)' % (detectors_two_combinations[i,0], detectors_two_combinations[i,1])
             tdiff_str.append(tdiff_head)
             tdiff_format.append('##.##')
         ids = {detector:found[detector+'/trigger_id'][:] for detector in detectors_used}
     
-    found_cols = tdiff + [found['stat'], found['fap_exc'], found['ifar_exc']]
-    found_names = tdiff_str + ['Ranking Stat.', 'Exc. FAP', 'Exc. IFAR']
-    found_formats =  tdiff_format + ['##.##', '##', '##']
+        found_cols = tdiff + [found['stat'], found['fap_exc'], found['ifar_exc']]
+        found_names = tdiff_str + ['Ranking Stat.', 'Exc. FAP', 'Exc. IFAR']
+        found_formats =  tdiff_format + ['##.##', '##', '##']
 
 
     if args.single_trigger_files:
