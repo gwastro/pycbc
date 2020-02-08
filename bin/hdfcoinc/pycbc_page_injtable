@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-""" Make a table of found injection information
-"""
 import argparse, h5py, numpy, pycbc.results, pycbc.detector, sys
 from pycbc.types import MultiDetOptionAction
 import pycbc.pnutils, pycbc.events
@@ -59,7 +56,7 @@ else:
             tdiff_format.append('##.##')
         ids = {detector:found[detector+'/trigger_id'][:] for detector in detectors_used}
     
-        found_cols = tdiff + [found['stat'], found['fap_exc'], found['ifar_exc']]
+        found_cols = tdiff + [numpy.round(found['stat'],2), numpy.round(found['fap_exc'],2), numpy.round(found['ifar_exc'],2)]
         found_names = tdiff_str + ['Ranking Stat.', 'Exc. FAP', 'Exc. IFAR']
         found_formats =  tdiff_format + ['##.##', '##', '##']
 
@@ -73,7 +70,7 @@ else:
             newsnr = pycbc.events.ranking.newsnr(snr, chisq)
             
             found_names += ["%s SNR" % ifo, "CHISQ", "NewSNR"]
-            found_cols += [snr, chisq, newsnr]
+            found_cols += [numpy.round(snr,2), numpy.round(chisq,2), numpy.round(newsnr,2)]
             found_formats += ['##.##', '##.##', '##.##']
 
 eff_dist = {'eff_dist_l':'Eff Dist(L)','eff_dist_h':'Eff Dist(H)','eff_dist_v':'Eff Dist(V)',
@@ -84,7 +81,7 @@ eff_distance = []
 eff_dist_format = []
 for dist in eff_dist :
     if(dist in keys):
-        eff_distance.append(inj[dist][:][idx])
+        eff_distance.append(numpy.round(inj[dist][:][idx],2))
         eff_dist_str.append(eff_dist[dist])
         eff_dist_format.append('##.##')
                 
@@ -93,10 +90,11 @@ m1, m2 = inj['mass1'][:][idx], inj['mass2'][:][idx]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-columns = [dec_chirp_dist, inj['end_time'][:][idx], m1, m2, mchirp, eta,
-           inj['spin1x'][:][idx], inj['spin1y'][:][idx], inj['spin1z'][:][idx],
-           inj['spin2x'][:][idx], inj['spin2y'][:][idx], inj['spin2z'][:][idx],
-           inj['distance'][:][idx]] + eff_distance + found_cols
+columns = [numpy.round(dec_chirp_dist,2), numpy.round(inj['end_time'][:][idx],2), 
+           numpy.round(m1,2), numpy.round(m2,2), numpy.round(mchirp,2), numpy.round(eta,2),
+           numpy.round(inj['spin1x'][:][idx],2), numpy.round(inj['spin1y'][:][idx],2), numpy.round(inj['spin1z'][:][idx],2),
+           numpy.round(inj['spin2x'][:][idx],2), numpy.round(inj['spin2y'][:][idx],2), numpy.round(inj['spin2z'][:][idx],2),
+           numpy.round(inj['distance'][:][idx],2)] + eff_distance + found_cols
          
 names = ['DChirp Dist', 'Inj Time', 'Mass1', 'Mass2', 'Mchirp', 'Eta',
          's1x', 's1y', 's1z',
