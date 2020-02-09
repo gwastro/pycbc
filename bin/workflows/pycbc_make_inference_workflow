@@ -41,6 +41,7 @@ from pycbc.workflow import datafind
 from pycbc.workflow import plotting
 from pycbc import __version__
 import pycbc.workflow.inference_followups as inffu
+from pycbc.workflow.jobsetup import PycbcInferenceExecutable
 
 
 def read_events_from_config(cp):
