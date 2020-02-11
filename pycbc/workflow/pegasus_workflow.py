@@ -159,6 +159,11 @@ class Node(ProfileShortcuts):
         else:
             self._options += [opt]
 
+    def add_input(self, inp):
+        """Declares an input file without adding it as a command-line option.
+        """
+        self._add_input(inp)
+
     #private functions to add input and output data sources/sinks
     def _add_input(self, inp):
         """ Add as source of input data
