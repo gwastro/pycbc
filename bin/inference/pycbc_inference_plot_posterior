@@ -283,10 +283,11 @@ fig.set_dpi(opts.dpi)
 
 # save
 metadata.save_fig_with_metadata(
-                 fig, opts.output_file, {},
+                 fig, opts.output_file,
                  cmd=" ".join(sys.argv),
                  title="Posteriors",
-                 caption="Posterior probability density functions.")
+                 caption="Posterior probability density functions.",
+                 fig_kwds={'bbox_inches': 'tight'})
 
 # finish
 logging.info("Done")
