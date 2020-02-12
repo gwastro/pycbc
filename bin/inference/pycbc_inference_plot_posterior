@@ -37,7 +37,7 @@ from matplotlib import (patches, use)
 
 import pycbc
 import pycbc.version
-from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli) 
+from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli)
 from pycbc.results import metadata
 from pycbc.io import FieldArray
 from pycbc import __version__
