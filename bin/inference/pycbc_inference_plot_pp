@@ -30,6 +30,7 @@ from scipy import stats
 from matplotlib import use
 use('agg')
 from matplotlib import pyplot as plt
+import matplotlib.style as style
 
 import pycbc
 from pycbc.results import save_fig_with_metadata
@@ -52,7 +53,11 @@ parser.add_argument("--do-ks-test", action="store_true", default=False,
                     help="Perform a KS test between the percentile-percentile "
                          "plot for each parameter and the (expected) uniform "
                          "distribution. Results are printed in the legend.")
-option_utils.add_scatter_option_group(parser)
+parser.add_argument('--color-style', default='seaborn-colorblind',
+                    help='Style to use for line colors. Default is '
+                         'seaborn-colorblind. Options are {}.'
+                         .format(', '.join([s for s in style.library().keys()
+                                            if not s.startswith('_')])))
 opts = parser.parse_args()
 
 # set logging
@@ -84,10 +89,17 @@ for input_file, input_samples in zip(opts.input_file, samples):
             measured_percentiles[p] = []
             measured_percentiles[p].append(measured)
 
+# set the color and line styles; we'll use seaborn's colorblind + 4 different
+# line styles, giving 24 unique combinations
+color_cycle = style.library[opts.color_style]['axes.prop_cycle']
+colors = itertools.cycle([x['color'] for x in color_cycle])
+ncolors = len(color_cycle)
+ls_cycle = ['-']*ncolors + ['--']*ncolors + [':']*ncolors + ['-.']*ncolors
+line_styles = itertools.cycle(ls_cycle)
+
 # create figure for plotting
 fig = plt.figure()
 ax = fig.add_subplot(111)
-
 # calculate the expected percentile for each injection and plot
 for param in parameters:
     label = labels[param]
@@ -99,7 +111,8 @@ for param in parameters:
     if opts.do_ks_test:
         ks, p = stats.kstest(meas/100., 'uniform')
         label = '{} $D_{{KS}}$: {:.3f} p-value: {:.3f}'.format(label, ks, p)
-    ax.plot(meas/100., expected/100., label=label)
+    ax.plot(meas/100., expected/100., c=colors.next(), ls=line_sytles.next(),
+            label=label)
 
 # set legend
 ax.legend()
