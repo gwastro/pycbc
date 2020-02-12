@@ -41,6 +41,7 @@ from pycbc.workflow import datafind
 from pycbc.workflow import plotting
 from pycbc import __version__
 import pycbc.workflow.inference_followups as inffu
+from pycbc.workflow.jobsetup import PycbcInferenceExecutable
 
 
 def read_events_from_config(cp):
@@ -158,9 +159,9 @@ parser.add_argument("--version", action="version", version=__version__,
 
 # workflow options
 parser.add_argument("--workflow-name", required=True,
-                    help="Name of the workflow to append in various places.")
+                    help="Name of the workflow.")
 parser.add_argument("--tags", nargs="+", default=[],
-                    help="Tags to apend in various places.")
+                    help="Append the given tags to file names.")
 parser.add_argument("--output-dir", default=None,
                     help="Path to directory where the workflow will be "
                          "written. Default is to use "
@@ -236,9 +237,10 @@ core.makedir(rdir["config_files"])
 
 # create files for workflow log
 log_file_txt = core.File(workflow.ifos, "workflow-log", workflow.analysis_time,
-                      extension=".txt", directory=rdir["workflow"])
-log_file_html = core.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
-                        extension=".html", directory=rdir["workflow"])
+                         extension=".txt", directory=rdir["workflow"])
+log_file_html = core.File(workflow.ifos, "WORKFLOW-LOG",
+                          workflow.analysis_time,
+                          extension=".html", directory=rdir["workflow"])
 
 # switch saving log to file
 logging.basicConfig(format=log_format, level=logging.INFO,
@@ -252,7 +254,7 @@ logging.info("Created log file %s" % log_file_txt.storage_path)
 
 config_files = {}
 seed = opts.seed
-# loop over number of loudest events to be analyzed
+# loop over the events to be analyzed
 for num_event, event in enumerate(events):
     # slugify the event name so it can be used in file names
     event = event_slug(event)
@@ -283,19 +285,16 @@ for num_event, event in enumerate(events):
 
     # make node(s) for running sampler
     samples_files = []
-    inference_exe = core.Executable(sub_workflow.cp, "inference",
-                                    ifos=sub_workflow.ifos,
-                                    out_dir=samples_file_dir)
+    inference_exe = PycbcInferenceExecutable(sub_workflow.cp, "inference",
+                                             ifos=sub_workflow.ifos,
+                                             out_dir=samples_file_dir)
     for nn in range(nrun):
         tags = opts.tags + [event]
         if nrun > 1:
             tags.append(str(nn))
-        node = inference_exe.create_node()
-        node.add_input_opt("--config-file", config_file)
-        node.add_opt("--seed", seed)
-        samples_file = node.new_output_file_opt(
-            sub_workflow.analysis_time, ".hdf", "--output-file",
-            tags=tags)
+        node, samples_file = inference_exe.create_node(
+            config_file, seed=seed, tags=tags,
+            analysis_time=sub_workflow.analysis_time)
         samples_files.append(samples_file)
         # add node to workflow
         sub_workflow += node
