@@ -295,6 +295,7 @@ for num_event, event in enumerate(events):
         node, samples_file = inference_exe.create_node(
             config_file, seed=seed, tags=tags,
             analysis_time=sub_workflow.analysis_time)
+        samples_files.append(samples_file)
         # add node to workflow
         sub_workflow += node
         # increment the seed
