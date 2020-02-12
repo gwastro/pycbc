@@ -38,7 +38,11 @@ parser.add_argument("--memory-limit", default=2., type=float, metavar="X GB",
                          "clusters, this defaults to 2GB if this option is "
                          "not provided explicitly.")
 pycbc.psd.insert_psd_option_group(parser, output=False)
+pycbc.results.add_style_opt_to_parser(parser)
 args = parser.parse_args()
+
+# set the matplotlib style
+pycbc.results.set_style_from_cli(args)
 
 fig = pylab.figure(0)
 ax = fig.gca()
