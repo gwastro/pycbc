@@ -21,7 +21,7 @@ def hist_overflow(val, val_max, **kwds):
 
 def add_style_opt_to_parser(parser, default=None):
     """Adds an option to set the matplotlib style to a parser.
-    
+
     Parameters
     ----------
     parser : argparse.ArgumentParser
@@ -31,7 +31,7 @@ def add_style_opt_to_parser(parser, default=None):
         matplotlib style to be used.
     """
     from matplotlib import pyplot
-    parser.add_argument('--mpl-style', default=None,
+    parser.add_argument('--mpl-style', default=default,
                         choices=['default']+pyplot.style.available+['xkcd'],
                         help='Set the matplotlib style to use.')
 
