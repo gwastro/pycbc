@@ -22,17 +22,19 @@ within a credible interval versus credible interval.
 import sys
 import argparse
 import logging
+import itertools
 
 import numpy
 
 from scipy import stats
 
-from matplotlib import use
-use('agg')
+import matplotlib
+matplotlib.use('agg')
 from matplotlib import pyplot as plt
 import matplotlib.style as style
 
 import pycbc
+import pycbc.results.plot
 from pycbc.results import save_fig_with_metadata
 from pycbc.inference import (option_utils, io)
 
@@ -53,12 +55,12 @@ parser.add_argument("--do-ks-test", action="store_true", default=False,
                     help="Perform a KS test between the percentile-percentile "
                          "plot for each parameter and the (expected) uniform "
                          "distribution. Results are printed in the legend.")
-parser.add_argument('--color-style', default='seaborn-colorblind',
-                    help='Style to use for line colors. Default is '
-                         'seaborn-colorblind. Options are {}.'
-                         .format(', '.join([s for s in style.library().keys()
-                                            if not s.startswith('_')])))
+pycbc.results.plot.add_style_opt_to_parser(parser,
+                                           default='seaborn-colorblind')
 opts = parser.parse_args()
+
+# set style
+pycbc.results.plot.set_style_from_cli(opts)
 
 # set logging
 pycbc.init_logging(opts.verbose)
@@ -89,16 +91,17 @@ for input_file, input_samples in zip(opts.input_file, samples):
             measured_percentiles[p] = []
             measured_percentiles[p].append(measured)
 
-# set the color and line styles; we'll use seaborn's colorblind + 4 different
-# line styles, giving 24 unique combinations
-color_cycle = style.library[opts.color_style]['axes.prop_cycle']
+# set the color and line styles; total number of unique combinations is 3 *
+# the number of colors in the style's cycle (seaborn-colorblind has 6 colors,
+# so the default is 18 unique combinations)
+color_cycle = matplotlib.rcParams['axes.prop_cycle']
 colors = itertools.cycle([x['color'] for x in color_cycle])
 ncolors = len(color_cycle)
-ls_cycle = ['-']*ncolors + ['--']*ncolors + [':']*ncolors + ['-.']*ncolors
+ls_cycle = ['-']*ncolors + [':']*ncolors + ['-.']*ncolors
 line_styles = itertools.cycle(ls_cycle)
 
 # create figure for plotting
-fig = plt.figure()
+fig = plt.figure(figsize=(6,6))
 ax = fig.add_subplot(111)
 # calculate the expected percentile for each injection and plot
 for param in parameters:
@@ -111,11 +114,19 @@ for param in parameters:
     if opts.do_ks_test:
         ks, p = stats.kstest(meas/100., 'uniform')
         label = '{} $D_{{KS}}$: {:.3f} p-value: {:.3f}'.format(label, ks, p)
-    ax.plot(meas/100., expected/100., c=colors.next(), ls=line_sytles.next(),
+    ax.plot(meas/100., expected/100., c=next(colors), ls=next(line_styles),
             label=label)
 
 # set legend
-ax.legend()
+breaknum = 9
+if len(parameters) > 2*breaknum:
+    ncols = 3
+elif len(parameters) > breaknum:
+    ncols = 2
+else:
+    ncols = 1
+
+ax.legend(ncol=ncols)
 
 # set labels
 ax.set_ylabel(r"Fraction of Injections Recovered in Credible Interval")
@@ -141,7 +152,8 @@ caption = ('Percentile-percentile plot. The value of the KS statistic '
            'expected.')
 save_fig_with_metadata(fig, opts.output_file,
     caption=caption,
-    cmd=' '.join(sys.argv))
+    cmd=' '.join(sys.argv),
+    fig_kwds={'bbox_inches': 'tight'})
 
 # done
 logging.info("Done")
