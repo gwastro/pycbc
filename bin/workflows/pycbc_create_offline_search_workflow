@@ -195,8 +195,8 @@ for i in range(2, len(insps)+1):
         pivot_ifo, fixed_ifo, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
 
         # Create coinc tag, and set up the coinc job for the combination
-        coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
-        ctagcomb = [tag, 'full', coinctag]
+        coinctag = '{}det'.format(len(ifocomb))
+        ctagcomb = [tag, 'full', coinctag, ordered_ifo_list]
 
         bg_file = wf.setup_multiifo_interval_coinc(
             workflow, hdfbank, inspcomb, statfiles, final_veto_file,
@@ -217,8 +217,8 @@ else:
         for ifocomb in combinations:
             _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
             # Create coinc tag
-            coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
-            ctagcomb = [tag, 'full', coinctag]
+            coinctag = '{}det'.format(len(ifocomb))
+            ctagcomb = [tag, 'full', coinctag, ordered_ifo_list]
             other_ifo_keys = no_fg_exc_files.keys()
             other_ifo_keys.remove(ordered_ifo_list)
             other_bg_files = {ctype: no_fg_exc_files[ctype] for ctype in other_ifo_keys}
@@ -546,8 +546,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
                 wf.get_ordered_ifo_list(ifocomb, ifo_ids)
 
             # Create coinc tag, and set up the coinc job for the combination
-            coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
-            ctagcomb = [tag, 'injections', coinctag]
+            coinctag = '{}det'.format(len(ifocomb))
+            ctagcomb = [tag, 'injections', coinctag, ordered_ifo_list]
             curr_out = wf.setup_multiifo_interval_coinc_inj\
                 (workflow, hdfbank, full_insps, inspcomb, statfiles,
                  final_bg_files[ordered_ifo_list],
