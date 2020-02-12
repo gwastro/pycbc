@@ -28,6 +28,7 @@ from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingle
 from pycbc.io.live import SingleCoincForGraceDB
+from pycbc.io.hdf import recursively_save_dict_contents_to_group
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
@@ -331,6 +332,10 @@ class LiveEventManager(object):
                         hdfp['channel_names/{}'.format(ifo)] = \
                             args.channel_name[ifo]
 
+                    recursively_save_dict_contents_to_group(hdfp,
+                                                            'mc_area_args/',
+                                                            self.mc_area_args)
+
                 cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant {} '.format(apr)
                 cmd += '--gracedb-server {} '.format(args.gracedb_server)
@@ -371,7 +376,8 @@ class LiveEventManager(object):
             event = SingleCoincForGraceDB([ifo], single, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
-                                          channel_names=args.channel_name)
+                                          channel_names=args.channel_name,
+                                          mc_area_args=self.mc_area_args)
 
             end_time = int(single['foreground/%s/end_time' % ifo])
             fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
