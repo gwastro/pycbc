@@ -968,29 +968,14 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
         else:
             raise ValueError('Cannot save %s type' % type(item))
 
-def load_hdf5_to_dict(filename):
-    """
-    Parameters
-    ----------
-    filename:
-	hdf5 file to be loaded as a dictionary
-
-    Returns
-    -------
-    dictionary with hdf5 file content
-
-    """
-    with h5py.File(filename, 'r') as h5file:
-        recursively_load_hdf5_group_to_dict(h5file, '/')
-
-def recursively_load_hdf5_group_to_dict(h5file, path):
+def load_hdf5_to_dict(h5file, path):
     """
     Parameters
     ----------
     h5file:
         h5py file to be loaded as a dictionary
     path:
-        path within h5py file to load
+        path within h5py file to load: '/' for the whole h5py file
  
     Returns
     -------
