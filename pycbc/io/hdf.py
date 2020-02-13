@@ -960,12 +960,37 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
         python dictionary to be converted to hdf5 format
     """
     for key, item in dic.items():
-        if isinstance(item, (np.ndarray, np.int64, np.float64, str, bytes, tuple, list)):
+        if isinstance(item, (np.ndarray, np.int64, np.float64, str, int, float,
+                             bytes, tuple, list)):
             h5file[path + str(key)] = item
         elif isinstance(item, dict):
             recursively_save_dict_contents_to_group(h5file, path + key + '/', item)
         else:
             raise ValueError('Cannot save %s type' % type(item))
+
+def load_hdf5_to_dict(h5file, path):
+    """
+    Parameters
+    ----------
+    h5file:
+        h5py file to be loaded as a dictionary
+    path:
+        path within h5py file to load: '/' for the whole h5py file
+
+    Returns
+    -------
+    dic:
+        dictionary with hdf5 file group content
+    """
+    dic = {}
+    for key, item in h5file[path].items():
+        if isinstance(item, h5py.Dataset):
+            dic[key] = item[()]
+        elif isinstance(item, h5py.Group):
+            dic[key] = load_hdf5_to_dict(h5file, path + key + '/')
+        else:
+            raise ValueError('Cannot load %s type' % type(item))
+    return dic
 
 def combine_and_copy(f, files, group):
     """ Combine the same column from multiple files and save to a third"""

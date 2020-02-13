@@ -320,7 +320,7 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     # equal to the maximum mass, the probability for BBH is 100%
     mc_max = mass_limits['max_m1'] / (2 ** 0.2)
     if trig_mc_det['central'] > mc_max * (1 + z['central']):
-        if mass_gap is not False:
+        if mass_gap:
             probabilities = {"BNS": 0.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
                              "BHG": 0.0, "BBH": 1.0}
         else:

@@ -20,6 +20,7 @@ from pycbc.conversions import (
 )
 from scipy.optimize import differential_evolution
 from pycbc.io import live
+from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
 
@@ -316,10 +317,13 @@ channel_names = {}
 for ifo in fp['channel_names'].keys():
     channel_names[ifo] = fp['channel_names'][ifo][()]
 
+mc_area_args = load_hdf5_to_dict(fp, 'mc_area_args/')
+
 kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
           'low_frequency_cutoff': flow,
           'followup_data': followup_data,
-          'channel_names': channel_names}
+          'channel_names': channel_names,
+          'mc_area_args': mc_area_args}
 
 doc = live.SingleCoincForGraceDB(ifos, coinc_results,
                                  upload_snr_series=True, **kwargs)
