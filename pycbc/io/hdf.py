@@ -984,9 +984,9 @@ def load_hdf5_to_dict(h5file, path):
     """
     dic = {}
     for key, item in h5file[path].items():
-        if isinstance(item, h5py._hl.dataset.Dataset):
+        if isinstance(item, h5py.Dataset):
             dic[key] = item[()]
-        elif isinstance(item, h5py._hl.group.Group):
+        elif isinstance(item, h5py.Group):
             dic[key] = load_hdf5_to_dict(h5file, path + key + '/')
         else:
             raise ValueError('Cannot load %s type' % type(item))
