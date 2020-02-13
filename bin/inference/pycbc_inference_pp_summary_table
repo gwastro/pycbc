@@ -19,16 +19,15 @@
 an html table.
 """
 
-import os
 import argparse
-import h5py
 import logging
 import numpy
 import sys
+from scipy import stats
 import pycbc
 from pycbc import results
-from pycbc.inference.option_utils import ParseLabelArg
-from pycbc.inference.io import ResultsArgumentParser, results_from_cli
+from pycbc.inference.io import (ResultsArgumentParser, results_from_cli,
+                                injections_from_cli)
 
 parser = ResultsArgumentParser(description=__doc__)
 parser.add_argument("--verbose", action="store_true", default=False,
@@ -43,7 +42,7 @@ pycbc.init_logging(opts.verbose)
 
 # read results
 logging.info('Loading parameters')
-_, parameters, labels, samples = io.results_from_cli(opts)
+_, parameters, labels, samples = results_from_cli(opts)
 
 # typecast to list for iteration
 samples = [samples] if not isinstance(samples, list) else samples
@@ -53,7 +52,7 @@ measured_percentiles = {}
 for input_file, input_samples in zip(opts.input_file, samples):
     # load the injections
     opts.input_file = input_file
-    inj_parameters = io.injections_from_cli(opts)
+    inj_parameters = injections_from_cli(opts)
 
     for p in parameters:
         inj_val = inj_parameters[p]
@@ -82,14 +81,13 @@ for ii, param in enumerate(parameters):
     table.append(row)
 
 # do the p-value of p-values test
-summar_ks, summary_p = stats.kstest(p_values, 'uniform')
+summary_ks, summary_p = stats.kstest(p_values, 'uniform')
 table.append(['<b>p-value of p-values</b>',
               '<b>'+fmt.format(summary_ks)+'</b>',
               '<b>'+fmt.format(summary_p)+'</b>'])
 
 # create table header
-interval = opts.percentiles[-1]-opts.percentiles[0]
-headers = ["Parameter", "$D_{{KS}}$" "p-value"]
+headers = ["Parameter", "$D_{{KS}}$", "p-value"]
 
 # add mathjax header to display latex
 html = results.mathjax_html_header() + '\n%s'%(
