@@ -987,8 +987,7 @@ def load_hdf5_to_dict(h5file, path):
         if isinstance(item, h5py._hl.dataset.Dataset):
             dic[key] = item[()]
         elif isinstance(item, h5py._hl.group.Group):
-            dic[key] = recursively_load_hdf5_group_to_dict(h5file,
-                                                           path + key + '/')
+            dic[key] = load_hdf5_to_dict(h5file, path + key + '/')
         else:
             raise ValueError('Cannot load %s type' % type(item))
     return dic
