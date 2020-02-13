@@ -81,11 +81,24 @@ for ii, param in enumerate(parameters):
     row += [fmt.format(ks), fmt.format(p)]
     table.append(row)
 
-# do the p-value of p-values test
-summary_ks, summary_p = stats.kstest(p_values, 'uniform')
-table.append(['<b>p-values</b>',
-              '<b>'+fmt.format(summary_ks)+'</b>',
-              '<b>'+fmt.format(summary_p)+'</b>'])
+# do the p-value of p-values test if more than one parameter provided
+if len(parameters) > 1:
+    summary_ks, summary_p = stats.kstest(p_values, 'uniform')
+    table.append(['<b>p-values</b>',
+                  '<b>'+fmt.format(summary_ks)+'</b>',
+                  '<b>'+fmt.format(summary_p)+'</b>'])
+    # for the caption
+    extra_caption = (
+           ' If all parameters '
+           'satisfy the percentile-percentile test, then the distribution of '
+           'p-values should be uniform. The p-value of p-values is obtained '
+           'by applying the KS test to the distribution of p-values. The '
+           'smaller this value, the lower the probability of obtaining the '
+           'observed distribution of parameters assuming that the analysis '
+           'did satsify the expectation that $X$ percent of injections fall '
+           'in the $X$ percent credible interval.')
+else:
+    extra_caption = ''
 
 # create table header
 headers = ["Parameter", "$D_{{KS}}$", "p-value"]
@@ -114,11 +127,4 @@ results.save_fig_with_metadata(
            'assuming that the measured CDF is the same as the expected. '
            'In other words, the larger (smaller) the p-value ($D_{KS}$), the '
            'more likely the measured distribution is the same as the '
-           'expected. If all parameters '
-           'satisfy the percentile-percentile test, then the distribution of '
-           'p-values should be uniform. The p-value of p-values is obtained '
-           'by applying the KS test to the distribution of p-values. The '
-           'smaller this value, the lower the probability of obtaining the '
-           'observed distribution of parameters assuming that the analysis '
-           'did satsify the expectation that $X$ percent of injections fall '
-           'in the $X$ percent credible interval.')
+           'expected.'+extra_caption)
