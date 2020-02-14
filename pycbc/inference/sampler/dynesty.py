@@ -109,8 +109,8 @@ class DynestySampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, loglikelihood_function=None,
-                    use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False, loglikelihood_function=None):
         """
         Loads the sampler from the given config file.
         """
@@ -138,9 +138,15 @@ class DynestySampler(BaseSampler):
         obj = cls(model, nlive=nlive, dlogz=dlogz, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
                   use_mpi=use_mpi, **extra)
+        setup_output(obj, output_file)
+        if not obj.new_checkpoint:
+            obj.resume_from_checkpoint()
         return obj
 
     def checkpoint(self):
+        pass
+
+    def resume_from_checkpoint(self):
         pass
 
     def finalize(self):
@@ -226,7 +232,7 @@ class DynestySampler(BaseSampler):
         """
 
         dynesty_samples = self._sampler.results['samples']
-        wt = numpy.exp(self._sampler.results['logwt'] - 
+        wt = numpy.exp(self._sampler.results['logwt'] -
                        self._sampler.results['logz'][-1])
         # Make sure that sum of weights equal to 1
         weights = wt/numpy.sum(wt)

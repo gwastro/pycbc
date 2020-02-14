@@ -39,7 +39,7 @@ from pycbc.filter import autocorrelation
 from pycbc.inference.io import validate_checkpoint_files
 
 from .base import setup_output
-
+from .base import initial_dist_from_config
 
 #
 # =============================================================================
@@ -436,24 +436,25 @@ class BaseMCMC(object):
         self._p0 = p0
         return self.p0
 
-    def set_initial_conditions(self, initial_distribution=None,
-                               samples_file=None):
-        """Sets the initial starting point for the MCMC.
-
-        If a starting samples file is provided, will also load the random
-        state from it.
-        """
-        self.set_p0(samples_file=samples_file, prior=initial_distribution)
-        # if a samples file was provided, use it to set the state of the
-        # sampler
-        if samples_file is not None:
-            self.set_state_from_file(samples_file)
-
     @abstractmethod
     def set_state_from_file(self, filename):
         """Sets the state of the sampler to the instance saved in a file.
         """
         pass
+
+    def set_start_from_config(self, cp):
+        """Sets the initial state of the sampler from config file
+        """
+        init_prior = initial_dist_from_config(cp, self.variable_params)
+        self.set_p0(prior=init_prior)
+
+    def resume_from_checkpoint(self):
+        """Resume the sampler from the checkpoint file
+        """
+        with self.io(self.checkpoint_file, "r") as fp:
+            self._lastclear = fp.niterations
+        self.set_p0(samples_file=self.checkpoint_file)
+        self.set_state_from_file(self.checkpoint_file)
 
     def run(self):
         """Runs the sampler."""
@@ -464,7 +465,6 @@ class BaseMCMC(object):
         # "nsamples" keeps track of the number of samples we've obtained (if
         # target_eff_nsamples is not None, this is the effective number of
         # samples; otherwise, this is the total number of samples).
-        # _lastclear is the number of iterations that the file already
         # contains (either due to sampler burn-in, or a previous checkpoint)
         if self.new_checkpoint:
             self._lastclear = 0
@@ -550,27 +550,6 @@ class BaseMCMC(object):
     def write_results(self, filename):
         """Should write all samples currently in memory to the given file."""
         pass
-
-    def setup_output(self, output_file, force=False):
-        """Sets up the sampler's checkpoint and output files.
-
-        The checkpoint file has the same name as the output file, but with
-        ``.checkpoint`` appended to the name. A backup file will also be
-        created.
-
-        If the output file already exists, an ``OSError`` will be raised.
-        This can be overridden by setting ``force`` to ``True``.
-
-        Parameters
-        ----------
-        sampler : sampler instance
-            Sampler
-        output_file : str
-            Name of the output file.
-        force : bool, optional
-            If the output file already exists, overwrite it.
-        """
-        setup_output(self, output_file, force=force)
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""

@@ -201,6 +201,11 @@ class MultinestSampler(BaseSampler):
         if samples_file is not None:
             self.set_state_from_file(samples_file)
 
+    def resume_from_checkpoint(self):
+        """Resume sampler from checkpoint
+        """
+        pass
+
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file.
         """
@@ -364,7 +369,8 @@ class MultinestSampler(BaseSampler):
         pass
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
         """Loads the sampler from the given config file."""
         section = "sampler"
         # check name
@@ -396,4 +402,5 @@ class MultinestSampler(BaseSampler):
                            v is not None}
         obj = cls(model, nlivepoints, constraints=constraints,
                   **optional_kwargs)
+        obj.setup_output(obj, output_file)
         return obj

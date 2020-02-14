@@ -28,7 +28,6 @@ Defines the base sampler class to be inherited by all samplers.
 from __future__ import absolute_import
 
 from abc import ABCMeta, abstractmethod, abstractproperty
-import os
 import shutil
 import logging
 
@@ -69,7 +68,8 @@ class BaseSampler(object):
 
     # @classmethod <--uncomment when we move to python 3.3
     @abstractmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
         """This should initialize the sampler given a config file.
         """
         pass
@@ -129,15 +129,6 @@ class BaseSampler(object):
         pass
 
     @abstractmethod
-    def set_initial_conditions(self, initial_distribution=None,
-                               samples_file=None):
-        """Sets up the starting point for the sampler.
-
-        Should also set the sampler's random state.
-        """
-        pass
-
-    @abstractmethod
     def checkpoint(self):
         """The sampler must have a checkpoint method for dumping raw samples
         and stats to the file type defined by ``io``.
@@ -150,10 +141,10 @@ class BaseSampler(object):
         pass
 
     @abstractmethod
-    def setup_output(self, output_file, force=False):
-        """Sets up the sampler's checkpoint and output files.
+    def resume_from_checkpoint(self):
+        """Resume the sampler from the output file.
         """
-
+        pass
 
 #
 # =============================================================================
@@ -163,8 +154,9 @@ class BaseSampler(object):
 # =============================================================================
 #
 
+
 def setup_output(sampler, output_file, force=False):
-    """Sets up the sampler's checkpoint and output files.
+    r"""Sets up the sampler's checkpoint and output files.
 
     The checkpoint file has the same name as the output file, but with
     ``.checkpoint`` appended to the name. A backup file will also be
@@ -182,13 +174,6 @@ def setup_output(sampler, output_file, force=False):
     force : bool, optional
         If the output file already exists, overwrite it.
     """
-    # check that the output file doesn't already exist
-    if os.path.exists(output_file):
-        if force:
-            os.remove(output_file)
-        else:
-            raise OSError("output-file already exists; use force if you "
-                          "wish to overwrite it.")
     # check for backup file(s)
     checkpoint_file = output_file + '.checkpoint'
     backup_file = output_file + '.bkup'
@@ -214,7 +199,6 @@ def setup_output(sampler, output_file, force=False):
     # store
     sampler.checkpoint_file = checkpoint_file
     sampler.backup_file = backup_file
-    sampler.checkpoint_valid = checkpoint_valid
 
 
 def create_new_output_file(sampler, filename, **kwargs):
