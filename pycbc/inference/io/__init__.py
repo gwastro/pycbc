@@ -27,7 +27,7 @@ import textwrap
 import numpy
 import logging
 import h5py as _h5py
-from pycbc.io.record import FieldArray, _numpy_function_lib
+from pycbc.io.record import (FieldArray, _numpy_function_lib)
 from pycbc import waveform as _waveform
 
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
@@ -500,6 +500,16 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                                                collection=self.defaultparams)
             # now call parse parameters action to populate the namespace
             self.actions['parameters'](self, opts, parameters)
+        elif opts.greedy:
+            # add the rest of the parameters not used
+            all_params = get_common_parameters(opts.input_file,
+                                               collection=self.defaultparams)
+            # extract the used parameters from the parameters option
+            used_params = FieldArray.parse_parameters(opts.parameters,
+                                                      all_params)
+            add_params = set(all_params) - set(used_params)
+            # add them
+            opts.parameters += list(add_params)
         # parse the sampler-specific options and check for any unknowns
         unknown = []
         for fn in opts.input_file:
@@ -582,6 +592,16 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                  "given input file(s), as well as all avaiable functions, "
                  "run --file-help, along with one or more input files."
                  .format(lblhelp))
+        results_reading_group.add_argument(
+            "-g", "--greedy", action="store_true", default=False,
+            help="Load all other parameters not used in the parameters "
+                 "option. For example, if the input-file contains 'srcmass1', "
+                 "'srcmass2', and 'distance', and --parameters is set to "
+                 "'primary_mass(srcmass1, srcmass2):mass1', then "
+                 "'mass1' and 'distance' will be loaded if this flag is "
+                 "on. Otherwise, only 'mass1' would be loaded "
+                 "Note that any parameter that is used in a function "
+                 "in the parameters option will not automatically be added.")
         results_reading_group.add_argument(
             "--constraint", type=str, nargs="+", metavar="CONSTRAINT[:FILE]",
             help="Apply a constraint to the samples. If a file is provided "
