@@ -495,12 +495,16 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         opts, extra_opts = super(ResultsArgumentParser, self).parse_known_args(
             args, opts)
         # populate the parameters option if it wasn't specified
-        if opts.parameters is None:
+        if opts.parameters is None or opts.parameters == ['*']:
             parameters = get_common_parameters(opts.input_file,
                                                collection=self.defaultparams)
-            # now call parse parameters action to populate the namespace
+            # now call parse parameters action to re-populate the namespace
             self.actions['parameters'](self, opts, parameters)
-        elif opts.greedy:
+        # check if we're being greedy or not
+        elif '*' in opts.parameters:
+            # remove the * from the parameters and the labels
+            opts.parameters = [p for p in opts.parameters if p != '*']
+            opts.parameters_labels.pop('*', None)
             # add the rest of the parameters not used
             all_params = get_common_parameters(opts.input_file,
                                                collection=self.defaultparams)
@@ -581,8 +585,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         results_reading_group.add_argument(
             "--parameters", type=str, nargs="+", metavar="PARAM[:LABEL]",
             action=paramparser,
-            help="Name of parameters to load. If none provided will load all "
-                 "of the model params in the input-file. If provided, the "
+            help="Name of parameters to load; default is to load all. The "
                  "parameters can be any of the model params or posterior "
                  "stats (loglikelihood, logprior, etc.) in the input file(s), "
                  "derived parameters from them, or any function of them. If "
@@ -593,18 +596,24 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                  "provided, PARAM will used as the LABEL. {}"
                  "To see all possible parameters that may be used with the "
                  "given input file(s), as well as all avaiable functions, "
-                 "run --file-help, along with one or more input files."
-                 .format(lblhelp))
-        results_reading_group.add_argument(
-            "-g", "--greedy", action="store_true", default=False,
-            help="Load all other parameters not used in the parameters "
-                 "option. For example, if the input-file contains 'srcmass1', "
-                 "'srcmass2', and 'distance', and --parameters is set to "
-                 "'primary_mass(srcmass1, srcmass2):mass1', then "
-                 "'mass1' and 'distance' will be loaded if this flag is "
-                 "on. Otherwise, only 'mass1' would be loaded "
+                 "run --file-help, along with one or more input files. "
+                 "If '*' is provided in addition to other parameters names, "
+                 "then parameters will be loaded in a greedy fashion; i.e., "
+                 "all other parameters that exist in the file(s) that are not "
+                 "explicitly mentioned will also be loaded. For example,"
+                 "if the input-file(s) contains 'srcmass1', "
+                 "'srcmass2', and 'distance', and  "
+                 "\"'primary_mass(srcmass1, srcmass2):mass1' '*'\", is given "
+                 "then 'mass1' and 'distance' will be loaded. Otherwise, "
+                 "without the '*', only 'mass1' would be loaded. "
                  "Note that any parameter that is used in a function "
-                 "in the parameters option will not automatically be added.")
+                 "will not automatically be added. Tip: enclose "
+                 "arguments in single quotes, or else special characters will "
+                 "be interpreted as shell commands. For example, the "
+                 "wildcard should be given as either '*' or \\*, otherwise "
+                 "bash will expand the * into the names of all the files in "
+                 "the current directory."
+                 .format(lblhelp))
         results_reading_group.add_argument(
             "--constraint", type=str, nargs="+", metavar="CONSTRAINT[:FILE]",
             help="Apply a constraint to the samples. If a file is provided "
