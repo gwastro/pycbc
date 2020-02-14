@@ -32,10 +32,12 @@ import sys
 
 import numpy
 
+import matplotlib
 from matplotlib import (patches, use)
 
 import pycbc
 import pycbc.version
+from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli)
 from pycbc.results import metadata
 from pycbc.io import FieldArray
 from pycbc import __version__
@@ -70,9 +72,14 @@ option_utils.add_scatter_option_group(parser)
 option_utils.add_density_option_group(parser)
 parser.add_argument('--dpi', type=int, default=200,
                     help="Set the DPI of the plot. Default is 200.")
+# style option
+add_style_opt_to_parser(parser)
 
 # parse command line
 opts = parser.parse_args()
+
+# set mpl style
+set_style_from_cli(opts)
 
 # set logging
 pycbc.init_logging(opts.verbose)
@@ -180,8 +187,9 @@ if opts.plot_injection_parameters:
 # get expected parameter values from command line
 expected_parameters.update(option_utils.expected_parameters_from_cli(opts))
 
-# assign some colors
-colors = itertools.cycle(["black"] + ["C{}".format(i) for i in range(10)])
+# get the color cycle to use
+color_cycle = [c['color'] for c in matplotlib.rcParams['axes.prop_cycle']]
+colors = itertools.cycle(color_cycle)
 
 # plot each input file
 logging.info("Plotting")
@@ -193,19 +201,34 @@ for (i, s) in enumerate(samples):
         fig = None
         axis_dict = None
 
-    # loop over some contour colors
-    contour_color = next(colors) if not opts.contour_color \
-        else opts.contour_color
+    # get a default line color; this is used for the 1D marginal lines
+    linecolor = next(colors)
+    # set different colors depending on if one or more files was provided
+    if len(opts.input_file) == 1:
+        # make the hist color black or white, depending on if dark background
+        # is used
+        if opts.mpl_style == 'dark_background':
+            hist_color = 'white'
+        else:
+            hist_color = 'black'
+        # make histograms filled if only one input file to plot
+        fill_color = 'gray'
+        # make the default contour color white if plot density is on
+        if not opts.contour_color and opts.plot_density:
+            contour_color = 'white'
+        # otherwise, make the default be the same as the hist color
+        elif not opts.contour_color:
+            contour_color = hist_color
+        else:
+            contour_color = opts.contour_color
+    else:
+        # don't fill in the histograms
+        fill_color = None
+        # make the contour and hist colors the same as the 1D marginal lines
+        contour_color = hist_color = linecolor
 
-    # make histograms filled if only one input file to plot
-    fill_color = "gray" if len(opts.input_file) == 1 else None
-
-    # make histogram black lines if only one
-    hist_color = "black" if len(opts.input_file) == 1 else contour_color
+    # save the hist color for the legend, in the case of multiple files
     hist_colors.append(hist_color)
-
-    # pick a new color for each input file
-    linecolor = "navy" if len(opts.input_file) == 1 else contour_color
 
     # plot
     fig, axis_dict = create_multidim_plot(
@@ -260,10 +283,11 @@ fig.set_dpi(opts.dpi)
 
 # save
 metadata.save_fig_with_metadata(
-                 fig, opts.output_file, {},
+                 fig, opts.output_file,
                  cmd=" ".join(sys.argv),
                  title="Posteriors",
-                 caption="Posterior probability density functions.")
+                 caption="Posterior probability density functions.",
+                 fig_kwds={'bbox_inches': 'tight'})
 
 # finish
 logging.info("Done")
