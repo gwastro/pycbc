@@ -508,8 +508,11 @@ class ResultsArgumentParser(argparse.ArgumentParser):
             used_params = FieldArray.parse_parameters(opts.parameters,
                                                       all_params)
             add_params = set(all_params) - set(used_params)
-            # add them
-            opts.parameters += list(add_params)
+            # repopulate the name space with the additional parameters
+            if add_params:
+                opts.parameters += list(add_params)
+                # update the labels
+                opts.parameters_labels.update({p: p for p in add_params})
         # parse the sampler-specific options and check for any unknowns
         unknown = []
         for fn in opts.input_file:
