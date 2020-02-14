@@ -26,6 +26,7 @@ import sys
 from scipy import stats
 import pycbc
 from pycbc import results
+from pycbc.inference.option_utils import add_injsamples_map_opt
 from pycbc.inference.io import (ResultsArgumentParser, results_from_cli,
                                 injections_from_cli)
 
@@ -34,6 +35,7 @@ parser.add_argument("--verbose", action="store_true", default=False,
     help="Print logging info.")
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
+add_injsamples_map_opt(parser)
 
 # parse the command line
 opts = parser.parse_args()
