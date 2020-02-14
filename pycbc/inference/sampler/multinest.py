@@ -201,7 +201,7 @@ class MultinestSampler(BaseSampler):
         if samples_file is not None:
             self.set_state_from_file(samples_file)
 
-    def resume_from_ceckpoint(self):
+    def resume_from_checkpoint(self):
         """Resume sampler from checkpoint
         """
         pass
