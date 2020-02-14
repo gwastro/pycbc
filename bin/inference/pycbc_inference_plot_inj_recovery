@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Plots the recovered versus injected parameter values from a population
+"""Plots the recovered versus injected parameter values from a population
 of injections.
 """
 
@@ -17,8 +17,7 @@ from pycbc import __version__
 from pycbc.inference import (option_utils, io)
 
 # parse command line
-parser = io.ResultsArgumentParser(description="Plots the recovered versus injected parameter values "
-                                               "from a population.")
+parser = io.ResultsArgumentParser(description=__doc__)
 
 parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
@@ -26,9 +25,10 @@ parser.add_argument("--output-file", required=True, type=str,
                     help="Path to save output plot.")
 parser.add_argument("--verbose", action="store_true",
                     help="Allows print statements.")
-parser.add_argument("--quantiles", nargs=2, type=float, default=[0.05, 0.95],
-                    help="Quantiles to use as limits.")
+parser.add_argument("--percentiles", nargs=2, type=float, default=[5, 95],
+                    help="Percentiles to use as limits.")
 option_utils.add_scatter_option_group(parser)
+option_utils.add_injsamples_map_opt(parser)
 opts = parser.parse_args()
 
 # set logging
@@ -80,14 +80,14 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
     # get paramter values
     sampled_vals = input_samples[parameter]
     injected_vals = injs[parameter][i]
-    # compute quantiles of sampled results
-    quantiles = numpy.array([numpy.percentile(sampled_vals, 100 * q)
-                             for q in opts.quantiles])
+    # compute percentiles of sampled results
+    percentiles = numpy.array([numpy.percentile(sampled_vals, p)
+                             for p in opts.percentiles])
 
     # get median and lowest and highest quntiles for plotting
     med = numpy.median(sampled_vals)
-    high = quantiles.max()
-    low = quantiles.min()
+    high = percentiles.max()
+    low = percentiles.min()
 
     # get color
     if opts.z_arg:
