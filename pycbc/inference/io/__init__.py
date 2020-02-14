@@ -600,7 +600,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                  "If '*' is provided in addition to other parameters names, "
                  "then parameters will be loaded in a greedy fashion; i.e., "
                  "all other parameters that exist in the file(s) that are not "
-                 "explicitly mentioned will also be loaded. For example,"
+                 "explicitly mentioned will also be loaded. For example, "
                  "if the input-file(s) contains 'srcmass1', "
                  "'srcmass2', and 'distance', and  "
                  "\"'primary_mass(srcmass1, srcmass2):mass1' '*'\", is given "
