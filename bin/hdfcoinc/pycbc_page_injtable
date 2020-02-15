@@ -49,7 +49,7 @@ else:
         for i in range(len(detectors_two_combinations)):
             time_1 = found[detectors_two_combinations[i,0]+'/time'][:]
             time_2 = found[detectors_two_combinations[i,1]+'/time'][:]
-            tdiff_1 = ['{:.2f}'.format((t1 - t2)*1000) if t1 > 0 and t2 > 0 else 'n/a' for t1,t2 in zip(time_1, time_2)]
+            tdiff_1 = ['{:.2f}'.format((t1 - t2)*1000) if t1 > 0 and t2 > 0 else 'N/A' for t1,t2 in zip(time_1, time_2)]
             tdiff.append(tdiff_1)
             tdiff_head= '%s - %s time (ms)' % (detectors_two_combinations[i,0], detectors_two_combinations[i,1])
             tdiff_str.append(tdiff_head)
