@@ -373,7 +373,9 @@ class LiveEventManager(object):
             ifar /= len(active)
             single['foreground/ifar'] = ifar
 
-            event = SingleCoincForGraceDB([ifo], single, bank=bank,
+            live_ifos = [i for i in fud if 'snr_series' in fud[i]]
+
+            event = SingleCoincForGraceDB(live_ifos, single, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
