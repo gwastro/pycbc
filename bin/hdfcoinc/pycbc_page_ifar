@@ -40,9 +40,6 @@ def calculate_time_slide_duration(ifo1_segments, ifo2_segments, offset=0):
    return duration
 
 
-pylab.rc('text', usetex=True)
-pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-
 # parser command line
 parser = argparse.ArgumentParser(usage='pycbc_page_ifar [--options]',
                     description='Plots a cumulative histogram of IFAR for'
