@@ -55,6 +55,7 @@ parser.add_argument("--do-ks-test", action="store_true", default=False,
                     help="Perform a KS test between the percentile-percentile "
                          "plot for each parameter and the (expected) uniform "
                          "distribution. Results are printed in the legend.")
+option_utils.add_injsamples_map_opt(parser)
 pycbc.results.plot.add_style_opt_to_parser(parser,
                                            default='seaborn-colorblind')
 opts = parser.parse_args()

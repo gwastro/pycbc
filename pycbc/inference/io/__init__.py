@@ -726,6 +726,11 @@ def results_from_cli(opts, load_samples=True, **kwargs):
 def injections_from_cli(opts):
     """Gets injection parameters from the inference file(s).
 
+    If the opts have a ``injection_samples_map`` option, the injection
+    parameters will be remapped accordingly. See
+    :py:func:`pycbc.inference.option_utils.add_injsamples_map_opt` for
+    details.
+
     Parameters
     ----------
     opts : argparser
@@ -737,6 +742,11 @@ def injections_from_cli(opts):
         Array of the injection parameters from all of the input files given
         by ``opts.input_file``.
     """
+    # see if a mapping was provided
+    if hasattr(opts, 'injection_samples_map') and opts.injection_samples_map:
+        param_map = [opt.split(':') for opt in opts.injection_samples_map]
+    else:
+        param_map = []
     input_files = opts.input_file
     if isinstance(input_files, str):
         input_files = [input_files]
@@ -745,6 +755,18 @@ def injections_from_cli(opts):
     for input_file in input_files:
         fp = loadfile(input_file, 'r')
         these_injs = fp.read_injections()
+        # apply mapping if it was provided
+        if param_map:
+            mapvals = {sp: these_injs[ip] for ip, sp in param_map}
+            # if any of the new parameters are the same as the old, just
+            # overwrite the values
+            common_params = set(these_injs.fieldnames) & set(mapvals.keys())
+            for param in common_params:
+                these_injs[param] = mapvals.pop(param)
+            # add the rest as new fields
+            ps = list(mapvals.keys())
+            these_injs = these_injs.add_fields([mapvals[p] for p in ps],
+                                               names=ps)
         if injections is None:
             injections = these_injs
         else:
