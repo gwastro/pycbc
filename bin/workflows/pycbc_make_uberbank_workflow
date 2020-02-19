@@ -18,16 +18,17 @@
 
 """
 Workflow generator for the 'uberbank' template bank construction. The script
-as written runs a configurable example of pycbc_geom_aligned_bank and, if
-required to do so with an [sbank-coarse] section in the configuration file,
-another idependent one of sbank. Typically, a standard uberbank uses this
-round of sbank to cover BBH sources, while a PyGRB uberbank does not require
-performing this step. The script then combines these two banks together, if
-the BBH sbank was indeed generated.  Finally, it runs a second example of sbank
-(configuration file tag: [sbank-final]) on the resulting output. It is foreseen
-that this script would be altered to generate workflows in slightly different
-configurations to the one described, so hopefully the script is clear enough to
-allow someone to do that.
+as written runs a configurable example of pycbc_geom_aligned_bank and, unless
+instructed otherwise, another idependent one of sbank. Typically, a standard
+uberbank uses this round of sbank to cover BBH sources, while a PyGRB uberbank
+does not require performing this step: this step can be avoided with the
+option skip-coarse-bank = in the section [workflow-bank_structure]. The script
+then combines these two banks together, if the BBH sbank was indeed generated.
+Finally, it runs a second example of sbank (configuration file tag:
+[sbank-final]) on the resulting output. It is foreseen that this script would
+be altered to generate workflows in slightly different configurations to the
+one described, so hopefully the script is clear enough to allow someone to do
+that.
 """
 
 #imports
@@ -240,7 +241,7 @@ config_file = wf.File.from_path(config_path)
 # This first round of sbank is used for BBHs for the standard uberbank;
 # a PyGRB uberbank covers only potentially EM-bright systems and therfore
 # skips this step.
-if workflow.cp.has_section('sbank-coarse'):
+if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     logging.info("Setting up the (optional) first round of sbank jobs.")
     sbank_out_file_bbh = wf.File(sbank_exe.ifo_list, sbank_exe.name,
                                  workflow.analysis_time, extension='.h5',
@@ -278,7 +279,7 @@ sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
                          tags=['sbank_final'], use_tmp_subdirs=False)
 
 seed_files = [geom_out_file.name]
-if workflow.cp.has_section('sbank-coarse'):
+if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     seed_files = [geom_out_file.name, sbank_out_file_bbh.name]
 
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
@@ -302,7 +303,7 @@ wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
 workflow._adag.addJob(dax_job)
 dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
 workflow._adag.addDependency(dep)
-if workflow.cp.has_section('sbank-coarse'):
+if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     dep = dax.Dependency(parent=sbank_bbh_dax_job, child=dax_job)
     workflow._adag.addDependency(dep)
 dep = dax.Dependency(parent=geom_dax_job, child=dax_job)
