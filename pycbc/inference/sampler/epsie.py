@@ -29,7 +29,7 @@ from emcee.ptsampler import default_beta_ladder
 
 from pycbc.pool import choose_pool
 
-from .base import BaseSampler
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
                         get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,
@@ -176,24 +176,6 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # now clear the sampler
         self._sampler.clear()
 
-    def set_initial_conditions(self, initial_distribution=None,
-                               samples_file=None):
-        """Sets the initial starting point for the MCMC.
-
-        If a starting samples file is provided, will also load the random
-        state from it.
-        """
-        if samples_file is not None:
-            # if a samples file was provided, use it to set the sampler's
-            # state. This includes setting the start position of the sampler to
-            # the last iteration from the file.
-            self.set_state_from_file(samples_file)
-        else:
-            # otherwise, draw samples from the prior to set the start
-            # get the initial samples
-            p0 = self.set_p0(prior=initial_distribution)
-            self._sampler.start_position = p0
-
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file.
         """
@@ -206,6 +188,11 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             self._sampler.set_state_from_checkpoint(fp, path=fp.state_path)
         # set the global numpy random state for pycbc
         numpy.random.set_state(rstate)
+
+    def set_p0(self, samples_file=None, prior=None):
+        p0 = super(EpsieSampler, self).set_p0(samples_file=samples_file,
+                                              prior=prior)
+        self._sampler.start_position = p0
 
     @property
     def pos(self):
@@ -258,13 +245,14 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                 del fp[fp.state_path]
             except KeyError:
                 pass
-            #self._sampler.checkpoint(fp, path=fp.state_path)
+            self._sampler.checkpoint(fp, path=fp.state_path)
 
     def finalize(self):
         pass
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
         """Loads the sampler from the given config file.
 
         The following options are retrieved in the ``[sampler]`` section:
@@ -335,6 +323,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             Config file object to parse.
         model : pycbc.inference.model.BaseModel instance
             The model to use.
+        output_file : str, optional
+            The name of the output file to checkpoint and write results to.
         nprocesses : int, optional
             The number of parallel processes to use. Default is 1.
         use_mpi : bool, optional
@@ -381,12 +371,18 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         obj.set_burn_in_from_config(cp)
         # set prethin options
         obj.set_thin_interval_from_config(cp, section)
+        # Set up the output file
+        setup_output(obj, output_file)
+        if not obj.new_checkpoint:
+            obj.resume_from_checkpoint()
+        else:
+            obj.set_start_from_config(cp)
         return obj
 
 
 class _EpsieCallModel(object):
     """Model wrapper for epsie.
-    
+
     Allows model to be called like a function. Returns the loglikelihood
     function, logprior, and the model's default stats.
     """
