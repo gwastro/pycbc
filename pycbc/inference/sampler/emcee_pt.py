@@ -196,7 +196,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
         # get the temps/betas
-        betas, ntemps = cls.betas_from_config(cp, section)
+        ntemps, betas = cls.betas_from_config(cp, section)
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
