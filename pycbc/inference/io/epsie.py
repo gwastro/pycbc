@@ -34,11 +34,6 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         """The betas that were used."""
         return self[self.sampler_group]['betas'][()]
 
-    @property
-    def state_path(self):
-        """The path to write the sampler state to."""
-        return '/'.join([self.sampler_group, 'checkpoint'])
-
     def write_sampler_metadata(self, sampler):
         """Adds writing betas to MultiTemperedMCMCIO.
         """
