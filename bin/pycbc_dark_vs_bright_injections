@@ -115,7 +115,7 @@ for i, inj in enumerate(injections.table):
         incl = inj.inclination
         # 1 = NS, 2 = BH
         if m1 < m2:
-            NSmass = m1
+            ns_mass = m1
             bh_spin_magnitude = numpy.sqrt(s2x*s2x + s2y*s2y + s2z*s2z)
             if opts.frame_axis_view:
                 # Scalar product between spin and orbital angular momentum 
@@ -127,7 +127,7 @@ for i, inj in enumerate(injections.table):
             bh_spin_inclination = numpy.arccos(bh_spin_para/bh_spin_magnitude)
         # 2 = NS, 1 = BH
         else:
-            NSmass = m2
+            ns_mass = m2
             bh_spin_magnitude = numpy.sqrt(s1x*s1x + s1y*s1y + s1z*s1z)
             if opts.frame_axis_view:
                 # Scalar product between spin and orbital angular momentum 
@@ -137,9 +137,11 @@ for i, inj in enumerate(injections.table):
                 # The x, y, z spin components are wrt the orbital angular momentum
                 bh_spin_para = s1z
             bh_spin_inclination = numpy.arccos(bh_spin_para/bh_spin_magnitude)
-        # remnant_mass is the remnant disk mass - the threshold set by the user to discriminate dim and bright
-        remnant_mass = pycbc.tmpltbank.em_progenitors.remnant_mass(eta, NSmass, ns_sequence, bh_spin_magnitude, bh_spin_inclination, opts.remnant_mass_threshold)
-        if remnant_mass > 0.:
+        # remnant_mass is the remnant disk mass, it is compared to the 
+        # threshold set by the user to discriminate dim and bright
+        remnant_mass = pycbc.tmpltbank.em_progenitors.remnant_mass( \
+            eta, ns_mass, ns_sequence, bh_spin_magnitude, bh_spin_inclination)
+        if remnant_mass > opts.remnant_mass_threshold:
             out_sim_inspiral_bright.append(inj)
         else:
             out_sim_inspiral_dim.append(inj)
