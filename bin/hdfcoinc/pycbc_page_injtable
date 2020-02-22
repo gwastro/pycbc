@@ -1,5 +1,5 @@
-#!/usr/bin/env python	
-""" Make a table of found injection information	
+#!/usr/bin/env python
+""" Make a table of found injection information
 """
 import argparse, h5py, numpy, pycbc.results, pycbc.detector, sys
 from pycbc.types import MultiDetOptionAction
@@ -38,7 +38,7 @@ else:
         found_formats =  ['##.##', '##.##', '##', '##']
 
     else:
-        detectors = ['L1','H1','V1','K1','I1']
+        detectors = f.attrs['ifos'].split(' ')
         keys = f['found_after_vetoes'].keys()
         detectors_used = []
         found = f['found_after_vetoes']
