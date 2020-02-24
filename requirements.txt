@@ -27,9 +27,7 @@ python-ligo-lw
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
 dynesty
-randomgen<1.17; python_version < '3.0'
-randomgen>=1.17; python_version >= '3.0'
-epsie
+epsie>=0.3
 
 # For LDG service access
 dqsegdb
