@@ -333,7 +333,7 @@ class MultinestSampler(BaseSampler):
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
 
-    def setup_output(self, output_file, force=False):
+    def setup_output(self, output_file):
         """Sets up the sampler's checkpoint and output files.
 
         The checkpoint file has the same name as the output file, but with
@@ -353,7 +353,7 @@ class MultinestSampler(BaseSampler):
             If the output file already exists, overwrite it.
         """
         if self.is_main_process:
-            setup_output(self, output_file, force=force)
+            setup_output(self, output_file)
         else:
             # child processes just store filenames
             checkpoint_file = output_file + '.checkpoint'
@@ -402,5 +402,5 @@ class MultinestSampler(BaseSampler):
                            v is not None}
         obj = cls(model, nlivepoints, constraints=constraints,
                   **optional_kwargs)
-        obj.setup_output(obj, output_file)
+        obj.setup_output(output_file)
         return obj

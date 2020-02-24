@@ -155,15 +155,12 @@ class BaseSampler(object):
 #
 
 
-def setup_output(sampler, output_file, force=False):
+def setup_output(sampler, output_file):
     r"""Sets up the sampler's checkpoint and output files.
 
     The checkpoint file has the same name as the output file, but with
     ``.checkpoint`` appended to the name. A backup file will also be
     created.
-
-    If the output file already exists, an ``OSError`` will be raised.
-    This can be overridden by setting ``force`` to ``True``.
 
     Parameters
     ----------
@@ -171,8 +168,6 @@ def setup_output(sampler, output_file, force=False):
         Sampler
     output_file : str
         Name of the output file.
-    force : bool, optional
-        If the output file already exists, overwrite it.
     """
     # check for backup file(s)
     checkpoint_file = output_file + '.checkpoint'
@@ -203,9 +198,6 @@ def setup_output(sampler, output_file, force=False):
 
 def create_new_output_file(sampler, filename, **kwargs):
     r"""Creates a new output file.
-
-    If the output file already exists, an ``OSError`` will be raised. This can
-    be overridden by setting ``force`` to ``True``.
 
     Parameters
     ----------
