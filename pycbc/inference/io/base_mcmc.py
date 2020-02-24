@@ -62,6 +62,33 @@ class MCMCMetadataIO(object):
         """Returns the number of walkers used by the sampler."""
         return self[self.sampler_group].attrs['nwalkers']
 
+    def _thin_data(self, group, params, thin_interval):
+        """Thins data on disk by the given interval.
+
+        This makes no effort to record the thinning interval that is applied.
+
+        Parameters
+        ----------
+        group : str
+            The group where the datasets to thin live.
+        params : list
+            The list of dataset names to thin.
+        thin_interval : int
+            The interval to thin the samples on disk by.
+        """
+        samples = self.read_raw_samples(params, thin_start=0,
+                                        thin_interval=thin_interval,
+                                        thin_end=None, flatten=False,
+                                        group=group)
+        # now resize and write the data back to disk
+        fpgroup = self[group]
+        for param in params:
+            data = samples[param]
+            # resize the arrays on disk
+            fpgroup[param].resize(data.shape)
+            # and write
+            fpgroup[param][:] = data
+
     def thin(self, thin_interval):
         """Thins the samples on disk to the given thinning interval.
 
@@ -79,20 +106,9 @@ class MCMCMetadataIO(object):
                              "current thinned_by ({})"
                              .format(thin_interval, self.thinned_by))
         new_interval = int(new_interval)
-        # read thinned samples into memory
-        params = self[self.samples_group].keys()
-        samples = self.read_raw_samples(params, thin_start=0,
-                                        thin_interval=new_interval,
-                                        thin_end=None,
-                                        flatten=False)
-        # now resize and write the data back to disk
-        group = self[self.samples_group]
-        for param in params:
-            data = samples[param]
-            # resize the arrays on disk
-            group[param].resize(data.shape)
-            # and write
-            group[param][:] = data
+        # now thin the data on disk
+        params = list(self[self.samples_group].keys())
+        self._thin_data(self.samples_group, params, new_interval)
         # store the interval that samples were thinned by
         self.thinned_by = thin_interval
         # If a default thin interval and thin start exist, reduce them by the
@@ -125,20 +141,28 @@ class MCMCMetadataIO(object):
         """
         self.attrs['thinned_by'] = int(thinned_by)
 
-    def last_iteration(self, parameter=None):
+    def last_iteration(self, parameter=None, group=None):
         """Returns the iteration of the last sample of the given parameter.
 
-        If parameter is ``None``, will just use the first parameter in the
-        samples group.
+        Parameters
+        ----------
+        parameter : str, optional
+            The name of the parameter to get the last iteration for. If
+            None provided, will just use the first parameter in ``group``.
+        group : str, optional
+            The name of the group to get the last iteration from. Default is
+            the ``samples_group``.
         """
+        if group is None:
+            group = self.samples_group
         if parameter is None:
             try:
-                parameter = list(self[self.samples_group].keys())[0]
+                parameter = list(self[group].keys())[0]
             except (IndexError, KeyError):
                 # nothing has been written yet, just return 0
                 return 0
         try:
-            lastiter = self[self.samples_group][parameter].shape[-1]
+            lastiter = self[group][parameter].shape[-1]
         except KeyError:
             # no samples have been written, just return 0
             lastiter = 0
@@ -299,7 +323,8 @@ class SingleTempMCMCIO(object):
     only a single temperature.
     """
 
-    def write_samples(self, samples, parameters=None, last_iteration=None):
+    def write_samples(self, samples, parameters=None, last_iteration=None,
+                      samples_group=None, thin_by=None):
         """Writes samples to the given file.
 
         Results are written to ``samples_group/{vararg}``, where ``{vararg}``
@@ -329,17 +354,28 @@ class SingleTempMCMCIO(object):
             thinning the samples such that the interval between the last sample
             currently on disk and the first new sample is the same as all of
             the other samples.
+        samples_group : str, optional
+            Which group to write the samples to. Default (None) will result
+            in writing to "samples".
+        thin_by : int, optional
+            Override the ``thinned_by`` attribute in the file with the given
+            value. **Only set this if you are using this function to write
+            something other than inference samples!**
         """
         nwalkers, nsamples = list(samples.values())[0].shape
         assert all(p.shape == (nwalkers, nsamples)
                    for p in samples.values()), (
                "all samples must have the same shape")
-        group = self.samples_group + '/{name}'
+        if samples_group is None:
+            samples_group = self.samples_group
         if parameters is None:
             parameters = samples.keys()
         # thin the samples
-        samples = thin_samples_for_writing(self, samples, parameters, last_iteration)
+        samples = thin_samples_for_writing(self, samples, parameters,
+                                           last_iteration, samples_group,
+                                           thin_by=thin_by)
         # loop over number of dimensions
+        group = samples_group + '/{name}'
         for param in parameters:
             dataset_name = group.format(name=param)
             data = samples[param]
@@ -366,14 +402,14 @@ class SingleTempMCMCIO(object):
 
     def read_raw_samples(self, fields,
                          thin_start=None, thin_interval=None, thin_end=None,
-                         iteration=None, walkers=None, flatten=True):
+                         iteration=None, walkers=None, flatten=True,
+                         group=None):
         """Base function for reading samples.
 
         Parameters
         -----------
         fields : list
-            The list of field names to retrieve. Must be names of datasets in
-            the ``samples_group``.
+            The list of field names to retrieve.
         thin_start : int, optional
             Start reading from the given iteration. Default is to start from
             the first iteration.
@@ -391,6 +427,9 @@ class SingleTempMCMCIO(object):
             Flatten the samples to 1D arrays before returning. Otherwise, the
             returned arrays will have shape (requested walkers x
             requested iteration(s)). Default is True.
+        group : str, optional
+            The name of the group to read sample datasets from. Default is
+            the file's ``samples_group``.
 
         Returns
         -------
@@ -418,7 +457,9 @@ class SingleTempMCMCIO(object):
             # we'll just get the number of iterations from the returned shape
             niterations = None
         # load
-        group = self.samples_group + '/{name}'
+        if group is None:
+            group = self.samples_group
+        group = group + '/{name}'
         arrays = {}
         for name in fields:
             arr = self[group.format(name=name)][widx, get_index]
@@ -433,7 +474,8 @@ class SingleTempMCMCIO(object):
         return arrays
 
 
-def thin_samples_for_writing(fp, samples, parameters, last_iteration):
+def thin_samples_for_writing(fp, samples, parameters, last_iteration,
+                             group, thin_by=None):
     """Thins samples for writing to disk.
 
     The thinning interval to use is determined by the given file handler's
@@ -455,17 +497,26 @@ def thin_samples_for_writing(fp, samples, parameters, last_iteration):
         needed to figure out where to start the thinning in ``samples``, such
         that the interval between the last sample on disk and the first new
         sample is the same as all of the other samples.
+    group : str
+        The name of the group that the samples will be written to. This is
+        needed to determine what the last iteration saved on disk was.
+    thin_by : int, optional
+        Override the ``thinned_by`` attribute in the file for with the given
+        value. **Only do this if you are thinning something other than
+        inference samples!**
 
     Returns
     -------
     dict :
         Dictionary of the thinned samples to write.
     """
-    if fp.thinned_by > 1:
+    if thin_by is None:
+        thin_by = fp.thinned_by
+    if thin_by > 1:
         if last_iteration is None:
             raise ValueError("File's thinned_by attribute is > 1 ({}), "
                              "but last_iteration not provided."
-                             .format(fp.thinned_by))
+                             .format(thin_by))
         thinned_samples = {}
         for param in parameters:
             data = samples[param]
@@ -477,9 +528,9 @@ def thin_samples_for_writing(fp, samples, parameters, last_iteration):
             # sample in samples. Subtracting the latter from the former - 1
             # (-1 to convert from iteration to index) therefore gives the index
             # in the samples data to start using samples.
-            thin_start = fp.last_iteration(param) + fp.thinned_by \
+            thin_start = fp.last_iteration(param, group) + thin_by \
                 - (last_iteration - nsamples) - 1
-            thinned_samples[param] = data[..., thin_start::fp.thinned_by]
+            thinned_samples[param] = data[..., thin_start::thin_by]
     else:
         thinned_samples = samples
     return thinned_samples

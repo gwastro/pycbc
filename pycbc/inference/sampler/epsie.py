@@ -68,6 +68,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         Default is :py:class:`epsie.proposals.Normal`.
     default_proposal_args : dict, optional
         Dictionary of arguments to pass to the default proposal.
+    swap_interval : int, optional
+        The number of iterations between temperature swaps. Default is 1.
     seed : int, optional
         Seed for epsie's random number generator. If None provided, will create
         one.
@@ -93,6 +95,7 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     def __init__(self, model, nchains, ntemps=None, betas=None,
                  proposals=None, default_proposal=None,
                  default_proposal_args=None, seed=None,
+                 swap_interval=1,
                  checkpoint_interval=None, checkpoint_signal=None,
                  loglikelihood_function=None,
                  nprocesses=1, use_mpi=False):
@@ -114,6 +117,7 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # initialize the sampler
         self._sampler = ParallelTemperedSampler(
             model.sampling_params, model_call, nchains, betas=betas,
+            swap_interval=swap_interval,
             proposals=proposals, default_proposal=default_proposal,
             default_proposal_args=default_proposal_args,
             seed=seed, pool=pool) 
@@ -139,6 +143,10 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     @property
     def betas(self):
         return self._sampler.betas
+
+    @property
+    def swap_interval(self):
+        return self._sampler.swap_interval
 
     @property
     def samples(self):
@@ -233,9 +241,10 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                                       last_iteration=self.niterations)
             # write temperature data
             if self.ntemps > 1:
-                temp_data = self._sampler.temperature_swaps
-                temp_data = {p: temp_data[p] for p in temp_data.dtype.names}
-                fp.write_temperature_data(temp_data,
+                temp_ar = self._sampler.temperature_acceptance
+                temp_swaps = self._sampler.temperature_swaps
+                fp.write_temperature_data(temp_swaps, temp_ar,
+                                          self.swap_interval,
                                           last_iteration=self.niterations)
             # write numpy's global state (for the distributions)
             numpy_rstate_group = '/'.join([fp.sampler_group,
@@ -294,6 +303,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         * ``logl-function`` :
             The attribute of the model to use for the loglikelihood. If
             not provided, will default to ``loglikelihood``.
+        * ``swap-interval`` :
+            The number of iterations between temperature swaps. Default is 1.
 
         Jump proposals must be provided for every sampling
         parameter. These are retrieved from subsections
@@ -339,6 +350,12 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         nchains = int(cp.get(section, "nchains"))
         seed = get_optional_arg_from_config(cp, section, 'seed', dtype=int)
         ntemps, betas = cls.betas_from_config(cp, section)
+        # get the swap interval
+        swap_interval = get_optional_arg_from_config(cp, section,
+                                                     'swap-interval',
+                                                     dtype=int)
+        if swap_interval is None:
+            swap_interval = 1
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
@@ -356,8 +373,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                              "{}".format(', '.join(missing)))
         # initialize
         obj = cls(model, nchains,
-                  ntemps=ntemps, betas=betas,
-                  proposals=proposals, seed=seed,
+                  ntemps=ntemps, betas=betas, proposals=proposals,
+                  swap_interval=swap_interval, seed=seed,
                   checkpoint_interval=checkpoint_interval,
                   checkpoint_signal=checkpoint_signal,
                   loglikelihood_function=logl,
