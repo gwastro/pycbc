@@ -340,17 +340,12 @@ class MultinestSampler(BaseSampler):
         ``.checkpoint`` appended to the name. A backup file will also be
         created.
 
-        If the output file already exists, an ``OSError`` will be raised.
-        This can be overridden by setting ``force`` to ``True``.
-
         Parameters
         ----------
         sampler : sampler instance
             Sampler
         output_file : str
             Name of the output file.
-        force : bool, optional
-            If the output file already exists, overwrite it.
         """
         if self.is_main_process:
             setup_output(self, output_file)
