@@ -113,6 +113,12 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
             Optional. Sets the ``target_rate``. If not provided, will use
             the class's default.
 
+        .. note::
+           The min and max parameter bounds are only used for setting the width
+           of the covariance of the proposal; they are not used as bounds on
+           the proposal itself. In other words, it is possible to get proposals
+           outside of the given min and max values.
+
         Example::
 
             [jump_proposal-mchirp+q]
@@ -161,8 +167,8 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
             if maxbound is None:
                 raise ValueError("Must provide a maximum bound for {p}."
                                  "Syntax is max-{p} = val".format(p=param))
-            bnds = {param: (float(minbound), float(maxbound))}
-            prior_widths[param] = boundaries.Bounds(**bnds)
+            prior_widths[param] = boundaries.Bounds(float(minbound),
+                                                    float(maxbound))
         # optional args
         optional_args = {}
         adaptation_decay = opts.pop('adaptation-decay', None)
