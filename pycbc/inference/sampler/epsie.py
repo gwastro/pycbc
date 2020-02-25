@@ -110,6 +110,7 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         if nprocesses > 1:
             # these are used to help paralleize over multiple cores / MPI
             models._global_instance = model_call
+            model_call = models._call_global_model
         pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         if pool is not None:
             pool.count = nprocesses
@@ -396,10 +397,10 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         obj.set_thin_interval_from_config(cp, section)
         # Set up the output file
         setup_output(obj, output_file)
-        if not obj.new_checkpoint:
-            obj.resume_from_checkpoint()
-        else:
+        if obj.new_checkpoint:
             obj.set_start_from_config(cp)
+        else:
+            obj.resume_from_checkpoint()
         return obj
 
 
