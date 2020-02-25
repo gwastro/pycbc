@@ -203,27 +203,6 @@ class DynestySampler(BaseSampler):
             fp.write_logevidence(self._sampler.results.logz[-1:][0],
                                  self._sampler.results.logzerr[-1:][0])
 
-    def setup_output(self, output_file, force=False):
-        """Sets up the sampler's checkpoint and output files.
-
-        The checkpoint file has the same name as the output file, but with
-        ``.checkpoint`` appended to the name. A backup file will also be
-        created.
-
-        If the output file already exists, an ``OSError`` will be raised.
-        This can be overridden by setting ``force`` to ``True``.
-
-        Parameters
-        ----------
-        sampler : sampler instance
-            Sampler
-        output_file : str
-            Name of the output file.
-        force : bool, optional
-            If the output file already exists, overwrite it.
-        """
-        setup_output(self, output_file, force=force)
-
     @property
     def posterior_samples(self):
         """
