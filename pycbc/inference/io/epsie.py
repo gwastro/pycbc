@@ -47,9 +47,10 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         self[self.sampler_group].attrs['swap_interval'] = swap_interval
 
     def write_sampler_metadata(self, sampler):
-        """Adds writing betas to MultiTemperedMCMCIO.
+        """Adds writing seed and betas to MultiTemperedMCMCIO.
         """
         super(EpsieFile, self).write_sampler_metadata(sampler)
+        self[self.sampler_group].attrs['seed'] = sampler.seed
         try:
             self[self.sampler_group]["betas"][:] = sampler.betas
         except KeyError:
