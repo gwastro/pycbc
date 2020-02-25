@@ -30,8 +30,7 @@ from emcee.ptsampler import default_beta_ladder
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
-                        get_optional_arg_from_config)
+from .base_mcmc import (BaseMCMC, get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,
                                MultiTemperedAutocorrSupport)
 from ..burn_in import MultiTemperedMCMCBurnInTests
@@ -120,7 +119,7 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             swap_interval=swap_interval,
             proposals=proposals, default_proposal=default_proposal,
             default_proposal_args=default_proposal_args,
-            seed=seed, pool=pool) 
+            seed=seed, pool=pool)
         # set other parameters
         self._nwalkers = nchains
         self._ntemps = ntemps
@@ -142,10 +141,12 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
     @property
     def betas(self):
+        """The inverse temperatures being used."""
         return self._sampler.betas
 
     @property
     def swap_interval(self):
+        """Number of iterations between temperature swaps."""
         return self._sampler.swap_interval
 
     @property

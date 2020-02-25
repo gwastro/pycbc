@@ -18,15 +18,17 @@
 
 from __future__ import (absolute_import, division)
 
+from pickle import UnpicklingError
 from epsie import load_state
 
 from .base_sampler import BaseSamplerFile
 from .base_multitemper import (MultiTemperedMCMCIO, MultiTemperedMetadataIO)
 
+
 class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
                 BaseSamplerFile):
     """Class to handle IO for Epsie's parallel-tempered sampler."""
-    
+
     name = 'epsie_file'
 
     @property
@@ -75,7 +77,7 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
 
     def write_acceptance_ratio(self, acceptance_ratio, last_iteration=None):
         """Writes the acceptance ratios to the sampler info group.
-        
+
         Parameters
         ----------
         acceptance_ratio : array
@@ -86,7 +88,6 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         self.write_samples({'acceptance_ratio': acceptance_ratio},
                            last_iteration=last_iteration,
                            samples_group=self.sampler_group)
-
 
     def write_temperature_data(self, swap_index, acceptance_ratio,
                                swap_interval, last_iteration):
@@ -131,6 +132,8 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         if valid:
             try:
                 load_state(self, self.sampler_group)
-            except:
+            except (KeyError, UnpicklingError):
+                # will get this if the state wasn't written, or it was
+                # corrupted for some reason
                 valid = False
         return valid

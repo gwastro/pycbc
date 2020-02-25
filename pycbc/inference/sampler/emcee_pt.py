@@ -23,7 +23,6 @@ from __future__ import absolute_import
 
 import numpy
 import emcee
-import h5py
 import logging
 from pycbc.pool import choose_pool
 

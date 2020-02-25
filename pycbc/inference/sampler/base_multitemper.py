@@ -29,6 +29,7 @@ from __future__ import absolute_import
 from six import string_types
 
 import numpy
+import h5py
 from pycbc.filter import autocorrelation
 
 

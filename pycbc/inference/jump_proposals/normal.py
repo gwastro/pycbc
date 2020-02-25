@@ -143,7 +143,7 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
             "name in specified section must match mine")
         params = tag.split(VARARGS_DELIM)
         # get options
-        readsection = '-'.join(section, tag)
+        readsection = '-'.join([section, tag])
         opts = {opt: cp.get(readsection, opt)
                 for opt in cp.options(readsection) if opt != 'name'}
         adaptation_duration = opts.pop('adaptation-duration', None)
@@ -177,5 +177,5 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
         # check that there are no unrecognized options
         if opts:
             raise ValueError('unrecognized options {} in section {}'
-                             .format(', '.join(opts.keys())), readsection)
-        return cls(params, prior_widths, adaptation_duration, **optional_args) 
+                             .format(', '.join(opts.keys()), readsection))
+        return cls(params, prior_widths, adaptation_duration, **optional_args)
