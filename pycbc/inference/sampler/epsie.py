@@ -145,6 +145,14 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         return self._sampler.betas
 
     @property
+    def seed(self):
+        """The seed used for epsie's random bit generator.
+
+        This is not the same as the seed used for the prior distributions.
+        """
+        return self._sampler.seed
+
+    @property
     def swap_interval(self):
         """Number of iterations between temperature swaps."""
         return self._sampler.swap_interval
@@ -411,6 +419,10 @@ class _EpsieCallModel(object):
     def __call__(self, **kwargs):
         """Calls update, then calls the loglikelihood and logprior."""
         self.model.update(**kwargs)
-        logl = getattr(self.model, self.loglikelihood_function)
         logp = self.model.logprior
+        if logp == -numpy.inf:
+            # don't try to call the log likelihood if the prior rules it out
+            logl = numpy.nan
+        else:
+            logl = getattr(self.model, self.loglikelihood_function)
         return logl, logp, self.model.current_stats
