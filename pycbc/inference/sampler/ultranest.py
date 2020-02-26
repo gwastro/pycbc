@@ -30,7 +30,6 @@ packages for parameter estimation.
 from __future__ import absolute_import
 
 import logging
-import numpy
 
 from pycbc.inference.io.ultranest import UltranestFile
 from .base import (BaseSampler, setup_output)
@@ -61,7 +60,7 @@ class UltranestSampler(BaseSampler):
         super(UltranestSampler, self).__init__(model)
     
         import ultranest
-        log_likelihood_call, prior_call = setup_calls(model)
+        log_likelihood_call, prior_call = setup_calls(model, copy_prior=True)
 
         self._sampler = ultranest.ReactiveNestedSampler(
             list(self.model.variable_params),
@@ -111,6 +110,9 @@ class UltranestSampler(BaseSampler):
         return cls(model, **skeys)
 
     def checkpoint(self):
+        pass
+
+    def resume_from_checkpoint(self):
         pass
 
     def finalize(self):

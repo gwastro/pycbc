@@ -25,6 +25,7 @@
 Common utilities for samplers that rely on transforming between a unit cube
 and the prior space. This is typical of many nested sampling algorithms.
 """
+import numpy
 
 from .. import models
 
@@ -41,7 +42,7 @@ def setup_calls(model, nprocesses=1,
                 loglikelihood_function=None, copy_prior=False):
     """ Configure calls for MPI support
     """
-    model_call = CubeModel(model, loglikelihood_function)
+    model_call = CubeModel(model, loglikelihood_function, copy_prior=copy_prior)
     if nprocesses > 1:
         # these are used to help paralleize over multiple cores / MPI
         models._global_instance = model_call
@@ -52,6 +53,7 @@ def setup_calls(model, nprocesses=1,
         log_likelihood_call = model_call.log_likelihood
 
     return log_likelihood_call, prior_call
+
 
 class CubeModel(object):
     """
