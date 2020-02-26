@@ -25,6 +25,7 @@
 """
 from .base_nested_sampler import BaseNestedSamplerFile
 
+
 class UltranestFile(BaseNestedSamplerFile):
     """Class to handle file IO for the ``dynesty`` sampler."""
 

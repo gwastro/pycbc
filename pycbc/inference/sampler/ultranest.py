@@ -32,10 +32,8 @@ from __future__ import absolute_import
 import logging
 import numpy
 
-from pycbc.distributions import read_constraints_from_config
-from .base import (BaseSampler, setup_output)
-from .base_mcmc import get_optional_arg_from_config
 from pycbc.inference.io.ultranest import UltranestFile
+from .base import (BaseSampler, setup_output)
 from .. import models
 
 
@@ -60,8 +58,9 @@ class UltranestSampler(BaseSampler):
     _io = UltranestFile
 
     def __init__(self, model, **kwargs):
+        super(UltranestSampler, self).__init__(model)
+    
         import ultranest
-        self.model = model
         model_call = UltranestModel(model)
 
         nprocesses = 1
@@ -75,14 +74,14 @@ class UltranestSampler(BaseSampler):
             log_likelihood_call = model_call.log_likelihood
 
         self._sampler = ultranest.ReactiveNestedSampler(
-                                              list(self.model.variable_params),
-                                              log_likelihood_call,
-                                              prior_call)
+            list(self.model.variable_params),
+            log_likelihood_call,
+            prior_call)
 
         self.nlive = 0
         self.ndim = len(self.model.variable_params)
-        self.results = None
-        self.kwargs = kwargs # Keywords for the run method of ultranest
+        self.result = None
+        self.kwargs = kwargs  # Keywords for the run method of ultranest
 
     def run(self):
         self.result = self._sampler.run(**self.kwargs)
@@ -93,7 +92,7 @@ class UltranestSampler(BaseSampler):
 
     @property
     def niterations(self):
-        return sel.result['niter']
+        return self.result['niter']
 
     @classmethod
     def from_config(cls, cp, model, **kwds):
@@ -114,8 +113,7 @@ class UltranestSampler(BaseSampler):
                 'max_ncalls': int,
                 'max_num_improvement_loops': int,
                 'min_num_live_points': int,
-                'cluster_num_live_points:': int,
-               }
+                'cluster_num_live_points:': int}
         for opt_name in opts:
             if cp.has_option('sampler', opt_name):
                 value = cp.get('sampler', opt_name)
@@ -140,14 +138,6 @@ class UltranestSampler(BaseSampler):
                         zip(self.model.variable_params, range(self.ndim))}
         return samples_dict
 
-    def set_initial_conditions(self, initial_distribution=None,
-                               samples_file=None):
-        """Sets up the starting point for the sampler.
-
-        Should also set the sampler's random state.
-        """
-        pass
-
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state
         to the given file.
@@ -161,12 +151,10 @@ class UltranestSampler(BaseSampler):
         with self.io(filename, 'a') as fp:
             # write samples
             fp.write_samples(self.samples, self.model.variable_params)
-            # write stats
-            #fp.write_samples(self.model_stats)
             # write log evidence
             fp.write_logevidence(self.logz, self.logz_err)
 
-    def setup_output(self, output_file, force=False):
+    def setup_output(self, output_file):
         """Sets up the sampler's checkpoint and output files.
 
         The checkpoint file has the same name as the output file, but with
@@ -185,7 +173,7 @@ class UltranestSampler(BaseSampler):
         force : bool, optional
             If the output file already exists, overwrite it.
         """
-        setup_output(self, output_file, force=force)
+        setup_output(self, output_file)
 
     @property
     def logz(self):
@@ -204,6 +192,7 @@ class UltranestSampler(BaseSampler):
         """
 
         return self.result['logzerr']
+
 
 def _call_global_loglikelihood(cube):
     return models._global_instance.log_likelihood(cube)
