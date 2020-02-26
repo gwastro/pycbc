@@ -29,6 +29,7 @@ from __future__ import absolute_import
 from six import string_types
 
 import numpy
+import h5py
 from pycbc.filter import autocorrelation
 
 
@@ -41,6 +42,58 @@ class MultiTemperedSupport(object):
     def ntemps(self):
         """The number of temeratures that are set."""
         return self._ntemps
+
+    @staticmethod
+    def betas_from_config(cp, section):
+        """Loads number of temperatures or betas from a config file.
+
+        This looks in the given section for:
+
+        * ``ntemps`` :
+            The number of temperatures to use. Either this, or
+            ``inverse-temperatures-file`` must be provided (but not both).
+        * ``inverse-temperatures-file`` :
+            Path to an hdf file containing the inverse temperatures ("betas")
+            to use. The betas will be retrieved from the file's
+            ``.attrs['betas']``. Either this or ``ntemps`` must be provided
+            (but not both).
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser instance
+            Config file object to parse.
+        section : str
+            The name of the section to look in.
+
+        Returns
+        -------
+        ntemps : int or None
+            The number of temperatures to use, if it was provided.
+        betas : array
+            The array of betas to use, if a inverse-temperatures-file was
+            provided.
+        """
+        if cp.has_option(section, "ntemps") and \
+                cp.has_option(section, "inverse-temperatures-file"):
+            raise ValueError("Must specify either ntemps or "
+                             "inverse-temperatures-file, not both.")
+        if cp.has_option(section, "inverse-temperatures-file"):
+            # get the path of the file containing inverse temperatures values.
+            inverse_temperatures_file = cp.get(section,
+                                               "inverse-temperatures-file")
+            with h5py.File(inverse_temperatures_file, "r") as fp:
+                try:
+                    betas = numpy.array(fp.attrs['betas'])
+                    # betas must be in decending order
+                    betas = numpy.sort(betas)[::-1]
+                    ntemps = betas.shape[0]
+                except KeyError:
+                    raise AttributeError("No attribute called betas")
+        else:
+            # get the number of temperatures
+            betas = None
+            ntemps = int(cp.get(section, "ntemps"))
+        return ntemps, betas
 
 
 class MultiTemperedAutocorrSupport(object):

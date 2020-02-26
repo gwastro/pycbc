@@ -33,6 +33,7 @@ from pycbc import waveform as _waveform
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
+from .epsie import EpsieFile
 from .cpnest import CPNestFile
 from .multinest import MultinestFile
 from .dynesty import DynestyFile
@@ -42,6 +43,7 @@ from .txt import InferenceTXTFile
 filetypes = {
     EmceeFile.name: EmceeFile,
     EmceePTFile.name: EmceePTFile,
+    EpsieFile.name: EpsieFile,
     CPNestFile.name: CPNestFile,
     MultinestFile.name: MultinestFile,
     DynestyFile.name: DynestyFile,
@@ -220,28 +222,22 @@ def validate_checkpoint_files(checkpoint_file, backup_file):
         backup_valid = True
     except (ValueError, KeyError, IOError):
         backup_valid = False
-    # check if there are any samples in the file; if not, we'll just start from
-    # scratch
+    # since we can open the file, run self diagnostics
     if checkpoint_valid:
         with loadfile(checkpoint_file, 'r') as fp:
-            try:
-                group = '{}/{}'.format(fp.samples_group, fp.variable_params[0])
-                nsamples = fp[group].size
-                checkpoint_valid = nsamples != 0
-            except KeyError:
-                checkpoint_valid = False
-    # check if there are any samples in the backup file
+            checkpoint_valid = fp.validate()
     if backup_valid:
         with loadfile(backup_file, 'r') as fp:
-            try:
-                group = '{}/{}'.format(fp.samples_group, fp.variable_params[0])
-                backup_nsamples = fp[group].size
-                backup_valid = backup_nsamples != 0
-            except KeyError:
-                backup_valid = False
+            backup_valid = fp.validate()
     # check that the checkpoint and backup have the same number of samples;
     # if not, assume the checkpoint has the correct number
     if checkpoint_valid and backup_valid:
+        with loadfile(checkpoint_file, 'r') as fp:
+            group = list(fp[fp.samples_group].keys())[0]
+            nsamples = fp[fp.samples_group][group].size
+        with loadfile(backup_file, 'r') as fp:
+            group = list(fp[fp.samples_group].keys())[0]
+            backup_nsamples = fp[fp.samples_group][group].size
         backup_valid = nsamples == backup_nsamples
     # decide what to do based on the files' statuses
     if checkpoint_valid and not backup_valid:
