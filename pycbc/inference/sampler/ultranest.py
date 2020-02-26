@@ -58,7 +58,7 @@ class UltranestSampler(BaseSampler):
 
     def __init__(self, model, **kwargs):
         super(UltranestSampler, self).__init__(model)
-    
+
         import ultranest
         log_likelihood_call, prior_call = setup_calls(model, copy_prior=True)
 
