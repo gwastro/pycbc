@@ -34,7 +34,7 @@ from .base_mcmc import (BaseMCMC, get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,
                                MultiTemperedAutocorrSupport)
 from ..burn_in import MultiTemperedMCMCBurnInTests
-from ..jump_proposals import epsie_proposals_from_config
+from ..jump import epsie_proposals_from_config
 from ..io import EpsieFile
 from .. import models
 
@@ -321,7 +321,7 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         ``[jump_proposal-{params}]``, where params is a
         :py:const:`pycbc.VARARGS_DELIM` separated list of parameters the
         proposal should be used for. See
-        :py:func:`inference.jump_proposals.epsie_proposals_from_config` for
+        :py:func:`inference.jump.epsie_proposals_from_config` for
         details.
 
         .. note::
