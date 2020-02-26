@@ -34,7 +34,7 @@ import numpy
 
 from pycbc.inference.io.ultranest import UltranestFile
 from .base import (BaseSampler, setup_output)
-from .. import models
+from .base_cube import setup_calls
 
 
 #
@@ -61,17 +61,7 @@ class UltranestSampler(BaseSampler):
         super(UltranestSampler, self).__init__(model)
     
         import ultranest
-        model_call = UltranestModel(model)
-
-        nprocesses = 1
-        if nprocesses > 1:
-            # these are used to help paralleize over multiple cores / MPI
-            models._global_instance = model_call
-            log_likelihood_call = _call_global_loglikelihood
-            prior_call = _call_global_logprior
-        else:
-            prior_call = model_call.prior_transform
-            log_likelihood_call = model_call.log_likelihood
+        log_likelihood_call, prior_call = setup_calls(model)
 
         self._sampler = ultranest.ReactiveNestedSampler(
             list(self.model.variable_params),
@@ -181,7 +171,6 @@ class UltranestSampler(BaseSampler):
         return bayesian evidence estimated by
         dynesty sampler
         """
-
         return self.result['logz']
 
     @property
@@ -190,56 +179,4 @@ class UltranestSampler(BaseSampler):
         return error in bayesian evidence estimated by
         dynesty sampler
         """
-
         return self.result['logzerr']
-
-
-def _call_global_loglikelihood(cube):
-    return models._global_instance.log_likelihood(cube)
-
-
-def _call_global_logprior(cube):
-    return models._global_instance.prior_transform(cube)
-
-
-class UltranestModel(object):
-    """
-    Class for making PyCBC Inference 'model class'
-    Parameters
-    ----------
-    model : inference.BaseModel instance
-             A model instance from pycbc.
-    """
-
-    def __init__(self, model, loglikelihood_function=None):
-        if model.sampling_transforms is not None:
-            raise ValueError("Ultranest does not support sampling transforms")
-        self.model = model
-        if loglikelihood_function is None:
-            loglikelihood_function = 'loglikelihood'
-        self.loglikelihood_function = loglikelihood_function
-
-    def log_likelihood(self, cube):
-        """
-        returns log likelihood function
-        """
-        params = {p: v for p, v in zip(self.model.sampling_params, cube)}
-        self.model.update(**params)
-        if self.model.logprior == -numpy.inf:
-            return -numpy.inf
-        return getattr(self.model, self.loglikelihood_function)
-
-    def prior_transform(self, cube):
-        """
-        prior transform function for ultranest sampler
-        It takes unit cube as input parameter and apply
-        prior transforms
-        """
-        cube = cube.copy()
-        prior_dists = self.model.prior_distribution.distributions
-        dist_dict = {}
-        for dist in prior_dists:
-            dist_dict.update({param: dist for param in dist.params})
-        for i, param in enumerate(self.model.variable_params):
-            cube[i] = dist_dict[param].cdfinv(param, cube[i])
-        return cube
