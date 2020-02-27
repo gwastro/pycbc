@@ -78,7 +78,7 @@ class CubeModel(object):
         """
         returns log likelihood function
         """
-        params = {p: v for p, v in zip(self.model.sampling_params, cube)}
+        params = dict(zip(self.model.sampling_params, cube))
         self.model.update(**params)
         if self.model.logprior == -numpy.inf:
             return -numpy.inf
