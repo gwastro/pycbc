@@ -45,7 +45,7 @@ from .base_cube import setup_calls
 #
 
 class UltranestSampler(BaseSampler):
-    """This class is used to construct an Dynesty sampler from the dynesty
+    """This class is used to construct an Ultranest sampler from the ultranest
     package.
 
     Parameters
