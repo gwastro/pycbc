@@ -27,6 +27,6 @@ from .base_nested_sampler import BaseNestedSamplerFile
 
 
 class UltranestFile(BaseNestedSamplerFile):
-    """Class to handle file IO for the ``dynesty`` sampler."""
+    """Class to handle file IO for the ``ultranest`` sampler."""
 
     name = 'ultranest_file'
