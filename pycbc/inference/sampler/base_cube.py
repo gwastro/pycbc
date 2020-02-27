@@ -42,7 +42,8 @@ def setup_calls(model, nprocesses=1,
                 loglikelihood_function=None, copy_prior=False):
     """ Configure calls for MPI support
     """
-    model_call = CubeModel(model, loglikelihood_function, copy_prior=copy_prior)
+    model_call = CubeModel(model, loglikelihood_function,
+                           copy_prior=copy_prior)
     if nprocesses > 1:
         # these are used to help paralleize over multiple cores / MPI
         models._global_instance = model_call
@@ -56,8 +57,8 @@ def setup_calls(model, nprocesses=1,
 
 
 class CubeModel(object):
-    """
-    Class for making PyCBC Inference 'model class'
+    """ Class for making PyCBC Inference 'model class'
+
     Parameters
     ----------
     model : inference.BaseModel instance

@@ -107,7 +107,9 @@ class UltranestSampler(BaseSampler):
             if cp.has_option('sampler', opt_name):
                 value = cp.get('sampler', opt_name)
                 skeys[opt_name] = opts[opt_name](value)
-        return cls(model, **skeys)
+        inst = cls(model, **skeys)
+        setup_output(inst, output_file)
+        return inst
 
     def checkpoint(self):
         pass
@@ -145,27 +147,6 @@ class UltranestSampler(BaseSampler):
             fp.write_samples(self.samples, self.model.variable_params)
             # write log evidence
             fp.write_logevidence(self.logz, self.logz_err)
-
-    def setup_output(self, output_file):
-        """Sets up the sampler's checkpoint and output files.
-
-        The checkpoint file has the same name as the output file, but with
-        ``.checkpoint`` appended to the name. A backup file will also be
-        created.
-
-        If the output file already exists, an ``OSError`` will be raised.
-        This can be overridden by setting ``force`` to ``True``.
-
-        Parameters
-        ----------
-        sampler : sampler instance
-            Sampler
-        output_file : str
-            Name of the output file.
-        force : bool, optional
-            If the output file already exists, overwrite it.
-        """
-        setup_output(self, output_file)
 
     @property
     def logz(self):
