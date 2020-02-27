@@ -84,7 +84,7 @@ class UltranestSampler(BaseSampler):
         return self.result['niter']
 
     @classmethod
-    def from_config(cls, cp, model, **kwds):
+    def from_config(cls, cp, model, output_file=None, **kwds):
         """
         Loads the sampler from the given config file.
         """
