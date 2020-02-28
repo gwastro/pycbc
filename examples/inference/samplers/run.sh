@@ -1,12 +1,11 @@
 #!/bin/sh
 for f in emcee_stub.ini emcee_pt_stub.ini dynesty_stub.ini ultranest_stub.ini epsie_stub.ini; do
         echo $f
-	pycbc_inference --verbose \
+	pycbc_inference \
         --config-files simp.ini $f \
         --output-file $f.hdf \
         --nprocesses 2 \
         --seed 10 \
-        --verbose \
         --force
 done
 

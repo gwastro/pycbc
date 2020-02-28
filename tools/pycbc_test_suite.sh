@@ -117,6 +117,18 @@ else
 fi
 popd
 
+## Run inference samplers
+pushd examples/inference/samplers
+bash -e run.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+popd
+
 echo -e "\\n>> [`date`] Building documentation"
 
 python setup.py build_gh_pages &> $LOG_FILE
