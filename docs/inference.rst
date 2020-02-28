@@ -110,6 +110,8 @@ sampler to use. The currently available samplers are:
 
 .. include:: _include/samplers-table.rst
 
+See :ref:`example of trying different samplers<inference_example_samplers>`
+
 Configuration options for the sampler should also be specified in the
 ``[sampler]`` section. For example:
 
@@ -479,7 +481,8 @@ Examples
 
 .. toctree::
     :maxdepth: 1
-    
+
+    inference/examples/sampler_platter.rst
     inference/examples/analytic.rst
     inference/examples/bbh.rst
     inference/examples/gw150914.rst
