@@ -20,16 +20,16 @@ sampler try to fit this.
 Each sampler needs nees a slightly different configuration. Below are basic
 configurations which can analyze this simple problem.
 
-===============================================
+===================================================
 `Emcee<https://emcee.readthedocs.io/en/v2.2.1/>`_
-===============================================
+===================================================
 
 .. literalinclude:: ../../../examples/inference/samplers/emcee_stub.ini
    :language: ini
    
-===============================================
+======================================================================
 `Parallel-tempered Emcee<https://emcee.readthedocs.io/en/v2.2.1/>`_
-===============================================
+======================================================================
    
 .. literalinclude:: ../../../examples/inference/samplers/emcee_pt_stub.ini
    :language: ini
@@ -41,9 +41,9 @@ configurations which can analyze this simple problem.
 .. literalinclude:: ../../../examples/inference/samplers/dynesty_stub.ini
    :language: ini
    
-===============================================
+============================================================
 `Ultranest<https://johannesbuchner.github.io/UltraNest/>`_
-===============================================
+============================================================
    
 .. literalinclude:: ../../../examples/inference/samplers/ultranest_stub.ini
    :language: ini
@@ -65,9 +65,9 @@ or an external package (multinest).
 .. literalinclude:: ../../../examples/inference/samplers/cpnest_tub.ini
    :language: ini
    
-===============================================
+=============================================================
 `Multinest<https://johannesbuchner.github.io/PyMultiNest/>`_
-===============================================
+=============================================================
    
 .. literalinclude:: ../../../examples/inference/samplers/multinest_tub.ini
    :language: ini
