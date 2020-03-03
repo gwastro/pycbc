@@ -158,7 +158,11 @@ class DynestySampler(BaseSampler):
         return obj
 
     def checkpoint(self):
-        pass
+        """Checkpoint function for dynesty sampler
+        """
+        for fn in [self.checkpoint_file, self.backup_file]:
+            with self.io(fn, "a") as fp:
+                
 
     def resume_from_checkpoint(self):
         pass
