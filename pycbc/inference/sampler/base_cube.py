@@ -67,7 +67,7 @@ class CubeModel(object):
 
     def __init__(self, model, loglikelihood_function=None, copy_prior=False):
         if model.sampling_transforms is not None:
-            raise ValueError("Ultranest does not support sampling transforms")
+            raise ValueError("Ultranest or dynesty do not support sampling transforms")
         self.model = model
         if loglikelihood_function is None:
             loglikelihood_function = 'loglikelihood'
