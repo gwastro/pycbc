@@ -155,7 +155,7 @@ class BaseSampler(object):
 #
 
 
-def setup_output(sampler, output_file):
+def setup_output(sampler, output_file,check_nsamples=True):
     r"""Sets up the sampler's checkpoint and output files.
 
     The checkpoint file has the same name as the output file, but with
@@ -175,7 +175,8 @@ def setup_output(sampler, output_file):
     # check if we have a good checkpoint and/or backup file
     logging.info("Looking for checkpoint file")
     checkpoint_valid = validate_checkpoint_files(checkpoint_file,
-                                                 backup_file)
+                                                 backup_file,
+                                                 check_nsamples)
     # Create a new file if the checkpoint doesn't exist, or if it is
     # corrupted
     sampler.new_checkpoint = False  # keeps track if this is a new file or not
