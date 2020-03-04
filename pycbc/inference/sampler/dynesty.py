@@ -71,7 +71,8 @@ class DynestySampler(BaseSampler):
     _io = DynestyFile
 
     def __init__(self, model, nlive, dlogz, nprocesses=1,
-                 loglikelihood_function=None, use_mpi=False, **kwargs):
+                 loglikelihood_function=None, use_mpi=False, run_kwds=None,
+                 **kwargs):
         self.model = model
         log_likelihood_call, prior_call = setup_calls(
             model,
@@ -82,19 +83,18 @@ class DynestySampler(BaseSampler):
         if pool is not None:
             pool.size = nprocesses
 
+        self.run_kwds = {} if run_kwds is None else run_kwds
         self.nlive = nlive
-        self.dlogz = dlogz
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
         self.checkpoint_file = None
         self._sampler = dynesty.NestedSampler(log_likelihood_call,
                                               prior_call, self.ndim,
                                               nlive=self.nlive,
-                                              dlogz=self.dlogz,
                                               pool=pool, **kwargs)
 
     def run(self):
-        self._sampler.run_nested()
+        self._sampler.run_nested(**self.run_kwds)
 
     @property
     def io(self):
@@ -120,6 +120,14 @@ class DynestySampler(BaseSampler):
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
 
+        # optional run_nested arguments for dynesty
+        rargs = {'maxiter': int,
+                 'maxcall': int,
+                 'dlogz': float,
+                 'logl_max': float,
+                 'n_effective': int,
+                 }           
+
         # optional arguments for dynesty
         cargs = {'bound': str,
                  'bootstrap': int,
@@ -127,13 +135,18 @@ class DynestySampler(BaseSampler):
                  'update_interval': float,
                  'sample': str}
         extra = {}
+        run_extra = {}
         for karg in cargs:
             if cp.has_option(section, karg):
                 extra[karg] = cargs[karg](cp.get(section, karg))
+        
+        for karg in rargs:
+            if cp.has_option(section, karg):
+                run_extra[karg] = cargs[karg](cp.get(section, karg))
 
         obj = cls(model, nlive=nlive, dlogz=dlogz, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
-                  use_mpi=use_mpi, **extra)
+                  use_mpi=use_mpi, run_kwds=run_extra, **extra)
         setup_output(obj, output_file)
         if not obj.new_checkpoint:
             obj.resume_from_checkpoint()
