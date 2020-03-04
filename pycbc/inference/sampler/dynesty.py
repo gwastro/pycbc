@@ -60,8 +60,6 @@ class DynestySampler(BaseSampler):
         A model from ``pycbc.inference.models``.
     nlive : int
         Number of live points to use in sampler.
-    dlogz: float
-        Tolerance limit to the value of logz (also a convergence criteria)
     pool : function with map, Optional
         A provider of a map function that allows a function call to be run
         over multiple sets of arguments and possibly maps them to
@@ -70,7 +68,7 @@ class DynestySampler(BaseSampler):
     name = "dynesty"
     _io = DynestyFile
 
-    def __init__(self, model, nlive, dlogz, nprocesses=1,
+    def __init__(self, model, nlive, nprocesses=1,
                  loglikelihood_function=None, use_mpi=False, run_kwds=None,
                  **kwargs):
         self.model = model
@@ -116,7 +114,6 @@ class DynestySampler(BaseSampler):
             "name in section [sampler] must match mine")
         # get the number of live points to use
         nlive = int(cp.get(section, "nlive"))
-        dlogz = float(cp.get(section, "dlogz"))
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
 
@@ -126,7 +123,7 @@ class DynestySampler(BaseSampler):
                  'dlogz': float,
                  'logl_max': float,
                  'n_effective': int,
-                 }           
+                 }
 
         # optional arguments for dynesty
         cargs = {'bound': str,
@@ -139,12 +136,12 @@ class DynestySampler(BaseSampler):
         for karg in cargs:
             if cp.has_option(section, karg):
                 extra[karg] = cargs[karg](cp.get(section, karg))
-        
+
         for karg in rargs:
             if cp.has_option(section, karg):
                 run_extra[karg] = cargs[karg](cp.get(section, karg))
 
-        obj = cls(model, nlive=nlive, dlogz=dlogz, nprocesses=nprocesses,
+        obj = cls(model, nlive=nlive, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
                   use_mpi=use_mpi, run_kwds=run_extra, **extra)
         setup_output(obj, output_file)
