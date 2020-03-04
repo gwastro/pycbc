@@ -37,6 +37,7 @@ from ..jump import epsie_proposals_from_config
 from ..io import EpsieFile
 from .. import models
 
+from pycbc.filter import autocorrelation
 
 class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                    BaseMCMC, BaseSampler):
@@ -264,6 +265,82 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
     def finalize(self):
         pass
+
+    @property
+    def effective_nsamples(self):
+        """The effective number of samples post burn-in that the sampler has
+        acquired so far."""
+        try:
+            acls = numpy.array(list(self.acls.values())).max(axis=1)
+        except (AttributeError, TypeError):
+            acls = numpy.full(self.nwalkers, numpy.inf)
+        if self.burn_in is None:
+            burn_in_iter = 0
+        else:
+            burn_in_iter = self.burn_in.burn_in_iteration
+        nsamples_in_file = (self.niterations-burn_in_iter)//self.thin_interval
+        nsamps = 0
+        for ci, acl in enumerate(acls): 
+            nsamps += int(numpy.ceil(nsamples_in_file/acl)) 
+        return nsamps
+
+    @classmethod
+    def compute_acl(cls, filename, start_index=None, end_index=None,
+                    min_nsamples=10):
+        """Computes the autocorrleation length for all model params and
+        temperatures in the given file.
+
+        ACLs are calculated separately for each chain.
+
+        Parameters
+        -----------
+        filename : str
+            Name of a samples file to compute ACLs for.
+        start_index : {None, int}
+            The start index to compute the acl from. If None, will try to use
+            the number of burn-in iterations in the file; otherwise, will start
+            at the first sample.
+        end_index : {None, int}
+            The end index to compute the acl to. If None, will go to the end
+            of the current iteration.
+        min_nsamples : int, optional
+            Require a minimum number of samples to compute an ACL. If the
+            number of samples per walker is less than this, will just set to
+            ``inf``. Default is 10.
+
+        Returns
+        -------
+        dict
+            A dictionary of ntemps x nchains arrays of the ACLs of each
+            parameter.
+        """
+        acls = {}
+        with cls._io(filename, 'r') as fp:
+            tidx = numpy.arange(fp.ntemps)
+            cidx = numpy.arange(fp.nwalkers)
+            for param in fp.variable_params:
+                these_acls = numpy.zeros((fp.ntemps, fp.nwalkers))
+                for tk in tidx:
+                    samples = fp.read_raw_samples(
+                        param, thin_start=start_index, thin_interval=1,
+                        thin_end=end_index, temps=tk, flatten=False)[param]
+                    if numpy.isnan(samples).any():
+                        raise ValueError("nan found in samples for {}, "
+                                         "temp {}, thin_start {}, thin_end {}"
+                                         .format(param, tk, start_index,
+                                                 end_index))
+                    # flatten out the temperature
+                    samples = samples[0, ...]
+                    if samples.shape[-1] < min_nsamples:
+                        these_acls[tk, :] = numpy.inf
+                    else:
+                        for ci in cidx:
+                            acl = autocorrelation.calculate_acl(samples[ci, :])
+                            if acl <= 0:
+                                acl = numpy.inf
+                            these_acls[tk, ci] = acl
+                acls[param] = these_acls
+        return acls
 
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1,
