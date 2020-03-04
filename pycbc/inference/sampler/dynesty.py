@@ -139,7 +139,7 @@ class DynestySampler(BaseSampler):
 
         for karg in rargs:
             if cp.has_option(section, karg):
-                run_extra[karg] = cargs[karg](cp.get(section, karg))
+                run_extra[karg] = rargs[karg](cp.get(section, karg))
 
         obj = cls(model, nlive=nlive, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
