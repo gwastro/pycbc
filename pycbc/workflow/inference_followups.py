@@ -444,30 +444,34 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
     return node.output_files
 
 
-def make_inference_inj_recovery_plot(workflow, inference_files, output_dir,
-                                     parameters=None,
-                                     name="inj_recovery",
-                                     analysis_seg=None, tags=None):
-    """Sets up the recovered versus injected parameter plot in the workflow.
+def make_inference_pp_table(workflow, posterior_files, output_dir,
+                            parameters=None, injection_samples_map=None,
+                            name="pp_table_summary",
+                            analysis_seg=None, tags=None):
+    """Performs a PP, writing results to an html table.
 
     Parameters
     ----------
-    workflow: pycbc.workflow.Workflow
+    workflow : pycbc.workflow.Workflow
         The core workflow instance we are populating
-    inference_files: pycbc.workflow.core.FileList
+    posterior_files : pycbc.workflow.core.FileList
         List of files with posteriors of injections.
-    output_dir: str
+    output_dir : str
         The directory to store result plots and files.
-    parameters : list or str
-        The parameters to plot.
-    name: str, optional
+    parameters : list or str, optional
+        A list or string of parameters to generate the table for. If a string
+        is provided, separate parameters should be space or new-line separated.
+    injection_samples_map : (list of) str, optional
+        Map between injection parameters and parameters in the posterior file.
+        Format is ``INJECTION_PARAM:SAMPLES_PARAM``.
+    name : str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``inj_recovery``.
-    analysis_segs: ligo.segments.Segment, optional
+        the executable. Default is ``table_summary``.
+    analysis_segs : ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
-    tags: list, optional
+    tags : list, optional
         Tags to add to the inference executables.
 
     Returns
@@ -475,18 +479,24 @@ def make_inference_inj_recovery_plot(workflow, inference_files, output_dir,
     pycbc.workflow.FileList
         A list of output files.
     """
-    node = make_inference_plot(workflow, inference_files, output_dir,
+    # we'll use make_inference_plot even though this isn't a plot; the
+    # setup is the same, we just change the file extension
+    node = make_inference_plot(workflow, posterior_files, output_dir,
                                name, analysis_seg=analysis_seg, tags=tags,
+                               output_file_extension='.html',
                                add_to_workflow=False)
+    # add the parameters and inj/samples map
     if parameters is not None:
         node.add_opt("--parameters", _params_for_pegasus(parameters))
-    # now add the node to workflow
+    if injection_samples_map is not None:
+        node.add_opt("--injection-samples-map",
+                     _params_for_pegasus(injection_samples_map))
     workflow += node
     return node.output_files
 
 
-def make_inference_pp_plot(workflow, inference_files, output_dir,
-                           parameters=None,
+def make_inference_pp_plot(workflow, posterior_files, output_dir,
+                           parameters=None, injection_samples_map=None,
                            name="plot_pp",
                            analysis_seg=None, tags=None):
     """Sets up a pp plot in the workflow.
@@ -495,12 +505,15 @@ def make_inference_pp_plot(workflow, inference_files, output_dir,
     ----------
     workflow: pycbc.workflow.Workflow
         The core workflow instance we are populating
-    inference_files: pycbc.workflow.core.FileList
+    posterior_files: pycbc.workflow.core.FileList
         List of files with posteriors of injections.
     output_dir: str
         The directory to store result plots and files.
-    parameters : list or str
+    parameters : list or str, optional
         The parameters to plot.
+    injection_samples_map : (list of) str, optional
+        Map between injection parameters and parameters in the posterior file.
+        Format is ``INJECTION_PARAM:SAMPLES_PARAM``.
     name: str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
@@ -516,10 +529,59 @@ def make_inference_pp_plot(workflow, inference_files, output_dir,
     pycbc.workflow.FileList
         A list of output files.
     """
-    # arguments are the same as inj_recovery, so just call that with the
+    node = make_inference_plot(workflow, posterior_files, output_dir,
+                               name, analysis_seg=analysis_seg, tags=tags,
+                               add_to_workflow=False)
+    # add the parameters and inj/samples map
+    if parameters is not None:
+        node.add_opt("--parameters", _params_for_pegasus(parameters))
+    if injection_samples_map is not None:
+        node.add_opt("--injection-samples-map",
+                     _params_for_pegasus(injection_samples_map))
+    # now add the node to workflow
+    workflow += node
+    return node.output_files
+
+
+def make_inference_inj_recovery_plot(workflow, posterior_files, output_dir,
+                                     parameter, injection_samples_map=None,
+                                     name="inj_recovery",
+                                     analysis_seg=None, tags=None):
+    """Sets up the recovered versus injected parameter plot in the workflow.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    inference_files: pycbc.workflow.core.FileList
+        List of files with posteriors of injections.
+    output_dir: str
+        The directory to store result plots and files.
+    parameter : str
+        The parameter to plot.
+    injection_samples_map : (list of) str, optional
+        Map between injection parameters and parameters in the posterior file.
+        Format is ``INJECTION_PARAM:SAMPLES_PARAM``.
+    name: str, optional
+        The name in the [executables] section of the configuration file
+        to use, and the section to read for additional arguments to pass to
+        the executable. Default is ``inj_recovery``.
+    analysis_segs: ligo.segments.Segment, optional
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: list, optional
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of output files.
+    """
+    # arguments are the same as plot_pp, so just call that with the
     # different executable name
-    return make_inference_inj_recovery_plot(
-        workflow, inference_files, output_dir, parameters=parameters,
+    return make_inference_inference_pp_plot(
+        workflow, posterior_files, output_dir, parameters=parameter,
+        injection_samples_map=injection_samples_map,
         name=name, analysis_seg=analysis_seg, tags=tags)
 
 

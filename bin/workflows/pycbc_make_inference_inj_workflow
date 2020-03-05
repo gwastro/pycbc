@@ -170,12 +170,14 @@ diagnostics = inffu.get_diagnostic_plots(workflow)
 # figure out if we're creating PP plots
 do_pp_test = workflow.cp.has_option('executables', 'plot_pp')
 if do_pp_test:
-    # get the parameters to do the test; if none provide, we'll default to
-    # the posterior parameters
-    if workflow.cp.has_option('workflow-pp_test', 'params'):
-        pp_params = shlex.split(workflow.cp.get('workflow-pp_test', 'params'))
+    # get the parameters to do the test
+    pp_params = shlex.split(workflow.cp.get('workflow-pp_test', 'pp-params'))
+    # see if there is an injection map provided
+    if workflow.cp.has_option('workflow-pp_test', 'injection-samples-map'):
+        inj_samples_map = workflow.cp.get('workflow-pp_test',
+                                          'injection-samples-map')
     else:
-        pp_params = inffu.get_posterior_params(workflow.cp)
+        inj_samples_map = None
     pp_section = 'p-p_test'
     pp_dir = [pp_section]
 else:
@@ -320,18 +322,31 @@ for num_inj in range(num_injections):
 
 # create the PP and recovery plot
 if do_pp_test:
+    # create the pp summary table
+    pp_table = inffu.make_inference_pp_table(
+        workflow, posterior_files, rdir[pp_section], parameters=pp_params,
+        injection_samples_map=inj_samples_map,
+        analysis_seg=workflow.analysis_time, tags=opts.tags)
+    layout.single_layout(rdir[pp_section], [pp_table])
+    # now the pp plots and injection recovery
     pp_plots = []
     inj_recovery_plots = []
-    for param in pp_params:
-        pp_plots.append(inffu.make_inference_pp_plot(
+    for pi, param in enumerate(pp_params):
+        tags = opts.tags + ['PARAM_{}'.format(pi)]
+        # the pp plot
+        pp_plot = inffu.make_inference_pp_plot(
             workflow, posterior_files, rdir[pp_section], parameters=param,
-            analysis_seg=workflow.analysis_time, tags=opts.tags))
-        inj_recovery_plots.append(inffu.make_inference_inj_recovery_plot(
+            injection_samples_map=inj_samples_map,
+            analysis_seg=workflow.analysis_time, tags=tags)
+        pp_plots.append(pp_plot)
+        # the injection recovery plot
+        injrec_plot = inffu.make_inference_inj_recovery_plot(
             workflow, posterior_files, rdir[pp_section], parameters=param,
-            analysis_seg=workflow.analysis_time, tags=opts.tags))
+            injection_samples_map=inj_samples_map,
+            analysis_seg=workflow.analysis_time, tags=tags)
+        inj_recovery_plots.append(injrec_plot)
     layout.two_column_layout(rdir[pp_section],
                              list(zip(pp_plots, inj_recovery_plots)))
-
 
 # create versioning HTML pages
 results.create_versioning_page(rdir["workflow/version"], container.cp)
