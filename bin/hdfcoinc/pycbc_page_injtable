@@ -21,6 +21,11 @@ f = h5py.File(args.injection_file,'r')
 inj = f['injections']
 found_cols, found_names, found_formats = [], [], []
 
+if('detector_1' in f.attrs):
+    ifos = [f.attrs['detector_1'], f.attrs['detector_2']]
+else:
+    ifos = f.attrs['ifos'].split(' ')
+
 if args.show_missed:
     title = "Missed Injections"
     idx = f['missed/after_vetoes'][:]
@@ -35,7 +40,7 @@ else:
                f.attrs['detector_2']: found['trigger_id2'][:],}
         found_cols = [tdiff, found['stat'], found['ifar'], found['ifar_exc']]
         found_names = [tdiff_str, 'Ranking Stat.', 'Inc. IFAR (yrs)', 'Exc. IFAR']
-        found_formats =  ['##.##', '##.##', '##', '##']
+        found_formats =  ['##.##', '##.##', '##.##', '##.##']
 
     else:
         detectors = f.attrs['ifos'].split(' ')
@@ -60,8 +65,8 @@ else:
         ids = {detector:found[detector+'/trigger_id'][:] for detector in detectors_used}
     
         found_cols = tdiff + [numpy.round(found['stat'],2), numpy.round(found['fap_exc'],2), numpy.round(found['ifar_exc'],2)]
-        found_names = tdiff_str + ['Ranking Stat.', 'Exc. FAP', 'Exc. IFAR']
-        found_formats =  tdiff_format + ['##.##', '##', '##']
+        found_names = tdiff_str + ['Ranking Stat.', 'Exc. IFAR']
+        found_formats =  tdiff_format + ['##.##', '##.##']
 
 
     if args.single_trigger_files:
@@ -76,8 +81,7 @@ else:
             found_cols += [numpy.round(snr,2), numpy.round(chisq,2), numpy.round(newsnr,2)]
             found_formats += ['##.##', '##.##', '##.##']
 
-eff_dist = {'eff_dist_l':'Eff Dist(L)','eff_dist_h':'Eff Dist(H)','eff_dist_v':'Eff Dist(V)',
-            'eff_dist_k':'Eff Dist(K)','eff_dist_i':'Eff Dist(I)'}
+eff_dist = {'eff_dist_%s' % i[0].lower() : 'Eff Dist(%s)' % i for i in ifos}
 keys = inj.keys()
 eff_dist_str = []
 eff_distance = []
