@@ -64,9 +64,9 @@ else:
             tdiff_format.append('##.##')
         ids = {detector:found[detector+'/trigger_id'][:] for detector in detectors_used}
     
-        found_cols = tdiff + [numpy.round(found['stat'],2), numpy.round(found['fap_exc'],2), numpy.round(found['ifar_exc'],2)]
+        found_cols = tdiff + [numpy.round(found['stat'],2), numpy.round(found['ifar_exc'],2)]
         found_names = tdiff_str + ['Ranking Stat.', 'Exc. IFAR']
-        found_formats =  tdiff_format + ['##.##', '##.##']
+        found_formats =  tdiff_format + ['##.##', '##']
 
 
     if args.single_trigger_files:
