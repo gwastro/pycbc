@@ -18,10 +18,9 @@
 
 from __future__ import print_function
 
-import sys
 import logging
 from tqdm import tqdm
-from numpy import complex64, float32, array
+from numpy import complex64, array
 from argparse import ArgumentParser
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
@@ -30,14 +29,14 @@ class mycontenthandler(LIGOLWContentHandler):
     pass
 lsctables.use_in(mycontenthandler)
 
-from pycbc.pnutils import mass1_mass2_to_mchirp_eta, f_SchwarzISCO
+from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc.waveform.utils import taper_timeseries
 from pycbc import DYN_RANGE_FAC
-from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
-from pycbc.filter import match, sigmasq, resample_to_delta_t
+from pycbc.types import FrequencySeries, TimeSeries, zeros, complex_same_precision_as
+from pycbc.filter import match, sigmasq
 from math import ceil, log
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain, pycbc.version
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
