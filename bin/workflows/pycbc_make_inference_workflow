@@ -152,35 +152,18 @@ def symlink_path(f, path):
 
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
-
-# version option
-parser.add_argument("--version", action="version", version=__version__,
-                    help="Prints version information.")
-
+# add option groups
+configuration.add_workflow_command_line_group(parser)
 # workflow options
-parser.add_argument("--workflow-name", required=True,
-                    help="Name of the workflow.")
-parser.add_argument("--tags", nargs="+", default=[],
-                    help="Append the given tags to file names.")
-parser.add_argument("--output-dir", default=None,
-                    help="Path to directory where the workflow will be "
-                         "written. Default is to use "
-                         "{workflow-name}_output.")
-parser.add_argument("--output-map", default="output.map",
-                    help="Path to an output map file. Default is "
-                         "output.map.")
-parser.add_argument("--transformation-catalog", default=None,
-                    help="Path to transformation catalog file.")
-parser.add_argument("--dax-file", default=None,
-                    help="Path to DAX file. Default is to write to the "
-                         "output directory with name {workflow-name}.dax.")
-# inference options
+inffu.add_inference_workflow_group(parser)
 parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for inference job(s). If multiple "
                          "events are analyzed, the seed will be incremented "
                          "by one for each event.")
-# add option groups
-configuration.add_workflow_command_line_group(parser)
+# version option
+parser.add_argument("--version", action="version", version=__version__,
+                    help="Prints version information.")
+
 
 # parser command line
 opts = parser.parse_args()

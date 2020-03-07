@@ -22,10 +22,13 @@ import argparse
 import logging
 import os
 import shlex
+import numpy
 import Pegasus.DAX3 as dax
 import pycbc.version
 import socket
 import sys
+from pycbc import __version__
+from pycbc import results
 from pycbc.results import layout
 from pycbc.results import metadata
 from pycbc.results import versioning
@@ -59,32 +62,20 @@ def read_inference_settings_from_config(cp, section):
     return config_from_config(cp, section, skip_opts=['nruns']), nruns
     
 
+def symlink_path(f, path):
+    """ Symlinks a path.
+    """
+    if f is None:
+        return
+    try:
+        os.symlink(f.storage_path, os.path.join(path, f.name))
+    except OSError:
+        pass
+
+
 # set command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
 
-# version option
-parser.add_argument("--version", action="version", version=__version__,
-                    help="Prints version information.")
-
-# workflow options
-parser.add_argument("--workflow-name", required=True,
-                    help="Name of the workflow.")
-parser.add_argument("--tags", nargs="+", default=[],
-                    help="Append the given tags to file names.")
-parser.add_argument("--output-dir", default=None,
-                    help="Path to directory where the workflow will be "
-                         "written. Default is to use "
-                         "{workflow-name}_output.")
-parser.add_argument("--output-map", default="output.map",
-                    help="Path to an output map file. Default is "
-                         "output.map.")
-parser.add_argument("--dax-file", default=None,
-                    help="Path to DAX file. Default is to write to the "
-                         "output directory with name {workflow-name}.dax.")
-# inference options
-parser.add_argument("--seed", type=int, default=0,
-                    help="Starting to seed to use. This will be incremented "
-                         "one for each injection analyzed. Default is 0.")
 # injection options: either specify a number to create, or use the given file
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--num-injections", type=int,
@@ -94,6 +85,14 @@ group.add_argument("--injection-file", type=str, nargs="+",
                         "creating them.")
 # add option groups
 configuration.add_workflow_command_line_group(parser)
+# add workflow group
+inffu.add_inference_workflow_group(parser)
+parser.add_argument("--seed", type=int, default=0,
+                    help="Starting to seed to use. This will be incremented "
+                         "one for each injection analyzed. Default is 0.")
+# version option
+parser.add_argument("--version", action="version", version=__version__,
+                    help="Prints version information.")
 
 # parser command line
 opts = parser.parse_args()
@@ -132,7 +131,7 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 
 # load the inference config file
 inference_cp, nruns = read_inference_settings_from_config(
-    workflow.cp, 'workflow-inference_config')
+    workflow.cp, 'workflow-inference')
 
 # change working directory to the output
 origdir = os.path.abspath(os.curdir)
@@ -143,7 +142,7 @@ os.chdir(opts.output_dir)
 if opts.injection_file:
     injection_files = core.FileList([])
     n_injections = 0
-    for injection_file in opts.injection_files:
+    for injection_file in opts.injection_file:
         injections = InjectionSet('{}/{}'.format(origdir, injection_file))
         local_numinj = len(injections.table)
         st_args = {k: injections.table[k][0] 
@@ -217,8 +216,8 @@ config_files = {}
 posterior_files = []
 seed = opts.seed
 # loop over number of injecionts to be analyzed
-for num_inj in range(num_injections):
-    zpad = int(numpy.ceil(numpy.log10(num_injections)))
+for num_inj in range(n_injections):
+    zpad = int(numpy.ceil(numpy.log10(n_injections)))
     label = 'Injection {}'.format(str(num_inj+1).zfill(zpad))
     event = label.lower().replace(' ', '_')
 
@@ -235,7 +234,7 @@ for num_inj in range(num_injections):
     # independent noise realizations
     if inference_cp.has_option('data', 'fake-strain-seed'):
         # get the detectors
-        detectors = shlex.split(cp.get('data', 'instruments'))
+        detectors = shlex.split(inference_cp.get('data', 'instruments'))
         fake_strain_seeds = {}
         for det in detectors:
             fake_strain_seeds[det] = seed
@@ -253,7 +252,7 @@ for num_inj in range(num_injections):
     symlink_path(config_file, rdir[base])
 
     # add a node to create the injection if an injection file wasn't provided
-    if opts.injection_files:
+    if opts.injection_file:
         injection_file = injection_files[num_inj]
     else:
         # construct Executable for creating injections
@@ -262,22 +261,24 @@ for num_inj in range(num_injections):
             out_dir=injection_file_dir)
         node, injection_file = create_injections_exe.create_node(
             config_file, seed=seed, tags=opts.tags+[event])
-        workflow += node
+        node.add_opt("--ninjections", 1)
+        sub_workflow += node
         seed = seed + 1
 
     # add the injection file to the inference config file
-    cp = configuration.WorkflowConfigParser([config_file])
-    cp.set('data', 'injection', injection_file)
-    cp.close()
+    cp = configuration.WorkflowConfigParser([config_file.storage_path])
+    cp.set('data', 'injection', injection_file.name)
+    with open(config_file.storage_path, "w") as fp:
+        cp.write(fp)
 
     # make node(s) for running sampler
     samples_files = []
     inference_exe = PycbcInferenceExecutable(sub_workflow.cp, "inference",
                                              ifos=sub_workflow.ifos,
                                              out_dir=samples_file_dir)
-    for nn in range(nrun):
+    for nn in range(nruns):
         tags = opts.tags + [event]
-        if nrun > 1:
+        if nruns > 1:
             tags.append(str(nn))
         node, samples_file = inference_exe.create_node(
             config_file, seed=seed, tags=tags,
@@ -286,6 +287,7 @@ for num_inj in range(num_injections):
         node.add_input(injection_file)
         # add node to workflow
         sub_workflow += node
+        samples_files.append(samples_file)
         # increment the seed
         seed = seed + 1
 
@@ -309,12 +311,12 @@ for num_inj in range(num_injections):
     # build the summary page
     zpad = int(numpy.ceil(numpy.log10(len(samples_files))))
     layout.two_column_layout(rdir.base, summary_files,
-                             unique=str(num_event).zfill(zpad),
+                             unique=str(num_inj).zfill(zpad),
                              title=label, collapse=True)
 
     # build the psd page
     layout.single_layout(rdir['detector_sensitivity'], [psd_plot],
-                         unique=str(num_event).zfill(zpad),
+                         unique=str(num_inj).zfill(zpad),
                          title=label, collapse=True)
 
     # add the sub workflow to the main workflow
