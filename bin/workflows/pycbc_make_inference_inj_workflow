@@ -267,7 +267,7 @@ for num_inj in range(n_injections):
 
     # add the injection file to the inference config file
     cp = configuration.WorkflowConfigParser([config_file.storage_path])
-    cp.set('data', 'injection', injection_file.name)
+    cp.set('data', 'injection-file', injection_file.name)
     with open(config_file.storage_path, "w") as fp:
         cp.write(fp)
 
