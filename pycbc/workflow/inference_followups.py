@@ -579,7 +579,7 @@ def make_inference_inj_recovery_plot(workflow, posterior_files, output_dir,
     """
     # arguments are the same as plot_pp, so just call that with the
     # different executable name
-    return make_inference_inference_pp_plot(
+    return make_inference_pp_plot(
         workflow, posterior_files, output_dir, parameters=parameter,
         injection_samples_map=injection_samples_map,
         name=name, analysis_seg=analysis_seg, tags=tags)
