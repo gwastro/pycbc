@@ -50,23 +50,23 @@ else:
         for det in detectors:
             if(det in keys):
                 detectors_used.append(det)
-        detectors_two_combinations= numpy.array(list(combinations(detectors_used,2)))
+        det_two_combo= numpy.array(list(combinations(detectors_used,2)))
         tdiff = []
         tdiff_str = []
         tdiff_format =[]
-        for i in range(len(detectors_two_combinations)):
-            time_1 = found[detectors_two_combinations[i,0]+'/time'][:]
-            time_2 = found[detectors_two_combinations[i,1]+'/time'][:]
-            tdiff_1 = ['{:.2f}'.format((t1 - t2)*1000) if t1 > 0 and t2 > 0 else 'N/A' for t1,t2 in zip(time_1, time_2)]
+        for i in range(len(det_two_combo)):
+            time_1 = numpy.array(found[det_two_combo[i,0]+'/time'][:])
+            time_2 = numpy.array(found[det_two_combo[i,1]+'/time'][:])
+            tdiff_1 = [i'{:.2f}'.format((t1 - t2)*1000) if t1 > 0 and t2 > 0 else 'N/A' for t1,t2 in zip(time_1, time_2)]
             tdiff.append(tdiff_1)
-            tdiff_head= '%s - %s time (ms)' % (detectors_two_combinations[i,0], detectors_two_combinations[i,1])
+            tdiff_head= '%s - %s time (ms)' % (det_two_combo[i,0], det_two_combo[i,1])
             tdiff_str.append(tdiff_head)
             tdiff_format.append('##.##')
         ids = {detector:found[detector+'/trigger_id'][:] for detector in detectors_used}
     
         found_cols = tdiff + [numpy.round(found['stat'],2), numpy.round(found['ifar_exc'],2)]
         found_names = tdiff_str + ['Ranking Stat.', 'Exc. IFAR']
-        found_formats =  tdiff_format + ['##.##', '##']
+        found_formats =  tdiff_format + ['##.##', '##.##']
 
 
     if args.single_trigger_files:
@@ -113,10 +113,10 @@ format_strings = ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
                   '##.##'] + eff_dist_format +  found_formats 
 columns = numpy.array(columns)
-html_table = pycbc.results.html_table(columns, names, 
-                                 format_strings=format_strings, 
+html_table = pycbc.results.html_table(columns, names,
+                                 format_strings=format_strings,
                                  page_size=20)
-                                 
+
 kwds = { 'title' : title, 
         'caption' : "A table of %s and their coincident statistic information." % title.lower(),
         'cmd' :' '.join(sys.argv), }
