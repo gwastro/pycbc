@@ -38,6 +38,7 @@ else:
         tdiff_str = '%s - %s time (ms)' % (f.attrs['detector_1'], f.attrs['detector_2'])
         ids = {f.attrs['detector_1']: found['trigger_id1'][:],
                f.attrs['detector_2']: found['trigger_id2'][:],}
+
         found_cols = [found['stat'], found['ifar'], found['ifar_exc'], tdiff]
         found_names = ['Ranking Stat.', 'Inc. IFAR (yrs)', 'Exc. IFAR', tdiff_str]
         found_formats =  ['##.##', '##.##', '##.##', '##.##']
@@ -93,6 +94,7 @@ else:
             found_formats += ['##.##', '##.##', '##.##']
 
 eff_dist = {'eff_dist_%s' % i[0].lower() : 'Eff Dist (%s)' % i for i in ifos}
+
 keys = inj.keys()
 eff_dist_str = []
 eff_distance = []
