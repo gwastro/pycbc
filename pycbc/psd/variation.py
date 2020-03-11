@@ -6,7 +6,7 @@ import scipy.signal as sig
 
 
 import pycbc.psd
-from pycbc.types import TimeSeries, FrequencySeries, zeros
+from pycbc.types import TimeSeries
 from pycbc.filter import resample_to_delta_t
 
 
