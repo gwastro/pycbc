@@ -38,8 +38,8 @@ else:
         tdiff_str = '%s - %s time (ms)' % (f.attrs['detector_1'], f.attrs['detector_2'])
         ids = {f.attrs['detector_1']: found['trigger_id1'][:],
                f.attrs['detector_2']: found['trigger_id2'][:],}
-        found_cols = [tdiff, found['stat'], found['ifar'], found['ifar_exc']]
-        found_names = [tdiff_str, 'Ranking Stat.', 'Inc. IFAR (yrs)', 'Exc. IFAR']
+        found_cols = [found['stat'], found['ifar'], found['ifar_exc'], tdiff]
+        found_names = ['Ranking Stat.', 'Inc. IFAR (yrs)', 'Exc. IFAR', tdiff_str]
         found_formats =  ['##.##', '##.##', '##.##', '##.##']
 
     else:
@@ -57,38 +57,49 @@ else:
         for i in range(len(det_two_combo)):
             time_1 = numpy.array(found[det_two_combo[i,0]+'/time'][:])
             time_2 = numpy.array(found[det_two_combo[i,1]+'/time'][:])
-            tdiff_1 = ['{:.2f}'.format((t1 - t2)*1000) if t1 > 0 and t2 > 0 else 'N/A' for t1,t2 in zip(time_1, time_2)]
+            tdiff_vals = (time_1 - time_2) * 1000
+            tdiff_vals[numpy.logical_or(time_1 < 0, time_2 < 0)] = numpy.nan
+            tdiff_1 = ['%.2f' % td for td in tdiff_vals]
             tdiff.append(tdiff_1)
             tdiff_head= '%s - %s time (ms)' % (det_two_combo[i,0], det_two_combo[i,1])
             tdiff_str.append(tdiff_head)
             tdiff_format.append('##.##')
         ids = {detector:found[detector+'/trigger_id'][:] for detector in detectors_used}
     
-        found_cols = tdiff + [numpy.round(found['stat'],2), numpy.round(found['ifar_exc'],2)]
-        found_names = tdiff_str + ['Ranking Stat.', 'Exc. IFAR']
-        found_formats =  tdiff_format + ['##.##', '##.##']
+        found_cols = [found['stat'], found['ifar_exc']] + tdiff
+        found_names = ['Ranking Stat.', 'Exc. IFAR'] + tdiff_str
+        found_formats =  ['##.##', '##.##'] + tdiff_format
 
 
     if args.single_trigger_files:
         for ifo in args.single_trigger_files:
             f = h5py.File(args.single_trigger_files[ifo], 'r')[ifo]
-            i = ids[ifo]
-            snr = f['snr'][:][i]
-            chisq = f['chisq'][:][i] / (2 * f['chisq_dof'][:][i] - 2)
-            newsnr = pycbc.events.ranking.newsnr(snr, chisq)
+            ids_ifo = numpy.array(ids[ifo])
+            ids_na = numpy.argwhere(ids_ifo == -1)
+            snr_vals = f['snr'][:][ids_ifo]
+            snr_vals[ids_ifo == -1] = numpy.nan
+            chisq_vals = f['chisq'][:][ids_ifo] / (2 * f['chisq_dof'][:][ids_ifo] - 2)
+            chisq_vals[ids_ifo == -1] = numpy.nan
+            newsnr_vals = pycbc.events.ranking.newsnr(snr_vals, chisq_vals)
+            snr = ['%.2f' % s for s in snr_vals]
+            chisq = ['%.2f' % c for c in chisq_vals]
+            newsnr = ['%.2f' % s for s in newsnr_vals]
             
-            found_names += ["%s SNR" % ifo, "CHISQ", "NewSNR"]
-            found_cols += [numpy.round(snr,2), numpy.round(chisq,2), numpy.round(newsnr,2)]
+            found_names += [ifo + " SNR", ifo + " CHISQ", ifo + " NewSNR"]
+            if('detector_1' in f.attrs):
+                found_cols += [snr_vals, chisq_vals, newsnr_vals]
+            else:
+                found_cols += [snr, chisq, newsnr]
             found_formats += ['##.##', '##.##', '##.##']
 
-eff_dist = {'eff_dist_%s' % i[0].lower() : 'Eff Dist(%s)' % i for i in ifos}
+eff_dist = {'eff_dist_%s' % i[0].lower() : 'Eff Dist (%s)' % i for i in ifos}
 keys = inj.keys()
 eff_dist_str = []
 eff_distance = []
 eff_dist_format = []
 for dist in eff_dist :
     if(dist in keys):
-        eff_distance.append(numpy.round(inj[dist][:][idx],2))
+        eff_distance.append(inj[dist][:][idx])
         eff_dist_str.append(eff_dist[dist])
         eff_dist_format.append('##.##')
                 
@@ -97,11 +108,10 @@ m1, m2 = inj['mass1'][:][idx], inj['mass2'][:][idx]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-columns = [numpy.round(dec_chirp_dist,2), numpy.round(inj['end_time'][:][idx],2), 
-           numpy.round(m1,2), numpy.round(m2,2), numpy.round(mchirp,2), numpy.round(eta,2),
-           numpy.round(inj['spin1x'][:][idx],2), numpy.round(inj['spin1y'][:][idx],2), numpy.round(inj['spin1z'][:][idx],2),
-           numpy.round(inj['spin2x'][:][idx],2), numpy.round(inj['spin2y'][:][idx],2), numpy.round(inj['spin2z'][:][idx],2),
-           numpy.round(inj['distance'][:][idx],2)] + eff_distance + found_cols
+columns = [dec_chirp_dist, inj['end_time'][:][idx], m1, m2, mchirp, eta,
+           inj['spin1x'][:][idx], inj['spin1y'][:][idx], inj['spin1z'][:][idx],
+           inj['spin2x'][:][idx], inj['spin2y'][:][idx], inj['spin2z'][:][idx],
+           inj['distance'][:][idx]] + eff_distance + found_cols
          
 names = ['DChirp Dist', 'Inj Time', 'Mass1', 'Mass2', 'Mchirp', 'Eta',
          's1x', 's1y', 's1z',
@@ -112,7 +122,7 @@ format_strings = ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
                   '##.##'] + eff_dist_format +  found_formats 
-columns = numpy.array(columns)
+columns = [numpy.array(col) for col in columns]
 html_table = pycbc.results.html_table(columns, names,
                                  format_strings=format_strings,
                                  page_size=20)
