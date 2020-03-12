@@ -39,6 +39,8 @@ from .dynesty import DynestyFile
 from .ultranest import UltranestFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
+# add the dump/load state functions to the io namespace
+from .base_hdf import (load_state, dump_state)
 
 filetypes = {
     EmceeFile.name: EmceeFile,

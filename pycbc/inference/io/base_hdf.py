@@ -29,6 +29,8 @@ from __future__ import absolute_import
 
 import sys
 import logging
+import pickle
+from io import BytesIO
 from abc import (ABCMeta, abstractmethod)
 
 from six import (add_metaclass, string_types)
@@ -812,3 +814,94 @@ class BaseInferenceFile(h5py.File):
                 cls.write_kwargs_to_attrs(attrs, **val)
             else:
                 attrs[arg] = val
+
+
+#
+# =============================================================================
+#
+#                          Checkpointing utilities
+#
+# =============================================================================
+#
+
+
+def dump_state(state, fp, path=None, dsetname='sampler_state', protocol=None):
+    """Dumps the given state to an hdf5 file handler.
+
+    The state is stored as a raw binary array to ``{path}/{dsetname}`` in the
+    given hdf5 file handler. If a dataset with the same name and path is
+    already in the file, the dataset will be resized and overwritten with the
+    new state data.
+
+    Parameters
+    ----------
+    state : any picklable object
+        The sampler state to dump to file. Can be the object returned by
+        any of the samplers' `.state` attribute (a dictionary of dictionaries),
+        or any picklable object.
+    fp : h5py.File
+        An open hdf5 file handler. Must have write capability enabled.
+    path : str, optional
+        The path (group name) to store the state dataset to. Default (None)
+        will result in the array being stored to the top level.
+    dsetname : str, optional
+        The name of the dataset to store the binary array to. Default is
+        ``sampler_state``.
+    protocol : int, optional
+        The protocol version to use for pickling. See the :py:mod:`pickle`
+        module for more details.
+    """
+    memfp = BytesIO()
+    pickle.dump(state, memfp, protocol=protocol)
+    dump_pickle_to_hdf(memfp, fp, path=path, dsetname=dsetname)
+
+
+def dump_pickle_to_hdf(memfp, fp, path=None, dsetname='sampler_state'):
+    """Dumps pickled data to an hdf5 file object.
+
+    Parameters
+    ----------
+    memfp : file object
+        Bytes stream of pickled data.
+    fp : h5py.File
+        An open hdf5 file handler. Must have write capability enabled.
+    path : str, optional
+        The path (group name) to store the state dataset to. Default (None)
+        will result in the array being stored to the top level.
+    dsetname : str, optional
+        The name of the dataset to store the binary array to. Default is
+        ``sampler_state``.
+    """
+    memfp.seek(0)
+    bdata = numpy.frombuffer(memfp.read(), dtype='S1')
+    if path is not None:
+        fp = fp[path]
+    if dsetname not in fp:
+        fp.create_dataset(dsetname, shape=bdata.shape, maxshape=(None,),
+                          dtype=bdata.dtype)
+    elif bdata.size != fp[dsetname].shape[0]:
+        fp[dsetname].resize((bdata.size,))
+    fp[dsetname][:] = bdata
+
+
+def load_state(fp, path=None, dsetname='sampler_state'):
+    """Loads a sampler state from the given hdf5 file object.
+
+    The sampler state is expected to be stored as a raw bytes array which can
+    be loaded by pickle.
+
+    Parameters
+    ----------
+    fp : h5py.File
+        An open hdf5 file handler.
+    path : str, optional
+        The path (group name) that the state data is stored to. Default (None)
+        is to read from the top level.
+    dsetname : str, optional
+        The name of the dataset that the state data is stored to. Default is
+        ``sampler_state``.
+    """
+    if path is not None:
+        fp = fp[path]
+    bdata = fp[dsetname][()].tobytes()
+    return pickle.load(BytesIO(bdata))
