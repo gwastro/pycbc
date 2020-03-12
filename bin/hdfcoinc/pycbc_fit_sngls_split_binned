@@ -156,9 +156,8 @@ else:
     pbin_upper_lim = params[args.bin_param].max()
 
 
-if params[args.bin_param].min() == 0:
-    logging.warn('WARNING: Some templates do not contain triggers')
 if args.bin_param == 'template_duration' and params[args.bin_param].min() == 0:
+    logging.warn('WARNING: Some templates do not contain triggers')
     pbin_lower_lim = params[args.bin_param][params[args.bin_param] > 0].min()
 else:
     pbin_lower_lim = params[args.bin_param].min()
