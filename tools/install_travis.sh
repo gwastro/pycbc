@@ -48,6 +48,9 @@ pip install --upgrade setuptools pip
 echo -e ">> [`date`] installing requirements"
 pip install -r requirements.txt
 
+echo -e ">> [`date`] installing companion components"
+pip install -r companion.txt
+
 echo -e ">> [`date`] installing mpi4py"
 pip install mpi4py
 

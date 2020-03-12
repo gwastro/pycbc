@@ -104,7 +104,8 @@ class MultiTemperedMCMCIO(object):
     """Provides functions for reading/writing samples from a parallel-tempered
     MCMC sampler.
     """
-    def write_samples(self, samples, parameters=None, last_iteration=None):
+    def write_samples(self, samples, parameters=None, last_iteration=None,
+                      samples_group=None, thin_by=None):
         """Writes samples to the given file.
 
         Results are written to ``samples_group/{vararg}``, where ``{vararg}``
@@ -115,7 +116,7 @@ class MultiTemperedMCMCIO(object):
         -----------
         samples : dict
             The samples to write. Each array in the dictionary should have
-            shape nwalkers x niterations.
+            shape ntemps x nwalkers x niterations.
         parameters : list, optional
             Only write the specified parameters to the file. If None, will
             write all of the keys in the ``samples`` dict.
@@ -123,18 +124,28 @@ class MultiTemperedMCMCIO(object):
             The iteration of the last sample. If the file's ``thinned_by``
             attribute is > 1, this is needed to determine where to start
             thinning the samples to match what has already been stored on disk.
+        samples_group : str, optional
+            Which group to write the samples to. Default (None) will result
+            in writing to "samples".
+        thin_by : int, optional
+            Override the ``thinned_by`` attribute in the file with the given
+            value. **Only set this if you are using this function to write
+            something other than inference samples!**
         """
         ntemps, nwalkers, niterations = tuple(samples.values())[0].shape
         assert all(p.shape == (ntemps, nwalkers, niterations)
                    for p in samples.values()), (
                "all samples must have the same shape")
-        group = self.samples_group + '/{name}'
+        if samples_group is None:
+            samples_group = self.samples_group
         if parameters is None:
-            parameters = samples.keys()
+            parameters = list(samples.keys())
         # thin the samples
         samples = thin_samples_for_writing(self, samples, parameters,
-                                           last_iteration)
+                                           last_iteration, samples_group,
+                                           thin_by=thin_by)
         # loop over number of dimensions
+        group = samples_group + '/{name}'
         for param in parameters:
             dataset_name = group.format(name=param)
             data = samples[param]
@@ -163,14 +174,13 @@ class MultiTemperedMCMCIO(object):
     def read_raw_samples(self, fields,
                          thin_start=None, thin_interval=None, thin_end=None,
                          iteration=None, temps='all', walkers=None,
-                         flatten=True):
+                         flatten=True, group=None):
         """Base function for reading samples.
 
         Parameters
         -----------
         fields : list
-            The list of field names to retrieve. Must be names of datasets in
-            the ``samples_group``.
+            The list of field names to retrieve.
         thin_start : int, optional
             Start reading from the given iteration. Default is to start from
             the first iteration.
@@ -192,6 +202,9 @@ class MultiTemperedMCMCIO(object):
             Flatten the samples to 1D arrays before returning. Otherwise, the
             returned arrays will have shape (requested temps x
             requested walkers x requested iteration(s)). Default is True.
+        group : str, optional
+            The name of the group to read sample datasets from. Default is
+            the file's ``samples_group``.
 
         Returns
         -------
@@ -235,7 +248,9 @@ class MultiTemperedMCMCIO(object):
             # we'll just get the number of iterations from the returned shape
             niterations = None
         # load
-        group = self.samples_group + '/{name}'
+        if group is None:
+            group = self.samples_group
+        group = group + '/{name}'
         arrays = {}
         for name in fields:
             arr = self[group.format(name=name)][tidx, widx, get_index]

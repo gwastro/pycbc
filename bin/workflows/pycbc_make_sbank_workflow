@@ -189,6 +189,8 @@ parser.add_argument("--map-filename", type=str, default=None,
                          "WARNING: Giving this if not running as a "
                          "sub-workflow will cause pycbc_submit_dax to not "
                          "work.")
+parser.add_argument("--transformation-catalog-filename", type=str, default=None,
+                    help="See workflow/core.py")
 parser.add_argument("--is-sub-workflow", default=False, action="store_true",
                     help="Only give this option if this code is being run "
                     "as a sub-workflow within pegasus. If this means nothing "
@@ -412,4 +414,5 @@ for cycle_idx in range(num_cycles):
     seed_file = h5add_node.output_files[0]
     bins_inp_file = seed_file
 
-workflow.save(filename=args.dax_filename, output_map_path=args.map_filename)
+workflow.save(filename=args.dax_filename, output_map_path=args.map_filename,
+              transformation_catalog_path=args.transformation_catalog_filename)

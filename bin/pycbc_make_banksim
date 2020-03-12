@@ -467,7 +467,6 @@ goldenratio = 2 / (1 + 5**.5)
 #	"subplots.top": 0.75,
 #        "savefig.dpi": 600,
 #        "text.verticalalignment": "center",
-#        "text.usetex": True     # render all text with TeX
 #})
 
 res = numpy.loadtxt("results.dat")

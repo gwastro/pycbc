@@ -30,7 +30,7 @@ done
 
 # check that all executables that do not require
 # special environments can return a help message
-for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print 2>/dev/null | egrep -v '(pycbc_live_nagios_monitor|pycbc_make_grb_summary_page|pycbc_make_offline_grb_workflow|pycbc_mvsc_get_features|pycbc_upload_xml_to_gracedb)'`
+for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print 2>/dev/null | egrep -v '(pycbc_live_nagios_monitor|pycbc_make_grb_summary_page|pycbc_make_offline_grb_workflow|pycbc_mvsc_get_features|pycbc_upload_xml_to_gracedb|pycbc_make_skymap)'`
 do
     echo -e ">> [`date`] running $prog --help"
     $prog --help &> $LOG_FILE
@@ -95,6 +95,31 @@ popd
 ## Run inference on GW150914 data
 pushd examples/inference/gw150914
 bash -e run_test.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+popd
+
+## Run inference using single template model
+pushd examples/inference/single
+bash -e get.sh
+bash -e run.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+popd
+
+## Run inference samplers
+pushd examples/inference/samplers
+bash -e run.sh
 if test $? -ne 0 ; then
     RESULT=1
     echo -e "    FAILED!"

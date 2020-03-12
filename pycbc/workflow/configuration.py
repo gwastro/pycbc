@@ -172,22 +172,35 @@ def istext(s, text_characters=None, threshold=0.3):
     # s is 'text' if less than 30% of its characters are non-text ones:
     return len(t)/float(len(s)) <= threshold
 
-def resolve_url(url, directory=None, permissions=None):
-    """
-    Resolves a URL to a local file, and returns the path to
-    that file.
+def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
+    """Resolves a URL to a local file, and returns the path to that file.
+
+    If a URL is given, the file will be copied to the current working
+    directory. If a local file path is given, the file will only be copied
+    to the current working directory if ``copy_to_cwd`` is ``True``
+    (the default).
     """
 
     u = urlparse(url)
 
-    # create the name of the destination file
-    if directory is None:
-        directory = os.getcwd()
-    filename = os.path.join(directory,os.path.basename(u.path))
+    # determine whether the file exists locally
+    islocal = u.scheme == '' or u.scheme == 'file'
 
-    if u.scheme == '' or u.scheme == 'file':
-        # for regular files, make a direct copy
-        if os.path.isfile(u.path):
+    if not islocal or copy_to_cwd:
+        # create the name of the destination file
+        if directory is None:
+            directory = os.getcwd()
+        filename = os.path.join(directory, os.path.basename(u.path))
+    else:
+        filename = u.path
+
+    if islocal:
+        # check that the file exists
+        if not os.path.isfile(u.path):
+            errmsg  = "Cannot open file %s from URL %s" % (u.path, url)
+            raise ValueError(errmsg)
+        # for regular files, make a direct copy if requested
+        elif copy_to_cwd:
             if os.path.isfile(filename):
                 # check to see if src and dest are the same file
                 src_inode = os.stat(u.path)[stat.ST_INO]
@@ -196,9 +209,6 @@ def resolve_url(url, directory=None, permissions=None):
                     shutil.copy(u.path, filename)
             else:
                 shutil.copy(u.path, filename)
-        else:
-            errmsg  = "Cannot open file %s from URL %s" % (u.path, url)
-            raise ValueError(errmsg)
 
     elif u.scheme == 'http' or u.scheme == 'https':
         s = requests.Session()
@@ -339,7 +349,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
     """
-    def __init__(self, configFiles=None, overrideTuples=None, parsedFilePath=None, deleteTuples=None):
+    def __init__(self, configFiles=None, overrideTuples=None,
+                 parsedFilePath=None, deleteTuples=None, copy_to_cwd=False):
         """
         Initialize an WorkflowConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
@@ -359,6 +370,11 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             Delete the (section, option) pairs provided
             in this list from provided .ini file(s). If the section only
             is provided, the entire section will be deleted.
+        copy_to_cwd : bool, optional
+            Copy the configuration files to the current working directory if
+            they are not already there, even if they already exist locally.
+            If False, files will only be copied to the current working
+            directory if they are remote. Default is False.
 
         Returns
         --------
@@ -376,7 +392,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Enable case sensitive options
         self.optionxform = str
 
-        configFiles = [resolve_url(cFile) for cFile in configFiles]
+        configFiles = [resolve_url(cFile, copy_to_cwd=copy_to_cwd)
+                       for cFile in configFiles]
 
         self.read_ini_file(configFiles)
 
@@ -443,63 +460,32 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             self.write(fp)
             fp.close()
 
-
     @classmethod
-    def from_args(cls, args):
-        """
-        Initialize a WorkflowConfigParser instance using the command line values
-        parsed in args. args must contain the values provided by the
-        workflow_command_line_group() function. If you are not using the standard
-        workflow command line interface, you should probably initialize directly
-        using __init__()
+    def from_cli(cls, opts):
+        """Initialize the config parser using options parsed from the command
+        line.
+
+        The parsed options ``opts`` must include options provided by
+        :py:func:`add_workflow_command_line_group`.
 
         Parameters
         -----------
-        args : argparse.ArgumentParser
+        opts : argparse.ArgumentParser
             The command line arguments parsed by argparse
         """
-        # Identify the config files
-        confFiles = []
-
-        # files and URLs to resolve
-        if args.config_files:
-            confFiles += args.config_files
-
-        # Identify the deletes
-        confDeletes = args.config_delete or []
-        # and parse them
-        parsedDeletes = []
-        for delete in confDeletes:
-            splitDelete = delete.split(":")
-            if len(splitDelete) > 2:
-                raise ValueError(
-                    "Deletes must be of format section:option "
-                    "or section. Cannot parse %s." % str(delete))
-            else:
-                parsedDeletes.append(tuple(splitDelete))
-
-        # Identify the overrides
-        confOverrides = args.config_overrides or []
-        # and parse them
-        parsedOverrides = []
-        for override in confOverrides:
-            splitOverride = override.split(":", 2)
-            if len(splitOverride) == 3:
-                parsedOverrides.append(tuple(splitOverride))
-            elif len(splitOverride) == 2:
-                parsedOverrides.append(tuple(splitOverride + [""]))
-            elif len(splitOverride) > 3:
-                # Cannot have colons in either section name or variable name
-                # but the value may contain colons
-                rec_value = ':'.join(splitOverride[2:])
-                parsedOverrides.append(tuple(splitOverride[:2] + [rec_value]))
-            else:
-                raise ValueError(
-                    "Overrides must be of format section:option:value "
-                    "or section:option. Cannot parse %s." % str(override))
-
-        return cls(confFiles, parsedOverrides, None, parsedDeletes)
-
+        # read configuration file
+        logging.info("Reading configuration file")
+        if opts.config_overrides is not None:
+            overrides = [tuple(override.split(":", 2))
+                         for override in opts.config_overrides]
+        else:
+            overrides = None
+        if opts.config_delete is not None:
+            deletes = [tuple(delete.split(":"))
+                       for delete in opts.config_delete]
+        else:
+            deletes = None
+        return cls(opts.config_files, overrides, deleteTuples=deletes)
 
     def read_ini_file(self, cpFile):
         """
@@ -1075,7 +1061,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         except ConfigParser.Error:
             return False
 
-    def section_to_cli(self, section):
+    def section_to_cli(self, section, skip_opts=None):
         """Converts a section into a command-line string.
 
         For example:
@@ -1087,42 +1073,53 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             bar = 10
 
         yields: `'--foo --bar 10'`.
+
+        Parameters
+        ----------
+        section : str
+            The name of the section to convert.
+        skip_opts : list, optional
+            List of options to skip. Default (None) results in all options
+            in the section being converted.
+
+        Returns
+        -------
+        str :
+            The options as a command-line string.
         """
+        if skip_opts is None:
+            skip_opts = []
+        read_opts = [opt for opt in self.options(section)
+                     if opt not in skip_opts]
         opts = []
-        for opt in self.options(section):
+        for opt in read_opts:
             opts.append('--{}'.format(opt))
             val = self.get(section, opt)
             if val != '':
                 opts.append(val)
         return ' '.join(opts)
 
-    @staticmethod
-    def add_config_opts_to_parser(parser):
-        """Adds options for configuration files to the given parser."""
-        parser.add_argument("--config-files", type=str, nargs="+",
-                            required=True,
-                            help="A file parsable by "
-                                 "pycbc.workflow.WorkflowConfigParser.")
-        parser.add_argument("--config-overrides", type=str, nargs="+",
-                            default=None, metavar="SECTION:OPTION:VALUE",
-                            help="List of section:option:value combinations "
-                                 "to add into the configuration file.")
+    def get_cli_option(self, section, option_name, **kwds):
+        """Return option using CLI action parsing
 
+        Parameters
+        ----------
+        section: str
+            Section to find option to parse
+        option_name: str
+            Name of the option to parse from the config file
+        kwds: keywords
+            Additional keywords are passed directly to the argument parser.
 
-    @classmethod
-    def from_cli(cls, opts):
-        """Loads a config file from the given options, with overrides and
-        deletes applied.
+        Returns
+        -------
+        value:
+            The parsed value for this option
         """
-        # read configuration file
-        logging.info("Reading configuration file")
-        if opts.config_overrides is not None:
-            overrides = [override.split(":", 2)
-                         for override in opts.config_overrides]
-        else:
-            overrides = None
-        if opts.config_delete is not None:
-            deletes = [delete.split(":") for delete in opts.config_delete]
-        else:
-            deletes = None
-        return cls(opts.config_files, overrides, deleteTuples=deletes)
+        import argparse
+        optstr = self.section_to_cli(section)
+        parser = argparse.ArgumentParser()
+        name = "--" + option_name.replace('_', '-')
+        parser.add_argument(name, **kwds)
+        args, _ = parser.parse_known_args(optstr.split())
+        return getattr(args, option_name)

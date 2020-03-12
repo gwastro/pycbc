@@ -65,7 +65,7 @@ def indices_within_times(times, start, end):
     if len(left) == 0:
         return numpy.array([], dtype=numpy.uint32)
 
-    return tsort[numpy.hstack(numpy.r_[s:e] for s, e in zip(left, right))]
+    return tsort[numpy.hstack([numpy.r_[s:e] for s, e in zip(left, right)])]
 
 def indices_outside_times(times, start, end):
     """

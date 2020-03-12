@@ -36,8 +36,9 @@ import dynesty
 from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
-from .base import BaseSampler
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
+from .base_cube import setup_calls
 from .. import models
 
 
@@ -72,16 +73,11 @@ class DynestySampler(BaseSampler):
     def __init__(self, model, nlive, dlogz, nprocesses=1,
                  loglikelihood_function=None, use_mpi=False, **kwargs):
         self.model = model
+        log_likelihood_call, prior_call = setup_calls(
+            model,
+            nprocesses=nprocesses,
+            loglikelihood_function=loglikelihood_function)
         # Set up the pool
-        model_call = DynestyModel(model, loglikelihood_function)
-        if nprocesses > 1:
-            # these are used to help paralleize over multiple cores / MPI
-            models._global_instance = model_call
-            log_likelihood_call = _call_global_loglikelihood
-            prior_call = _call_global_logprior
-        else:
-            prior_call = model_call.prior_transform
-            log_likelihood_call = model_call.log_likelihood
         pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         if pool is not None:
             pool.size = nprocesses
@@ -109,8 +105,8 @@ class DynestySampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, loglikelihood_function=None,
-                    use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False, loglikelihood_function=None):
         """
         Loads the sampler from the given config file.
         """
@@ -123,12 +119,30 @@ class DynestySampler(BaseSampler):
         dlogz = float(cp.get(section, "dlogz"))
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
+
+        # optional arguments for dynesty
+        cargs = {'bound': str,
+                 'bootstrap': int,
+                 'enlarge': float,
+                 'update_interval': float,
+                 'sample': str}
+        extra = {}
+        for karg in cargs:
+            if cp.has_option(section, karg):
+                extra[karg] = cargs[karg](cp.get(section, karg))
+
         obj = cls(model, nlive=nlive, dlogz=dlogz, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
-                  use_mpi=use_mpi)
+                  use_mpi=use_mpi, **extra)
+        setup_output(obj, output_file)
+        if not obj.new_checkpoint:
+            obj.resume_from_checkpoint()
         return obj
 
     def checkpoint(self):
+        pass
+
+    def resume_from_checkpoint(self):
         pass
 
     def finalize(self):
@@ -193,7 +207,7 @@ class DynestySampler(BaseSampler):
         """
 
         dynesty_samples = self._sampler.results['samples']
-        wt = numpy.exp(self._sampler.results['logwt'] - 
+        wt = numpy.exp(self._sampler.results['logwt'] -
                        self._sampler.results['logz'][-1])
         # Make sure that sum of weights equal to 1
         weights = wt/numpy.sum(wt)
@@ -217,53 +231,3 @@ class DynestySampler(BaseSampler):
         """
 
         return self._sampler.results.logzerr[-1:][0]
-
-
-def _call_global_loglikelihood(cube):
-    return models._global_instance.log_likelihood(cube)
-
-
-def _call_global_logprior(cube):
-    return models._global_instance.prior_transform(cube)
-
-
-class DynestyModel(object):
-    """
-    Class for making PyCBC Inference 'model class'
-    Parameters
-    ----------
-    model : inference.BaseModel instance
-             A model instance from pycbc.
-    """
-
-    def __init__(self, model, loglikelihood_function=None):
-        if model.sampling_transforms is not None:
-            raise ValueError("Dinesty does not support sampling transforms")
-        self.model = model
-        if loglikelihood_function is None:
-            loglikelihood_function = 'loglikelihood'
-        self.loglikelihood_function = loglikelihood_function
-
-    def log_likelihood(self, cube):
-        """
-        returns log likelihood function
-        """
-        params = {p: v for p, v in zip(self.model.sampling_params, cube)}
-        self.model.update(**params)
-        if self.model.logprior == -numpy.inf:
-            return -numpy.inf
-        return getattr(self.model, self.loglikelihood_function)
-
-    def prior_transform(self, cube):
-        """
-        prior transform function for dynesty sampler
-        It takes unit cube as input parameter and apply
-        prior transforms
-        """
-        prior_dists = self.model.prior_distribution.distributions
-        dist_dict = {}
-        for dist in prior_dists:
-            dist_dict.update({param: dist for param in dist.params})
-        for i, param in enumerate(self.model.variable_params):
-            cube[i] = dist_dict[param].cdfinv(param, cube[i])
-        return cube

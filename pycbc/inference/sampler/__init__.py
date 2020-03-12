@@ -23,13 +23,21 @@ from .base import (initial_dist_from_config, create_new_output_file)
 from .emcee import EmceeEnsembleSampler
 from .emcee_pt import EmceePTSampler
 from .multinest import MultinestSampler
+from .ultranest import UltranestSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
     EmceeEnsembleSampler,
     EmceePTSampler,
-    MultinestSampler
+    MultinestSampler,
+    UltranestSampler,
 )}
+
+try:
+    from .epsie import EpsieSampler
+    samplers[EpsieSampler.name] = EpsieSampler
+except ImportError:
+    pass
 
 try:
     from .cpnest import CPNestSampler

@@ -41,6 +41,38 @@ from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
 
 
+def format_attr(val):
+    """Formats an attr so that it can be read in either python 2 or 3.
+
+    In python 2, strings that are saved as an attribute in an hdf file default
+    to unicode. Since unicode was removed in python 3, if you load that file
+    in a python 3 environment, the strings will be read as bytes instead, which
+    causes a number of issues. This attempts to fix that. If the value is
+    a bytes string, then it will be decoded into a string. If the value is
+    a numpy array of byte strings, it will convert the array to a list of
+    strings.
+
+    Parameters
+    ----------
+    val : obj
+        The value to format. This will try to apply decoding to the value
+
+    Returns
+    -------
+    obj
+        If ``val`` was a byte string, the value as a ``str``. If the value
+        was a numpy array of ``bytes_``, the value as a list of ``str``.
+        Otherwise, just returns the value.
+    """
+    try:
+        val = str(val.decode())
+    except AttributeError:
+        pass
+    if isinstance(val, numpy.ndarray) and val.dtype.type == numpy.bytes_:
+        val = val.astype(numpy.unicode_).tolist()
+    return val
+
+
 @add_metaclass(ABCMeta)
 class BaseInferenceFile(h5py.File):
     """Base class for all inference hdf files.
@@ -74,6 +106,10 @@ class BaseInferenceFile(h5py.File):
                 self.attrs['filetype'] = filetype
             else:
                 filetype = None
+        try:
+            filetype = str(filetype.decode())
+        except AttributeError:
+            pass
         if filetype != self.name:
             raise ValueError("This file has filetype {}, whereas this class "
                              "is named {}. This indicates that the file was "
@@ -176,7 +212,7 @@ class BaseInferenceFile(h5py.File):
         addatrs = (list(self.static_params.items()) +
                    list(self[self.samples_group].attrs.items()))
         for (p, val) in addatrs:
-            setattr(samples, p, val)
+            setattr(samples, format_attr(p), format_attr(val))
         return samples
 
     @abstractmethod

@@ -14,7 +14,7 @@ workflow.
 
 This module is designed to be able to support multiple ways of obtaining
 data (different codes/interfaces whatever). Currently we only support datafind
-through the glue.datafind module (which is equivalent to using gw_data_find).
+through the `gwdatafind` module (which is equivalent to using gw_data_find).
 
 This module will run the necessary queries to the datafind server to obtain
 locations for frame files at the specfied times for each interferometer.
@@ -122,7 +122,7 @@ $$$$$$$$$$$$$$$
 $$$$$$$$$$$$$$$
 
 Currently no executables are needed in the datafind section. Workflow will use
-the glue.datafind module to run the calls to the datafind server.
+the `gwdatafind` module to run the calls to the datafind server.
 
 $$$$$$$$$$$$$$$$$$$
 Other sections

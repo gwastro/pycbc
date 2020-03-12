@@ -1,0 +1,115 @@
+#!/bin/bash
+
+WORKFLOW_DIR=""
+
+CMD_OPTS=$(getopt \
+    -o hd: \
+    -l help,workflow-dir: \
+    -n pycbc_stageout_failed_worflow \
+    -- "$@")
+
+eval set -- "$CMD_OPTS"
+
+while true
+do
+    case "$1" in
+	-h|--help)
+	    echo "usage: pycbc_copy_output_map [-h] input_map output_map [optional arguments]"
+	    echo
+	    echo "required arguments:"
+	    echo "  -d, --workflow-dir    the directory of the workflow to be staged out"
+	    echo
+	    echo "optional arguments:"
+	    echo "  -h, --help            show this help message and exit"
+	    echo
+	    exit 0 ;;
+	-d|--workflow-dir)
+	    WORKFLOW_DIR="$2"
+	    shift 2
+	    if [ ! -d "$WORKFLOW_DIR" ]
+	    then
+		echo "--workflow-dir must be given a directory"
+		exit 1
+	    fi
+	    WORKFLOW_DIR=$(readlink -f "$WORKFLOW_DIR") ;;
+	--)
+	    break ;;
+    esac
+done
+
+if [ "x$WORKFLOW_DIR" == "x" ]
+then
+    echo "-d, --workflow-dir must be specified, see -h, --help for options"
+    exit 1
+fi
+
+# Find the main map file and the workflow name
+# If multiple files are given then the workflow must be called *-main *-main-main etc.
+MAINS_STRING="-main.dax"
+WORKFLOW_DAX=($(ls "${WORKFLOW_DIR}/"*"$MAINS_STRING"))
+
+while (( ${#WORKFLOW_DAX[@]} > 1 ))
+do
+    MAINS_STRING="-main$MAINS_STRING"
+    WORKFLOW_DAX=($(ls "${WORKFLOW_DIR}/"*"$MAINS_STRING"))
+done
+
+if (( ${#WORKFLOW_DAX[@]} == 0 ))
+then
+    echo "Can't find the *-main.dax file in the workflow"
+    exit 1
+fi
+
+WORKFLOW_DAX=${WORKFLOW_DAX[0]}
+
+NAME_START=$(( ${#WORKFLOW_DIR} + 1 ))
+NAME_LENGTH=$(( ${#WORKFLOW_DAX} - $NAME_START - ${#MAINS_STRING} ))
+WORKFLOW_NAME=${WORKFLOW_DAX:$NAME_START:$NAME_LENGTH}
+WORKFLOW_MAP="${WORKFLOW_DIR}/${WORKFLOW_NAME}-main.map"
+
+echo "Workflow name:        $WORKFLOW_NAME"
+echo "Workflow map file:    $WORKFLOW_MAP"
+
+WORKING_DIRS=($(ls -d "${WORKFLOW_DIR}/local-site-scratch/work/${WORKFLOW_NAME}-main_ID"???????))
+
+echo "Working directories to be searched:"
+echo "${WORKING_DIRS[@]}"
+echo
+
+while true
+do
+    read -p "Do you wish to continue? [y/n]" YN
+    case $YN in
+	[Yy] )
+	    break ;;
+	[Nn] )
+	    exit 0 ;;
+	* )
+	    echo "Please enter y/n."
+    esac
+done
+
+while read -r LINE
+do
+    read -ra ARRAY <<< "$LINE"
+    if (( ${#ARRAY[@]} != 3 ))
+    then
+	echo "A line in the *-main.map file contained ${#ARRAY[@]} space seperated entries."
+	echo "A map file should contain 3 per line."
+	exit 1
+    elif [ ! -d $(dirname "${ARRAY[1]}") ]
+    then
+	DESTINATION_DIR=$(dirname "${ARRAY[1]}")
+	echo "$DESTINATION_DIR doesn't exist, skipping files going to this dir."
+    elif [ ! -s "${ARRAY[1]}" ]
+    then
+	for WORKING_DIR in "${WORKING_DIRS[@]}"
+	do
+	    if [ -s "${WORKING_DIR}/${ARRAY[0]}" ]
+	    then
+		cp "${WORKING_DIR}/${ARRAY[0]}" "${ARRAY[1]}"
+		break
+	    fi
+	done
+    fi
+done < "$WORKFLOW_MAP"

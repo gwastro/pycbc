@@ -1431,6 +1431,12 @@ def get_segments_file(workflow, name, option_name, out_dir):
     source = "any"
     if cp.has_option("workflow-segments", "segments-source"):
         source = cp.get("workflow-segments", "segments-source")
+    if source == "file":
+        local_file_path = \
+            resolve_url(cp.get("workflow-segments", option_name+"-file"))
+        pfn = os.path.join(out_dir, os.path.basename(local_file_path))
+        shutil.move(local_file_path, pfn)
+        return SegFile.from_segment_xml(pfn)
 
     segs = {}
     for ifo in workflow.ifos:

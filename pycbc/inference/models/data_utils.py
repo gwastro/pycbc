@@ -341,9 +341,9 @@ def data_opts_from_config(cp, section, filter_flow):
                          det, pad)
         gps_start[det] -= pad
         gps_end[det] += pad
-        if opts.psd_start_time is not None:
+        if opts.psd_start_time[det] is not None:
             opts.psd_start_time[det] += opts.trigger_time
-        if opts.psd_end_time is not None:
+        if opts.psd_end_time[det] is not None:
             opts.psd_end_time[det] += opts.trigger_time
     opts.gps_start_time = gps_start
     opts.gps_end_time = gps_end
@@ -360,9 +360,8 @@ def data_opts_from_config(cp, section, filter_flow):
             raise ValueError("data conditioning low frequency cutoff must "
                              "be less than the filter low frequency "
                              "cutoff")
-    # have to clear to remove the random string thing in DictWithDefaultReturn
-    opts.low_frequency_cutoff.clear()
-    opts.low_frequency_cutoff.update(low_freq_cutoff)
+    opts.low_frequency_cutoff = low_freq_cutoff
+
     # verify options are sane
     verify_psd_options_multi_ifo(opts, parser, opts.instruments)
     verify_strain_options_multi_ifo(opts, parser, opts.instruments)
@@ -394,11 +393,11 @@ def data_from_cli(opts, check_for_valid_times=False,
     Returns
     -------
     strain_dict : dict
-        Dictionary of instruments -> `TimeSeries` strain.
-    stilde_dict : dict
-        Dictionary of instruments -> `FrequencySeries` strain.
-    psd_dict : dict
-        Dictionary of instruments -> `FrequencySeries` psds.
+        Dictionary of detectors -> time series strain.
+    psd_strain_dict : dict or None
+        If ``opts.psd_(start|end)_time`` were set, a dctionary of
+        detectors -> time series data to use for PSD estimation. Otherwise,
+        ``None``.
     """
     # get gates to apply
     gates = gates_from_cli(opts)
@@ -460,43 +459,93 @@ def data_from_cli(opts, check_for_valid_times=False,
         # apply any gates
         logging.info("Applying gates to PSD data")
         psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
+        # check that there aren't nans in the psd data
+        check_for_nans(psd_strain_dict)
     elif opts.psd_start_time or opts.psd_end_time:
         raise ValueError("Must give psd-start-time and psd-end-time")
     else:
-        psd_strain_dict = strain_dict
+        psd_strain_dict = None
 
     # check that we have data left to analyze
     if instruments == []:
         raise NoValidDataError("No valid data could be found in any of the "
                                "requested instruments.")
 
-    # check that there aren't nans in the psd data
-    check_for_nans(psd_strain_dict)
+    return strain_dict, psd_strain_dict
 
+
+def fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict=None):
+    """Converts a dictionary of time series to the frequency domain, and gets
+    the PSDs.
+
+    Parameters
+    ----------
+    opts : ArgumentParser parsed args
+        Argument options parsed from a command line string (the sort of thing
+        returned by `parser.parse_args`).
+    strain_dict : dict
+        Dictionary of detectors -> time series data.
+    psd_strain_dict : dict, optional
+        Dictionary of detectors -> time series data to use for PSD estimation.
+        If not provided, will use the ``strain_dict``. This is
+        ignored if ``opts.psd_estimation`` is not set. See
+        :py:func:`pycbc.psd.psd_from_cli_multi_ifos` for details.
+
+    Returns
+    -------
+    stilde_dict : dict
+        Dictionary of detectors -> frequency series data.
+    psd_dict : dict
+        Dictionary of detectors -> frequency-domain PSDs.
+    """
     # FFT strain and save each of the length of the FFT, delta_f, and
     # low frequency cutoff to a dict
     stilde_dict = {}
     length_dict = {}
     delta_f_dict = {}
-    for ifo in instruments:
-        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
-        length_dict[ifo] = len(stilde_dict[ifo])
-        delta_f_dict[ifo] = stilde_dict[ifo].delta_f
+    for det, tsdata in strain_dict.items():
+        stilde_dict[det] = tsdata.to_frequencyseries()
+        length_dict[det] = len(stilde_dict[det])
+        delta_f_dict[det] = stilde_dict[det].delta_f
+
+    if psd_strain_dict is None:
+        psd_strain_dict = strain_dict
 
     # get PSD as frequency series
     psd_dict = psd_from_cli_multi_ifos(
         opts, length_dict, delta_f_dict, opts.low_frequency_cutoff,
-        instruments, strain_dict=psd_strain_dict, precision="double")
+        list(psd_strain_dict.keys()), strain_dict=psd_strain_dict,
+        precision="double")
 
-    # apply any gates to overwhitened data, if desired
-    if opts.gate_overwhitened and opts.gate is not None:
-        logging.info("Applying gates to overwhitened data")
-        # overwhiten the data
-        for ifo in gates:
-            stilde_dict[ifo] /= psd_dict[ifo]
-        stilde_dict = apply_gates_to_fd(stilde_dict, gates)
-        # unwhiten the data for the model
-        for ifo in gates:
-            stilde_dict[ifo] *= psd_dict[ifo]
+    return stilde_dict, psd_dict
 
-    return strain_dict, stilde_dict, psd_dict
+
+def gate_overwhitened_data(stilde_dict, psd_dict, gates):
+    """Applies gates to overwhitened data.
+
+    Parameters
+    ----------
+    stilde_dict : dict
+        Dictionary of detectors -> frequency series data to apply the gates to.
+    psd_dict : dict
+        Dictionary of detectors -> PSD to use for overwhitening.
+    gates : dict
+        Dictionary of detectors -> gates.
+
+    Returns
+    -------
+    dict :
+        Dictionary of detectors -> frequency series data with the gates
+        applied after overwhitening. The returned data is not overwhitened.
+    """
+    logging.info("Applying gates to overwhitened data")
+    # overwhiten the data
+    out = {}
+    for det in gates:
+        out[det] = stilde_dict[det] / psd_dict[det]
+    # now apply the gate
+    out = apply_gates_to_fd(out, gates)
+    # now unwhiten
+    for det in gates:
+        out[det] *= psd_dict[det]
+    return out

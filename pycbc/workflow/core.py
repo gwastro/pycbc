@@ -622,7 +622,7 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).__init__(name)
 
         # Parse ini file
-        self.cp = WorkflowConfigParser.from_args(args)
+        self.cp = WorkflowConfigParser.from_cli(args)
 
         # Set global values
         start_time = int(self.cp.get("workflow", "start-time"))
@@ -821,13 +821,16 @@ class Workflow(pegasus_workflow.Workflow):
             The FileList object with the configuration file.
         """
         cp = self.cp if cp is None else cp
-        ini_file_path = os.path.join(output_dir, fname)
+        ini_file_path = os.path.abspath(os.path.join(output_dir, fname))
         with open(ini_file_path, "w") as fp:
             cp.write(fp)
-        ini_file = FileList([File(self.ifos, "",
-                                  self.analysis_time,
-                                  file_url="file://" + ini_file_path)])
-        return ini_file
+        ini_file = File(self.ifos, "", self.analysis_time,
+                        file_url="file://" + ini_file_path)
+        # set the physical file name
+        ini_file.PFN(ini_file_path, "local")
+        # set the storage path to be the same
+        ini_file.storage_path = ini_file_path
+        return FileList([ini_file])
 
 class Node(pegasus_workflow.Node):
     def __init__(self, executable):

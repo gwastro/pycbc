@@ -136,6 +136,22 @@ class ParseParametersArg(ParseLabelArg):
                 pass
 
 
+def add_injsamples_map_opt(parser):
+    """Adds option to parser to specify a mapping between injection parameters
+    an sample parameters.
+    """
+    parser.add_argument('--injection-samples-map', nargs='+',
+                        metavar='INJECTION_PARAM:SAMPLES_PARAM',
+                        help='Rename/apply functions to the injection '
+                             'parameters and name them the same as one of the '
+                             'parameters in samples. This can be used if the '
+                             'injection parameters are not the same as the '
+                             'samples parameters. INJECTION_PARAM may be a '
+                             'function of the injection parameters; '
+                             'SAMPLES_PARAM must a name of one of the '
+                             'parameters in the samples group.')
+
+
 def add_plot_posterior_option_group(parser):
     """Adds the options needed to configure plots of posterior results.
 
@@ -200,6 +216,7 @@ def add_plot_posterior_option_group(parser):
                              "injection in the file to work. Any values "
                              "specified by expected-parameters will override "
                              "the values obtained for the injection.")
+    add_injsamples_map_opt(pgroup)
     return pgroup
 
 
