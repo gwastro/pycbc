@@ -33,7 +33,6 @@ from pycbc import waveform as _waveform
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
-from .epsie import EpsieFile
 from .cpnest import CPNestFile
 from .multinest import MultinestFile
 from .dynesty import DynestyFile
@@ -44,13 +43,18 @@ from .txt import InferenceTXTFile
 filetypes = {
     EmceeFile.name: EmceeFile,
     EmceePTFile.name: EmceePTFile,
-    EpsieFile.name: EpsieFile,
     CPNestFile.name: CPNestFile,
     MultinestFile.name: MultinestFile,
     DynestyFile.name: DynestyFile,
     PosteriorFile.name: PosteriorFile,
     UltranestFile.name: UltranestFile,
 }
+
+try:
+    from .epsie import EpsieFile
+    filetypes[EpsieFile.name] = EpsieFile
+except ImportError:
+    pass
 
 
 def get_file_type(filename):
