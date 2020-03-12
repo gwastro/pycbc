@@ -43,7 +43,8 @@ cd ../
 ###############################################################################
 
 echo -e ">> [`date`] upgrading setuptools and pip"
-pip install --upgrade setuptools pip
+pip install --upgrade pip
+#pip install --upgrade setuptools
 
 echo -e ">> [`date`] installing requirements"
 pip install -r requirements.txt
