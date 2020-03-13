@@ -169,7 +169,8 @@ diagnostics = inffu.get_diagnostic_plots(workflow)
 do_pp_test = workflow.cp.has_option('executables', 'pp_table_summary')
 if do_pp_test:
     # get the parameters to do the test
-    pp_params = shlex.split(workflow.cp.get('workflow-pp_test', 'pp-params'))
+    pp_params = ["'"+s+"'" for s in
+                 shlex.split(workflow.cp.get('workflow-pp_test', 'pp-params'))]
     # see if there is an injection map provided
     if workflow.cp.has_option('workflow-pp_test', 'injection-samples-map'):
         inj_samples_map = workflow.cp.get('workflow-pp_test',
