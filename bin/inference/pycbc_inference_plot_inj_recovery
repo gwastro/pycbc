@@ -43,7 +43,7 @@ parameter = parameters[0]
 label = labels[parameters[0]] 
 
 # create figure
-fig = plt.figure()
+fig = plt.figure(figsize=(6,6))
 ax = fig.add_subplot(111)
 
 # typecast to list for iteratation
