@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ Make a table of found injection information
 """
-import argparse, h5py, numpy, pycbc.results, pycbc.detector, sys
+import argparse, h5py, numpy as np, pycbc.results, pycbc.detector, sys
 from pycbc.types import MultiDetOptionAction
 import pycbc.pnutils, pycbc.events
 import pycbc.version
@@ -51,16 +51,16 @@ else:
         for det in detectors:
             if(det in keys):
                 detectors_used.append(det)
-        det_two_combo= numpy.array(list(combinations(detectors_used,2)))
+        det_two_combo= np.array(list(combinations(detectors_used,2)))
         tdiff = []
         tdiff_str = []
         tdiff_format =[]
         for i in range(len(det_two_combo)):
-            time_1 = numpy.array(found[det_two_combo[i,0]+'/time'][:])
-            time_2 = numpy.array(found[det_two_combo[i,1]+'/time'][:])
+            time_1 = np.array(found[det_two_combo[i,0]+'/time'][:])
+            time_2 = np.array(found[det_two_combo[i,1]+'/time'][:])
             tdiff_vals = (time_1 - time_2) * 1000
-            tdiff_vals[numpy.logical_or(time_1 < 0, time_2 < 0)] = numpy.nan
-            tdiff_1 = ['%.2f' % td for td in tdiff_vals]
+            tdiff_vals[np.logical_or(time_1 < 0, time_2 < 0)] = np.nan
+            tdiff_1 = ['%.2f' % td if not np.isnan(td) else ' ' for td in tdiff_vals]
             tdiff.append(tdiff_1)
             tdiff_head= '%s - %s time (ms)' % (det_two_combo[i,0], det_two_combo[i,1])
             tdiff_str.append(tdiff_head)
@@ -75,16 +75,16 @@ else:
     if args.single_trigger_files:
         for ifo in args.single_trigger_files:
             f = h5py.File(args.single_trigger_files[ifo], 'r')[ifo]
-            ids_ifo = numpy.array(ids[ifo])
-            ids_na = numpy.argwhere(ids_ifo == -1)
+            ids_ifo = np.array(ids[ifo])
+            ids_na = np.argwhere(ids_ifo == -1)
             snr_vals = f['snr'][:][ids_ifo]
-            snr_vals[ids_ifo == -1] = numpy.nan
+            snr_vals[ids_ifo == -1] = np.nan
             chisq_vals = f['chisq'][:][ids_ifo] / (2 * f['chisq_dof'][:][ids_ifo] - 2)
-            chisq_vals[ids_ifo == -1] = numpy.nan
+            chisq_vals[ids_ifo == -1] = np.nan
             newsnr_vals = pycbc.events.ranking.newsnr(snr_vals, chisq_vals)
-            snr = ['%.2f' % s for s in snr_vals]
-            chisq = ['%.2f' % c for c in chisq_vals]
-            newsnr = ['%.2f' % s for s in newsnr_vals]
+            snr = ['%.2f' % s if not np.isnan(s) else ' ' for s in snr_vals]
+            chisq = ['%.2f' % c if not np.isnan(c) else ' ' for c in chisq_vals]
+            newsnr = ['%.2f' % s if not np.isnan(s) else ' ' for s in newsnr_vals]
             
             found_names += [ifo + " SNR", ifo + " CHISQ", ifo + " NewSNR"]
             if('detector_1' in f.attrs):
@@ -105,7 +105,7 @@ for dist in eff_dist :
         eff_dist_str.append(eff_dist[dist])
         eff_dist_format.append('##.##')
                 
-dec_dist = numpy.max(eff_distance,0)
+dec_dist = np.max(eff_distance,0)
 m1, m2 = inj['mass1'][:][idx], inj['mass2'][:][idx]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
@@ -124,7 +124,7 @@ format_strings = ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
                   '##.##'] + eff_dist_format +  found_formats 
-columns = [numpy.array(col) for col in columns]
+columns = [np.array(col) for col in columns]
 html_table = pycbc.results.html_table(columns, names,
                                  format_strings=format_strings,
                                  page_size=20)

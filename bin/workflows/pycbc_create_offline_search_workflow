@@ -599,8 +599,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                  exclude=['all', 'summ'], require='sub',
                                  tags=[tag])
 
-    #found_table = wf.make_inj_table(workflow, found_inj, injdir,
-    #                                singles=insps, tags=[tag + 'found'])
+    found_table = wf.make_inj_table(workflow, found_inj, injdir,
+                                    singles=insps, tags=[tag + 'found'])
     missed_table = wf.make_inj_table(workflow, found_inj, injdir,
                                      missed=True, tags=[tag + 'missed'])
 
@@ -619,7 +619,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                 #                               injdir, tags=curr_tags)
 
     # Make pages from plots
-    inj_layout = list(layout.grouper(f, 2)) + [(missed_table,)]
+    inj_layout = list(layout.grouper(f, 2)) + [(found_table,), (missed_table,)]
     layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)
 
     if len(s) > 0:
