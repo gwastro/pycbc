@@ -277,17 +277,15 @@ class Workflow(object):
                 path += [v.in_workflow]
                 v = v.in_workflow
             return path
-
         workflow_root = root_path(self)
         input_root = root_path(inp)
-
         for step in workflow_root:
             if step in input_root:
                 common = step
                 break
-
-        dep = dax.Dependency(child=workflow_root[workflow_root.index(common)-1],
-                             parent=input_root[input_root.index(common)-1])
+        dep = dax.Dependency(
+            parent=input_root[input_root.index(common)-1].as_job,
+            child=self.as_job)
         common._adag.addDependency(dep)
 
     def add_workflow(self, workflow):
@@ -310,7 +308,7 @@ class Workflow(object):
         node.file.PFN(os.path.join(os.getcwd(), node.file.name), site='local')
         self._adag.addFile(node.file)
 
-        for inp in self._external_workflow_inputs:
+        for inp in workflow._external_workflow_inputs:
             workflow._make_root_dependency(inp.node)
 
         return self
@@ -354,7 +352,6 @@ class Workflow(object):
             elif inp.node is not None and inp.node.in_workflow != self and inp not in self._inputs:
                 self._inputs += [inp]
                 self._external_workflow_inputs += [inp]
-
 
         # Record the outputs that this node generates
         self._outputs += node._outputs
