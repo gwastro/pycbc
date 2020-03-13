@@ -176,7 +176,7 @@ if do_pp_test:
                                           'injection-samples-map')
     else:
         inj_samples_map = None
-    pp_section = 'p-p_test'
+    pp_section = 'percentile-percentile_test'
     pp_dir = [pp_section]
 else:
     pp_dir = []
@@ -338,8 +338,7 @@ if do_pp_test:
     pp_table = inffu.make_inference_pp_table(
         pp_workflow, posterior_files, rdir[pp_section],
         parameters=pp_params, injection_samples_map=inj_samples_map,
-        analysis_seg=workflow.analysis_time, tags=opts.tags)
-    layout.single_layout(rdir[pp_section], pp_table)
+        analysis_seg=workflow.analysis_time, tags=opts.tags)[0]
     # now the pp plots and injection recovery
     pp_plots = []
     inj_recovery_plots = []
@@ -357,8 +356,9 @@ if do_pp_test:
             injection_samples_map=inj_samples_map,
             analysis_seg=workflow.analysis_time, tags=tags)[0]
         inj_recovery_plots.append(injrec_plot)
-    layout.two_column_layout(rdir[pp_section],
-                             list(zip(pp_plots, inj_recovery_plots)))
+    # add to the results page
+    pp_files = [(pp_table,)] + list(zip(pp_plots, inj_recovery_plots))
+    layout.two_column_layout(rdir[pp_section], pp_files)
     # add to the main workflow
     workflow += pp_workflow
 
