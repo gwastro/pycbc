@@ -92,7 +92,7 @@ def make_inference_plot(workflow, input_file, output_dir,
         # and put the opt back in the config file in memory
         workflow.cp.set(name, 'parameters', parameters)
     # add input and output options
-    if isinstance(input_file, list): 
+    if isinstance(input_file, list):
         # list of input files are given, use input_list_opt
         node.add_input_list_opt("--{}".format(input_file_opt), input_file)
     else:
