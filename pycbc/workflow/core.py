@@ -1994,3 +1994,36 @@ def get_random_label():
     """
     return ''.join(random.choice(string.ascii_uppercase + string.digits) \
                    for _ in range(15))
+
+
+def add_workflow_settings_cli(parser, include_subdax_opts=False):
+    """Adds workflow options to an argument parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Argument parser to add the options to.
+    include_subdax_opts : bool, optional
+        If True, will add output-map, transformation-catalog, and dax-file
+        options to the parser. These can be used for workflows that are
+        generated as a subdax of another workflow. Default is False.
+    """
+    wfgrp = parser.add_argument_group("Options for setting workflow files")
+    wfgrp.add_argument("--workflow-name", required=True,
+                       help="Name of the workflow.")
+    wfgrp.add_argument("--tags", nargs="+", default=[],
+                       help="Append the given tags to file names.")
+    wfgrp.add_argument("--output-dir", default=None,
+                       help="Path to directory where the workflow will be "
+                            "written. Default is to use "
+                            "{workflow-name}_output.")
+    if include_subdax_opts:
+        wfgrp.add_argument("--output-map", default="output.map",
+                           help="Path to an output map file. Default is "
+                                "output.map.")
+        wfgrp.add_argument("--transformation-catalog", default=None,
+                           help="Path to transformation catalog file.")
+        wfgrp.add_argument("--dax-file", default=None,
+                           help="Path to DAX file. Default is to write to the "
+                                "output directory with name "
+                                "{workflow-name}.dax.")

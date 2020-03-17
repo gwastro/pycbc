@@ -155,7 +155,7 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 # add option groups
 configuration.add_workflow_command_line_group(parser)
 # workflow options
-inffu.add_inference_workflow_group(parser)
+core.add_workflow_settings_cli(parser, include_subdax_opts=True)
 parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for inference job(s). If multiple "
                          "events are analyzed, the seed will be incremented "

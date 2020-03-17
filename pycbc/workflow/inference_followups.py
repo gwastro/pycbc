@@ -862,27 +862,6 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
     return posterior_file, summary_files, prior_plots, posterior_plots
 
 
-def add_inference_workflow_group(parser):
-    """Add workflow options to an argument parser."""
-    wfgrp = parser.add_argument_group("Options for setting workflow files.")
-    wfgrp.add_argument("--workflow-name", required=True,
-                       help="Name of the workflow.")
-    wfgrp.add_argument("--tags", nargs="+", default=[],
-                       help="Append the given tags to file names.")
-    wfgrp.add_argument("--output-dir", default=None,
-                       help="Path to directory where the workflow will be "
-                            "written. Default is to use "
-                            "{workflow-name}_output.")
-    wfgrp.add_argument("--output-map", default="output.map",
-                       help="Path to an output map file. Default is "
-                            "output.map.")
-    wfgrp.add_argument("--transformation-catalog", default=None,
-                       help="Path to transformation catalog file.")
-    wfgrp.add_argument("--dax-file", default=None,
-                       help="Path to DAX file. Default is to write to the "
-                            "output directory with name {workflow-name}.dax.")
-
-
 def _params_for_pegasus(parameters):
     """Escapes $ and escapes in parameters string for pegasus.
 

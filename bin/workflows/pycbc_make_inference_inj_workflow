@@ -86,7 +86,7 @@ group.add_argument("--injection-file", type=str, nargs="+",
 # add option groups
 configuration.add_workflow_command_line_group(parser)
 # add workflow group
-inffu.add_inference_workflow_group(parser)
+core.add_workflow_settings_cli(parser, include_subdax_opts=True)
 parser.add_argument("--seed", type=int, default=0,
                     help="Starting to seed to use. This will be incremented "
                          "one for each injection analyzed. Default is 0.")
