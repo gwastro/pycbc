@@ -140,9 +140,9 @@ parser.add_argument('--output-file', required=True,
                          'injections will be written to a sim_inspiral table '
                          'in an xml file. Otherwise, results will be written '
                          'to an hdf file.')
-parser.add_argument('--dist-section', default='distribution',
+parser.add_argument('--dist-section', default='prior',
                     help='What section in the config file to load '
-                          'distributions from. Default is distribution.')
+                          'distributions from. Default is prior.')
 parser.add_argument('--variable-params-section', default='variable_params',
                     help='What section in the config file to load the '
                          'parameters to vary. Default is variable_params.')

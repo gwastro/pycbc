@@ -3,6 +3,7 @@
 of injections.
 """
 
+import sys
 import argparse
 import logging
 import matplotlib as mpl; mpl.use("Agg")
@@ -15,6 +16,7 @@ from matplotlib import cm
 from pycbc import inject
 from pycbc import __version__
 from pycbc.inference import (option_utils, io)
+from pycbc.results import save_fig_with_metadata
 
 # parse command line
 parser = io.ResultsArgumentParser(description=__doc__)
@@ -43,7 +45,7 @@ parameter = parameters[0]
 label = labels[parameters[0]] 
 
 # create figure
-fig = plt.figure()
+fig = plt.figure(figsize=(6,6))
 ax = fig.add_subplot(111)
 
 # typecast to list for iteratation
@@ -118,7 +120,14 @@ ax.grid()
 ax.axhline(0, linestyle="dashed", color="gray", zorder=9)
 
 # save plot
-plt.savefig(opts.output_file)
+caption = ('Difference in recovered value vs injected value vs injected '
+           'value. The vertical lines show the width of the {} to {} '
+           'percentile credible interval.'
+           .format(opts.percentiles[0], opts.percentiles[1]))
+save_fig_with_metadata(fig, opts.output_file,
+                       caption=caption,
+                       cmd=' '.join(sys.argv),
+                       fig_kwds={'bbox_inches': 'tight'})
 
 # done
 logging.info("Done")

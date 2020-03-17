@@ -1752,6 +1752,7 @@ class PycbcConditionStrainExecutable(Executable):
 
         return node, out_file
 
+
 class PycbcCreateInjectionsExecutable(Executable):
     """ The class responsible for creating jobs
     for ``pycbc_create_injections``.
@@ -1792,7 +1793,7 @@ class PycbcCreateInjectionsExecutable(Executable):
 
         # make node for running executable
         node = Node(self)
-        node.add_input_opt("--config-file", config_file)
+        node.add_input_opt("--config-files", config_file)
         if seed:
             node.add_opt("--seed", seed)
         injection_file = node.new_output_file_opt(analysis_time,
@@ -1800,6 +1801,7 @@ class PycbcCreateInjectionsExecutable(Executable):
                                                   tags=tags)
 
         return node, injection_file
+
 
 class PycbcInferenceExecutable(Executable):
     """ The class responsible for creating jobs for ``pycbc_inference``.

@@ -124,32 +124,12 @@ def symlink_path(f, path):
 
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
-
-# version option
-parser.add_argument("--version", action="version", version=__version__,
-                    help="Prints version information.")
-
-# workflow options
-parser.add_argument("--workflow-name", required=True,
-                    help="Name of the workflow to append in various places.")
-parser.add_argument("--tags", nargs="+", default=[],
-                    help="Tags to apend in various places.")
-parser.add_argument("--output-dir", default=None,
-                    help="Path to directory where the workflow will be "
-                         "written. Default is to use "
-                         "{workflow-name}_output.")
-parser.add_argument("--output-map", default="output.map",
-                    help="Path to an output map file. Default is "
-                         "output.map.")
-parser.add_argument("--transformation-catalog", default=None,
-                    help="Path to transformation catalog file.")
-parser.add_argument("--dax-file", default=None,
-                    help="Path to DAX file. Default is to write to the "
-                         "output directory with name {workflow-name}.dax.")
 # add option groups
 configuration.add_workflow_command_line_group(parser)
-
-# parser command line
+# workflow options
+core.add_workflow_settings_cli(parser, include_subdax_opts=True)
+parser.add_argument("--version", action="version", version=__version__,
+                    help="Prints version information.")
 opts = parser.parse_args()
 
 posterior_file_dir = 'posterior_files'
