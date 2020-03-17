@@ -272,7 +272,7 @@ class Workflow(object):
 
     def _make_root_dependency(self, inp):
         def root_path(v):
-            path = []
+            path = [v]
             while v.in_workflow:
                 path += [v.in_workflow]
                 v = v.in_workflow
@@ -285,7 +285,7 @@ class Workflow(object):
                 break
         dep = dax.Dependency(
             parent=input_root[input_root.index(common)-1].as_job,
-            child=self.as_job)
+            child=workflow_root[workflow_root.index(common)-1].as_job)
         common._adag.addDependency(dep)
 
     def add_workflow(self, workflow):
