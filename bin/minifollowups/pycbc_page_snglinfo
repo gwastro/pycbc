@@ -20,6 +20,7 @@ import sys, h5py, matplotlib, numpy, datetime, argparse
 matplotlib.use('Agg')
 import lal
 import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
+from pycbc.results import followup
 from pycbc.io import hdf
 
 
@@ -54,6 +55,9 @@ parser.add_argument('--ranking-statistic', default='newsnr',
          "'newsnr'")
 parser.add_argument('--include-summary-page-link', action='store_true',
     help="If given, will include a link to the DQ summary page")
+parser.add_argument('--include-gracedb-link', action='store_true',
+    help="If given, will provide a link to search GraceDB for events "
+         "within a 3s window around the coincidence time.")
 
 
 
@@ -146,6 +150,12 @@ headers.append("M<sub>c</sub>")
 headers.append("s<sub>1z</sub>")
 headers.append("s<sub>2z</sub>")
 headers.append("Duration")
+
+# GraceDB search link
+if args.include_gracedb_link:
+    gdb_search_link = followup.get_gracedb_search_link(time)
+    headers.append("GraceDB Search Link")
+    data[0].append(gdb_search_link)
 
 html = pycbc.results.dq.redirect_javascript + \
         str(pycbc.results.static_table(data, headers))
