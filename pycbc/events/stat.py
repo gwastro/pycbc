@@ -1150,7 +1150,6 @@ class ExpFitSGFgBgRateNewStatistic(PhaseTDNewStatistic,
         loglr[loglr < -30.] = -30.
         return loglr
 
-
     def coinc_multiifo(self, s, slide, step, to_shift,
                        **kwargs): # pylint:disable=unused-argument
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
