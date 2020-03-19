@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright 2019 Gareth S. Davies
+# Copyright 2020 Gareth S. Davies
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -13,6 +13,7 @@
 # Public License for more details.
 
 import numpy as np
+import pycbc
 from pycbc import bin_utils
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.io import DictArray
@@ -91,24 +92,13 @@ parser.add_argument("--cluster", default=None,
                     help="which parameter to use maximum when clustering. default=None")
 parser.add_argument("--output-directory", required=True,
                     help="Directory in which to save the output file.")
-parser.add_argument("--output-fit-plot", action="store_true", default=False,
-                    help="Do we save a plot of the fits")
-parser.add_argument("--bank-file", required=True,
-                    help="Bank file, note that this must be an extended file which "
-                         "contains template_duration. This is only used for "
-                         "counting which templates are valid.")
 #parser.add_argument("--", default="", help="")
 
 
 #Add some input sanitisation
 args = parser.parse_args()
 
-if args.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(args.verbose)
 
 files = [f for f in os.listdir(os.path.join(args.top_directory, args.analysis_date))
          if args.file_identifier in f]
@@ -157,7 +147,7 @@ cut_thresholds = list(cut_thresholds)
 
 # The following datasets are required for calculation of cut parameters
 required_datasets = ['snr', 'chisq', 'chisq_dof', 'template_duration',
-                     'mass1', 'mass2', 'spin1z', 'spin2z']
+                     'mass1', 'mass2', 'spin1z', 'spin2z', 'template_id']
 required_datasets += cut_params
 required_datasets = list(set(required_datasets))
 
@@ -184,12 +174,13 @@ live_time = {ifo: 0 for ifo in args.ifos}
 
 #store as a DictArray - nice as it has the .select() method
 events_dict = {k : [] for k in required_datasets}
-logging.info("Getting events from which meet criteria: {}".format(ineq_str))
+logging.info("Getting events which meet criteria: %s", ineq_str)
 
 # Loop through files - add events which meet the immediately gettable
 # criteria
 date_directory = os.path.join(args.top_directory, args.analysis_date)
-events = {i: DictArray(data={rp: np.array([]) for rp in required_datasets}) for i in args.ifos}
+events = {i: DictArray(data={rp: np.array([])
+                       for rp in required_datasets}) for i in args.ifos}
 files = [f for f in os.listdir(date_directory)
          if args.file_identifier in f]
 counter = 0
@@ -199,17 +190,16 @@ for filename in files:
         logging.info("Processed %d files" % counter)
         for ifo in args.ifos:
             logging.info("{}: {} triggers in {}s".format(ifo,
-                                                        events[ifo].data['snr'].size,
-                                                        live_time[ifo]))
+                events[ifo].data['snr'].size, live_time[ifo]))
     f = os.path.join(date_directory, filename)
     skipping_file = False
     #If there is an IOerror with the file, don't fail, just carry on
     try:
-        h5py.File(f,'r')
+        h5py.File(f, 'r')
     except IOError:
         logging.info('IOError with file ' + f)
         continue
-    with h5py.File(f,'r') as fin:
+    with h5py.File(f, 'r') as fin:
         # Open the file: does it have the ifo group and snr dataset?
         for ifo in args.ifos:
             if not (ifo in fin and 'snr' in fin[ifo]):
@@ -217,7 +207,7 @@ for filename in files:
             live_time[ifo] += 8
             # all the required datasets must be present - this should
             # not happen though as if snr is present then the others should be
-            if any([rd not in fin[ifo] for rd in required_datasets]):
+            if any(rd not in fin[ifo] for rd in required_datasets):
                 logging.info('some datasets not present in ' + f +', skipping')
                 continue
             # Skip if there are no triggers
@@ -226,7 +216,8 @@ for filename in files:
             # unpack this file into a dictarray
             file_array = DictArray(data={rd : np.array(fin[ifo + '/' + rd][:])
                                          for rd in required_datasets})
-            for cparam, cineq, cthresh in zip(cut_params, cut_inequalities, cut_thresholds):
+            for cparam, cineq, cthresh in zip(cut_params, cut_inequalities,
+                                              cut_thresholds):
                 # calculate parameter if not already in file
                 if cparam not in file_array.data:
                     file_vals = triggers.get_param(cparam, args,
@@ -235,7 +226,8 @@ for filename in files:
                     file_array.data[cparam] = file_vals
                 #Apply cuts to array for this file
                 cineq_fn = inequality_string_to_function(cineq)
-                idx_keep = np.nonzero(cineq_fn(file_array.data[cparam], cthresh))[0]
+                idx_keep = np.nonzero(cineq_fn(file_array.data[cparam],
+                                               cthresh))[0]
                 # if nothing remains after cuts, skip file
                 if not len(idx_keep):
                     skipping_file = True
@@ -244,8 +236,9 @@ for filename in files:
             if args.cluster:
                 if args.cluster=='new_snr':
                     #Calculating new_snr for clustering
-                    file_array.data['new_snr'] = ranking.newsnr(file_array.data['snr'],
-                                                                file_array.data['chisq'])
+                    file_array.data['new_snr'] = ranking.newsnr(
+                                                     file_array.data['snr'],
+                                                     file_array.data['chisq'])
                 max_idx = file_array.data[args.cluster].argmax()
                 file_array = file_array.select([max_idx])
             if skipping_file: continue
@@ -259,7 +252,7 @@ if cutting_newsnr or args.fit_param == 'new_snr' or 'new_snr' not in events[ifo]
     logging.info("Calculating new_snr")
     for ifo in args.ifos:
         events[ifo].data['new_snr'] = ranking.newsnr(events[ifo].data['snr'],
-                                            events[ifo].data['chisq'])
+                                                     events[ifo].data['chisq'])
 #Note: according to Alex, the stored chisq here is already the reduced chisq
 
 if cutting_newsnr:
@@ -274,12 +267,14 @@ if cutting_newsnr:
 
 logging.info("Number of events which meet all criteria:")
 for ifo in args.ifos:
-    logging.info("{}: {} in {}s".format(ifo, len(events[ifo].data['snr']), live_time[ifo]))
+    logging.info("{}: {} in {}s".format(ifo, len(events[ifo].data['snr']),
+                                        live_time[ifo]))
 
 # split the events into bins by template duration
 logging.info('Sorting events into template duration bins')
 
-oput_file = os.path.join(args.output_directory, args.analysis_date + "-TRIGGER-FITS.hdf")
+oput_file = os.path.join(args.output_directory,
+                         args.analysis_date + "-TRIGGER-FITS.hdf")
 
 fout = h5py.File(oput_file, 'w')
 # Fit the triggers within each bin
@@ -293,8 +288,8 @@ for ifo in args.ifos:
         inbin = event_bin == bin_num
         counts[ifo][bin_num] = np.count_nonzero(inbin)
         alphas[ifo][bin_num], _ = trstats.fit_above_thresh(args.fit_function,
-                                 events[ifo].data[args.fit_param][inbin],
-                                 args.fit_threshold)
+                                      events[ifo].data[args.fit_param][inbin],
+                                      args.fit_threshold)
     fout['{}/fit_coeff'.format(ifo)] = alphas[ifo]
     fout['{}/counts'.format(ifo)] = counts[ifo]
     fout[ifo].attrs['live_time'] = live_time[ifo]
@@ -308,70 +303,5 @@ fout.attrs['cuts'] = ineq_str
 fout.attrs['fit_function'] = args.fit_function
 fout.attrs['fit_threshold'] = args.fit_threshold
 
-#for ifo in args.ifos:
-#    event_bin = np.array([tbins[d] for d in events[ifo].data['template_duration']])
-#    for bin_num, l, u, a in zip(range(args.num_duration_bins), tbins.lower(),
-#                                      tbins.upper(), alphas[ifo]):
-#        inbin = event_bin == bin_num
-#        parvals = events[ifo].data[args.fit_param][inbin]
-#        fit_test = fits.KS_test(args.fit_function, parvals, a,
-#                                thresh=args.fit_threshold)
-#        logging.info("{}: bin {}-{}, has fit value {}".format(ifo, l, u, fit_test))
-
-histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
-if args.output_fit_plot:
-    logging.info("Getting template counts from bank file")
-    bank_f = h5py.File(args.bank_file, 'r')
-    bank_array = DictArray(data={d : np.array(bank_f[d][:])
-                                 for d in bank_f})
-    for cparam, cineq, cthresh in zip(cut_params, cut_inequalities, cut_thresholds):
-        #Apply cuts to templates in this file
-        if cparam not in bank_f: continue
-        cineq_fn = inequality_string_to_function(cineq)
-        idx_keep = np.nonzero(cineq_fn(bank_array.data[cparam], cthresh))[0]
-        bank_array = bank_array.select(idx_keep)
-    logging.info("{} templates meet cut criteria".format(len(bank_array)))
-    logging.info("Plotting fits")
-    f_trigs = h5py.File(oput_file, "r")
-    bank_bin = np.array([tbins[d] for d in bank_array.data['template_duration']])
-    for ifo in args.ifos:
-        max_rate = 0
-        if not len(events[ifo].data[args.fit_param]): continue
-        maxstat = max(events[ifo].data[args.fit_param])
-        max_ct = 0
-        plotrange =  np.linspace(args.fit_threshold, 1.05 * maxstat)
-        event_bin = np.array([tbins[d] for d in events[ifo].data['template_duration']])
-        for bin_num, l, u, c, a in zip(range(args.num_duration_bins), tbins.lower(),
-                                       tbins.upper(), counts[ifo], alphas[ifo]):
-            inbin = event_bin == bin_num
-            parvals = events[ifo].data[args.fit_param][inbin]
-            if not len(parvals): continue
-            count_templates = np.count_nonzero(bank_bin == bin_num)
-            max_ct = max(max_ct, count_templates)
-            histcounts, edges = np.histogram(parvals, bins=50)
-            cum_counts = histcounts[::-1].cumsum()[::-1]
-            binlabel = r"%.3g - %.3g" % (l, u)
-            # histogram of fitted values
-            cum_rate = cum_counts / live_time[ifo] / count_templates
-            max_rate = max(max_rate, max(cum_rate))
-            cum_fit = c * trstats.cum_fit(args.fit_function, plotrange,
-                                          a, args.fit_threshold) / live_time[ifo] / count_templates
-            plt.semilogy(edges[:-1], cum_rate, linewidth=2,
-                         color=histcolors[bin_num], label=binlabel, alpha=0.6)
-            plt.semilogy(plotrange, cum_fit, "--", color=histcolors[bin_num],
-                         label=r"$\alpha = $%.2f" % a)
-        oput_plot = os.path.join(args.output_directory,
-                                 ifo + '-' + args.analysis_date + "-TRIGGER-FITS.png")
-        plt.grid()
-        plt.xlim(args.fit_threshold, 1.05 * maxstat)
-        plt.ylim(0.5 / live_time[ifo] / max_ct, 1.5 * max_rate)
-        plt.xlabel(args.fit_param)
-        plt.ylabel("Number of louder triggers per live time per applicable template")
-        plt.legend()
-        logging.getLogger().setLevel(logging.WARNING)
-        plt.savefig(oput_plot)
-        logging.getLogger().setLevel(logging.INFO)
-        logging.info("{} fits saved as {}".format(ifo, oput_plot))
-        plt.close()
-
+fout.close()
 logging.info("Done")
