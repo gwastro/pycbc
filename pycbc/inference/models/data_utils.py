@@ -333,7 +333,7 @@ def data_opts_from_config(cp, section, filter_flow):
     for det in opts.instruments:
         gps_start[det] += opts.trigger_time
         gps_end[det] += opts.trigger_time
-        if opts.psd_inverse_length is not None:
+        if opts.psd_inverse_length[det] is not None:
             pad = int(numpy.ceil(opts.psd_inverse_length[det] / 2))
             logging.info("Padding %s analysis start and end times by %d "
                          "(= psd-inverse-length/2) seconds to "
