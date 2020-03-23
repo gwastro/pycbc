@@ -203,7 +203,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
         node.add_opt('--veto-segment-name', veto_segment_name)
-    if statfiles is not None:
+    if statfiles:
         statfiles = statfiles.find_output_with_ifo(curr_ifo)
         node.add_input_list_opt('--statistic-files', statfiles)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
