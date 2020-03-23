@@ -893,19 +893,22 @@ class ForegroundTriggers(object):
         ligolw_utils.write_filename(outdoc, file_name)
 
 class ReadByTemplate(object):
-    def __init__(self, filename, bank=None, segment_name=[], veto_files=[]):
+    def __init__(self, filename, bank=None, segment_name=None, veto_files=None):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
         self.ifo = tuple(self.file.keys())[0]
         self.valid = None
-        self.bank = h5py.File(bank, 'r') if bank else None
+        self.bank = h5py.File(bank, 'r') if bank else {}
 
         # Determine the segments which define the boundaries of valid times
         # to use triggers
-        from ligo.segments import segmentlist, segment
         key = '%s/search/' % self.ifo
         s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
+        if segment_name is None:
+            segment_name = []
+        if veto_files is None:
+            veto_files = []
         for vfile, name in zip(veto_files, segment_name):
             veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
                                                         segment_name=name)
@@ -948,24 +951,26 @@ class ReadByTemplate(object):
         # Determine which of these template's triggers are kept after
         # applying vetoes
         if self.valid:
-            self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1])
-            logging.info('applying vetoes')
+            self.keep = veto.indices_within_times(times, self.valid[0],
+                                                  self.valid[1])
+#            logging.info('applying vetoes')
         else:
-            self.keep = numpy.arange(0, len(times))
+            self.keep = np.arange(0, len(times))
 
-        if self.bank is not None:
+        if self.bank != {}:
             self.param = {}
-            if 'parameters' in self.bank.attrs :
+            if 'parameters' in self.bank.attrs:
                 for col in self.bank.attrs['parameters']:
                     self.param[col] = self.bank[col][self.template_num]
-            else :
+            else:
                 for col in self.bank:
                     self.param[col] = self.bank[col][self.template_num]
 
         # Calculate the trigger id by adding the relative offset in self.keep
         # to the absolute beginning index of this templates triggers stored
         # in 'template_boundaries'
-        trigger_id = self.keep + self.file['%s/template_boundaries' % self.ifo][num]
+        trigger_id = self.keep + \
+                         self.file['%s/template_boundaries' % self.ifo][num]
         return trigger_id
 
     def __getitem__(self, col):
@@ -982,7 +987,7 @@ class ReadByTemplate(object):
         data: numpy.ndarray
             The requested column of data
         """
-        if self.template_num == None:
+        if self.template_num is None:
             raise ValueError('You must call set_template to first pick the '
                              'template to read data from')
         data = self.get_data(col, self.template_num)
