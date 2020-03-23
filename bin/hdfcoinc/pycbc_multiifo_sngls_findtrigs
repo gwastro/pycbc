@@ -114,19 +114,21 @@ else:
 data = {'stat': [], 'decimation_factor': [], 'timeslide_id': [],
         'template_id': [], '%s/time' % ifo : [], '%s/trigger_id' % ifo: []}
 
+tid_counter = 0
 for tnum in template_ids:
-    logging.info('Obtaining trigs for template %i ..' % (tnum))
+    if not tid_counter % 500:
+        logging.info('Obtaining trigs for template %i out of %i',
+                     tid_counter, len(template_ids))
+    tid_counter += 1
     sngl = reader
     tids_full = sngl.set_template(tnum)
     times_full = sngl['end_time']
     sds_full = rank_method.single(sngl)
-    logging.info('%s' % len(tids_full))
 
     if len(tids_full) == 0:
-        logging.info('No triggers in template %i, skipping' % tnum)
+        logging.info('No triggers in template %i, skipping', tnum)
         continue
 
-    logging.info('Calculating multi-detector singles statistic')
     # list in ifo order of remaining trigger data
     single_info = (ifo, sds_full)
     data['stat'] += [rank_method.single_multiifo(single_info)]
@@ -174,7 +176,8 @@ fore_stat = data['stat'][cid]
 logging.info('Assigning IFARs according to X model')
 # Currently just using a "Count N louder" model as it's easy to code - 
 # which is a bit crap and doesnt give far below 1 per live time
-fnlouder = numpy.argsort(fore_stat[::-1])
+_, fnlouder = coinc.calculate_n_louder(fore_stat, fore_stat,
+                                       numpy.ones_like(fore_stat))
 fg_time = abs(fg_segs)
 ifar = fg_time / (fnlouder + 1)
 fap = 1 - numpy.exp(-fg_time / ifar)
