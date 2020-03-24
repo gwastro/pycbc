@@ -20,7 +20,7 @@ from pycbc import version as pycbc_version
 from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
-from pycbc.events import ranking
+from pycbc.events import ranking, veto
 from pycbc.events.stat import sngl_statistic_dict
 
 class HFile(h5py.File):
@@ -891,6 +891,108 @@ class ForegroundTriggers(object):
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
         ligolw_utils.write_filename(outdoc, file_name)
+
+class ReadByTemplate(object):
+    def __init__(self, filename, bank=None, segment_name=None, veto_files=None):
+        self.filename = filename
+        self.file = h5py.File(filename, 'r')
+        self.ifo = tuple(self.file.keys())[0]
+        self.valid = None
+        self.bank = h5py.File(bank, 'r') if bank else {}
+
+        # Determine the segments which define the boundaries of valid times
+        # to use triggers
+        key = '%s/search/' % self.ifo
+        s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
+        self.segs = veto.start_end_to_segments(s, e).coalesce()
+        if segment_name is None:
+            segment_name = []
+        if veto_files is None:
+            veto_files = []
+        for vfile, name in zip(veto_files, segment_name):
+            veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
+                                                        segment_name=name)
+            self.segs = (self.segs - veto_segs).coalesce()
+        self.valid = veto.segments_to_start_end(self.segs)
+
+    def get_data(self, col, num):
+        """ Get a column of data for template with id 'num'
+
+        Parameters
+        ----------
+        col: str
+            Name of column to read
+        num: int
+            The template id to read triggers for
+
+        Returns
+        -------
+        data: numpy.ndarray
+            The requested column of data
+        """
+        ref = self.file['%s/%s_template' % (self.ifo, col)][num]
+        return self.file['%s/%s' % (self.ifo, col)][ref]
+
+    def set_template(self, num):
+        """ Set the active template to read from
+
+        Parameters        ----------
+        num: int
+            The template id to read triggers for
+
+        Returns
+        -------
+        trigger_id: numpy.ndarray
+            The indices of this templates triggers
+        """
+        self.template_num = num
+        times = self.get_data('end_time', num)
+
+        # Determine which of these template's triggers are kept after
+        # applying vetoes
+        if self.valid:
+            self.keep = veto.indices_within_times(times, self.valid[0],
+                                                  self.valid[1])
+#            logging.info('applying vetoes')
+        else:
+            self.keep = np.arange(0, len(times))
+
+        if self.bank != {}:
+            self.param = {}
+            if 'parameters' in self.bank.attrs:
+                for col in self.bank.attrs['parameters']:
+                    self.param[col] = self.bank[col][self.template_num]
+            else:
+                for col in self.bank:
+                    self.param[col] = self.bank[col][self.template_num]
+
+        # Calculate the trigger id by adding the relative offset in self.keep
+        # to the absolute beginning index of this templates triggers stored
+        # in 'template_boundaries'
+        trigger_id = self.keep + \
+                         self.file['%s/template_boundaries' % self.ifo][num]
+        return trigger_id
+
+    def __getitem__(self, col):
+        """ Return the column of data for current active template after
+        applying vetoes
+
+        Parameters
+        ----------
+        col: str
+            Name of column to read
+
+        Returns
+        -------
+        data: numpy.ndarray
+            The requested column of data
+        """
+        if self.template_num is None:
+            raise ValueError('You must call set_template to first pick the '
+                             'template to read data from')
+        data = self.get_data(col, self.template_num)
+        data = data[self.keep] if self.valid else data
+        return data
 
 
 chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',

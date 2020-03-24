@@ -1138,6 +1138,18 @@ class ExpFitSGFgBgRateNewStatistic(PhaseTDNewStatistic,
         singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
         return numpy.array(singles, ndmin=1)
 
+    def single_multiifo(self, s):
+        ln_noise_rate = s[1]['snglstat']
+        ln_noise_rate -= self.benchmark_lograte
+        network_sigmasq = s[1]['sigmasq']
+        network_logvol = 1.5 * numpy.log(network_sigmasq)
+        benchmark_logvol = s[1]['benchmark_logvol']
+        network_logvol -= benchmark_logvol
+        loglr = network_logvol - ln_noise_rate
+        # cut off underflowing and very small values
+        loglr[loglr < -30.] = -30.
+        return loglr
+
     def coinc_multiifo(self, s, slide, step, to_shift,
                        **kwargs): # pylint:disable=unused-argument
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
