@@ -27,6 +27,8 @@ This module is responsible for setting up the psd files used by CBC
 workflows.
 """
 
+# FIXME: Is this module still relevant for any code? Can it be removed?
+
 from __future__ import division
 
 import os

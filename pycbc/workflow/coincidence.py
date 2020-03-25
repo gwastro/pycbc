@@ -334,24 +334,26 @@ def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir,
         out += node.output_files
     return out
 
-def setup_trigger_fitting(workflow, insps, hdfbank, veto_file, veto_name):
+def setup_trigger_fitting(workflow, insps, hdfbank, veto_file, veto_name,
+                          tags=None):
     if not workflow.cp.has_option('workflow-coincidence', 'do-trigger-fitting'):
         return FileList()
     else:
-        assert len(hdfbank) == 1  # must be a list with exactly 1 bank file
-        assert len(veto_file) == 1
-        assert len(veto_name) == 1
         smoothed_fit_files = FileList()
         for i in workflow.ifos:
             ifo_insp = [insp for insp in insps if (insp.ifo == i)]
             assert len(ifo_insp)==1
-            raw_node = PyCBCFitByTemplateExecutable(workflow.cp,
-                'fit_by_template', ifos=i).create_node(ifo_insp[0], hdfbank[0],
-                                                    veto_file[0], veto_name[0])
+            raw_exe = PyCBCFitByTemplateExecutable(workflow.cp,
+                                                   'fit_by_template', ifos=i,
+                                                   tags=tags)
+            raw_node = raw_exe.create_node(ifo_insp[0], hdfbank,
+                                           veto_file, veto_name)
             workflow += raw_node
-            smooth_node = PyCBCFitOverParamExecutable(workflow.cp,
-                'fit_over_param', ifos=i).create_node(raw_node.output_files[0],
-                                                                    hdfbank[0])
+            smooth_exe = PyCBCFitOverParamExecutable(workflow.cp,
+                                                     'fit_over_param', ifos=i,
+                                                     tags=tags)
+            smooth_node = smooth_exe.create_node(raw_node.output_file,
+                                                 hdfbank[0])
             workflow += smooth_node
             smoothed_fit_files += smooth_node.output_files
         return smoothed_fit_files
@@ -414,7 +416,7 @@ def setup_multiifo_statmap(workflow, ifos, coinc_files, out_dir, tags=None):
     ifolist = ' '.join(ifos)
     stat_node = statmap_exe.create_node(coinc_files, ifolist)
     workflow.add_node(stat_node)
-    return stat_node.output_files[0], stat_node.output_files
+    return stat_node.output_file
 
 def setup_multiifo_statmap_inj(workflow, ifos, coinc_files, background_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -723,7 +725,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files,
                                       tags=tags + [veto_name])
 
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
-                                  veto_files, veto_names, out_dir, pivot_ifo,
+                                  veto_file, veto_name, out_dir, pivot_ifo,
                                   fixed_ifo, tags=None):
     """
     This function sets up exact match multiifo coincidence
@@ -736,7 +738,6 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     if len(hdfbank) != 1:
         raise ValueError('Must use exactly 1 bank file for this coincidence '
                          'method, I got %i !' % len(hdfbank))
-    hdfbank = hdfbank[0]
 
     ifos, _ = trig_files.categorize_by_attr('ifo')
     findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp, 'multiifo_coinc',
@@ -748,23 +749,22 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                                           'parallelization-factor', tags))
 
     statmap_files = []
-    for veto_file, veto_name in zip(veto_files, veto_names):
-        bg_files = FileList()
-        for i in range(factor):
-            group_str = '%s/%s' % (i, factor)
-            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
-                                                   stat_files,
-                                                   veto_file, veto_name,
-                                                   group_str,
-                                                   pivot_ifo,
-                                                   fixed_ifo,
-                                                   tags=[veto_name, str(i)])
-            bg_files += coinc_node.output_files
-            workflow.add_node(coinc_node)
+    bg_files = FileList()
+    for i in range(factor):
+        group_str = '%s/%s' % (i, factor)
+        coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
+                                               stat_files,
+                                               veto_file, veto_name,
+                                               group_str,
+                                               pivot_ifo,
+                                               fixed_ifo,
+                                               tags=['JOB'+str(i)])
+        bg_files += coinc_node.output_files
+        workflow.add_node(coinc_node)
 
-        statmap_files += [setup_multiifo_statmap(workflow, ifos, bg_files,
-                                                 out_dir,
-                                                 tags=tags + [veto_name])]
+    statmap_files = setup_multiifo_statmap(workflow, ifos, bg_files,
+                                           out_dir,
+                                           tags=tags)
 
     logging.info('...leaving coincidence ')
     return statmap_files
@@ -818,12 +818,10 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, bg_file_list,
                             tags=tags, out_dir=out_dir)
 
     if cstat_exe_name == 'pycbc_multiifo_combine_statmap':
-        combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
-                                                     tags=tags)
+        combine_statmap_node = cstat_exe.create_node(final_bg_file_list)
     elif cstat_exe_name == 'pycbc_multiifo_add_statmap':
         combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
-                                                     bg_file_list,
-                                                     tags=tags)
+                                                     bg_file_list)
 
     workflow.add_node(combine_statmap_node)
     return combine_statmap_node.output_file
@@ -848,9 +846,13 @@ def setup_multiifo_exclude_zerolag(workflow, statmap_file, other_statmap_files,
     workflow.add_node(exc_zerolag_node)
     return exc_zerolag_node.output_file
 
-def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
+def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir,
+                          tags=None,
                           injection_file=None,
                           ranking_file=None):
+    if tags is None:
+        tags = []
+
     make_analysis_dir(out_dir)
 
     if not workflow.cp.has_section("workflow-rerank"):
@@ -864,14 +866,14 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
     for ifo in workflow.ifos:
         make_analysis_dir('strain_files')
         node = Executable(workflow.cp, 'strain_data_reduce', ifos=[ifo],
-                          out_dir='strain_files').create_node()
+                          out_dir='strain_files', tags=tags).create_node()
         node.add_opt('--gps-start-time', workflow.analysis_time[0])
         node.add_opt('--gps-end-time', workflow.analysis_time[1])
         if injection_file:
             node.add_input_opt('--injection-file', injection_file)
 
         fil = node.new_output_file_opt(workflow.analysis_time, '.hdf',
-                                       '--output-file', tags=tags)
+                                       '--output-file')
         stores.append(fil)
         workflow += node
 
@@ -881,7 +883,7 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
     node.add_input_opt('--statmap-file', statmap_file)
     node.add_input_opt('--bank-file', bank_file)
     trigfil = node.new_output_file_opt(workflow.analysis_time, '.hdf',
-                                   '--output-file', tags=tags)
+                                   '--output-file')
     workflow += node
 
     # Parallelize coinc trigger followup
@@ -915,4 +917,4 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
     node.new_output_file_opt(workflow.analysis_time, '.hdf',
                              '--output-file')
     workflow += node
-    return node.output_files[0]
+    return node.output_file
