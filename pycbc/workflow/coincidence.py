@@ -735,10 +735,6 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     make_analysis_dir(out_dir)
     logging.info('Setting up coincidence')
 
-    if len(hdfbank) != 1:
-        raise ValueError('Must use exactly 1 bank file for this coincidence '
-                         'method, I got %i !' % len(hdfbank))
-
     ifos, _ = trig_files.categorize_by_attr('ifo')
     findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp, 'multiifo_coinc',
                                              ifos=ifos,
