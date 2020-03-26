@@ -187,7 +187,7 @@ no_fg_exc_files = {}
 ifo_ids = {}
 
 # Get the ifo precedence values
-ifo_precedence_list = workflow.cp.get_opt_tags('workflow-coincidence', 'timeslide-precedence', ctags)
+ifo_precedence_list = workflow.cp.get_opt_tags('workflow-coincidence', 'timeslide-precedence', ['full_data'])
 for ifo, _ in zip(*insps.categorize_by_attr('ifo')):
     ifo_ids[ifo] = ifo_precedence_list.index(ifo)
 
