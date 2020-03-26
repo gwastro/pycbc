@@ -86,13 +86,15 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     config_file = wdax.File(os.path.basename(config_path))
     config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
-    exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output, tags=tags)
+    exe = Executable(workflow.cp, 'foreground_minifollowup',
+                     ifos=workflow.ifos, out_dir=dax_output, tags=tags)
 
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--bank-file', tmpltbank_file)
     node.add_input_opt('--statmap-file', coinc_file)
-    node.add_multiifo_input_list_opt('--single-detector-triggers', single_triggers)
+    node.add_multiifo_input_list_opt('--single-detector-triggers',
+                                     single_triggers)
     node.add_input_opt('--inspiral-segments', insp_segs)
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
@@ -100,7 +102,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
         node.add_list_opt('--tags', tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog')
+    node.new_output_file_opt(workflow.analysis_time, '.tc.txt',
+                             '--transformation-catalog')
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -206,9 +209,11 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     if statfiles:
         statfiles = statfiles.find_output_with_ifo(curr_ifo)
         node.add_input_list_opt('--statistic-files', statfiles)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map',
+                             '--output-map')
+    node.new_output_file_opt(workflow.analysis_time, '.tc.txt',
+                             '--transformation-catalog')
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -232,7 +237,8 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     job = dax.DAX(fil)
     job.addArguments('--basename %s' \
                      % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
+    Workflow.set_job_properties(job, map_file, tc_file,
+                                staging_site=staging_site)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
