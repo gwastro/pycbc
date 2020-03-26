@@ -204,8 +204,8 @@ for ifocomb in ifo_combos(ifo_ids.keys()):
     ctagcomb = ['full_data', coinctag]
 
     bg_file = wf.setup_multiifo_interval_coinc(
-        workflow, hdfbank, inspcomb, statfiles, [final_veto_file],
-        [final_veto_name], output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
+        workflow, hdfbank, inspcomb, statfiles, final_veto_file,
+        final_veto_name, output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
 
     # Optionally perform follow-up on triggers and rerank the candidates
     # Returns the input file if not enabled.
