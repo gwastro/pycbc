@@ -344,13 +344,13 @@ layout.group_layout(rdir['single_triggers'], snrchi)
 hist_summ = []
 for insp in full_insps:
     outdir = rdir['single_triggers/%s_binned_triggers' % insp.ifo]
-    wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto,
+    wf.make_singles_plot(workflow, [insp], hdfbank, censored_veto,
                          'closed_box', outdir, tags=['full_data'])
     # make non-summary hists using the bank file
     # currently, none of these are made
     outdir = rdir['single_triggers/%s_trigger_histograms' % insp.ifo]
     wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', outdir,
-                        bank_file=hdfbank[0], exclude='summ',
+                        bank_file=hdfbank, exclude='summ',
                         tags=['full_data'])
     # make summary hists for all templates together
     # currently, 2 per ifo: snr and newsnr
@@ -361,7 +361,7 @@ for insp in full_insps:
     # currently, 1 per ifo split by template duration
     outdir = rdir['single_triggers/%s_binned_histograms' % insp.ifo]
     binhists = wf.make_binned_hist(workflow, insp, censored_veto,
-                                   'closed_box', outdir, hdfbank[0],
+                                   'closed_box', outdir, hdfbank,
                                    tags=['full_data'])
     # put raw SNR and binned newsnr hist in summary
     hist_summ += list(layout.grouper([allhists[0], binhists[0]], 2))
@@ -387,7 +387,7 @@ for insp_file in full_insps:
         dir_str = workflow.cp.get(sec_name, 'section-header')
         currdir = rdir['single_triggers/{}_{}'.format(curr_ifo, dir_str)]
         wf.setup_single_det_minifollowups\
-            (workflow, insp_file, hdfbank[0], insp_files_seg_file,
+            (workflow, insp_file, hdfbank, insp_files_seg_file,
              data_analysed_name, trig_generated_name, 'daxes', currdir,
              veto_file=censored_veto, veto_segment_name='closed_box',
              tags=insp_file.tags + [subsec])
@@ -421,7 +421,7 @@ ifar_ob = wf.make_ifar_plot(workflow, combined_bg_file,
 #                                    tags=combined_bg_file.tags + ['closed_box'],
 #                                    executable='page_ifar_catalog')
 #table = wf.make_foreground_table(workflow, combined_bg_file,
-#                                 hdfbank[0], rdir['open_box_result'],
+#                                 hdfbank, rdir['open_box_result'],
 #                                 singles=insps, extension='.html',
 #                                 tags=["html"])
 #symlink_result(snrifar, 'open_box_result/significance')
@@ -441,13 +441,13 @@ layout.two_column_layout(rdir['coincident_triggers'], closed_page)
 # run minifollowups on the output of the loudest events
 mfup_dir = rdir['open_box_result/loudest_events_followup']
 wf.setup_foreground_minifollowups(workflow, combined_bg_file,
-                                  full_insps, hdfbank[0], insp_files_seg_file,
+                                  full_insps, hdfbank, insp_files_seg_file,
                                   data_analysed_name, trig_generated_name,
                                   'daxes', mfup_dir,
                                   tags=combined_bg_file.tags + ['foreground'])
 
 wf.setup_foreground_minifollowups(workflow, combined_bg_file,
-                                  full_insps, hdfbank[0], insp_files_seg_file,
+                                  full_insps, hdfbank, insp_files_seg_file,
                                   data_analysed_name, trig_generated_name, 'daxes',
                                   rdir['coincident_triggers/loudest_background_followup'],
                                   tags=combined_bg_file.tags + ['background'])
@@ -474,7 +474,7 @@ for key in final_bg_files:
     #                            tags=bg_file.tags + ['open_box'])
     #ifar_cb = wf.make_ifar_plot(workflow, bg_file, closed_dir,
     #                            tags=bg_file.tags + ['closed_box'])
-    #table = wf.make_foreground_table(workflow, bg_file, hdfbank[0], open_dir,
+    #table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
     #                                 singles=insps, extension='.html',
     #                                 tags=["html"])
 
@@ -491,7 +491,7 @@ for key in final_bg_files:
 
 ############################## Setup the injection runs #######################
 
-splitbank_files_inj = wf.setup_splittable_workflow(workflow, hdfbank,
+splitbank_files_inj = wf.setup_splittable_workflow(workflow, [hdfbank],
                                                    out_dir="bank",
                                                    tags=['injections'])
 
@@ -540,7 +540,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                          output_dir, tags=ctags,
                                          injection_file=small_inj_file)
 
-    insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
+    insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
                                                insps, output_dir, tags=ctags)
     # multiifo coincidence for injections
     inj_coinc = {}
@@ -562,7 +562,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
             # Rerank events
             curr_out = wf.rerank_coinc_followup(workflow, curr_out,
-                                     hdfbank[0],
+                                     hdfbank,
                                      output_dir, tags=ctagcomb,
                                      injection_file=small_inj_file,
                                      ranking_file=final_bg_files[ordered_ifo_list])
@@ -640,7 +640,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
         curr_dir_nam += '_' + suf_str
     currdir = rdir[curr_dir_nam]
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
-                                     insps, hdfbank[0], insp_files_seg_file,
+                                     insps, hdfbank, insp_files_seg_file,
                                      data_analysed_name, trig_generated_name,
                                      'daxes', currdir, tags=[tag])
 
