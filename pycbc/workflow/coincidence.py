@@ -345,10 +345,11 @@ def setup_trigger_fitting(workflow, insps, hdfbank, veto_file, veto_name,
         for i in workflow.ifos:
             ifo_insp = [insp for insp in insps if (insp.ifo == i)]
             assert len(ifo_insp)==1
+            ifo_insp = ifo_insp[0]
             raw_exe = PyCBCFitByTemplateExecutable(workflow.cp,
                                                    'fit_by_template', ifos=i,
                                                    tags=tags)
-            raw_node = raw_exe.create_node(ifo_insp[0], hdfbank,
+            raw_node = raw_exe.create_node(ifo_insp, hdfbank,
                                            veto_file, veto_name)
             workflow += raw_node
             smooth_exe = PyCBCFitOverParamExecutable(workflow.cp,
