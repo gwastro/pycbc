@@ -742,7 +742,8 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
 
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence',
-                                          'parallelization-factor', tags))
+                                          'parallelization-factor',
+                                          [findcoinc_exe.ifo_string] + tags))
 
     statmap_files = []
     bg_files = FileList()
