@@ -351,7 +351,7 @@ for insp in full_insps:
     outdir = rdir['single_triggers/%s_trigger_histograms' % insp.ifo]
     wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', outdir,
                         bank_file=hdfbank[0], exclude='summ',
-                        tags=['full_data')
+                        tags=['full_data'])
     # make summary hists for all templates together
     # currently, 2 per ifo: snr and newsnr
     outdir = rdir['single_triggers/%s_trigger_histograms' % insp.ifo]
