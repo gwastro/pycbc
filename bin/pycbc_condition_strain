@@ -33,6 +33,8 @@ from pycbc.types import float32, float64
 
 
 def write_strain(file_name, channel, data):
+    logging.info('Writing output strain to %s', file_name)
+
     if file_name.endswith('.gwf'):
         pycbc.frame.write_frame(file_name, channel, data)
     elif file_name.endswith(('.hdf', '.h5')):
@@ -111,10 +113,8 @@ if args.frame_duration:
     for s in range(start, stop, step):
         ts = out_strain.time_slice(s, s+step if s+step < stop else stop)
         complete_fn = filename.format(s, step if s+step < stop else stop - s)
-        logging.info('Writing output strain to %s', complete_fn)
         write_strain(complete_fn, output_channel_name, ts)
 else:
-    logging.info('Writing output strain to %s', args.output_strain_file)
     write_strain(args.output_strain_file, output_channel_name, out_strain)
 
 logging.info('Done')
