@@ -276,9 +276,11 @@ class PyCBCMultiifoAddStatmap(PyCBCMultiifoCombineStatmap):
 
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, statmap_files, background_files, tags=None):
+        if tags is None:
+            tags = []
         node = super(PyCBCMultiifoAddStatmap, self).create_node(statmap_files,
                                                             tags=tags)
-        if 'injections' in tags:
+        if 'injections' in (tags+self.tags):
             node.add_input_list_opt('--background-files', background_files)
 
         return node
