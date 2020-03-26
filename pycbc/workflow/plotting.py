@@ -317,9 +317,9 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
     for tag in secs:
         for trig_file in trig_files:
             exe = PlotExecutable(workflow.cp, 'plot_snrchi',
-                                  ifos=trig_file.ifo_list,
-                                  out_dir=out_dir,
-                                  tags=[tag] + tags)
+                                 ifos=trig_file.ifo_list,
+                                 out_dir=out_dir,
+                                 tags=[tag] + tags)
             node = exe.create_node()
 
             node.set_memory(15000)
