@@ -337,35 +337,37 @@ if vetodef_table is not None:
 ##################### SINGLES plots first ###################################
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto,
-                            'closed_box', rdir['single_triggers'], tags=[tag])
+                            'closed_box', rdir['single_triggers'],
+                            tags=['full_data'])
 layout.group_layout(rdir['single_triggers'], snrchi)
 
 hist_summ = []
 for insp in full_insps:
     outdir = rdir['single_triggers/%s_binned_triggers' % insp.ifo]
     wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto,
-                         'closed_box', outdir, tags=[tag])
+                         'closed_box', outdir, tags=['full_data'])
     # make non-summary hists using the bank file
     # currently, none of these are made
     outdir = rdir['single_triggers/%s_trigger_histograms' % insp.ifo]
     wf.make_single_hist(workflow, insp, censored_veto, 'closed_box', outdir,
-                        bank_file=hdfbank[0], exclude='summ', tags=[tag])
+                        bank_file=hdfbank[0], exclude='summ',
+                        tags=['full_data')
     # make summary hists for all templates together
     # currently, 2 per ifo: snr and newsnr
     outdir = rdir['single_triggers/%s_trigger_histograms' % insp.ifo]
     allhists = wf.make_single_hist(workflow, insp, censored_veto, 'closed_box',
-                                   outdir, require='summ', tags=[tag])
+                                   outdir, require='summ', tags=['full_data'])
     # make hists of newsnr split up by parameter
     # currently, 1 per ifo split by template duration
     outdir = rdir['single_triggers/%s_binned_histograms' % insp.ifo]
     binhists = wf.make_binned_hist(workflow, insp, censored_veto,
                                    'closed_box', outdir, hdfbank[0],
-                                   tags=[tag])
+                                   tags=['full_data'])
     # put raw SNR and binned newsnr hist in summary
     hist_summ += list(layout.grouper([allhists[0], binhists[0]], 2))
 
 if workflow.cp.has_option_tags('workflow-matchedfilter',
-                                   'plot-throughput', tags=[tag]):
+                               'plot-throughput', tags=['full_data']):
     wf.make_throughput_plot(workflow, full_insps, rdir['workflow/throughput'],
                             tags=['full_data'])
 
