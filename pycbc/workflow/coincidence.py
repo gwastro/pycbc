@@ -353,7 +353,7 @@ def setup_trigger_fitting(workflow, insps, hdfbank, veto_file, veto_name,
                                                      'fit_over_param', ifos=i,
                                                      tags=tags)
             smooth_node = smooth_exe.create_node(raw_node.output_file,
-                                                 hdfbank[0])
+                                                 hdfbank)
             workflow += smooth_node
             smoothed_fit_files += smooth_node.output_files
         return smoothed_fit_files
