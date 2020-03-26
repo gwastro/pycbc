@@ -261,8 +261,9 @@ class Executable(pegasus_workflow.Executable):
             else:
                 self.universe = 'vanilla'
 
-        logging.info("%s executable will run as %s universe"
-                     % (name, self.universe))
+        if not self.universe == 'vanilla':
+            logging.info("%s executable will run as %s universe"
+                         % (name, self.universe))
 
         self.set_universe(self.universe)
 
