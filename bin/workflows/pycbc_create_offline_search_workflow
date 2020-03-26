@@ -555,7 +555,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
             coinctag = '{}det'.format(len(ifocomb))
             ctagcomb = [tag, 'injections', coinctag, ordered_ifo_list]
             curr_out = wf.setup_multiifo_interval_coinc_inj\
-                (workflow, hdfbank, full_insps, inspcomb, statfiles,
+                (workflow, [hdfbank], full_insps, inspcomb, statfiles,
                  final_bg_files[ordered_ifo_list],
                  final_veto_file, final_veto_name,
                  output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
