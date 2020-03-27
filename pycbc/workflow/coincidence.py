@@ -421,7 +421,8 @@ def setup_multiifo_statmap(workflow, ifos, coinc_files, out_dir, tags=None):
     workflow.add_node(stat_node)
     return stat_node.output_file
 
-def setup_multiifo_statmap_inj(workflow, ifos, coinc_files, background_file, out_dir, tags=None):
+def setup_multiifo_statmap_inj(workflow, ifos, coinc_files, background_file,
+                               out_dir, tags=None):
     tags = [] if tags is None else tags
 
     statmap_exe = PyCBCMultiifoStatMapInjExecutable(workflow.cp,
@@ -430,8 +431,11 @@ def setup_multiifo_statmap_inj(workflow, ifos, coinc_files, background_file, out
                                                     tags=tags, out_dir=out_dir)
 
     ifolist = ' '.join(ifos)
-    stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']), background_file,
-                                     FileList(coinc_files['injfull']), FileList(coinc_files['fullinj']), ifolist)
+    stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']),
+                                        background_file,
+                                        FileList(coinc_files['injfull']),
+                                        FileList(coinc_files['fullinj']),
+                                        ifolist)
     workflow.add_node(stat_node)
     return stat_node.output_files[0]
 
