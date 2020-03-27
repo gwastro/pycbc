@@ -627,11 +627,18 @@ class PyCBCInspiralExecutable(Executable):
     file_input_options = ['--gating-file']
 
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
-                 injection_file=None, tags=None):
+                 injection_file=None, tags=None, reuse_executable=False):
         if tags is None:
             tags = []
-        super(PyCBCInspiralExecutable, self).__init__(cp, exe_name, None, ifo,
-                                                      out_dir, tags=tags)
+        super(PyCBCInspiralExecutable, self).__init__(
+            cp, 
+            exe_name,
+            None,
+            ifo,
+            out_dir,
+            tags=tags,
+            reuse_executable=reuse_executable
+        )
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
