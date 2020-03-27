@@ -159,7 +159,8 @@ class Executable(pegasus_workflow.Executable):
         else:
             self.ifo_list = ifos
         if self.ifo_list is not None:
-            self.ifo_string = ''.join(sorted(self.ifo_list))
+            self.ifo_list = sorted(self.ifo_list)
+            self.ifo_string = ''.join(self.ifo_list)
         else:
             self.ifo_string = None
         self.cp = cp
