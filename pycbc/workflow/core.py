@@ -159,7 +159,7 @@ class Executable(pegasus_workflow.Executable):
         else:
             self.ifo_list = ifos
         if self.ifo_list is not None:
-            self.ifo_string = ''.join(self.ifo_list)
+            self.ifo_string = ''.join(sorted(self.ifo_list))
         else:
             self.ifo_string = None
         self.cp = cp
@@ -261,8 +261,9 @@ class Executable(pegasus_workflow.Executable):
             else:
                 self.universe = 'vanilla'
 
-        logging.info("%s executable will run as %s universe"
-                     % (name, self.universe))
+        if not self.universe == 'vanilla':
+            logging.info("%s executable will run as %s universe"
+                         % (name, self.universe))
 
         self.set_universe(self.universe)
 
