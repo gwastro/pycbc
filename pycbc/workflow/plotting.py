@@ -334,6 +334,8 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
 
 def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
                          require=None, tags=None):
+    if tags is None:
+        tags = []
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_foundmissed'), require)
     secs = excludestr(secs, exclude)
