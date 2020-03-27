@@ -357,6 +357,10 @@ class Workflow(object):
         self._outputs += node._outputs
 
         # Record the executable that this node uses
+        for exe in self._executables:
+            if exe.name == node.executable.name:
+                node.executable.in_workflow = True
+                break
         if not node.executable.in_workflow:
             node.executable.in_workflow = True
             self._executables += [node.executable]
