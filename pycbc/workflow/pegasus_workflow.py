@@ -332,7 +332,7 @@ class Workflow(object):
         for exe in self._executables:
             if exe.name == node.executable.name:
                 node.executable.in_workflow = True
-                node._dax_node.name = executable.logical_name
+                node._dax_node.name = exe.logical_name
                 break
         if not node.executable.in_workflow:
             node.executable.in_workflow = True
