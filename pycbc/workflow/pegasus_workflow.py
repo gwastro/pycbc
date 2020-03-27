@@ -330,7 +330,7 @@ class Workflow(object):
 
         # Record the executable that this node uses
         for exe in self._executables:
-            if exe.name == node.executable.name:
+            if exe.pegasus_name == node.executable.pegasus_name:
                 node.executable.in_workflow = True
                 node._dax_node.name = exe.logical_name
                 break
