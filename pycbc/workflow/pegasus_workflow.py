@@ -327,6 +327,18 @@ class Workflow(object):
         """
         node._finalize()
         node.in_workflow = self
+
+        # Record the executable that this node uses
+        for exe in self._executables:
+            if exe.name == node.executable.name:
+                node.executable.in_workflow = True
+                node._dax_node.name = executable.logical_name
+                break
+        if not node.executable.in_workflow:
+            node.executable.in_workflow = True
+            self._executables += [node.executable]
+
+        # Add the node itself
         self._adag.addJob(node._dax_node)
 
         # Determine the parent child relationships based on the inputs that
@@ -355,15 +367,6 @@ class Workflow(object):
 
         # Record the outputs that this node generates
         self._outputs += node._outputs
-
-        # Record the executable that this node uses
-        for exe in self._executables:
-            if exe.name == node.executable.name:
-                node.executable.in_workflow = True
-                break
-        if not node.executable.in_workflow:
-            node.executable.in_workflow = True
-            self._executables += [node.executable]
 
         return self
 
