@@ -362,6 +362,9 @@ class Workflow(object):
             else:
                 node.executable.in_workflow = True
                 self._executables += [node.executable]
+        else:
+            # Ensure we have the correct name
+            node._dax_node.name = node.executable.logical_name
 
         # Add the node itself
         self._adag.addJob(node._dax_node)
