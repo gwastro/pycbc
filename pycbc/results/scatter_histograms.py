@@ -385,39 +385,37 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             values_med, negerror, plus_error=poserror))
         if rotated:
             ax.yaxis.set_label_position("right")
-
             # sets colored title for marginal histogram
             set_marginal_histogram_title(ax, fmt, color,
                                          label=label, rotated=rotated)
-
-            # Remove x-ticks
-            ax.set_xticks([])
-            # turn off x-labels
-            ax.set_xlabel('')
-            # set limits
-            ymin, ymax = ax.get_ylim()
-            if plot_min is not None:
-                ymin = plot_min
-            if plot_max is not None:
-                ymax = plot_max
-            ax.set_ylim(ymin, ymax)
-
         else:
-
             # sets colored title for marginal histogram
             set_marginal_histogram_title(ax, fmt, color, label=label)
-
-            # Remove y-ticks
-            ax.set_yticks([])
-            # turn off y-label
-            ax.set_ylabel('')
-            # set limits
-            xmin, xmax = ax.get_xlim()
-            if plot_min is not None:
-                xmin = plot_min
-            if plot_max is not None:
-                xmax = plot_max
-            ax.set_xlim(xmin, xmax)
+    # remove ticks and set limits
+    if rotated:
+        # Remove x-ticks
+        ax.set_xticks([])
+        # turn off x-labels
+        ax.set_xlabel('')
+        # set limits
+        ymin, ymax = ax.get_ylim()
+        if plot_min is not None:
+            ymin = plot_min
+        if plot_max is not None:
+            ymax = plot_max
+        ax.set_ylim(ymin, ymax)
+    else:
+        # Remove y-ticks
+        ax.set_yticks([])
+        # turn off y-label
+        ax.set_ylabel('')
+        # set limits
+        xmin, xmax = ax.get_xlim()
+        if plot_min is not None:
+            xmin = plot_min
+        if plot_max is not None:
+            xmax = plot_max
+        ax.set_xlim(xmin, xmax)
 
 
 def set_marginal_histogram_title(ax, fmt, color, label=None, rotated=False):
