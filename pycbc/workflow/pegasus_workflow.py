@@ -112,6 +112,30 @@ class Executable(ProfileShortcuts):
                 self._dax_executable.removeProfile(entry)
                 self._dax_executable.addProfile(entry)
 
+    def is_same_as(self, other):
+        test_vals = ['namespace', 'version', 'arch', 'os', 'osrelease',
+                     'osversion', 'glibc', 'installed', 'container']
+        # Check for logical name first
+        if not self.pegasus_name == other.pegasus_name:
+            return False
+
+        # Check the properties of the executable
+        for val in test_vals:
+            sattr = getattr(self._dax_executable, val)
+            oattr = getattr(other._dax_executable, val)
+            if not sattr == oattr:
+                return False
+        # Also check the "profile". This is things like Universe, RAM/disk/CPU
+        # requests, execution site, getenv=True, etc.
+        for profile in self._dax_executable.profiles:
+            if profile not in other._dax_executable.profiles:
+                return False
+        for profile in other._dax_executable.profiles:
+            if profile not in self._dax_executable.profiles:
+                return False
+
+        return True
+
 
 class Node(ProfileShortcuts):
     def __init__(self, executable):
@@ -329,14 +353,15 @@ class Workflow(object):
         node.in_workflow = self
 
         # Record the executable that this node uses
-        for exe in self._executables:
-            if exe.pegasus_name == node.executable.pegasus_name:
-                node.executable.in_workflow = True
-                node._dax_node.name = exe.logical_name
-                break
         if not node.executable.in_workflow:
-            node.executable.in_workflow = True
-            self._executables += [node.executable]
+            for exe in self._executables:
+                if node.executable.is_same_as(exe):
+                    node.executable.in_workflow = True
+                    node._dax_node.name = exe.logical_name
+                    break
+            else:
+                node.executable.in_workflow = True
+                self._executables += [node.executable]
 
         # Add the node itself
         self._adag.addJob(node._dax_node)
