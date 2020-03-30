@@ -635,22 +635,6 @@ def create_multidim_plot(parameters, samples, labels=None,
         # copy the dict
         maxs = {p: val for p, val in maxs.items()}
 
-    # remove common offsets
-    for pi, param in enumerate(parameters):
-        values, offset = remove_common_offset(samples[param])
-        if offset != 0:
-            # we'll add the offset removed to the label
-            labels[param] = '{} - {:d}'.format(labels[param], offset)
-            samples[param] = values
-            mins[param] = mins[param] - float(offset)
-            maxs[param] = maxs[param] - float(offset)
-        # also remove from expected parameters, if they were provided
-        if expected_parameters is not None:
-            try:
-                expected_parameters[param] -= offset
-            except KeyError:
-                pass
-
     # create the axis grid
     if fig is None and axis_dict is None:
         fig, axis_dict = create_axes_grid(
