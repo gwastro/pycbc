@@ -131,7 +131,8 @@ class Executable(pegasus_workflow.Executable):
     # file will be retained, but a warning given
     current_retention_level = KEEP_BUT_RAISE_WARNING
     def __init__(self, cp, name,
-                 universe=None, ifos=None, out_dir=None, tags=None):
+                 universe=None, ifos=None, out_dir=None, tags=None,
+                 reuse_executable=True):
         """
         Initialize the Executable class.
 
@@ -182,6 +183,12 @@ class Executable(pegasus_workflow.Executable):
         # Determine the level at which output files should be kept
         self.update_current_retention_level(self.current_retention_level)
 
+        # Should I reuse this executable?
+        if reuse_executable:
+            self.pegasus_name = self.name
+        else:
+            self.pegasus_name = self.tagged_name
+
         # Determine if this executables should be run in a container
         try:
             self.container_type = cp.get('pegasus_profile-%s' % name,
@@ -212,12 +219,12 @@ class Executable(pegasus_workflow.Executable):
                                                     imagesite=self.container_site,
                                                     mount=self.container_mount)
 
-            super(Executable, self).__init__(self.tagged_name,
+            super(Executable, self).__init__(self.pegasus_name,
                                              installed=self.installed,
                                              container=self.container_cls)
 
         else:
-            super(Executable, self).__init__(self.tagged_name,
+            super(Executable, self).__init__(self.pegasus_name,
                                              installed=self.installed)
 
         self._set_pegasus_profile_options()
@@ -833,6 +840,7 @@ class Workflow(pegasus_workflow.Workflow):
         # set the storage path to be the same
         ini_file.storage_path = ini_file_path
         return FileList([ini_file])
+
 
 class Node(pegasus_workflow.Node):
     def __init__(self, executable):
