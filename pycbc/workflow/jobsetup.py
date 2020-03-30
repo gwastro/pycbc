@@ -631,7 +631,7 @@ class PyCBCInspiralExecutable(Executable):
         if tags is None:
             tags = []
         super(PyCBCInspiralExecutable, self).__init__(
-            cp, 
+            cp,
             exe_name,
             None,
             ifo,
