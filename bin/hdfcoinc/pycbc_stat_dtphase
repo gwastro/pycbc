@@ -70,7 +70,8 @@ def generate_hist(val):
     chunksize = 20000 if 20000 < size else size
     while total < size:
         total += chunksize
-        chunk_hist, _ = numpy.histogramdd(generate_samples((chunksize, seed)), bins=hist_bins)
+        chunk_hist, _ = numpy.histogramdd(generate_samples((chunksize, seed)),
+                                          bins=hist_bins, density=True)
         if data is None:
             data = chunk_hist
         else:
