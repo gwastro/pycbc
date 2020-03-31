@@ -320,7 +320,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
             param = histfile[ifo]['param_bin'][:]
             ncol = param.shape[1]
-            self.pdtype = [('c%s' % i, int) for i in range(ncol)]
+            self.pdtype = [('c%s' % i, param.dtype) for i in range(ncol)]
             self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]),
                                               dtype=self.pdtype)
             for i in range(ncol):
