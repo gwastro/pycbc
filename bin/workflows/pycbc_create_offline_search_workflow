@@ -177,6 +177,7 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
 statfiles = []
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name,
+                                      output_dir=output_dir,
                                       tags=['full_data'])
 
 # Set up the multi-ifo coinc jobs
