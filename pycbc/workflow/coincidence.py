@@ -337,7 +337,7 @@ def merge_single_detector_hdf_files(workflow, bank_file, trigger_files, out_dir,
     return out
 
 def setup_trigger_fitting(workflow, insps, hdfbank, veto_file, veto_name,
-                          tags=None):
+                          output_dir=None, tags=None):
     if not workflow.cp.has_option('workflow-coincidence', 'do-trigger-fitting'):
         return FileList()
     else:
@@ -348,12 +348,14 @@ def setup_trigger_fitting(workflow, insps, hdfbank, veto_file, veto_name,
             ifo_insp = ifo_insp[0]
             raw_exe = PyCBCFitByTemplateExecutable(workflow.cp,
                                                    'fit_by_template', ifos=i,
+                                                   out_dir=output_dir,
                                                    tags=tags)
             raw_node = raw_exe.create_node(ifo_insp, hdfbank,
                                            veto_file, veto_name)
             workflow += raw_node
             smooth_exe = PyCBCFitOverParamExecutable(workflow.cp,
                                                      'fit_over_param', ifos=i,
+                                                     out_dir=output_dir,
                                                      tags=tags)
             smooth_node = smooth_exe.create_node(raw_node.output_file,
                                                  hdfbank)
