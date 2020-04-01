@@ -727,7 +727,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files,
                                                    group_str,
                                                    pivot_ifo,
                                                    fixed_ifo,
-                                                   tags=[str(i)])
+                                                   tags=['JOB'+str(i)])
 
             bg_files[ctag] += coinc_node.output_files
             workflow.add_node(coinc_node)
