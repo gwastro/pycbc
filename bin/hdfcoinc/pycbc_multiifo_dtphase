@@ -208,12 +208,19 @@ for ifo0 in args.ifos:
     logging.info('Final length: %s', len(keys))
 
     # presort the keys, helps with downstream use
-    l = values.argsort()
-    keys = keys[l]
-    values = values[l]
+    ncol = keys.shape[1]
+    pdtype = [('c%s' % i, numpy.int8) for i in range(ncol)]
+    keys_bin = numpy.zeros(len(values), dtype=pdtype)
+    for i in range(ncol):
+        keys_bin['c%s' % i] = keys[:, i]
+    lsort = keys_bin.argsort()
+    keys_bin = keys_bin[lsort]
+    values = values[lsort]
 
-    f.create_dataset('%s/param_bin' % ifo0, data=keys, compression='gzip', compression_opts=7)
-    f.create_dataset('%s/weights' % ifo0, data=values, compression='gzip', compression_opts=7)
+    f.create_dataset('%s/param_bin' % ifo0, data=keys_bin, compression='gzip',
+                     compression_opts=7)
+    f.create_dataset('%s/weights' % ifo0, data=values, compression='gzip',
+                     compression_opts=7)
 
 f.attrs['sensitivity_ratios'] = args.relative_sensitivities
 f.attrs['srbmin'] = srbmin
