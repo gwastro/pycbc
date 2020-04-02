@@ -318,7 +318,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         for ifo in self.hist_ifos:
             self.weights[ifo] = histfile[ifo]['weights'][:]
             param = histfile[ifo]['param_bin'][:]
-            if param.dtype == 'int8'
+            if param.dtype == 'int8':
                 # Old style, incorrectly sorted histogram file
                 ncol = param.shape[1]
                 self.pdtype = [('c%s' % i, param.dtype) for i in range(ncol)]
@@ -333,7 +333,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             else:
                 # New style, efficient histogram file
                 # param bin and weights have already been sorted
-                self.param_bin = param
+                self.param_bin[ifo] = param
                 self.pdtype = self.param_bin[ifo].dtype
             self.max_penalty = self.weights[ifo].min()
 
