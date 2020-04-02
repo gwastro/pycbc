@@ -279,7 +279,6 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.relsense = {}
         self.swidth = self.pwidth = self.twidth = None
         self.max_penalty = None
-        self.pdtype = []
         self.weights = {}
         self.param_bin = {}
 
@@ -415,7 +414,9 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 binned += [tbin, pbin, sbin]
 
             # convert binned to same dtype as stored in hist
-            nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
+            ncol = len(self.param_bin[ref_ifo][1])
+            pdtype = [('c%s' % i, numpy.int8) for i in range(ncol)]
+            nbinned = numpy.zeros(len(pbin), dtype=pdtype)
             for i, b in enumerate(binned):
                 nbinned['c%s' % i] = b
 
