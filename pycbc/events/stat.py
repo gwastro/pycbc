@@ -279,6 +279,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.relsense = {}
         self.swidth = self.pwidth = self.twidth = None
         self.max_penalty = None
+        self.pdtype = []
         self.weights = {}
         self.param_bin = {}
 
@@ -316,8 +317,24 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
         for ifo in self.hist_ifos:
             self.weights[ifo] = histfile[ifo]['weights'][:]
-            self.param_bin[ifo] = histfile[ifo]['param_bin'][:]
-            self.pdtype = self.param_bin[ifo].dtype
+            param = histfile[ifo]['param_bin'][:]
+            if param.dtype == 'int8'
+                param = histfile[ifo]['param_bin'][:]
+                # Old style, incorrectly sorted histogram file
+                self.pdtype = [('c%s' % i, param.dtype) for i in range(ncol)]
+                self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]),
+                                                  dtype=self.pdtype)
+                for i in range(ncol):
+                    self.param_bin[ifo]['c%s' % i] = param[:, i]
+
+                lsort = self.param_bin[ifo].argsort()
+                self.param_bin[ifo] = self.param_bin[ifo][lsort]
+                self.weights[ifo] = self.weights[ifo][lsort]
+            else:
+                # New style, efficient histogram file
+                # param bin and weights have already been sorted
+                self.param_bin = param
+                self.pdtype = self.param_bin[ifo].dtype
             self.max_penalty = self.weights[ifo].min()
 
         self.hist = {}
