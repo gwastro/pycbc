@@ -317,6 +317,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         for ifo in self.hist_ifos:
             self.weights[ifo] = histfile[ifo]['weights'][:]
             self.param_bin[ifo] = histfile[ifo]['param_bin'][:]
+            self.pdtype = self.param_bin[ifo].dtype
             self.max_penalty = self.weights[ifo].min()
 
         self.hist = {}
@@ -414,9 +415,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 binned += [tbin, pbin, sbin]
 
             # convert binned to same dtype as stored in hist
-            ncol = len(self.param_bin[ref_ifo][1])
-            pdtype = [('c%s' % i, numpy.int8) for i in range(ncol)]
-            nbinned = numpy.zeros(len(pbin), dtype=pdtype)
+            nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
             for i, b in enumerate(binned):
                 nbinned['c%s' % i] = b
 
