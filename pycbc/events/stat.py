@@ -319,8 +319,8 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             self.weights[ifo] = histfile[ifo]['weights'][:]
             param = histfile[ifo]['param_bin'][:]
             if param.dtype == 'int8'
-                param = histfile[ifo]['param_bin'][:]
                 # Old style, incorrectly sorted histogram file
+                ncol = param.shape[1]
                 self.pdtype = [('c%s' % i, param.dtype) for i in range(ncol)]
                 self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]),
                                                   dtype=self.pdtype)
