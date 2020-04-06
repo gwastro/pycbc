@@ -20,27 +20,30 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--ifos', nargs='+',
                     help="The ifos to generate a histogram for")
 parser.add_argument('--sample-size', type=int,
-                    help="Approximate number of independent samples to draw for the distribution")
+                    help="Approximate number of independent samples to draw "
+                         "for the distribution")
 parser.add_argument('--snr-ratio', type=float,
-                    help="The SNR ratio permitted between reference ifo and all others."
-                         "Ex. giving 4 permits a ratio of 0.25 -> 4")
+                    help="The SNR ratio permitted between reference ifo and "
+                         "all others. Ex. giving 4 permits a ratio of "
+                         "0.25 -> 4")
 parser.add_argument('--relative-sensitivities', nargs='+', type=float,
-                    help="Numbers proportional to horizon distance or expected SNR "
-                         "at fixed distance, one for each ifo")
+                    help="Numbers proportional to horizon distance or "
+                         "expected SNR at fixed distance, one for each ifo")
 parser.add_argument('--seed', type=int, default=124)
 parser.add_argument('--output-file')
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--bin-density', type=int, default=1,
-                    help="Number of bins per 1 sigma uncertainty in a parameter."
-                         " Higher values increase the resolution of the histogram"
-                         " at the expense of storage.")
+                    help="Number of bins per 1 sigma uncertainty in a "
+                         "parameter. Higher values increase the resolution of "
+                         "the histogram at the expense of storage.")
 parser.add_argument('--smoothing-sigma', type=int, default=2,
                     help="Width of the smoothing kernel in sigmas")
 parser.add_argument('--timing-uncertainty', type=float, default=.001,
-                    help="Timing uncertainty to set bin size and smoothing interval"
-                         " [default=.001s]")
+                    help="Timing uncertainty to set bin size and smoothing "
+                         "interval [default=.001s]")
 parser.add_argument('--phase-uncertainty', type=float, default=0.25,
-                    help="Phase uncertainty used to set bin size and smoothing")
+                    help="Phase uncertainty used to set bin size and "
+                         "smoothing")
 parser.add_argument('--snr-reference', type=float, default=5,
                     help="Reference SNR to scale SNR uncertainty")
 parser.add_argument('--snr-uncertainty', type=float, default=1.0,
@@ -55,7 +58,8 @@ assert len(args.relative_sensitivities) == len(args.ifos)
 
 # Approximate timing error at lower SNRs
 twidth = args.timing_uncertainty / args.bin_density
-# Factor of sqrt(2) as we'll be combining two SNRs with independent uncertainties
+# Factor of sqrt(2) as we'll be combining two SNRs with independent
+# uncertainties
 serr = args.snr_uncertainty * 2 ** 0.5
 # Reference SNR for bin smoothing
 sref = args.snr_reference  
@@ -66,7 +70,8 @@ pwidth = numpy.arctan(serr / sref) / args.bin_density
 srbmax = int(args.snr_ratio / swidth)
 srbmin = int((1.0 / args.snr_ratio) / swidth)
 
-# Apply a simple smoothing to help account for measurement errors for weak signals
+# Apply a simple smoothing to help account for measurement errors for
+# weak signals
 def smooth_param(data, index):
     mref = max(data.values())
     bins = numpy.arange(-args.smoothing_sigma * args.bin_density,\
@@ -115,6 +120,7 @@ chunks = int(args.sample_size / size) + 1
 # of error uncertainties.
 f = h5py.File(args.output_file, 'w')
 for ifo0 in args.ifos:
+    logging.info('Storing results using %s as a reference', ifo0)
     other_ifos = deepcopy(args.ifos)
     other_ifos.remove(ifo0)
 
@@ -123,7 +129,7 @@ for ifo0 in args.ifos:
     weights = {}
     for k in range(chunks):
         nsamples += size
-        logging.info('generating %s samples' % size)
+        logging.info('generating %s samples', size)
 
         # Choose random sky location and polarizations from
         # an isotropic population
@@ -174,11 +180,12 @@ for ifo0 in args.ifos:
 
         ol = l
         l = len(weights.values())
-        logging.info('%s, %s, %s, %s', l, l - ol, (l - ol) / float(size), l / float(nsamples))
+        logging.info('%s, %s, %s, %s', l, l - ol, (l - ol) / float(size),
+                     l / float(nsamples))
 
     logging.info('applying smoothing')
     # apply smoothing iteratively
-    for i, ifo in enumerate(range(len(args.ifos)-1)):
+    for i in range(len(args.ifos)-1):
         logging.info('%s-phase', len(weights))
         weights = smooth_param(weights, i * 3 + 1)
         logging.info('%s-time', len(weights))
@@ -187,33 +194,32 @@ for ifo0 in args.ifos:
         weights = smooth_param(weights, i * 3 + 2)
     logging.info('smoothing done: %s', len(weights))
 
-    # Get normalizations for different amplitude ratio thresholds
-    normv = {}
-    for key in weights:
-        rvals = tuple(list(key)[2::3])
-        if rvals not in normv:
-            normv[rvals] = 0
-        m = max(normv[rvals], weights[key])
-        normv[rvals] = m
-
-    # save dict to hdf5 file as key + value array
+    logging.info('converting to numpy arrays and normalizing')
     keys = numpy.array(weights.keys())
     values = numpy.array(weights.values())
     values /= values.max()
 
-    # Threshold to keep saved bins to a reasonable amount
+    logging.info('discarding bins below threshold to limit storage')
     l = values > args.weight_threshold
     keys = keys[l].astype(numpy.int8)
     values = values[l].astype(numpy.float32)
     logging.info('Final length: %s', len(keys))
 
-    # presort the keys, helps with downstream use
-    l = values.argsort()
-    keys = keys[l]
-    values = values[l]
+    logging.info('Presorting by keys for downstream use')
+    ncol = keys.shape[1]
+    pdtype = [('c%s' % i, numpy.int8) for i in range(ncol)]
+    keys_bin = numpy.zeros(len(values), dtype=pdtype)
+    for i in range(ncol):
+        keys_bin['c%s' % i] = keys[:, i]
+    lsort = keys_bin.argsort()
+    keys_bin = keys_bin[lsort]
+    values = values[lsort]
 
-    f.create_dataset('%s/param_bin' % ifo0, data=keys, compression='gzip', compression_opts=7)
-    f.create_dataset('%s/weights' % ifo0, data=values, compression='gzip', compression_opts=7)
+    logging.info('Writing results to file')
+    f.create_dataset('%s/param_bin' % ifo0, data=keys_bin, compression='gzip',
+                     compression_opts=7)
+    f.create_dataset('%s/weights' % ifo0, data=values, compression='gzip',
+                     compression_opts=7)
 
 f.attrs['sensitivity_ratios'] = args.relative_sensitivities
 f.attrs['srbmin'] = srbmin
