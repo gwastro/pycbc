@@ -456,9 +456,9 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             # Read signal weight from precalculated histogram
             if self.two_det_flag:
                 # High-RAM, low-CPU option for two-det
-                id0 = nbinned['c0']
-                id1 = nbinned['c1']
-                id2 = nbinned['c2']
+                id0 = nbinned['c0'] + 128
+                id1 = nbinned['c1'] + 128
+                id2 = nbinned['c2'] + 128
                 rate[rtype] = self.two_det_weights[ref_ifo][id0, id1, id2]
             else:
                 # Low[er]-RAM, high[er]-CPU option for >two det
