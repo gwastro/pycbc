@@ -318,7 +318,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         for ifo in self.hist_ifos:
             self.weights[ifo] = histfile[ifo]['weights'][:]
             param = histfile[ifo]['param_bin'][:]
-            if param.dtype == 'int8':
+            if param.dtype == numpy.int8:
                 # Old style, incorrectly sorted histogram file
                 ncol = param.shape[1]
                 self.pdtype = [('c%s' % i, param.dtype) for i in range(ncol)]
