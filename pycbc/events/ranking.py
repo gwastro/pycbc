@@ -55,8 +55,8 @@ def newsnr_sgveto(snr, brchisq, sgchisq):
 def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val):
     """ Combined SNR derived from SNR, reduced Allen chisq, sine-Gaussian chisq and
     PSD variation statistic"""
-    scaled_snr = snr * psd_var_val ** -0.5
-    scaled_brchisq = brchisq * psd_var_val ** -1.
+    scaled_snr = snr * (psd_var_val ** -0.5)
+    scaled_brchisq = brchisq * (psd_var_val ** -1.)
     nsnr = newsnr_sgveto(scaled_snr, scaled_brchisq, sgchisq)
 
     # If snr input is float, return a float. Otherwise return numpy array.
