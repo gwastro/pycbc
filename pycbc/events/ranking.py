@@ -53,11 +53,11 @@ def newsnr_sgveto(snr, brchisq, sgchisq):
 
 
 def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val):
-    """ Combined SNR derived from SNR, reduced Allen chisq, sine-Gaussian chisq and PSD
-    variation statistic"""
+    """ Combined SNR derived from SNR, reduced Allen chisq, sine-Gaussian chisq and
+    PSD variation statistic"""
     scaled_snr = snr * psd_var_val ** -0.5
     scaled_brchisq = brchisq * psd_var_val ** -1.
-    nsnr = newsnr_sgveto(scaled_snr, scaled_brchisq, sgchisq)
+    nsnr = newsnr_sgveto(scaled_snr, scaled_brchisq, sgchisq
     
     # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
@@ -90,7 +90,7 @@ def newsnr_sgveto_psdvar_scaled_threshold(snr, bchisq, sgchisq, psd_var_val,
     """
     nsnr = newsnr_sgveto_psdvar_scaled(snr, bchisq, sgchisq, psd_var_val)
     nsnr = numpy.array(nsnr, ndmin=1)
-    nsnr[bchisq > threshold] = 1
+    nsnr[bchisq > threshold] = 1.
 
     # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
@@ -98,10 +98,10 @@ def newsnr_sgveto_psdvar_scaled_threshold(snr, bchisq, sgchisq, psd_var_val,
     else:
         return nsnr[0]
 
-      
+
 def get_newsnr(trigs):
     """
-    Calculate newsnr ('reweighted SNR') for a trigs object
+    Calculate newsnr ('reweighted SNR') for a trigs/dictionary object
 
     Parameters
     ----------
@@ -143,8 +143,8 @@ def get_newsnr_sgveto(trigs):
 
 def get_newsnr_sgveto_psdvar(trigs):
     """
-    Calculate snr re-weighted by Allen chisq, sine-gaussian veto and psd variation
-    statistic
+    Calculate snr re-weighted by Allen chisq, sine-gaussian veto and
+    psd variation statistic
 
     Parameters
     ----------
@@ -193,7 +193,7 @@ def get_newsnr_sgveto_psdvar_scaled(trigs):
 def get_newsnr_sgveto_psdvar_scaled_threshold(trigs):
     """
     Calculate newsnr re-weighted by the sine-gaussian veto and scaled
-    psd variation statistic. A futher threshold is applied to the
+    psd variation statistic. A further threshold is applied to the
     reduced chisq.
 
     Parameters
