@@ -57,8 +57,8 @@ def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val):
     PSD variation statistic"""
     scaled_snr = snr * psd_var_val ** -0.5
     scaled_brchisq = brchisq * psd_var_val ** -1.
-    nsnr = newsnr_sgveto(scaled_snr, scaled_brchisq, sgchisq
-    
+    nsnr = newsnr_sgveto(scaled_snr, scaled_brchisq, sgchisq)
+
     # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
         return nsnr
