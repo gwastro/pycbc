@@ -348,7 +348,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 array_size = [256,256,256]
                 dtypec = self.weights[ifo].dtype
                 self.two_det_weights[ifo] = \
-                    numpy.zeros(array_size, dtype=dtypec) + max_penalty
+                    numpy.zeros(array_size, dtype=dtypec) + self.max_penalty
                 id0 = self.param_bin[ifo]['c0'] + 128
                 id1 = self.param_bin[ifo]['c1'] + 128
                 id2 = self.param_bin[ifo]['c2'] + 128
