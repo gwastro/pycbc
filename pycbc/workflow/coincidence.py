@@ -281,7 +281,7 @@ class PyCBCMultiifoAddStatmap(PyCBCMultiifoCombineStatmap):
         node = super(PyCBCMultiifoAddStatmap, self).create_node(statmap_files,
                                                             tags=tags)
         # Enforce upper case
-        ctags = [t.upper for t in (tags+self.tags)]
+        ctags = [t.upper() for t in (tags + self.tags)]
         if 'INJECTIONS' in ctags:
             node.add_input_list_opt('--background-files', background_files)
 
