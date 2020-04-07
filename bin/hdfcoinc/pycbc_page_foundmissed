@@ -6,6 +6,10 @@ import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plot
 import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
 import pycbc.pnutils
+import seaborn as sns
+
+sns.set_style("whitegrid")
+sns.set_palette('colorblind')
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
