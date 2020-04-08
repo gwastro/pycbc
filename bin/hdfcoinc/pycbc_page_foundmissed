@@ -6,10 +6,6 @@ import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plot
 import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
 import pycbc.pnutils
-import seaborn as sns
-
-sns.set_style("whitegrid")
-sns.set_palette('colorblind')
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
@@ -26,6 +22,8 @@ parser.add_argument('--distance-type', default='decisive_optimal_snr',
 parser.add_argument('--plot-all-distance', action='store_true', default=False,
                     help="Plot all values of distance or SNR. If not given, "
                          "the plot will be truncated below 1")
+parser.add_argument('--colormap',default='cividis_r',
+                   help="Type of colormap to be used for the plots.")
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--log-distance', action='store_true', default=False)
 parser.add_argument('--dynamic', action='store_true', default=False)
@@ -181,7 +179,7 @@ else:
                            marker='x', color='red', label='missed', zorder=zmissed)
     points = plot.scatter(fvals, fdval, c=color, linewidth=0, s=16,
                           norm=matplotlib.colors.LogNorm(),
-                          marker='o', label='found', zorder=zfound)
+                          marker='o', label='found', zorder=zfound,cmap=args.colormap)
     caption = (fig_title + ": Red x's are missed injections. "
                "Circles are found injections. The color indicates the value of "
                "the false alarm rate." )
