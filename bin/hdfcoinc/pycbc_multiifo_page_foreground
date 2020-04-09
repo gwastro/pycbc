@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Make a table of coincident multi-ifo foreground coincident events.
+""" Make a table of coincident multi-ifo foreground events.
 """
 """
 import argparse, h5py, numpy as np, pycbc.results, sys
