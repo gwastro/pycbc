@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-""" Make a table of coincident multi-ifo foreground events.
 """
+Make a table of foreground coincidences information. 
+This code is meant for the multiifo statmap files as an
+alternative to pycbc_page_foreground.
 """
 import argparse, h5py, numpy as np, pycbc.results, sys
 import pycbc.pnutils, pycbc.events
 import pycbc.version
-
+from pycbc import init_logging
+import logging
 from itertools import combinations
 
 
@@ -27,10 +30,16 @@ parser.add_argument('--use-hierarchical-level', type=int, default=None,
                          'doing 1 hierarchical removal. The program will '
                          'fail if the user selects a number above the number '
                          'of hierarchical removals done. [default=None]')
+parser.add_argument('--sort-param', default="ifar",
+                    help='What to use to sort table, choose ifar, ifar_exc, '
+                         'stat.')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
+init_logging(args.verbose)
+
+logging.info("Opening results file")
 f = h5py.File(args.trigger_file,'r')
 
 h_num_rm = args.use_hierarchical_level
@@ -41,6 +50,7 @@ except KeyError:
     h_iterations = None
 
 if h_num_rm is not None and (h_iterations is None or h_num_rm > h_iterations):
+    logging.info("Hierarchical removal requested is more than performed")
     col_one = np.array([h_num_rm])
     col_two = np.array([h_iterations])
     columns = [col_one, col_two]
@@ -61,11 +71,14 @@ ifos = f.attrs['ifos'].split(' ')
 
 title = "Loudest Event Table"
 if h_num_rm:
-   foreground = f['foreground_h%d' % h_num_rm]
+    logging.info("Using hierarchical removal level %d", h_num_rm)
+    foreground = f['foreground_h%d' % h_num_rm]
 else:
-   foreground = f['foreground']
+    foreground = f['foreground']
 
-ii_sort = np.argsort(foreground['ifar'][:])[::-1]
+logging.info("Sorting on %s", args.sort_param)
+ii_sort = np.argsort(foreground[args.sort_param][:])[::-1]
+logging.info("Getting coinc statistic and significance details")
 cols = [foreground['ifar'][:][ii_sort], foreground['ifar_exc'][:][ii_sort],
         foreground['fap'][:][ii_sort],  foreground['fap_exc'][:][ii_sort],
         foreground['stat'][:][ii_sort]]
@@ -75,7 +88,7 @@ formats = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###']
 
 detectors = f.attrs['ifos'].split(' ')
 
-# Get event time and number of IFOs information
+logging.info("Getting event time and number of IFOs")
 tc = [foreground[ifo + '/time'][:][ii_sort] for ifo in detectors]
 n_ifos = [np.count_nonzero(np.array(ct) > 0) for ct in zip(*tc)]
 mean_time = [np.mean(np.array(ct)[np.array(ct) > 0]) for ct in zip(*tc)]
@@ -89,7 +102,7 @@ cols.append(n_ifos)
 names.append("No. IFOs in coinc")
 formats.append("#")
 
-# Get template information - mass, spin etc
+logging.info("Getting template information")
 tid = foreground['template_id'][:][ii_sort]
 with h5py.File(args.bank_file, 'r') as bank_f:
     mass1 = bank_f['mass1'][:][tid]
@@ -101,7 +114,7 @@ cols += [mchirp, mass1, mass2, spin1z, spin2z]
 names += ['mchirp', 'm1', 'm2', 's1z', 's2z']
 formats += ['##.##', '##.##', '##.##', '##.##', '##.##']
 
-# Get time difference information
+logging.info("Getting time difference information")
 det_two_combo= np.array(list(combinations(detectors,2)))
 tdiff = []
 tdiff_str = []
@@ -126,18 +139,19 @@ ids = {detector:foreground[detector+'/trigger_id'][:][ii_sort] for detector
        in detectors}
 f.close()
 
-stfs = {detector: [h5py.File(stf_name, 'r') for stf_name in
-                   args.single_detector_triggers
-                   if detector in h5py.File(stf_name, 'r')][0]
+sngl_trig_filedict = {detector: [h5py.File(sngl_trig_fname, 'r')
+                 for sngl_trig_fname in args.single_detector_triggers
+                 if detector in h5py.File(sngl_trig_fname, 'r')][0]
        for detector in detectors}
 
 for ifo in detectors:
+    logging.info("Getting %s single-detector trigger information", ifo)
     ids_ifo = np.array(ids[ifo])
-    stf_ifo = stfs[ifo][ifo]
-    snr_vals = stf_ifo['snr'][:][ids_ifo]
+    trigfile_ifo = sngl_trig_filedict[ifo][ifo]
+    snr_vals = trigfile_ifo['snr'][:][ids_ifo]
     snr_vals[ids_ifo == -1] = np.nan
-    chisq_dof = stf_ifo['chisq_dof'][:][ids_ifo]
-    chisq_vals = stf_ifo['chisq'][:][ids_ifo] / (2 * chisq_dof - 2)
+    chisq_dof = trigfile_ifo['chisq_dof'][:][ids_ifo]
+    chisq_vals = trigfile_ifo['chisq'][:][ids_ifo] / (2 * chisq_dof - 2)
     chisq_vals[ids_ifo == -1] = np.inf
     newsnr_vals = pycbc.events.ranking.newsnr(snr_vals, chisq_vals)
     chisq_vals[ids_ifo == -1] = np.nan
@@ -151,6 +165,7 @@ for ifo in detectors:
     formats += ['##.##', '##.##', '##.##']
 
 columns = [np.array(col) for col in cols]
+logging.info("Putting results into html table")
 html_table = pycbc.results.html_table(columns, names,
                                  format_strings=formats,
                                  page_size=20)
@@ -159,4 +174,5 @@ kwds = { 'title' : title,
         'caption' : "A table of %s and their coincident statistic information."
                     % title.lower(),
         'cmd' :' '.join(sys.argv), }
+logging.info("Saving table with metadata")
 pycbc.results.save_fig_with_metadata(str(html_table), args.output_file, **kwds)
