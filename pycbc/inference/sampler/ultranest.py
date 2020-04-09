@@ -52,11 +52,16 @@ class UltranestSampler(BaseSampler):
     ----------
     model : model
         A model from ``pycbc.inference.models``.
+    log_dir : str
+        Folder where files should be stored for resuming (optional).
+    stepsampling : bool
+        If false, uses rejection sampling. If true, uses
+        hit-and-run sampler, which scales better with dimensionality.
     """
     name = "ultranest"
     _io = UltranestFile
 
-    def __init__(self, model, **kwargs):
+    def __init__(self, model, log_dir=None, stepsampling=False, **kwargs):
         super(UltranestSampler, self).__init__(model)
 
         import ultranest
@@ -65,7 +70,12 @@ class UltranestSampler(BaseSampler):
         self._sampler = ultranest.ReactiveNestedSampler(
             list(self.model.variable_params),
             log_likelihood_call,
-            prior_call)
+            prior_call, log_dir=log_dir, resume=True)
+        
+        if stepsampling:
+            import ultranest.stepsampler
+            self._sampler.stepsampler = ultranest.stepsampler.RegionBallSliceSampler(
+                nsteps=100, adaptive_nsteps='move-distance', region_filter=True)
 
         self.nlive = 0
         self.ndim = len(self.model.variable_params)
@@ -74,6 +84,9 @@ class UltranestSampler(BaseSampler):
 
     def run(self):
         self.result = self._sampler.run(**self.kwargs)
+        self._sampler.print_results()
+        self._sampler.plot()
+
 
     @property
     def io(self):
