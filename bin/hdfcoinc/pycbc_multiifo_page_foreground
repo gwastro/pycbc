@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 """ Make a table of found injection information
 """
-import argparse, h5py, numpy as np, pycbc.results, pycbc.detector, sys
-from pycbc.types import MultiDetOptionAction
+import argparse, h5py, numpy as np, pycbc.results, sys
 import pycbc.pnutils, pycbc.events
 import pycbc.version
-import logging
-import lal, datetime
-from pycbc import init_logging
 
 from itertools import combinations
 
@@ -34,8 +30,6 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
-init_logging(args.verbose)
-
 f = h5py.File(args.trigger_file,'r')
 
 h_num_rm = args.use_hierarchical_level
@@ -46,10 +40,11 @@ except KeyError:
     h_iterations = None
 
 if h_num_rm is not None and (h_iterations is None or h_num_rm > h_iterations):
-    col_one = numpy.array([h_num_rm])
-    col_two = numpy.array([h_iterations])
+    col_one = np.array([h_num_rm])
+    col_two = np.array([h_iterations])
     columns = [col_one, col_two]
-    names = ["Hierarchical Removals Requested", "Hierarchical Removals Performed"]
+    names = ["Hierarchical Removals Requested",
+             "Hierarchical Removals Performed"]
     format_strings = ['#', '#']
     html_table = pycbc.results.html_table(columns, names,
                                    format_strings=format_strings, page_size=10)
@@ -57,7 +52,8 @@ if h_num_rm is not None and (h_iterations is None or h_num_rm > h_iterations):
     kwds = { 'title' :
         'No more events louder than all background at this removal level.',
         'cmd' :' '.join(sys.argv), }
-    save_fig_with_metadata(str(html_table), args.output_file, **kwds)
+    pycbc.results.save_fig_with_metadata(str(html_table), args.output_file,
+                                         **kwds)
     sys.exit(0)
 
 ifos = f.attrs['ifos'].split(' ')
@@ -159,6 +155,7 @@ html_table = pycbc.results.html_table(columns, names,
                                  page_size=20)
 
 kwds = { 'title' : title, 
-        'caption' : "A table of %s and their coincident statistic information." % title.lower(),
+        'caption' : "A table of %s and their coincident statistic information."
+                    % title.lower(),
         'cmd' :' '.join(sys.argv), }
 pycbc.results.save_fig_with_metadata(str(html_table), args.output_file, **kwds)
