@@ -72,7 +72,8 @@ ii_sort = np.argsort(foreground['ifar'][:])[::-1]
 cols = [foreground['ifar'][:][ii_sort], foreground['ifar_exc'][:][ii_sort],
         foreground['fap'][:][ii_sort],  foreground['fap_exc'][:][ii_sort],
         foreground['stat'][:][ii_sort]]
-names = ['Inc. IFAR (YR)', 'Exc. IFAR (YR)', 'Inc. FAP', 'Exc..          'Ranking Statistic']
+names = ['Inc. IFAR (YR)', 'Exc. IFAR (YR)', 'Inc. FAP', 'Exc. FAP ',
+         'Ranking Statistic']
 formats = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###']
 
 detectors = f.attrs['ifos'].split(' ')
