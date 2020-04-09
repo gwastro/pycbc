@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-""" Make a table of found injection information
+""" Make a table of coincident multi-ifo foreground coincident events.
+"""
 """
 import argparse, h5py, numpy as np, pycbc.results, sys
 import pycbc.pnutils, pycbc.events
