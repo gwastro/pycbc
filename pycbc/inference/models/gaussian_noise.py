@@ -17,6 +17,7 @@
 """
 
 import logging
+import shlex
 from abc import ABCMeta
 from six import add_metaclass
 import numpy
@@ -28,6 +29,7 @@ from pycbc.types import Array, FrequencySeries
 from pycbc.strain import gates_from_cli
 from pycbc.strain.calibration import Recalibrate
 from pycbc.inject import InjectionSet
+from pycbc.io import FieldArray
 from pycbc.types.optparse import MultiDetOptionAction
 
 from .base import ModelStats
@@ -509,7 +511,17 @@ class BaseGaussianNoise(BaseDataModel):
             All additional keyword arguments are passed to the class. Any
             provided keyword will over ride what is in the config file.
         """
+        # get the injection file, to replace any FROM_INJECTION settings
+        if 'injection-file' in cp.options('data'):
+            injection_file = cp.get('data', 'injection-file')
+        else:
+            injection_file = None
+        # update any values that are to be retrieved from the injection
+        # Note: this does nothing if there are FROM_INJECTION values
+        get_values_from_injection(cp, injection_file, update_cp=True)
         args = cls._init_args_from_config(cp)
+        # add the injection file
+        args['injection_file'] = injection_file
         # check if normalize is set
         if cp.has_option('model', 'normalize'):
             args['normalize'] = True
@@ -552,21 +564,6 @@ class BaseGaussianNoise(BaseDataModel):
         # any extra args
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
-        # get the injection file
-        # Note: PyCBC's multi-ifo parser uses key:ifo for
-        # the injection file, even though we will use the same
-        # injection file for all detectors. This
-        # should be fixed in a future version of PyCBC. Once it is,
-        # update this. Until then, just use the first file.
-        if opts.injection_file:
-            injection_file = tuple(opts.injection_file.values())[0]
-            # None if not set
-        else:
-            injection_file = None
-        args['injection_file'] = injection_file
-        # update any values that are to be retrieved from the injection
-        # Note: this does nothing if there are FROM_INJECTION values
-        get_values_from_injection(cp, injection_file, update_cp=True)
         # get ifo-specific instances of calibration model
         if cp.has_section('calibration'):
             logging.info("Initializing calibration model")
@@ -970,36 +967,60 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
     """
     lookfor = 'FROM_INJECTION'
     # figure out what parameters need to be set
-    replace_params = [(sec, opt, cp.get(sec, opt))
-                      for sec in cp.sections for opt in cp.options(sec)
-                      if opt.startswith(lookfor)]
+    replace_params = []
+    for sec in cp.sections():
+        for opt in cp.options(sec):
+            val = cp.get(sec, opt)
+            splitvals = shlex.split(val)
+            replace_this = []
+            for ii, subval in enumerate(splitvals):
+                if subval.startswith(lookfor):
+                    # determine what we should retrieve from the injection
+                    subval = subval.split(':', 1)
+                    if len(subval) == 1:
+                        subval = opt
+                    else:
+                        subval = subval[1]
+                    replace_this.append((ii, subval))
+            if replace_this:
+                replace_params.append((sec, opt, splitvals, replace_this))
     if replace_params:
         # check that we have an injection file
         if injection_file is None:
             raise ValueError("One or values are set to {}, but no injection "
                              "file provided".format(lookfor))
         # load the injection file
-        inj = InjectionSet(injection_file)
+        inj = InjectionSet(injection_file).table.view(type=FieldArray)
         # make sure there's only one injection provided
-        if inj.table.size > 1:
+        if inj.size > 1:
             raise ValueError("One or more values are set to {}, but more than "
                              "one injection exists in the injection file."
                              .format(lookfor))
     # get the injection values to replace
-    for ii, (sec, opt, arg) in enumerate(replace_params):
-        # determine what we should retrieve from the injection
-        arg = arg.split(':', 1)
-        if len(arg) == 1:
-            arg = opt
-        else:
-            arg = arg[1]
-        # now get the injection value and set it
-        replace_val = inj[arg][0]
+    for ii, (sec, opt, splitvals, replace_this) in enumerate(replace_params):
+        # replace the value in the shlex-splitted string with the value
+        # from the injection
+        for jj, arg in replace_this:
+            splitvals[jj] = str(inj[arg][0])
+        # now rejoin the string...
+        # shlex will strip quotes around arguments; this can be problematic
+        # when rejoining if the the argument had a space in it. In python 3.8
+        # there is a shlex.join function which properly rejoins things taking
+        # that into account. Since we need to continue to support earlier
+        # versions of python, the following kludge tries to account for that.
+        # If/when we drop support for all earlier versions of python, then the
+        # following can just be replaced by:
+        # replace_val = shlex.join(splitvals)
+        for jj, arg in enumerate(splitvals):
+            if ' ' in arg:
+                arg = "'" + arg + "'"
+                splitvals[jj] = arg
+        replace_val = ' '.join(splitvals)
         replace_params[ii] = (sec, opt, replace_val)
     # replace in the config file
     if update_cp:
-        for (sec, opt, val) in replace_params:
-            cp.set(sec, opt, val)
+        for (sec, opt, replace_val) in replace_params:
+            cp.set(sec, opt, replace_val)
     return replace_params
 
 
