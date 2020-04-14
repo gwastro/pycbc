@@ -938,10 +938,11 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
 
     .. code-black:: ini
 
-       mass1 = FROM_INJECTION:primary_mass(mass1, mass2)
+       mass1 = FROM_INJECTION:'primary_mass(mass1, mass2)'
 
     will cause the larger of mass1 and mass2 to be retrieved from the injection
-    file.
+    file. Note that if spaces are in the argument, it must be encased in
+    single quotes.
 
     The injection file may contain only one injection. Otherwise, a ValueError
     will be raised.
