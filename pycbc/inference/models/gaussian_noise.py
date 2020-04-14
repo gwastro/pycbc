@@ -564,10 +564,9 @@ class BaseGaussianNoise(BaseDataModel):
         else:
             injection_file = None
         args['injection_file'] = injection_file
-        # update any static params that are set to FROM_INJECTION
-        replace_params = get_static_params_from_injection(
-            args['static_params'], injection_file)
-        args['static_params'].update(replace_params)
+        # update any values that are to be retrieved from the injection
+        # Note: this does nothing if there are FROM_INJECTION values
+        get_values_from_injection(cp, injection_file, update_cp=True)
         # get ifo-specific instances of calibration model
         if cp.has_section('calibration'):
             logging.info("Initializing calibration model")
@@ -919,48 +918,88 @@ class GaussianNoise(BaseGaussianNoise):
 #
 # =============================================================================
 #
-def get_static_params_from_injection(static_params, injection_file):
-    """Gets FROM_INJECTION static params from injection.
+def get_values_from_injection(cp, injection_file, update_cp=True):
+    """Replaces all FROM_INJECTION values in a config file with the
+    corresponding value from the injection.
+
+    This looks for any options that start with ``FROM_INJECTION[:ARG]`` in
+    a config file. It then replaces that value with the corresponding value
+    from the injection file. An argument may be optionally provided, in which
+    case the argument will be retrieved from the injection file. Functions of
+    parameters in the injection file may be used; the syntax and functions
+    available is the same as the ``--parameters`` argument in executables
+    such as ``pycbc_inference_extract_samples``. If no ``ARG`` is provided,
+    then the option name will try to be retrieved from the injection.
+
+    For example,
+
+    .. code-block:: ini
+
+       mass1 = FROM_INJECTION
+
+    will cause ``mass1`` to be retrieved from the injection file, while:
+
+    .. code-black:: ini
+
+       mass1 = FROM_INJECTION:primary_mass(mass1, mass2)
+
+    will cause the larger of mass1 and mass2 to be retrieved from the injection
+    file.
+
+    The injection file may contain only one injection. Otherwise, a ValueError
+    will be raised.
 
     Parameters
     ----------
-    static_params : dict
-        Dictionary of static params.
-    injection_file : str
-        Name of the injection file to use.
+    cp : ConfigParser
+        The config file within which to replace values.
+    injection_file : str or None
+        The injection file to get values from. A ValueError will be raised
+        if there are any ``FROM_INJECTION`` values in the config file, and
+        injection file is None, or if there is more than one injection.
+    update_cp : bool, optional
+        Update the config parser with the replaced parameters. If False,
+        will just retrieve the parameter values to update, without updating
+        the config file. Default is True.
 
     Returns
     -------
-    dict :
-        A dictionary mapping parameter names to values retrieved from the
-        injection file. The dictionary will only contain parameters that were
-        set to ``"FROM_INJECTION"`` in the ``static_params``.
-        Parameter names -> values The injection parameters.
+    list
+        The parameters that were replaced, as a tuple of section name, option,
+        value.
     """
-    # pull out the parameters that need replacing
-    replace_params = {p: None for (p, val) in static_params.items()
-                      if val == 'FROM_INJECTION'}
-    if replace_params != {}:
-        # make sure there's actually an injection file
+    lookfor = 'FROM_INJECTION'
+    # figure out what parameters need to be set
+    replace_params = [(sec, opt, cp.get(sec, opt))
+                      for sec in cp.sections for opt in cp.options(sec)
+                      if opt.startswith(lookfor)]
+    if replace_params:
+        # check that we have an injection file
         if injection_file is None:
-            raise ValueError("one or more static params are set to "
-                             "FROM_INJECTION, but no injection file "
-                             "provided in data section")
+            raise ValueError("One or values are set to {}, but no injection "
+                             "file provided".format(lookfor))
+        # load the injection file
         inj = InjectionSet(injection_file)
         # make sure there's only one injection provided
         if inj.table.size > 1:
-            raise ValueError("Some static params set to FROM_INJECTION, but "
-                             "more than one injection exists in the injection "
-                             "file.")
-        for param in replace_params:
-            try:
-                injval = inj.table[param][0]
-            except NameError:
-                # means the parameter doesn't exist
-                raise ValueError("Static param {} with placeholder "
-                                 "FROM_INJECTION has no counterpart in "
-                                 "injection file.".format(param))
-            replace_params[param] = injval
+            raise ValueError("One or more values are set to {}, but more than "
+                             "one injection exists in the injection file."
+                             .format(lookfor))
+    # get the injection values to replace
+    for ii, (sec, opt, arg) in enumerate(replace_params):
+        # determine what we should retrieve from the injection
+        arg = arg.split(':', 1)
+        if len(arg) == 1:
+            arg = opt
+        else:
+            arg = arg[1]
+        # now get the injection value and set it
+        replace_val = inj[arg][0]
+        replace_params[ii] = (sec, opt, replace_val)
+    # replace in the config file
+    if update_cp:
+        for (sec, opt, val) in replace_params:
+            cp.set(sec, opt, val)
     return replace_params
 
 
