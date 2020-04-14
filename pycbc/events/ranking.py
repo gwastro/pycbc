@@ -59,7 +59,7 @@ def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
     # If PSD var is lower than the 'minimum usually expected value' stop this
     # being used in the statistic. This low value might arise because a
     # significant fraction of the "short" PSD period was gated (for instance).
-    psd_var_val = np.array(psd_var_val, copy=True)
+    psd_var_val = numpy.array(psd_var_val, copy=True)
     psd_var_val[psd_var_val < min_expected_psdvar] = 1.
     scaled_snr = snr * (psd_var_val ** -0.5)
     scaled_brchisq = brchisq * (psd_var_val ** -1.)
