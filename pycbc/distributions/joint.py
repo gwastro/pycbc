@@ -127,6 +127,10 @@ class JointDistribution(object):
             # set new scaling factor for prior to be
             # the fraction of acceptances in random sampling of entire space
             self._pdf_scale = result.sum() / float(n_test_samples)
+            if self._pdf_scale == 0.0:
+                raise ValueError("None of the random draws for pdf "
+                    "renormalization satisfied the constraints. "
+                    " You can try increasing the 'n_test_samples' keyword.")
 
         else:
             self._pdf_scale = 1.0
