@@ -319,6 +319,10 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.twidth = histfile.attrs['twidth']
         self.pwidth = histfile.attrs['pwidth']
         self.swidth = histfile.attrs['swidth']
+
+        self.srbmin = histfile.attrs['srbmin']
+        self.srbmax = histfile.attrs['srbmax']
+
         n_ifos = len(self.hist_ifos)
         bin_volume = (self.twidth * self.pwidth * self.swidth) ** (n_ifos - 1)
         for ifo in self.hist_ifos:
@@ -346,14 +350,6 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             self.max_penalty = self.weights[ifo].min()
 
         self.hist = {}
-
-        # Bin boundaries are stored in the hdf file
-        self.twidth = histfile.attrs['twidth']
-        self.pwidth = histfile.attrs['pwidth']
-        self.swidth = histfile.attrs['swidth']
-
-        self.srbmin = histfile.attrs['srbmin']
-        self.srbmax = histfile.attrs['srbmax']
 
         relfac = histfile.attrs['sensitivity_ratios']
         for ifo, sense in zip(self.hist_ifos, relfac):
