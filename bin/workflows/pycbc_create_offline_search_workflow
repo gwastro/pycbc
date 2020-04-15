@@ -421,16 +421,17 @@ ifar_ob = wf.make_ifar_plot(workflow, combined_bg_file,
 #                                    rdir['coincident_triggers'],
 #                                    tags=combined_bg_file.tags + ['closed_box'],
 #                                    executable='page_ifar_catalog')
-#table = wf.make_foreground_table(workflow, combined_bg_file,
-#                                 hdfbank, rdir['open_box_result'],
-#                                 singles=insps, extension='.html',
-#                                 tags=["html"])
+table = wf.make_foreground_table(workflow, combined_bg_file,
+                                 hdfbank, rdir['open_box_result'],
+                                 singles=insps, extension='.html',
+                                 tags=["html"])
+
 #symlink_result(snrifar, 'open_box_result/significance')
 #symlink_result(ratehist, 'open_box_result/significance')
-#symlink_result(table, 'open_box_result/significance')
+symlink_result(table, 'open_box_result/significance')
 
 # Set html pages
-main_page = [(ifar_ob,)]
+main_page = [(ifar_ob,), (table, )]
 layout.two_column_layout(rdir['open_box_result'], main_page)
 
 #detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
