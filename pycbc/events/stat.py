@@ -278,6 +278,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.ref_snr = 5.0
         self.relsense = {}
         self.swidth = self.pwidth = self.twidth = None
+        self.srbmin = self.srbmax = None
         self.max_penalty = None
         self.pdtype = []
         self.weights = {}
@@ -1194,10 +1195,10 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         # noise coincs for n_ifos > 2
         noise_twindow = coinc_rate.multiifo_noise_coincident_area(
                             self.hist_ifos, kwargs['time_addition'])
-        hist_volume = noise_twindow * (2 * numpy.pi * (self.srbmax - self.srbmin)
-                                       * self.swidth) ** (n_ifos - 1)
+        hist_vol = noise_twindow * (2 * numpy.pi * (self.srbmax - self.srbmin)
+                                    * self.swidth) ** (n_ifos - 1)
 
-        logr_n = - numpy.log(hist_volume)
+        logr_n = - numpy.log(hist_vol)
 
         # Combine to get final statistic
         loglr = logr_s - logr_n + network_logvol - ln_noise_rate
