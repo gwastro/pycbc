@@ -283,8 +283,8 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.weights = {}
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
-        if self.two_det_flag:
-            self.two_det_weights = {}
+        self.two_det_weights = {}
+        self.pb_int_size = None
 
     def get_hist(self, ifos=None):
         """Read in a signal density file for the ifo combination"""
@@ -343,11 +343,22 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             self.max_penalty = self.weights[ifo].min()
 
             if self.two_det_flag:
-                # 3bins, for "t", "p", and "s". However, we can expand the
-                # weights lookup table here, avoiding the need to not store 0
-                # values by using param_bin. This makes the lookup a O(N)
-                # rather than O(NlogN) operation. It sacrifices RAM to do this,
-                # so is a good tradeoff for 2 detectors, but not for 3!
+                # The relative weights are computed as a
+                # function of 3 binned parameters, time difference (t), phase
+                # difference (p) and sensitivity different (s). These are 
+                # computed for each combination of detectors, so for 3 detectors
+                # 6 differences are needed. However, many
+                # combinations of these parameters are highly unlikely and
+                # no instances of these combinations occurred when generating
+                # the statistic files. Rather than storing a bunch of 0s, these
+                # values are just not stored at all. This reduces the size of the
+                # statistic file, but means we have to identify the correct value
+                # to read for every trigger. For 2 detectors we can expand the
+                # weights lookup table here, basically adding in all the "0"
+                # values. This makes looking up a value in the "weights" table
+                # a O(N) rather than O(NlogN) operation. It sacrifices RAM
+                # to do this, so is a good tradeoff for 2 detectors,
+                # but not for 3!
                 pb_iinfo = numpy.iinfo(self.param_bin[ifo]['c0'].dtype)
                 self.pb_int_size = pb_iinfo.max - pb_iinfo.min + 1
 
