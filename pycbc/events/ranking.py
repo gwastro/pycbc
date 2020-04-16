@@ -52,9 +52,15 @@ def newsnr_sgveto(snr, brchisq, sgchisq):
         return nsnr[0]
 
 
-def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val):
+def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
+                         min_expected_psdvar=0.65):
     """ Combined SNR derived from SNR, reduced Allen chisq, sine-Gaussian chisq and
     PSD variation statistic"""
+    # If PSD var is lower than the 'minimum usually expected value' stop this
+    # being used in the statistic. This low value might arise because a
+    # significant fraction of the "short" PSD period was gated (for instance).
+    psd_var_val = numpy.array(psd_var_val, copy=True)
+    psd_var_val[psd_var_val < min_expected_psdvar] = 1.
     scaled_snr = snr * (psd_var_val ** -0.5)
     scaled_brchisq = brchisq * (psd_var_val ** -1.)
     nsnr = newsnr_sgveto(scaled_snr, scaled_brchisq, sgchisq)
@@ -66,12 +72,13 @@ def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val):
         return nsnr[0]
 
 
-def newsnr_sgveto_psdvar_scaled(snr, brchisq, sgchisq,
-                                psd_var_val, scaling=0.33):
+def newsnr_sgveto_psdvar_scaled(snr, brchisq, sgchisq, psd_var_val,
+                                scaling=0.33, min_expected_psdvar=0.65):
     """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and scaled PSD
     variation statistic. """
     nsnr = numpy.array(newsnr_sgveto(snr, brchisq, sgchisq), ndmin=1)
-    psd_var_val = numpy.array(psd_var_val, ndmin=1)
+    psd_var_val = numpy.array(psd_var_val, ndmin=1, copy=True)
+    psd_var_val[psd_var_val < min_expected_psdvar] = 1.
 
     # Default scale is 0.33 as tuned from analysis of data from O2 chunks
     nsnr = nsnr / psd_var_val ** scaling
