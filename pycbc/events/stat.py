@@ -346,7 +346,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 # The density of signals is computed as a function of 3 binned
                 # parameters: time difference (t), phase difference (p) and
                 # SNR ratio (s). These are computed for each combination of
-                # detectors, so for detectors 6 differences are needed. However,
+                # detectors, so for detectors 6 differences are needed. However
                 # many combinations of these parameters are highly unlikely and
                 # no instances of these combinations occurred when generating
                 # the statistic files. Rather than storing a bunch of 0s, these
