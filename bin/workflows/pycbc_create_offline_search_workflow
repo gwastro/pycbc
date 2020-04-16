@@ -651,9 +651,9 @@ for inj_file, tag in zip(inj_files, inj_tags):
         for inj_insp, trig_insp in zip(inspcomb, fdinspcmb):
             final_bg_file = final_bg_files[ordered_ifo_list]
             curr_tags = [tag, ordered_ifo_list]
-            #f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp,
-            #                               final_bg_file, trig_insp,
-            #                               injdir, tags=curr_tags)
+            f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp,
+                                           final_bg_file, trig_insp,
+                                           injdir, tags=curr_tags)
 
     # Make pages from plots
     inj_layout = list(layout.grouper(f, 2)) + [(found_table,), (missed_table,)]
