@@ -323,7 +323,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             param = histfile[ifo]['param_bin'][:]
 
             if param.dtype == numpy.int8:
-                # Old style, incorrectly sorted histogram file
+                # Older style, incorrectly sorted histogram file
                 ncol = param.shape[1]
                 self.pdtype = [('c%s' % i, param.dtype) for i in range(ncol)]
                 self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]),
@@ -343,12 +343,11 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             self.max_penalty = self.weights[ifo].min()
 
             if self.two_det_flag:
-                # The relative weights are computed as a
-                # function of 3 binned parameters, time difference (t), phase
-                # difference (p) and sensitivity different (s). These are
-                # computed for each combination of detectors, so for 3
-                # detectors 6 differences are needed. However, many
-                # combinations of these parameters are highly unlikely and
+                # The density of signals is computed as a function of 3 binned
+                # parameters: time difference (t), phase difference (p) and
+                # SNR ratio (s). These are computed for each combination of
+                # detectors, so for detectors 6 differences are needed. However,
+                # many combinations of these parameters are highly unlikely and
                 # no instances of these combinations occurred when generating
                 # the statistic files. Rather than storing a bunch of 0s, these
                 # values are just not stored at all. This reduces the size of
