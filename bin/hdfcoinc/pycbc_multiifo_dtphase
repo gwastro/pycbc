@@ -6,10 +6,10 @@ doing a simple monte-carlo
 Output is the relative amplitude, time, and phase as compared to a reference
 IFO. A separate calculation is done for each IFO as a possible reference.
 The data is stored as two vectors : one vector gives the discrete integer bin
-corresponding to a particular location in 3*(Nifo-1)-dimensional 
+corresponding to a particular location in 3*(Nifo-1)-dimensional
 amplitude/time/phase space, the other gives the weight assigned to that bin.
 To get the signal rate this weight should be scaled by the local sensitivity
-value and by the SNR of the event in the reference detector. 
+value and by the SNR of the event in the reference detector.
 """
 import argparse, h5py, numpy.random, pycbc.detector, logging, multiprocessing
 from numpy.random import normal, uniform, power
@@ -49,8 +49,9 @@ parser.add_argument('--snr-reference', type=float, default=5,
 parser.add_argument('--snr-uncertainty', type=float, default=1.0,
                     help="SNR uncertainty to set bin size and smoothing")
 parser.add_argument('--weight-threshold', type=float, default=1e-10,
-                    help="Minimum histogram weight to store: "
-                         "bins with less weight will not be stored.")
+                    help="Minimum histogram weight to store as a proportion "
+                         "of the histogram maximum: bins with less weight "
+                         "will not be stored.")
 parser.add_argument('--batch-size', type=int, default=1000000)
 args = parser.parse_args()
 
@@ -62,7 +63,7 @@ twidth = args.timing_uncertainty / args.bin_density
 # uncertainties
 serr = args.snr_uncertainty * 2 ** 0.5
 # Reference SNR for bin smoothing
-sref = args.snr_reference  
+sref = args.snr_reference
 swidth = serr / sref / args.bin_density
 # Approximate phase error at lower SNRs
 pwidth = numpy.arctan(serr / sref) / args.bin_density
@@ -72,7 +73,7 @@ srbmin = int((1.0 / args.snr_ratio) / swidth)
 
 # Apply a simple smoothing to help account for measurement errors for
 # weak signals
-def smooth_param(data, index):
+def smooth_param(data, index, wrapped=None):
     mref = max(data.values())
     bins = numpy.arange(-args.smoothing_sigma * args.bin_density,\
                         args.smoothing_sigma * args.bin_density + 1)
@@ -89,6 +90,11 @@ def smooth_param(data, index):
         for a in bins:
             nkey = list(key)
             nkey[index] += a
+            # If smoothing a wrapped parameter (e.g. phase)
+            # put back into the allowed range
+            if wrapped:
+                nkey[index] = nkey[index] % wrapped
+
             tnkey = tuple(nkey)
 
             if tnkey in nweights:
@@ -98,6 +104,11 @@ def smooth_param(data, index):
             for b, w in zip(bins, kernel):
                 wkey = list(nkey)
                 wkey[index] += b
+                # If smoothing a wrapped parameter (e.g. phase)
+                # put back into the allowed range
+                if wrapped:
+                    wkey[index] = wkey[index] % wrapped
+
                 wkey = tuple(wkey)
 
                 if wkey in data:
@@ -185,9 +196,10 @@ for ifo0 in args.ifos:
 
     logging.info('applying smoothing')
     # apply smoothing iteratively
+    pwrap = (2 * numpy.pi) / pwidth
     for i in range(len(args.ifos)-1):
         logging.info('%s-phase', len(weights))
-        weights = smooth_param(weights, i * 3 + 1)
+        weights = smooth_param(weights, i * 3 + 1, wrapped=pwrap)
         logging.info('%s-time', len(weights))
         weights = smooth_param(weights, i * 3 + 0)
         logging.info('%s-amp', len(weights))
@@ -198,6 +210,19 @@ for ifo0 in args.ifos:
     keys = numpy.array(weights.keys())
     values = numpy.array(weights.values())
     values /= values.max()
+
+    logging.info('Removing bins outside of SNR ratio limits')
+    n_precut = len(keys)
+    keep = None
+    for i in range(len(args.ifos)-1):
+        srbin = numpy.array(zip(*keys)[i * 3 + 2])
+        if keep is None:
+            keep = (srbin < srbmax) & (srbin > srbmin)
+        else:
+            keep = keep & (srbin < srbmax) & (srbin > srbmin)
+    keys = keys[keep]
+    values = values[keep]
+    logging.info('Removed %s bins', n_precut - len(keys))
 
     logging.info('discarding bins below threshold to limit storage')
     l = values > args.weight_threshold
