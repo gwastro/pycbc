@@ -321,6 +321,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         for ifo in self.hist_ifos:
             self.weights[ifo] = histfile[ifo]['weights'][:]
             param = histfile[ifo]['param_bin'][:]
+
             if param.dtype == numpy.int8:
                 # Old style, incorrectly sorted histogram file
                 ncol = param.shape[1]
@@ -338,7 +339,9 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 # param bin and weights have already been sorted
                 self.param_bin[ifo] = param
                 self.pdtype = self.param_bin[ifo].dtype
+
             self.max_penalty = self.weights[ifo].min()
+
             if self.two_det_flag:
                 # 3bins, for "t", "p", and "s". However, we can expand the
                 # weights lookup table here, avoiding the need to not store 0
@@ -347,7 +350,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 # so is a good tradeoff for 2 detectors, but not for 3!
                 pb_iinfo = numpy.iinfo(self.param_bin[ifo]['c0'].dtype)
                 self.pb_int_size = pb_iinfo.max - pb_iinfo.min + 1
-                
+
                 array_size = [self.pb_int_size, self.pb_int_size,
                               self.pb_int_size]
                 dtypec = self.weights[ifo].dtype
