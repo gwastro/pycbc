@@ -53,7 +53,7 @@ def newsnr_sgveto(snr, brchisq, sgchisq):
 
 
 def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
-                         min_expected_psdvar=0.8):
+                         min_expected_psdvar=0.65):
     """ Combined SNR derived from SNR, reduced Allen chisq, sine-Gaussian chisq and
     PSD variation statistic"""
     # If PSD var is lower than the 'minimum usually expected value' stop this
@@ -73,7 +73,7 @@ def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
 
 
 def newsnr_sgveto_psdvar_scaled(snr, brchisq, sgchisq, psd_var_val,
-                                scaling=0.33, min_expected_psdvar=0.8):
+                                scaling=0.33, min_expected_psdvar=0.65):
     """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and scaled PSD
     variation statistic. """
     nsnr = numpy.array(newsnr_sgveto(snr, brchisq, sgchisq), ndmin=1)
