@@ -210,7 +210,6 @@ ax = plot.gca()
 plot.xlabel(labels[args.axis_type])
 plot.ylabel(labels[args.distance_type])
 plot.grid()
-plot.tight_layout()
 
 if args.log_x:
     # log x axis may fail for some choices, eg effective spin
@@ -250,7 +249,7 @@ if ('.html' in args.output_file):
                                                     alpha_unsel=0.1)
     mpld3.plugins.connect(fig, legend)
 
-pycbc.results.save_fig_with_metadata\
-    (fig, args.output_file, fig_kwds=fig_kwds,
-     title='%s: %s vs %s' % (fig_title, args.axis_type, args.distance_type),
-     cmd=' '.join(sys.argv), caption=caption)
+title = '%s: %s vs %s' % (fig_title, args.axis_type, args.distance_type)
+cmd = ' '.join(sys.argv)
+pycbc.results.save_fig_with_metadata(fig, args.output_file, fig_kwds=fig_kwds,
+                                     title=title, cmd=cmd, caption=caption)
