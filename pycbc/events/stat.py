@@ -1184,37 +1184,44 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
 
         # Use prior histogram to get log signal rate
         stat = {ifo: st for ifo, st in s}
-        logr_s = self.logsignalrate_multiifo(stat,
+        logr_shist = self.logsignalrate_multiifo(stat,
                                              slide * step, to_shift)
 
-        # Calculate noise rate in each bin given uniform phase time diffs
-        # and SNR ratio.
-        # Calculate bin & histogram volumes
-        n_ifos = len(self.hist_ifos)
-        # Effective histogram volume, as not all bins will be occupied by
-        # noise coincs for n_ifos > 2
         noise_twindow = coinc_rate.multiifo_noise_coincident_area(
                             self.hist_ifos, kwargs['time_addition'])
+        # Calculate the volume of the histogram which could be filled by
+        # noise coincidences. Not all bins may be occupied due to
+        # combinations of limits on time difference between constituent
+        # pairs of detectors, the noise_coincident_area function takes this
+        # into account.
+
+        # Volume will be the allowed time difference window multiplied
+        # by 2pi for each phase difference dimension, and the allowed range
+        # of SNR ratio for each SNR ratio dimension. There will be
+        # (n_ifos - 1) dimensions for each parameter.
+        n_ifos = len(self.hist_ifos)
         hist_vol = noise_twindow * (2 * numpy.pi * (self.srbmax - self.srbmin)
                                     * self.swidth) ** (n_ifos - 1)
 
-        logr_n = - numpy.log(hist_vol)
+        # One over this volume will be the PDF assuming uniform noise
+        # distributions in each dimension.
+        logr_nhist = - numpy.log(hist_vol)
 
         # Combine to get final statistic
-        loglr = logr_s - logr_n + network_logvol - ln_noise_rate
+        loglr = logr_shist - logr_nhist + network_logvol - ln_noise_rate
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
         return loglr
 
 
-class ExpFitSGPSDFgBgNormDensityStatistic(ExpFitSGFgBgNormNewStatistic):
+class ExpFitSGPSDFgBgNormStatistic(ExpFitSGFgBgNormNewStatistic):
     def __init__(self, files=None, ifos=None, **kwargs):
         ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
                                               **kwargs)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled
 
 
-class ExpFitSGPSDFgBgNormDensityBBHStatistic(ExpFitSGFgBgNormNewStatistic):
+class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
     def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
         ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
                                               **kwargs)
@@ -1262,10 +1269,10 @@ statistic_dict = {
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
     'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic,
     'exp_fit_sg_fgbg_norm_new': ExpFitSGFgBgNormNewStatistic,
-    '2ogc': ExpFitSGPSDFgBgNormDensityStatistic, # backwards compatible
-    '2ogcbbh': ExpFitSGPSDFgBgNormDensityBBHStatistic, # backwards compatible
-    'exp_fit_sg_fgbg_norm_psdvar': ExpFitSGPSDFgBgNormDensityStatistic,
-    'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormDensityBBHStatistic
+    '2ogc': ExpFitSGPSDFgBgNormStatistic, # backwards compatible
+    '2ogcbbh': ExpFitSGPSDFgBgNormBBHStatistic, # backwards compatible
+    'exp_fit_sg_fgbg_norm_psdvar': ExpFitSGPSDFgBgNormStatistic,
+    'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic
 }
 
 sngl_statistic_dict = {
