@@ -93,10 +93,8 @@ fp = h5py.File(opts.trigger_file, 'r')
 
 if 'ifos' in fp.attrs:
     legacy_smap_file = False
-    ifos = fp.attrs['ifos']
 else:
     legacy_smap_file = True
-    ifos = ['H1', 'L1']
 
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = opts.use_hierarchical_level
