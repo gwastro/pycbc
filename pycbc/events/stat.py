@@ -1182,11 +1182,14 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         benchmark_logvol = s[0][1]['benchmark_logvol']
         network_logvol -= benchmark_logvol
 
-        # Use prior histogram to get log signal rate
+        # Use prior histogram to get Bayes factor for signal vs noise given
+        # time, phase and SNR differences between IFOs
+        # First get signal term logr_s
         stat = {ifo: st for ifo, st in s}
-        logr_shist = self.logsignalrate_multiifo(stat,
+        logr_s = self.logsignalrate_multiifo(stat,
                                              slide * step, to_shift)
 
+        # Calculate noise term of phase-time-amplitude Bayes factor, logr_n
         noise_twindow = coinc_rate.multiifo_noise_coincident_area(
                             self.hist_ifos, kwargs['time_addition'])
         # Calculate the volume of the histogram which could be filled by
@@ -1205,10 +1208,13 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
 
         # One over this volume will be the PDF assuming uniform noise
         # distributions in each dimension.
-        logr_nhist = - numpy.log(hist_vol)
+        logr_n = - numpy.log(hist_vol)
+
+        # Combine the signal and noise terms of the PTA Bayes factor
+        pta_bf = logr_s - logr_n
 
         # Combine to get final statistic
-        loglr = logr_shist - logr_nhist + network_logvol - ln_noise_rate
+        loglr = network_logvol - ln_noise_rate + pta_bf
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
         return loglr
