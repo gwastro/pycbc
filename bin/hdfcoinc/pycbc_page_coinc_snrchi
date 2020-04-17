@@ -52,6 +52,7 @@ f = h5py.File(args.coinc_statistic_file, 'r')
 b_tids = {}
 old_style_format_flag = 'detector_1' in f.attrs
 if old_style_format_flag:
+    ifos = [f.attrs['detector_1'], f.attrs['detector_2']]
     b_tids[f.attrs['detector_1']] = f['background_exc/trigger_id1']
     b_tids[f.attrs['detector_2']] = f['background_exc/trigger_id2']
 else:
@@ -83,7 +84,6 @@ if old_style_format_flag:
     inj_tids[f.attrs['detector_1']] = f['found_after_vetoes/trigger_id1']
     inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
 else:
-    ifos = f.attrs['ifos'].split(' ')
     for tmpifo in ifos:
         inj_tids[tmpifo] = f['found_after_vetoes/{}/trigger_id'.format(tmpifo)]
 
@@ -175,13 +175,14 @@ pylab.legend(loc='lower right', prop={'size': 10})
 pylab.grid(which='major', ls='solid', alpha=0.7, linewidth=.5)
 pylab.grid(which='minor', ls='solid', alpha=0.7, linewidth=.1)
 
-title = '%s %s chisq vs SNR. Background with injections %s' \
-        % (ifo.upper(), args.chisq_choice,
+title = '%s %s chisq vs SNR. %s background with injections %s' \
+        % (ifo.upper(), args.chisq_choice, ''.join(ifos).upper(),
            'behind' if args.background_front else 'ontop')
 caption = """Distribution of SNR and %s chi-squared veto for single detector
-triggers. Black points are background triggers. Triangles are injection
+triggers. Black points are %s background triggers. Triangles are injection
 triggers colored by %s of the injection. Dashed lines show contours of
-constant NewSNR.""" % (args.chisq_choice, coloring[args.colorbar_choice][1])
+constant NewSNR.""" % (args.chisq_choice, ''.join(ifos).upper(),
+                       coloring[args.colorbar_choice][1])
 pycbc.results.save_fig_with_metadata(fig,
                                      args.output_file,
                                      title=title,
