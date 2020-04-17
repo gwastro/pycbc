@@ -51,8 +51,14 @@ args = parser.parse_args()
 f = h5py.File(args.coinc_statistic_file, 'r')
 b_tids = {}
 # FIXME: rewrite for multi-ifo case
-b_tids[f.attrs['detector_1']] = f['background_exc/trigger_id1']
-b_tids[f.attrs['detector_2']] = f['background_exc/trigger_id2']
+old_style_format_flag = 'detector_1' in f.attrs
+if old_style_format_flag:
+    b_tids[f.attrs['detector_1']] = f['background_exc/trigger_id1']
+    b_tids[f.attrs['detector_2']] = f['background_exc/trigger_id2']
+else:
+    ifos = f.attrs['ifos'].split(' ')
+    for tmpifo in ifos:
+        b_tids[tmpifo] = f['background_exc/{}/trigger_id'.format(tmpifo)]
 
 f = h5py.File(args.single_trigger_file, 'r')
 ifo = tuple(f.keys())[0]
@@ -75,8 +81,14 @@ pylab.scatter(bkg_snr, bkg_chisq, marker='o', color='black',
 f = h5py.File(args.found_injection_file, 'r')
 inj_tids = {}
 # FIXME : make compatible with multi-ifo case
-inj_tids[f.attrs['detector_1']] = f['found_after_vetoes/trigger_id1']
-inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
+if old_style_format_flag:
+    inj_tids[f.attrs['detector_1']] = f['found_after_vetoes/trigger_id1']
+    inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
+else:
+    ifos = f.attrs['ifos'].split(' ')
+    for tmpifo in ifos:
+        inj_tids[tmpifo] = f['found_after_vetoes/{}/trigger_id'.format(tmpifo)]
+
 
 inj_idx = f['found_after_vetoes/injection_index'][:]
 eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
