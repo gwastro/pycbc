@@ -50,7 +50,6 @@ args = parser.parse_args()
 # Add the background triggers
 f = h5py.File(args.coinc_statistic_file, 'r')
 b_tids = {}
-# FIXME: rewrite for multi-ifo case
 old_style_format_flag = 'detector_1' in f.attrs
 if old_style_format_flag:
     b_tids[f.attrs['detector_1']] = f['background_exc/trigger_id1']
@@ -80,7 +79,6 @@ pylab.scatter(bkg_snr, bkg_chisq, marker='o', color='black',
 # Add the found injection points
 f = h5py.File(args.found_injection_file, 'r')
 inj_tids = {}
-# FIXME : make compatible with multi-ifo case
 if old_style_format_flag:
     inj_tids[f.attrs['detector_1']] = f['found_after_vetoes/trigger_id1']
     inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
