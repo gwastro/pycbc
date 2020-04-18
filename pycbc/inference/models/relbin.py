@@ -260,13 +260,13 @@ class RelativeSPA(BaseGaussianNoise):
             b0 = numpy.array([4. * self.df * numpy.sum(hh[l:h]) for
                               l, h in self.bins])
             # linear terms
-            bin_centers = [0.5 * (fl + fh) for fl, fh in self.fbins]
+            bin_lefts = [fl for fl, fh in self.fbins]
             a1 = numpy.array([4. * self.df
-                              * numpy.sum(hd[l:h] * (self.f[l:h] - bc)) for
-                              (l, h), bc in zip(self.bins, bin_centers)])
+                              * numpy.sum(hd[l:h] * (self.f[l:h] - bl)) for
+                              (l, h), bl in zip(self.bins, bin_lefts)])
             b1 = numpy.array([4. * self.df
-                              * numpy.sum(hh[l:h] * (self.f[l:h] - bc)) for
-                              (l, h), bc in zip(self.bins, bin_centers)])
+                              * numpy.sum(hh[l:h] * (self.f[l:h] - bl)) for
+                              (l, h), bl in zip(self.bins, bin_lefts)])
 
             sdat[ifo] = {'a0': a0, 'a1': a1,
                          'b0': b0, 'b1': b1}
@@ -305,8 +305,8 @@ class RelativeSPA(BaseGaussianNoise):
             dtc = p['tc'] + dt - self.end_time
             tshift = numpy.exp(-2.0j * numpy.pi * self.fedges * dtc)
             # generate template and calculate waveform ratio
-            hp, hc = get_fd_waveform_sequence(
-                sample_points=Array(self.fedges), **p)
+            hp, hc = get_fd_waveform_sequence(sample_points=Array(self.fedges),
+                                              **p)
             htilde = numpy.array(fp * hp + fc * hc) * tshift
             r = (htilde / self.h00_sparse[ifo]).astype(numpy.complex128)
             r0 = r[:-1]
