@@ -90,7 +90,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     return nbin, fbin, fbin_ind
 
 
-class RelativeSPA(BaseGaussianNoise):
+class Relative(BaseGaussianNoise):
     r"""Model that assumes the likelihood in a region around the peak
     is slowly varying such that a linear approximation can be made, and
     likelihoods can be calculated at a coarser frequency resolution. For
@@ -142,14 +142,14 @@ class RelativeSPA(BaseGaussianNoise):
         All other keyword arguments are passed to
         :py:class:`BaseGaussianNoise`.
     """
-    name = "relative_spa"
+    name = "relative"
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
                  mass1_ref, mass2_ref, spin1z_ref, spin2z_ref,
                  ra_ref, dec_ref, tc_ref,
                  epsilon=0.5,
                  **kwargs):
-        super(RelativeSPA, self).__init__(
+        super(Relative, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
         # check that all of the frequency cutoffs are the same
         # FIXME: this can probably be loosened at some point
@@ -331,7 +331,7 @@ class RelativeSPA(BaseGaussianNoise):
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
         """
-        super(RelativeSPA, self).write_metadata(fp)
+        super(Relative, self).write_metadata(fp)
         fp.attrs['mass1_ref'] = self.mass1_ref
         fp.attrs['mass2_ref'] = self.mass2_ref
         fp.attrs['spin1z_ref'] = self.spin1z_ref
