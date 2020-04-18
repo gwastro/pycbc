@@ -145,10 +145,7 @@ class Relative(BaseGaussianNoise):
     name = "relative"
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
-                 mass1_ref, mass2_ref, spin1z_ref, spin2z_ref,
-                 ra_ref, dec_ref, tc_ref,
-                 epsilon=0.5,
-                 **kwargs):
+                 fiducial_params=None, epsilon=0.5, **kwargs):
         super(Relative, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
         # check that all of the frequency cutoffs are the same
@@ -170,13 +167,7 @@ class Relative(BaseGaussianNoise):
         self.comp_data = {ifo: d.numpy() for ifo, d in self.data.items()}
         self.comp_psds = {ifo: p.numpy() for ifo, p in self.psds.items()}
         # store fiducial waveform params
-        self.mass1_ref = float(mass1_ref)
-        self.mass2_ref = float(mass2_ref)
-        self.spin1z_ref = float(spin1z_ref)
-        self.spin2z_ref = float(spin2z_ref)
-        self.ra_ref = float(ra_ref)
-        self.dec_ref = float(dec_ref)
-        self.tc_ref = float(tc_ref)
+        self.fid_params = fiducial_params
 
         # get detector-specific arrival times relative to end of data
         dt = {ifo:
@@ -195,12 +186,6 @@ class Relative(BaseGaussianNoise):
         # prune f=0 point so IMR doesn't complain
         fpoints = Array(self.f.astype(numpy.float64))[1:]
         approx = self.static_params['approximant']
-        self.fid_params = dict(mass1=self.mass1_ref, mass2=self.mass2_ref,
-                               spin1z=self.spin1z_ref, spin2z=self.spin2z_ref,
-                               inclination=self.inclination_ref,
-                               ra=self.ra_ref, dec=self.dec_ref,
-                               polarization=self.polarization_ref,
-                               tc=self.tc_ref)
         fid_hp, fid_hc = get_fd_waveform_sequence(approximant=approx,
                                                   sample_points=fpoints,
                                                   **self.fid_params)
@@ -332,11 +317,27 @@ class Relative(BaseGaussianNoise):
             The inference file to write to.
         """
         super(Relative, self).write_metadata(fp)
-        fp.attrs['mass1_ref'] = self.mass1_ref
-        fp.attrs['mass2_ref'] = self.mass2_ref
-        fp.attrs['spin1z_ref'] = self.spin1z_ref
-        fp.attrs['spin2z_ref'] = self.spin2z_ref
-        fp.attrs['ra_ref'] = self.ra_ref
-        fp.attrs['dec_ref'] = self.dec_ref
-        fp.attrs['tc_ref'] = self.tc_ref
         fp.attrs['epsilon'] = self.epsilon
+        for p, v in self.fid_params.items():
+            fp.attrs['{}_ref'.format(p)] = v
+
+
+    @staticmethod
+    def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
+        """Adds reading fiducial waveform parameters from config file.
+        """
+        # add fiducial params to skip list
+        skip_args += [option for option in cp.options(section) if
+                      option.endswith('_ref')]
+        args = super(Relative, Relative).extra_args_from_config(
+            cp, section, skip_args=skip_args, dtypes=dtypes)
+        # get fiducial params from config
+        fid_params = {p.replace('_ref', ''): float(cp.get('model', p)) for p
+                      in cp.options('model') if p.endswith('_ref')}
+        # add optional params with default values if not specified
+        opt_params = {'ra': numpy.pi, 'dec': 0.0, 'inclination': 0.0,
+                      'polarization': numpy.pi}
+        fid_params.update({p: opt_params[p] for p in opt_params if p
+                           not in fid_params})
+        args.update({'fiducial_params': fid_params})
+        return args
