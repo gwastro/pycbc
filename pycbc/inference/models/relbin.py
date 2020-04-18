@@ -171,11 +171,11 @@ class Relative(BaseGaussianNoise):
 
         # get detector-specific arrival times relative to end of data
         dt = {ifo:
-              self.det[ifo].time_delay_from_earth_center(self.ra_ref,
-                                                         self.dec_ref,
-                                                         self.tc_ref)
+              self.det[ifo].time_delay_from_earth_center(
+                  self.fid_params['ra'], self.fid_params['dec'],
+                  self.fid_params['tc'])
               for ifo in self.data}
-        self.ta = {ifo: self.tc_ref + dt[ifo] - self.end_time
+        self.ta = {ifo: self.fid_params['tc'] + dt[ifo] - self.end_time
                    for ifo in self.data}
 
         # generate fiducial waveform
@@ -238,7 +238,7 @@ class Relative(BaseGaussianNoise):
         for ifo in self.data:
             hd = numpy.conjugate(self.comp_data[ifo]) * self.h00[ifo]
             hd /= self.comp_psds[ifo]
-            hh = (numpy.absolute(h0[ifo]) ** 2.0) / self.comp_psds[ifo]
+            hh = (numpy.absolute(self.h00[ifo]) ** 2.0) / self.comp_psds[ifo]
             # constant terms
             a0 = numpy.array([4. * self.df * numpy.sum(hd[l:h]) for
                               l, h in self.bins])
