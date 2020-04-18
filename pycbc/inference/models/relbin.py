@@ -81,10 +81,11 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     # frequency grid points
     fbin = dphi2f(dphi_grid)
     # indices of frequency grid points in the FFT array
-    fbin_ind = numpy.array([numpy.argmin(numpy.absolute(f_full - ff)) for
-                            ff in fbin])
+    fbin_ind = numpy.unique([numpy.argmin(numpy.absolute(f_full - ff)) for
+                             ff in fbin])
     # make sure grid points are precise
     fbin = numpy.array([f_full[i] for i in fbin_ind])
+    nbin = len(fbin)
     return nbin, fbin, fbin_ind
 
 
