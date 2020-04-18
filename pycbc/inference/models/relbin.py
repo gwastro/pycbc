@@ -31,8 +31,9 @@ import numpy
 from scipy.interpolate import interp1d
 from scipy import special
 
-from pycbc.waveform.spa_tmplt import spa_tmplt
+from pycbc.waveform import get_fd_waveform_sequence
 from pycbc.detector import Detector
+from pycbc.types import Array
 
 from .gaussian_noise import BaseGaussianNoise
 
@@ -187,14 +188,32 @@ class RelativeSPA(BaseGaussianNoise):
                    for ifo in self.data}
 
         # generate fiducial waveform
-        logging.info("Generating fiducial waveform")
-        hp = spa_tmplt(f_lower=kmins[0]*self.df, f_upper=(kmaxs[0]+1)*self.df,
-                       delta_f=self.df, mass1=self.mass1_ref,
-                       mass2=self.mass2_ref, spin1z=self.spin1z_ref,
-                       spin2z=self.spin2z_ref, distance=1.,
-                       spin_order=-1, phase_order=-1)
-        hp.resize(len(self.f))
-        self.h00 = numpy.array(hp)
+        f_lo = kmins[0] * self.df
+        f_hi = kmaxs[0] * self.df
+        logging.info("Generating fiducial waveform from %s to %s Hz" %
+                     (f_lo, f_hi))
+        # prune f=0 point so IMR doesn't complain
+        fpoints = Array(self.f.astype(numpy.float64))[1:]
+        approx = self.static_params['approximant']
+        self.fid_params = dict(mass1=self.mass1_ref, mass2=self.mass2_ref,
+                               spin1z=self.spin1z_ref, spin2z=self.spin2z_ref,
+                               inclination=self.inclination_ref,
+                               ra=self.ra_ref, dec=self.dec_ref,
+                               polarization=self.polarization_ref,
+                               tc=self.tc_ref)
+        fid_hp, fid_hc = get_fd_waveform_sequence(approximant=approx,
+                                                  sample_points=fpoints,
+                                                  **self.fid_params)
+        self.h00 = {}
+        for ifo in self.data:
+            # make copy of fiducial wfs, adding back in f=0
+            hp0 = numpy.concatenate([[0j], fid_hp.copy()])
+            hc0 = numpy.concatenate([[0j], fid_hc.copy()])
+            fp, fc = self.det[ifo].antenna_pattern(
+                self.fid_params['ra'], self.fid_params['dec'],
+                self.fid_params['polarization'], self.fid_params['tc'])
+            tshift = numpy.exp(-2.0j * numpy.pi * self.f * self.ta[ifo])
+            self.h00[ifo] = numpy.array(hp0 * fp + hc0 * fc) * tshift
 
         # compute frequency bins
         logging.info("Computing frequency bins")
@@ -204,13 +223,14 @@ class RelativeSPA(BaseGaussianNoise):
         logging.info("Using %s bins for this model", nbin)
         # store bins and edges in sample and frequency space
         self.edges = fbin_ind
-        self.fedges = numpy.array(fbin).astype(numpy.float32)
+        self.fedges = numpy.array(fbin).astype(numpy.float64)
         self.bins = numpy.array([(self.edges[i], self.edges[i+1]) for
                                  i in range(len(self.edges) - 1)])
         self.fbins = numpy.array([(fbin[i], fbin[i+1]) for
                                   i in range(len(fbin) - 1)])
         # store low res copy of fiducial waveform
-        self.h00_sparse = self.h00.copy().take(self.edges)
+        self.h00_sparse = {ifo: self.h00[ifo].copy().take(self.edges) for ifo
+                           in self.h00}
 
         # compute summary data
         logging.info("Calculating summary data at frequency resolution %s Hz",
@@ -228,14 +248,10 @@ class RelativeSPA(BaseGaussianNoise):
             containing bin coefficients a0, b0, a1, b1, for each frequency
             bin.
         """
-        # timeshift the fiducial waveform for each detector
-        shift = {ifo: numpy.exp(-2.0j * numpy.pi * self.f * self.ta[ifo]) for
-                 ifo in self.data}
-        h0 = {ifo: self.h00.copy() * shift[ifo] for ifo in self.data}
         # calculate coefficients
         sdat = {}
         for ifo in self.data:
-            hd = numpy.conjugate(self.comp_data[ifo]) * h0[ifo]
+            hd = numpy.conjugate(self.comp_data[ifo]) * self.h00[ifo]
             hd /= self.comp_psds[ifo]
             hh = (numpy.absolute(h0[ifo]) ** 2.0) / self.comp_psds[ifo]
             # constant terms
@@ -255,25 +271,6 @@ class RelativeSPA(BaseGaussianNoise):
             sdat[ifo] = {'a0': a0, 'a1': a1,
                          'b0': b0, 'b1': b1}
         return sdat
-
-    def waveform_ratio(self, p, htf, dtc=0.0):
-        """Calculate waveform ratio between template and fiducial
-        waveforms.
-        """
-        # generate template
-        hp = spa_tmplt(sample_points=self.fedges,
-                       mass1=p['mass1'], mass2=p['mass2'],
-                       spin1z=p['spin1z'], spin2z=p['spin2z'],
-                       distance=1., spin_order=-1, phase_order=-1)
-        htarget = numpy.array(hp)
-        # apply antenna pattern, inclination, and distance factor
-        htarget *= htf
-        # compute waveform ratio and timeshift
-        shift = numpy.exp(-2.0j * numpy.pi * self.fedges * dtc)
-        r = htarget / self.h00_sparse * shift
-        r0 = 0.5 * (r[:-1] + r[1:])
-        r1 = (r[1:] - r[:-1]) / (self.fedges[1:] - self.fedges[:-1])
-        return numpy.array([r0, r1], dtype=numpy.complex128)
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
@@ -295,32 +292,35 @@ class RelativeSPA(BaseGaussianNoise):
         p = self.current_params.copy()
         p.update(self.static_params)
 
-        llr = 0.
+        hh = 0.
+        hd = 0j
         for ifo in self.data:
             # get detector antenna pattern
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                    p['polarization'],
                                                    p['tc'])
-            ip = numpy.cos(p['inclination'])
-            ic = 0.5 * (1.0 + ip * ip)
-            htf = (fp * ip + 1.0j * fc * ic) / p['distance']
-            # get timeshift relative to fiducial waveform
+            # get timeshift relative to end of data
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
                                                             p['tc'])
-            dtc = p['tc'] + dt - self.end_time - self.ta[ifo]
+            dtc = p['tc'] + dt - self.end_time
+            tshift = numpy.exp(-2.0j * numpy.pi * self.fedges * dtc)
             # generate template and calculate waveform ratio
-            r0, r1 = self.waveform_ratio(p, htf, dtc=dtc)
-            # <h, d> is real part of sum over bins of A0r0 + A1r1
-            hd = numpy.sum(self.sdat[ifo]['a0'] * r0
-                           + self.sdat[ifo]['a1'] * r1).real
-            # marginalize over phase
-            hd = numpy.log(special.i0e(hd)) + abs(hd)
-            # <h, h> is real part of sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
-            hh = numpy.sum(self.sdat[ifo]['b0'] * numpy.absolute(r0) ** 2.
+            hp, hc = get_fd_waveform_sequence(
+                sample_points=Array(self.fedges), **p)
+            htilde = numpy.array(fp * hp + fc * hc) * tshift
+            r = (htilde / self.h00_sparse[ifo]).astype(numpy.complex128)
+            r0 = r[:-1]
+            r1 = (r[1:] - r[:-1]) / (self.fedges[1:] - self.fedges[:-1])
+
+            # <h, d> is sum over bins of A0r0 + A1r1
+            hd += numpy.sum(self.sdat[ifo]['a0'] * r0
+                            + self.sdat[ifo]['a1'] * r1)
+            # <h, h> is sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
+            hh += numpy.sum(self.sdat[ifo]['b0'] * numpy.absolute(r0) ** 2.
                            + 2. * self.sdat[ifo]['b1']
-                           * (r1 * numpy.conjugate(r0)).real).real
-            # increment loglr
-            llr += (hd - 0.5 * hh)
+                           * (r1 * numpy.conjugate(r0)).real)
+        hd = abs(hd)
+        llr = numpy.log(special.i0e(hd)) + hd - 0.5 * hh
         return float(llr)
 
     def write_metadata(self, fp):
