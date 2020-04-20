@@ -117,6 +117,19 @@ else
 fi
 popd
 
+## Run inference using relative model
+pushd examples/inference/relative
+bash -e get.sh
+bash -e run.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+popd
+
 ## Run inference samplers
 pushd examples/inference/samplers
 bash -e run.sh
