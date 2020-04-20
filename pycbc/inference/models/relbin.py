@@ -181,8 +181,8 @@ class Relative(BaseGaussianNoise):
         # generate fiducial waveform
         f_lo = kmins[0] * self.df
         f_hi = kmaxs[0] * self.df
-        logging.info("Generating fiducial waveform from %s to %s Hz" %
-                     (f_lo, f_hi))
+        logging.info("Generating fiducial waveform from %s to %s Hz",
+                     f_lo, f_hi)
         # prune low frequency samples to avoid waveform errors
         nbelow = sum(self.f < 10)
         fpoints = Array(self.f.astype(numpy.float64))[nbelow:]
@@ -303,8 +303,8 @@ class Relative(BaseGaussianNoise):
                             + self.sdat[ifo]['a1'] * r1)
             # <h, h> is sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
             hh += numpy.sum(self.sdat[ifo]['b0'] * numpy.absolute(r0) ** 2.
-                           + 2. * self.sdat[ifo]['b1']
-                           * (r1 * numpy.conjugate(r0)).real)
+                            + 2. * self.sdat[ifo]['b1']
+                            * (r1 * numpy.conjugate(r0)).real)
         hd = abs(hd)
         llr = numpy.log(special.i0e(hd)) + hd - 0.5 * hh
         return float(llr)
@@ -321,7 +321,6 @@ class Relative(BaseGaussianNoise):
         fp.attrs['epsilon'] = self.epsilon
         for p, v in self.fid_params.items():
             fp.attrs['{}_ref'.format(p)] = v
-
 
     @staticmethod
     def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
