@@ -282,6 +282,9 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.pdtype = []
         self.weights = {}
         self.param_bin = {}
+        self.two_det_flag = (len(ifos) == 2)
+        self.two_det_weights = {}
+        self.pb_int_size = None
 
     def get_hist(self, ifos=None):
         """Read in a signal density file for the ifo combination"""
@@ -318,8 +321,9 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         for ifo in self.hist_ifos:
             self.weights[ifo] = histfile[ifo]['weights'][:]
             param = histfile[ifo]['param_bin'][:]
+
             if param.dtype == numpy.int8:
-                # Old style, incorrectly sorted histogram file
+                # Older style, incorrectly sorted histogram file
                 ncol = param.shape[1]
                 self.pdtype = [('c%s' % i, param.dtype) for i in range(ncol)]
                 self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]),
@@ -335,7 +339,37 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 # param bin and weights have already been sorted
                 self.param_bin[ifo] = param
                 self.pdtype = self.param_bin[ifo].dtype
+
             self.max_penalty = self.weights[ifo].min()
+
+            if self.two_det_flag:
+                # The density of signals is computed as a function of 3 binned
+                # parameters: time difference (t), phase difference (p) and
+                # SNR ratio (s). These are computed for each combination of
+                # detectors, so for detectors 6 differences are needed. However
+                # many combinations of these parameters are highly unlikely and
+                # no instances of these combinations occurred when generating
+                # the statistic files. Rather than storing a bunch of 0s, these
+                # values are just not stored at all. This reduces the size of
+                # the statistic file, but means we have to identify the correct
+                # value to read for every trigger. For 2 detectors we can
+                # expand the weights lookup table here, basically adding in all
+                # the "0" values. This makes looking up a value in the
+                # "weights" table a O(N) rather than O(NlogN) operation. It
+                # sacrifices RAM to do this, so is a good tradeoff for 2
+                # detectors, but not for 3!
+                pb_iinfo = numpy.iinfo(self.param_bin[ifo]['c0'].dtype)
+                self.pb_int_size = pb_iinfo.max - pb_iinfo.min + 1
+
+                array_size = [self.pb_int_size, self.pb_int_size,
+                              self.pb_int_size]
+                dtypec = self.weights[ifo].dtype
+                self.two_det_weights[ifo] = \
+                    numpy.zeros(array_size, dtype=dtypec) + self.max_penalty
+                id0 = self.param_bin[ifo]['c0'] + self.pb_int_size // 2
+                id1 = self.param_bin[ifo]['c1'] + self.pb_int_size // 2
+                id2 = self.param_bin[ifo]['c2'] + self.pb_int_size // 2
+                self.two_det_weights[ifo][id0, id1, id2] = self.weights[ifo]
 
         self.hist = {}
 
@@ -437,14 +471,24 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 nbinned['c%s' % i] = b
 
             # Read signal weight from precalculated histogram
-            loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
-            loc[loc == len(self.weights[ref_ifo])] = 0
-            rate[rtype] = self.weights[ref_ifo][loc]
+            if self.two_det_flag:
+                # High-RAM, low-CPU option for two-det
+                id0 = nbinned['c0'] + self.pb_int_size // 2
+                id1 = nbinned['c1'] + self.pb_int_size // 2
+                id2 = nbinned['c2'] + self.pb_int_size // 2
+                rate[rtype] = self.two_det_weights[ref_ifo][id0, id1, id2]
+            else:
+                # Low[er]-RAM, high[er]-CPU option for >two det
+                loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
+                loc[loc == len(self.weights[ref_ifo])] = 0
+                rate[rtype] = self.weights[ref_ifo][loc]
 
-            # These weren't in our histogram so give them max penalty instead
-            # of random value
-            missed = numpy.where(self.param_bin[ref_ifo][loc] != nbinned)[0]
-            rate[rtype][missed] = self.max_penalty
+                # These weren't in our histogram so give them max penalty
+                # instead of random value
+                missed = numpy.where(
+                    self.param_bin[ref_ifo][loc] != nbinned
+                )[0]
+                rate[rtype][missed] = self.max_penalty
 
             # Scale by signal population SNR
             rate[rtype] *= (sref / self.ref_snr) ** -4.0
