@@ -487,6 +487,7 @@ Examples
     inference/examples/bbh.rst
     inference/examples/gw150914.rst
     inference/examples/single.rst
+    inference/examples/relative.rst
 
 ===============================================
 Visualizing the Posteriors
