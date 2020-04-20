@@ -183,17 +183,18 @@ class Relative(BaseGaussianNoise):
         f_hi = kmaxs[0] * self.df
         logging.info("Generating fiducial waveform from %s to %s Hz" %
                      (f_lo, f_hi))
-        # prune f=0 point so IMR doesn't complain
-        fpoints = Array(self.f.astype(numpy.float64))[1:]
+        # prune low frequency samples to avoid waveform errors
+        nbelow = sum(self.f < 10)
+        fpoints = Array(self.f.astype(numpy.float64))[nbelow:]
         approx = self.static_params['approximant']
         fid_hp, fid_hc = get_fd_waveform_sequence(approximant=approx,
                                                   sample_points=fpoints,
                                                   **self.fid_params)
         self.h00 = {}
         for ifo in self.data:
-            # make copy of fiducial wfs, adding back in f=0
-            hp0 = numpy.concatenate([[0j], fid_hp.copy()])
-            hc0 = numpy.concatenate([[0j], fid_hc.copy()])
+            # make copy of fiducial wfs, adding back in low frequencies
+            hp0 = numpy.concatenate([[0j] * nbelow, fid_hp.copy()])
+            hc0 = numpy.concatenate([[0j] * nbelow, fid_hc.copy()])
             fp, fc = self.det[ifo].antenna_pattern(
                 self.fid_params['ra'], self.fid_params['dec'],
                 self.fid_params['polarization'], self.fid_params['tc'])
