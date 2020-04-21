@@ -123,7 +123,6 @@ extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration']
              if par in usedparams]
 
 for ex_p in extparams:
-    logging.info('calculating {}'.format(ex_p))
     if ex_p == 'template_duration':
         logging.info('using duration from trigger file')
         params[ex_p] = np.array([trigf[args.ifo + '/template_duration'][ref][0]
@@ -157,7 +156,11 @@ else:
 
 
 if args.bin_param == 'template_duration' and params[args.bin_param].min() == 0:
+    # If a template does not contain triggers, then the dereferencing above
+    # will return a zero for the duration
     logging.warn('WARNING: Some templates do not contain triggers')
+    # Find the lowest non-zero template duration to use as the lower limit for
+    # the bins
     pbin_lower_lim = params[args.bin_param][params[args.bin_param] > 0].min()
 else:
     pbin_lower_lim = params[args.bin_param].min()
