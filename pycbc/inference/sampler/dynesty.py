@@ -160,12 +160,18 @@ class DynestySampler(BaseSampler):
     def checkpoint(self):
         """Checkpoint function for dynesty sampler
         """
-        for fn in [self.checkpoint_file, self.backup_file]:
-            with self.io(fn, "a") as fp:
-                
+        #for fn in [self.checkpoint_file, self.backup_file]:
+        #    with self.io(fn, "a") as fp:
+        state = [item for item in self._sampler.__dict__.keys() 
+                 if item.startswith('saved_')]
+        with loadfile(self.checkpoint_file, 'a') as fp:
+            dump_state(state, fp, path=fp.sampler_group)
+
 
     def resume_from_checkpoint(self):
-        pass
+        with loadfile(self.checkpoint_file, 'r') as fp:
+            state = load_state(fp, path=fp.sampler_group)
+        
 
     def finalize(self):
         logz = self._sampler.results.logz[-1:][0]
