@@ -145,7 +145,7 @@ fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
 
 # get expected (noise-only) foreground IFAR values and cumulative number for
 # each IFAR value
-expected_ifar = numpy.logspace(-4., numpy.log10(opts.truncate_threshold) or 5,
+expected_ifar = numpy.logspace(-4., numpy.log10(opts.truncate_threshold or 10000),
                                num=1000, base=10.0)
 fg_time = 0
 for f in trigf:
