@@ -133,11 +133,14 @@ bin_size = args.bin_size if args.bin_size else (maximum - minimum) / 100.
 bins = numpy.arange(minimum, maximum + bin_size, bin_size)
 
 # plot background minus foreground
-pylab.hist(bstat_exc, bins=bins, histtype='step',
-                      linewidth=2,
-                      color='grey', log=True,
-                      label= 'Background Uncorrelated with Foreground',
-                      weights=dec_exc / f.attrs['background_time_exc'] * lal.YRJUL_SI)
+exc_binweights = dec_exc / f.attrs['background_time_exc'] * lal.YRJUL_SI
+exc_binvals = pylab.hist(bstat_exc, bins=bins, histtype='step',
+                         linewidth=2,
+                         color='grey', log=True,
+                         label= 'Background Uncorrelated with Foreground',
+                         weights=exc_binweights)
+
+histpeak = bins[exc_binvals[0].argmax()]
 
 # plot full background
 if not args.closed_box:
@@ -207,7 +210,7 @@ pylab.ylabel('Trigger Rate (yr$^{-1})$')
 if args.x_min is not None:
     pylab.xlim(xmin=args.x_min)
 else:
-    pylab.xlim(xmin=fstat.min())
+    pylab.xlim(xmin=numpy.floor(histpeak))
 pylab.ylim(ymin=0.5 / f.attrs['background_time_exc'] * lal.YRJUL_SI)
 pylab.grid()
 leg = pylab.legend(fontsize=9)
