@@ -424,7 +424,7 @@ ifar_ob = wf.make_ifar_plot(workflow, combined_bg_file,
 table = wf.make_foreground_table(workflow, combined_bg_file,
                                  hdfbank, rdir['open_box_result'],
                                  singles=insps, extension='.html',
-                                 tags=["html"])
+                                 tags=combined_bg_file.tags)
 
 #symlink_result(snrifar, 'open_box_result/significance')
 #symlink_result(ratehist, 'open_box_result/significance')
@@ -473,21 +473,18 @@ for key in final_bg_files:
     snrifar_ifar = wf.make_snrifar_plot(workflow, bg_file, open_dir,
                                         cumulative=False,
                                         tags=bg_file.tags + ['ifar'])
-    #ifar_ob = wf.make_ifar_plot(workflow, bg_file, open_dir,
-    #                            tags=bg_file.tags + ['open_box'])
-    #ifar_cb = wf.make_ifar_plot(workflow, bg_file, closed_dir,
-    #                            tags=bg_file.tags + ['closed_box'])
-    #table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
-    #                                 singles=insps, extension='.html',
-    #                                 tags=["html"])
+    ifar_ob = wf.make_ifar_plot(workflow, bg_file, open_dir,
+                                tags=bg_file.tags + ['open_box'])
+    ifar_cb = wf.make_ifar_plot(workflow, bg_file, closed_dir,
+                                tags=bg_file.tags + ['closed_box'])
+    table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
+                                     singles=insps, extension='.html',
+                                     tags=bg_file.tags)
 
-    #detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
-    # FIXME: NEED TO ADD NOT WORKING PLOTS, AS ABOVE
-    detailed_page = [(snrifar, ratehist), (snrifar_ifar,)]
+    detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
     layout.two_column_layout(open_dir, detailed_page)
 
-    #closed_page = [(snrifar_cb, ifar_cb)]
-    closed_page = [(snrifar_cb,)]
+    closed_page = [(snrifar_cb, ifar_cb)]
     snrifar_summ += closed_page
     layout.two_column_layout(closed_dir, closed_page)
 
