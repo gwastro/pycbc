@@ -274,7 +274,8 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
         # Assign attribute so that it can be replaced with other functions
         self.get_newsnr = ranking.get_newsnr
-        self.hist = self.hist_ifos = None
+        self.has_hist = False
+        self.hist_ifos = None
         self.ref_snr = 5.0
         self.relsense = {}
         self.swidth = self.pwidth = self.twidth = None
@@ -311,25 +312,26 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
         logging.info("Using signal histogram %s for ifos %s", selected, ifos)
         histfile = self.files[selected]
-
-        # This order matters, we need to retrieve the order used to
-        # generate the histogram as the first ifos if the reference
         self.hist_ifos = histfile.attrs['ifos']
-
-        # Bin boundaries are stored in the hdf file
+        n_ifos = len(self.hist_ifos)
+        
+        # Histogram bin attributes
         self.twidth = histfile.attrs['twidth']
         self.pwidth = histfile.attrs['pwidth']
         self.swidth = histfile.attrs['swidth']
-
         self.srbmin = histfile.attrs['srbmin']
         self.srbmax = histfile.attrs['srbmax']
 
-        n_ifos = len(self.hist_ifos)
         bin_volume = (self.twidth * self.pwidth * self.swidth) ** (n_ifos - 1)
+
+        # Read histogram for each ifo, to use if that ifo has smallest SNR in
+        # the coinc
         for ifo in self.hist_ifos:
+
             weights = histfile[ifo]['weights'][:]
             # renormalise to PDF
             self.weights[ifo] = weights / (weights.sum() * bin_volume)
+
             param = histfile[ifo]['param_bin'][:]
             if param.dtype == numpy.int8:
                 # Old style, incorrectly sorted histogram file
@@ -348,13 +350,17 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 # param bin and weights have already been sorted
                 self.param_bin[ifo] = param
                 self.pdtype = self.param_bin[ifo].dtype
-            self.max_penalty = self.weights[ifo].min()
 
-        self.hist = {}
+            # Max_penalty is a small number to assigned to any bins without
+            # histogram entries. All histograms in a given file have the same
+            # min entry by design, so use the min of the last one read in.
+            self.max_penalty = self.weights[ifo].min()
 
         relfac = histfile.attrs['sensitivity_ratios']
         for ifo, sense in zip(self.hist_ifos, relfac):
             self.relsense[ifo] = sense
+
+        self.has_hist = True
 
     def single(self, trigs):
         """Calculate the single detector statistic & assemble other parameters
@@ -385,21 +391,35 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         return self.logsignalrate_multiifo(stats, shift, to_shift)
 
     def logsignalrate_multiifo(self, stats, shift, to_shift):
-        """Calculate the normalized log rate density of signals via lookup"""
-        # Convert to dict as hist ifos and self.ifos may not be in same
-        # order
+        """Calculate the normalized log rate density of signals via lookup
+        
+        Parameters
+        ----------
+        stats: list of dicts giving single-ifo quantities, ordered as 
+            self.ifos
+        shift: numpy array of float, size of the time shift vector for each
+            coinc to be ranked
+        to_shift: list of int, multiple of the time shift to apply ordered
+            as self.ifos
+
+        Returns
+        -------
+        value: log of coinc signal rate density for the given single-ifo
+            triggers and time shifts
+        """
+        # Convert time shift vector to dict, as hist ifos and self.ifos may
+        # not be in same order
         to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
 
-        # does not require ifos to be specified, only 1 p/t/a file
-        if self.hist is None:
+        if not self.has_hist:
             self.get_hist()
 
-        # figure out which ifo has the smallest SNR of the contributing ifos
-        # Store a list 'rtypes' by ifo of which triggers that reference ifo
-        # should handle. This corresponds to which histogram will be used
+        # Figure out which ifo of the contributing ifos has the smallest SNR,
+        # to use as reference for choosing the signal histogram.
         snrs = numpy.array([numpy.array(stats[ifo]['snr'], ndmin=1)
                            for ifo in self.ifos])
         smin = numpy.argmin(snrs, axis=0)
+        # Store a list of the triggers using each ifo as reference
         rtypes = {ifo: numpy.where(smin == j)[0]
                   for j, ifo in enumerate(self.ifos)}
 
@@ -439,7 +459,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 sbin = (sdif / self.swidth).astype(numpy.int)
                 binned += [tbin, pbin, sbin]
 
-            # convert binned to same dtype as stored in hist
+            # Convert binned to same dtype as stored in hist
             nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
             for i, b in enumerate(binned):
                 nbinned['c%s' % i] = b
