@@ -1166,7 +1166,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
             tnum = trigs['template_id']  # exists for SingleDetTriggers
             # Should only be one ifo fit file provided
             assert len(self.ifos) == 1
-        # store benchmark log volume as single-ifo information since the coinc
+        # Store benchmark log volume as single-ifo information since the coinc
         # method does not have access to template id
         singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
         return numpy.array(singles, ndmin=1)
@@ -1196,45 +1196,41 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
                                      axis=0)
         # Volume \propto sigma^3 or sigmasq^1.5
         network_logvol = 1.5 * numpy.log(network_sigmasq)
-        # Get benchmark log volume as single-ifo information
-        # NB benchmark logvol for a given template is not ifo-dependent
-        # - choose the first ifo for convenience
+        # Get benchmark log volume as single-ifo information :
+        # benchmark_logvol for a given template is not ifo-dependent, so
+        # choose the first ifo for convenience
         benchmark_logvol = s[0][1]['benchmark_logvol']
         network_logvol -= benchmark_logvol
 
-        # Use prior histogram to get Bayes factor for signal vs noise given
-        # time, phase and SNR differences between IFOs
-        # First get signal term logr_s
+        # Use prior histogram to get Bayes factor for signal vs noise
+        # given the time, phase and SNR differences between IFOs
+        
+        # First get signal PDF logr_s
         stat = {ifo: st for ifo, st in s}
         logr_s = self.logsignalrate_multiifo(stat,
                                              slide * step, to_shift)
 
-        # Calculate noise term of phase-time-amplitude Bayes factor, logr_n
+        # Find total volume of phase-time-amplitude space occupied by noise
+        # coincs        
+        # Extent of time-difference space occupied
         noise_twindow = coinc_rate.multiifo_noise_coincident_area(
                             self.hist_ifos, kwargs['time_addition'])
-        # Calculate the volume of the histogram which could be filled by
-        # noise coincidences. Not all bins may be occupied due to
-        # combinations of limits on time difference between constituent
-        # pairs of detectors, the noise_coincident_area function takes this
-        # into account.
-
-        # Volume will be the allowed time difference window multiplied
-        # by 2pi for each phase difference dimension, and the allowed range
-        # of SNR ratio for each SNR ratio dimension. There will be
-        # (n_ifos - 1) dimensions for each parameter.
+        # Volume is the allowed time difference window, multiplied by 2pi for
+        # each phase difference dimension and by allowed range of SNR ratio
+        # for each SNR ratio dimension : there are (n_ifos - 1) dimensions
+        # for both phase and SNR
         n_ifos = len(self.hist_ifos)
-        hist_vol = noise_twindow * (2 * numpy.pi * (self.srbmax - self.srbmin)
-                                    * self.swidth) ** (n_ifos - 1)
-
-        # One over this volume will be the PDF assuming uniform noise
-        # distributions in each dimension.
+        hist_vol = noise_twindow * \
+           (2 * numpy.pi * (self.srbmax - self.srbmin) * self.swidth) ** \
+                                                                   (n_ifos - 1)
+        # Noise PDF is 1/volume, assuming a uniform distribution of noise
+        # coincs
         logr_n = - numpy.log(hist_vol)
 
-        # Combine the signal and noise terms of the PTA Bayes factor
-        pta_bf = logr_s - logr_n
+        # Combine to get final statistic: log of
+        # ((rate of signals / rate of noise) * PTA Bayes factor) 
+        loglr = network_logvol - ln_noise_rate + logr_s - logr_n
 
-        # Combine to get final statistic
-        loglr = network_logvol - ln_noise_rate + pta_bf
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
         return loglr
