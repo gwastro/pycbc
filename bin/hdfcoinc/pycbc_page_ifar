@@ -24,18 +24,20 @@ import matplotlib as mpl; mpl.use('Agg')
 import pylab
 import pycbc.results
 import pycbc.version
+import copy
+from pycbc.events import veto
 from ligo import segments
 
-def calculate_time_slide_duration(ifo1_segments, ifo2_segments, offset=0):
+def calculate_time_slide_duration(pifo_segments, fifo_segments, offset=0):
    ''' Returns the amount of coincident time between two segmentlists.
    '''
 
    # dertermine how much coincident time
-   overlap = ifo1_segments.coalesce() & ifo2_segments.coalesce().shift(offset)
+   overlap = pifo_segments.coalesce() & fifo_segments.coalesce().shift(offset)
    duration = abs(overlap.coalesce())
 
    # unshift the shifted segmentlist
-   ifo2_segments.shift(-offset)
+   fifo_segments.shift(-offset)
 
    return duration
 
@@ -89,6 +91,11 @@ opts = parser.parse_args()
 # read file
 fp = h5py.File(opts.trigger_file, 'r')
 
+if 'ifos' in fp.attrs:
+    legacy_smap_file = False
+else:
+    legacy_smap_file = True
+
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = opts.use_hierarchical_level
 
@@ -110,17 +117,17 @@ if h_inc_back_num > h_iterations:
     ax.set_ylim(0, 1)
 
     output_message = "No more foreground events louder than all background\n" \
-                     "at this removal level.\n" \
-                     "Attempted to show " + str(h_inc_back_num) + " removal(s),\n" \
-                     "but only " + str(h_iterations) + " removal(s) done."
+                     "at this removal level.\nAttempted to show %d " \
+                     "removal(s),\nbut only %d removal(s) done." % \
+                     (h_inc_back_num, h_iterations)
 
     ax.text(0.5, 0.5, output_message, horizontalalignment='center',
             verticalalignment='center')
 
     pycbc.results.save_fig_with_metadata(fig, opts.output_file,
-     title='Cumulative Number vs. IFAR',
-     caption=output_message,
-     cmd=' '.join(sys.argv))
+                                         title='Cumulative Number vs. IFAR',
+                                         caption=output_message,
+                                         cmd=' '.join(sys.argv))
 
     # Exit the code successfully and bypass the rest of the plotting code.
     sys.exit(0)
@@ -184,23 +191,36 @@ else :
         back_tsid = fp['background/timeslide_id'][:]
         back_ifar = fp['background/ifar'][:]
 
-# get IFO segments
-h1_segments = segments.segmentlist([segments.segment(s,e) for s,e in zip(fp['segments']['H1']['start'][:],fp['segments']['H1']['end'][:])])
-l1_segments = segments.segmentlist([segments.segment(s,e) for s,e in zip(fp['segments']['L1']['start'][:],fp['segments']['L1']['end'][:])])
-
 # make figure
 fig = pylab.figure(1)
 
 # get a unique list of timeslide_ids and loop over them
 interval = fp.attrs['timeslide_interval']
-ifo1, ifo2 = fp.attrs['detector_1'], fp.attrs['detector_2']
-min_tsid = (fp['segments'][ifo1]['start'][:].min() - \
-            fp['segments'][ifo2]['end'][:].max()) / interval
+if legacy_smap_file:
+    pifo, fifo = fp.attrs['detector_1'], fp.attrs['detector_2']
+    p_starts = fp['segments'][pifo]['start'][:]
+    p_ends = fp['segments'][pifo]['end'][:]
+    pifo_segments = veto.start_end_to_segments(p_starts, p_ends)
+    f_starts = fp['segments'][pifo]['start'][:]
+    f_ends = fp['segments'][pifo]['end'][:]
+    fifo_segments = veto.start_end_to_segments(f_starts, f_ends)
+    min_tsid = (p_starts.min() - f_ends.max()) / interval
+    max_tsid = (p_ends.max() - f_starts.min()) / interval
+else:
+    pifo, fifo = fp.attrs['pivot'], fp.attrs['fixed']
+    ifo_joined = fp.attrs['ifos'].replace(' ','')
+    p_starts = fp['segments'][ifo_joined]['start'][:]
+    p_ends = fp['segments'][ifo_joined]['end'][:]
+    pifo_segments = veto.start_end_to_segments(p_starts, p_ends)
+    fifo_segments = copy.deepcopy(pifo_segments)
+    min_tsid = (p_starts.min() - p_ends.max()) / interval
+    max_tsid = -min_tsid
+
 min_tsid = numpy.rint(min_tsid) // opts.decimation_factor
-max_tsid = (fp['segments'][ifo1]['end'][:].max() - fp['segments'][ifo2]['start'][:].min()) / interval
 max_tsid = numpy.rint(max_tsid) // opts.decimation_factor
 
-tsids = numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * opts.decimation_factor
+tsids = numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * \
+                     opts.decimation_factor
 
 allbkg_dur = 0
 allbkg_ifars = []
@@ -216,9 +236,11 @@ for tsid in tsids:
 
     # calculate the amount of coincident time in this time slide
     offset = tsid*fp.attrs['timeslide_interval']
-    back_dur = calculate_time_slide_duration(h1_segments, l1_segments, offset=offset)
+    back_dur = calculate_time_slide_duration(pifo_segments, fifo_segments,
+                                             offset=offset)
     if back_dur == 0:
         continue
+
     plotted_slide_count += 1
     allbkg_dur = allbkg_dur + back_dur
     # Limit how far back the decimated background gets plotted
@@ -229,7 +251,7 @@ for tsid in tsids:
     # apply the correction factor for this time slide to its IFAR
     # you need a correction factor because the analyzed time of the time slide
     # is not the same as the analyzed time of the foreground
-    ts_ifar = back_ifar[ts_indx] * ( fp.attrs['foreground_time'] / back_dur )
+    ts_ifar = back_ifar[ts_indx] * (fp.attrs['foreground_time'] / back_dur)
     ts_ifar.sort()
 
     # get the cumulative number of triggers in this time slide
@@ -251,30 +273,36 @@ pylab.loglog(allbkg_ifars, allbkg_cumnum, color='green', linewidth=1.5,
              label="All decimated background")
 
 # plot the expected background
-pylab.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=2, color='black', label='Expected Background')
+pylab.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=2,
+             color='black', label='Expected Background')
 
 # plot the counting error
 error_plus = expected_cumnum + numpy.sqrt(expected_cumnum)
 error_minus = expected_cumnum - numpy.sqrt(expected_cumnum)
 error_minus = numpy.where(error_minus<=0, 1e-5, error_minus)
-pylab.fill_between(expected_ifar, error_minus, error_plus, facecolor='y', alpha=0.4, label='$N^{1/2}$ Errors')
+pylab.fill_between(expected_ifar, error_minus, error_plus, facecolor='y',
+                   alpha=0.4, label='$N^{1/2}$ Errors')
 
 # plot the counting error
 error_plus = expected_cumnum + 2 * numpy.sqrt(expected_cumnum)
 error_minus = expected_cumnum - 2*numpy.sqrt(expected_cumnum)
 error_minus = numpy.where(error_minus<=0, 1e-5, error_minus)
-pylab.fill_between(expected_ifar, error_minus, error_plus, facecolor='y', alpha=0.2, label='$2N^{1/2}$ Errors')
+pylab.fill_between(expected_ifar, error_minus, error_plus, facecolor='y',
+                   alpha=0.2, label='$2N^{1/2}$ Errors')
 
 # plot the foreground triggers
 if opts.open_box:
-    pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue', marker='^', label='Foreground')
+    pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue',
+                 marker='^', label='Foreground')
 
     if h_inc_back_num > 0:
-        pylab.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff', marker='v', label='Hierarchically Removed Foreground')
+        pylab.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff',
+                     marker='v', label='Hierarchically Removed Foreground')
 
 # format plot
 if opts.open_box and len(fore_cumnum) > 100:
-    # If we have > 100 foreground triggers, scale the plot around the foreground
+    # If we have > 100 foreground triggers, scale the plot around the
+    # foreground
     pylab.ylim(0.8, 1.1 * len(fore_cumnum))
     pylab.xlim(0.9 * min(fore_ifar))
 elif len(allbkg_cumnum) > 0:
@@ -288,13 +316,16 @@ pylab.ylabel('Cumulative Number')
 pylab.xlabel('Inverse False Alarm Rate (yr)')
 
 # save
-caption = 'This is a cumulative histogram of triggers. The blue triangles represent ' \
-          + 'coincident foreground triggers. The dashed line represents the expected background ' \
-          + 'given the analysis time. The shaded regions represent ' \
-          + 'counting errors. The gray lines are time slides treated as zero lag, here there are %d time ' %(plotted_slide_count) \
-          + 'slides plotted. Gray dots are time slides with only one event. ' \
-          + '%d of the plotted slides have zero events. ' %(empty_slide_count) \
-          + 'The green line represents all decimated time slides rescaled to the analysis time.'
+caption = 'This is a cumulative histogram of triggers. The blue triangles ' \
+          'represent coincident foreground triggers. The dashed line ' \
+          'represents the expected background given the analysis time. The ' \
+          'shaded regions represent counting errors. The gray lines are ' \
+          'time slides treated as zero lag, here there are %d time slides ' \
+          'plotted. Gray dots are time slides with only one event. %d of ' \
+          'the plotted slides have zero events. The green line represents ' \
+          'all decimated time slides rescaled to the analysis time.' \
+          %  (plotted_slide_count, empty_slide_count)
+
 pycbc.results.save_fig_with_metadata(fig, opts.output_file,
      title='Cumulative Number vs. IFAR',
      caption=caption,
