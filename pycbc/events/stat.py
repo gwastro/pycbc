@@ -317,7 +317,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         histfile = self.files[selected]
         self.hist_ifos = histfile.attrs['ifos']
         n_ifos = len(self.hist_ifos)
-        
+
         # Histogram bin attributes
         self.twidth = histfile.attrs['twidth']
         self.pwidth = histfile.attrs['pwidth']
@@ -425,10 +425,10 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
     def logsignalrate_multiifo(self, stats, shift, to_shift):
         """Calculate the normalized log rate density of signals via lookup
-        
+
         Parameters
         ----------
-        stats: list of dicts giving single-ifo quantities, ordered as 
+        stats: list of dicts giving single-ifo quantities, ordered as
             self.ifos
         shift: numpy array of float, size of the time shift vector for each
             coinc to be ranked
@@ -1247,14 +1247,14 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
 
         # Use prior histogram to get Bayes factor for signal vs noise
         # given the time, phase and SNR differences between IFOs
-        
+
         # First get signal PDF logr_s
         stat = {ifo: st for ifo, st in s}
         logr_s = self.logsignalrate_multiifo(stat,
                                              slide * step, to_shift)
 
         # Find total volume of phase-time-amplitude space occupied by noise
-        # coincs        
+        # coincs
         # Extent of time-difference space occupied
         noise_twindow = coinc_rate.multiifo_noise_coincident_area(
                             self.hist_ifos, kwargs['time_addition'])
@@ -1264,14 +1264,14 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         # for both phase and SNR
         n_ifos = len(self.hist_ifos)
         hist_vol = noise_twindow * \
-           (2 * numpy.pi * (self.srbmax - self.srbmin) * self.swidth) ** \
-                                                                   (n_ifos - 1)
+            (2 * numpy.pi * (self.srbmax - self.srbmin) * self.swidth) ** \
+            (n_ifos - 1)
         # Noise PDF is 1/volume, assuming a uniform distribution of noise
         # coincs
         logr_n = - numpy.log(hist_vol)
 
         # Combine to get final statistic: log of
-        # ((rate of signals / rate of noise) * PTA Bayes factor) 
+        # ((rate of signals / rate of noise) * PTA Bayes factor)
         loglr = network_logvol - ln_noise_rate + logr_s - logr_n
 
         # cut off underflowing and very small values
