@@ -822,12 +822,14 @@ class ForegroundTriggers(object):
             # FIXME: As two-ifo is hardcoded loop over all ifos
             sngl_combined_mchirp = 0
             sngl_combined_mtot = 0
+            net_snrsq = 0
             for ifo in ifos:
                 sngl_id = self.trig_id[ifo][idx]
                 event_id = lsctables.SnglInspiralID(sngl_id)
                 sngl = return_empty_sngl()
                 sngl.event_id = event_id
                 sngl.ifo = ifo
+                net_snrsq += sngl_col_vals['snr'][ifo][idx]**2
                 for name in sngl_col_names:
                     val = sngl_col_vals[name][ifo][idx]
                     if name == 'end_time':
@@ -872,13 +874,13 @@ class ForegroundTriggers(object):
             coinc_inspiral_row.mass = sngl_combined_mtot
             coinc_inspiral_row.set_end(\
                                    LIGOTimeGPS(coinc_event_vals['time1'][idx]))
-            coinc_inspiral_row.snr = coinc_event_vals['stat'][idx]
+            coinc_inspiral_row.snr = net_snrsq**0.5
             coinc_inspiral_row.false_alarm_rate = coinc_event_vals['fap'][idx]
             coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
             # Transform to Hz
             coinc_inspiral_row.combined_far = \
                                     coinc_inspiral_row.combined_far / YRJUL_SI
-            coinc_event_row.likelihood = 0.
+            coinc_event_row.likelihood = coinc_event_vals['stat'][idx]
             coinc_inspiral_row.minimum_duration = 0.
             coinc_event_table.append(coinc_event_row)
             coinc_inspiral_table.append(coinc_inspiral_row)
