@@ -33,14 +33,19 @@ import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
 from pycbc import mchirp_area
+try:
+    from setproctitle import setproctitle
+except ImportError:
+    def setproctitle(title):
+        pass
 
 
-def ppdets(ifos):
+def ppdets(ifos, separator=', '):
     """Pretty-print a list (or set) of detectors: return a string listing
     the given detectors alphabetically and separated by commas.
     """
     if ifos:
-        return ', '.join(sorted(ifos))
+        return separator.join(sorted(ifos))
     return 'no detectors'
 
 def ptof(p, ft):
@@ -665,6 +670,9 @@ evnt = LiveEventManager(args.output_path,
                         run_snr_optimization=args.run_snr_optimization,
                         mc_area_args=mchirp_area.from_cli(args))
 
+task_name = 'root' if evnt.rank == 0 else 'filtering'
+setproctitle('PyCBC Live rank {:d} [{}]'.format(evnt.rank, task_name))
+
 sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
 if args.size_override:
@@ -749,6 +757,9 @@ with ctx:
         def set_coinc_id(i):
             global my_coinc_id
             my_coinc_id = i
+            c = estimators[my_coinc_id]
+            setproctitle('PyCBC Live {} bg estimator'.format(
+                    ppdets(c.ifos, '-')))
 
         def get_coinc(results):
             c = estimators[my_coinc_id]
@@ -813,7 +824,7 @@ with ctx:
             if evnt.size > 1:
                 results, valid_end = evnt.gather_results()
 
-            # veto detectors with different state between the master
+            # veto detectors with different state between the root
             # and worker nodes (e.g. late frame files on one node only)
             detectors_with_results = set(results.keys())
             evnt.live_detectors.intersection_update(detectors_with_results)
