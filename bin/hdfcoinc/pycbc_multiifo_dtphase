@@ -53,6 +53,11 @@ parser.add_argument('--weight-threshold', type=float, default=1e-10,
                          "of the histogram maximum: bins with less weight "
                          "will not be stored.")
 parser.add_argument('--batch-size', type=int, default=1000000)
+parser.add_argument('--param-bin-dtype', default='int32',
+                    help="Type to use to store param_bin information. "
+                         "Affects the maximum values that can be taken by "
+                         "bin parameters. Default int32.",
+                    choices=['int8', 'int16', 'int32'])
 args = parser.parse_args()
 
 assert len(args.relative_sensitivities) == len(args.ifos)
@@ -125,9 +130,7 @@ numpy.random.seed(args.seed)
 size = args.batch_size
 chunks = int(args.sample_size / size) + 1
 
-n_ifos = len(args.ifos)
-bin_dtype = numpy.int8 if n_ifos > 2 else numpy.int16
-
+bin_dtype = args.param_bin_dtype
 max_td = twidth * (numpy.iinfo(bin_dtype).max - numpy.iinfo(bin_dtype).min + 1)
 
 if max_tdiff < 0.0425:
