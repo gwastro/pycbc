@@ -124,6 +124,7 @@ deploy:
   on:
     tags: true
     condition: $PYCBC_CONTAINER = build_and_test
+    python: 3.6
 before_cache:
 - rm -rf $HOME/build/pycbc-sources/lalsuite
 - rm -rf $HOME/build/pycbc-sources/pycbc
