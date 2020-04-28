@@ -117,7 +117,7 @@ params = {
 }
 bank.close()
 
-# only calculate params if needed
+# Only calculate params if needed
 usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
 extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration']
              if par in usedparams]
@@ -125,8 +125,8 @@ extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration']
 for ex_p in extparams:
     if ex_p == 'template_duration':
         logging.info('Reading duration from trigger file')
-        # Note that if no triggers are present in the template, the duration
-        # returned from this process will be zero.
+        # List comprehension loops over templates; if a template has no triggers, accessing
+        # the 0th entry of its region reference will return zero due to a quirk of h5py.
         params[ex_p] = np.array([trigf[args.ifo + '/template_duration'][ref][0]
                                  for ref in trigf[args.ifo + '/template_duration_template'][:]])
     else:
@@ -156,13 +156,10 @@ if args.max_bin_param:
 else:
     pbin_upper_lim = params[args.bin_param].max()
 
-
+# For templates with no triggers, the duration will be read as zero
 if args.bin_param == 'template_duration' and params[args.bin_param].min() == 0:
-    # If a template does not contain triggers, then the duration reading
-    # above will return zero
     logging.warn('WARNING: Some templates do not contain triggers')
-    # Find the lowest non-zero template duration to use as the lower limit for
-    # the bins
+    # Use the lowest nonzero template duration as lower limit for bins
     pbin_lower_lim = params[args.bin_param][params[args.bin_param] > 0].min()
 else:
     pbin_lower_lim = params[args.bin_param].min()
@@ -175,7 +172,7 @@ if args.bin_spacing == 'log':
     pbins = bin_utils.LogarithmicBins(*bb_input)
 else:
     pbins = bin_utils.LinearBins(*bb_input)
-# use sentinel value -1 for templates outside range
+# Use sentinel value -1 for templates outside range
 pind = np.array([pbins[par] if pbin_lower_lim < par < pbin_upper_lim
                  else -1 for par in params[args.bin_param]])
 
