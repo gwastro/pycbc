@@ -508,7 +508,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 id2 = nbinned['c2'] + self.c2_size // 2
 
                 # look up keys which are within boundaries
-                within = (ido0 > 0) & (id0 < self.c0_size)
+                within = (id0 > 0) & (id0 < self.c0_size)
                 within = within & (id1 > 0) & (id1 < self.c1_size)
                 within = within & (id2 > 0) & (id2 < self.c2_size)
                 rate[rtype][within] = self.two_det_weights[ref_ifo][id0[within], id1[within], id2[within]]
