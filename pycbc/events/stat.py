@@ -286,7 +286,6 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
         self.two_det_weights = {}
-        self.pb_int_size = None
 
     def get_hist(self, ifos=None):
         """Read in a signal density file for the ifo combination"""
@@ -376,17 +375,19 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 # "weights" table a O(N) rather than O(NlogN) operation. It
                 # sacrifices RAM to do this, so is a good tradeoff for 2
                 # detectors, but not for 3!
-                pb_iinfo = numpy.iinfo(self.param_bin[ifo]['c0'].dtype)
-                self.pb_int_size = pb_iinfo.max - pb_iinfo.min + 1
+                # Size should be same for each reference ifo!
+                self.c0_size = 2 * (abs(self.param_bin[ifo]['c0']).max() + 1)
+                self.c1_size = 2 * (abs(self.param_bin[ifo]['c1']).max() + 1)
+                self.c2_size = 2 * (abs(self.param_bin[ifo]['c2']).max() + 1)
 
-                array_size = [self.pb_int_size, self.pb_int_size,
-                              self.pb_int_size]
+                array_size = [self.c0_size, self.c1_size,
+                              self.c2_size]
                 dtypec = self.weights[ifo].dtype
                 self.two_det_weights[ifo] = \
                     numpy.zeros(array_size, dtype=dtypec) + self.max_penalty
-                id0 = self.param_bin[ifo]['c0'] + self.pb_int_size // 2
-                id1 = self.param_bin[ifo]['c1'] + self.pb_int_size // 2
-                id2 = self.param_bin[ifo]['c2'] + self.pb_int_size // 2
+                id0 = self.param_bin[ifo]['c0'] + self.c0_size // 2
+                id1 = self.param_bin[ifo]['c1'] + self.c1_size // 2
+                id2 = self.param_bin[ifo]['c2'] + self.c2_size // 2
                 self.two_det_weights[ifo][id0, id1, id2] = self.weights[ifo]
 
         relfac = histfile.attrs['sensitivity_ratios']
@@ -500,9 +501,9 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             # Read signal weight from precalculated histogram
             if self.two_det_flag:
                 # High-RAM, low-CPU option for two-det
-                id0 = nbinned['c0'] + self.pb_int_size // 2
-                id1 = nbinned['c1'] + self.pb_int_size // 2
-                id2 = nbinned['c2'] + self.pb_int_size // 2
+                id0 = nbinned['c0'] + self.c0_size // 2
+                id1 = nbinned['c1'] + self.c1_size // 2
+                id2 = nbinned['c2'] + self.c2_size // 2
                 rate[rtype] = self.two_det_weights[ref_ifo][id0, id1, id2]
             else:
                 # Low[er]-RAM, high[er]-CPU option for >two det
