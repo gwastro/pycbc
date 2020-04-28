@@ -501,10 +501,17 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             # Read signal weight from precalculated histogram
             if self.two_det_flag:
                 # High-RAM, low-CPU option for two-det
+                rate[rtype] = numpy.zeros(len(nbinned)) + self.max_penalty
+
                 id0 = nbinned['c0'] + self.c0_size // 2
                 id1 = nbinned['c1'] + self.c1_size // 2
                 id2 = nbinned['c2'] + self.c2_size // 2
-                rate[rtype] = self.two_det_weights[ref_ifo][id0, id1, id2]
+
+                # look up keys which are within boundaries
+                within = (ido0 > 0) & (id0 < self.c0_size)
+                within = within & (id1 > 0) & (id1 < self.c1_size)
+                within = within & (id2 > 0) & (id2 < self.c2_size)
+                rate[rtype][within] = self.two_det_weights[ref_ifo][id0[within], id1[within], id2[within]]
             else:
                 # Low[er]-RAM, high[er]-CPU option for >two det
                 loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
