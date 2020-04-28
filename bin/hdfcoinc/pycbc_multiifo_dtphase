@@ -125,6 +125,16 @@ numpy.random.seed(args.seed)
 size = args.batch_size
 chunks = int(args.sample_size / size) + 1
 
+n_ifos = len(args.ifos)
+bin_dtype = numpy.int8 if n_ifos > 2 else numpy.int16
+
+max_td = twidth * (numpy.iinfo(bin_dtype).max - numpy.iinfo(bin_dtype).min + 1)
+
+if max_tdiff < 0.0425:
+    raise RuntimeError('Max allowed time difference is less than the earth '
+                       'travel time. Some observatories may be further apart '
+                       'than this.')
+
 # Store results for each ifo as a reference. The reference ifo is the
 # ifo which gets the smallest amplitude. This allows us to get the correct
 # symmetries handled under ifo switch and apply more consistent treatment
@@ -226,13 +236,13 @@ for ifo0 in args.ifos:
 
     logging.info('discarding bins below threshold to limit storage')
     l = values > args.weight_threshold
-    keys = keys[l].astype(numpy.int8)
+    keys = keys[l].astype(bin_dtype)
     values = values[l].astype(numpy.float32)
     logging.info('Final length: %s', len(keys))
 
     logging.info('Presorting by keys for downstream use')
     ncol = keys.shape[1]
-    pdtype = [('c%s' % i, numpy.int8) for i in range(ncol)]
+    pdtype = [('c%s' % i, bin_dtype) for i in range(ncol)]
     keys_bin = numpy.zeros(len(values), dtype=pdtype)
     for i in range(ncol):
         keys_bin['c%s' % i] = keys[:, i]
