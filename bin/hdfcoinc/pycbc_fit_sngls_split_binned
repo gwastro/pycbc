@@ -117,18 +117,20 @@ params = {
 }
 bank.close()
 
-# only calculate params if needed
+# Only calculate params if needed
 usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
 extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration']
              if par in usedparams]
 
 for ex_p in extparams:
-    logging.info('calculating {}'.format(ex_p))
     if ex_p == 'template_duration':
-        logging.info('using duration from trigger file')
+        logging.info('Reading duration from trigger file')
+        # List comprehension loops over templates; if a template has no triggers, accessing
+        # the 0th entry of its region reference will return zero due to a quirk of h5py.
         params[ex_p] = np.array([trigf[args.ifo + '/template_duration'][ref][0]
                                  for ref in trigf[args.ifo + '/template_duration_template'][:]])
     else:
+        logging.info("Calculating " + ex_p + " from template parameters")
         params[ex_p] = trigs.get_param(ex_p, args, params['mass1'],
                                        params['mass2'], params['spin1z'],
                                        params['spin2z'])
@@ -153,16 +155,26 @@ if args.max_bin_param:
     pbin_upper_lim = float(args.max_bin_param)
 else:
     pbin_upper_lim = params[args.bin_param].max()
-bb_input = (params[args.bin_param].min(), pbin_upper_lim, args.num_bins)
+
+# For templates with no triggers, the duration will be read as zero
+if args.bin_param == 'template_duration' and params[args.bin_param].min() == 0:
+    logging.warn('WARNING: Some templates do not contain triggers')
+    # Use the lowest nonzero template duration as lower limit for bins
+    pbin_lower_lim = params[args.bin_param][params[args.bin_param] > 0].min()
+else:
+    pbin_lower_lim = params[args.bin_param].min()
+
+bb_input = (pbin_lower_lim, pbin_upper_lim, args.num_bins)
 
 logging.info('splitting {} into bins'.format(args.bin_param))
 if args.bin_spacing == 'log':
-    assert params[args.bin_param].min() > 0
+    assert pbin_lower_lim > 0
     pbins = bin_utils.LogarithmicBins(*bb_input)
 else:
     pbins = bin_utils.LinearBins(*bb_input)
-# use sentinel value -1 for templates outside range
-pind = np.array([pbins[par] if par < pbin_upper_lim else -1 for par in params[args.bin_param]])
+# Use sentinel value -1 for templates outside range
+pind = np.array([pbins[par] if pbin_lower_lim < par < pbin_upper_lim
+                 else -1 for par in params[args.bin_param]])
 
 if args.split_one_spacing == 'log':
     assert params[args.split_param_one].min() > 0
