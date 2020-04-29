@@ -11,7 +11,7 @@ amplitude/time/phase space, the other gives the weight assigned to that bin.
 To get the signal rate this weight should be scaled by the local sensitivity
 value and by the SNR of the event in the reference detector.
 """
-import argparse, h5py, numpy.random, pycbc.detector, logging, multiprocessing
+import argparse, h5py, numpy as np, pycbc.detector, logging, multiprocessing
 from numpy.random import normal, uniform, power
 from scipy.stats import norm
 from copy import deepcopy
@@ -71,7 +71,7 @@ serr = args.snr_uncertainty * 2 ** 0.5
 sref = args.snr_reference
 swidth = serr / sref / args.bin_density
 # Approximate phase error at lower SNRs
-pwidth = numpy.arctan(serr / sref) / args.bin_density
+pwidth = np.arctan(serr / sref) / args.bin_density
 
 srbmax = int(args.snr_ratio / swidth)
 srbmin = int((1.0 / args.snr_ratio) / swidth)
@@ -80,7 +80,7 @@ srbmin = int((1.0 / args.snr_ratio) / swidth)
 # weak signals
 def smooth_param(data, index, wrapped=None):
     mref = max(data.values())
-    bins = numpy.arange(-args.smoothing_sigma * args.bin_density,\
+    bins = np.arange(-args.smoothing_sigma * args.bin_density,\
                         args.smoothing_sigma * args.bin_density + 1)
     kernel = norm.pdf(bins, scale=args.bin_density)
 
@@ -98,7 +98,7 @@ def smooth_param(data, index, wrapped=None):
             # If smoothing a wrapped parameter (e.g. phase)
             # put back into the allowed range
             if wrapped:
-                nkey[index] = nkey[index] % wrapped
+                nkey[index] = np.floor(nkey[index] % wrapped)
 
             tnkey = tuple(nkey)
 
@@ -112,7 +112,7 @@ def smooth_param(data, index, wrapped=None):
                 # If smoothing a wrapped parameter (e.g. phase)
                 # put back into the allowed range
                 if wrapped:
-                    wkey[index] = wkey[index] % wrapped
+                    wkey[index] = np.floor(wkey[index] % wrapped)
 
                 wkey = tuple(wkey)
 
@@ -126,14 +126,14 @@ d = {ifo: pycbc.detector.Detector(ifo) for ifo in args.ifos}
 
 pycbc.init_logging(args.verbose)
 
-numpy.random.seed(args.seed)
+np.random.seed(args.seed)
 size = args.batch_size
 chunks = int(args.sample_size / size) + 1
 
 bin_dtype = args.param_bin_dtype
-max_td = twidth * (numpy.iinfo(bin_dtype).max - numpy.iinfo(bin_dtype).min + 1)
+max_td = twidth * (np.iinfo(bin_dtype).max - np.iinfo(bin_dtype).min + 1)
 
-if max_tdiff < 0.0425:
+if max_td < 0.0425:
     raise RuntimeError('Max allowed time difference is less than the earth '
                        'travel time. Some observatories may be further apart '
                        'than this.')
@@ -157,11 +157,11 @@ for ifo0 in args.ifos:
 
         # Choose random sky location and polarizations from
         # an isotropic population
-        ra = uniform(0, 2 * numpy.pi, size=size)
-        dec = numpy.arccos(uniform(-1., 1., size=size)) - numpy.pi/2
-        inc = numpy.arccos(uniform(-1., 1., size=size))
-        pol = uniform(0, 2 * numpy.pi, size=size)
-        ip = numpy.cos(inc)
+        ra = uniform(0, 2 * np.pi, size=size)
+        dec = np.arccos(uniform(-1., 1., size=size)) - np.pi/2
+        inc = np.arccos(uniform(-1., 1., size=size))
+        pol = uniform(0, 2 * np.pi, size=size)
+        ip = np.cos(inc)
         ic = 0.5 * (1.0 + ip * ip)
 
         # calculate the toa, poa, and amplitude of each sample
@@ -172,18 +172,18 @@ for ifo0 in args.ifos:
             sp, sc = fp * ip, fc * ic
             data[ifo]['s'] = (sp ** 2. + sc ** 2.) ** 0.5 * rs
             data[ifo]['t'] = d[ifo].time_delay_from_earth_center(ra, dec, 0)
-            data[ifo]['p'] = numpy.arctan2(sc, sp)
+            data[ifo]['p'] = np.arctan2(sc, sp)
 
         # Bin the data
         bind = []
         keep = None
         for ifo1 in other_ifos:
             dt = (data[ifo0]['t'] - data[ifo1]['t'])
-            dp = (data[ifo0]['p'] - data[ifo1]['p']) % (2. * numpy.pi)
+            dp = (data[ifo0]['p'] - data[ifo1]['p']) % (2. * np.pi)
             sr = (data[ifo1]['s'] / data[ifo0]['s'])
-            dtbin = (dt / twidth).astype(numpy.int)
-            dpbin = (dp / pwidth).astype(numpy.int)
-            srbin = (sr / swidth).astype(numpy.int)
+            dtbin = (dt / twidth).astype(np.int)
+            dpbin = (dp / pwidth).astype(np.int)
+            srbin = (sr / swidth).astype(np.int)
 
             # We'll only store a limited range of ratios
             if keep is None:
@@ -209,7 +209,7 @@ for ifo0 in args.ifos:
 
     logging.info('applying smoothing')
     # apply smoothing iteratively
-    pwrap = (2 * numpy.pi) / pwidth
+    pwrap = (2 * np.pi) / pwidth
     for i in range(len(args.ifos)-1):
         logging.info('%s-phase', len(weights))
         weights = smooth_param(weights, i * 3 + 1, wrapped=pwrap)
@@ -220,15 +220,15 @@ for ifo0 in args.ifos:
     logging.info('smoothing done: %s', len(weights))
 
     logging.info('converting to numpy arrays and normalizing')
-    keys = numpy.array(weights.keys())
-    values = numpy.array(weights.values())
+    keys = np.array(weights.keys())
+    values = np.array(weights.values())
     values /= values.max()
 
     logging.info('Removing bins outside of SNR ratio limits')
     n_precut = len(keys)
     keep = None
     for i in range(len(args.ifos)-1):
-        srbin = numpy.array(zip(*keys)[i * 3 + 2])
+        srbin = np.array(zip(*keys)[i * 3 + 2])
         if keep is None:
             keep = (srbin < srbmax) & (srbin > srbmin)
         else:
@@ -240,13 +240,13 @@ for ifo0 in args.ifos:
     logging.info('discarding bins below threshold to limit storage')
     l = values > args.weight_threshold
     keys = keys[l].astype(bin_dtype)
-    values = values[l].astype(numpy.float32)
+    values = values[l].astype(np.float32)
     logging.info('Final length: %s', len(keys))
 
     logging.info('Presorting by keys for downstream use')
     ncol = keys.shape[1]
     pdtype = [('c%s' % i, bin_dtype) for i in range(ncol)]
-    keys_bin = numpy.zeros(len(values), dtype=pdtype)
+    keys_bin = np.zeros(len(values), dtype=pdtype)
     for i in range(ncol):
         keys_bin['c%s' % i] = keys[:, i]
     lsort = keys_bin.argsort()
