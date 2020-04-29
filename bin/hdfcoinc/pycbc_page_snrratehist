@@ -205,7 +205,7 @@ if fstat is not None and not args.closed_box:
                    label='Foreground', mec='none', fmt='o', ms=1, capthick=0,
                    elinewidth=4,  color='#ff6600')
 
-pylab.xlabel('Coincident Ranking statistic, (Bin Size = %.2f)' % bin_size)
+pylab.xlabel('Coincident ranking statistic (bin size = %.2f)' % bin_size)
 pylab.ylabel('Trigger Rate (yr$^{-1})$')
 if args.x_min is not None:
     pylab.xlim(xmin=args.x_min)
@@ -249,9 +249,6 @@ if not args.closed_box:
         pylab.text(bstat[::-1][x2] - .1, ymax, r"$%s \sigma$" % next_sig,
                    fontsize=10, horizontalalignment='center',
                    verticalalignment='bottom')
-    _, xmax = pylab.gca().get_xlim()
-    pylab.fill_between([bstat[-1], xmax], ymin, ymax, zorder=-1,
-                       color="#DEDEDE")
 
 ax1 =  pylab.gca()
 ax2 = ax1.twinx()
