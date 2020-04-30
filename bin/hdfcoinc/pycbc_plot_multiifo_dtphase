@@ -173,8 +173,8 @@ ltypes = ['-',':','--']
 
 # Add some space for the colorbar to be added
 left_space = 0.1
-top_space = 1 if args.shared_color_scale else (1 - left_space)
-bot_space = 1.7 * left_space if args.shared_color_scale else left_space
+top_space = 0.98 if args.shared_color_scale else (1 - left_space)
+bot_space = 2 * left_space - 0.02 if args.shared_color_scale else left_space
 fig.subplots_adjust(top=top_space, bottom=bot_space, left=left_space,
                     right=(1 - left_space), wspace=0.02, hspace=0.02)
 
