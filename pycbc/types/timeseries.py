@@ -84,6 +84,13 @@ class TimeSeries(Array):
         self._delta_t = delta_t
         self._epoch = epoch
 
+    def epoch_close(self, other):
+        """ Check if the epoch is close enough to allow operations """
+        dt = abs(self.start_time - other.start_time)
+        if dt * 1e-7 > self.delta_t:
+            return False
+        return True
+
     def sample_rate_close(self, other):
         """ Check if the sample rate is close enough to allow operations """
         if (other.delta_t - self.delta_t) / self.delta_t > 1e-4:
@@ -101,7 +108,7 @@ class TimeSeries(Array):
         if isinstance(other, TimeSeries):
             if not self.sample_rate_close(other):
                 raise ValueError('different delta_t')
-            if self._epoch != other._epoch:
+            if not self.epoch_close(other):
                 raise ValueError('different epoch')
 
     def _getslice(self, index):
@@ -852,8 +859,11 @@ class TimeSeries(Array):
         ts = self.copy()
         start = max(other.start_time, self.start_time)
         end = min(other.end_time, self.end_time)
+        
+        opart = other.time_slice(start, end)
         part = ts.time_slice(start, end)
-        part += other.time_slice(start, end)
+        mlen = min(len(opart), len(part))
+        part[:mlen] += opart[:mlen] 
         return ts
 
     @_nocomplex
