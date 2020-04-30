@@ -187,9 +187,9 @@ for ifo0 in args.ifos:
 
             # We'll only store a limited range of ratios
             if keep is None:
-                keep = (srbin < srbmax) & (srbin > srbmin)
+                keep = (srbin <= srbmax) & (srbin >= srbmin)
             else:
-                keep = keep & (srbin < srbmax) & (srbin > srbmin)
+                keep = keep & (srbin <= srbmax) & (srbin >= srbmin)
             bind += [dtbin, dpbin, srbin]
 
         # Calculate and sum the weights for each bin
@@ -230,9 +230,9 @@ for ifo0 in args.ifos:
     for i in range(len(args.ifos)-1):
         srbin = np.array(zip(*keys)[i * 3 + 2])
         if keep is None:
-            keep = (srbin < srbmax) & (srbin > srbmin)
+            keep = (srbin <= srbmax) & (srbin >= srbmin)
         else:
-            keep = keep & (srbin < srbmax) & (srbin > srbmin)
+            keep = keep & (srbin <= srbmax) & (srbin >= srbmin)
     keys = keys[keep]
     values = values[keep]
     logging.info('Removed %s bins', n_precut - len(keys))
