@@ -87,7 +87,7 @@ class TimeSeries(Array):
     def epoch_close(self, other):
         """ Check if the epoch is close enough to allow operations """
         dt = abs(self.start_time - other.start_time)
-        if dt * 1e-7 > self.delta_t:
+        if dt > 1e-7:
             return False
         return True
 
@@ -166,7 +166,7 @@ class TimeSeries(Array):
     sample_rate = property(get_sample_rate,
                            doc="The sample rate of the time series.")
 
-    def time_slice(self, start, end):
+    def time_slice(self, start, end, mode='floor'):
         """Return the slice of the time series that contains the time range
         in GPS seconds.
         """
@@ -176,8 +176,18 @@ class TimeSeries(Array):
         if end > self.end_time:
             raise ValueError('Time series does not contain a time as late as %s' % end)
 
-        start_idx = int((start - self.start_time) * self.sample_rate)
-        end_idx = int((end - self.start_time) * self.sample_rate)
+        start_idx = (start - self.start_time) * self.sample_rate
+        end_idx = (end - self.start_time) * self.sample_rate
+        
+        if mode == 'floor':
+            start_idx = int(start_idx)
+            end_idx = int(end_idx)
+        elif mode == 'nearest':
+            start_idx = int(round(start_idx))
+            end_idx = int(round(end_idx))
+        else:
+            raise ValueError("Invalid mode", mode)
+
         return self[start_idx:end_idx]
 
     @property
@@ -851,8 +861,9 @@ class TimeSeries(Array):
 
         other = other.copy()
         dt = float((other.start_time - self.start_time) * self.sample_rate)
+
         if not dt.is_integer():
-            diff = (dt - _numpy.floor(dt))
+            diff = (dt - _numpy.floor(dt)) * self.delta_t
             other.resize(len(other) + (len(other) + 1) % 2 + 1)
             other = other.cyclic_time_shift(diff)
 
@@ -860,10 +871,9 @@ class TimeSeries(Array):
         start = max(other.start_time, self.start_time)
         end = min(other.end_time, self.end_time)
         
-        opart = other.time_slice(start, end)
-        part = ts.time_slice(start, end)
-        mlen = min(len(opart), len(part))
-        part[:mlen] += opart[:mlen] 
+        opart = other.time_slice(start, end, mode='nearest')
+        part = ts.time_slice(start, end, mode='nearest')
+        part[:] += opart[:] 
         return ts
 
     @_nocomplex
