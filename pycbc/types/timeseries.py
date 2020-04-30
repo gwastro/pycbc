@@ -53,7 +53,7 @@ class TimeSeries(Array):
     sample_rate
     """
 
-    def __init__(self, initial_array, delta_t=None, epoch="", dtype=None, copy=True):
+    def __init__(self, initial_array, delta_t=None, epoch=None, dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if delta_t is None:
@@ -69,8 +69,8 @@ class TimeSeries(Array):
         # But if the user passed in a value---even 'None'---that will take precedence over
         # anything set in initial_array.  Finally, if the user passes in something without
         # an epoch attribute *and* doesn't pass in a value of epoch, it becomes 'None'
-        if not isinstance(epoch,_lal.LIGOTimeGPS):
-            if epoch == "":
+        if not isinstance(epoch, _lal.LIGOTimeGPS):
+            if epoch == None:
                 if isinstance(initial_array, TimeSeries):
                     epoch = initial_array._epoch
                 else:
@@ -86,7 +86,7 @@ class TimeSeries(Array):
 
     def epoch_close(self, other):
         """ Check if the epoch is close enough to allow operations """
-        dt = abs(self.start_time - other.start_time)
+        dt = abs(float(self.start_time) - float(other.start_time))
         if dt > 1e-7:
             return False
         return True
@@ -113,9 +113,7 @@ class TimeSeries(Array):
 
     def _getslice(self, index):
         # Set the new epoch---note that index.start may also be None
-        if self._epoch is None:
-            new_epoch = None
-        elif index.start is None:
+        if index.start is None:
             new_epoch = self._epoch
         else:
             if index.start < 0:
@@ -408,10 +406,7 @@ class TimeSeries(Array):
             If time series is stored in GPU memory.
         """
         lal_data = None
-        if self._epoch is None:
-            ep = _lal.LIGOTimeGPS(0,0)
-        else:
-            ep = self._epoch
+        ep = self._epoch
 
         if self._data.dtype == _numpy.float32:
             lal_data = _lal.CreateREAL4TimeSeries("",ep,0,self.delta_t,_lal.SecondUnit,len(self))
