@@ -178,7 +178,7 @@ class TimeSeries(Array):
 
         start_idx = (start - self.start_time) * self.sample_rate
         end_idx = (end - self.start_time) * self.sample_rate
-        
+
         if mode == 'floor':
             start_idx = int(start_idx)
             end_idx = int(end_idx)
@@ -870,10 +870,10 @@ class TimeSeries(Array):
         ts = self.copy()
         start = max(other.start_time, self.start_time)
         end = min(other.end_time, self.end_time)
-        
+
         opart = other.time_slice(start, end, mode='nearest')
         part = ts.time_slice(start, end, mode='nearest')
-        part[:] += opart[:] 
+        part[:] += opart[:]
         return ts
 
     @_nocomplex
