@@ -53,7 +53,8 @@ class TimeSeries(Array):
     sample_rate
     """
 
-    def __init__(self, initial_array, delta_t=None, epoch=None, dtype=None, copy=True):
+    def __init__(self, initial_array, delta_t=None,
+                 epoch=None, dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if delta_t is None:
@@ -63,14 +64,12 @@ class TimeSeries(Array):
                 raise TypeError('must provide either an initial_array with a delta_t attribute, or a value for delta_t')
         if not delta_t > 0:
             raise ValueError('delta_t must be a positive number')
-        # We gave a nonsensical default value to epoch so we can test if it's been set.
-        # If the user passes in an initial_array that has an 'epoch' attribute and doesn't
-        # pass in a value of epoch, then our new object's epoch comes from initial_array.
-        # But if the user passed in a value---even 'None'---that will take precedence over
-        # anything set in initial_array.  Finally, if the user passes in something without
-        # an epoch attribute *and* doesn't pass in a value of epoch, it becomes 'None'
+
+        # Get epoch from initial_array if epoch not given (or is None)
+        # If initialy array has no epoch, set epoch to 0.
+        # If epoch is provided, use that.
         if not isinstance(epoch, _lal.LIGOTimeGPS):
-            if epoch == None:
+            if epoch is None:
                 if isinstance(initial_array, TimeSeries):
                     epoch = initial_array._epoch
                 else:
