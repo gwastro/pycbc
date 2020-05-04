@@ -588,9 +588,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 within = within & (id1 > 0) & (id1 < self.c1_size[ref_ifo])
                 within = within & (id2 > 0) & (id2 < self.c2_size[ref_ifo])
                 within = numpy.where(within)[0]
-
                 rate[rtype[within]] = self.two_det_weights[ref_ifo][id0[within], id1[within], id2[within]]
-
             else:
                 # Low[er]-RAM, high[er]-CPU option for >two det
                 loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
@@ -904,9 +902,9 @@ class ExpFitStatistic(NewSNRStatistic):
             ifo = trigs.ifo
         except AttributeError:
             tnum = trigs['template_id']  # exists for SingleDetTriggers
-            # Should be exactly one ifo fit file provided
-            assert len(self.bg_ifos) == 1
-            ifo = self.bg_ifos[0]
+            assert len(self.ifos) == 1
+            # Should be exactly one ifo provided
+            ifo = self.ifos[0]
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
         alphai = self.fits_by_tid[ifo]['alpha'][tnum]
@@ -1442,7 +1440,8 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         network_logvol = 1.5 * numpy.log(network_sigmasq)
         benchmark_logvol = s[1]['benchmark_logvol']
         network_logvol -= benchmark_logvol
-        loglr = network_logvol - ln_noise_rate
+        ln_s = (s[1]['snr'] / self.ref_snr) ** -4.0
+        loglr = network_logvol - ln_noise_rate + ln_s
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
         return loglr
