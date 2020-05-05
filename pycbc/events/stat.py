@@ -1314,9 +1314,6 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
         self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
                                                    trigs.param['mass2'])
 
-        if self.curr_mchirp > 75.:
-            self.curr_mchirp = 0.01
-
         if self.mcm is not None:
             # Careful - input might be a str, so cast to float
             self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
