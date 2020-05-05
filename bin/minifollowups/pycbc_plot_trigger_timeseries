@@ -57,11 +57,25 @@ for ifo in args.single_trigger_files.keys():
         id_loud = args.special_trigger_ids[ifo]
 
     data = h5py.File(args.single_trigger_files[ifo], 'r')[ifo]
-    times = data['end_time'][:]
-    idx = numpy.logical_and(times < t + args.window, times > t - args.window)
+    data_len = len(data['end_time'])
+    data_start = 0
+    idx_arr = []
+    while data_start < data_len:
+        # Hardcode dataread size of 10 million
+        read_size = 10000000
+        curr_read_end = min(data_len, data_start+read_size)
+        times = data['end_time'][data_start:curr_read_end]
+        #idx_arr.append(numpy.logical_and(times < (t + args.window),
+        #                                 times > (t - args.window)))
+        lgc = numpy.logical_and(times < (t + args.window),
+                                         times > (t - args.window))
+        idxes = numpy.where(lgc)[0] + data_start
+        idx_arr.append(idxes)
+        data_start += read_size
+    idx = list(numpy.concatenate(idx_arr))
 
     # center times on the trigger/chosen time
-    times = times[idx] - t
+    times = data['end_time'][idx] - t
 
     if args.plot_type == 'snr':
         val = data['snr'][idx]
