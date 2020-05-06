@@ -67,9 +67,12 @@ parser.add_argument('--low-frequency-cutoff', type=float,
                     help='Provide a low-frequency-cutoff for fake strain. '
                          'This is only needed if fake-strain or '
                          'fake-strain-from-file is used')
-parser.add_argument('--frame-duration', type=int,
-                    help='Split all data into smaller frame files of the '
-                         'given duration if specified.')
+parser.add_argument('--frame-duration', metavar='SECONDS', type=int,
+                    help='Split the produced data into different frame files '
+                         'of the given duration. The output file name should '
+                         'contain the strings {start} and {duration}, which '
+                         'will be replaced by the start GPS time and duration '
+                         'in seconds')
 
 pycbc.strain.insert_strain_option_group(parser)
 args = parser.parse_args()
@@ -105,14 +108,12 @@ if args.frame_duration:
     start = args.gps_start_time
     stop = args.gps_end_time
     step = args.frame_duration
-    # Filename with split the given name as prefix and add `start_time-duration`
-    fn_split = args.output_strain_file.rsplit('.', 2)
-    filename = fn_split[0] + '_{0}-{1}.' + fn_split[1]
 
     # Last frame duration can be shorter than duration if stop doesn't allow
     for s in range(start, stop, step):
         ts = out_strain.time_slice(s, s+step if s+step < stop else stop)
-        complete_fn = filename.format(s, step if s+step < stop else stop - s)
+        complete_fn = args.output_strain_file.format(
+                start=s, duration=step if s+step < stop else stop - s)
         write_strain(complete_fn, output_channel_name, ts)
 else:
     write_strain(args.output_strain_file, output_channel_name, out_strain)
