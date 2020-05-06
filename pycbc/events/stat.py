@@ -506,7 +506,6 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             if self.two_det_flag:
                 # High-RAM, low-CPU option for two-det
                 rate[rtype] = numpy.zeros(len(nbinned)) + self.max_penalty
-                x = numpy.zeros(len(nbinned)) + self.max_penalty
 
                 id0 = nbinned['c0'].astype(numpy.int32) + self.c0_size[ref_ifo] // 2
                 id1 = nbinned['c1'].astype(numpy.int32) + self.c1_size[ref_ifo] // 2
