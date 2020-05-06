@@ -389,9 +389,9 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 dtypec = self.weights[ifo].dtype
                 self.two_det_weights[ifo] = \
                     numpy.zeros(array_size, dtype=dtypec) + self.max_penalty
-                id0 = self.param_bin[ifo]['c0'] + self.c0_size[ifo] // 2
-                id1 = self.param_bin[ifo]['c1'] + self.c1_size[ifo] // 2
-                id2 = self.param_bin[ifo]['c2'] + self.c2_size[ifo] // 2
+                id0 = self.param_bin[ifo]['c0'].astype(numpy.int32) + self.c0_size[ifo] // 2
+                id1 = self.param_bin[ifo]['c1'].astype(numpy.int32) + self.c1_size[ifo] // 2
+                id2 = self.param_bin[ifo]['c2'].astype(numpy.int32) + self.c2_size[ifo] // 2
                 self.two_det_weights[ifo][id0, id1, id2] = self.weights[ifo]
 
         relfac = histfile.attrs['sensitivity_ratios']
@@ -506,16 +506,20 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             if self.two_det_flag:
                 # High-RAM, low-CPU option for two-det
                 rate[rtype] = numpy.zeros(len(nbinned)) + self.max_penalty
+                x = numpy.zeros(len(nbinned)) + self.max_penalty
 
-                id0 = nbinned['c0'] + self.c0_size[ref_ifo] // 2
-                id1 = nbinned['c1'] + self.c1_size[ref_ifo] // 2
-                id2 = nbinned['c2'] + self.c2_size[ref_ifo] // 2
+                id0 = nbinned['c0'].astype(numpy.int32) + self.c0_size[ref_ifo] // 2
+                id1 = nbinned['c1'].astype(numpy.int32) + self.c1_size[ref_ifo] // 2
+                id2 = nbinned['c2'].astype(numpy.int32) + self.c2_size[ref_ifo] // 2
 
                 # look up keys which are within boundaries
                 within = (id0 > 0) & (id0 < self.c0_size[ref_ifo])
                 within = within & (id1 > 0) & (id1 < self.c1_size[ref_ifo])
                 within = within & (id2 > 0) & (id2 < self.c2_size[ref_ifo])
-                rate[rtype][within] = self.two_det_weights[ref_ifo][id0[within], id1[within], id2[within]]
+                within = numpy.where(within)[0]
+
+                rate[rtype[within]] = self.two_det_weights[ref_ifo][id0[within], id1[within], id2[within]]
+
             else:
                 # Low[er]-RAM, high[er]-CPU option for >two det
                 loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
@@ -527,7 +531,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 missed = numpy.where(
                     self.param_bin[ref_ifo][loc] != nbinned
                 )[0]
-                rate[rtype][missed] = self.max_penalty
+                rate[rtype[missed]] = self.max_penalty
 
             # Scale by signal population SNR
             rate[rtype] *= (sref / self.ref_snr) ** -4.0
