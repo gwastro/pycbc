@@ -10,6 +10,29 @@ export HDF5_USE_FILE_LOCKING="FALSE"
 gps_start_time=1272790000
 gps_end_time=1272790500
 
+echo -e "\\n\\n>> [`date`] Making template bank"
+
+curl \
+    --remote-name \
+    --silent \
+    --show-error \
+    https://raw.githubusercontent.com/gwastro/pycbc-config/710dbfd3590bd93d7679d7822da59fcb6b6fac0f/O2/bank/H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz
+
+pycbc_coinc_bank2hdf \
+    --bank-file H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz \
+    --output-file template_bank_full.hdf
+
+rm -f H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz
+
+pycbc_hdf5_splitbank \
+    --bank-file template_bank_full.hdf \
+    --output-prefix template_bank_ \
+    --random-sort \
+    --templates-per-bank 1000
+
+mv template_bank_0.hdf template_bank.hdf
+rm -f template_bank_*.hdf
+
 echo -e "\\n\\n>> [`date`] Generating simulated strain"
 
 function simulate_strain { # detector PSD_model random_seed
@@ -98,6 +121,6 @@ python -m mpi4py `which pycbc_live` \
 --ifar-double-followup-threshold 0.0001 \
 --ifar-upload-threshold 0.0001 \
 --round-start-time 4 \
---size-override 151 \
+--size-override 20 \
 --start-time $gps_start_time \
 --end-time $gps_end_time
