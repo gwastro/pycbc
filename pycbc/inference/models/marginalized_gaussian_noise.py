@@ -155,8 +155,11 @@ class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
         params = self.current_params
         try:
             wfs = self.waveform_generator.generate(**params)
-        except NoWaveformError:
-            return self._nowaveform_loglr()
+        except NoWaveformError as e:
+            if self.allow_waveform_errors:
+                return self._nowaveform_loglr()
+            else:
+                raise e
         hh = 0.
         hd = 0j
         for det, h in wfs.items():

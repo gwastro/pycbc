@@ -84,6 +84,11 @@ class BaseGaussianNoise(BaseDataModel):
         to not include it.
     static_params : dict, optional
         A dictionary of parameter names -> values to keep fixed.
+    allow_waveform_errors : bool, optional
+        If the waveform generator raises an error when it tries to generate,
+        treat the point as having zero likelihood. This allows the parameter
+        estimation to continue. Otherwise, an error will be raised, stopping
+        the run. Default is False.
     \**kwargs :
         All other keyword arguments are passed to ``BaseDataModel``.
 
@@ -91,6 +96,10 @@ class BaseGaussianNoise(BaseDataModel):
     ----------
     data : dict
         Dictionary of detectors -> frequency-domain data.
+    allow_waveform_errors : bool
+        If True, points in parameter space that cause waveform generation to
+        fail will be treated as zero likelihood points. Otherwise, such points
+        will cause the model to raise an error.
     low_frequency_cutoff
     high_frequency_cutoff
     kmin
@@ -104,11 +113,13 @@ class BaseGaussianNoise(BaseDataModel):
     """
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, **kwargs):
+                 static_params=None, allow_waveform_errors=False,
+                 **kwargs):
         # set up the boiler-plate attributes
         super(BaseGaussianNoise, self).__init__(variable_params, data,
                                                 static_params=static_params,
                                                 **kwargs)
+        self.allow_waveform_errors = allow_waveform_errors
         # check if low frequency cutoff has been provided for every IFO with
         # data
         for ifo in self.data.keys():
@@ -498,8 +509,10 @@ class BaseGaussianNoise(BaseDataModel):
           Raises an error if any detector is removed from the analysis because
           a valid time could not be found. Otherwise, a warning is printed
           to screen and the detector is removed from the analysis.
-        * ``normalize =``:
+        * ``normalize =`` :
           (Optional) Turn on the normalization factor.
+        * ``allow-waveform-errors =`` :
+          Sets the ``allow_waveform_errors`` attribute.
 
         Parameters
         ----------
@@ -540,7 +553,7 @@ class BaseGaussianNoise(BaseDataModel):
 
         # data args
         bool_args = ['check-for-valid-times', 'shift-psd-times-to-valid',
-                     'err-on-missing-detectors']
+                     'err-on-missing-detectors', 'allow-waveform-errors']
         data_args = {arg.replace('-', '_'): True for arg in bool_args
                      if cp.has_option('model', arg)}
         ignore_args += bool_args
@@ -834,8 +847,11 @@ class GaussianNoise(BaseGaussianNoise):
         params = self.current_params
         try:
             wfs = self.waveform_generator.generate(**params)
-        except NoWaveformError:
-            return self._nowaveform_loglr()
+        except NoWaveformError as e:
+            if self.allow_waveform_errors:
+                return self._nowaveform_loglr()
+            else:
+                raise e
         lr = 0.
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax

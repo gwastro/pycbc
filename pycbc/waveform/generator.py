@@ -26,6 +26,7 @@ This modules provides classes for generating waveforms.
 """
 
 from . import waveform
+from .waveform import NoWaveformError
 from . import ringdown
 from pycbc import filter
 from pycbc import transforms
@@ -134,7 +135,14 @@ class BaseGenerator(object):
     def _generate_from_current(self):
         """Generates a waveform from the current parameters.
         """
-        return self.generator(**self.current_params)
+        try:
+            return self.generator(**self.current_params)
+        except RuntimeError as e:
+            strparams = ', '.join([p, str(val)
+                                   for p, val in self.current_params.items()])
+            raise NoWaveformError("Failed to generate waveform with "
+                                  "parameters:\n{}\nError was: {}"
+                                  .format(strparams, e))
 
 
 class BaseCBCGenerator(BaseGenerator):
