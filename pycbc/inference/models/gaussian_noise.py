@@ -23,7 +23,7 @@ from six import add_metaclass
 import numpy
 
 from pycbc import filter as pyfilter
-from pycbc.waveform import NoWaveformError
+from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.waveform import generator
 from pycbc.types import Array, FrequencySeries
 from pycbc.strain import gates_from_cli
@@ -84,6 +84,11 @@ class BaseGaussianNoise(BaseDataModel):
         to not include it.
     static_params : dict, optional
         A dictionary of parameter names -> values to keep fixed.
+    ignore_failed_waveforms : bool, optional
+        If the waveform generator raises an error when it tries to generate,
+        treat the point as having zero likelihood. This allows the parameter
+        estimation to continue. Otherwise, an error will be raised, stopping
+        the run. Default is False.
     \**kwargs :
         All other keyword arguments are passed to ``BaseDataModel``.
 
@@ -91,6 +96,11 @@ class BaseGaussianNoise(BaseDataModel):
     ----------
     data : dict
         Dictionary of detectors -> frequency-domain data.
+    ignore_failed_waveforms : bool
+        If True, points in parameter space that cause waveform generation to
+        fail (i.e., they raise a ``FailedWaveformError``) will be treated as
+        points with zero likelihood. Otherwise, such points will cause the
+        model to raise a ``FailedWaveformError``.
     low_frequency_cutoff
     high_frequency_cutoff
     kmin
@@ -104,11 +114,13 @@ class BaseGaussianNoise(BaseDataModel):
     """
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, **kwargs):
+                 static_params=None, ignore_failed_waveforms=False,
+                 **kwargs):
         # set up the boiler-plate attributes
         super(BaseGaussianNoise, self).__init__(variable_params, data,
                                                 static_params=static_params,
                                                 **kwargs)
+        self.ignore_failed_waveforms = ignore_failed_waveforms
         # check if low frequency cutoff has been provided for every IFO with
         # data
         for ifo in self.data.keys():
@@ -498,8 +510,10 @@ class BaseGaussianNoise(BaseDataModel):
           Raises an error if any detector is removed from the analysis because
           a valid time could not be found. Otherwise, a warning is printed
           to screen and the detector is removed from the analysis.
-        * ``normalize =``:
+        * ``normalize =`` :
           (Optional) Turn on the normalization factor.
+        * ``ignore-failed-waveforms =`` :
+          Sets the ``ignore_failed_waveforms`` attribute.
 
         Parameters
         ----------
@@ -525,8 +539,10 @@ class BaseGaussianNoise(BaseDataModel):
         # check if normalize is set
         if cp.has_option('model', 'normalize'):
             args['normalize'] = True
+        if cp.has_option('model', 'ignore-failed-waveforms'):
+            args['ignore_failed_waveforms'] = True
         # get any other keyword arguments provided in the model section
-        ignore_args = ['name', 'normalize']
+        ignore_args = ['name', 'normalize', 'ignore-failed-waveforms']
         for option in cp.options("model"):
             if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)
@@ -836,6 +852,11 @@ class GaussianNoise(BaseGaussianNoise):
             wfs = self.waveform_generator.generate(**params)
         except NoWaveformError:
             return self._nowaveform_loglr()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_loglr()
+            else:
+                raise e
         lr = 0.
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
