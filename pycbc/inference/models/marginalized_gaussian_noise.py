@@ -21,7 +21,7 @@ distance.
 import numpy
 from scipy import special
 
-from pycbc.waveform import NoWaveformError
+from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 
@@ -155,8 +155,10 @@ class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
         params = self.current_params
         try:
             wfs = self.waveform_generator.generate(**params)
-        except NoWaveformError as e:
-            if self.allow_waveform_errors:
+        except NoWaveformError:
+            return self._nowaveform_loglr()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
                 return self._nowaveform_loglr()
             else:
                 raise e

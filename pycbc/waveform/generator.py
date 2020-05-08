@@ -26,7 +26,7 @@ This modules provides classes for generating waveforms.
 """
 
 from . import waveform
-from .waveform import NoWaveformError
+from .waveform import (NoWaveformError, FailedWaveformError)
 from . import ringdown
 from pycbc import filter
 from pycbc import transforms
@@ -138,11 +138,13 @@ class BaseGenerator(object):
         try:
             return self.generator(**self.current_params)
         except RuntimeError as e:
-            strparams = ', '.join([p, str(val)
+            # we'll get a RuntimeError if lalsimulation failed to generate
+            # the waveform for whatever reason
+            strparams = ' | '.join(['{}: {}'.format(p, str(val))
                                    for p, val in self.current_params.items()])
-            raise NoWaveformError("Failed to generate waveform with "
-                                  "parameters:\n{}\nError was: {}"
-                                  .format(strparams, e))
+            raise FailedWaveformError("Failed to generate waveform with "
+                                      "parameters:\n{}\nError was: {}"
+                                      .format(strparams, e))
 
 
 class BaseCBCGenerator(BaseGenerator):

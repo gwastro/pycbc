@@ -23,7 +23,7 @@ from six import add_metaclass
 import numpy
 
 from pycbc import filter as pyfilter
-from pycbc.waveform import NoWaveformError
+from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.waveform import generator
 from pycbc.types import Array, FrequencySeries
 from pycbc.strain import gates_from_cli
@@ -84,7 +84,7 @@ class BaseGaussianNoise(BaseDataModel):
         to not include it.
     static_params : dict, optional
         A dictionary of parameter names -> values to keep fixed.
-    allow_waveform_errors : bool, optional
+    ignore_failed_waveforms : bool, optional
         If the waveform generator raises an error when it tries to generate,
         treat the point as having zero likelihood. This allows the parameter
         estimation to continue. Otherwise, an error will be raised, stopping
@@ -96,10 +96,11 @@ class BaseGaussianNoise(BaseDataModel):
     ----------
     data : dict
         Dictionary of detectors -> frequency-domain data.
-    allow_waveform_errors : bool
+    ignore_failed_waveforms : bool
         If True, points in parameter space that cause waveform generation to
-        fail will be treated as zero likelihood points. Otherwise, such points
-        will cause the model to raise an error.
+        fail (i.e., they raise a ``FailedWaveformError``) will be treated as
+        points with zero likelihood. Otherwise, such points will cause the
+        model to raise a ``FailedWaveformError``.
     low_frequency_cutoff
     high_frequency_cutoff
     kmin
@@ -113,13 +114,13 @@ class BaseGaussianNoise(BaseDataModel):
     """
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, allow_waveform_errors=False,
+                 static_params=None, ignore_failed_waveforms=False,
                  **kwargs):
         # set up the boiler-plate attributes
         super(BaseGaussianNoise, self).__init__(variable_params, data,
                                                 static_params=static_params,
                                                 **kwargs)
-        self.allow_waveform_errors = allow_waveform_errors
+        self.ignore_failed_waveforms = ignore_failed_waveforms
         # check if low frequency cutoff has been provided for every IFO with
         # data
         for ifo in self.data.keys():
@@ -511,8 +512,8 @@ class BaseGaussianNoise(BaseDataModel):
           to screen and the detector is removed from the analysis.
         * ``normalize =`` :
           (Optional) Turn on the normalization factor.
-        * ``allow-waveform-errors =`` :
-          Sets the ``allow_waveform_errors`` attribute.
+        * ``ignore-failed-waveforms =`` :
+          Sets the ``ignore_failed_waveforms`` attribute.
 
         Parameters
         ----------
@@ -538,8 +539,10 @@ class BaseGaussianNoise(BaseDataModel):
         # check if normalize is set
         if cp.has_option('model', 'normalize'):
             args['normalize'] = True
+        if cp.has_option('model', 'ignore-failed-waveforms'):
+            args['ignore_failed_waveforms'] = True
         # get any other keyword arguments provided in the model section
-        ignore_args = ['name', 'normalize']
+        ignore_args = ['name', 'normalize', 'ignore-failed-waveforms']
         for option in cp.options("model"):
             if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)
@@ -553,7 +556,7 @@ class BaseGaussianNoise(BaseDataModel):
 
         # data args
         bool_args = ['check-for-valid-times', 'shift-psd-times-to-valid',
-                     'err-on-missing-detectors', 'allow-waveform-errors']
+                     'err-on-missing-detectors']
         data_args = {arg.replace('-', '_'): True for arg in bool_args
                      if cp.has_option('model', arg)}
         ignore_args += bool_args
@@ -847,8 +850,10 @@ class GaussianNoise(BaseGaussianNoise):
         params = self.current_params
         try:
             wfs = self.waveform_generator.generate(**params)
-        except NoWaveformError as e:
-            if self.allow_waveform_errors:
+        except NoWaveformError:
+            return self._nowaveform_loglr()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
                 return self._nowaveform_loglr()
             else:
                 raise e
