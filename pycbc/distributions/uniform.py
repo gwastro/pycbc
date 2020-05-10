@@ -109,13 +109,23 @@ class Uniform(bounded.BoundedDist):
     def lognorm(self):
         return self._lognorm
 
-    def cdfinv(self, param, value):
+    def cdfinv(self, value):
+        """Return the inverse cdf to map the unit interval to parameter bounds.
+        """
+        if len(self.params) == 1:
+            return self.cdfinv_param(self.params[0], value)
+        else:
+            new_value = numpy.zeros(len(self.params))
+            for i, param in emumerate(self.params):
+                new_value[i] = self.cdfinv_param(param, value[i])
+            return new_value
+
+    def cdfinv_param(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         """
         lower_bound = self._bounds[param][0]
         upper_bound = self._bounds[param][1]
-        new_value = (upper_bound - lower_bound) * value + lower_bound
-        return new_value
+        return (upper_bound - lower_bound) * value + lower_bound
 
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
