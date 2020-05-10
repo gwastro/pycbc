@@ -849,7 +849,7 @@ class TimeSeries(Array):
             raise ValueError('Sample rate must be the same')
 
         # Other is disjoint
-        if ((other.start_time > self.end_time) or
+        if ((other.start_time >= self.end_time) or
            (self.start_time > other.end_time)):
             return self.copy()
 
