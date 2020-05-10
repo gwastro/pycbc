@@ -85,10 +85,8 @@ class TimeSeries(Array):
 
     def epoch_close(self, other):
         """ Check if the epoch is close enough to allow operations """
-        dt = abs(float(self.start_time) - float(other.start_time))
-        if dt > 1e-7:
-            return False
-        return True
+        dt = abs(float(self.start_time - other.start_time))
+        return dt <= 1e-7
 
     def sample_rate_close(self, other):
         """ Check if the sample rate is close enough to allow operations """
@@ -106,9 +104,11 @@ class TimeSeries(Array):
     def _typecheck(self, other):
         if isinstance(other, TimeSeries):
             if not self.sample_rate_close(other):
-                raise ValueError('different delta_t')
+                raise ValueError('different delta_t, {} vs {}'.format(
+                    self.delta_t, other.delta_t))
             if not self.epoch_close(other):
-                raise ValueError('different epoch')
+                raise ValueError('different epoch, {} vs {}'.format(
+                    self.start_time, other.start_time))
 
     def _getslice(self, index):
         # Set the new epoch---note that index.start may also be None
