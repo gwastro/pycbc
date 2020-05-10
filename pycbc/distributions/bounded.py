@@ -17,6 +17,7 @@ This modules provides classes for evaluating distributions with bounds.
 """
 
 import warnings
+import numpy
 from six.moves.configparser import Error
 from pycbc import boundaries
 from pycbc import VARARGS_DELIM
@@ -312,7 +313,7 @@ class BoundedDist(object):
             return self.cdfinv_param(self.params[0], value)
         else:
             new_value = numpy.zeros(len(self.params))
-            for i, param in emumerate(self.params):
+            for i, param in enumerate(self.params):
                 new_value[i] = self.cdfinv_param(param, value[i])
             return new_value
 
