@@ -408,9 +408,9 @@ class UniformSolidAngle(bounded.BoundedDist):
     def _cdfinv_param(self, param, value):
         """ Return the cdfinv for a single given parameter """
         if param == self.polar_angle:
-            return self._polardist._cdfinv(param, value)
+            return self._polardist._cdfinv_param(param, value)
         elif param == self.azimuthal_angle:
-            return self._azimuthaldist._cdfinv(param, value)
+            return self._azimuthaldist._cdfinv_param(param, value)
 
     def apply_boundary_conditions(self, **kwargs):
         """Maps the given values to be within the domain of the azimuthal and
