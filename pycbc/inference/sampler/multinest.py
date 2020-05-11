@@ -236,8 +236,8 @@ class MultinestSampler(BaseSampler):
         """Transforms the unit hypercube that multinest makes its draws
         from, into the prior space defined in the config file.
         """
-        dict_cube = dict(self.model.variable_params, cube)
-        inv = self.model.prior_distribution.cdfinv(dict_cube)
+        dict_cube = dict(zip(self.model.variable_params, cube))
+        inv = self.model.prior_distribution.cdfinv(**dict_cube)
         for i, param in enumerate(self.model.variable_params):
             cube[i] = inv[param]
         return cube

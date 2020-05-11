@@ -94,8 +94,8 @@ class CubeModel(object):
             cube = cube.copy()
 
         # we preserve the type of cube to whatever we were given
-        dict_cube = dict(self.model.variable_params, cube)
-        inv = self.model.prior_distribution.cdfinv(dict_cube)
+        dict_cube = dict(zip(self.model.variable_params, cube))
+        inv = self.model.prior_distribution.cdfinv(**dict_cube)
         for i, param in enumerate(self.model.variable_params):
             cube[i] = inv[param]
         return cube

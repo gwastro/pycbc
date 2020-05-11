@@ -202,11 +202,5 @@ class JointDistribution(object):
         """
         updated = {}
         for dist in self.distributions:
-            if len(dist.params) == 1:
-                updated[dist.params[0]] = dist.cdfinv(original[dist.params[0]])
-            else:
-                old_vals = [original[param] for param in dist.params]
-                vals = dist.invcdf(old_vals)
-                for i, param in enumerate(dist.params):
-                    updated[param] = vals[i]
+            updated.update(dist.cdfinv(**original))
         return updated

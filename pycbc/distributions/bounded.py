@@ -307,16 +307,14 @@ class BoundedDist(object):
         """Return the cdfinv for a single given parameter """
         raise NotImplementedError("inverse cdf not set")
 
-    def cdfinv(self, value):
+    def cdfinv(self, **kwds):
         """Return the inverse cdf to map the unit interval to parameter bounds.
+        You must provide a keyword for every parameter.
         """
-        if len(self.params) == 1:
-            return self._cdfinv_param(self.params[0], value)
-
-        new_value = numpy.zeros(len(self.params))
-        for i, param in enumerate(self.params):
-            new_value[i] = self._cdfinv_param(param, value[i])
-        return new_value
+        updated = {}
+        for param in self.params:
+            updated[param] = self._cdfinv_param(param, kwds[param])
+        return updated
 
     @classmethod
     def from_config(cls, cp, section, variable_args, bounds_required=False):
