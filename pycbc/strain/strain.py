@@ -342,8 +342,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
         if opt.pad_data:
             logging.info("Remove Padding")
-            start = opt.pad_data * strain.sample_rate
-            end = len(strain) - strain.sample_rate * opt.pad_data
+            start = int(opt.pad_data * strain.sample_rate)
+            end = int(len(strain) - strain.sample_rate * opt.pad_data)
             strain = strain[start:end]
 
     if opt.fake_strain or opt.fake_strain_from_file:
@@ -930,7 +930,7 @@ class StrainSegments(object):
             seg_len = strain.duration
 
         self.delta_f = 1.0 / seg_len
-        self.time_len = seg_len * self.sample_rate
+        self.time_len = int(seg_len * self.sample_rate)
         self.freq_len = self.time_len // 2 + 1
 
         seg_end_pad = segment_end_pad

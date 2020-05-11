@@ -69,7 +69,7 @@ class TestChisq(unittest.TestCase):
             data[ifo] = resample_to_delta_t(ts, 1.0/2048).crop(2, 2)
             p = data[ifo].psd(2)
             p = interpolate(p, data[ifo].delta_f)
-            p = inverse_spectrum_truncation(p, 2 * data[ifo].sample_rate,
+            p = inverse_spectrum_truncation(p, int(2 * data[ifo].sample_rate),
                                             low_frequency_cutoff=15.0)
             psd[ifo] = p
         hp, _ = get_fd_waveform(approximant="IMRPhenomD",
