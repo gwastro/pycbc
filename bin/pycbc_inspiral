@@ -299,8 +299,9 @@ with ctx:
         try:
             tnum_start, event_mgr = events.EventManager.restore_state(checkpoint_file)
             checkpoint_exists = True
-        except:
+        except Exception as e:
             logging.info('Failed to load checkpoint file, starting anew')
+            logging.info(e)
 
     if not checkpoint_exists:
         event_mgr = events.EventManager(

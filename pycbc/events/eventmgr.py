@@ -27,6 +27,7 @@ produces event triggers
 from __future__ import absolute_import
 import numpy, copy, os.path
 import logging
+import h5py
 
 from pycbc.types import Array
 from pycbc.scheme import schemed
@@ -192,19 +193,29 @@ class EventManager(object):
 
     def save_state(self, tnum_finished, filename):
         """Save the current state of the background buffers"""
-        from six.moves import cPickle
+        import cPickle
+        from pycbc.io.hdf import dump_state
+
         self.tnum_finished = tnum_finished
-        logging.info('Writing checkpoint file at template {}'.format(tnum_finished))
-        cPickle.dump(self, open(filename, 'wb'), 
-                     protocol=cPickle.HIGHEST_PROTOCOL)
+        logging.info('Writing checkpoint file at template %s', tnum_finished)
+        fp = h5py.File(filename, 'w')
+        dump_state(self, fp, protocol=cPickle.HIGHEST_PROTOCOL)
+        fp.close()
 
     @staticmethod
     def restore_state(filename):
         """Restore state of the background buffers from a file"""
-        from six.moves import cPickle
-        mgr = cPickle.load(open(filename, 'rb'))
+        from pycbc.io.hdf import load_state
+
+        fp = h5py.File(filename, 'r')
+        try:
+            mgr = load_state(fp)
+        except Exception as e:
+            fp.close()
+            raise e
+        fp.close()
         next_template = mgr.tnum_finished + 1
-        logging.info('Restarting with checkpoint at template {}'.format(next_template))
+        logging.info('Restoring with checkpoint at template %s', next_template)
         return mgr.tnum_finished + 1, mgr
 
     @classmethod
