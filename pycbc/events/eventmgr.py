@@ -190,6 +190,23 @@ class EventManager(object):
         self.template_events = numpy.array([], dtype=self.event_dtype)
         self.write_performance = False
 
+    def save_state(self, tnum_finished, filename):
+        """Save the current state of the background buffers"""
+        from six.moves import cPickle
+        self.tnum_finished = tnum_finished
+        logging.info('Writing checkpoint file at template {}'.format(tnum_finished))
+        cPickle.dump(self, open(filename, 'wb'), 
+                     protocol=cPickle.HIGHEST_PROTOCOL)
+
+    @staticmethod
+    def restore_state(filename):
+        """Restore state of the background buffers from a file"""
+        from six.moves import cPickle
+        mgr = cPickle.load(open(filename, 'rb'))
+        next_template = mgr.tnum_finished + 1
+        logging.info('Restarting with checkpoint at template {}'.format(next_template))
+        return mgr.tnum_finished + 1, mgr
+
     @classmethod
     def from_multi_ifo_interface(cls, opt, ifo, column, column_types, **kwds):
         """

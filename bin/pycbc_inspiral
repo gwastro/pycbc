@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
+import sys, os
 import logging, argparse, numpy, itertools
 from six.moves import range
 import pycbc
@@ -185,6 +185,8 @@ parser.add_argument("--use-compressed-waveforms", action="store_true", default=F
                     help='Use compressed waveforms from the bank file.')
 parser.add_argument("--waveform-decompression-method", action='store', default=None,
                     help='Method to be used decompress waveforms from the bank file.')
+parser.add_argument("--checkpoint-interval", type=int,
+                    help="Save results to checkpoint file every X template")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -283,7 +285,20 @@ with ctx:
         q_trans = {}
 
     # FIXME: Maybe we should use the PSD corresponding to each trigger
-    event_mgr = events.EventManager(
+    if opt.checkpoint_interval:
+        checkpoint_file = opt.output + '.checkpoint'
+
+    checkpoint_exists = False
+    tnum_start = 0
+    if (opt.checkpoint_interval and os.path.isfile(checkpoint_file)):
+        try:
+            tnum_start, event_mgr = events.EventManager.restore_state(checkpoint_file)
+            checkpoint_exists = True
+        except:
+            logging.info('Failed to load checkpoint file, starting anew')
+
+    if not checkpoint_exists:
+        event_mgr = events.EventManager(
             opt, names, [out_types[n] for n in names], psd=segments[0].psd,
             gating_info=gwstrain.gating_info, q_trans=q_trans)
 
@@ -355,7 +370,8 @@ with ctx:
     # within the loop.  Rather, the iteration simply fills the memory specifed in
     # the 'template_mem' argument to MatchedFilterControl with the next template
     # from the bank.
-    for t_num in range(len(bank)):
+    for t_num in range(len(bank) - tnum_start):
+        t_num += tnum_start
         tmplt_generated = False
 
         for s_num, stilde in enumerate(segments):
@@ -430,6 +446,9 @@ with ctx:
         if opt.finalize_events_template_rate is not None and \
                 not (t_num+1) % opt.finalize_events_template_rate:
             event_mgr.consolidate_events(opt, gwstrain=gwstrain)
+            
+        if opt.checkpoint_interval and (t_num % opt.checkpoint_interval == 0):
+            event_mgr.save_state(t_num, opt.output + '.checkpoint')
 
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()
