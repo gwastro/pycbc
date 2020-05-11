@@ -196,7 +196,7 @@ class JointDistribution(object):
 
         return out
 
-    def invcdf(self, value):
+    def cdfinv(self, value):
         """ Apply the inverse cdf to the array of values [0, 1]
         """
         original = dict(zip(self.variable_args, value))
@@ -209,8 +209,8 @@ class JointDistribution(object):
                 vals = dist.invcdf(old_vals)
                 for i, param in enumerate(dist.params):
                     updated[param] = vals[i]
- 
+
         new_value = numpy.zeros(len(value))
         for i, param in enumerate(self.variable_args):
-            new_value[i] = updated[param]            
+            new_value[i] = updated[param]
         return new_value
