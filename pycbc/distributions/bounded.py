@@ -18,6 +18,7 @@ This modules provides classes for evaluating distributions with bounds.
 
 import warnings
 from six.moves.configparser import Error
+import numpy
 from pycbc import boundaries
 from pycbc import VARARGS_DELIM
 
@@ -308,7 +309,6 @@ class BoundedDist(object):
     def cdfinv(self, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         """
-        import numpy
         if len(self.params) == 1:
             return self.cdfinv_param(self.params[0], value)
 

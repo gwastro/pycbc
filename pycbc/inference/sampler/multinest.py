@@ -237,8 +237,8 @@ class MultinestSampler(BaseSampler):
         from, into the prior space defined in the config file.
         """
         inv = self.model.prior_distribution.cdfinv(cube)
-        for i, v in enumerate(inv):
-            cube[i] = v
+        for i, value in enumerate(inv):
+            cube[i] = value
         return cube
 
     def run(self):

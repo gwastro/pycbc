@@ -95,6 +95,6 @@ class CubeModel(object):
 
         # we preserve the type of cube to whatever we were given
         inv = self.model.prior_distribution.cdfinv(cube)
-        for i, v in enumerate(inv):
-            cube[i] = v
+        for i, value in enumerate(inv):
+            cube[i] = value
         return cube
