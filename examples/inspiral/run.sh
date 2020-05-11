@@ -37,9 +37,11 @@ pycbc_inspiral \
 --gps-end-time 1126259846 \
 --output H1-INSPIRAL-OUT.hdf \
 --verbose \
---approximant SPAtmplt \
---bank-file H1L1-SBANK_FOR_GW150914ER10.xml.gz
+--approximant "SPAtmplt:mtotal<4" "SEOBNRv4_ROM:mtotal<20" "SEOBNRv2_ROM_DoubleSpin:else" \
+--bank-file H1L1-SBANK_FOR_GW150914ER10.xml.gz 2> inspiral.log
 
+cat inspiral.log | head -10
+cat inspiral.log | tail -20
 
 echo -e "\\n\\n>> [`date`] test for GW150914"
 python ./check_GW150914_detection.py H1-INSPIRAL-OUT.hdf
