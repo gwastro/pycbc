@@ -421,7 +421,6 @@ class EventManager(object):
     def write_to_hdf(self, outname):
         class fw(object):
             def __init__(self, name, prefix):
-                import h5py
                 self.f = h5py.File(name, 'w')
                 self.prefix = prefix
 
@@ -663,7 +662,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
     def write_to_hdf(self, outname):
         class fw(object):
             def __init__(self, name):
-                import h5py
                 self.f = h5py.File(name, 'w')
 
             def __setitem__(self, name, data):
@@ -958,7 +956,6 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
     def write_to_hdf(self, outname):
         class fw(object):
             def __init__(self, name):
-                import h5py
                 self.f = h5py.File(name, 'w')
 
             def __setitem__(self, name, data):

@@ -1126,7 +1126,7 @@ def get_all_subkeys(grp, key):
             subkey_list += get_all_subkeys(grp, path)
     # returns an empty list if there is no dataset or subgroup within the group
     return subkey_list
-    
+
 #
 # =============================================================================
 #
