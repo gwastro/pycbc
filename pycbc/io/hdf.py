@@ -6,10 +6,10 @@ import h5py
 import numpy as np
 import logging
 import inspect
-import cPickle as pickle
 
 from itertools import chain
 from six.moves import range
+from six.moves import cPickle as pickle
 
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI

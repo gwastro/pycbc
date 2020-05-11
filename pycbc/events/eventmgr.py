@@ -193,7 +193,7 @@ class EventManager(object):
 
     def save_state(self, tnum_finished, filename):
         """Save the current state of the background buffers"""
-        import cPickle
+        from six.moves import cPickle
         from pycbc.io.hdf import dump_state
 
         self.tnum_finished = tnum_finished
