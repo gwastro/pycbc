@@ -339,6 +339,8 @@ def data_opts_from_config(cp, section, filter_flow):
                          "(= psd-inverse-length/2) seconds to "
                          "account for PSD wrap around effects.",
                          det, pad)
+        else:
+            pad = 0
         gps_start[det] -= pad
         gps_end[det] += pad
         if opts.psd_start_time[det] is not None:
