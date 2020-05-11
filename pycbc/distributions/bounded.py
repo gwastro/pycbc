@@ -303,18 +303,19 @@ class BoundedDist(object):
 
     __call__ = logpdf
 
-    def cdfinv_param(self, param, value):
+    def _cdfinv_param(self, param, value):
+        """Return the cdfinv for a single given parameter """
         raise NotImplementedError("inverse cdf not set")
 
     def cdfinv(self, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         """
         if len(self.params) == 1:
-            return self.cdfinv_param(self.params[0], value)
+            return self._cdfinv_param(self.params[0], value)
 
         new_value = numpy.zeros(len(self.params))
         for i, param in enumerate(self.params):
-            new_value[i] = self.cdfinv_param(param, value[i])
+            new_value[i] = self._cdfinv_param(param, value[i])
         return new_value
 
     @classmethod
