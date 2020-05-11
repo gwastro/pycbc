@@ -136,7 +136,7 @@ class SingleCoincForGraceDB(object):
 
         proc_id = ligolw_process.register_to_xmldoc(
             outdoc, 'pycbc', {}, ifos=usable_ifos, comment='',
-            version=pycbc_version.git_hash,
+            version=pycbc_version.version,
             cvs_repository='pycbc/'+pycbc_version.git_branch,
             cvs_entry_time=pycbc_version.date).process_id
 
@@ -397,9 +397,13 @@ class SingleCoincForGraceDB(object):
                              psd_fname, open(fname, "rb").read(), "psd")
             logging.info("Uploaded PSDs for event %s", gid)
 
-            # add other tags and comments
-            gracedb.writeLog(
-                    gid, "Using PyCBC code hash %s" % pycbc_version.git_hash)
+            # add info for tracking code version
+            version_str = 'Using PyCBC version {}{} at {}'
+            version_str = version_str.format(
+                    pycbc_version.version,
+                    ' (release)' if pycbc_version.release else '',
+                    os.path.dirname(pycbc.__file__))
+            gracedb.writeLog(gid, version_str)
 
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
