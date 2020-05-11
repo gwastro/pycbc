@@ -80,12 +80,16 @@ def format_lmns(lmns):
     # In Python3 this might be "[b'221', b'331']"
     if isinstance(lmns, str):
         # strip off brackets and convert to list
-        lmns = lmns.strip('[]').split(',')
+        for char in ["[", "]", "'", " ", "b"]:
+            lmns = lmns.replace(char,'')
+        lmns = lmns.split(',')
 
     # Case 2: a list with only one string with a list ["221', '331"]
     # In Python3 this might be ["b221', b'331"]
     elif (len(lmns) == 1 and isinstance(lmns[0], str)
           and len(lmns[0]) > 3):
+        for char in ["[", "]", "'", " ", "b"]:
+            lmns[0] = lmns[0].replace(char,'')
         lmns = lmns[0].split(',')
 
     out = []
