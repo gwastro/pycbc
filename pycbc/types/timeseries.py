@@ -183,7 +183,7 @@ class TimeSeries(Array):
             start_idx = int(round(start_idx))
             end_idx = int(round(end_idx))
         else:
-            raise ValueError("Invalid mode", mode)
+            raise ValueError("Invalid mode: {}".format(mode))
 
         return self[start_idx:end_idx]
 
