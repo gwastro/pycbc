@@ -60,8 +60,8 @@ for ifo in args.single_trigger_files.keys():
     data = HFile(args.single_trigger_files[ifo], 'r')
 
     # Identify trigger indices within window
-    select_func = lambda inputs: ((inputs[0] < (t + args.window)) & 
-                                  (inputs[0] > (t - args.window)))
+    select_func = lambda *inputs: ((inputs[0] < (t + args.window)) & 
+                                   (inputs[0] > (t - args.window)))
     times, snr, chisq, chisq_dof = data.select(select_func, ifo + '/end_time',
                                                ifo + '/snr', ifo + '/chisq',
                                                ifo + '/chisq_dof')
