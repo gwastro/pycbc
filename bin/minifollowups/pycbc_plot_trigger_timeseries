@@ -85,8 +85,8 @@ for ifo in args.single_trigger_files.keys():
         # Get the newnsr of the loudest trigger so we can plot a star there
         if args.special_trigger_ids:
             rchisq = data[ifo]['chisq'][id_loud] / \
-                (data['chisq_dof'][id_loud] * 2 - 2)
-            top = ranking.newsnr(data['snr'][id_loud], rchisq)
+                (data[ifo]['chisq_dof'][id_loud] * 2 - 2)
+            top = ranking.newsnr(data[ifo]['snr'][id_loud], rchisq)
 
     if type(val) in [numpy.float32, numpy.float64] or len(val) > 0:
         any_data = True
