@@ -225,7 +225,7 @@ class SinAngle(UniformAngle):
             for bnd in self._bounds.values()])
         self._norm = numpy.exp(self._lognorm)
 
-    def cdfinv(self, arg, value):
+    def _cdfinv_param(self, arg, value):
         """Return inverse of cdf for mapping unit interval to parameter bounds.
         """
         scale = (numpy.cos(self._bounds[arg][0])
@@ -318,7 +318,7 @@ class CosAngle(SinAngle):
     _arcfunc = numpy.arcsin
     _domainbounds = (-numpy.pi/2, numpy.pi/2)
 
-    def cdfinv(self, param, value):
+    def _cdfinv_param(self, param, value):
         a = self._bounds[param][0]
         b = self._bounds[param][1]
         scale = numpy.sin(b) - numpy.sin(a)
@@ -405,11 +405,12 @@ class UniformSolidAngle(bounded.BoundedDist):
     def azimuthal_angle(self):
         return self._azimuthal_angle
 
-    def cdfinv(self, param, value):
+    def _cdfinv_param(self, param, value):
+        """ Return the cdfinv for a single given parameter """
         if param == self.polar_angle:
-            return self._polardist.cdfinv(param, value)
+            return self._polardist._cdfinv_param(param, value)
         elif param == self.azimuthal_angle:
-            return self._azimuthaldist.cdfinv(param, value)
+            return self._azimuthaldist._cdfinv_param(param, value)
 
     def apply_boundary_conditions(self, **kwargs):
         """Maps the given values to be within the domain of the azimuthal and

@@ -92,10 +92,10 @@ class CubeModel(object):
         """
         if self.copy_prior:
             cube = cube.copy()
-        prior_dists = self.model.prior_distribution.distributions
-        dist_dict = {}
-        for dist in prior_dists:
-            dist_dict.update({param: dist for param in dist.params})
+
+        # we preserve the type of cube to whatever we were given
+        dict_cube = dict(zip(self.model.variable_params, cube))
+        inv = self.model.prior_distribution.cdfinv(**dict_cube)
         for i, param in enumerate(self.model.variable_params):
-            cube[i] = dist_dict[param].cdfinv(param, cube[i])
+            cube[i] = inv[param]
         return cube
