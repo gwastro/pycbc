@@ -20,33 +20,34 @@ import importlib
 import numpy.random
 from pycbc import VARARGS_DELIM
 
+
 class External(object):
     """ Distribution defined by external cdfinv and logpdf functions
- 
+
     To add to an inference configuration file:
- 
+
     .. code-block:: ini
 
         [prior-param1+param2]
         module = custom_mod
         logpdf = custom_function_name
         cdfinv = custom_function_name2
-   
+
     Parameters
     ----------
     params : list
-        list of parameter names 
+        list of parameter names
     logpdf : function
         function which returns the logpdf
     cdfinv : function
         function which applies the invcdf
-        
+
     Examples
     --------
     To instantate by hand and example of function format
-    
+
     >>> import numpy
-    >>> params = 
+    >>> params =
     >>> def logpdf(x=None, y=None):
     ...     p = numpy.ones(len(x))
     ...     res = {}
@@ -57,7 +58,7 @@ class External(object):
     >>> def cdfinv(**kwds):
     ...     return kwds
     >>> e = External(['x', 'y'], logpdf, cdfinv)
-    >>> e.rvs(size=10) 
+    >>> e.rvs(size=10)
     """
     name = "external"
 
@@ -67,6 +68,7 @@ class External(object):
         self.cdfinv = cdfinv
 
     def rvs(self, size=1):
+        "Draw random value"
         draw = {}
         for param in self.params:
             draw[param] = numpy.random.uniform(0, 1, size=size)
@@ -79,10 +81,10 @@ class External(object):
         modulestr = cp.get_opt_tag(section, 'module', tag)
         logpdfstr = cp.get_opt_tag(section, 'logpdf', tag)
         cdfinvstr = cp.get_opt_tag(section, 'cdfinv', tag)
-        
+
         mod = importlib.import_module(modulestr)
         logpdf = getattr(mod, logpdfstr)
         cdfinv = getattr(mod, cdfinvstr)
         return cls(params, logpdf, cdfinv)
 
-__all__ = ['external']
+__all__ = ['External']
