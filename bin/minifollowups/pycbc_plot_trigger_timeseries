@@ -63,6 +63,7 @@ for ifo in args.single_trigger_files.keys():
     select_func = lambda times: ((times < (t + args.window)) & 
                                  (times > (t - args.window)))
     _, idx = data.select(select_func, ifo+'/end_time', return_indices=True)
+    idx = list(idx)
     data = data[ifo]
                                  
     # center times on the trigger/chosen time
