@@ -62,30 +62,30 @@ for ifo in args.single_trigger_files.keys():
     # Identify trigger indices within window
     select_func = lambda times: ((times < (t + args.window)) & 
                                  (times > (t - args.window)))
-    _, idx = data.select(select_func, ifo+'/end_time', return_indices=True)
-    idx = list(idx)
-    data = data[ifo]
+    times, snr, chisq, chisq_dof = data.select(select_func, ifo + '/end_time',
+                                               ifo + '/snr', ifo + '/chisq',
+                                               ifo + '/chisq_dof')
                                  
     # center times on the trigger/chosen time
-    times = data['end_time'][idx] - t
+    times = times - t
 
     if args.plot_type == 'snr':
-        val = data['snr'][idx]
+        val = snr
 
         if args.special_trigger_ids:
-            top = data['snr'][id_loud]
+            top = data[ifo]['snr'][id_loud]
 
     if args.plot_type == 'newsnr':
-        rchisq = data['chisq'][idx] / (2 * data['chisq_dof'][idx] - 2)
+        rchisq = chisq / (2 * chisq_dof - 2)
         if len(rchisq) > 0:
-            val = ranking.newsnr(data['snr'][idx], rchisq)
+            val = ranking.newsnr(snr, rchisq)
         else:
             val = numpy.array([])
-        del rchisq
 
         # Get the newnsr of the loudest trigger so we can plot a star there
         if args.special_trigger_ids:
-            rchisq = data['chisq'][id_loud] / (data['chisq_dof'][id_loud] * 2 - 2)
+            rchisq = data[ifo]['chisq'][id_loud] / \
+                (data['chisq_dof'][id_loud] * 2 - 2)
             top = ranking.newsnr(data['snr'][id_loud], rchisq)
 
     if type(val) in [numpy.float32, numpy.float64] or len(val) > 0:
