@@ -57,12 +57,13 @@ for ifo in args.single_trigger_files.keys():
     if args.special_trigger_ids:
         id_loud = args.special_trigger_ids[ifo]
 
-    data = HFile(args.single_trigger_files[ifo], 'r')[ifo]
+    data = HFile(args.single_trigger_files[ifo], 'r')
 
     # Identify trigger indices within window
     select_func = lambda times: ((times < (t + args.window)) & 
                                  (times > (t - args.window)))
-    _, idx = data.select(select_func, 'end_time', return_indices=True)
+    _, idx = data.select(select_func, ifo+'/end_time', return_indices=True)
+    data = data[ifo]
                                  
     # center times on the trigger/chosen time
     times = data['end_time'][idx] - t
