@@ -861,6 +861,7 @@ class ForegroundTriggers(object):
         for name in sngl_col_names:
             sngl_col_vals[name] = self.get_snglfile_array_dict(name)
 
+        sngl_event_count = 0
         for idx in range(len(self.sort_arr)):
             # Set up IDs and mapping values
             coinc_id = lsctables.CoincID(idx)
@@ -873,9 +874,8 @@ class ForegroundTriggers(object):
             for ifo in ifos:
                 if not sngl_col_vals['snr'][ifo][1][idx]:
                     continue
-                # FIXME: Not guaranteed to be unique!!
-                sngl_id = self.trig_id[ifo][idx]
-                event_id = lsctables.SnglInspiralID(sngl_id)
+                event_id = lsctables.SnglInspiralID(sngl_event_count)
+                sngl_event_count += 1
                 sngl = return_empty_sngl()
                 sngl.event_id = event_id
                 sngl.ifo = ifo
