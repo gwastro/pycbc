@@ -753,7 +753,7 @@ class ForegroundTriggers(object):
                     curr = np.array([])
                 else:
                     raise
-            return_dict[ifo] = (curr, numpy.logical_not(lgc))
+            return_dict[ifo] = (curr, np.logical_not(lgc))
         return return_dict
 
     def get_end_time(self):
