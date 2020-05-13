@@ -761,6 +761,7 @@ class ForegroundTriggers(object):
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
                     curr = np.array([])
+                    lgc = curr == 0
                 else:
                     raise
             return_dict[ifo] = (curr, np.logical_not(lgc))
@@ -871,6 +872,8 @@ class ForegroundTriggers(object):
             sngl_combined_mtot = 0
             net_snrsq = 0
             for ifo in ifos:
+                # If this ifo is not participating in this coincidence then
+                # ignore it and move on.
                 if not sngl_col_vals['snr'][ifo][1][idx]:
                     continue
                 event_id = lsctables.SnglInspiralID(sngl_event_count)

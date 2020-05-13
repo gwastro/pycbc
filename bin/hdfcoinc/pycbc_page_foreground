@@ -104,9 +104,9 @@ if args.output_file.endswith('.html'):
     if h_num_rm is not None and h_iterations is not None \
             and h_num_rm >= 0 and h_iterations != 0:
         # FIXME: Currently hierarchical removal is not in the multi-detector
-        #        code. If this functionality is added, and we want to make this
-        #        table for hierarchically removed triggers, we would need to
-        #        change the code below to support that.
+        #        workflow. If this functionality is added, and we want to make
+        #        this table for hierarchically removed triggers, we would need
+        #        to change the code below to support that.
 
         # This information is not stored at all levels of the coinc trigger file
         # so grab from the top level and populate the variables for output later
@@ -154,23 +154,19 @@ if args.output_file.endswith('.html'):
 
         for ifo in single_snr.keys():
             snrs = []
+            chisqs = []
             for idx in range(len(single_snr[ifo][0])):
                 if single_snr[ifo][1][idx]:
                     snrs.append('%.2f' % single_snr[ifo][0][idx])
-                else:
-                    snrs.append(' ')
-            columns.append(numpy.array(snrs))
-            names.append("%s SNR" %(ifo))
-            format_strings.append("##.##")
-        for ifo in single_chisq.keys():
-            chisqs = []
-            for idx in range(len(single_chisq[ifo][0])):
-                if single_chisq[ifo][1][idx]:
                     rchisq = single_chisq[ifo][0][idx] / \
                         (single_chisq_dof[ifo][0][idx]*2 - 2)
                     chisqs.append('%.2f' % rchisq)
                 else:
+                    snrs.append(' ')
                     chisqs.append(' ')
+            columns.append(numpy.array(snrs))
+            names.append("%s SNR" %(ifo))
+            format_strings.append("##.##")
             columns.append(numpy.array(chisqs))
             names.append("%s Red. Chisq" %(ifo))
             format_strings.append("##.##")
