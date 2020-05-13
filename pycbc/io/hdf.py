@@ -750,7 +750,7 @@ class ForegroundTriggers(object):
                 tid = np.copy(tid)
                 tid[lgc] = 0
                 # If small number of points don't read the full file
-                if len(tid) < 10000:
+                if len(tid) < 1000:
                     curr = []
                     hdf_dataset = self.sngl_files[ifo].group[variable]
                     for idx in tid:
