@@ -162,7 +162,7 @@ if args.output_file.endswith('.html'):
                     snrs.append(' ')
             columns.append(numpy.array(snrs))
             names.append("%s SNR" %(ifo))
-            format_strings.extend("##.##")
+            format_strings.append("##.##")
         for ifo in single_chisq.keys():
             chisqs = []
             for idx in range(len(single_chisq[ifo][0])):
@@ -174,7 +174,7 @@ if args.output_file.endswith('.html'):
                     chisqs.append(' ')
             columns.append(numpy.array(chisqs))
             names.append("%s Red. Chisq" %(ifo))
-            format_strings.extend("##.##")
+            format_strings.append("##.##")
 
     logging.info('Making table of foreground triggers')
     html_table = pycbc.results.html_table(columns, names, 
