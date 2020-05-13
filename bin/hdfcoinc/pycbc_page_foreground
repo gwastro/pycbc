@@ -157,7 +157,7 @@ if args.output_file.endswith('.html'):
             snrs = []
             for idx in range(len(single_snr[ifo][0])):
                 if single_snr[ifo][1][idx]:
-                    snrs.append('%.2f' % single_snr[ifo][0][idx]
+                    snrs.append('%.2f' % single_snr[ifo][0][idx])
                 else:
                     snrs.append(' ')
             columns.append(snrs)
@@ -169,7 +169,7 @@ if args.output_file.endswith('.html'):
                 if single_chisq[ifo][1][idx]:
                     rchisq = single_chisq[ifo][0][idx] / \
                         (single_chisq_dof[ifo][0][idx]*2 - 2)
-                    chisqs.append('%.2f' % rchisq]
+                    chisqs.append('%.2f' % rchisq)
                 else:
                     chisqs.append(' ')
             columns.append(chisqs)
