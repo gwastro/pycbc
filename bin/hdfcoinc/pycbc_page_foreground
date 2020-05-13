@@ -145,8 +145,7 @@ if args.output_file.endswith('.html'):
              'Inc. FAP', 'Ranking Statistic', 'End Time',
              'mchirp', 'm1','m2', 's1z', 's2z']
     format_strings = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###',
-                      None, '##.##', '##.##', '##.##',
-                      '##.##', '##.##', '##.##']
+                      None, '##.##', '##.##', '##.##', '##.##', '##.##']
 
     if args.single_detector_triggers:
         single_snr = fortrigs.get_snglfile_array_dict('snr')
