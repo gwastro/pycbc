@@ -747,7 +747,12 @@ class ForegroundTriggers(object):
                 lgc = tid == -1
                 # Put in *some* value for the invalid points to avoid failure
                 tid[lgc] = 0
-                curr = self.sngl_files[ifo].get_column(variable)[tid]
+                # Bit of a hack to greatly improve speed
+                # This avoids reading *all* values in the TRIGGER_MERGE files
+                self.sngl_files[ifo]._mask = list(tid)
+                curr = self.sngl_files[ifo].get_column(variable)
+                # Unset hack
+                self.sngl_files[ifo]._mask = None
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
                     curr = np.array([])
