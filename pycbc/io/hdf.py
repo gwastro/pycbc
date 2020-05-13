@@ -713,14 +713,19 @@ class ForegroundTriggers(object):
         if self._trig_ids is not None:
             return self._trig_ids
         self._trig_ids = {}
-        # FIXME: There is no clear mapping from trig_id to ifo. This is bad!!!
-        #        for now a hack is in place.
-        ifo1 = self.coinc_file.h5file.attrs['detector_1']
-        ifo2 = self.coinc_file.h5file.attrs['detector_2']
-        trigid1 = self.get_coincfile_array('trigger_id1')
-        trigid2 = self.get_coincfile_array('trigger_id2')
-        self._trig_ids[ifo1] = trigid1
-        self._trig_ids[ifo2] = trigid2
+
+        try: # New style multi-ifo file
+            ifos = coinc_h5file.attrs['ifos'].split(' ')
+            for ifo in ifos:
+                trigid = self.get_coincfile_array(ifo + '/trigger_id')
+                self._trig_ids[ifo] = trigid
+        except: # ADD ERROR # Old style two-ifo file
+            ifo1 = self.coinc_file.h5file.attrs['detector_1']
+            ifo2 = self.coinc_file.h5file.attrs['detector_2']
+            trigid1 = self.get_coincfile_array('trigger_id1')
+            trigid2 = self.get_coincfile_array('trigger_id2')
+            self._trig_ids[ifo1] = trigid1
+            self._trig_ids[ifo2] = trigid2
         return self._trig_ids
 
     def get_coincfile_array(self, variable):
@@ -738,19 +743,20 @@ class ForegroundTriggers(object):
         return_dict = {}
         for ifo in self.sngl_files.keys():
             try:
-                curr = self.sngl_files[ifo].get_column(variable)[\
-                                                             self.trig_id[ifo]]
+                tid = self.trig_id[ifo]
+                lgc = tid == -1
+                # Put in *some* value for the invalid points to avoid failure
+                tid[lgc] = 0
+                curr = self.sngl_files[ifo].get_column(variable)[tid]
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
                     curr = np.array([])
                 else:
                     raise
-            return_dict[ifo] = curr
+            return_dict[ifo] = (curr, lgc)
         return return_dict
 
     def to_coinc_xml_object(self, file_name):
-        # FIXME: This function will only work with two ifos!!
-
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
@@ -762,11 +768,23 @@ class ForegroundTriggers(object):
 
         search_summ_table = lsctables.New(lsctables.SearchSummaryTable)
         coinc_h5file = self.coinc_file.h5file
-        start_time = coinc_h5file['segments']['coinc']['start'][:].min()
-        end_time = coinc_h5file['segments']['coinc']['end'][:].max()
+        try:
+            start_time = coinc_h5file['segments']['coinc']['start'][:].min()
+            end_time = coinc_h5file['segments']['coinc']['end'][:].max()
+        except: # ADD CONDITION!
+            start_times = []
+            end_times = []
+            for ifo_comb in coinc_h5file['segments']:
+                if ifo_comb == 'foreground_veto':
+                    continue
+                seg_group = coinc_h5file['segments'][ifo_comb]
+                start_times.append(seg_group['start'][:].min())
+                end_times.append(seg_group['end'][:].max())
+            start_time = min(start_times)
+            end_time = max(end_times)
         num_trigs = len(self.sort_arr)
         search_summary = return_search_summary(start_time, end_time,
-                                                 num_trigs, ifos)
+                                               num_trigs, ifos)
         search_summ_table.append(search_summary)
         outdoc.childNodes[0].appendChild(search_summ_table)
 
@@ -791,7 +809,8 @@ class ForegroundTriggers(object):
         coinc_def_id = lsctables.CoincDefID(0)
         coinc_def_row = lsctables.CoincDef()
         coinc_def_row.search = "inspiral"
-        coinc_def_row.description = "sngl_inspiral<-->sngl_inspiral coincidences"
+        coinc_def_row.description = \
+            "sngl_inspiral<-->sngl_inspiral coincidences"
         coinc_def_row.coinc_def_id = coinc_def_id
         coinc_def_row.search_coinc_type = 0
         coinc_def_table.append(coinc_def_row)
@@ -801,10 +820,24 @@ class ForegroundTriggers(object):
         for name in bank_col_names:
             bank_col_vals[name] = self.get_bankfile_array(name)
 
-        coinc_event_names = ['ifar', 'time1', 'fap', 'stat']
+        coinc_event_names = ['ifar', 'time', 'fap', 'stat']
         coinc_event_vals = {}
         for name in coinc_event_names:
-            coinc_event_vals[name] = self.get_coincfile_array(name)
+            if name == 'time':
+                try:
+                    ifos = coinc_h5file.attrs['ifos'].split(' ')
+                    ref_times = None
+                    for ifo in ifos:
+                        times = self.get_coincfile_array('{}/time'.format(ifo))
+                        if ref_times is None:
+                            ref_times = times
+                        else:
+                            ref_times[ref_times < 0] = times[ref_times < 0]
+                    coinc_event_vals[name] = ref_times
+                except: # ADD CONDITION
+                    coinc_event_vals[name] = self.get_coincfile_array('time1')
+            else:
+                coinc_event_vals[name] = self.get_coincfile_array(name)
 
         sngl_col_names = ['snr', 'chisq', 'chisq_dof', 'bank_chisq',
                           'bank_chisq_dof', 'cont_chisq', 'cont_chisq_dof',
@@ -824,14 +857,16 @@ class ForegroundTriggers(object):
             sngl_combined_mtot = 0
             net_snrsq = 0
             for ifo in ifos:
+                if not sngl_col_vals['snr'][ifo][1][idx]:
+                    continue
                 sngl_id = self.trig_id[ifo][idx]
                 event_id = lsctables.SnglInspiralID(sngl_id)
                 sngl = return_empty_sngl()
                 sngl.event_id = event_id
                 sngl.ifo = ifo
-                net_snrsq += sngl_col_vals['snr'][ifo][idx]**2
+                net_snrsq += sngl_col_vals['snr'][ifo][0][idx]**2
                 for name in sngl_col_names:
-                    val = sngl_col_vals[name][ifo][idx]
+                    val = sngl_col_vals[name][ifo][0][idx]
                     if name == 'end_time':
                         sngl.set_end(LIGOTimeGPS(val))
                     else:
@@ -872,8 +907,9 @@ class ForegroundTriggers(object):
             coinc_inspiral_row.coinc_event_id = coinc_id
             coinc_inspiral_row.mchirp = sngl_combined_mchirp
             coinc_inspiral_row.mass = sngl_combined_mtot
-            coinc_inspiral_row.set_end(\
-                                   LIGOTimeGPS(coinc_event_vals['time1'][idx]))
+            coinc_inspiral_row.set_end(
+                LIGOTimeGPS(coinc_event_vals['time'][idx])
+            )
             coinc_inspiral_row.snr = net_snrsq**0.5
             coinc_inspiral_row.false_alarm_rate = coinc_event_vals['fap'][idx]
             coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
