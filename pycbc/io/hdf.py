@@ -753,7 +753,7 @@ class ForegroundTriggers(object):
                     curr = np.array([])
                 else:
                     raise
-            return_dict[ifo] = (curr, lgc)
+            return_dict[ifo] = (curr, numpy.logical_not(lgc))
         return return_dict
 
     def get_end_time(self):
@@ -863,7 +863,8 @@ class ForegroundTriggers(object):
             for ifo in ifos:
                 if not sngl_col_vals['snr'][ifo][1][idx]:
                     continue
-                sngl_id = self.trig_id[ifo][idx]
+                # FIXME: Not guaranteed to be unique!!
+                sngl_id = self.trig_id[ifo][0][idx]
                 event_id = lsctables.SnglInspiralID(sngl_id)
                 sngl = return_empty_sngl()
                 sngl.event_id = event_id
