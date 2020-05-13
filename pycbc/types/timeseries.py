@@ -840,7 +840,7 @@ class TimeSeries(Array):
     def add_into(self, other):
         """Return the sum of the two time series accounting for the time stamp.
 
-        The other vector will be resized and time shifted wiht sub-sample
+        The other vector will be resized and time shifted with sub-sample
         precision before adding. This assumes that one can assume zeros
         outside of the original vector range.
         """
