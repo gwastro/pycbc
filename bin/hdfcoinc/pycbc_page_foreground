@@ -160,7 +160,7 @@ if args.output_file.endswith('.html'):
                     snrs.append('%.2f' % single_snr[ifo][0][idx])
                 else:
                     snrs.append(' ')
-            columns.append(snrs)
+            columns.append(numpy.array(snrs))
             names.append("%s SNR" %(ifo))
             format_strings.extend("##.##")
         for ifo in single_chisq.keys():
@@ -172,7 +172,7 @@ if args.output_file.endswith('.html'):
                     chisqs.append('%.2f' % rchisq)
                 else:
                     chisqs.append(' ')
-            columns.append(chisqs)
+            columns.append(numpy.array(chisqs))
             names.append("%s Red. Chisq" %(ifo))
             format_strings.extend("##.##")
 
