@@ -749,14 +749,15 @@ class ForegroundTriggers(object):
                 # Make sure this doesn't change the cached internal array!
                 tid = np.copy(tid)
                 tid[lgc] = 0
-                # Bit of a hack to greatly improve speed
-                # This avoids reading *all* values in the TRIGGER_MERGE files
-                self.sngl_files[ifo]._mask = list(tid)
-                self.sngl_files[ifo].filter_func = True
-                curr = self.sngl_files[ifo].get_column(variable)
-                # Unset hack
-                self.sngl_files[ifo]._mask = None
-                self.sngl_files[ifo].filter_func = False
+                # If small number of points don't read the full file
+                if len(tid) < 10000:
+                    curr = []
+                    hdf_dataset = self.sngl_files[ifo].group[variable]
+                    for idx in tid:
+                        curr.append(hdf_dataset[idx])
+                    curr = np.array(curr)
+                else:
+                    curr = self.sngl_files[ifo].get_column(variable)
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
                     curr = np.array([])
