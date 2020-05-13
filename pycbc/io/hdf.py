@@ -715,7 +715,7 @@ class ForegroundTriggers(object):
         self._trig_ids = {}
 
         try: # New style multi-ifo file
-            ifos = coinc_h5file.attrs['ifos'].split(' ')
+            ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
             for ifo in ifos:
                 trigid = self.get_coincfile_array(ifo + '/trigger_id')
                 self._trig_ids[ifo] = trigid
@@ -755,6 +755,21 @@ class ForegroundTriggers(object):
                     raise
             return_dict[ifo] = (curr, lgc)
         return return_dict
+
+    def get_end_time(self):
+        try: # First try new-style format
+            ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
+            ref_times = None
+            for ifo in ifos:
+                times = self.get_coincfile_array('{}/time'.format(ifo))
+                if ref_times is None:
+                    ref_times = times
+                else:
+                    ref_times[ref_times < 0] = times[ref_times < 0]
+        except: # ADD CONDITION # Else fall back on old two-det format
+            ref_times = self.get_coincfile_array('time1')
+        return ref_times
+
 
     def to_coinc_xml_object(self, file_name):
         outdoc = ligolw.Document()
@@ -824,18 +839,7 @@ class ForegroundTriggers(object):
         coinc_event_vals = {}
         for name in coinc_event_names:
             if name == 'time':
-                try:
-                    ifos = coinc_h5file.attrs['ifos'].split(' ')
-                    ref_times = None
-                    for ifo in ifos:
-                        times = self.get_coincfile_array('{}/time'.format(ifo))
-                        if ref_times is None:
-                            ref_times = times
-                        else:
-                            ref_times[ref_times < 0] = times[ref_times < 0]
-                    coinc_event_vals[name] = ref_times
-                except: # ADD CONDITION
-                    coinc_event_vals[name] = self.get_coincfile_array('time1')
+                coinc_event_vals[name] = self.get_end_time()
             else:
                 coinc_event_vals[name] = self.get_coincfile_array(name)
 

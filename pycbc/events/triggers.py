@@ -178,7 +178,11 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
                 for ifo in ifos:
                     key = "/".join([ifo, p])
                     arr = statmap.get_snglfile_array_dict(p)[ifo]
-                    data[key] = arr[bin_idx][sorting][:opts.n_loudest]
+                    if "/".join(ifo, "valid") not in data:
+                        data["/".join(ifo, "valid")] = \
+                            arr[1][bin_idx][sorting][:opts.n_loudest]
+                    else:
+                        data[key] = arr[bin_idx][sorting][:opts.n_loudest]
             for p in bank_parameters:
                 arr = statmap.get_bankfile_array(p)
                 data[p] = arr[bin_idx][sorting][:opts.n_loudest]
