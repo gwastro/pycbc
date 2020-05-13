@@ -173,8 +173,8 @@ class TimeSeries(Array):
         if end > self.end_time:
             raise ValueError('Time series does not contain a time as late as %s' % end)
 
-        start_idx = (start - self.start_time) * self.sample_rate
-        end_idx = (end - self.start_time) * self.sample_rate
+        start_idx = float(start - self.start_time) * self.sample_rate
+        end_idx = float(end - self.start_time) * self.sample_rate
 
         if mode == 'floor':
             start_idx = int(start_idx)
