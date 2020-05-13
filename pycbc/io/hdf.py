@@ -746,6 +746,8 @@ class ForegroundTriggers(object):
                 tid = self.trig_id[ifo]
                 lgc = tid == -1
                 # Put in *some* value for the invalid points to avoid failure
+                # Make sure this doesn't change the cached internal array!
+                tid = np.copy(tid)
                 tid[lgc] = 0
                 # Bit of a hack to greatly improve speed
                 # This avoids reading *all* values in the TRIGGER_MERGE files
