@@ -752,9 +752,11 @@ class ForegroundTriggers(object):
                 # Bit of a hack to greatly improve speed
                 # This avoids reading *all* values in the TRIGGER_MERGE files
                 self.sngl_files[ifo]._mask = list(tid)
+                self.sngl_files[ifo].filter_func = True
                 curr = self.sngl_files[ifo].get_column(variable)
                 # Unset hack
                 self.sngl_files[ifo]._mask = None
+                self.sngl_files[ifo].filter_func = False
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
                     curr = np.array([])
@@ -871,7 +873,7 @@ class ForegroundTriggers(object):
                 if not sngl_col_vals['snr'][ifo][1][idx]:
                     continue
                 # FIXME: Not guaranteed to be unique!!
-                sngl_id = self.trig_id[ifo][0][idx]
+                sngl_id = self.trig_id[ifo][idx]
                 event_id = lsctables.SnglInspiralID(sngl_id)
                 sngl = return_empty_sngl()
                 sngl.event_id = event_id
