@@ -152,7 +152,7 @@ if args.output_file.endswith('.html'):
         single_chisq = fortrigs.get_snglfile_array_dict('chisq')
         single_chisq_dof = fortrigs.get_snglfile_array_dict('chisq_dof')
 
-        for ifo in single_snr.keys():
+        for ifo in sorted(single_snr.keys()):
             snrs = []
             chisqs = []
             for idx in range(len(single_snr[ifo][0])):
