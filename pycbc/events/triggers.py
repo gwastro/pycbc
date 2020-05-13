@@ -178,8 +178,8 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
                 for ifo in ifos:
                     key = "/".join([ifo, p])
                     arr = statmap.get_snglfile_array_dict(p)[ifo]
-                    if "/".join(ifo, "valid") not in data:
-                        data["/".join(ifo, "valid")] = \
+                    if "/".join([ifo, "valid"]) not in data:
+                        data["/".join([ifo, "valid"])] = \
                             arr[1][bin_idx][sorting][:opts.n_loudest]
                     else:
                         data[key] = arr[bin_idx][sorting][:opts.n_loudest]

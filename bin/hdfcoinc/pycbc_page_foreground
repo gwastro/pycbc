@@ -103,9 +103,9 @@ if args.output_file.endswith('.html'):
 
     if h_num_rm is not None and h_iterations is not None \
             and h_num_rm >= 0 and h_iterations != 0:
-        # FIXME: Currently heirarchical removal is not in the multi-detector
+        # FIXME: Currently hierarchical removal is not in the multi-detector
         #        code. If this functionality is added, and we want to make this
-        #        table for heirarchically removed triggers, we would need to
+        #        table for hierarchically removed triggers, we would need to
         #        change the code below to support that.
 
         # This information is not stored at all levels of the coinc trigger file
