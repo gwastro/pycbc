@@ -838,7 +838,7 @@ class TimeSeries(Array):
         return f
 
     def add_into(self, other):
-        """Return the sum of selfand other where other overlaps with self
+        """Return copy of self with other inserted into it.
 
         The other vector will be resized and time shifted with sub-sample
         precision before adding. This assumes that one can assume zeros
