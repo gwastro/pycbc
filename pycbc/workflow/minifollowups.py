@@ -541,7 +541,7 @@ def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
 
 def make_coinc_info(workflow, singles, bank, coinc, out_dir,
                     n_loudest=None, trig_id=None, file_substring=None,
-                    tags=None):
+                    sort_order=None, sort_var=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
@@ -551,6 +551,10 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
     node.add_input_list_opt('--single-trigger-files', singles)
     node.add_input_opt('--statmap-file', coinc)
     node.add_input_opt('--bank-file', bank)
+    if sort_order:
+        node.add_opt('--sort-order', sort_order)
+    if sort_var:
+        node.add_opt('--sort-variable', sort_var)
     if n_loudest is not None:
         node.add_opt('--n-loudest', str(n_loudest))
     if trig_id is not None:

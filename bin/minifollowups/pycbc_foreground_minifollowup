@@ -56,6 +56,13 @@ parser.add_argument('--analysis-category', type=str, required=False,
                     help='Designates whether to look at foreground triggers '
                          'background triggers (including "little dogs") '
                          'or background triggers (with "little dogs" removed)')
+parser.add_argument('--sort-variable', default='stat',
+                    help='Which subgroup of --analysis-category to use for '
+                         'sorting. Default=stat')
+parser.add_argument('--sort-order', default='descending',
+                    choices=['ascending','descending'],
+                    help='Which direction to use when sorting on '
+                         '--sort-variable. Default=descending')
 parser.add_argument('--output-map', type=str, required=False,
                     help='Supply the location of the pegasus output map file. '
                          'Only needed if running this job within a workflow.')
@@ -110,7 +117,10 @@ f = h5py.File(args.statmap_file, 'r')
 file_val = args.analysis_category
 stat = f['{}/stat'.format(file_val)][:]
 
-sorting = stat.argsort()[::-1]
+if args.sort_variable not in f[file_val]:
+    raise KeyError('Sort variable {0} not in {1}: sort choices in ' +
+                   '{1} are {2}'.format(args.sort_variable, file_val,
+                                        f[file_val].keys()))
 
 if len(stat) == 0:
     # There are no triggers, make no-op job and exit
@@ -127,30 +137,32 @@ if len(stat) < num_events:
 if len(stat) < events_to_read:
     events_to_read = len(stat)
 
-stat = stat[sorting][0:events_to_read]
+sorting = f[file_val + '/' + args.sort_variable][:].argsort()
+if args.sort_order == 'descending':
+    sorting = sorting[::-1]
+event_idx = sorting[0:events_to_read]
+stat = stat[event_idx]
 
 times = {}
 tids = {}
 # Check if using input files from old (2-ifo) coinc code
 if 'detector_1' in f.attrs:
     times = {f.attrs['detector_1']:
-               f['{}/time1'.format(file_val)][:][sorting][0:events_to_read],
+               f['{}/time1'.format(file_val)][:][event_idx],
              f.attrs['detector_2']:
-               f['{}/time2'.format(file_val)][:][sorting][0:events_to_read],
+               f['{}/time2'.format(file_val)][:][event_idx],
              }
     tids = {f.attrs['detector_1']:
-          f['{}/trigger_id1'.format(file_val)][:][sorting][0:events_to_read],
+          f['{}/trigger_id1'.format(file_val)][:][event_idx],
             f.attrs['detector_2']:
-          f['{}/trigger_id2'.format(file_val)][:][sorting][0:events_to_read],
+          f['{}/trigger_id2'.format(file_val)][:][event_idx],
             }
 else:
     # Version used for multi-ifo coinc code
     ifo_list = f.attrs['ifos'].split(' ')
     for ifo in ifo_list:
-        times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][sorting]\
-                                                             [0:events_to_read]
-        tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][sorting]\
-                                                             [0:events_to_read]
+        times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
+        tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
 
 bank_data = h5py.File(args.bank_file, 'r')
 
@@ -230,6 +242,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
 
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, args.output_dir, n_loudest=curr_idx,
+                              sort_order=args.sort_order, sort_var=args.sort_variable,
                               tags=args.tags + [str(event_count)]),)
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                              ifo_times, args.output_dir, special_tids=ifo_tids,
