@@ -837,7 +837,7 @@ class TimeSeries(Array):
         fft(tmp, f)
         return f
 
-    def add_into(self, other):
+    def insert(self, other):
         """Return copy of self with other inserted into it.
 
         The other vector will be resized and time shifted with sub-sample
@@ -888,6 +888,7 @@ class TimeSeries(Array):
         ts = self.copy()
         ts[left:right] += other[oleft:oright]
         return ts
+    add_into = insert # maintain backwards compatibility for now
 
     @_nocomplex
     def cyclic_time_shift(self, dt):
