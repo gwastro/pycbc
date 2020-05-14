@@ -67,7 +67,7 @@ class External(object):
         self.logpdf = logpdf
         self.cdfinv = cdfinv
         self._rvs = rvs
-        
+
         if not (rvs or cdfinv):
             raise ValueError("Must provide either rvs or cdfinv")
 
@@ -93,20 +93,20 @@ class External(object):
         params = variable_args.split(VARARGS_DELIM)
         modulestr = cp.get_opt_tag(section, 'module', tag)
 
-
         mod = importlib.import_module(modulestr)
         logpdfstr = cp.get_opt_tag(section, 'logpdf', tag)
-        logpdf = getattr(mod, logpdfstr)        
+        logpdf = getattr(mod, logpdfstr)
 
         cdfinv = rvs = None
         if cp.has_option_tag(section, 'cdfinv', tag):
             cdfinvstr = cp.get_opt_tag(section, 'cdfinv', tag)
-            cdfinv =  cdfinv = getattr(mod, cdfinvstr)
+            cdfinv = getattr(mod, cdfinvstr)
 
         if cp.has_option_tag(section, 'rvs', tag):
             rvsstr = cp.get_opt_tag(section, 'rvs', tag)
             rvs = getattr(mod, rvsstr)
 
         return cls(params, logpdf, rvs=rvs, cdfinv=cdfinv)
+
 
 __all__ = ['External']
