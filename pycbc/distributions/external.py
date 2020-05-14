@@ -44,47 +44,69 @@ class External(object):
 
     Examples
     --------
-    To instantate by hand and example of function format
+    To instantate by hand and example of function format. You must provide
+    the logpdf function, and you may either provide the rvs or cdfinv function.
+    If the cdfinv is provided, but not the rvs, the random values will
+    be calculated using the cdfinv function.
 
     >>> import numpy
-    >>> params =
+    >>> params = ['x', 'y']
     >>> def logpdf(x=None, y=None):
     ...     p = numpy.ones(len(x))
-    ...     res = {}
-    ...     res['x'] = p
-    ...     res['y'] = p
-    ...     return res
+    ...     return p
     >>>
     >>> def cdfinv(**kwds):
     ...     return kwds
-    >>> e = External(['x', 'y'], logpdf, cdfinv)
+    >>> e = External(['x', 'y'], logpdf, cdfinv=cdfinv)
     >>> e.rvs(size=10)
     """
     name = "external"
 
-    def __init__(self, params, logpdf, cdfinv):
+    def __init__(self, params, logpdf, rvs=None, cdfinv=None):
         self.params = params
         self.logpdf = logpdf
         self.cdfinv = cdfinv
+        self._rvs = rvs
+        
+        if not (rvs or cdfinv):
+            raise ValueError("Must provide either rvs or cdfinv")
 
-    def rvs(self, size=1):
+    def rvs(self, size=1, **kwds):
         "Draw random value"
+        if self._rvs:
+            return self._rvs(size=size)
+
         draw = {}
         for param in self.params:
             draw[param] = numpy.random.uniform(0, 1, size=size)
         return self.cdfinv(**draw)
+
+    def apply_boundary_conditions(self, **params):
+        return params
+
+    def __call__(self, **kwds):
+        return self.logpdf(**kwds)
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
         tag = variable_args
         params = variable_args.split(VARARGS_DELIM)
         modulestr = cp.get_opt_tag(section, 'module', tag)
-        logpdfstr = cp.get_opt_tag(section, 'logpdf', tag)
-        cdfinvstr = cp.get_opt_tag(section, 'cdfinv', tag)
+
 
         mod = importlib.import_module(modulestr)
-        logpdf = getattr(mod, logpdfstr)
-        cdfinv = getattr(mod, cdfinvstr)
-        return cls(params, logpdf, cdfinv)
+        logpdfstr = cp.get_opt_tag(section, 'logpdf', tag)
+        logpdf = getattr(mod, logpdfstr)        
+
+        cdfinv = rvs = None
+        if cp.has_option_tag(section, 'cdfinv', tag):
+            cdfinvstr = cp.get_opt_tag(section, 'cdfinv', tag)
+            cdfinv =  cdfinv = getattr(mod, cdfinvstr)
+
+        if cp.has_option_tag(section, 'rvs', tag):
+            rvsstr = cp.get_opt_tag(section, 'rvs', tag)
+            rvs = getattr(mod, rvsstr)
+
+        return cls(params, logpdf, rvs=rvs, cdfinv=cdfinv)
 
 __all__ = ['External']
