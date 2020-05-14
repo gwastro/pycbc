@@ -838,14 +838,14 @@ class TimeSeries(Array):
         return f
 
     def add_into(self, other):
-        """Return the sum of the two time series accounting for the time stamp.
+        """Add another time series into this one where they overlap.
 
         The other vector will be resized and time shifted with sub-sample
         precision before adding. This assumes that one can assume zeros
         outside of the original vector range.
         """
         # only handle equal sample rate for now.
-        if self.sample_rate != other.sample_rate:
+        if not self.sample_rate_close(other):
             raise ValueError('Sample rate must be the same')
 
         # Other is disjoint
@@ -856,18 +856,37 @@ class TimeSeries(Array):
         other = other.copy()
         dt = float((other.start_time - self.start_time) * self.sample_rate)
 
+        # This coaligns other to the time stepping of self
         if not dt.is_integer():
             diff = (dt - _numpy.floor(dt)) * self.delta_t
+
+            # insert zeros at end
             other.resize(len(other) + (len(other) + 1) % 2 + 1)
+
+            # fd shift to the right
             other = other.cyclic_time_shift(diff)
 
-        ts = self.copy()
-        start = max(other.start_time, self.start_time)
-        end = min(other.end_time, self.end_time)
+        # get indices of other with respect to self
+        # this is already an integer to floating point precission
+        left = float(other.start_time - self.start_time) * self.sample_rate
+        left = int(round(left))  
+        right = left + len(other)
 
-        opart = other.time_slice(start, end, mode='nearest')
-        part = ts.time_slice(start, end, mode='nearest')
-        part[:] += opart[:]
+        oleft = 0
+        oright = len(other)
+
+        # other overhangs on left so truncate
+        if left < 0:
+            oleft = -left 
+            left = 0
+
+        # other overhangs on right so truncate
+        if right > len(self):
+            oright = len(other) - (right - len(self))
+            right = len(self)
+
+        ts = self.copy()
+        ts[left:right] += other[oleft:oright]
         return ts
 
     @_nocomplex
