@@ -99,11 +99,15 @@ if args.output_file.endswith('.html'):
     mass2 = fortrigs.get_bankfile_array('mass2')
     spin1z = fortrigs.get_bankfile_array('spin1z')
     spin2z = fortrigs.get_bankfile_array('spin2z')
-    time1 = fortrigs.get_coincfile_array('time1')
-    time2 = fortrigs.get_coincfile_array('time2')
+    time = fortrigs.get_end_time()
 
     if h_num_rm is not None and h_iterations is not None \
             and h_num_rm >= 0 and h_iterations != 0:
+        # FIXME: Currently hierarchical removal is not in the multi-detector
+        #        workflow. If this functionality is added, and we want to make
+        #        this table for hierarchically removed triggers, we would need
+        #        to change the code below to support that.
+
         # This information is not stored at all levels of the coinc trigger file
         # so grab from the top level and populate the variables for output later
  
@@ -132,29 +136,40 @@ if args.output_file.endswith('.html'):
 
     mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
-    columns = [ifar_exc, ifar, fap_exc, fap, stat,  time1,
-               (time2-time1)*1000, mchirp, mass1, mass2, spin1z, spin2z]
+    columns = [ifar_exc, ifar, fap_exc, fap, stat,  time,
+               mchirp, mass1, mass2, spin1z, spin2z]
 
     # Not supposed to use FAP anymore, nomenclature is p-value. Should be
     # fixed consistently accross PyCBC.
     names = ['Exc. IFAR (YR)', 'Inc. IFAR (YR)', 'Exc. FAP',
              'Inc. FAP', 'Ranking Statistic', 'End Time',
-             'Time Diff. (ms)', 'mchirp', 'm1','m2', 's1z', 's2z']
+             'mchirp', 'm1','m2', 's1z', 's2z']
     format_strings = ['#.###E0', '#.###E0', '#.##E0', '#.##E0', '##.###',
-                      None, '##.##', '##.##', '##.##',
-                      '##.##', '##.##', '##.##']
+                      None, '##.##', '##.##', '##.##', '##.##', '##.##']
 
     if args.single_detector_triggers:
         single_snr = fortrigs.get_snglfile_array_dict('snr')
         single_chisq = fortrigs.get_snglfile_array_dict('chisq')
         single_chisq_dof = fortrigs.get_snglfile_array_dict('chisq_dof')
 
-        columns.extend([single_snr[ifo] for ifo in single_snr.keys()])
-        names.extend(["%s SNR" %(ifo) for ifo in single_snr.keys()])
-        format_strings.extend(["##.##" for ifo in single_snr.keys()])
-        columns.extend([single_chisq[ifo] / (single_chisq_dof[ifo] * 2 - 2) for ifo in single_chisq.keys()])
-        names.extend(["%s Red. Chisq" %(ifo) for ifo in single_chisq.keys()])
-        format_strings.extend(["##.##" for ifo in single_chisq.keys()])
+        for ifo in sorted(single_snr.keys()):
+            snrs = []
+            chisqs = []
+            for idx in range(len(single_snr[ifo][0])):
+                if single_snr[ifo][1][idx]:
+                    snrs.append('%.2f' % single_snr[ifo][0][idx])
+                    rchisq = single_chisq[ifo][0][idx] / \
+                        (single_chisq_dof[ifo][0][idx]*2 - 2)
+                    chisqs.append('%.2f' % rchisq)
+                else:
+                    snrs.append(' ')
+                    chisqs.append(' ')
+            columns.append(numpy.array(snrs))
+            names.append("%s SNR" %(ifo))
+            format_strings.append("##.##")
+            columns.append(numpy.array(chisqs))
+            names.append("%s Red. Chisq" %(ifo))
+            format_strings.append("##.##")
 
     logging.info('Making table of foreground triggers')
     html_table = pycbc.results.html_table(columns, names, 
