@@ -869,7 +869,7 @@ class TimeSeries(Array):
         # get indices of other with respect to self
         # this is already an integer to floating point precission
         left = float(other.start_time - self.start_time) * self.sample_rate
-        left = int(round(left))  
+        left = int(round(left))
         right = left + len(other)
 
         oleft = 0
@@ -877,7 +877,7 @@ class TimeSeries(Array):
 
         # other overhangs on left so truncate
         if left < 0:
-            oleft = -left 
+            oleft = -left
             left = 0
 
         # other overhangs on right so truncate
