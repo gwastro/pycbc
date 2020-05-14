@@ -17,9 +17,8 @@
 from the command line.
 """
 
-import h5py
 import numpy
-from pycbc import types, conversions, pnutils
+from pycbc import conversions, pnutils
 from pycbc.events import coinc
 from pycbc.io import hdf
 import pycbc.detector
