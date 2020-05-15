@@ -99,8 +99,8 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
                          'PSD functions.')
 
     # make sure length has the right type for CreateREAL8FrequencySeries
-    if not isinstance(length, numbers.Integral):
-        warnings.warn('forcing length argument to int', RuntimeWarning)
+    if not isinstance(length, numbers.Integral) or length <= 0:
+        raise TypeError('length must be a positive integer')
     length = int(length)
 
     # if PSD model is in LALSimulation

@@ -353,7 +353,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                              'generate a fake strain')
         duration = opt.gps_end_time - opt.gps_start_time
         pdf = 1. / 128
-        plen = int(opt.sample_rate / pdf) / 2 + 1
+        plen = int(opt.sample_rate / pdf) // 2 + 1
 
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
