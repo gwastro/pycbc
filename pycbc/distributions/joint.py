@@ -196,3 +196,11 @@ class JointDistribution(object):
 
         return out
 
+    def cdfinv(self, **original):
+        """ Apply the inverse cdf to the array of values [0, 1]. Every
+        variable parameter must be given as a keyword argument.
+        """
+        updated = {}
+        for dist in self.distributions:
+            updated.update(dist.cdfinv(**original))
+        return updated

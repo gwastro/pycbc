@@ -41,6 +41,13 @@ parser.add_argument('--statmap-file-subspace-name', default='background_exc',
 trig_input = parser.add_mutually_exclusive_group(required=True)
 trig_input.add_argument('--n-loudest', type=int,
     help="Examine the n'th loudest trigger, use with statmap file")
+parser.add_argument('--sort-variable', default='stat',
+                    help='Which subgroup of --analysis-category to use for '
+                         'sorting. Default=ifar')
+parser.add_argument('--sort-order', default='descending',
+                    choices=['ascending','descending'],
+                    help='Which direction to use when sorting on '
+                         '--sort-variable. Default=descending')
 trig_input.add_argument('--trigger-id', type=int,
     help="Examine the trigger with specified ID, use with statmap file. An "
          "alternative to --n-loudest. Cannot be used together")
@@ -60,11 +67,14 @@ f = h5py.File(args.statmap_file, 'r')
 d = f[args.statmap_file_subspace_name]
 
 if args.n_loudest is not None:
-    n = d['stat'][:].argsort()[::-1][args.n_loudest]
+    sorting = d[args.sort_variable][:].argsort()
+    if args.sort_order == 'descending':
+        sorting = sorting[::-1]
+    n = sorting[args.n_loudest]
     title = 'Parameters of coincident event ranked %s' % (args.n_loudest + 1)
-    caption = ('Parameters of event ranked %s by the search. The figures below'
+    caption = ('Parameters of event ranked %s by %s %s in the search. The figures below'
                ' show the mini-followup data for this event.' % 
-               (args.n_loudest + 1))
+               (args.n_loudest + 1, args.sort_order, args.sort_variable))
 elif args.trigger_id is not None:
     n = args.trigger_id
     title = 'Details of coincident trigger'

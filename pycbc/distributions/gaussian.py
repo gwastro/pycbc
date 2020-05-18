@@ -164,7 +164,7 @@ class Gaussian(bounded.BoundedDist):
         var = self._var[param]
         return mu + (2*var)**0.5 * erfinv(2*p - 1.)
 
-    def cdfinv(self, param, p):
+    def _cdfinv_param(self, param, p):
         """Return inverse of the CDF.
         """
         a, b = self._bounds[param]

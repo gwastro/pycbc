@@ -28,6 +28,7 @@ pycbc_hdf5_splitbank \
     --bank-file template_bank_full.hdf \
     --output-prefix template_bank_ \
     --random-sort \
+    --random-seed 831486 \
     --templates-per-bank 1000
 
 mv template_bank_0.hdf template_bank.hdf
@@ -124,3 +125,7 @@ python -m mpi4py `which pycbc_live` \
 --size-override 20 \
 --start-time $gps_start_time \
 --end-time $gps_end_time
+
+echo -e "\\n\\n>> [`date`] Checking results"
+
+./check_results.py
