@@ -757,7 +757,7 @@ class ForegroundTriggers(object):
                         curr.append(hdf_dataset[idx])
                     curr = np.array(curr)
                 else:
-                    curr = self.sngl_files[ifo].get_column(variable)
+                    curr = self.sngl_files[ifo].get_column(variable)[tid]
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
                     curr = np.array([])
