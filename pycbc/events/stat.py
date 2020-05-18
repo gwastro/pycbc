@@ -1213,20 +1213,14 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         Read in single trigger information, make the newsnr statistic
         and rescale by the fitted coefficients alpha and rate
         """
-        alphai, ratei, thresh = self.find_fits(trigs)
+        lognoisel = ExpFitStatistic.lognoiserate(trigs)
+        _, ratei, thresh = self.find_fits(trigs)
         newsnr = self.get_newsnr(trigs)
-        # alphai is constant of proportionality between single-ifo newsnr and
-        #   negative log noise likelihood in given template
-        # ratei is rate of trigs in given template compared to average
-        # thresh is stat threshold used in given ifo
-        lognoisel = - alphai * (newsnr - thresh) + numpy.log(alphai) + \
-                      numpy.log(ratei)
         # When newsnr is below threshold, we want to set the log noise rate
         # to be a fit to a newsnr ** -6 distribution
         bt = newsnr < thresh
-        alphasix = 6.0 + numpy.zeros_like(bt)
-        lognoisel[bt] = - alphasix * (newsnr[bt] - thresh) + \
-                          numpy.log(alphasix) + numpy.log(ratei[bt])
+        lognoisel[bt] = - 6.0 * (newsnr[bt] - thresh) + \
+                          numpy.log(6.0) + numpy.log(ratei[bt])
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def single(self, trigs):
