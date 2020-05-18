@@ -97,11 +97,7 @@ parser.add_argument("--prune-window", type=float, default=0.1,
                          "which is loudest in each split, default 0.1s")
 args = parser.parse_args()
 
-if args.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(args.verbose)
 
 logging.info('Opening trigger file: %s' % args.trigger_file)
 trigf = h5py.File(args.trigger_file, 'r')
@@ -218,17 +214,18 @@ for idx, idx_start in enumerate(boundaries):
 logging.info('calculating single stat values from trigger file')
 stat = get_stat(args.sngl_stat, trigf[args.ifo])
 
-logging.info('applying DQ vetoes')
-time = trigf[args.ifo + '/end_time'][:]
-remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
-                     ifo=args.ifo, segment_name=args.veto_segment_name)
-# Set stat to zero for triggers being vetoed: given that the fit threshold is
-# >0 these will not be fitted or plotted.  Avoids complications from changing
-# the number of triggers, ie changes of template boundary.
-stat[remove] = np.zeros_like(remove)
-time[remove] = np.zeros_like(remove)
-logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
-                  remove.size, stat.size, args.veto_segment_name, args.veto_file))
+if args.veto_file:
+    logging.info('applying DQ vetoes')
+    time = trigf[args.ifo + '/end_time'][:]
+    remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
+                         ifo=args.ifo, segment_name=args.veto_segment_name)
+    # Set stat to zero for triggers being vetoed: given that the fit threshold is
+    # >0 these will not be fitted or plotted.  Avoids complications from changing
+    # the number of triggers, ie changes of template boundary.
+    stat[remove] = np.zeros_like(remove)
+    time[remove] = np.zeros_like(remove)
+    logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
+                      remove.size, stat.size, args.veto_segment_name, args.veto_file))
 
 for x in range(args.split_one_nbins):
     if not args.prune_number:
