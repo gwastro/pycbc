@@ -1003,7 +1003,7 @@ def make_frequency_series(vec):
         return vec
     if isinstance(vec, TimeSeries):
         N = len(vec)
-        n = N/2+1
+        n = N // 2 + 1
         delta_f = 1.0 / N / vec.delta_t
         vectilde =  FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),
                                     delta_f=delta_f, copy=False)

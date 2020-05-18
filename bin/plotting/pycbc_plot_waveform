@@ -92,7 +92,7 @@ opt = parser.parse_args()
 delta_f = 1. / opt.waveform_length
 delta_t = 1. / opt.sample_rate
 tlen = int(opt.waveform_length * opt.sample_rate)
-flen = tlen / 2 + 1
+flen = tlen // 2 + 1
 
 tmp_params = io.WaveformArray.from_kwargs(
                     mass1=opt.mass1,
