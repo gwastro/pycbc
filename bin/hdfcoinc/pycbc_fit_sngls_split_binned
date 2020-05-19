@@ -279,7 +279,7 @@ trigf.close()
 
 logging.info('setting up plotting and fitting limit values')
 minplot = max(stat[np.nonzero(stat)].min(), args.stat_fit_threshold - 1)
-min_fit = max(minplot, args.stat_fit_threshold)
+min_fit = minplot#max(minplot, args.stat_fit_threshold)
 max_fit = 1.05 * stat.max()
 if args.plot_max_x:
     maxplot = args.plot_max_x
@@ -290,7 +290,7 @@ fitrange = np.linspace(min_fit, max_fit, 100)
 logging.info('setting up plotting variables')
 histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
 fig, axes = plt.subplots(args.split_one_nbins, args.split_two_nbins,
-                         sharex=True, sharey=True,
+                         sharex=True, sharey=True, squeeze=False,
                          figsize=(3 * (args.split_two_nbins + 1),
                                   3 * args.split_one_nbins))
 
@@ -345,9 +345,17 @@ for x in range(args.split_one_nbins):
                              len(vals_above_thresh), len(vals_inbin)))
             alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function,
                                  vals_above_thresh, args.stat_fit_threshold)
-            fitted_cum_counts = len(vals_above_thresh) * \
-                                trstats.cum_fit(args.fit_function, fitrange,
-                                                alpha, args.stat_fit_threshold)
+#            fitted_cum_counts = len(vals_above_thresh) * \
+#                                trstats.cum_fit(args.fit_function, fitrange,
+#                                                alpha, args.stat_fit_threshold)
+            lognoisel = - alpha * (fitrange - args.stat_fit_threshold) + \
+                            np.log(len(vals_above_thresh))
+            fitted_cum_counts = np.exp(lognoisel)
+            bt = fitrange < args.stat_fit_threshold
+            lognoisel = - 6.0 * (fitrange[bt] - args.stat_fit_threshold) + \
+                            np.log(len(vals_above_thresh))
+            fitted_cum_counts[bt] = np.exp(lognoisel)
+ 
             # upper and lower 1-sigma bounds on fit are not currently plotted
             #fitted_cum_counts_plus = len(vals_above_thresh) * \
             #                             trstats.cum_fit(args.fit_function,
@@ -382,14 +390,19 @@ axes[0,0].set_ylim(1, 5 * maxyval)
 axes[0,0].set_xlim(minplot, maxplot)
 
 for j in range(args.split_two_nbins):
+    axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_stat, size="large")
+    if args.split_two_nbins == 1:
+        break
     axes[0, j].set_xlabel(args.split_param_two + ': ' +
                           (formats[args.split_param_two] + ' to ' +
                            formats[args.split_param_two]).format(sp_two_bounds.lower()[j],
                                      sp_two_bounds.upper()[j]), size="large")
     axes[0, j].xaxis.set_label_position("top")
-    axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_stat, size="large")
 
 for i in range(args.split_one_nbins):
+    if args.split_one_nbins == 1:
+        axes[0, 0].set_ylabel('cumulative number', size='large')
+        break
     axes[i, 0].set_ylabel(args.split_param_one + ': ' +
                           (formats[args.split_param_one] + ' to ' +
                            formats[args.split_param_one]).format(sp_one_bounds.lower()[i],
