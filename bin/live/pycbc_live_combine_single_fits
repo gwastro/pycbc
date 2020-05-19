@@ -58,9 +58,10 @@ for f in files:
     if 'days_since_epoch' in fits_f.attrs:
         analysis_dates += [fits_f.attrs['days_since_epoch']]
     elif 'analysis_date' in fits_f.attrs:
-        analysis_year = int(fits_f.attrs['analysis_date'][:4])
-        analysis_month = int(fits_f.attrs['analysis_date'][5:7])
-        analysis_day = int(fits_f.attrs['analysis_date'][8:10])
+        date_list = fits_f.attrs['analysis_date'].split('_')
+        analysis_year = int(date_list[0])
+        analysis_month = int(date_list[1])
+        analysis_day = int(date_list[2])
         n_since_epoch = (datetime.date(analysis_year,
                                        analysis_month,
                                        analysis_day)

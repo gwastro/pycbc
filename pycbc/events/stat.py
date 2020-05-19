@@ -996,6 +996,9 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
+    def single_multiifo(self, s):
+        return s[1]['snglstat']
+
     def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         # scale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / 2.**0.5
@@ -1440,7 +1443,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         network_logvol = 1.5 * numpy.log(network_sigmasq)
         benchmark_logvol = s[1]['benchmark_logvol']
         network_logvol -= benchmark_logvol
-        ln_s = (s[1]['snr'] / self.ref_snr) ** -4.0
+        ln_s = -4 * numpy.log(s[1]['snr'] / self.ref_snr)
         loglr = network_logvol - ln_noise_rate + ln_s
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.

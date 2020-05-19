@@ -6,8 +6,7 @@ import pycbc.conversions as conv
 import pycbc.version
 from pycbc import io
 from pycbc.events import trigger_fits as trfits
-
-ifar_model_options = ['n_louder', 'exp_fit', 'gaussian_kde']
+from pycbc import init_logging
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action='count')
@@ -36,23 +35,15 @@ parser.add_argument("--statistic-keywords", nargs='*',
                          "the statistic class when it is initialized. Should "
                          "be given in format --statistic-keywords "
                          "KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ...")
-parser.add_argument("--trigger-snr-cut", type=float, default=6,
-                    help="Apply a cut on snr to triggers before processing. "
-                         "Default = 6")
-parser.add_argument("--reduced-chisq-cut", type=float, default=None,
-                    help="Apply a cut on reduced chisquared to triggers "
-                         "before processing. Default = None")
-parser.add_argument("--chieff-upper-limit", type=float, default=None,
-                    help="Apply an upper limit cut on chi_eff to triggers "
-                         "before processing. Default = None")
-parser.add_argument("--cluster-window", type=float,
-                    help="Optional, window size in seconds to cluster "
-                         "over the bank")
-parser.add_argument("--ifar-model", default='n_louder',
-                    choices=ifar_model_options,
-                    help="Which model t use for calculating IFAR. "
-                         "Choices=" + ", ".join(ifar_model_options) + ". "
-                         "Default = n_louder.")
+parser.add_argument('--trigger-snr-cut',  type=float,
+                    help='Only consider triggers above the given SNR.')
+parser.add_argument('--cluster-window', type=float,
+                    help='Window (seconds) during which to keep the trigger '
+                         'with the loudest statistic value. '
+                         'Default=do not cluster')
+parser.add_argument('--reduced-chisq-cut', type=float,
+                    help='Only consider triggers below given reduced '
+                         'chisquared.')
 parser.add_argument("--output-file",
                     help="File to store the candidate triggers")
 args = parser.parse_args()
@@ -63,25 +54,11 @@ if (args.veto_file and not args.segment_name) or \
 
 args.statistic_files = sum(args.statistic_files, [])
 
-if args.verbose:
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
-
+init_logging(args.verbose)
 
 logging.info('Opening trigger file: %s', args.trigger_file)
 trigf = io.HFile(args.trigger_file, 'r')
 ifo = trigf.keys()[0]
-
-# Stat class instance to calculate the ranking statistic
-extra_kwargs = {}
-for inputstr in args.statistic_keywords:
-    try:
-        key, value = inputstr.split(':')
-        extra_kwargs[key] = value
-    except ValueError:
-        err_txt = "--statistic-keywords must take input in the " \
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                  "Received {}".format(args.statistic_keywords)
-        raise ValueError(err_txt)
 
 starts = trigf[ifo + '/search/start_time'][:]
 ends = trigf[ifo + '/search/end_time'][:]
@@ -89,14 +66,15 @@ segments = veto.start_end_to_segments(starts, ends)
 
 n_tot_trigs = trigf[ifo + '/snr'].size
 logging.info("%d triggers in file", n_tot_trigs)
-keep_idx = np.flatnonzero(trigf[ifo + '/snr'][:] >= args.trigger_snr_cut)
-snr_cut_f = ("%f" % args.trigger_snr_cut).rstrip("0").rstrip(".")
-logging.info("Cutting %d triggers with SNR < %s (%.2f%%)",
-             n_tot_trigs - keep_idx.size, snr_cut_f,
-             float(n_tot_trigs - keep_idx.size) / n_tot_trigs * 100)
 
+if args.trigger_snr_cut:
+    keep_idx = np.flatnonzero(trigf[ifo + '/snr'][:] >= args.trigger_snr_cut)
+    snr_cut_f = ("%f" % args.trigger_snr_cut).rstrip("0").rstrip(".")
+    logging.info("Cutting %d triggers with SNR < %s (%.2f%%)",
+                 n_tot_trigs - keep_idx.size, snr_cut_f,
+                 float(n_tot_trigs - keep_idx.size) / n_tot_trigs * 100)
 if args.reduced_chisq_cut:
-    n_skp_trigs = keep_idx.size
+    n_skp_trigs = float(keep_idx.size)
     chisq = trigf[ifo + '/chisq'][:][keep_idx]
     chisq_dof = trigf[ifo + '/chisq_dof'][:][keep_idx]
     reduced_chisq = chisq / (2 * chisq_dof - 2)
@@ -112,12 +90,12 @@ if args.veto_file:
     logging.info("Getting vetoed indices from file %s", args.veto_file)
     end_time = trigf[ifo + '/end_time'][:][keep_idx]
     veto_keep_idx, _ = veto.indices_outside_segments(end_time,
-                                                [args.veto_file],
-                                                segment_name=args.segment_name,
-                                                ifo=ifo)
+                                                     [args.veto_file],
+                                                     segment_name=args.segment_name,
+                                                     ifo=ifo)
     logging.info("Cutting %d triggers in vetoed segments (%.2f%%)",
                  keep_idx.size - veto_keep_idx.size,
-                 float(keep_idx.size - veto_keep_idx.size) / keep_idx.size * 100)
+                 float(keep_idx.size - veto_keep_idx.size) / float(keep_idx.size) * 100.)
     # Select unvetoed idx from keep_idx
     keep_idx = keep_idx[veto_keep_idx]
     veto_segs = veto.select_segments_by_definer(args.veto_file, ifo=ifo,
@@ -125,6 +103,9 @@ if args.veto_file:
     fg_segs = segments - veto_segs
 else:
     fg_segs = segments
+
+if not len(keep_idx):
+    raise RuntimeError("All triggers removed by vetoes or cuts")
 
 logging.info("Loading %d triggers", len(keep_idx))
 
@@ -134,16 +115,25 @@ all_dsets = ['sigmasq', 'chisq', 'chisq_dof', 'coa_phase', 'end_time',
 
 for ds in all_dsets:
     data_init[ds] = trigf[ifo + "/" + ds][:][keep_idx]
-data_init['trigger_id'] = np.arange(trigf[ifo + '/snr'].size)
+data_init['trigger_id'] = np.arange(trigf[ifo + '/snr'].size)[keep_idx]
 
 logging.info("Putting data into DictArray")
 trigs = io.DictArray(data=data_init)
 trigf.close()
 
-if not len(trigs):
-    raise RuntimeError("All triggers removed by vetoes or snr cut")
-
 logging.info('Setting up ranking method')
+# Stat class instance to calculate the ranking statistic
+extra_kwargs = {}
+for inputstr in args.statistic_keywords:
+    try:
+        key, value = inputstr.split(':')
+        extra_kwargs[key] = value
+    except ValueError:
+        err_txt = "--statistic-keywords must take input in the " \
+                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                  "Received {}".format(args.statistic_keywords)
+        raise ValueError(err_txt)
+
 rank_stat_class = stat.get_statistic(args.ranking_statistic)
 rank_method = rank_stat_class(args.statistic_files, ifos=[ifo],
                               **extra_kwargs)
@@ -159,77 +149,21 @@ if args.cluster_window:
                                   args.cluster_window)
     trigs = trigs.select(cid)
     stat = stat[cid]
-
+    logging.info("%d triggers after clustering", stat.size)
 
 fg_time = abs(fg_segs)
-
-logging.info("Assigning IFARs according to %s model", args.ifar_model)
-
-if args.ifar_model == "n_louder":
-    # This is a "count N louder and divide by live time" model as it's the
-    # most basic - it is a bit crap and doesn't give FAR below 1 per live time
-    _, fnlouder = coinc.calculate_n_louder(stat, stat, np.ones_like(stat))
-    ifar_sec = fg_time / (fnlouder + 1)
-    ifar = conv.sec_to_year(ifar_sec)
-    fap = 1 - np.exp(-fg_time / ifar_sec)
-elif args.ifar_model == "exp_fit":
-    # Basic (overly optimistic) method of IFAR calculation - fits to an
-    # exponential above a threshold. Threshold should be above the point
-    # where clustering affects the distribution - 3 seems to be about right
-    # with the current statistic & 10s window
-    stat_threshold = 3.0
-    stat_above = stat[stat > stat_threshold]
-    alpha, _ = trfits.fit_above_thresh("exponential", stat_above,
-                                       stat_threshold)
-    cum_fit = stat_above.size * trfits.cum_fit("exponential", stat, alpha,
-                                               stat_threshold)
-    # cum_fit returns zero if below threshold - change so that IFAR will be
-    # equal to the n_louder method
-    stat_below = stat[stat < stat_threshold]
-    _, fnlouder_below = coinc.calculate_n_louder(stat_below, stat_below,
-                                                 np.ones_like(stat_below))
-    cum_fit[stat < stat_threshold] = fnlouder_below + 1 + stat_above.size
-    ifar_sec = fg_time / cum_fit
-    ifar = conv.sec_to_year(ifar_sec)
-    fap = 1 - np.exp(-fg_time / ifar_sec)
-elif args.ifar_model == "gaussian_kde":
-    #This is crap - ignore it
-    from scipy.stats import gaussian_kde
-    stat_fit_threshold = 3.0
-    stat_above = stat[stat >= stat_fit_threshold]
-    stat_below = stat[stat < stat_fit_threshold]
-    statsort = stat_above.argsort()
-    unsort = statsort.argsort()
-    kernel = gaussian_kde(stat_above)
-    dens = kernel(stat_above)
-    dens *= stat_above.size / dens.sum()
-    dens_above = dens[statsort][::-1].cumsum()[::-1][unsort]
-    cum_fit = np.zeros(stat.size)
-    cum_fit[stat > stat_fit_threshold] = dens_above
-    # Below stat threshold use n louder method
-    _, fnlouder_below = coinc.calculate_n_louder(stat_below, stat_below,
-                                                 np.ones_like(stat_below))
-    cum_fit[stat < stat_fit_threshold] = fnlouder_below + 1 + stat_above.size
-    ifar_sec = fg_time / cum_fit
-    ifar = conv.sec_to_year(ifar_sec)
-    fap = 1 - np.exp(-fg_time / ifar_sec)
-else:
-    # Prefer to use method from arxiv.org/abs/2004.10015 or similar
-    raise NotImplementedError("Currently only supporting IFAR models: " +
-                              ", ".join(ifar_model_options) + ".")
 
 data = {"stat": stat,
         "decimation_factor": np.ones_like(stat),
         "timeslide_id": np.zeros_like(stat),
         "template_id": trigs.data['template_id'],
         "%s/time" % ifo : trigs.data['end_time'],
-        "%s/trigger_id" % ifo: trigs.data['trigger_id'],
-        "ifar": ifar, "fap": fap}
+        "%s/trigger_id" % ifo: trigs.data['trigger_id']}
 
 logging.info("saving triggers")
 f = io.HFile(args.output_file, 'w')
 for key in data:
-    f.create_dataset("foreground/" + key, data=data[key],
+    f.create_dataset(key, data=data[key],
                      compression="gzip",
                      compression_opts=9,
                      shuffle=True)

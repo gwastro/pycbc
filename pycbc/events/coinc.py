@@ -1123,7 +1123,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.coincs.remove(num_coincs)
 
     def add_singles(self, results):
-        """Add singles to the bacckground estimate and find candidates
+        """Add singles to the background estimate and find candidates
 
         Parameters
         ----------
