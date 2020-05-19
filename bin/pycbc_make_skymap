@@ -328,7 +328,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--version', action=pycbc.version.Version)
     parser.add_argument('--trig-time', required=True, type=float,
-                        help=help='GPS time of trigger (float)')
+                        help='GPS time of trigger (float)')
     parser.add_argument('--mass1', type=float, required=True)
     parser.add_argument('--mass2', type=float, required=True)
     parser.add_argument('--spin1z', type=float, required=True)
