@@ -1511,7 +1511,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 gate_params = [(overwhite2.start_time, 0., taper_window),
                                (overwhite2.end_time, 0., taper_window)]
                 gate_data(overwhite2, gate_params)
-                fseries_trimmed = FrequencySeries(zeros(len(overwhite2) / 2 + 1,
+                fseries_trimmed = FrequencySeries(zeros(len(overwhite2) // 2 + 1,
                                                   dtype=fseries.dtype), delta_f=delta_f)
                 pycbc.fft.fft(overwhite2, fseries_trimmed)
                 fseries_trimmed.start_time = fseries.start_time + self.reduced_pad * self.strain.delta_t

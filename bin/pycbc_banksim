@@ -73,7 +73,7 @@ def make_padded_frequency_series(vec, filter_N=None, delta_f=None):
         N = 2 ** power
     else:
         N = filter_N
-    n = N / 2 + 1
+    n = N // 2 + 1
 
     if isinstance(vec, FrequencySeries):
         vectilde = FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),

@@ -106,7 +106,7 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """
     psd = psd.copy()
 
-    flen = int(SAMPLE_RATE / psd.delta_f) / 2 + 1
+    flen = int(SAMPLE_RATE / psd.delta_f) // 2 + 1
     oldlen = len(psd)
     psd.resize(flen)
 
@@ -187,7 +187,7 @@ def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cuto
         A TimeSeries containing gaussian noise colored by the given psd.
     """
     delta_f = 1.0 / FILTER_LENGTH
-    flen = int(SAMPLE_RATE / delta_f) / 2 + 1
+    flen = int(SAMPLE_RATE / delta_f) // 2 + 1
     psd = pycbc.psd.from_string(psd_name, flen, delta_f, low_frequency_cutoff)
     return colored_noise(psd, start_time, end_time,
                          seed=seed,
