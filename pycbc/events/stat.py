@@ -1217,12 +1217,12 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         newsnr = self.get_newsnr(trigs)
         # When newsnr is below threshold, we want to set the log noise rate
         # to be a fit to a newsnr ** -6 distribution
-        at = newsnr < thresh
+        bt = newsnr > thresh
         normvalue = numpy.log(alphai) + numpy.log(ratei)
-        lognoisel = - 6.0 * (newsnr - thresh) + normvalue
-        #Above the threhsold we use the usual alpha
-        lognoisel[at] = - alphai[at] * (newsnr[at] - thresh) + normvalue[at]
-
+        lognoisel = - alphai * (newsnr - thresh) + normvalue
+        lognoiselsix = - 6.0 * (newsnr - thresh) + normvalue
+        # Above the threshold we use the usual alpha - below use six
+        lognoisel[bt] = lognoiselsix[bt]
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def single(self, trigs):
