@@ -186,12 +186,17 @@ parser.add_argument("--use-compressed-waveforms", action="store_true", default=F
 parser.add_argument("--waveform-decompression-method", action='store', default=None,
                     help='Method to be used decompress waveforms from the bank file.')
 parser.add_argument("--checkpoint-interval", type=int,
-                    help="Save results to checkpoint file every X seconds")
+                    help="Save results to checkpoint file every X seconds. "
+                         "Default is no checkpointing.")
+parser.add_argument('--require-valid-checkpoint', default=False, action="store_true",
+                    help="If the checkpoint file is invalid, raise an error. "
+                         "Default is to ignore invalid checkpoint files and to "
+                         "delete the broken file.")
 parser.add_argument("--checkpoint-exit-maxtime", type=int,
                     help="Checkpoint and exit if X seconds of execution"
-                         " time is exceeded.")
+                         " time is exceeded. Default is no checkpointing.")
 parser.add_argument("--checkpoint-exit-code", type=int, default=77,
-                    help="Exit code returned if existing after a checkpoint")
+                    help="Exit code returned if exiting after a checkpoint")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -275,6 +280,7 @@ with ctx:
         logging.info("Finished")
         sys.exit(0)
 
+    # FIXME: Maybe we should use the PSD corresponding to each trigger
     if opt.psdvar_segment is not None:
         logging.info("Calculating PSD variation")
         psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
@@ -289,7 +295,6 @@ with ctx:
     else:
         q_trans = {}
 
-    # FIXME: Maybe we should use the PSD corresponding to each trigger
     if opt.checkpoint_interval:
         checkpoint_file = opt.output + '.checkpoint'
 
@@ -300,6 +305,10 @@ with ctx:
             tnum_start, event_mgr = events.EventManager.restore_state(checkpoint_file)
             checkpoint_exists = True
         except Exception as e:
+            if args.require_valid_checkpoint:
+                logging.info("Failed to load checkpoint file")
+                raise(e)
+
             logging.info('Failed to load checkpoint file, starting anew')
             logging.info(e)
 

@@ -28,6 +28,7 @@ from __future__ import absolute_import
 import numpy, copy, os.path
 import logging
 import h5py
+from six.moves import cPickle
 
 from pycbc.types import Array
 from pycbc.scheme import schemed
@@ -193,7 +194,6 @@ class EventManager(object):
 
     def save_state(self, tnum_finished, filename):
         """Save the current state of the background buffers"""
-        from six.moves import cPickle
         from pycbc.io.hdf import dump_state
 
         self.tnum_finished = tnum_finished
