@@ -279,7 +279,7 @@ trigf.close()
 
 logging.info('setting up plotting and fitting limit values')
 minplot = max(stat[np.nonzero(stat)].min(), args.stat_fit_threshold - 1)
-min_fit = minplot#max(minplot, args.stat_fit_threshold)
+min_fit = max(minplot, args.stat_fit_threshold)
 max_fit = 1.05 * stat.max()
 if args.plot_max_x:
     maxplot = args.plot_max_x
@@ -345,17 +345,9 @@ for x in range(args.split_one_nbins):
                              len(vals_above_thresh), len(vals_inbin)))
             alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function,
                                  vals_above_thresh, args.stat_fit_threshold)
-#            fitted_cum_counts = len(vals_above_thresh) * \
-#                                trstats.cum_fit(args.fit_function, fitrange,
-#                                                alpha, args.stat_fit_threshold)
-            lognoisel = - alpha * (fitrange - args.stat_fit_threshold) + \
-                            np.log(len(vals_above_thresh))
-            fitted_cum_counts = np.exp(lognoisel)
-            bt = fitrange < args.stat_fit_threshold
-            lognoisel = - 6.0 * (fitrange[bt] - args.stat_fit_threshold) + \
-                            np.log(len(vals_above_thresh))
-            fitted_cum_counts[bt] = np.exp(lognoisel)
- 
+            fitted_cum_counts = len(vals_above_thresh) * \
+                                trstats.cum_fit(args.fit_function, fitrange,
+                                                alpha, args.stat_fit_threshold)
             # upper and lower 1-sigma bounds on fit are not currently plotted
             #fitted_cum_counts_plus = len(vals_above_thresh) * \
             #                             trstats.cum_fit(args.fit_function,
