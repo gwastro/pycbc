@@ -1207,7 +1207,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         self.fits_by_tid[ifo]['median_sigma'] = \
             coeff_file['median_sigma'][:][tid_sort]
 
-    def lognoiserate(self, trigs):
+    def lognoiserate(self, trigs, alphabelow=6):
         """Calculate the log noise rate density over single-ifo newsnr
 
         Read in single trigger information, make the newsnr statistic
@@ -1215,14 +1215,14 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         """
         alphai, ratei, thresh = self.find_fits(trigs)
         newsnr = self.get_newsnr(trigs)
-        # When newsnr is below threshold, we want to set the log noise rate
-        # to be a fit to a newsnr ** -6 distribution
         bt = newsnr > thresh
-        normvalue = numpy.log(alphai) + numpy.log(ratei)
-        lognoisel = - alphai * (newsnr - thresh) + normvalue
-        lognoiselsix = - 6.0 * (newsnr - thresh) + normvalue
-        # Above the threshold we use the usual alpha - below use six
-        lognoisel[bt] = lognoiselsix[bt]
+        lognoisel = - alphai * (newsnr - thresh) + numpy.log(alphai) + \
+                        numpy.log(ratei)
+        lognoiselbt = - alphabelow * (newsnr - thresh) + \
+                           numpy.log(alphabelow) + numpy.log(ratei)
+        # Above the threshold we use the usual alpha
+        # below threshold use specified alphabelow
+        lognoisel[bt] = lognoiselbt[bt]
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def single(self, trigs):
