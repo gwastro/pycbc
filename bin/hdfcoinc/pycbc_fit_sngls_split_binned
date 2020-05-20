@@ -97,11 +97,7 @@ parser.add_argument("--prune-window", type=float, default=0.1,
                          "which is loudest in each split, default 0.1s")
 args = parser.parse_args()
 
-if args.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(args.verbose)
 
 logging.info('Opening trigger file: %s' % args.trigger_file)
 trigf = h5py.File(args.trigger_file, 'r')
@@ -218,17 +214,18 @@ for idx, idx_start in enumerate(boundaries):
 logging.info('calculating single stat values from trigger file')
 stat = get_stat(args.sngl_stat, trigf[args.ifo])
 
-logging.info('applying DQ vetoes')
-time = trigf[args.ifo + '/end_time'][:]
-remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
-                     ifo=args.ifo, segment_name=args.veto_segment_name)
-# Set stat to zero for triggers being vetoed: given that the fit threshold is
-# >0 these will not be fitted or plotted.  Avoids complications from changing
-# the number of triggers, ie changes of template boundary.
-stat[remove] = np.zeros_like(remove)
-time[remove] = np.zeros_like(remove)
-logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
-                  remove.size, stat.size, args.veto_segment_name, args.veto_file))
+if args.veto_file:
+    logging.info('applying DQ vetoes')
+    time = trigf[args.ifo + '/end_time'][:]
+    remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
+                         ifo=args.ifo, segment_name=args.veto_segment_name)
+    # Set stat to zero for triggers being vetoed: given that the fit threshold is
+    # >0 these will not be fitted or plotted.  Avoids complications from changing
+    # the number of triggers, ie changes of template boundary.
+    stat[remove] = np.zeros_like(remove)
+    time[remove] = np.zeros_like(remove)
+    logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
+                      remove.size, stat.size, args.veto_segment_name, args.veto_file))
 
 for x in range(args.split_one_nbins):
     if not args.prune_number:
@@ -293,7 +290,7 @@ fitrange = np.linspace(min_fit, max_fit, 100)
 logging.info('setting up plotting variables')
 histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
 fig, axes = plt.subplots(args.split_one_nbins, args.split_two_nbins,
-                         sharex=True, sharey=True,
+                         sharex=True, sharey=True, squeeze=False,
                          figsize=(3 * (args.split_two_nbins + 1),
                                   3 * args.split_one_nbins))
 
@@ -385,14 +382,19 @@ axes[0,0].set_ylim(1, 5 * maxyval)
 axes[0,0].set_xlim(minplot, maxplot)
 
 for j in range(args.split_two_nbins):
+    axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_stat, size="large")
+    if args.split_two_nbins == 1:
+        break
     axes[0, j].set_xlabel(args.split_param_two + ': ' +
                           (formats[args.split_param_two] + ' to ' +
                            formats[args.split_param_two]).format(sp_two_bounds.lower()[j],
                                      sp_two_bounds.upper()[j]), size="large")
     axes[0, j].xaxis.set_label_position("top")
-    axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_stat, size="large")
 
 for i in range(args.split_one_nbins):
+    if args.split_one_nbins == 1:
+        axes[0, 0].set_ylabel('cumulative number', size='large')
+        break
     axes[i, 0].set_ylabel(args.split_param_one + ': ' +
                           (formats[args.split_param_one] + ' to ' +
                            formats[args.split_param_one]).format(sp_one_bounds.lower()[i],
