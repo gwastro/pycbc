@@ -1215,13 +1215,13 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         """
         alphai, ratei, thresh = self.find_fits(trigs)
         newsnr = self.get_newsnr(trigs)
+        # Above the threshold we use the usual fit coefficient (alpha)
+        # below threshold use specified alphabelow
         bt = newsnr < thresh
         lognoisel = - alphai * (newsnr - thresh) + numpy.log(alphai) + \
                         numpy.log(ratei)
         lognoiselbt = - alphabelow * (newsnr - thresh) + \
                            numpy.log(alphabelow) + numpy.log(ratei)
-        # Above the threshold we use the usual alpha
-        # below threshold use specified alphabelow
         lognoisel[bt] = lognoiselbt[bt]
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
