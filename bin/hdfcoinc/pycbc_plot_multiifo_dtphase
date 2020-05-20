@@ -39,13 +39,15 @@ parser.add_argument('--version', action="version",
                     version=version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--input-file', required=True,
-                    help="Input phasetd histogram file")
+                    help="Input phasetd histogram file, made using "
+                         "pycbc_multiifo_dtphase")
 parser.add_argument('--reference-ifo',
-                    help="IFO to ue as reference for P/T/A differences. "
-                         "Default = first IFO in 'ifos' attribute.")
+                    help="IFO to use as reference for P/T/A differences. "
+                         "Default = first IFO in 'ifos' attribute of "
+                         "input file.")
 parser.add_argument('--norm', choices=['pdf','max'], default='pdf',
                     help="Normalization of the histogram. Choose from pdf "
-                         "or so that the maximum (unmarginalied) bin height "
+                         "or so that the maximum (unmarginalized) bin height "
                          "is unity. Default=pdf")
 parser.add_argument('--shared-color-scale', action='store_true',
                     help="Color scale shared between the plots? Default=No")
@@ -121,19 +123,6 @@ hist_range = [(1.1 * mn - 0.1 * mx, 1.1 * mx - 0.1 * mn)
 # Set up a zero-valued array to be filled by histogram values
 arr_size = tuple(max_bin[i] - min_bin[i] + 1 for i in range(ndims))
 hist_vals = np.zeros(arr_size)
-
-print("Max histogram value : %f" % (f[ref_ifo]['weights'][:].max() / f[ref_ifo]['weights'][:].sum() / np.prod(widths)))
-print("Mean histogram value : %f" % (f[ref_ifo]['weights'][:].mean() / f[ref_ifo]['weights'][:].sum() / np.prod(widths)))
-noise_twindow = coinc_rate.multiifo_noise_coincident_area(
-                            ifos, 0)
-hist_vol = noise_twindow * \
-        (2 * np.pi * (f.attrs['srbmax'] - f.attrs['srbmin']) * f.attrs['swidth']) ** (len(ifos) - 1)
-print("1 / Hist volume: %f" % (1. / hist_vol))
-pdf_norm = np.log(f[ref_ifo]['weights'][:].sum()) + np.log(np.prod(widths))
-pta_noise = np.log(f[ref_ifo]['weights'][:]) - pdf_norm
-print("Max PTA term : %f" % (pta_noise.max() - np.log(hist_vol)))
-print("Mean PTA term : %f" % (pta_noise.mean() - np.log(hist_vol)))
-print("Min PTA term : %f" % (pta_noise.min() - np.log(hist_vol)))
 
 logging.info("filling histogram")
 for pb, w in zip(f[ref_ifo]['param_bin'][:],
