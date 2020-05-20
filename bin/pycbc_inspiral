@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
+import sys, os
 import logging, argparse, numpy, itertools
 from six.moves import range
 import pycbc
@@ -185,6 +185,18 @@ parser.add_argument("--use-compressed-waveforms", action="store_true", default=F
                     help='Use compressed waveforms from the bank file.')
 parser.add_argument("--waveform-decompression-method", action='store', default=None,
                     help='Method to be used decompress waveforms from the bank file.')
+parser.add_argument("--checkpoint-interval", type=int,
+                    help="Save results to checkpoint file every X seconds. "
+                         "Default is no checkpointing.")
+parser.add_argument('--require-valid-checkpoint', default=False, action="store_true",
+                    help="If the checkpoint file is invalid, raise an error. "
+                         "Default is to ignore invalid checkpoint files and to "
+                         "delete the broken file.")
+parser.add_argument("--checkpoint-exit-maxtime", type=int,
+                    help="Checkpoint and exit if X seconds of execution"
+                         " time is exceeded. Default is no checkpointing.")
+parser.add_argument("--checkpoint-exit-code", type=int, default=77,
+                    help="Exit code returned if exiting after a checkpoint")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -268,6 +280,7 @@ with ctx:
         logging.info("Finished")
         sys.exit(0)
 
+    # FIXME: Maybe we should use the PSD corresponding to each trigger
     if opt.psdvar_segment is not None:
         logging.info("Calculating PSD variation")
         psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
@@ -282,8 +295,25 @@ with ctx:
     else:
         q_trans = {}
 
-    # FIXME: Maybe we should use the PSD corresponding to each trigger
-    event_mgr = events.EventManager(
+    if opt.checkpoint_interval:
+        checkpoint_file = opt.output + '.checkpoint'
+
+    checkpoint_exists = False
+    tnum_start = 0
+    if (opt.checkpoint_interval and os.path.isfile(checkpoint_file)):
+        try:
+            tnum_start, event_mgr = events.EventManager.restore_state(checkpoint_file)
+            checkpoint_exists = True
+        except Exception as e:
+            if args.require_valid_checkpoint:
+                logging.info("Failed to load checkpoint file")
+                raise(e)
+
+            logging.info('Failed to load checkpoint file, starting anew')
+            logging.info(e)
+
+    if not checkpoint_exists:
+        event_mgr = events.EventManager(
             opt, names, [out_types[n] for n in names], psd=segments[0].psd,
             gating_info=gwstrain.gating_info, q_trans=q_trans)
 
@@ -350,12 +380,14 @@ with ctx:
         logging.info("Template bank size after thinning: %s", len(bank))
 
     tsetup = time.time() - tstart
+    tcheckpoint = time.time()
 
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in
     # the 'template_mem' argument to MatchedFilterControl with the next template
     # from the bank.
-    for t_num in range(len(bank)):
+    for t_num in range(len(bank) - tnum_start):
+        t_num += tnum_start
         tmplt_generated = False
 
         for s_num, stilde in enumerate(segments):
@@ -430,6 +462,16 @@ with ctx:
         if opt.finalize_events_template_rate is not None and \
                 not (t_num+1) % opt.finalize_events_template_rate:
             event_mgr.consolidate_events(opt, gwstrain=gwstrain)
+
+        if opt.checkpoint_interval and \
+            (time.time() - tcheckpoint > opt.checkpoint_interval):
+            event_mgr.save_state(t_num, opt.output + '.checkpoint')
+            tcheckpoint = time.time()
+
+        if opt.checkpoint_exit_maxtime and \
+            (time.time() - tstart > opt.checkpoint_exit_maxtime):
+            event_mgr.save_state(t_num, opt.output + '.checkpoint')
+            sys.exit(opt.checkpoint_exit_code)           
 
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()

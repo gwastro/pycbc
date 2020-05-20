@@ -39,8 +39,6 @@ from .dynesty import DynestyFile
 from .ultranest import UltranestFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
-# add the dump/load state functions to the io namespace
-from .base_hdf import (load_state, dump_state)
 
 filetypes = {
     EmceeFile.name: EmceeFile,
@@ -682,7 +680,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
                 # this means no file, only one constraint, apply to all
                 # files
                 constraints = {fn: constraint for fn in input_files}
-                
+
     # loop over all input files
     for input_file in input_files:
         logging.info("Reading input file %s", input_file)
@@ -703,7 +701,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
             if input_file in constraints:
                 logging.info("Applying constraints")
                 mask = samples[constraints[input_file]]
-                samples = samples[mask] 
+                samples = samples[mask]
                 if samples.size == 0:
                     raise ValueError("No samples remain after constraint {} "
                                      "applied".format(constraints[input_file]))
