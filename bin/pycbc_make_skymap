@@ -352,7 +352,7 @@ if __name__ == '__main__':
                              'production analyses!')
     parser.add_argument('--gracedb-server', metavar='URL', default=None,
                         help='URL of GraceDB server API for uploading events. ')
-    parser.add_argument('--custom-frame-file', type=str, default=None, required=False, nargs='+',
+    parser.add_argument('--custom-frame-file', type=str, nargs='+',
                         help='lists of local frame files, e.g., H1:/path/to/frame/file L1:/path/to/frame/file')
     
     opt = parser.parse_args()
