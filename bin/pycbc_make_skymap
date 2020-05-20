@@ -153,25 +153,25 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, ifar, ifos, thresh_SNR,
             command.append("--frame-type")
             command.append(frame_types[ifo])
         else:
-            print("check if the segment in the custom frame file is safe") 
+            logging.info("check if the segment in the custom frame file is safe")
             try:
                 frame_data = frame.read_frame(custom_frame_files[ifo], channel_names[ifo])
             except RuntimeError:
-                print("Channel name in {} is not {}".format(custom_frame_files[ifo], channel_names[ifo]))
-                print("Unable to open it")
-                print("Exit the program")
+                logging.info("Channel name in {} is not {}".format(custom_frame_files[ifo], channel_names[ifo]))
+                logging.info("Unable to open it")
+                logging.info("Exit the program")
                 sys.exit()
             if gps_start_time < frame_data.start_time:
-                print("Start time of {} should be before the required start time {}".format(frame_data.start_time, gps_start_time))
-                print("Exit the program")
+                logging.info("Start time of {} should be before the required start time {}".format(frame_data.start_time, gps_start_time))
+                logging.info("Exit the program")
                 sys.exit()
             if frame_data.end_time < gps_end_time:
-                print("End time of {} should be after the required end time {}".format(frame_data.end_time, gps_end_time))
-                print("Exit the program")
+                logging.info("End time of {} should be after the required end time {}".format(frame_data.end_time, gps_end_time))
+                logging.info("Exit the program")
                 sys.exit()
             if trig_time < frame_data.start_time or frame_data.end_time < trig_time:
-                print("Trigger time should be within your frame file")
-                print("Exit theprogram")
+                logging.info("Trigger time should be within your frame file")
+                logging.info("Exit theprogram")
                 sys.exit()
             command.append("--frame-files"),command.append(custom_frame_files[ifo])
         # till here
