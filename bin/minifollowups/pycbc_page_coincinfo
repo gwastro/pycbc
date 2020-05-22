@@ -41,7 +41,7 @@ parser.add_argument('--statmap-file-subspace-name', default='background_exc',
 trig_input = parser.add_mutually_exclusive_group(required=True)
 trig_input.add_argument('--n-loudest', type=int,
     help="Examine the n'th loudest trigger, use with statmap file")
-parser.add_argument('--sort-variable', default='stat',
+parser.add_argument('--sort-variable', default='ifar',
                     help='Which subgroup of --analysis-category to use for '
                          'sorting. Default=ifar')
 parser.add_argument('--sort-order', default='descending',
