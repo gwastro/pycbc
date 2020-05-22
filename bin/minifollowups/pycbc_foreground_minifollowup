@@ -57,7 +57,7 @@ parser.add_argument('--analysis-category', type=str, required=False,
                     help='Designates whether to look at foreground triggers '
                          'background triggers (including "little dogs") '
                          'or background triggers (with "little dogs" removed)')
-parser.add_argument('--sort-variable', default='stat',
+parser.add_argument('--sort-variable', default='ifar',
                     help='Which subgroup of --analysis-category to use for '
                          'sorting. Default=ifar')
 parser.add_argument('--sort-order', default='descending',
