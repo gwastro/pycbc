@@ -15,7 +15,20 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""Creates a movie showing how a sampler evolves.
 
+To determine the length of the movie, you can either specify a --frame-number
+or a --frame-step. The former specifies the number of frames to use in the
+movie.  In this case, the code will load samples stored in the given file,
+thinned such that the number of frames is <= the frame number. The latter
+specifies how many samples to skip between frames. In both cases, you can
+provide a --start-index or --end-index to control the range of samples to
+consider. These values, along with the --frame-step are specified in terms of
+the index of samples on file. If the file was thinned (the file's thinned_by
+attribute is > 1), then indices will correspond to the sampler's iteration *
+the thinned_by interval. The iteration number will be printed on each frame of
+the movie.
+"""
 
 #
 # =============================================================================
@@ -34,18 +47,18 @@ from multiprocessing import Pool
 
 import numpy
 
-from matplotlib import use
-use('agg')
+import matplotlib
+matplotlib.use('agg')
 from matplotlib import pyplot
 
 import pycbc.results
-from pycbc import transforms
-
+from pycbc import conversions
 from pycbc import __version__
 from pycbc.inference import (option_utils, io)
 
 from pycbc.results.scatter_histograms import (create_multidim_plot,
                                               get_scale_fac)
+from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli)
 
 
 def integer_logspace(start, end, num):
@@ -96,20 +109,23 @@ def integer_logspace(start, end, num):
 # we won't add thinning arguments nor iteration, since this is determined by
 # the frame number/step options
 skip_args = ['thin-start', 'thin-interval', 'thin-end', 'iteration']
-parser = io.ResultsArgumentParser(skip_args=skip_args)
+parser = io.ResultsArgumentParser(description=__doc__, skip_args=skip_args)
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
-parser.add_argument("--start-sample", type=int, default=1,
-                    help="Start sample for the first frame. Note: sample "
-                         "counting starts from 1. Default is 1.")
-parser.add_argument("--end-sample", type=int, default=None,
-                    help="End sample for the last frame. If None, will "
-                         "default to the last sample.")
-parser.add_argument("--frame-number", type=int,
-                    help="Number of frames for the movie.")
-parser.add_argument("--frame-step", type=int, 
-                    help="Step in the sample between frames for the movie. "
-                         "Only provide if not --frame-number given.")
+# make frame number and frame step mutually exclusive
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument("--frame-number", type=int,
+                   help="Maximum number of frames for the movie.")
+group.add_argument("--frame-step", type=int, 
+                   help="Number of sample indices to skip between frames.")
+parser.add_argument("--start-index", type=int, default=0,
+                    help="The starting index of the samples to load. Must be "
+                         "< the number of samples that are stored in the "
+                         "file. Default is 0.")
+parser.add_argument("--end-index", type=int, default=None,
+                    help="The ending index of the samples to load. Must be < "
+                         "the number of samples that are stored in the file. "
+                         "Default is to load everything to the end.")
 parser.add_argument("--log-steps", action="store_true", default=False,
                     help="If frame-number is specified, make the number of "
                          "samples between frames uniform in log10. This "
@@ -138,8 +154,13 @@ option_utils.add_plot_posterior_option_group(parser)
 # add scatter and density configuration options
 option_utils.add_scatter_option_group(parser) 
 option_utils.add_density_option_group(parser)
+add_style_opt_to_parser(parser)
 
 opts = parser.parse_args()
+
+# set mpl style
+set_style_from_cli(opts)
+
 pycbc.init_logging(opts.verbose)
 
 if len(opts.input_file) > 1:
@@ -149,70 +170,70 @@ if len(opts.input_file) > 1:
 logging.info('Loading parameters')
 fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 
-if opts.end_sample is None:
-    opts.end_sample = fp.niterations
+# get the total number of samples on disk
+thinned_by = fp.thinned_by
+nsamples = fp.niterations // thinned_by
+start_index = opts.start_index
+if start_index >= nsamples:
+    raise ValueError("given start-index {} is >= the number of samples in the "
+                     "input file {}".format(start_index, nsamples))
+end_index = opts.end_index
+if end_index is not None and end_index >= nsamples:
+    raise ValueError("given end-index {} is >= the number of samples in the "
+                     "input file {}".format(end_index, nsamples))
 
 if opts.log_steps and not opts.frame_number:
     raise ValueError("log-steps requires a non-zero frame-number to be "
                      "provided; see help for details.")
 
-# convert sample numbers to index
-start_index = opts.start_sample - 1
-end_index = opts.end_sample - 1
-
-# Define thin interval based on number of frames or frame step
-if opts.frame_number and opts.frame_step:
-    raise ValueError("Only one of frame-number or frame-step must be "
-                     "provided.")
-elif opts.frame_number:
-    if opts.frame_number > fp.niterations:
-        raise ValueError("frame number is > the number of iterations "
-                         "({})".format(fp.niterations))
-    if opts.log_steps:
-        iterations = integer_logspace(start_index, end_index,
-                                      opts.frame_number)
-    else:
-        iterations = numpy.unique(numpy.linspace(start_index, end_index,
-                                    num=opts.frame_number).astype(int))
-    nframes = len(iterations)
-    # create a mask to pull out the desired values
-    itermask = numpy.zeros(fp.niterations, dtype=bool)
-    itermask[iterations] = True
-    thinint = thin_start = thin_end = None
-elif opts.frame_step:
+if opts.frame_number:
+    thinint = 1
+else:  # frame step was provided
     thinint = opts.frame_step
-    thin_start = start_index
-    thin_end = end_index + thinint
-    itermask = None
-    nframes = 1 + (thin_end - thin_start)/thinint
-    iterations = numpy.arange(nframes-1) * thinint + thin_start
-else:
-    raise ValueError("At least one of frame-number or frame-step must be "
-                     "provided.")
 
 # get the samples
-file_parameters, trans = transforms.get_common_cbc_transforms(
-                                         parameters, fp.variable_params)
-samples = fp.samples_from_cli(opts, file_parameters, thin_start=thin_start,
-                              thin_interval=thinint, thin_end=thin_end,
-                              iteration=itermask, flatten=False)
-samples = transforms.apply_transforms(samples, trans)
+samples = fp.samples_from_cli(opts, parameters, thin_start=start_index,
+                              thin_interval=thinint, thin_end=end_index,
+                              flatten=False)
 if samples.ndim > 2:
     # multi-tempered samplers will return 3 dims, so flatten
     _, ii, jj = samples.shape
     samples = samples.reshape((ii, jj))
 
+# pull out the samples we want
+if opts.frame_number:
+    if opts.log_steps:
+        indices = integer_logspace(start_index, samples.shape[1]-1,
+                                   opts.frame_number)
+    else:
+        indices = numpy.unique(numpy.linspace(start_index, samples.shape[1]-1,
+                               num=opts.frame_number).astype(int))
+    samples = samples[:, indices]
+else:
+    # set the index counter based on what was loaded
+    indices = numpy.arange(samples.shape[1]) * thinint + start_index
+
+
 # Get z-values
 if opts.z_arg is not None:
     logging.info("Getting samples for colorbar")
-    zsamples = fp.samples_from_cli(opts, opts.z_arg, thin_start=thin_start,
-                                   thin_interval=thinint, thin_end=thin_end,
-                                   iteration=itermask, flatten=False)
+    if opts.z_arg == 'snr':
+        z_arg = 'loglikelihood'
+    else:
+        z_arg = opts.z_arg
+    zsamples = fp.samples_from_cli(opts, z_arg, thin_start=start_index,
+                                   thin_interval=thinint, thin_end=end_index,
+                                   flatten=False)
+    if opts.z_arg == 'snr':
+        loglr = zsamples[z_arg] - zsamples.lognl
+        zsamples[z_arg] = conversions.snr_from_loglr(loglr)
     zlbl = opts.z_arg_labels[opts.z_arg]
     if zsamples.ndim > 2:
         _, ii, jj = zsamples.shape
         zsamples = zsamples.reshape((ii, jj))
-    zvals = zsamples[opts.z_arg]
+    if opts.frame_number:
+        zsamples = zsamples[:, indices]
+    zvals = zsamples[z_arg]
     show_colorbar = True
     # Set common min and max for colorbar in all plots
     if opts.vmin is None:
@@ -267,10 +288,28 @@ for p in parameters:
     if p not in maxs:
         maxs[p] = samples[p].max()
 
+# set colors:
+# the 1d marginal colors will just be the first color in the style's cycle
+linecolor = list(matplotlib.rcParams['axes.prop_cycle'])[0]['color']
+# make the hist color black or white, depending on if the
+# dark background is used
+if opts.mpl_style == 'dark_background':
+    hist_color = 'white'
+else:
+    hist_color = 'black'
+# make the default contour color white if plot density is on
+if not opts.contour_color and opts.plot_density:
+    contour_color = 'white'
+# otherwise, make the default be the same as the hist color
+elif not opts.contour_color:
+    contour_color = hist_color
+else:
+    contour_color = opts.contour_color
+
 # Make each figure
 # for sorting purposes, we will need to zero-pad the sample number with the
 # appriopriate number of 0's
-max_sample_num = iterations[-1] + 1
+max_iter_num = indices[-1]*thinned_by + 1
 
 def _make_frame(frame):
     """Wrapper for making the plot in a pooled environment.
@@ -280,13 +319,15 @@ def _make_frame(frame):
         z = zvals[:,frame]
     else:
         z = None
-    sample_num = str(iterations[frame] + 1)
-    sample_num = sample_num.zfill(len(str(max_sample_num)))
-    output = opts.output_prefix + '-{}.png'.format(sample_num)
+    iter_num = str(indices[frame]*thinned_by + 1)
+    iter_num = iter_num.zfill(len(str(max_iter_num)))
+    output = opts.output_prefix + '-{}.png'.format(iter_num)
 
     fig, axis_dict = create_multidim_plot(parameters, plotargs, labels=labels,
                         mins=mins, maxs=maxs,
                         plot_marginal=opts.plot_marginal,
+                            line_color=linecolor,
+                            hist_color=hist_color,
                         plot_scatter=opts.plot_scatter,
                             zvals=z, show_colorbar=show_colorbar,
                             cbar_label=zlbl, vmin=vmin, vmax=vmax,
@@ -294,7 +335,7 @@ def _make_frame(frame):
                         plot_density=opts.plot_density,
                         plot_contours=opts.plot_contours,
                             density_cmap=opts.density_cmap,
-                            contour_color=opts.contour_color,
+                            contour_color=contour_color,
                             use_kombine=opts.use_kombine_kde,
                         expected_parameters=expected_parameters,
                         expected_parameters_color=expected_parameters_color)
@@ -307,12 +348,13 @@ def _make_frame(frame):
     ytxt = 0.95
     scale_fac = get_scale_fac(fig)
     fontsize = 8*scale_fac
-    pyplot.annotate('Sample {}'.format(sample_num), xy=(xtxt, ytxt),
+    pyplot.annotate('Iteration {}'.format(iter_num), xy=(xtxt, ytxt),
         xycoords='figure fraction', horizontalalignment='right',
         verticalalignment='top', fontsize=fontsize)
 
     fig.savefig(output, bbox_inches='tight', dpi=opts.dpi)
     pyplot.close()
+    return fig.get_figheight()/fig.get_figwidth()
 
 # create the pool
 if opts.nprocesses is None or opts.nprocesses > 1:
@@ -325,14 +367,16 @@ else:
     mfunc = map
 
 logging.info("Making frames")
-mfunc(make_frame, range(len(iterations)))
+aspect_ratio = list(mfunc(make_frame, range(len(indices))))[0]
 
 if opts.movie_file:
     logging.info("Making movie")
     frame_files = opts.output_prefix + "*.png"
+    # set the aspect ratio
+    aspect_ratio = "1024x{}".format(int(1024*aspect_ratio))
     if os.path.isfile(opts.movie_file):
         os.remove(opts.movie_file)
-    subprocess.call(["ffmpeg", "-pix_fmt", "yuv420p", "-s", "1024x768",
+    subprocess.call(["ffmpeg", "-pix_fmt", "yuv420p", "-s", aspect_ratio,
                      "-pattern_type", "glob", "-i",
                      frame_files, opts.movie_file])
     if opts.cleanup:

@@ -60,7 +60,7 @@ def lfilter(coefficients, timeseries):
         cseries.roll(len(timeseries) - len(coefficients) + 1)
         timeseries = Array(timeseries, copy=False)
 
-        flen = len(cseries) / 2 + 1
+        flen = len(cseries) // 2 + 1
         ftype = complex_same_precision_as(timeseries)
 
         cfreq = zeros(flen, dtype=ftype)

@@ -129,14 +129,6 @@ def setup_injection_workflow(workflow, output_dir=None,
         inj_tag = section.upper()
         curr_tags = tags + [inj_tag]
 
-        # FIXME: Remove once fixed in pipedown
-        # TEMPORARILY we require inj tags to end in "INJ"
-        if not inj_tag.endswith("INJ"):
-            err_msg = "Currently workflow requires injection names to end with "
-            err_msg += "a inj suffix. Ie. bnslininj or bbhinj. "
-            err_msg += "%s is not good." %(inj_tag.lower())
-            raise ValueError(err_msg)
-
         # Parse for options in ini file
         injection_method = workflow.cp.get_opt_tags("workflow-injections",
                                                     "injections-method",

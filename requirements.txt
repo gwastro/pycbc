@@ -20,6 +20,7 @@ lalsuite
 lscsoft-glue>=1.59.3
 ligo-segments
 tqdm
+gwdatafind
 
 # Requirements for ligoxml access needed by some workflows
 python-ligo-lw
@@ -27,6 +28,7 @@ python-ligo-lw
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
 dynesty
+epsie>=0.3
 
 # For LDG service access
 dqsegdb

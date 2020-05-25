@@ -342,8 +342,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
         if opt.pad_data:
             logging.info("Remove Padding")
-            start = opt.pad_data * strain.sample_rate
-            end = len(strain) - strain.sample_rate * opt.pad_data
+            start = int(opt.pad_data * strain.sample_rate)
+            end = int(len(strain) - strain.sample_rate * opt.pad_data)
             strain = strain[start:end]
 
     if opt.fake_strain or opt.fake_strain_from_file:
@@ -353,7 +353,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                              'generate a fake strain')
         duration = opt.gps_end_time - opt.gps_start_time
         pdf = 1. / 128
-        plen = int(opt.sample_rate / pdf) / 2 + 1
+        plen = int(opt.sample_rate / pdf) // 2 + 1
 
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
@@ -930,7 +930,7 @@ class StrainSegments(object):
             seg_len = strain.duration
 
         self.delta_f = 1.0 / seg_len
-        self.time_len = seg_len * self.sample_rate
+        self.time_len = int(seg_len * self.sample_rate)
         self.freq_len = self.time_len // 2 + 1
 
         seg_end_pad = segment_end_pad
@@ -1511,7 +1511,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 gate_params = [(overwhite2.start_time, 0., taper_window),
                                (overwhite2.end_time, 0., taper_window)]
                 gate_data(overwhite2, gate_params)
-                fseries_trimmed = FrequencySeries(zeros(len(overwhite2) / 2 + 1,
+                fseries_trimmed = FrequencySeries(zeros(len(overwhite2) // 2 + 1,
                                                   dtype=fseries.dtype), delta_f=delta_f)
                 pycbc.fft.fft(overwhite2, fseries_trimmed)
                 fseries_trimmed.start_time = fseries.start_time + self.reduced_pad * self.strain.delta_t

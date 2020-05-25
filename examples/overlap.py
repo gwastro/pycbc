@@ -11,7 +11,7 @@ sample_rate = 4096
 
 # Length of corresponding time series and frequency series
 tlen = sample_rate * time_buffer
-flen = tlen / 2 + 1
+flen = tlen // 2 + 1
 
 delta_t = 1.0 / sample_rate
 delta_f = 1.0 / time_buffer

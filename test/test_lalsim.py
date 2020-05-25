@@ -87,7 +87,6 @@ import matplotlib
 if not opt.show_plots:
     matplotlib.use('Agg')
 import pylab
-matplotlib.rc('text', usetex=True)
 
 def get_waveform(p, **kwds):
     """ Given the input parameters get me the waveform, whether it is TD or

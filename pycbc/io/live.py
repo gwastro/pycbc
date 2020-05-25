@@ -3,6 +3,7 @@ import os
 import pycbc
 import numpy
 import lal
+import json
 from six import u as unicode
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
@@ -13,7 +14,8 @@ from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc.results import ifo_color
-
+from pycbc.results import source_color
+from pycbc.mchirp_area import calc_probabilities
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
@@ -104,6 +106,9 @@ class SingleCoincForGraceDB(object):
         channel_names: dict of strings, optional
             Strain channel names for each detector.
             Will be recorded in the sngl_inspiral table.
+        mc_area_args: dict of dicts, optional
+            Dictionary providing arguments to be used in source probability
+            estimation with pycbc/mchirp_area.py
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
         self.coinc_results = coinc_results
@@ -131,7 +136,7 @@ class SingleCoincForGraceDB(object):
 
         proc_id = ligolw_process.register_to_xmldoc(
             outdoc, 'pycbc', {}, ifos=usable_ifos, comment='',
-            version=pycbc_version.git_hash,
+            version=pycbc_version.version,
             cvs_repository='pycbc/'+pycbc_version.git_branch,
             cvs_entry_time=pycbc_version.date).process_id
 
@@ -251,6 +256,17 @@ class SingleCoincForGraceDB(object):
             psds_lal[ifo] = fseries
         make_psd_xmldoc(psds_lal, outdoc)
 
+        # source probabilities estimation
+        if 'mc_area_args' in kwargs:
+            eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
+            probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
+                                               coinc_inspiral_row.snr,
+                                               min(eff_distances),
+                                               kwargs['mc_area_args'])
+            self.probabilities = probabilities
+        else:
+            self.probabilities = None
+
         self.outdoc = outdoc
         self.time = sngl_populated.get_end()
 
@@ -264,6 +280,13 @@ class SingleCoincForGraceDB(object):
         """
         gz = filename.endswith('.gz')
         ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
+
+        # save source probabilities in a json file
+        if self.probabilities is not None:
+            prob_fname = filename.replace('.xml.gz', '_probs.json')
+            with open(prob_fname, 'w') as prob_outfile:
+                json.dump(self.probabilities, prob_outfile)
+            logging.info('Source probabilities file saved as %s', prob_fname)
 
     def upload(self, fname, gracedb_server=None, testing=True,
                extra_strings=None):
@@ -332,6 +355,22 @@ class SingleCoincForGraceDB(object):
             pylab.xlabel('Frequency (Hz)')
             pylab.ylabel('ASD')
             pylab.savefig(psd_series_plot_fname)
+            pylab.close()
+
+        if self.probabilities is not None:
+            prob_fname = fname.replace('.xml.gz', '_probs.json')
+            prob_plot_fname = prob_fname.replace('.json', '.png')
+
+            prob_plot = {k: v for (k, v) in self.probabilities.items()
+                         if v != 0.0}
+            labels, sizes = zip(*prob_plot.items())
+            colors = [source_color(label) for label in labels]
+            fig, ax = pylab.subplots()
+            ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
+                   textprops={'fontsize': 15})
+            ax.axis('equal')
+            fig.savefig(prob_plot_fname)
+            pylab.close()
 
         gid = None
         try:
@@ -358,9 +397,13 @@ class SingleCoincForGraceDB(object):
                              psd_fname, open(fname, "rb").read(), "psd")
             logging.info("Uploaded PSDs for event %s", gid)
 
-            # add other tags and comments
-            gracedb.writeLog(
-                    gid, "Using PyCBC code hash %s" % pycbc_version.git_hash)
+            # add info for tracking code version
+            version_str = 'Using PyCBC version {}{} at {}'
+            version_str = version_str.format(
+                    pycbc_version.version,
+                    ' (release)' if pycbc_version.release else '',
+                    os.path.dirname(pycbc.__file__))
+            gracedb.writeLog(gid, version_str)
 
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
@@ -377,6 +420,17 @@ class SingleCoincForGraceDB(object):
                 gracedb.writeLog(gid, 'PSD plot upload',
                                  filename=psd_series_plot_fname,
                                  tag_name=['psd'], displayName=['PSDs'])
+
+            # upload source probabilities in json format and plot
+            if self.probabilities is not None:
+                gracedb.writeLog(gid, 'source probabilities JSON file upload',
+                                 filename=prob_fname, tag_name=['em_follow'])
+                logging.info('Uploaded source probabilities for event %s', gid)
+                gracedb.writeLog(gid, 'source probabilities plot upload',
+                                 filename=prob_plot_fname,
+                                 tag_name=['em_follow'])
+                logging.info('Uploaded source probabilities pie chart for '
+                             'event %s', gid)
 
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '

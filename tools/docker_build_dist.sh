@@ -55,13 +55,13 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum -y install pegasus
   yum -y install ligo-proxy-utils
   yum -y install ecp-cookie-init
+  yum -y install python-virtualenv
   yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static fftw-static gsl-static
 
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
 
   VENV_PATH=${CVMFS_PATH}/pycbc-${TRAVIS_TAG}
-  pip install virtualenv
   virtualenv ${VENV_PATH}
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
   echo "export XDG_CACHE_HOME=\${HOME}/cvmfs-pycbc-${TRAVIS_TAG}/.cache" >> ${VENV_PATH}/bin/activate
@@ -83,12 +83,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   pip install .
 
   echo -e "\\n>> [`date`] Installing ipython and jupyter"
-  pip install ipython
   pip install jupyter
-  pip install hide_code
-  jupyter nbextension install --sys-prefix --py hide_code
-  jupyter nbextension enable --sys-prefix --py hide_code
-  jupyter serverextension enable --sys-prefix --py hide_code
 
   cat << EOF >> $VIRTUAL_ENV/bin/activate
 

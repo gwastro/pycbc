@@ -21,7 +21,8 @@ import lalframe, logging
 import lal
 import numpy
 import os.path, glob, time
-import glue.datafind
+import gwdatafind
+from six.moves.urllib.parse import urlparse
 from pycbc.types import TimeSeries, zeros
 
 
@@ -259,38 +260,7 @@ def datafind_connection(server=None):
     connection
         The open connection to the datafind server.
     """
-
-    if server:
-        datafind_server = server
-    else:
-        # Get the server name from the environment
-        if 'LIGO_DATAFIND_SERVER' in os.environ:
-            datafind_server = os.environ["LIGO_DATAFIND_SERVER"]
-        else:
-            err = "Trying to obtain the ligo datafind server url from "
-            err += "the environment, ${LIGO_DATAFIND_SERVER}, but that "
-            err += "variable is not populated."
-            raise ValueError(err)
-
-    # verify authentication options
-    if not datafind_server.endswith("80"):
-        cert_file, key_file = glue.datafind.find_credential()
-    else:
-        cert_file, key_file = None, None
-
-    # Is a port specified in the server URL
-    dfs_fields = datafind_server.split(':', 1)
-    server = dfs_fields[0]
-    port = int(dfs_fields[1]) if len(dfs_fields) == 2 else None
-
-    # Open connection to the datafind server
-    if cert_file and key_file:
-        connection = glue.datafind.GWDataFindHTTPSConnection(
-                host=server, port=port, cert_file=cert_file, key_file=key_file)
-    else:
-        connection = glue.datafind.GWDataFindHTTPConnection(
-                host=server, port=port)
-    return connection
+    return gwdatafind.connect(host=server)
 
 def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     """Return the paths to a span of frame files
@@ -324,8 +294,7 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     connection.find_times(site, frame_type,
                           gpsstart=start_time, gpsend=end_time)
     cache = connection.find_frame_urls(site, frame_type, start_time, end_time,urltype=url_type)
-    paths = [entry.path for entry in cache]
-    return paths
+    return [urlparse(entry).path for entry in cache]
 
 def query_and_read_frame(frame_type, channels, start_time, end_time,
                          sieve=None, check_integrity=False):

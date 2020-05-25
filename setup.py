@@ -56,6 +56,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'six>=1.10.0',
                       'ligo-segments',
                       'tqdm',
+                      'gwdatafind',
                       ]
 
 def find_files(dirname, relpath=None):
@@ -123,7 +124,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.15.dev4'
+        vinfo.version = '1.16.dev2'
         vinfo.release = 'False'
 
     with open('pycbc/version.py', 'w') as f:
@@ -175,7 +176,7 @@ class build_docs(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp Makefile.std Makefile; cp conf_std.py conf.py; sphinx-apidoc "
+        subprocess.check_call("cd docs; cp Makefile.std Makefile; sphinx-apidoc "
                               " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
@@ -188,7 +189,7 @@ class build_gh_pages(Command):
         pass
     def run(self):
         subprocess.check_call("mkdir -p _gh-pages/latest && touch _gh-pages/.nojekyll && "
-                              "cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
+                              "cd docs; cp Makefile.gh_pages Makefile; sphinx-apidoc "
                               " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 

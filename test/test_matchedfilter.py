@@ -133,8 +133,8 @@ class TestMatchedFilter(unittest.TestCase):
 
             #Check that an incompatible psd produces an error
             self.assertRaises(TypeError,match,self.filt,self.filt,psd=self.filt)
-            psd = FrequencySeries(zeros(len(self.filt)/2+1),delta_f=100000)
-            self.assertRaises(TypeError,match,self.filt,self.filt,psd=psd)
+            psd = FrequencySeries(zeros(len(self.filt) // 2 + 1), delta_f=100000)
+            self.assertRaises(ValueError,match,self.filt,self.filt,psd=psd)
 
             #Check that only TimeSeries or FrequencySeries are accepted
             self.assertRaises(TypeError,match,zeros(10),zeros(10))

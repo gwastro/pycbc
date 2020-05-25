@@ -343,6 +343,9 @@ class Bounds(object):
         else:
             raise IndexError("index {} out of range".format(ii))
 
+    def __abs__(self):
+        return abs(self._max - self._min)
+
     def __contains__(self, value):
         return self._min.smaller(value) & self._max.larger(value)
 

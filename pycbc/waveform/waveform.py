@@ -43,9 +43,16 @@ from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_length_in_time
 from six.moves import range as xrange
 
+
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
     zeros being returned, e.g., if a requested `f_final` is <= `f_lower`.
+    """
+    pass
+
+
+class FailedWaveformError(Exception):
+    """This should be raised if a waveform fails to generate.
     """
     pass
 
@@ -492,11 +499,12 @@ def get_fd_waveform(template=None, **kwargs):
             if 'f_final' in input_params and \
                     (input_params['f_lower']+input_params['delta_f'] >=
                      input_params['f_final']):
-                raise NoWaveformError("cannot generate waveform: f_lower >= f_final")
+                raise NoWaveformError("cannot generate waveform: f_lower >= "
+                                      "f_final")
     except KeyError:
         pass
-
     return wav_gen[input_params['approximant']](**input_params)
+
 
 get_fd_waveform.__doc__ = get_fd_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
@@ -1090,4 +1098,4 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
-           "NoWaveformError", "get_td_waveform_from_fd"]
+           "NoWaveformError", "FailedWaveformError", "get_td_waveform_from_fd"]

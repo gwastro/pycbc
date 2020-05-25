@@ -328,8 +328,24 @@ class MchirpQToMass1Mass2(BaseTransform):
     """ Converts chirp mass and mass ratio to component masses.
     """
     name = "mchirp_q_to_mass1_mass2"
-    _inputs = [parameters.mchirp, parameters.q]
-    _outputs = [parameters.mass1, parameters.mass2]
+
+    def __init__(self, mass1_param=None, mass2_param=None, mchirp_param=None,
+                 q_param=None):
+        if mass1_param is None:
+            mass1_param = parameters.mass1
+        if mass2_param is None:
+            mass2_param = parameters.mass2
+        if mchirp_param is None:
+            mchirp_param = parameters.mchirp
+        if q_param is None:
+            q_param = parameters.q
+        self.mass1_param = mass1_param
+        self.mass2_param = mass2_param
+        self.mchirp_param = mchirp_param
+        self.q_param = q_param
+        self._inputs = [self.mchirp_param, self.q_param]
+        self._outputs = [self.mass1_param, self.mass2_param]
+        super(MchirpQToMass1Mass2, self).__init__()
 
     def transform(self, maps):
         """This function transforms from chirp mass and mass ratio to component
@@ -357,12 +373,12 @@ class MchirpQToMass1Mass2(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[parameters.mass1] = conversions.mass1_from_mchirp_q(
-                                                maps[parameters.mchirp],
-                                                maps[parameters.q])
-        out[parameters.mass2] = conversions.mass2_from_mchirp_q(
-                                                maps[parameters.mchirp],
-                                                maps[parameters.q])
+        out[self.mass1_param] = conversions.mass1_from_mchirp_q(
+                                                maps[self.mchirp_param],
+                                                maps[self.q_param])
+        out[self.mass2_param] = conversions.mass2_from_mchirp_q(
+                                                maps[self.mchirp_param],
+                                                maps[self.q_param])
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -391,27 +407,28 @@ class MchirpQToMass1Mass2(BaseTransform):
             of transformed values.
         """
         out = {}
-        m1 = maps[parameters.mass1]
-        m2 = maps[parameters.mass2]
-        out[parameters.mchirp] = conversions.mchirp_from_mass1_mass2(m1, m2)
-        out[parameters.q] = m1 / m2
+        m1 = maps[self.mass1_param]
+        m2 = maps[self.mass2_param]
+        out[self.mchirp_param] = conversions.mchirp_from_mass1_mass2(m1, m2)
+        out[self.q_param] = m1 / m2
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
         """Returns the Jacobian for transforming mchirp and q to mass1 and
         mass2.
         """
-        mchirp = maps[parameters.mchirp]
-        q = maps[parameters.q]
+        mchirp = maps[self.mchirp_param]
+        q = maps[self.q_param]
         return mchirp * ((1.+q)/q**3.)**(2./5)
 
     def inverse_jacobian(self, maps):
         """Returns the Jacobian for transforming mass1 and mass2 to
         mchirp and q.
         """
-        m1 = maps[parameters.mass1]
-        m2 = maps[parameters.mass2]
+        m1 = maps[self.mass1_param]
+        m2 = maps[self.mass2_param]
         return conversions.mchirp_from_mass1_mass2(m1, m2)/m2**2.
+
 
 class MchirpEtaToMass1Mass2(BaseTransform):
     """ Converts chirp mass and symmetric mass ratio to component masses.
@@ -1607,12 +1624,29 @@ class Mass1Mass2ToMchirpQ(MchirpQToMass1Mass2):
     """
     name = "mass1_mass2_to_mchirp_q"
     inverse = MchirpQToMass1Mass2
-    _inputs = inverse._outputs
-    _outputs = inverse._inputs
     transform = inverse.inverse_transform
     inverse_transform = inverse.transform
     jacobian = inverse.inverse_jacobian
     inverse_jacobian = inverse.jacobian
+
+    def __init__(self, mass1_param=None, mass2_param=None, mchirp_param=None,
+                 q_param=None):
+        if mass1_param is None:
+            mass1_param = parameters.mass1
+        if mass2_param is None:
+            mass2_param = parameters.mass2
+        if mchirp_param is None:
+            mchirp_param = parameters.mchirp
+        if q_param is None:
+            q_param = parameters.q
+        self.mass1_param = mass1_param
+        self.mass2_param = mass2_param
+        self.mchirp_param = mchirp_param
+        self.q_param = q_param
+        self._inputs = [self.mass1_param, self.mass2_param]
+        self._outputs = [self.mchirp_param, self.q_param]
+        BaseTransform.__init__(self)
+
 
 class Mass1Mass2ToMchirpEta(MchirpEtaToMass1Mass2):
     """The inverse of MchirpEtaToMass1Mass2.

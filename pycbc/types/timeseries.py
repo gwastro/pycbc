@@ -53,7 +53,8 @@ class TimeSeries(Array):
     sample_rate
     """
 
-    def __init__(self, initial_array, delta_t=None, epoch="", dtype=None, copy=True):
+    def __init__(self, initial_array, delta_t=None,
+                 epoch=None, dtype=None, copy=True):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if delta_t is None:
@@ -63,14 +64,12 @@ class TimeSeries(Array):
                 raise TypeError('must provide either an initial_array with a delta_t attribute, or a value for delta_t')
         if not delta_t > 0:
             raise ValueError('delta_t must be a positive number')
-        # We gave a nonsensical default value to epoch so we can test if it's been set.
-        # If the user passes in an initial_array that has an 'epoch' attribute and doesn't
-        # pass in a value of epoch, then our new object's epoch comes from initial_array.
-        # But if the user passed in a value---even 'None'---that will take precedence over
-        # anything set in initial_array.  Finally, if the user passes in something without
-        # an epoch attribute *and* doesn't pass in a value of epoch, it becomes 'None'
-        if not isinstance(epoch,_lal.LIGOTimeGPS):
-            if epoch == "":
+
+        # Get epoch from initial_array if epoch not given (or is None)
+        # If initialy array has no epoch, set epoch to 0.
+        # If epoch is provided, use that.
+        if not isinstance(epoch, _lal.LIGOTimeGPS):
+            if epoch is None:
                 if isinstance(initial_array, TimeSeries):
                     epoch = initial_array._epoch
                 else:
@@ -83,6 +82,11 @@ class TimeSeries(Array):
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
         self._epoch = epoch
+
+    def epoch_close(self, other):
+        """ Check if the epoch is close enough to allow operations """
+        dt = abs(float(self.start_time - other.start_time))
+        return dt <= 1e-7
 
     def sample_rate_close(self, other):
         """ Check if the sample rate is close enough to allow operations """
@@ -100,15 +104,15 @@ class TimeSeries(Array):
     def _typecheck(self, other):
         if isinstance(other, TimeSeries):
             if not self.sample_rate_close(other):
-                raise ValueError('different delta_t')
-            if self._epoch != other._epoch:
-                raise ValueError('different epoch')
+                raise ValueError('different delta_t, {} vs {}'.format(
+                    self.delta_t, other.delta_t))
+            if not self.epoch_close(other):
+                raise ValueError('different epoch, {} vs {}'.format(
+                    self.start_time, other.start_time))
 
     def _getslice(self, index):
         # Set the new epoch---note that index.start may also be None
-        if self._epoch is None:
-            new_epoch = None
-        elif index.start is None:
+        if index.start is None:
             new_epoch = self._epoch
         else:
             if index.start < 0:
@@ -155,11 +159,11 @@ class TimeSeries(Array):
     def get_sample_rate(self):
         """Return the sample rate of the time series.
         """
-        return int(round(1.0/self.delta_t))
+        return 1.0/self.delta_t
     sample_rate = property(get_sample_rate,
                            doc="The sample rate of the time series.")
 
-    def time_slice(self, start, end):
+    def time_slice(self, start, end, mode='floor'):
         """Return the slice of the time series that contains the time range
         in GPS seconds.
         """
@@ -169,8 +173,18 @@ class TimeSeries(Array):
         if end > self.end_time:
             raise ValueError('Time series does not contain a time as late as %s' % end)
 
-        start_idx = int((start - self.start_time) * self.sample_rate)
-        end_idx = int((end - self.start_time) * self.sample_rate)
+        start_idx = float(start - self.start_time) * self.sample_rate
+        end_idx = float(end - self.start_time) * self.sample_rate
+
+        if mode == 'floor':
+            start_idx = int(start_idx)
+            end_idx = int(end_idx)
+        elif mode == 'nearest':
+            start_idx = int(round(start_idx))
+            end_idx = int(round(end_idx))
+        else:
+            raise ValueError("Invalid mode: {}".format(mode))
+
         return self[start_idx:end_idx]
 
     @property
@@ -391,10 +405,7 @@ class TimeSeries(Array):
             If time series is stored in GPU memory.
         """
         lal_data = None
-        if self._epoch is None:
-            ep = _lal.LIGOTimeGPS(0,0)
-        else:
-            ep = self._epoch
+        ep = self._epoch
 
         if self._data.dtype == _numpy.float32:
             lal_data = _lal.CreateREAL4TimeSeries("",ep,0,self.delta_t,_lal.SecondUnit,len(self))
@@ -829,7 +840,7 @@ class TimeSeries(Array):
     def add_into(self, other):
         """Return the sum of the two time series accounting for the time stamp.
 
-        The other vector will be resized and time shifted wiht sub-sample
+        The other vector will be resized and time shifted with sub-sample
         precision before adding. This assumes that one can assume zeros
         outside of the original vector range.
         """
@@ -838,22 +849,25 @@ class TimeSeries(Array):
             raise ValueError('Sample rate must be the same')
 
         # Other is disjoint
-        if ((other.start_time > self.end_time) or
+        if ((other.start_time >= self.end_time) or
            (self.start_time > other.end_time)):
             return self.copy()
 
         other = other.copy()
         dt = float((other.start_time - self.start_time) * self.sample_rate)
+
         if not dt.is_integer():
-            diff = (dt - _numpy.floor(dt))
+            diff = (dt - _numpy.floor(dt)) * self.delta_t
             other.resize(len(other) + (len(other) + 1) % 2 + 1)
             other = other.cyclic_time_shift(diff)
 
         ts = self.copy()
         start = max(other.start_time, self.start_time)
         end = min(other.end_time, self.end_time)
-        part = ts.time_slice(start, end)
-        part += other.time_slice(start, end)
+
+        opart = other.time_slice(start, end, mode='nearest')
+        part = ts.time_slice(start, end, mode='nearest')
+        part[:] += opart[:]
         return ts
 
     @_nocomplex
@@ -863,7 +877,7 @@ class TimeSeries(Array):
         Shift the data and timestamps in the time domain a given number of
         seconds. To just change the time stamps, do ts.start_time += dt.
         The time shift may be smaller than the intrinsic sample rate of the data.
-        Note that data will be cycliclly rotated, so if you shift by 2
+        Note that data will be cyclically rotated, so if you shift by 2
         seconds, the final 2 seconds of your data will now be at the
         beginning of the data set.
 

@@ -1003,7 +1003,7 @@ def make_frequency_series(vec):
         return vec
     if isinstance(vec, TimeSeries):
         N = len(vec)
-        n = N/2+1
+        n = N // 2 + 1
         delta_f = 1.0 / N / vec.delta_t
         vectilde =  FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),
                                     delta_f=delta_f, copy=False)
@@ -1088,7 +1088,7 @@ def sigmasq(htilde, psd = None, low_frequency_cutoff=None,
     if psd:
         try:
             numpy.testing.assert_almost_equal(ht.delta_f, psd.delta_f)
-        except:
+        except AssertionError:
             raise ValueError('Waveform does not have same delta_f as psd')
 
     if psd is None:
@@ -1234,10 +1234,11 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
 
     if psd is not None:
         if isinstance(psd, FrequencySeries):
-            if psd.delta_f == stilde.delta_f :
-                qtilde[kmin:kmax] /= psd[kmin:kmax]
-            else:
-                raise TypeError("PSD delta_f does not match data")
+            try:
+                numpy.testing.assert_almost_equal(stilde.delta_f, psd.delta_f)
+            except AssertionError:
+                raise ValueError("PSD delta_f does not match data")
+            qtilde[kmin:kmax] /= psd[kmin:kmax]
         else:
             raise TypeError("PSD must be a FrequencySeries")
 
@@ -1902,4 +1903,3 @@ __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'compute_u_val_for_sky_loc_stat_no_phase',
            'compute_u_val_for_sky_loc_stat',
            'followup_event_significance']
-

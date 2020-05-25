@@ -23,10 +23,9 @@ assuming various noise models.
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
                        TestPrior)
 from .gaussian_noise import GaussianNoise
-from .marginalized_gaussian_noise import (MarginalizedPhaseGaussianNoise,
-                                          MarginalizedGaussianNoise)
+from .marginalized_gaussian_noise import MarginalizedPhaseGaussianNoise
 from .single_template import SingleTemplate
-from .relbin import RelativeSPA
+from .relbin import Relative
 
 
 # Used to manage a model instance across multiple cores or MPI
@@ -183,7 +182,6 @@ models = {_cls.name: _cls for _cls in (
     TestPrior,
     GaussianNoise,
     MarginalizedPhaseGaussianNoise,
-    MarginalizedGaussianNoise,
     SingleTemplate,
-    RelativeSPA
+    Relative
 )}

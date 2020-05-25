@@ -1,0 +1,342 @@
+#!/usr/bin/env python
+
+"""Fast and simple sky localization for a specific compact binary merger event.
+Runs a single-template matched filter on strain data from a number of detectors
+and calls BAYESTAR to produce a sky localization from the resulting set of SNR
+time series."""
+
+import h5py, sys, pycbc, os, subprocess, argparse, json, tempfile, shutil
+import time as TIME
+import numpy as np
+import lal
+import logging
+from pycbc import filter
+from pycbc.io import live
+from pycbc.types import TimeSeries, FrequencySeries
+from glue.ligolw import utils as ligolw_utils
+from ligo.gracedb.rest import GraceDb
+
+
+def default_frame_type(time, ifo):
+    """Sensible defaults for frame types based on interferometer and time.
+    """
+    if time < 1137254517:
+        # O1
+        if ifo in ['H1', 'L1']:
+            return ifo + '_HOFT_C02'
+    elif time >= 1164556717 and time < 1235433618:
+        # O2
+        if ifo == 'V1':
+            return 'V1O2Repro2A'
+        elif ifo in ['H1', 'L1']:
+            return ifo + '_CLEANED_HOFT_C02'
+    elif time >= 1235433618:
+        # O3
+        if ifo == 'V1':
+            return 'V1Online'
+        elif ifo in ['H1', 'L1']:
+            return ifo + '_HOFT_C00'
+    raise ValueError('Interferometer {} not supported at time {}'.format(ifo, time))
+
+def default_channel_name(time, ifo):
+    """Sensible defaults for channel name based on interferometer and time.
+    """
+    if time < 1137254517:
+        # O1
+        if ifo in ['H1', 'L1']:
+            return ifo + ':DCS-CALIB_STRAIN_C02'
+    elif time > 1164556717 and time < 1235433618:
+        # O2
+        if ifo == 'V1':
+            return ifo + ':Hrec_hoft_V1O2Repro2A_16384Hz'
+        elif ifo in ['H1', 'L1']:
+            return ifo + ':DCH-CLEAN_STRAIN_C02'
+    elif time >= 1235433618:
+        # O3
+        if ifo == 'V1':
+            return ifo + ':Hrec_hoft_16384Hz'
+        elif ifo in ['H1', 'L1']:
+            return ifo + ':GDS-CALIB_STRAIN'
+    raise ValueError('Interferometer {} not supported at time {}'.format(ifo, time))
+
+def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, ifar, ifos, thresh_SNR, ligolw_psd_output=None, ligolw_event_output=None, window_bins=300, frame_types=None, channel_names=None, gracedb_server=None, test_event=True):
+
+    if not test_event and not gracedb_server:
+        raise RuntimeError('a gracedb url must be specified if not a test event.')
+
+    start = TIME.time()
+
+    tmpdir = tempfile.mkdtemp()
+    coinc_results = {}
+    follow_up = []
+    followup_data = {}
+    procs = []
+
+    if frame_types is None:
+        frame_types = {}
+    if channel_names is None:
+        channel_names = {}
+    for ifo in ifos:
+        if ifo not in frame_types:
+            frame_types[ifo] = default_frame_type(trig_time, ifo)
+        if ifo not in channel_names:
+            channel_names[ifo] = default_channel_name(trig_time, ifo)
+
+    rough_time = int(np.round(trig_time))
+    sample_rate = 2048.0
+    window = 1.
+    start_time = trig_time - window
+
+    # parameters to fit a single-template inspiral job nicely
+    # around the trigger time, without requiring too much data
+    segment_start_pad = 144
+    segment_end_pad = 16
+    segment_length = 256
+    gps_start_time = rough_time - segment_start_pad - (segment_length - segment_start_pad - segment_end_pad) // 2
+    gps_end_time = gps_start_time + segment_length
+    psd_segment_length = 16
+    psd_segment_stride = psd_segment_length / 2
+    psd_num_segments = 31
+
+    for i, ifo in enumerate(ifos):
+        followup_data[ifo] = {}
+        command = ["pycbc_single_template",
+        "--verbose",
+        "--segment-length", str(segment_length),
+        "--segment-start-pad", str(segment_start_pad),
+        "--segment-end-pad", str(segment_end_pad),
+        "--psd-estimation","median",
+        "--psd-segment-length", str(psd_segment_length),
+        "--psd-segment-stride", str(psd_segment_stride),
+        "--psd-inverse-length", str(psd_segment_length),
+        "--approximant",'SPAtmplt:mtotal<4','SEOBNRv4_ROM:else',
+        "--order","-1",
+        "--psd-num-segments", str(psd_num_segments),
+        "--taper-data","1",
+        "--allow-zero-padding",
+        "--autogating-threshold","100",
+        "--autogating-cluster","0.5",
+        "--autogating-width","0.25",
+        "--autogating-taper","0.25",
+        "--autogating-pad","16",
+        "--minimum-chisq-bins","3",
+        "--strain-high-pass","15.",
+        "--pad-data","8",
+        "--template-start-frequency","27",
+        "--chisq-bins",'0.72*get_freq("fSEOBNRv4Peak",params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7']
+
+        coinc_results['foreground/'+ifo+'/end_time'] = float(trig_time)
+        coinc_results['foreground/'+ifo+'/mass1'] = mass1
+        coinc_results['foreground/'+ifo+'/mass2'] = mass2
+        coinc_results['foreground/'+ifo+'/spin1z'] = spin1z
+        coinc_results['foreground/'+ifo+'/spin2z'] = spin2z
+        coinc_results['foreground/'+ifo+'/f_lower'] = f_low
+        coinc_results['foreground/'+ifo+'/window'] = window
+        coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
+        coinc_results['foreground/'+ifo+'/template_id'] = i
+
+        command.append("--sample-rate"),command.append(str(int(sample_rate)))
+        command.append("--mass1"),command.append(str(mass1))
+        command.append("--mass2"),command.append(str(mass2))
+        command.append("--spin1z"),command.append(str(spin1z))
+        command.append("--spin2z"),command.append(str(spin2z))
+        command.append("--low-frequency-cutoff"),command.append(str(f_low))
+        command.append("--gps-start-time"),command.append(str(gps_start_time))
+        command.append("--gps-end-time"),command.append(str(gps_end_time))
+        command.append("--trigger-time"),command.append(str(np.round(trig_time,5)))
+        command.append("--window"),command.append(str(window))
+
+        command.append("--frame-type")
+        command.append(frame_types[ifo])
+
+        command.append("--channel-name")
+        command.append(channel_names[ifo])
+
+        command.append("--psd-output"),command.append(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
+        command.append("--output-file"),command.append(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf")
+
+        stderr_file = open(tmpdir + '/pycbc_single_template_{}_{}_stderr.txt'.format(str(rough_time), ifo), 'w')
+
+        procs.append(subprocess.Popen(command,stdout=subprocess.PIPE, stderr=stderr_file))
+
+    logging.info('Calculating SNR...')
+    for proc in procs:
+        proc.wait()
+
+    for i,ifo in enumerate(ifos):
+        f = h5py.File(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf",'r')
+        g = np.loadtxt(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
+
+        coinc_results['foreground/'+ifo+'/snr_series'] = f['snr'][()]
+        coinc_results['foreground/'+ifo+'/psd_series'] = g[:,1] * pycbc.DYN_RANGE_FAC ** 2.0
+        coinc_results['foreground/'+ifo+'/delta_f'] = float(g[1][0])-float(g[0][0])
+        coinc_results['foreground/'+ifo+'/event_id'] = 'sngl_inspiral:event_id:'+str(i)
+        df = float(g[1][0])-float(g[0][0])
+        dt = 1.0/sample_rate 
+
+        snr_series_peak = np.argmax(np.absolute(coinc_results['foreground/'+ifo+'/snr_series']))
+        SNR=abs(coinc_results['foreground/'+ifo+'/snr_series'][snr_series_peak])
+        coa_phase = np.angle(coinc_results['foreground/'+ifo+'/snr_series'][snr_series_peak])
+        chisq = f['chisq'][:][snr_series_peak]
+        logging.info('%s SNR: %.2f', ifo, SNR)
+
+        if SNR < thresh_SNR:
+            follow_up.append(ifo)
+            continue
+
+        coinc_results['foreground/'+ifo+'/snr'] = SNR
+        coinc_results['foreground/'+ifo+'/sigmasq'] = filter.sigmasq(FrequencySeries(np.complex128(f['template'][()]), delta_f=df),
+                                                      psd=FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'], delta_f=df))
+        coinc_results['foreground/'+ifo+'/coa_phase'] = coa_phase
+        coinc_results['foreground/'+ifo+'/chisq'] = chisq
+
+
+    ifos = [x for x in ifos if x not in follow_up]
+    if not ifos:
+        raise RuntimeError('all interferometers have SNR below threshold.'
+                           ' Is this really a candidate event?')
+
+    logging.info('SNR process time: %.2f s', TIME.time() - start)
+
+    sumsq_snr = 0.0
+    for i,ifo in enumerate(ifos):
+        snr_series_peak = np.argmax(np.absolute(coinc_results['foreground/'+ifo+'/snr_series']))
+        coinc_results['foreground/'+ifo+'/end_time'] = start_time + dt*snr_series_peak
+        sumsq_snr += np.power(coinc_results['foreground/'+ifo+'/snr'],2)
+
+    coinc_results['foreground/stat'] = np.sqrt(sumsq_snr)
+    coinc_results['foreground/ifar'] = ifar
+
+    subthreshold_sngl_time = np.mean([coinc_results['foreground/%s/end_time' % ifo] for ifo in ifos])
+
+    for ifo in ifos + follow_up:
+
+        if ifo in follow_up:
+            coinc_results['foreground/'+ifo+'/end_time'] = subthreshold_sngl_time
+
+        time = coinc_results['foreground/'+ifo+'/end_time']
+
+        name='psd'
+        fseries = FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'], delta_f=df)
+        from pycbc.psd import interpolate
+        fseries = interpolate(fseries, 0.25)
+
+        followup_data[ifo]['psd'] = fseries
+
+        name='snr'
+        units=''
+        peak_bin = int(sample_rate * (time - start_time))
+        max_bin = peak_bin + window_bins + 1
+        if max_bin > coinc_results['foreground/'+ifo+'/snr_series'].size:
+            window_bins = coinc_results['foreground/'+ifo+'/snr_series'].size - peak_bin
+            max_bin = coinc_results['foreground/'+ifo+'/snr_series'].size
+            min_bin = peak_bin - window_bins + 1
+        else:
+            min_bin = peak_bin - window_bins
+        if min_bin < 0:
+            window_bins = peak_bin
+            max_bin = peak_bin + window_bins + 1
+            min_bin = peak_bin - window_bins
+
+        epoch = time - window_bins*dt
+        series = TimeSeries(coinc_results['foreground/'+ifo+'/snr_series'][min_bin:max_bin].astype(np.complex64), delta_t=dt, epoch=epoch)
+        followup_data[ifo]['snr_series'] = series
+
+    kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos + follow_up},
+              'low_frequency_cutoff': f_low,
+              'followup_data': followup_data,
+              'channel_names': channel_names}
+
+    comments = ['Manual followup up from PyCBC']
+
+    doc = live.SingleCoincForGraceDB(ifos, coinc_results, **kwargs)
+
+    ligolw_file_path = tmpdir + '/' + str(rough_time) + '.xml'
+
+    if gracedb_server:
+        gid = doc.upload(ligolw_file_path,
+                         gracedb_server=gracedb_server,
+                         testing=test_event,
+                         extra_strings=comments)
+        gracedb = GraceDb(gracedb_server)
+    else:
+        doc.save(ligolw_file_path)
+
+    # run BAYESTAR to generate the skymap
+
+    cmd = ['bayestar-localize-coincs',
+           ligolw_file_path,
+           ligolw_file_path,
+           '--f-low', str(f_low)]
+    subprocess.call(cmd)
+
+    skymap_fits_name = './' + str(rough_time) + '.fits'
+    shutil.move('./0.fits', skymap_fits_name)
+
+    # plot the skymap
+
+    skymap_plot_name = './' + str(rough_time) + '_skymap.png'
+    cmd = ['ligo-skymap-plot',
+           skymap_fits_name,
+           '-o', skymap_plot_name,
+           '--contour', '50', '90',
+           '--annotate']
+    subprocess.call(cmd)
+
+    if gracedb_server:
+        gracedb.writeLog(gid, 'Bayestar skymap FITS file upload',
+                         filename=skymap_fits_name,
+                         tag_name=['sky_loc'],
+                         displayName=['Bayestar FITS skymap'])
+        gracedb.writeLog(gid, 'Bayestar skymap plot upload',
+                         filename=skymap_plot_name,
+                         tag_name=['sky_loc'],
+                         displayName=['Bayestar skymap plot'])
+
+    if ligolw_event_output:
+        shutil.move(ligolw_file_path, ligolw_event_output)
+
+if __name__ == '__main__':
+    pycbc.init_logging(True)
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--version', action=pycbc.version.Version)
+    parser.add_argument('--trig-time', required=True, type=float,
+                        help='GPS time of trigger (float)')
+    parser.add_argument('--mass1', type=float, required=True)
+    parser.add_argument('--mass2', type=float, required=True)
+    parser.add_argument('--spin1z', type=float, required=True)
+    parser.add_argument('--spin2z', type=float, required=True)
+    parser.add_argument('--f-low', type=float,
+                        help="lower frequency cut-off (float)", default=20.0)
+    parser.add_argument('--ifar', type=float, help="false alarm rate (float)",
+                        default=1)
+    parser.add_argument('--thresh-SNR', type=float, help="Threshold SNR (float)",
+                        default=4.5)
+    parser.add_argument('--ifos', type=str, required=True, nargs='+',
+                        help='List of interferometer names, e.g. H1 L1')
+    parser.add_argument('--frame-type', type=str, nargs='+')
+    parser.add_argument('--channel-name', type=str, nargs='+')
+    parser.add_argument('--ligolw-psd-output', type=str, default=None, help='Option to keep psd file under given name')
+    parser.add_argument('--ligolw-event-output', type=str, default=None, help='Option to keep coinc file under given name')
+    parser.add_argument('--enable-production-gracedb-upload',
+                        action='store_true', default=False,
+                        help='Do not mark triggers uploaded to GraceDB as test '
+                             'events. This option should *only* be enabled in '
+                             'production analyses!')
+    parser.add_argument('--gracedb-server', metavar='URL', default=None,
+                        help='URL of GraceDB server API for uploading events. ')
+
+    opt = parser.parse_args()
+
+    frame_type_dict = {f.split(':')[0]: f.split(':')[1] for f in opt.frame_type} \
+            if opt.frame_type is not None else None
+    chan_name_dict = {f.split(':')[0]: f for f in opt.channel_name} \
+            if opt.channel_name is not None else None
+
+    main(opt.trig_time, opt.mass1, opt.mass2,
+         opt.spin1z, opt.spin2z, opt.f_low, opt.ifar, opt.ifos,
+         opt.thresh_SNR, opt.ligolw_psd_output, opt.ligolw_event_output,
+         frame_types=frame_type_dict, channel_names=chan_name_dict,
+         gracedb_server=opt.gracedb_server,
+         test_event=not opt.enable_production_gracedb_upload)

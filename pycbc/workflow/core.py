@@ -131,7 +131,8 @@ class Executable(pegasus_workflow.Executable):
     # file will be retained, but a warning given
     current_retention_level = KEEP_BUT_RAISE_WARNING
     def __init__(self, cp, name,
-                 universe=None, ifos=None, out_dir=None, tags=None):
+                 universe=None, ifos=None, out_dir=None, tags=None,
+                 reuse_executable=True):
         """
         Initialize the Executable class.
 
@@ -159,6 +160,7 @@ class Executable(pegasus_workflow.Executable):
         else:
             self.ifo_list = ifos
         if self.ifo_list is not None:
+            self.ifo_list = sorted(self.ifo_list)
             self.ifo_string = ''.join(self.ifo_list)
         else:
             self.ifo_string = None
@@ -180,6 +182,12 @@ class Executable(pegasus_workflow.Executable):
 
         # Determine the level at which output files should be kept
         self.update_current_retention_level(self.current_retention_level)
+
+        # Should I reuse this executable?
+        if reuse_executable:
+            self.pegasus_name = self.name
+        else:
+            self.pegasus_name = self.tagged_name
 
         # Determine if this executables should be run in a container
         try:
@@ -211,12 +219,12 @@ class Executable(pegasus_workflow.Executable):
                                                     imagesite=self.container_site,
                                                     mount=self.container_mount)
 
-            super(Executable, self).__init__(self.tagged_name,
+            super(Executable, self).__init__(self.pegasus_name,
                                              installed=self.installed,
                                              container=self.container_cls)
 
         else:
-            super(Executable, self).__init__(self.tagged_name,
+            super(Executable, self).__init__(self.pegasus_name,
                                              installed=self.installed)
 
         self._set_pegasus_profile_options()
@@ -261,8 +269,9 @@ class Executable(pegasus_workflow.Executable):
             else:
                 self.universe = 'vanilla'
 
-        logging.info("%s executable will run as %s universe"
-                     % (name, self.universe))
+        if not self.universe == 'vanilla':
+            logging.info("%s executable will run as %s universe"
+                         % (name, self.universe))
 
         self.set_universe(self.universe)
 
@@ -622,7 +631,7 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).__init__(name)
 
         # Parse ini file
-        self.cp = WorkflowConfigParser.from_args(args)
+        self.cp = WorkflowConfigParser.from_cli(args)
 
         # Set global values
         start_time = int(self.cp.get("workflow", "start-time"))
@@ -821,13 +830,17 @@ class Workflow(pegasus_workflow.Workflow):
             The FileList object with the configuration file.
         """
         cp = self.cp if cp is None else cp
-        ini_file_path = os.path.join(output_dir, fname)
+        ini_file_path = os.path.abspath(os.path.join(output_dir, fname))
         with open(ini_file_path, "w") as fp:
             cp.write(fp)
-        ini_file = FileList([File(self.ifos, "",
-                                  self.analysis_time,
-                                  file_url="file://" + ini_file_path)])
-        return ini_file
+        ini_file = File(self.ifos, "", self.analysis_time,
+                        file_url="file://" + ini_file_path)
+        # set the physical file name
+        ini_file.PFN(ini_file_path, "local")
+        # set the storage path to be the same
+        ini_file.storage_path = ini_file_path
+        return FileList([ini_file])
+
 
 class Node(pegasus_workflow.Node):
     def __init__(self, executable):
@@ -1991,3 +2004,36 @@ def get_random_label():
     """
     return ''.join(random.choice(string.ascii_uppercase + string.digits) \
                    for _ in range(15))
+
+
+def add_workflow_settings_cli(parser, include_subdax_opts=False):
+    """Adds workflow options to an argument parser.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        Argument parser to add the options to.
+    include_subdax_opts : bool, optional
+        If True, will add output-map, transformation-catalog, and dax-file
+        options to the parser. These can be used for workflows that are
+        generated as a subdax of another workflow. Default is False.
+    """
+    wfgrp = parser.add_argument_group("Options for setting workflow files")
+    wfgrp.add_argument("--workflow-name", required=True,
+                       help="Name of the workflow.")
+    wfgrp.add_argument("--tags", nargs="+", default=[],
+                       help="Append the given tags to file names.")
+    wfgrp.add_argument("--output-dir", default=None,
+                       help="Path to directory where the workflow will be "
+                            "written. Default is to use "
+                            "{workflow-name}_output.")
+    if include_subdax_opts:
+        wfgrp.add_argument("--output-map", default="output.map",
+                           help="Path to an output map file. Default is "
+                                "output.map.")
+        wfgrp.add_argument("--transformation-catalog", default=None,
+                           help="Path to transformation catalog file.")
+        wfgrp.add_argument("--dax-file", default=None,
+                           help="Path to DAX file. Default is to write to the "
+                                "output directory with name "
+                                "{workflow-name}.dax.")

@@ -98,12 +98,23 @@ parser.add_argument('--plot-caption',
                     help="If given, use this as the plot caption")
 parser.add_argument('--colormap', choices=plt.colormaps(), default='viridis',
                     help='Colormap to use (default %(default)s)')
+parser.add_argument('--mass1', type=float,
+                    help='Provide masses to plot the waveform track on top of '
+                         'the qscan.')
+parser.add_argument('--mass2', type=float,
+                    help='Provide masses to plot the waveform track on top of '
+                         'the qscan.')
+parser.add_argument('--spin1z', type=float, default=0,
+                    help='If masses provided, provide spins to plot the '
+                         'waveform track on top of the qscan (default=0).')
+parser.add_argument('--spin2z', type=float, default=0,
+                    help='If masses provided, provide spins to plot the '
+                         'waveform track on top of the qscan (default=0).')
 
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-
 
 if opts.center_time is None:
     center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
@@ -199,6 +210,17 @@ plt.ylabel('Frequency (Hz)')
 # https://stackoverflow.com/questions/13784201/matplotlib-2-subplots-1-colorbar
 cb = fig.colorbar(im, ax=(axes.ravel().tolist() if len(wins) > 1 else axes))
 cb.set_label('Normalized power')
+
+if opts.mass1:
+    if not opts.mass2:
+        raise ValueError('mass1 provided but mass2 missing')
+    from pycbc.pnutils import get_inspiral_tf
+    f_low = 20.
+    approximant = 'SPAtmplt' if opts.mass1+opts.mass2<4 else 'SEOBNRv4_ROM'
+    track_t, track_f = get_inspiral_tf(opts.center_time, opts.mass1,
+                                       opts.mass2, opts.spin1z, opts.spin2z,
+                                       f_low, approximant=approximant)
+    ax.plot(track_t - opts.center_time, track_f, 'r-', lw=1.5)
 
 if opts.plot_title is None:
     opts.plot_title = 'Q-transform plot around {:.3f}'.format(opts.center_time)

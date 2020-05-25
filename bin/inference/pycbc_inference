@@ -91,6 +91,12 @@ fft.verify_fft_options(opts, parser)
 opt.verify_optimization_options(opts, parser)
 scheme.verify_processing_options(opts, parser)
 
+# check that the output file doesn't already exist
+if os.path.exists(opts.output_file) and not opts.force:
+    raise OSError("output-file already exists; use force if you "
+                  "wish to overwrite it.")
+
+
 # set seed
 numpy.random.seed(opts.seed)
 logging.info("Using seed %i", opts.seed)
@@ -129,28 +135,8 @@ with ctx:
     # unless you enjoy angering your cluster admins,
     # NO SAMPLES FILE IO SHOULD BE DONE PRIOR TO THIS POINT!!!
     sampler = inference.sampler.load_from_config(
-        cp, model, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
-
-    # set up output/checkpoint file
-    sampler.setup_output(opts.output_file, force=opts.force)
-
-    # Figure out where to get the initial conditions from: a samples file,
-    # the checkpoint file, the prior, or an initial prior.
-    samples_file = opts.samples_file
-    # use the checkpoint file instead if resume from checkpoint
-    if not sampler.new_checkpoint:
-        samples_file = sampler.checkpoint_file
-    if samples_file is not None:
-        logging.info("Initial positions taken from last iteration in %s",
-                     samples_file)
-        init_prior = None
-    else:
-        # try to load an initial distribution from the config file
-        init_prior = inference.sampler.initial_dist_from_config(
-            cp, sampler.variable_params)
-
-    sampler.set_initial_conditions(initial_distribution=init_prior,
-                                   samples_file=samples_file)
+        cp, model, output_file=opts.output_file, nprocesses=opts.nprocesses,
+        use_mpi=opts.use_mpi)
 
     # Run the sampler
     sampler.run()

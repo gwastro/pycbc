@@ -38,7 +38,11 @@ parser.add_argument("--memory-limit", default=2., type=float, metavar="X GB",
                          "clusters, this defaults to 2GB if this option is "
                          "not provided explicitly.")
 pycbc.psd.insert_psd_option_group(parser, output=False)
+pycbc.results.add_style_opt_to_parser(parser)
 args = parser.parse_args()
+
+# set the matplotlib style
+pycbc.results.set_style_from_cli(args)
 
 fig = pylab.figure(0)
 ax = fig.gca()
@@ -128,4 +132,5 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
     caption="Median amplitude spectral density plotted with a shaded region " 
               "between the 5th and 95th perentiles. ",
     cmd=' '.join(sys.argv),
-    fig_kwds={'dpi': 200})
+    fig_kwds={'dpi': 200,
+              'bbox_inches': 'tight'})

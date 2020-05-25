@@ -34,8 +34,6 @@ import numpy
 from pycbc.inference import io
 import pycbc.version
 
-rc('text', usetex=True)
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--inference-file", type=str,
                     help="The PyCBC multi-temper inference file.")

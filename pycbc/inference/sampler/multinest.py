@@ -29,12 +29,14 @@ packages for parameter estimation.
 from __future__ import absolute_import
 
 import logging
+import sys
 import numpy
 
 from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
+from pycbc.pool import is_main_process
 from pycbc.transforms import apply_transforms
-from .base import BaseSampler
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 
 
@@ -90,6 +92,7 @@ class MultinestSampler(BaseSampler):
         self._dlogz = None
         self._importance_logz = None
         self._importance_dlogz = None
+        self.is_main_process = is_main_process()
 
     @property
     def io(self):
@@ -198,6 +201,11 @@ class MultinestSampler(BaseSampler):
         if samples_file is not None:
             self.set_state_from_file(samples_file)
 
+    def resume_from_checkpoint(self):
+        """Resume sampler from checkpoint
+        """
+        pass
+
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file.
         """
@@ -228,12 +236,10 @@ class MultinestSampler(BaseSampler):
         """Transforms the unit hypercube that multinest makes its draws
         from, into the prior space defined in the config file.
         """
-        prior_dists = self.model.prior_distribution.distributions
-        dist_dict = {}
-        for dist in prior_dists:
-            dist_dict.update({param: dist for param in dist.params})
+        dict_cube = dict(zip(self.model.variable_params, cube))
+        inv = self.model.prior_distribution.cdfinv(**dict_cube)
         for i, param in enumerate(self.model.variable_params):
-            cube[i] = dist_dict[param].cdfinv(param, cube[i])
+            cube[i] = inv[param]
         return cube
 
     def run(self):
@@ -261,6 +267,7 @@ class MultinestSampler(BaseSampler):
                                sampling_efficiency=self._eff,
                                importance_nested_sampling=self._ins,
                                max_iter=iterinterval,
+                               n_iter_before_update=iterinterval,
                                seed=numpy.random.randint(0, 1e6),
                                outputfiles_basename=outputfiles_basename,
                                multimodal=False, verbose=True)
@@ -282,9 +289,12 @@ class MultinestSampler(BaseSampler):
             if self._samples.shape[0] == 0:
                 continue
             # dump the current results
-            self.checkpoint()
+            if self.is_main_process:
+                self.checkpoint()
             # check if we're finished
             done = self.check_if_finished()
+        if not self.is_main_process:
+            sys.exit()
 
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state
@@ -321,13 +331,39 @@ class MultinestSampler(BaseSampler):
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
 
+    def setup_output(self, output_file):
+        """Sets up the sampler's checkpoint and output files.
+
+        The checkpoint file has the same name as the output file, but with
+        ``.checkpoint`` appended to the name. A backup file will also be
+        created.
+
+        Parameters
+        ----------
+        sampler : sampler instance
+            Sampler
+        output_file : str
+            Name of the output file.
+        """
+        if self.is_main_process:
+            setup_output(self, output_file)
+        else:
+            # child processes just store filenames
+            checkpoint_file = output_file + '.checkpoint'
+            backup_file = output_file + '.bkup'
+            self.checkpoint_file = checkpoint_file
+            self.backup_file = backup_file
+            self.checkpoint_valid = True
+            self.new_checkpoint = True
+
     def finalize(self):
         """All data is written by the last checkpoint in the run method, so
         this just passes."""
         pass
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
         """Loads the sampler from the given config file."""
         section = "sampler"
         # check name
@@ -359,4 +395,5 @@ class MultinestSampler(BaseSampler):
                            v is not None}
         obj = cls(model, nlivepoints, constraints=constraints,
                   **optional_kwargs)
+        obj.setup_output(output_file)
         return obj

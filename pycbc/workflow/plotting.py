@@ -143,8 +143,10 @@ def make_foreground_table(workflow, trig_file, bank_file, out_dir,
         tags = []
 
     makedir(out_dir)
-    node = PlotExecutable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=tags).create_node()
+    exe = PlotExecutable(workflow.cp, 'page_foreground',
+                         ifos=trig_file.ifo_list,
+                         out_dir=out_dir, tags=tags)
+    node = exe.create_node()
     node.add_input_opt('--bank-file', bank_file)
     node.add_input_opt('--trigger-file', trig_file)
     if hierarchical_level is not None:
@@ -179,8 +181,10 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file,
     secs = excludestr(secs, exclude)
     files = FileList([])
     for tag in secs:
-        node = PlotExecutable(workflow.cp, 'plot_coinc_snrchi', ifos=inj_trig.ifo,
-                    out_dir=out_dir, tags=[tag] + tags).create_node()
+        exe = PlotExecutable(workflow.cp, 'plot_coinc_snrchi',
+                             ifos=inj_trig.ifo_list,
+                             out_dir=out_dir, tags=[tag] + tags)
+        node = exe.create_node()
         node.add_input_opt('--found-injection-file', inj_file)
         node.add_input_opt('--single-injection-file', inj_trig)
         node.add_input_opt('--coinc-statistic-file', stat_file)
@@ -293,8 +297,9 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
         tags = []
 
     makedir(out_dir)
-    node = PlotExecutable(workflow.cp, executable, ifos=workflow.ifos,
-                    out_dir=out_dir, tags=tags).create_node()
+    exe = PlotExecutable(workflow.cp, executable, ifos=trigger_file.ifo_list,
+                         out_dir=out_dir, tags=tags)
+    node = exe.create_node()
     node.add_input_opt('--trigger-file', trigger_file)
     if hierarchical_level is not None:
         node.add_opt('--use-hierarchical-level', hierarchical_level)
@@ -311,10 +316,11 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
     files = FileList([])
     for tag in secs:
         for trig_file in trig_files:
-            node = PlotExecutable(workflow.cp, 'plot_snrchi',
-                        ifos=trig_file.ifo,
-                        out_dir=out_dir,
-                        tags=[tag] + tags).create_node()
+            exe = PlotExecutable(workflow.cp, 'plot_snrchi',
+                                 ifos=trig_file.ifo_list,
+                                 out_dir=out_dir,
+                                 tags=[tag] + tags)
+            node = exe.create_node()
 
             node.set_memory(15000)
             node.add_input_opt('--trigger-file', trig_file)
@@ -328,6 +334,8 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
 
 def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
                          require=None, tags=None):
+    if tags is None:
+        tags = []
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_foundmissed'), require)
     secs = excludestr(secs, exclude)
@@ -344,7 +352,7 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
     return files
 
 def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
-                         tags=None, hierarchical_level=None):
+                          tags=None, hierarchical_level=None):
 
     if hierarchical_level is not None and tags:
         tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
@@ -355,8 +363,10 @@ def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
         tags = []
 
     makedir(out_dir)
-    node = PlotExecutable(workflow.cp, 'plot_snrratehist', ifos=workflow.ifos,
-                out_dir=out_dir, tags=tags).create_node()
+    exe = PlotExecutable(workflow.cp, 'plot_snrratehist',
+                         ifos=bg_file.ifo_list,
+                         out_dir=out_dir, tags=tags)
+    node = exe.create_node()
     node.add_input_opt('--trigger-file', bg_file)
     if hierarchical_level is not None:
         node.add_opt('--use-hierarchical-level', hierarchical_level)
@@ -380,8 +390,9 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
         tags = []
 
     makedir(out_dir)
-    node = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
-                out_dir=out_dir, tags=tags).create_node()
+    exe = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=bg_file.ifo_list,
+                         out_dir=out_dir, tags=tags)
+    node = exe.create_node()
     node.add_input_opt('--trigger-file', bg_file)
     if hierarchical_level is not None:
         node.add_opt('--use-hierarchical-level', hierarchical_level)

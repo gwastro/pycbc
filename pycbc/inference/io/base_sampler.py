@@ -48,3 +48,21 @@ class BaseSamplerFile(BaseInferenceFile):
         This should also include the model's metadata.
         """
         pass
+
+    def validate(self):
+        """Runs a validation test.
+
+        This checks that a samples group exist, and that there are more than
+        one sample stored to it.
+
+        Returns
+        -------
+        bool :
+            Whether or not the file is valid as a checkpoint file.
+        """
+        try:
+            group = '{}/{}'.format(self.samples_group, self.variable_params[0])
+            checkpoint_valid = self[group].size != 0
+        except KeyError:
+            checkpoint_valid = False
+        return checkpoint_valid
