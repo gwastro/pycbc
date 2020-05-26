@@ -368,10 +368,13 @@ parser.add_argument("--injection-label", type=str, required=True,
                     help="Label of injection set")
 parser.add_argument("--reference-dir", type=str, required=True,
                     help="Directory containing reference run of this injection"
-                    " set")
+                    " set. This should contain a 'bank/' sub-directory, as well"
+                    " as a sub-directory '<injection_label>_INJ_coinc'")
 parser.add_argument("--comparison-dir", type=str, required=True,
                     help="Directory containing comparison run of this"
-                    " injection set")
+                    " injection set.  This should contain a 'bank/' sub-"
+                    "directory, as well as a sub-directory"
+                    " '<injection_label>_INJ_coinc'")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Name of HDF output file in which to store results")
 parser.add_argument("--number-missed", type=int,
