@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser(description="Plot ratios of VTs calculated at"
                                  " various IFARs using pycbc_page_sensitivity"
                                  " (run with --hdf-out option) for two"
-                                 " analyses ")
+                                 " comparable analyses ")
 parser.add_argument('--vt-file-one', required=True,
                     help="HDF file containing VT curves, first set of data"
                     " for comparison")

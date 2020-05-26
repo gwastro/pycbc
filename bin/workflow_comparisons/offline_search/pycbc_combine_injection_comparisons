@@ -99,17 +99,17 @@ def write_combined_missed(outgrp, ref_dict, com_dict):
 # Initialize
 long_description = """
 This program combines several injection comparison files. Each will have been
-created by running found_injection_comparison on one injection set that was
-performed in each of two runs. Typically, in a script one would loop over each
-injection set, running found_injection_comparison on each, and then finally run
-this program.
+created by running 'pycbc_injection_set_comparison' on one injection set that
+was performed in each of two runs. Typically, in a script one would loop over
+each injection set, running 'pycbc_injection_set_comparison' on each, and then
+finally run this program.
 
 
-combine_injection_comparison produces summary information across injection runs,
-and in its output stores summary information on the ratio of both IFAR and
-coincident ranking statistic for injections that were found in both, as well as
-the separate IFAR and ranking statistic. For injections found in only one run, it
-saves just the IFAR and ranking statistic.
+'pycbc_combine_injection_comparisons' produces summary information across
+injection runs, and in its output stores summary information on the ratio of
+both IFAR and coincident ranking statistic for injections that were found in
+both, as well as the separate IFAR and ranking statistic. For injections found
+in only one run, it saves just the IFAR and ranking statistic.
 
 
 If the specified category of found injections is 'found_after_vetoes', then
@@ -129,7 +129,8 @@ parser = argparse.ArgumentParser(formatter_class=formatter,
                                  description=long_description)
 parser.add_argument("--input-files", nargs='+', required=True,
                     help="List of comparison files created by running"
-                    " found_injection_comparison on several injection sets")
+                    " 'pycbc_injection_set_comparison' on several injection"
+                    " sets")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Name of HDF output file in which to store results")
 parser.add_argument("--found-type", type=str, required=True,

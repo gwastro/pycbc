@@ -12,8 +12,8 @@ parser = argparse.ArgumentParser(description="Plot histograms of IFAR and"
                                  " ranking statistic of injections missed in"
                                  " only one of two comparable runs")
 parser.add_argument('--combined-comparison-file', required=True,
-                    help='HDF file holding output of'
-                    ' combine_injection_comparisons')
+                    help="HDF file holding output of"
+                    " 'pycbc_combine_injection_comparisons'")
 parser.add_argument('--outfile', type=str, required=True,
                     help='Output file to save to')
 parser.add_argument('--plot-title', type=str, required=True,

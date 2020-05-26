@@ -347,13 +347,16 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
 
 parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser(usage="",
-    description="Detailed comparison of found injections between two PyCBC runs")
+    description="Detailed comparison of a specified injection set between two"
+                                 " PyCBC runs")
 parser.add_argument("--injection-label", type=str, required=True,
                     help="Label of injection set")
 parser.add_argument("--reference-dir", type=str, required=True,
-                    help="Directory containing reference run")
+                    help="Directory containing reference run of this injection"
+                    " set")
 parser.add_argument("--comparison-dir", type=str, required=True,
-                    help="Directory containing comparison run")
+                    help="Directory containing comparison run of this"
+                    " injection set")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Name of HDF output file in which to store results")
 parser.add_argument("--number-missed", type=int,
@@ -361,12 +364,12 @@ parser.add_argument("--number-missed", type=int,
                     help="Number of the loudest missed injections to compare"
                     " between runs")
 parser.add_argument('--ifar-threshold', type=float, default=None,
-                    help="If given also followup injections with ifar smaller "
+                    help="If given, also followup injections with ifar smaller "
                          "than this threshold.")
 parser.add_argument("--single-detector-statistic", type=str, default='newsnr',
                     choices=stat.sngl_statistic_dict.keys(),
-                    help="Which single-detector statistic to calculate for "
-                    "found injections")
+                    help="Which single-detector statistic to calculate for"
+                    " found injections")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Print extra debugging information")
 
