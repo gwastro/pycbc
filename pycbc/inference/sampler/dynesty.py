@@ -86,10 +86,18 @@ class DynestySampler(BaseSampler):
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
         self.checkpoint_file = None
-        self._sampler = dynesty.NestedSampler(log_likelihood_call,
-                                              prior_call, self.ndim,
-                                              nlive=self.nlive,
-                                              pool=pool, **kwargs)
+        if self.nlive < 0:
+            # Interpret a negative input value for the number of live points
+            # (which is clearly an invalid input in all senses)
+            # as the desire to dynamically determine that number
+            self._sampler = dynesty.DynamicNestedSampler(log_likelihood_call,
+                                                         prior_call, self.ndim,
+                                                         pool=pool, **kwargs)
+        else:
+            self._sampler = dynesty.NestedSampler(log_likelihood_call,
+                                                  prior_call, self.ndim,
+                                                  nlive=self.nlive,
+                                                  pool=pool, **kwargs)
 
     def run(self):
         self._sampler.run_nested(**self.run_kwds)
