@@ -3,7 +3,7 @@ pycbc_generate_hwinj \
   --ra 45.0 \
   --dec 45.0 \
   --polarization 0.0 \
-  --approximant SEOBNRv2 \
+  --approximant SEOBNRv4 \
   --mass1 25.0 \
   --mass2 25.0 \
   --inclination 0.0 \
