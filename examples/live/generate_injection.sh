@@ -9,8 +9,7 @@ pycbc_generate_hwinj \
   --inclination 0.0 \
   --taper TAPER_START \
   --waveform-low-frequency-cutoff 10 \
-  --geocentric-end-time 1272790440 \    
-  --low-frequency-cutoff 10.0 \
+  --geocentric-end-time 1272790440 \ 
   --instruments H1 L1 V1
   
   
