@@ -17,6 +17,9 @@ pycbc_generate_hwinj \
   --gps-start-time 1272790000 \
   --psd-model H1:aLIGOMidLowSensitivityP1200087 L1:aLIGOMidLowSensitivityP1200087
   
+  gunzip hwinjcbc_1272790426.xml.gz
+
+  
   
   
   
