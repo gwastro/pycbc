@@ -10,7 +10,7 @@ pycbc_generate_hwinj \
   --taper TAPER_START \
   --waveform-low-frequency-cutoff 10 \
   --geocentric-end-time 1272790440 \ 
-  --instruments H1 L1 V1
+  --instruments H1 L1
   
   
   
