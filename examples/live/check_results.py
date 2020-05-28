@@ -100,4 +100,9 @@ if detectors_with_trigs != tested_detectors:
     log.error('No triggers found in %s', ', '.join(missing))
     fail = True
 
+if fail:
+    log.info('Test Failed')
+else:
+    log.info('Test Passed')
+ 
 sys.exit(1 if fail else 0)
