@@ -601,9 +601,9 @@ class LiveFilterBank(TemplateBank):
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
 
         htilde.id = self.id_from_param((htilde.params.mass1,
-                                      htilde.params.mass2,
-                                      htilde.params.spin1z,
-                                      htilde.params.spin2z))
+                                        htilde.params.mass2,
+                                        htilde.params.spin1z,
+                                        htilde.params.spin2z))
         return htilde
 
 
