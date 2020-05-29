@@ -48,12 +48,12 @@ pycbc_generate_hwinj \
   --taper TAPER_START \
   --waveform-low-frequency-cutoff 10 \
   --geocentric-end-time 1272790440 \
-  --instruments H1 L1 \
+  --instruments H1 L1 V1 \
   --low-frequency-cutoff 10 \
   --sample-rate H1:16384 L1:16384 \
   --gps-end-time 1272790500 \
   --gps-start-time 1272790000 \
-  --psd-model H1:aLIGOMidLowSensitivityP1200087 L1:aLIGOMidLowSensitivityP1200087
+  --psd-model H1:aLIGOMidLowSensitivityP1200087 L1:aLIGOMidLowSensitivityP1200087 V1:AdVEarlyLowSensitivityP1200087
   
 gunzip hwinjcbc_1272790426.xml.gz
 
