@@ -493,6 +493,7 @@ class LiveFilterBank(TemplateBank):
         self.param_lookup = {}
         for i, p in enumerate(self.table):
             key =  (p.mass1, p.mass2, p.spin1z, p.spin2z)
+            assert(key not in self.param_lookup) # Uh, oh, template confusion!
             self.param_lookup[key] = i
 
     def round_up(self, num):
