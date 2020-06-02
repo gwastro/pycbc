@@ -118,10 +118,8 @@ for ctrigfp in coinc_trig_paths:
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
     sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
     log.info('acquired table')
-    new_snr = sngl_inspiral_table.get_new_snr()
-    end_time = sngl_inspiral_table.get_end()
-    log.info(new_snr)
-    log.info(end_time)
+    r_chisq = sngl_inspiral_table.get_reduced_chisq()    
+    log.info('Redcued Chisq'+r_chisq)    
     log.info('finished test')
   
 
