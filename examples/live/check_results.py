@@ -119,8 +119,8 @@ for ctrigfp in coinc_trig_paths:
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
     sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
     log.info('acquired table')
-    geocent_end_time = sngl_inspiral_table.get_time_geocent()
-    log.info(geocent_end_time)
+    end_time = sngl_inspiral_table.get_end()
+    log.info(end_time)
     log.info('finished test')
   
 
