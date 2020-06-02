@@ -125,7 +125,7 @@ else: log.info(str(l)+' coincident trigger(s) detected')
 for ctrigfp in coinc_trig_paths:
     xmldoc = ligolw_utils.load_filename(
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
-    sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
+    multi_inspiral_table = lsctables.MultiInspiralTable.get_table(xmldoc)
     log.info('acquired table')
     new_snr = sngl_inspiral_table.get_new_snr()  
     log.info('New SNR'+str(new_snr))    
