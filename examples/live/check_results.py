@@ -101,8 +101,8 @@ if detectors_with_trigs != tested_detectors:
     fail = True
 
 if fail:
-    print('Test Failed')
+    log.error('Test Failed')
 else:
-    print('Test Passed')
+    log.info('Test Passed')
  
 sys.exit(1 if fail else 0)
