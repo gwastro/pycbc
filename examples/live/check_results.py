@@ -116,7 +116,7 @@ l=coinc_trig_paths.len()
 if l==0:
     log.error('No coincident triggers detected')
     fail = True
-else if l>=10: 
+elif l>=10: 
     log.error('Too many coincident triggers detected')
     fail = True
 else log.info(str(l)+'coincident triggers detected')
