@@ -119,7 +119,7 @@ for ctrigfp in coinc_trig_paths:
     sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
     log.info('acquired table')
     chisq = sngl_inspiral_table.get_column('chisq')   
-    log.info('Chisq'+chisq)    
+    log.info('Chisq'+str(chisq))    
     log.info('finished test')
   
 
