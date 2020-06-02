@@ -121,7 +121,7 @@ def _get_desc(fftobj):
     desc = ctypes.c_void_p(1)
     prec = mkl_prec[fftobj.invec.precision]
     domain = mkl_domain[str(fftobj.invec.kind)][str(fftobj.outvec.kind)]
-    status = _create_descr(ctypes.byref(desc), prec, domain, 1, fftobj.size)
+    status = _create_descr(ctypes.byref(desc), prec, domain, 1, int(fftobj.size))
     check_status(status)
     # Now we set various things depending on exactly what kind of transform we're
     # performing.
