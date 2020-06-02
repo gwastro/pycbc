@@ -36,7 +36,7 @@ then
 
     mv template_bank_0.hdf template_bank.hdf
     rm -f template_bank_*.hdf
-fi
+
 
 echo -e "\\n\\n>> [`date`] Generating injection"
 
@@ -80,6 +80,8 @@ function simulate_strain { # detector PSD_model random_seed
 simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
 simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345
 simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456
+
+fi
 
 echo -e "\\n\\n>> [`date`] Running PyCBC Live"
 
