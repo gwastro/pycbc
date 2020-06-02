@@ -104,6 +104,12 @@ if detectors_with_trigs != tested_detectors:
     log.error('No triggers found in %s', ', '.join(missing))
     fail = True
     
+# dummy class needed for loading LIGOLW files
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+lsctables.use_in(LIGOLWContentHandler)
+    
 # check properties of coincident triggers
 coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
 
