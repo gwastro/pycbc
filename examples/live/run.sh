@@ -70,7 +70,7 @@ function simulate_strain { # detector PSD_model random_seed
         --low-frequency-cutoff 10 \
         --channel-name $1:SIMULATED_STRAIN \
         --frame-duration 32 \
-        --injection-file hwinjcbc_1272790426.xml
+        --injection-file hwinjcbc_1272790426.xml.gz
 }
 
 simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
