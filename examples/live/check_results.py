@@ -112,7 +112,7 @@ lsctables.use_in(LIGOLWContentHandler)
     
 # check properties of coincident triggers
 coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
-l=coinc_trig_paths.len()
+l=len(coinc_trig_paths)
 if l==0:
     log.error('No coincident triggers detected')
     fail = True
