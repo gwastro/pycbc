@@ -6,6 +6,8 @@ import logging as log
 import numpy as np
 import h5py
 import pycbc
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import ligolw, table, lsctables
 
 
 def close(a, b):
@@ -99,6 +101,15 @@ if detectors_with_trigs != tested_detectors:
     missing = sorted(tested_detectors - detectors_with_trigs)
     log.error('No triggers found in %s', ', '.join(missing))
     fail = True
+    
+# check properties of coincident triggers
+coinc_trig_paths = sorted(glob.glob('output/coinc*.xml'))
+for ctrigfp in coinc_trig_paths:
+    xmldoc = ligolw_utils.load_filename(
+            ctrigfp, False, contenthandler=LIGOLWContentHandler)
+    sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
+    geocent_end_time = sngl_inspiral_table.get_time_geocent()
+    print(geocent_end_time)
 
 if fail:
     log.error('Test Failed')
