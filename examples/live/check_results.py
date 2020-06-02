@@ -105,7 +105,7 @@ if detectors_with_trigs != tested_detectors:
     fail = True
     
 # check properties of coincident triggers
-coinc_trig_paths = sorted(glob.glob('output/coinc*.xml'))
+coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
 
 for ctrigfp in coinc_trig_paths:
     log.info('test')
