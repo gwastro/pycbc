@@ -1316,14 +1316,19 @@ class ExpFitSGPSDFgBgNormStatistic(ExpFitSGFgBgNormNewStatistic):
     def __init__(self, files=None, ifos=None, **kwargs):
         ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
                                               **kwargs)
-        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
+class ExpFitSGPSDScaledFgBgNormStatistic(ExpFitSGFgBgNormNewStatistic):
+    def __init__(self, files=None, ifos=None, **kwargs):
+        ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
+                                              **kwargs)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled
 
 class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
     def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
         ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
                                               **kwargs)
-        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
         self.mcm = max_chirp_mass
         self.curr_mchirp = None
 
@@ -1344,6 +1349,11 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
         logr_s += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
         return logr_s
 
+class ExpFitSGPSDSTFgBgNormBBHStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
+    def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
+        ExpFitSGPSDFgBgNormBBHStatistic.__init__(self, files=files, ifos=ifos,
+                                                 max_chirp_mass=None, **kwargs)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
 
 statistic_dict = {
     'newsnr': NewSNRStatistic,
@@ -1367,8 +1377,8 @@ statistic_dict = {
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
     'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic,
     'exp_fit_sg_fgbg_norm_new': ExpFitSGFgBgNormNewStatistic,
-    '2ogc': ExpFitSGPSDFgBgNormStatistic, # backwards compatible
-    '2ogcbbh': ExpFitSGPSDFgBgNormBBHStatistic, # backwards compatible
+    '2ogc': ExpFitSGPSDScaledFgBgNormStatistic, # backwards compatible
+    '2ogcbbh': ExpFitSGPSDSTFgBgNormBBHStatistic, # backwards compatible
     'exp_fit_sg_fgbg_norm_psdvar': ExpFitSGPSDFgBgNormStatistic,
     'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic
 }
