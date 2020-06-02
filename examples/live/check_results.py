@@ -30,6 +30,8 @@ with h5py.File('template_bank.hdf', 'r') as bankf:
 detectors_with_trigs = set()
 fail = False
 
+log.info('Starting Test')
+
 trig_paths = sorted(glob.glob('output/????_??_??/*.hdf'))
 for trigfp in trig_paths:
     with h5py.File(trigfp, 'r') as trigf:
@@ -104,15 +106,15 @@ if detectors_with_trigs != tested_detectors:
     
 # check properties of coincident triggers
 coinc_trig_paths = sorted(glob.glob('output/coinc*.xml'))
-print('starting test')
+
 for ctrigfp in coinc_trig_paths:
-    print('test')
+    log.info('test')
     xmldoc = ligolw_utils.load_filename(
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
     sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
     geocent_end_time = sngl_inspiral_table.get_time_geocent()
-    print('finished test')
-    print(geocent_end_time)
+    log.info('finished test')
+    log.info(geocent_end_time)
 
 if fail:
     log.error('Test Failed')
