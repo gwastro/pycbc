@@ -10,29 +10,33 @@ export HDF5_USE_FILE_LOCKING="FALSE"
 gps_start_time=1272790000
 gps_end_time=1272790500
 
-echo -e "\\n\\n>> [`date`] Making template bank"
 
-curl \
-    --remote-name \
-    --silent \
-    --show-error \
-    https://raw.githubusercontent.com/gwastro/pycbc-config/710dbfd3590bd93d7679d7822da59fcb6b6fac0f/O2/bank/H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz
 
-pycbc_coinc_bank2hdf \
-    --bank-file H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz \
-    --output-file template_bank_full.hdf
+if test ! -f template_bank.hdf
+then
+    echo -e "\\n\\n>> [`date`] Making template bank"
+    curl \
+        --remote-name \
+        --silent \
+        --show-error \
+        https://raw.githubusercontent.com/gwastro/pycbc-config/710dbfd3590bd93d7679d7822da59fcb6b6fac0f/O2/bank/H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz
 
-rm -f H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz
+    pycbc_coinc_bank2hdf \
+        --bank-file H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz \
+        --output-file template_bank_full.hdf
 
-pycbc_hdf5_splitbank \
-    --bank-file template_bank_full.hdf \
-    --output-prefix template_bank_ \
-    --random-sort \
-    --random-seed 831486 \
-    --templates-per-bank 1000
+    rm -f H1L1-HYPERBANK_SEOBNRv4v2_VARFLOW_THORNE-1163174417-604800.xml.gz
 
-mv template_bank_0.hdf template_bank.hdf
-rm -f template_bank_*.hdf
+    pycbc_hdf5_splitbank \
+        --bank-file template_bank_full.hdf \
+        --output-prefix template_bank_ \
+        --random-sort \
+        --random-seed 831486 \
+        --templates-per-bank 1000
+
+    mv template_bank_0.hdf template_bank.hdf
+    rm -f template_bank_*.hdf
+fi
 
 echo -e "\\n\\n>> [`date`] Generating injection"
 
