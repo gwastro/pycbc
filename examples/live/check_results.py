@@ -119,7 +119,7 @@ if l==0:
 elif l>=10: 
     log.error('Too many coincident triggers detected')
     fail = True
-else log.info(str(l)+'coincident triggers detected')
+else: log.info(str(l)+'coincident triggers detected')
 
 
 for ctrigfp in coinc_trig_paths:
