@@ -143,7 +143,7 @@ for ctrigfp in coinc_trig_paths:
     log.info('Mass 1: '+str(mass1))
     log.info('Mass 2: '+str(mass2))
     log.info('Spin1z: '+str(spin1z))
-    log.info('Spin2z: '+str(spin1z))
+    log.info('Spin2z: '+str(spin2z))
     
 #check if parameters of trigger are close to parameters of injection
 inj_path = sorted(glob.glob('./*.xml.gz'))[0]
