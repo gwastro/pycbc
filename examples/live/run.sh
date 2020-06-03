@@ -41,7 +41,7 @@ then
 echo -e "\\n\\n>> [`date`] Generating injection"
 
 pycbc_generate_hwinj \
-  --network-snr 20.0 \
+  --network-snr 40.0 \
   --ra 45.0 \
   --dec 45.0 \
   --polarization 0.0 \
