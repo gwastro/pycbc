@@ -822,6 +822,7 @@ _filter_time_lengths["IMRPhenomD_NRTidal"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2_NRTidal"] = imrphenomd_length_in_time
 _filter_time_lengths["SpinTaylorF2"] = spa_length_in_time
 _filter_time_lengths["TaylorF2NL"] = spa_length_in_time
+_filter_time_lengths["PreTaylorF2"] = spa_length_in_time
 
 # Also add generators for switching between approximants
 apx_name = "SpinTaylorF2_SWAPPER"
@@ -830,6 +831,9 @@ _filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
 
 from . nltides import nonlinear_tidal_spa
 cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
+
+from .premerger import premerger_taylorf2
+cpu_fd['PreTaylorF2'] = premerger_taylorf2
 
 # Load external waveforms #####################################################
 if 'PYCBC_WAVEFORM' in os.environ:
