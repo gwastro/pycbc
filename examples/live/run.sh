@@ -32,56 +32,56 @@ then
         --output-prefix template_bank_ \
         --random-sort \
         --random-seed 831486 \
-        --templates-per-bank 1000
+        --templates-per-bank 50
 
     mv template_bank_0.hdf template_bank.hdf
     rm -f template_bank_*.hdf
 
 
-echo -e "\\n\\n>> [`date`] Generating injection"
+    echo -e "\\n\\n>> [`date`] Generating injection"
 
-pycbc_generate_hwinj \
-  --network-snr 40.0 \
-  --ra 45.0 \
-  --dec 45.0 \
-  --polarization 0.0 \
-  --approximant SEOBNRv4 \
-  --mass1 11.921339 \
-  --mass2 10.645219 \
-  --spin1z 0.3027034 \
-  --spin2z -0.43998012 \
-  --inclination 0.0 \
-  --taper TAPER_START \
-  --waveform-low-frequency-cutoff 10 \
-  --geocentric-end-time 1272790440 \
-  --instruments H1 L1 V1 \
-  --low-frequency-cutoff 10 \
-  --sample-rate H1:16384 L1:16384 V1:16384 \
-  --gps-end-time 1272790500 \
-  --gps-start-time 1272790000 \
-  --psd-model H1:aLIGOMidLowSensitivityP1200087 L1:aLIGOMidLowSensitivityP1200087 V1:AdVEarlyLowSensitivityP1200087
+    pycbc_generate_hwinj \
+        --network-snr 30.0 \
+        --ra 45.0 \
+        --dec 45.0 \
+        --polarization 0.0 \
+        --approximant SEOBNRv4 \
+        --mass1 11.921339 \
+        --mass2 10.645219 \
+        --spin1z 0.3027034 \
+        --spin2z -0.43998012 \
+        --inclination 0.0 \
+        --taper TAPER_START \
+        --waveform-low-frequency-cutoff 10 \
+        --geocentric-end-time 1272790440 \
+        --instruments H1 L1 V1 \
+        --low-frequency-cutoff 10 \
+        --sample-rate H1:16384 L1:16384 V1:16384 \
+        --gps-end-time 1272790500 \
+        --gps-start-time 1272790000 \
+        --psd-model H1:aLIGOMidLowSensitivityP1200087 L1:aLIGOMidLowSensitivityP1200087 V1:AdVEarlyLowSensitivityP1200087
   
 
-echo -e "\\n\\n>> [`date`] Generating simulated strain"
+    echo -e "\\n\\n>> [`date`] Generating simulated strain"
 
-function simulate_strain { # detector PSD_model random_seed
-    mkdir -p strain/$1
-    pycbc_condition_strain \
-        --fake-strain $2 \
-        --fake-strain-seed $3 \
-        --output-strain-file "strain/$1/$1-SIMULATED_STRAIN-{start}-{duration}.gwf" \
-        --gps-start-time $gps_start_time \
-        --gps-end-time $gps_end_time \
-        --sample-rate 16384 \
-        --low-frequency-cutoff 10 \
-        --channel-name $1:SIMULATED_STRAIN \
-        --frame-duration 32 \
-        --injection-file hwinjcbc_1272790403.xml.gz
-}
+    function simulate_strain { # detector PSD_model random_seed
+        mkdir -p strain/$1
+        pycbc_condition_strain \
+            --fake-strain $2 \
+            --fake-strain-seed $3 \
+            --output-strain-file "strain/$1/$1-SIMULATED_STRAIN-{start}-{duration}.gwf" \
+            --gps-start-time $gps_start_time \
+            --gps-end-time $gps_end_time \
+            --sample-rate 16384 \
+            --low-frequency-cutoff 10 \
+            --channel-name $1:SIMULATED_STRAIN \
+            --frame-duration 32 \
+            --injection-file hwinjcbc_1272790403.xml.gz
+    }
 
-simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
-simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345
-simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456
+    simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
+    simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345
+    simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456
 
 fi
 
@@ -153,7 +153,6 @@ python -m mpi4py `which pycbc_live` \
 --ifar-double-followup-threshold 0.0001 \
 --ifar-upload-threshold 0.0001 \
 --round-start-time 4 \
---size-override 20 \
 --start-time $gps_start_time \
 --end-time $gps_end_time
 
