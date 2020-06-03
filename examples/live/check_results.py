@@ -10,8 +10,8 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import ligolw, table, lsctables
 
 
-def close(a, b):
-    return abs(a - b) < 1e-7
+def close(a, b, c):
+    return abs(a - b) < c
 
 
 log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
@@ -87,10 +87,10 @@ for trigfp in trig_paths:
             trig_s1z = group['spin1z'][:]
             trig_s2z = group['spin2z'][:]
             trig_temp_id = group['template_id'][:]
-            test_mass1 = close(temp_mass1[trig_temp_id], trig_mass1)
-            test_mass2 = close(temp_mass2[trig_temp_id], trig_mass2)
-            test_s1z = close(temp_s1z[trig_temp_id], trig_s1z)
-            test_s2z = close(temp_s2z[trig_temp_id], trig_s2z)
+            test_mass1 = close(temp_mass1[trig_temp_id], trig_mass1, 1e-7)
+            test_mass2 = close(temp_mass2[trig_temp_id], trig_mass2, 1e-7)
+            test_s1z = close(temp_s1z[trig_temp_id], trig_s1z, 1e-7)
+            test_s2z = close(temp_s2z[trig_temp_id], trig_s2z, 1e-7)
             test_all = np.logical_and.reduce((test_mass1, test_mass2,
                                               test_s1z, test_s2z))
             if not test_all.all():
@@ -126,16 +126,17 @@ else:
 for ctrigfp in coinc_trig_paths:
     xmldoc = ligolw_utils.load_filename(
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
-    sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
-    log.info('acquired table')
-    end_time=sngl_inspiral_table.get_column('end_time')
-    log.info('End Time: '+str(end_time))
-    snr=sngl_inspiral_table.get_column('snr')
-    log.info('SNR: '+str(snr))
-    chisq = sngl_inspiral_table.get_column('chisq')
-    log.info('Chisq: '+str(chisq))
-    new_snr = sngl_inspiral_table.get_column('new_snr')
-    log.info('New SNR'+str(new_snr))    
+    sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)    
+    end_time=sngl_inspiral_table.get_column('end_time')  
+    snr_list=sngl_inspiral_table.get_column('snr')
+    network_snr_squared=0
+    for snr in snr_list:
+        network_snr_squared+=snr**2
+    network_snr=np.sqrt(network_snr_squared)
+    
+    log.info('IFO SNRs: '+str(snr_list))
+    log.info('Network SNR: '+str(network_snr))
+    log.info('End Time: '+str(end_time))       
     log.info('finished test')
   
 
