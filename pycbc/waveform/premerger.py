@@ -20,7 +20,7 @@ def premerger_taylorf2(**p):
     hc = hc.cyclic_time_shift(removed)
     hc.start_time += removed
     
-    logging.info("Generated pre-merger waveform, fmax=%s, timeshift=%s",
-                 p['f_final'], removed)
+    logging.info("Generated pre-merger waveform, m1=%.1f, m2=%.1f, fmax=%.1f, timeshift=%.1f",
+                 p['mass1'], p['mass2'], p['f_final'], removed)
     
     return hp, hc
