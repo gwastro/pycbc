@@ -241,15 +241,19 @@ class LiveEventManager(object):
 
             live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
+            time_offset = 0
+            if 'foreground/time_offset' in coinc_results:
+                time_offset = coinc_results['foreground/time_offset']
             event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
-                                          mc_area_args=self.mc_area_args)
+                                          mc_area_args=self.mc_area_args,
+                                          time_offset=time_offset)
 
             end_time = int(coinc_results['foreground/%s/end_time'
                                          % coinc_ifos[0]])
-            fname = 'coinc-{}-{}.xml.gz'.format(end_time, pycbc.random_string(6))
+            fname = 'coinc-{}-{}.xml.gz'.format(end_time + time_offset, pycbc.random_string(6))
             fname = os.path.join(self.path, fname)
             logging.info('Coincident candidate! Saving as %s', fname)
 

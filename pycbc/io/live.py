@@ -181,6 +181,8 @@ class SingleCoincForGraceDB(object):
             for name in names:
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
                 if name == 'end_time':
+                    if 'time_offset' in kwargs:
+                        val += kwargs['time_offset']
                     sngl.set_end(lal.LIGOTimeGPS(val))
                 else:
                     try:

@@ -1716,6 +1716,11 @@ class LiveBatchMatchedFilter(object):
                 result[key].append(htilde.dict_params[key])
             i += 1
 
+            if hasattr(htilde, 'time_offset'):
+                if 'time_offset' not in result:
+                    result['time_offset'] = []
+                    tkeys.append('time_offset')
+                results['time_offset'].append(htilde.time_offset)
 
         result['snr'] = abs(snr[0:i])
         result['coa_phase'] = numpy.angle(snr[0:i])

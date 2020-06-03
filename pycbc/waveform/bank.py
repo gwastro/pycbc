@@ -597,7 +597,6 @@ class LiveFilterBank(TemplateBank):
 
         if time_offset:
             htilde.time_offset = time_offset
-        print(time_offset)
 
         htilde = htilde.astype(np.complex64)
         htilde.f_lower = flow
