@@ -11,7 +11,7 @@ from glue.ligolw import ligolw, table, lsctables
 
 
 def close(a, b, c):
-    return abs(a - b) < c
+    return abs(a - b) <= c
 
 
 log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
@@ -139,7 +139,7 @@ for ctrigfp in coinc_trig_paths:
     spin2z=sngl_inspiral_table.get_column('spin2z')[0] 
     log.info('IFO SNRs: '+str(snr_list))
     log.info('Network SNR: '+str(network_snr))
-    log.info('End Time: '+str(end_time)) 
+    log.info('IFO End Times: '+str(end_time)) 
     log.info('Mass 1: '+str(mass1))
     log.info('Mass 2: '+str(mass2))
     log.info('Spin1z: '+str(spin1z))
@@ -151,8 +151,28 @@ inj_xml = ligolw_utils.load_filename(
             inj_path, False, contenthandler=LIGOLWContentHandler)
 inj_table = lsctables.SnglInspiralTable.get_table(inj_xml)
 inj_end = inj_table.get_column('end_time')[0]
-log.info(inj_end)
+inj_mass1=inj_table.get_column('mass1')[0]
+inj_mass2=injl_table.get_column('mass2')[0]    
+inj_spin1z=inj_table.get_column('spin1z')[0] 
+inj_spin2z=inj_table.get_column('spin2z')[0]
 
+param_check = True
+for t in end_time:
+    if ! close(t,inj_end,1.0):
+        param_check = False
+if ! close(mass1, inj_mass1, 1e-7):
+    param_check = False
+if ! close(mass2, inj_mass2, 1e-7):
+    param_check = False
+if ! close(spin1z, inj_spin1z, 1e-7):
+    param_check = False
+if ! close(spin2z, inj_spin2z, 1e-7):
+    param_check = False
+
+if ! param_check:
+    fail = True
+    log.error('Trigger parameters do not match injection parameters')
+else: log.info('Trigger parameters match injection parameters')
   
 
 if fail:
