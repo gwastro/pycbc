@@ -158,18 +158,18 @@ inj_spin2z=inj_table.get_column('spin2z')[0]
 
 param_check = True
 for t in end_time:
-    if ! close(t,inj_end,1.0):
+    if not close(t,inj_end,1.0):
         param_check = False
-if ! close(mass1, inj_mass1, 1e-7):
+if not close(mass1, inj_mass1, 1e-7):
     param_check = False
-if ! close(mass2, inj_mass2, 1e-7):
+if not close(mass2, inj_mass2, 1e-7):
     param_check = False
-if ! close(spin1z, inj_spin1z, 1e-7):
+if not close(spin1z, inj_spin1z, 1e-7):
     param_check = False
-if ! close(spin2z, inj_spin2z, 1e-7):
+if not close(spin2z, inj_spin2z, 1e-7):
     param_check = False
 
-if ! param_check:
+if not param_check:
     fail = True
     log.error('Trigger parameters do not match injection parameters')
 else: log.info('Trigger parameters match injection parameters')
