@@ -133,10 +133,13 @@ for ctrigfp in coinc_trig_paths:
     for snr in snr_list:
         network_snr_squared+=snr**2
     network_snr=np.sqrt(network_snr_squared)
-    
+    mass1=sngl_inspiral_table.get_column('mass1')[0]
+    mass2=sngl_inspiral_table.get_column('mass2')[0]    
     log.info('IFO SNRs: '+str(snr_list))
     log.info('Network SNR: '+str(network_snr))
-    log.info('End Time: '+str(end_time))       
+    log.info('End Time: '+str(end_time)) 
+    log.info('Mass 1: '+str(mass1))
+    log.info('Mass 2: '+str(mass2))
     log.info('finished test')
   
 
