@@ -722,9 +722,9 @@ class FilterBank(TemplateBank):
 
         # Find the start frequency, if variable
         f_low = find_variable_start_frequency(approximant,
-                                                  self.table[index],
-                                                  self.f_lower,
-                                                  self.max_template_length)
+                                              self.table[index],
+                                              self.f_lower,
+                                              self.max_template_length)
         logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
 
         # Clear the storage memory
@@ -828,12 +828,10 @@ class FilterBankSkyMax(TemplateBank):
             f_end = (self.filter_length-1) * self.delta_f
 
         # Find the start frequency, if variable
-
         f_low = find_variable_start_frequency(approximant,
-                                                  self.table[index],
-                                                  self.f_lower,
-                                                  self.max_template_length)
-        
+                                              self.table[index],
+                                              self.f_lower,
+                                              self.max_template_length)
         logging.info('%s: generating %s from %s Hz', index, approximant, f_low)
 
         # What does this do???
