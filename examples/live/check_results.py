@@ -129,6 +129,8 @@ for ctrigfp in coinc_trig_paths:
     log.info('acquired table')
     end_time=sngl_inspiral_table.get_column('end_time')
     log.info('End Time: '+str(end_time))
+    snr=sngl_inspiral_table.get_column('snr')
+    log.info('SNR: '+str(snr))
     chisq = sngl_inspiral_table.get_column('chisq')
     log.info('Chisq: '+str(chisq))
     new_snr = sngl_inspiral_table.get_column('new_snr')
