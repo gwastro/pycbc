@@ -1,5 +1,3 @@
-names=`ls ./*.xml.gz`
-for n in $names
-do
-   echo $n
-done
+names = `ls ./*.xml.gz`
+template = ${names[0]}
+echo $template
