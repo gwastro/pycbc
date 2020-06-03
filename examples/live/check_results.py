@@ -110,7 +110,7 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 
 lsctables.use_in(LIGOLWContentHandler)
     
-# check properties of coincident triggers
+# gather coincident triggers
 coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
 l=len(coinc_trig_paths)
 if l==0:
@@ -119,9 +119,10 @@ if l==0:
 elif l>=10: 
     log.error('Too many coincident triggers detected')
     fail = True
-else: log.info(str(l)+' coincident trigger(s) detected')
+else: 
+    log.info(str(l)+' coincident trigger(s) detected')
 
-
+#check properties of coincident triggers
 for ctrigfp in coinc_trig_paths:
     xmldoc = ligolw_utils.load_filename(
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
