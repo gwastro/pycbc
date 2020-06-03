@@ -152,7 +152,7 @@ inj_xml = ligolw_utils.load_filename(
 inj_table = lsctables.SnglInspiralTable.get_table(inj_xml)
 inj_end = inj_table.get_column('end_time')[0]
 inj_mass1=inj_table.get_column('mass1')[0]
-inj_mass2=injl_table.get_column('mass2')[0]    
+inj_mass2=inj_table.get_column('mass2')[0]    
 inj_spin1z=inj_table.get_column('spin1z')[0] 
 inj_spin2z=inj_table.get_column('spin2z')[0]
 
