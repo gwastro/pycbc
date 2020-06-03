@@ -46,10 +46,10 @@ then
         --dec 45.0 \
         --polarization 0.0 \
         --approximant SEOBNRv4 \
-        --mass1 11.921339 \
-        --mass2 10.645219 \
-        --spin1z 0.3027034 \
-        --spin2z -0.43998012 \
+        --mass1 7.2797217 \
+        --mass2 6.910238 \
+        --spin1z 0.7189988 \
+        --spin2z 0.1991984 \
         --inclination 0.0 \
         --taper TAPER_START \
         --waveform-low-frequency-cutoff 10 \
