@@ -62,7 +62,7 @@ then
         --psd-model H1:aLIGOMidLowSensitivityP1200087 L1:aLIGOMidLowSensitivityP1200087 V1:AdVEarlyLowSensitivityP1200087
         
     names=`ls ./*.xml.gz`
-    template=${names[0]}
+    inj=${names[0]}
   
 
     echo -e "\\n\\n>> [`date`] Generating simulated strain"
@@ -79,7 +79,7 @@ then
             --low-frequency-cutoff 10 \
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 32 \
-            --injection-file $template
+            --injection-file $inj
     }
 
     simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
