@@ -779,6 +779,7 @@ with ctx:
     while data_end() < args.end_time:
         t1 = time()
         logging.info('%s: Analyzing from %s', evnt.rank, data_end())
+
         results = {}
         evnt.live_detectors = set()
 

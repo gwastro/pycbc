@@ -83,9 +83,9 @@ def sigma_cached(self, psd):
                 self.sigma_view = self[self.sslice].squared_norm() * 4.0 * self.delta_f
 
             if not hasattr(psd, 'invsqrt'):
-                psd.invsqrt = 1.0 / psd[self.sslice]
+                psd.invsqrt = 1.0 / psd
 
-            self._sigmasq[key] = self.sigma_view.inner(psd.invsqrt)
+            self._sigmasq[key] = self.sigma_view.inner(psd.invsqrt[self.sslice])
     return self._sigmasq[key]
 
 # dummy class needed for loading LIGOLW files
