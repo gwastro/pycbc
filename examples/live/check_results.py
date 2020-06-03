@@ -150,7 +150,7 @@ inj_path = sorted(glob.glob('./*.xml.gz'))[0]
 inj_xml = ligolw_utils.load_filename(
             inj_path, False, contenthandler=LIGOLWContentHandler)
 inj_table = lsctables.SnglInspiralTable.get_table(inj_xml)
-inj_end = inj_table.get_column('geocent_end_time')[0]
+inj_end = inj_table.get_column('end_time')[0]
 log.info(inj_end)
 
   
