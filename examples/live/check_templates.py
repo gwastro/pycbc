@@ -6,5 +6,7 @@ with h5py.File('template_bank.hdf', 'r') as bankf:
     temp_s1z = bankf['spin1z'][:]
     temp_s2z = bankf['spin2z'][:]
     
-print(len(temp_mass1))
-print(temp_mass1)
+l = len(temp_mass1)
+for i in range(l):
+    dat = [temp_mass1[i],temp_mass2[i],temp_s1z[i],temp_s2z[i]]
+    print(dat)
