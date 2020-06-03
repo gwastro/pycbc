@@ -894,7 +894,7 @@ def get_waveform_filter(out, template=None, **kwargs):
 
         hp.resize(n)
         out[0:len(hp)] = hp[:]
-        hp = FrequencySeries(out, delta_f=hp.delta_f, copy=False)
+        hp.data = out
 
         hp.length_in_time = hp.chirp_length = duration
         return hp

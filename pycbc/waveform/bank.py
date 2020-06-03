@@ -585,12 +585,19 @@ class LiveFilterBank(TemplateBank):
         # include ringdown) and the duration up to merger since they will be
         # erased by the type conversion below.
         ttotal = template_duration = -1
+        time_offset = None
         if hasattr(htilde, 'length_in_time'):
             ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
             template_duration = htilde.chirp_length
+        if hasattr(htilde, 'time_offset'):
+            time_offset = htilde.time_offset
 
         self.table[index].template_duration = template_duration
+
+        if time_offset:
+            htilde.time_offset = time_offset
+        print(time_offset)
 
         htilde = htilde.astype(np.complex64)
         htilde.f_lower = flow

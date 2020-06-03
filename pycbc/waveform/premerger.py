@@ -22,5 +22,11 @@ def premerger_taylorf2(**p):
     
     logging.info("Generated pre-merger waveform, m1=%.1f, m2=%.1f, fmax=%.1f, timeshift=%.1f",
                  p['mass1'], p['mass2'], p['f_final'], removed)
+    kmin = int(p['f_lower'] / p['delta_f'])
+    hp[0:kmin] = 0
+    hc[0:kmin] = 0
     
+    hp.time_offset = removed
+    hc.time_offset = removed
+    print(hp.time_offset)
     return hp, hc
