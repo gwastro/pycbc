@@ -46,8 +46,10 @@ pycbc_generate_hwinj \
   --dec 45.0 \
   --polarization 0.0 \
   --approximant SEOBNRv4 \
-  --mass1 25.0 \
-  --mass2 25.0 \
+  --mass1 11.921339 \
+  --mass2 10.645219 \
+  --spin1z 0.3027034 \
+  --spin2z -0.43998012 \
   --inclination 0.0 \
   --taper TAPER_START \
   --waveform-low-frequency-cutoff 10 \
