@@ -129,7 +129,7 @@ for ctrigfp in coinc_trig_paths:
     log.info('acquired table')
     chisq = sngl_inspiral_table.get_column('chisq')
     log.info('Chisq: '+str(chisq))
-    new_snr = sngl_inspiral_table.get_new_snr()  
+    new_snr = sngl_inspiral_table.get_column('new_snr')
     log.info('New SNR'+str(new_snr))    
     log.info('finished test')
   
