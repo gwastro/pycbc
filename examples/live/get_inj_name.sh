@@ -1,4 +1,4 @@
-names=`ls ./*.xml.gz'
+names=`ls ./*.xml.gz`
 for n in $names
 do
    echo $n
