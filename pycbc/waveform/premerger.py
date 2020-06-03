@@ -1,5 +1,6 @@
 """ Waveform approximants for the pre-merger detection of gravitational waves
 """
+import logging
 
 def premerger_taylorf2(**p):
     from pycbc.waveform import get_fd_waveform
@@ -18,5 +19,8 @@ def premerger_taylorf2(**p):
     
     hc = hc.cyclic_time_shift(removed)
     hc.start_time += removed
+    
+    logging.info("Generated pre-merger waveform, fmax=%s, timeshift=%s",
+                 p['f_final'], removed)
     
     return hp, hc
