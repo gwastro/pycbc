@@ -60,6 +60,9 @@ then
         --gps-end-time 1272790500 \
         --gps-start-time 1272790000 \
         --psd-model H1:aLIGOMidLowSensitivityP1200087 L1:aLIGOMidLowSensitivityP1200087 V1:AdVEarlyLowSensitivityP1200087
+        
+    names=`ls ./*.xml.gz`
+    template=${names[0]}
   
 
     echo -e "\\n\\n>> [`date`] Generating simulated strain"
@@ -76,7 +79,7 @@ then
             --low-frequency-cutoff 10 \
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 32 \
-            --injection-file hwinjcbc_1272790403.xml.gz
+            --injection-file $template
     }
 
     simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
