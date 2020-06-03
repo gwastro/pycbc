@@ -595,9 +595,6 @@ class LiveFilterBank(TemplateBank):
 
         self.table[index].template_duration = template_duration
 
-        if time_offset:
-            htilde.time_offset = time_offset
-
         htilde = htilde.astype(np.complex64)
         htilde.f_lower = flow
         htilde.min_f_lower = self.min_f_lower
@@ -607,6 +604,9 @@ class LiveFilterBank(TemplateBank):
         htilde.length_in_time = ttotal
         htilde.approximant = approximant
         htilde.end_frequency = f_end
+
+        if time_offset:
+            htilde.time_offset = time_offset
 
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)

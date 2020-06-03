@@ -1680,6 +1680,10 @@ class LiveBatchMatchedFilter(object):
         # Find the peaks in our SNR times series from the various templates
         i = 0
         for htilde in tgroup:
+            if hasattr(htilde, 'time_offset'):
+                if 'time_offset' not in result:
+                    result['time_offset'] = []
+        
             l = htilde.out[seg].abs_arg_max()
 
             sgm = htilde.sigmasq(psd)
@@ -1714,13 +1718,11 @@ class LiveBatchMatchedFilter(object):
 
             for key in tkeys:
                 result[key].append(htilde.dict_params[key])
-            i += 1
 
             if hasattr(htilde, 'time_offset'):
-                if 'time_offset' not in result:
-                    result['time_offset'] = []
-                    tkeys.append('time_offset')
-                results['time_offset'].append(htilde.time_offset)
+                result['time_offset'].append(htilde.time_offset)
+
+            i += 1
 
         result['snr'] = abs(snr[0:i])
         result['coa_phase'] = numpy.angle(snr[0:i])
@@ -1730,6 +1732,9 @@ class LiveBatchMatchedFilter(object):
 
         for key in tkeys:
             result[key] = numpy.array(result[key])
+
+        if 'time_offset' in result:
+            result['time_offset'] = numpy.array(result['time_offset'])
 
         return result, veto_info
 

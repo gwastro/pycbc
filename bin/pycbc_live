@@ -242,8 +242,9 @@ class LiveEventManager(object):
             live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
             time_offset = 0
-            if 'foreground/time_offset' in coinc_results:
-                time_offset = coinc_results['foreground/time_offset']
+            rtoff = 'foreground/{}/time_offset'.format(coinc_ifos[0])
+            if rtoff in coinc_results:
+                time_offset = coinc_results[rtoff]
             event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,

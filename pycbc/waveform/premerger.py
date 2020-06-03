@@ -28,5 +28,4 @@ def premerger_taylorf2(**p):
     
     hp.time_offset = removed
     hc.time_offset = removed
-    print(hp.time_offset)
     return hp, hc
