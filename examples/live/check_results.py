@@ -135,12 +135,24 @@ for ctrigfp in coinc_trig_paths:
     network_snr=np.sqrt(network_snr_squared)
     mass1=sngl_inspiral_table.get_column('mass1')[0]
     mass2=sngl_inspiral_table.get_column('mass2')[0]    
+    spin1z=sngl_inspiral_table.get_column('spin1z')[0] 
+    spin2z=sngl_inspiral_table.get_column('spin2z')[0] 
     log.info('IFO SNRs: '+str(snr_list))
     log.info('Network SNR: '+str(network_snr))
     log.info('End Time: '+str(end_time)) 
     log.info('Mass 1: '+str(mass1))
     log.info('Mass 2: '+str(mass2))
-    log.info('finished test')
+    log.info('Spin1z: '+str(spin1z))
+    log.info('Spin2z: '+str(spin1z))
+    
+#check if parameters of trigger are close to parameters of injection
+inj_path = sorted(glob.glob('./*.xml.gz'))[0]
+inj_xml = ligolw_utils.load_filename(
+            inj_path, False, contenthandler=LIGOLWContentHandler)
+inj_table = lsctables.SnglInspiralTable.get_table(inj_xml)
+inj_end = inj_table.get_column('geocent_end_time')[0]
+log.info(inj_end)
+
   
 
 if fail:
