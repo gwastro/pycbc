@@ -151,10 +151,13 @@ inj_xml = ligolw_utils.load_filename(
             inj_path, False, contenthandler=LIGOLWContentHandler)
 inj_table = lsctables.SnglInspiralTable.get_table(inj_xml)
 inj_end = inj_table.get_column('end_time')[0]
-inj_mass1=inj_table.get_column('mass1')[0]
-inj_mass2=inj_table.get_column('mass2')[0]    
-inj_spin1z=inj_table.get_column('spin1z')[0] 
-inj_spin2z=inj_table.get_column('spin2z')[0]
+inj_mass1 = inj_table.get_column('mass1')[0]
+inj_mass2 = inj_table.get_column('mass2')[0]    
+inj_spin1z = inj_table.get_column('spin1z')[0] 
+inj_spin2z = inj_table.get_column('spin2z')[0]
+inj_snr = 30
+    # note for Tito: the injection xml file apparently doesn't store the desired network snr of the injection from
+    # the generate_hwinj command. I'm not sure what is the best way to pass the network snr here
 
 param_check = True
 for t in end_time:
@@ -167,6 +170,8 @@ if not close(mass2, inj_mass2, 1e-7):
 if not close(spin1z, inj_spin1z, 1e-7):
     param_check = False
 if not close(spin2z, inj_spin2z, 1e-7):
+    param_check = False
+if not close(network_snr, inj_snr, 0.1):
     param_check = False
 
 if not param_check:
