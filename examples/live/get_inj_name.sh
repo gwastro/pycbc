@@ -1,5 +1,5 @@
 names=`ls ./*.xml.gz
-for n in $name
+for n in $names
 do
    echo $n
 done`
