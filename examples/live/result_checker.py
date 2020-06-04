@@ -10,7 +10,7 @@ from glue.ligolw import ligolw, table, lsctables
 def close(a, b, c):
    return abs(a - b) <= c
     
-def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_spin2z):
+def check_results(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_spin2z):
    log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
 
    tested_detectors = {'H1', 'L1', 'V1'}
