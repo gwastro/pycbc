@@ -95,32 +95,32 @@ def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_
                               trigfp, detector)
                fail = True
 
-  # check that triggers were produced in all detectors
-  if detectors_with_trigs != tested_detectors:      
+   # check that triggers were produced in all detectors
+   if detectors_with_trigs != tested_detectors:
       missing = sorted(tested_detectors - detectors_with_trigs)
       log.error('No triggers found in %s', ', '.join(missing))
       fail = True
     
-  # dummy class needed for loading LIGOLW files
-  class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+   # dummy class needed for loading LIGOLW files
+   class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
       pass
 
-  lsctables.use_in(LIGOLWContentHandler)
+   lsctables.use_in(LIGOLWContentHandler)
     
-  # gather coincident triggers
-  coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
-  l=len(coinc_trig_paths)
-  if l==0:
+   # gather coincident triggers
+   coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
+   l=len(coinc_trig_paths)
+   if l==0:
       log.error('No coincident triggers detected')
       fail = True
-  elif l>=10: 
+   elif l>=10: 
       log.error('Too many coincident triggers detected')
       fail = True
-  else: 
+   else: 
       log.info(str(l)+' coincident trigger(s) detected')
 
-  #check properties of coincident triggers
-  for ctrigfp in coinc_trig_paths:
+   #check properties of coincident triggers
+   for ctrigfp in coinc_trig_paths:
       xmldoc = ligolw_utils.load_filename(
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
       sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)    
@@ -170,9 +170,9 @@ def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_
       else: log.info('Trigger parameters match injection parameters')
   
 
-  if fail:
+   if fail:
       log.error('Test Failed')
-  else:
+   else:
       log.info('Test Passed')
  
-  sys.exit(1 if fail else 0)
+   sys.exit(1 if fail else 0)
