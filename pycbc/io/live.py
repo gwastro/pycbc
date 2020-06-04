@@ -125,6 +125,10 @@ class SingleCoincForGraceDB(object):
             self.snr_series = {ifo: fud[ifo]['snr_series'] for ifo in fud}
             usable_ifos = fud.keys()
             followup_ifos = list(set(usable_ifos) - set(ifos))
+
+            if 'time_offset' in kwargs:
+                for ifo in self.snr_series:
+                    self.snr_series[ifo].start_time += kwargs['time_offset']
         else:
             self.snr_series = None
             usable_ifos = ifos
