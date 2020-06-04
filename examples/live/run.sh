@@ -47,7 +47,7 @@ then
         --polarization 0.0 \
         --approximant SEOBNRv4 \
         --mass1 7.2797217 \
-        --mass2 6.910238 \
+        --mass2 6.9102380 \
         --spin1z 0.7189988 \
         --spin2z 0.1991984 \
         --inclination 0.0 \
