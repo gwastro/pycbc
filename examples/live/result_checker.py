@@ -11,30 +11,30 @@ def close(a, b, c):
    return abs(a - b) <= c
     
 def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_spin2z):
-  log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
+   log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
 
-  tested_detectors = {'H1', 'L1', 'V1'}
-  sim_gps_start = 1272790000
-  sim_gps_end =  1272790500
-  sim_f_lower = 18
+   tested_detectors = {'H1', 'L1', 'V1'}
+   sim_gps_start = 1272790000
+   sim_gps_end =  1272790500
+   sim_f_lower = 18
 
-  with h5py.File('template_bank.hdf', 'r') as bankf:
+   with h5py.File('template_bank.hdf', 'r') as bankf:
       temp_mass1 = bankf['mass1'][:]
       temp_mass2 = bankf['mass2'][:]
       temp_s1z = bankf['spin1z'][:]
       temp_s2z = bankf['spin2z'][:]
 
-  detectors_with_trigs = set()
-  fail = False
+   detectors_with_trigs = set()
+   fail = False
 
-  log.info('Starting Test')
+   log.info('Starting Test')
   
-  trig_paths = sorted(glob.glob('output/????_??_??/*.hdf'))
-  for trigfp in trig_paths:
-    with h5py.File(trigfp, 'r') as trigf:
-        for detector in tested_detectors:
+   trig_paths = sorted(glob.glob('output/????_??_??/*.hdf'))
+   for trigfp in trig_paths:
+      with h5py.File(trigfp, 'r') as trigf:
+         for detector in tested_detectors:
             if detector not in trigf:
-                continue
+               continue
             group = trigf[detector]
 
             if 'psd' not in group:
@@ -50,8 +50,8 @@ def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_
                     or (in_band_asd > 1e-20).any() \
                     or not np.isfinite(in_band_asd).all() \
                     or psd_epoch < sim_gps_start or psd_epoch > sim_gps_end:
-                log.info('Invalid PSD in %s %s', trigfp, detector)
-                fail = True
+               log.info('Invalid PSD in %s %s', trigfp, detector)
+               fail = True
 
             if 'snr' not in group or len(group['snr']) == 0:
                 continue
@@ -61,22 +61,22 @@ def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_
             # check that SNR is non-negative and finite
             snr = group['snr'][:]
             if (snr < 0).any() or not np.isfinite(snr).all():
-                log.error('Invalid SNR in %s %s', trigfp, detector)
-                fail = True
+               log.error('Invalid SNR in %s %s', trigfp, detector)
+               fail = True
 
             # check that Allen chi^2 is non-negative and finite
             chisq = group['chisq'][:]
             chisq_dof = group['chisq_dof'][:]
             if (chisq < 0).any() or not np.isfinite(chisq).all() \
                     or (chisq_dof < 0).any() or not np.isfinite(chisq_dof).all():
-                log.error('Invalid Allen chi^2 in %s %s', trigfp, detector)
-                fail = True
+               log.error('Invalid Allen chi^2 in %s %s', trigfp, detector)
+               fail = True
 
             # check that merger time is within the simulated time range
             end_time = group['end_time'][:]
             if (end_time < sim_gps_start).any() or (end_time > sim_gps_end).any():
-                log.error('Invalid merger time in %s %s', trigfp, detector)
-                fail = True
+               log.error('Invalid merger time in %s %s', trigfp, detector)
+               fail = True
 
             # check that template parameters are consistent with the bank
             trig_mass1 = group['mass1'][:]
@@ -91,12 +91,12 @@ def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_
             test_all = np.logical_and.reduce((test_mass1, test_mass2,
                                               test_s1z, test_s2z))
             if not test_all.all():
-                log.error('Invalid template parameters in %s %s',
+               log.error('Invalid template parameters in %s %s',
                               trigfp, detector)
-                fail = True
+               fail = True
 
   # check that triggers were produced in all detectors
-  if detectors_with_trigs != tested_detectors:
+  if detectors_with_trigs != tested_detectors:      
       missing = sorted(tested_detectors - detectors_with_trigs)
       log.error('No triggers found in %s', ', '.join(missing))
       fail = True
@@ -144,19 +144,25 @@ def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_
     
       #check if parameters of trigger are close to parameters of injection
       param_check = True
-      for t in end_time:
-          if not close(t,inj_time,1.0):
-              param_check = False
+      for t in end_time:         
+         if not close(t,inj_time,1.0):            
+            param_check = False
+            log.error('Time test failed')  
       if not close(mass1, inj_mass1, 1e-7):
-          param_check = False
+         param_check = False
+         log.error('Mass 1 test failed')
       if not close(mass2, inj_mass2, 1e-7):
-          param_check = False
+         param_check = False
+         log.error('Mass 2 test failed')
       if not close(spin1z, inj_spin1z, 1e-7):
-          param_check = False
+         param_check = False
+         log.error('Spin1z test failed')
       if not close(spin2z, inj_spin2z, 1e-7):
-          param_check = False
+         param_check = False
+         log.error('Spin2z test failed')   
       if not close(network_snr, inj_snr, 0.1):
-          param_check = False
+         param_check = False
+         log.error('Network SNR test failed')
 
       if not param_check:
           fail = True
