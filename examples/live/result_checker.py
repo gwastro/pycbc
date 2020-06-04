@@ -153,9 +153,11 @@ def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_
          log.error('Mass 1 test failed')
       if not close(mass2, inj_mass2, 1e-7):
          param_check = False
-         dif=mass2-inj_mass2
-         log.error(dif)
+         dif=mass2-inj_mass2         
          log.error('Mass 2 test failed')
+         log.error('Mass2: '+str(mass2))
+         log.error('Inj Mass2: '+str(inj_mass2))
+         log.error('Dif: '+str(dif))
       if not close(spin1z, inj_spin1z, 1e-7):
          param_check = False
          log.error('Spin1z test failed')
