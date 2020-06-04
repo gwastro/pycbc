@@ -148,20 +148,17 @@ def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_
          if not close(t,inj_time,1.0):            
             param_check = False
             log.error('Time test failed')  
-      if not close(mass1, inj_mass1, 1e-7):
+      if not close(mass1, inj_mass1, 5e-7):
          param_check = False
          log.error('Mass 1 test failed')
-      if not close(mass2, inj_mass2, 1e-7):
-         param_check = False
-         dif=mass2-inj_mass2         
+      if not close(mass2, inj_mass2, 5e-7):
+         param_check = False                  
          log.error('Mass 2 test failed')
-         log.error('Mass2: '+str(mass2))
-         log.error('Inj Mass2: '+str(inj_mass2))
-         log.error('Dif: '+str(dif))
-      if not close(spin1z, inj_spin1z, 1e-7):
+         
+      if not close(spin1z, inj_spin1z, 5e-7):
          param_check = False
          log.error('Spin1z test failed')
-      if not close(spin2z, inj_spin2z, 1e-7):
+      if not close(spin2z, inj_spin2z, 5e-7):
          param_check = False
          log.error('Spin2z test failed')   
       if not close(network_snr, inj_snr, 0.1):
