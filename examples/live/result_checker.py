@@ -161,7 +161,7 @@ def check_results_test(inj_snr, inj_time, inj_mass1, inj_mass2, inj_spin1z, inj_
       if not close(spin2z, inj_spin2z, 5e-7):
          param_check = False
          log.error('Spin2z test failed')   
-      if not close(network_snr, inj_snr, 0.1):
+      if not close(network_snr, inj_snr, 0.05):
          param_check = False
          log.error('Network SNR test failed')
 
