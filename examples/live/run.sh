@@ -10,7 +10,12 @@ export HDF5_USE_FILE_LOCKING="FALSE"
 gps_start_time=1272790000
 gps_end_time=1272790500
 
-
+inj_snr = 30
+inj_time = 1272790440
+inj_mass1 = 7.2797217
+inj_mass2 = 6.9102380
+inj_spin1z = 0.7189988
+inj_spin2z = 0.1991984
 
 if test ! -f template_bank.hdf
 then
@@ -41,15 +46,15 @@ then
     echo -e "\\n\\n>> [`date`] Generating injection"
 
     pycbc_generate_hwinj \
-        --network-snr 30.0 \
+        --network-snr $inj_snr \
         --ra 45.0 \
         --dec 45.0 \
         --polarization 0.0 \
         --approximant SEOBNRv4 \
-        --mass1 7.2797217 \
-        --mass2 6.9102380 \
-        --spin1z 0.7189988 \
-        --spin2z 0.1991984 \
+        --mass1 $inj_mass1 \
+        --mass2 $inj_mass2 \
+        --spin1z $inj_spin1z \
+        --spin2z $inj_spin2z \
         --inclination 0.0 \
         --taper TAPER_START \
         --waveform-low-frequency-cutoff 10 \
@@ -161,4 +166,4 @@ python -m mpi4py `which pycbc_live` \
 
 echo -e "\\n\\n>> [`date`] Checking results"
 
-./check_results.py
+python -c "import result_checker as rc; rc.check_results_test($inj_snr, $inj_time, $inj_mass1, $inj_mass2, $inj_spin1z, $inj_spin2z)"
