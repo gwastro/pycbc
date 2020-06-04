@@ -476,6 +476,25 @@ class TestTimeSeriesBase(array_base,unittest.TestCase):
             self.assertAlmostEqual(self.b.duration, 0.3)
             self.assertAlmostEqual(self.bad3.duration, 0.6)
 
+    def test_inject(self):
+        a = TimeSeries(numpy.zeros(2**20, dtype=numpy.float32),
+                                   delta_t=1.0)
+        a[2**19] = 1
+
+        # Check that the obvious case reduces to an add operation
+        r = a.inject(a)
+        self.assertAlmostEqual(r.max(), 2.0, places=7)
+
+        # Check adding an offset vector
+        b = a.cyclic_time_shift(-0.21)
+        r = a.inject(b)
+        self.assertAlmostEqual(r.max(), 2.0, places=5)
+
+        # check adding shoter offset vector
+        c = a.time_slice(2**19-5000, 2**19+5000).cyclic_time_shift(32.12)
+        r = a.inject(c)
+        self.assertAlmostEqual(r.max(), 2.0, places=4)
+
     def test_sample_times(self):
         with self.context:
             # Moving these to the current scheme
