@@ -10,12 +10,12 @@ export HDF5_USE_FILE_LOCKING="FALSE"
 gps_start_time=1272790000
 gps_end_time=1272790500
 
-inj_snr = 30
-inj_time = 1272790440
-inj_mass1 = 7.2797217
-inj_mass2 = 6.9102380
-inj_spin1z = 0.7189988
-inj_spin2z = 0.1991984
+inj_snr=30
+inj_time=1272790440
+inj_mass1=7.2797217
+inj_mass2=6.9102380
+inj_spin1z=0.7189988
+inj_spin2z=0.1991984
 
 if test ! -f template_bank.hdf
 then
