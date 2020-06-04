@@ -2,10 +2,12 @@
 """
 import logging
 
+
 def premerger_taylorf2(**p):
+    """ Generate time-shifted TaylorF2"""
     from pycbc.waveform import get_fd_waveform
     from pycbc.waveform.spa_tmplt import spa_length_in_time
-    
+
     p.pop('approximant')
     hp, hc = get_fd_waveform(approximant="TaylorF2", **p)
 
@@ -16,16 +18,16 @@ def premerger_taylorf2(**p):
 
     hp = hp.cyclic_time_shift(removed)
     hp.start_time += removed
-    
+
     hc = hc.cyclic_time_shift(removed)
     hc.start_time += removed
-    
-    logging.info("Generated pre-merger waveform, m1=%.1f, m2=%.1f, fmax=%.1f, timeshift=%.1f",
+
+    logging.info("PreTaylorF2, m1=%.1f, m2=%.1f, fmax=%.1f, timeshift=%.1f",
                  p['mass1'], p['mass2'], p['f_final'], removed)
     kmin = int(p['f_lower'] / p['delta_f'])
     hp[0:kmin] = 0
     hc[0:kmin] = 0
-    
+
     hp.time_offset = removed
     hc.time_offset = removed
     return hp, hc

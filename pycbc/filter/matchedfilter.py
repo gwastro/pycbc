@@ -1683,7 +1683,7 @@ class LiveBatchMatchedFilter(object):
             if hasattr(htilde, 'time_offset'):
                 if 'time_offset' not in result:
                     result['time_offset'] = []
-        
+
             l = htilde.out[seg].abs_arg_max()
 
             sgm = htilde.sigmasq(psd)
