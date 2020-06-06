@@ -46,11 +46,11 @@ def check_single_results(tested_detectors):
                         psd_epoch = group['psd'].attrs['epoch']
                         in_band_asd = psd[psd_f > sim_f_lower] ** 0.5
                         if len(in_band_asd) == 0 or (in_band_asd < 1e-24).any() \
-                              or (in_band_asd > 1e-20).any() \
-                              or not np.isfinite(in_band_asd).all() \
-                              or psd_epoch < sim_gps_start or psd_epoch > sim_gps_end:
-                        log.info('Invalid PSD in %s %s', trigfp, detector)
-                        single_fail = True
+                                    or (in_band_asd > 1e-20).any() \
+                                    or not np.isfinite(in_band_asd).all() \
+                                    or psd_epoch < sim_gps_start or psd_epoch > sim_gps_end:
+                              log.info('Invalid PSD in %s %s', trigfp, detector)
+                              single_fail = True
 
                         if 'snr' not in group or len(group['snr']) == 0:
                               continue
