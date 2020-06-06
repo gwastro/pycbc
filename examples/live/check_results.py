@@ -149,7 +149,7 @@ sim_f_lower = 18
 fail = False
 lsctables.use_in(LIGOLWContentHandler)
       
-inj_xmls == sorted(glob.glob('./hwinjcbc*.xml.gz'))
+inj_xmls = sorted(glob.glob('./hwinjcbc*.xml.gz'))
 if len(inj_xmls==0):
       log.error('No inj_xml found when checking results')
       fail=True
