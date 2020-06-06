@@ -41,6 +41,7 @@ fi
 # test if there is a hwinj file. If not, make one.
 # if a new inj is made, delete old strain and output files
 
+# this check isn't working right
 if [[ -f hwinjcbc*.xml.gz ]]
 then    
     inj_names=`ls ./hwinjcbc*.xml.gz`
