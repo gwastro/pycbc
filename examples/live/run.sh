@@ -58,6 +58,7 @@ else
     then rm -r ./output
     fi
     
+    # this will be replaced with a python script in future
     bash generate_injection.sh
     
     inj_names=`ls ./hwinjcbc*.xml.gz`  
