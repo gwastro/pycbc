@@ -40,11 +40,10 @@ fi
 
 # test if there is a hwinj file. If not, make one.
 
-inj_names=`ls ./hwinjcbc*.xml.gz`
-n_of_injs = ${#inj_names[@]}
-
-if [n_of_injs=0]
+if [-f hwinjcbc*.xml.gz]
 then
+    inj_names=`ls ./hwinjcbc*.xml.gz`
+else
     echo -e "\\n\\n>> [`date`] Generating injection"
     
     inj_snr=30
