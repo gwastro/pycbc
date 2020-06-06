@@ -165,4 +165,4 @@ python -m mpi4py `which pycbc_live` \
 --end-time $gps_end_time
 
 echo -e "\\n\\n>> [`date`] Checking results"
-./check_results.py
+python ./check_results.py
