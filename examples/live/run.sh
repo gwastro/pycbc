@@ -12,7 +12,7 @@ gps_end_time=1272790500
 
 # test if there is a template bank. If not, make one
 
-if [[! -f template_bank.hdf]]
+if [[ ! -f template_bank.hdf]]
 then
     echo -e "\\n\\n>> [`date`] Making template bank"
     curl \
@@ -40,7 +40,7 @@ fi
 
 # test if there is a hwinj file. If not, make one.
 
-if [[-f hwinjcbc*.xml.gz]]
+if [[ -f hwinjcbc*.xml.gz]]
 then    
     inj_names=`ls ./hwinjcbc*.xml.gz`
     if ${inj_name[@]} > 1
@@ -82,7 +82,7 @@ inj_file=${inj_names[0]}
 
 # test if strain files exist. If they dont, make them
 
-if [[! -d ./strain]]
+if [[ ! -d ./strain]]
 then        
     echo -e "\\n\\n>> [`date`] Generating simulated strain"
     
