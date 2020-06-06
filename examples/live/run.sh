@@ -44,7 +44,7 @@ fi
 if [[ -f hwinjcbc*.xml.gz ]]
 then    
     inj_names=`ls ./hwinjcbc*.xml.gz`
-    if ${inj_name[@]} > 1
+    if [[ ${inj_name[@]} > 1 ]]
     then echo -e "\\n\\n>> [`date`] Too many injection xmls, only first will be used"
     fi
 else
@@ -79,8 +79,13 @@ else
         --psd-model H1:aLIGOMidLowSensitivityP1200087 L1:aLIGOMidLowSensitivityP1200087 V1:AdVEarlyLowSensitivityP1200087
         
     inj_names=`ls ./hwinjcbc*.xml.gz`   
-    rm -r ./strain
-    rm -r ./output
+    if [[ -d ./strain ]]
+    then rm -r ./strain
+    fi
+    
+    if [[ -d ./output ]]
+    then rm -r ./output
+    fi
 fi
 
 inj_file=${inj_names[0]} 
