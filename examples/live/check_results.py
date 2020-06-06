@@ -69,7 +69,7 @@ def check_single_results(tested_detectors):
                         if (chisq < 0).any() or not np.isfinite(chisq).all() \
                                     or (chisq_dof < 0).any() or not np.isfinite(chisq_dof).all():
                               log.error('Invalid Allen chi^2 in %s %s', trigfp, detector)
-                        single_fail = True
+                              single_fail = True
 
                         # check that merger time is within the simulated time range
                         end_time = group['end_time'][:]
