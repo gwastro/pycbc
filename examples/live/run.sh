@@ -46,6 +46,14 @@ n_of_injs = ${#inj_names[@]}
 if [n_of_injs=0]
 then
     echo -e "\\n\\n>> [`date`] Generating injection"
+    
+    inj_snr=30
+    inj_time=1272790440
+    inj_mass1=7.2797217
+    inj_mass2=6.9102380
+    inj_spin1z=0.7189988
+    inj_spin2z=0.1991984
+    
     pycbc_generate_hwinj \
         --network-snr $inj_snr \
         --ra 45.0 \
