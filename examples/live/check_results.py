@@ -155,6 +155,7 @@ if len(inj_xmls)==0:
       fail=True
 else:
       path_to_inj_xml = inj_xmls[0]
+      log.info('injection xml found')
       inj_doc = ligolw_utils.load_filename(
             path_to_inj_xml, False, contenthandler=LIGOLWContentHandler)
       inj_table = lsctables.SnglInspiralTable.get_table(inj_doc)
