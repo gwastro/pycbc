@@ -166,4 +166,4 @@ python -m mpi4py `which pycbc_live` \
 
 echo -e "\\n\\n>> [`date`] Checking results"
 
-python -c "import result_checker as rc; rc.check_results($inj_snr, $inj_time, $inj_mass1, $inj_mass2, $inj_spin1z, $inj_spin2z)"
+python -c "import check_results as rc; rc.check_results($inj_snr, $inj_time, $inj_mass1, $inj_mass2, $inj_spin1z, $inj_spin2z)"
