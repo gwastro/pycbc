@@ -59,7 +59,7 @@ else
     fi
     
     # this will be replaced with a python script in future
-    bash generate_injection.sh
+    bash generate_injections.sh
     
     inj_names=`ls ./hwinjcbc*.xml.gz`  
 fi
