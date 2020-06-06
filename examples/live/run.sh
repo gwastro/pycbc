@@ -45,7 +45,8 @@ if [[ -f hwinjcbc*.xml.gz ]]
 then    
     inj_names=`ls ./hwinjcbc*.xml.gz`
     if ${inj_name[@]} > 1
-        then echo -e "\\n\\n>> [`date`] Too many injection xmls, only first will be used"
+    then echo -e "\\n\\n>> [`date`] Too many injection xmls, only first will be used"
+    fi
 else
     echo -e "\\n\\n>> [`date`] Generating injection"
     
