@@ -99,7 +99,8 @@ def check_single_results(tested_detectors):
             missing = sorted(tested_detectors - detectors_with_trigs)
             log.error('No triggers found in %s', ', '.join(missing))
             single_fail = True
-   
+      
+      if single_fail: log.info('Single Trigger Test Failed')
       return single_fail
       
 def check_coinc_results(inj_table):
@@ -139,6 +140,7 @@ def check_coinc_results(inj_table):
             log.info('Spin1z: '+str(spin1z))
             log.info('Spin2z: '+str(spin2z))
    
+      if coinc_fail: log.info('Coincident Trigger Test Failed')
       return coinc_fail
       
 
