@@ -39,6 +39,7 @@ then
 fi
 
 # test if there is a hwinj file. If not, make one.
+# if a new inj is made, delete old strain and output files
 
 if [[ -f hwinjcbc*.xml.gz ]]
 then    
@@ -75,7 +76,10 @@ else
         --gps-end-time 1272790500 \
         --gps-start-time 1272790000 \
         --psd-model H1:aLIGOMidLowSensitivityP1200087 L1:aLIGOMidLowSensitivityP1200087 V1:AdVEarlyLowSensitivityP1200087
-    inj_names=`ls ./hwinjcbc*.xml.gz`    
+        
+    inj_names=`ls ./hwinjcbc*.xml.gz`   
+    rm -r ./strain
+    rm -r ./output
 fi
 
 inj_file=${inj_names[0]} 
