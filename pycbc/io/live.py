@@ -118,6 +118,12 @@ class SingleCoincForGraceDB(object):
         self.is_hardware_injection = ('HWINJ' in coinc_results
                                       and coinc_results['HWINJ'])
 
+        # Check if we need to apply a time offset (this may be permerger)
+        time_offset = 0
+        rtoff = 'foreground/{}/time_offset'.format(ifos[0])
+        if rtoff in coinc_results:
+            time_offset = coinc_results[rtoff]
+
         if 'followup_data' in kwargs:
             fud = kwargs['followup_data']
             assert len({fud[ifo]['snr_series'].delta_t for ifo in fud}) == 1, \
@@ -126,9 +132,9 @@ class SingleCoincForGraceDB(object):
             usable_ifos = fud.keys()
             followup_ifos = list(set(usable_ifos) - set(ifos))
 
-            if 'time_offset' in kwargs:
+            if time_offset:
                 for ifo in self.snr_series:
-                    self.snr_series[ifo].start_time += kwargs['time_offset']
+                    self.snr_series[ifo].start_time += time_offset
         else:
             self.snr_series = None
             usable_ifos = ifos
@@ -185,8 +191,8 @@ class SingleCoincForGraceDB(object):
             for name in names:
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
                 if name == 'end_time':
-                    if 'time_offset' in kwargs:
-                        val += kwargs['time_offset']
+                    if time_offset:
+                        val += time_offset
                     sngl.set_end(lal.LIGOTimeGPS(val))
                 else:
                     try:
@@ -216,17 +222,19 @@ class SingleCoincForGraceDB(object):
             if self.snr_series is not None:
                 snr_series_to_xml(self.snr_series[ifo], outdoc, sngl.event_id)
 
+        # set merger time to the average of the ifo peaks
+        self.merger_time = ave_time = numpy.mean(
+                    [coinc_results['foreground/{}/end_time'.format(ifo)]
+                     for ifo in ifos])
+
         # for subthreshold detectors, respect BAYESTAR's assumptions and checks
         bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
                                  'spin1y spin1z spin2x spin2y spin2z').split()
-        subthreshold_sngl_time = numpy.mean(
-                    [coinc_results['foreground/{}/end_time'.format(ifo)]
-                     for ifo in ifos])
         for sngl in sngl_inspiral_table:
             if sngl.ifo in followup_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
-                sngl.set_end(lal.LIGOTimeGPS(subthreshold_sngl_time))
+                sngl.set_end(lal.LIGOTimeGPS(ave_time))
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)

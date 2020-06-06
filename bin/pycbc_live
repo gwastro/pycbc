@@ -241,20 +241,15 @@ class LiveEventManager(object):
 
             live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
-            time_offset = 0
-            rtoff = 'foreground/{}/time_offset'.format(coinc_ifos[0])
-            if rtoff in coinc_results:
-                time_offset = coinc_results[rtoff]
             event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
                                           mc_area_args=self.mc_area_args,
-                                          time_offset=time_offset)
+                                          )
 
-            end_time = int(coinc_results['foreground/%s/end_time'
-                                         % coinc_ifos[0]])
-            fname = 'coinc-{}-{}.xml.gz'.format(end_time + time_offset, pycbc.random_string(6))
+            fname = 'coinc-{}-{}.xml.gz'.format(event.merger_time,
+                                                pycbc.random_string(6))
             fname = os.path.join(self.path, fname)
             logging.info('Coincident candidate! Saving as %s', fname)
 
@@ -382,19 +377,14 @@ class LiveEventManager(object):
 
             live_ifos = [i for i in fud if 'snr_series' in fud[i]]
 
-            time_offset = 0
-            rtoff = 'foreground/{}/time_offset'.format(ifo)
-            if rtoff in single:
-                time_offset = single[rtoff]
             event = SingleCoincForGraceDB(live_ifos, single, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
                                           mc_area_args=self.mc_area_args,
-                                          time_offset=time_offset)
+                                          )
 
-            end_time = int(single['foreground/%s/end_time' % ifo])
-            fname = 'single-%s-%s.xml.gz' % (ifo, end_time + time_offset)
+            fname = 'single-%s-%s.xml.gz' % (ifo, event.merger_time)
             fname = os.path.join(self.path, fname)
             logging.info('Single-detector candidate! Saving as %s', fname)
 
