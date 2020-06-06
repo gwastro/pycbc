@@ -41,8 +41,10 @@ fi
 # test if there is a hwinj file. If not, make one.
 
 if [-f hwinjcbc*.xml.gz]
-then
+then    
     inj_names=`ls ./hwinjcbc*.xml.gz`
+    if ${inj_name[@]} > 1
+        then echo -e "\\n\\n>> [`date`] Too many injection xmls, only first will be used"
 else
     echo -e "\\n\\n>> [`date`] Generating injection"
     
