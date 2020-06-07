@@ -43,11 +43,11 @@ fi
 
 
 inj_names=(./hwinjcbc*.xml.gz)
-if [[ ${inj_names[@]} > 0 ]]
-then    
-    if [[ ${inj_name[@]} > 1 ]]
-    then echo -e "\\n\\n>> [`date`] Too many injection xmls, only first will be used"
-    fi
+n_inj=${inj_name[@]}
+if [[ $n_inj = 1  ]]
+then echo -e "\\n\\n>> [`date`] Pre-existing Inj Xml Found"
+elif [[ $n_inj > 1 ]]
+then echo -e "\\n\\n>> [`date`] Too many injection xmls, only first will be used"
 else
     echo -e "\\n\\n>> [`date`] Generating injection"
     
