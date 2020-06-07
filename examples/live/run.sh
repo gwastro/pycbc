@@ -41,10 +41,10 @@ fi
 # test if there is a hwinj file. If not, make one.
 # if a new inj is made, delete old strain and output files
 
-# this check isn't working right
-if [[ -f hwinjcbc*.xml.gz ]]
+
+inj_names=(./hwinjcbc*.xml.gz)
+if [[ ${inj_names[@]} > 0 ]]
 then    
-    inj_names=`ls ./hwinjcbc*.xml.gz`
     if [[ ${inj_name[@]} > 1 ]]
     then echo -e "\\n\\n>> [`date`] Too many injection xmls, only first will be used"
     fi
@@ -62,7 +62,7 @@ else
     # this will be replaced with a python script in future
     bash generate_injections.sh
     
-    inj_names=`ls ./hwinjcbc*.xml.gz`  
+    inj_names=(./hwinjcbc*.xml.gz) 
 fi
 
 inj_file=${inj_names[0]} 
