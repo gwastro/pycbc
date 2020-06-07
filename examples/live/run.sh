@@ -44,14 +44,15 @@ fi
 
 
 inj_names='ls ./hwinjcbc*.xml.gz'
-n_inj=${#inj_names[@]}
-if [[ $n_inj = 1  ]]
-then echo -e "\\n\\n>> [`date`] Pre-existing Inj Xml Found"
-elif [[ $n_inj > 1 ]]
-then echo -e "\\n\\n>> [`date`] Too many injection xmls, only first will be used"
-else
-    echo -e "\\n\\n>> [`date`] Generating injection"
-    
+if [[ "$(echo ./hwinjcbc*.xml.gz)" != "./hwinjcbc*.xml.gz" ]]
+then
+    n_inj=${inj_names[@]}
+    if [[ $n_inj = 1  ]]
+    then echo -e "\\n\\n>> [`date`] Pre-existing Inj Xml Found"
+    elif [[ $n_inj > 1 ]]
+    then echo -e "\\n\\n>> [`date`] Too many injection xmls, only first will be used"
+    fi
+else echo -e "\\n\\n>> [`date`] Generating injection"
     if [[ -d ./strain ]]
     then rm -r ./strain
     fi
@@ -63,7 +64,7 @@ else
     # this will be replaced with a python script in future
     bash generate_injections.sh
     
-    inj_names=(./hwinjcbc*.xml.gz) 
+     inj_names='./hwinjcbc*.xml.gz' 
 fi
 
 inj_file=${inj_names[0]} 
