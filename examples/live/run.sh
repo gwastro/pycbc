@@ -42,10 +42,9 @@ fi
 # if a new inj is made, delete old strain and output files
 
 
-inj_names=(./hwinjcbc*.xml.gz)
-echo -e $inj_names
-n_inj=${inj_names[@]}
-echo -e $n_inj
+
+inj_names='./hwinjcbc*.xml.gz'
+n_inj=${#inj_names[@]}
 if [[ $n_inj = 1  ]]
 then echo -e "\\n\\n>> [`date`] Pre-existing Inj Xml Found"
 elif [[ $n_inj > 1 ]]
