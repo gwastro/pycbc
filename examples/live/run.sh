@@ -43,10 +43,11 @@ fi
 
 
 
-inj_names='ls ./hwinjcbc*.xml.gz'
+
 if [[ "$(echo ./hwinjcbc*.xml.gz)" != "./hwinjcbc*.xml.gz" ]]
 then
-    n_inj=${inj_names[@]}
+    inj_names='ls ./hwinjcbc*.xml.gz'
+    n_inj=${#inj_names[@]}
     if [[ $n_inj = 1  ]]
     then echo -e "\\n\\n>> [`date`] Pre-existing Inj Xml Found"
     elif [[ $n_inj > 1 ]]
