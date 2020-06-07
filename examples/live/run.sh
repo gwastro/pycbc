@@ -43,6 +43,7 @@ fi
 
 
 inj_names=(./hwinjcbc*.xml.gz)
+echo -e $inj_names
 n_inj=${inj_names[@]}
 echo -e $n_inj
 if [[ $n_inj = 1  ]]
