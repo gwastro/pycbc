@@ -25,6 +25,8 @@ epsie_proposals = {
     EpsieAdaptiveNormal.name: EpsieAdaptiveNormal,
     EpsieBoundedNormal.name: EpsieBoundedNormal,
     EpsieAdaptiveBoundedNormal.name: EpsieAdaptiveBoundedNormal,
+    EpsieAngular.name: EpsieAngular,
+    EpsieAdaptiveAngular.name: EpsieAdaptiveAngular,
 }
 
 
