@@ -812,11 +812,9 @@ def compute_u_val_for_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
     # Initialize tan_kappa array
     u_val = denom * 0.
     # Catch the denominator -> 0 case
-    bad_lgc = (denom == 0)
-    u_val[bad_lgc] = 1E17
+    numpy.putmask(u_val , denom ==0, 1E17)
     # Otherwise do normal statistic
-    u_val[~bad_lgc] = (-rhoplusre+overlap*rhocrossre) / \
-        (-rhocrossre+overlap*rhoplusre)
+    numpy.putmask(u_val , denom !=0, (-rhoplusre+overlap*rhocrossre)/(-rhocrossre+overlap*rhoplusre))
     coa_phase = numpy.zeros(len(indices), dtype=numpy.float32)
 
     return u_val, coa_phase
