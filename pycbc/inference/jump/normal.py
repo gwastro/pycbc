@@ -32,13 +32,9 @@ class EpsieNormal(epsie_proposals.Normal):
     def from_config(cls, cp, section, tag):
         """Loads a proposal from a config file.
 
-        The section that is read should have the format ``[{section}-{tag}]``,
-        where ``{tag}`` is a :py:const:`pycbc.VARARGS_DELIM` separated list
-        of the parameters to create the jump proposal for.
-
-        Variances for each parameter may also be specified, by giving options
-        ``var-{param} = val``. Any parameter not specified will use a default
-        variance of 1.
+        This calls :py:func:`epsie_from_config` with ``cls`` set to
+        :py:class:`epsie.proposals.Normal` and ``with_boundaries`` set to
+        False. See that function for details on options that can be read.
 
         Example::
 
@@ -61,19 +57,7 @@ class EpsieNormal(epsie_proposals.Normal):
         :py:class:`epsie.proposals.Normal`:
             A normal proposal for use with ``epsie`` samplers.
         """
-        # check that the name matches
-        assert cp.get_opt_tag(section, "name", tag) == cls.name, (
-            "name in specified section must match mine")
-        params, opts = load_opts(cp, seciton, tag, skip=['name'])
-        if opts:
-            cov = get_variance(params, opts)
-            # check that there are no unrecognized options
-            if opts:
-                raise ValueError("unrecognized options {}"
-                                 .format(', '.join(opts.keys())))
-        else:
-            cov = None
-        return cls(params, cov=cov)
+        return epsie_from_config(cls, cp, section, tag, with_boundaries=False)
 
 
 class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
@@ -83,39 +67,9 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
     def from_config(cls, cp, section, tag):
         """Loads a proposal from a config file.
 
-        The section that is read should have the format ``[{section}-{tag}]``,
-        where ``{tag}`` is a :py:const:`pycbc.VARARGS_DELIM` separated list
-        of the parameters to create the jump proposal for.
-
-        Options that are read:
-
-        * name : str
-            Required. Must match the name of the proposal.
-        * adaptation-duration : int
-            Required. Sets the ``adaptation_duration``.
-        * min-{param} : float
-        * max-{param} : float
-            Required. Bounds must be provided for every parameter. These are
-            used to determine the prior widths.
-        * var-{param} : float
-            Optional. Initial variance to use. If not provided, will use a
-            default based on the bounds (see
-            :py:class:`epsie.proposals.AdaptiveSupport` for details).
-        * adaptation-decay : int
-            Optional. Sets the ``adaptation_decay``. If not provided, will use
-            the class's default.
-        * start-iteration : int
-            Optional. Sets the ``start_iteration``.If not provided, will use
-            the class's default.
-        * target-rate : float
-            Optional. Sets the ``target_rate``. If not provided, will use
-            the class's default.
-
-        .. note::
-           The min and max parameter bounds are only used for setting the width
-           of the covariance of the proposal; they are not used as bounds on
-           the proposal itself. In other words, it is possible to get proposals
-           outside of the given min and max values.
+        This calls :py:func:`epsie_adaptive_from_config` with ``cls`` set to
+        :py:class:`epsie.proposals.AdaptiveNormal`. See that function for
+        details on options that can be read.
 
         Example::
 
@@ -142,25 +96,157 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
         :py:class:`epsie.proposals.AdaptiveNormal`:
             An adaptive normal proposal for use with ``epsie`` samplers.
         """
-        # check that the name matches
-        assert cp.get_opt_tag(section, "name", tag) == cls.name, (
-            "name in specified section must match mine")
-        params, opts = load_opts(cp, seciton, tag, skip=['name'])
-        args = {'parameters': params}
-        # get the bounds
-        args['prior_widths'] = get_param_boundaries(params, opts)
-        # get the adaptation parameters
-        args.update(get_epsie_adaptation_settings(opts))
-        # if there are any other options, assume they are for setting the
-        # initial standard deviation
+        return epsie_adaptive_from_config(cls, cp, section, tag,
+                                          boundary_arg_name='prior_widths')
+
+
+def epsie_from_config(cls, cp, section, tag, with_boundaries=False):
+    """Generic function for loading epsie proposals from a config file.
+
+    This should be used for proposals that are not adaptive.
+
+    The section that is read should have the format ``[{section}-{tag}]``,
+    where ``{tag}`` is a :py:const:`pycbc.VARARGS_DELIM` separated list
+    of the parameters to create the jump proposal for.
+
+    Options that are read:
+
+    * name : str
+        Required. Must match the name of the proposal.
+    * var-{param} : float
+        Optional. Variance to use for parameter {param}. If ``with_boundaries``
+        is True, then any parameter not specified will use a default variance
+        of :math:`(\Delta p/10)^2`, where :math:`\Delta p` is the boundary
+        width for that parameter. If ``with_boundaries`` is False, will use
+        a default value of 1.
+    * min-{param} : float
+    * max-{param} : float
+        The bounds on each parameter. Required if ``with_boundaries`` is set to
+        True, in which case bounds must be provided for every parameter.
+
+    Parameters
+    ----------
+    cls : epsie.proposals.BaseProposal
+        The epsie proposal class to initialize.
+    cp : WorkflowConfigParser instance
+        Config file to read from.
+    section : str
+        The name of the section to look in.
+    tag : str
+        :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names
+        to create proposals for.
+    with_boundaries : bool, optional
+        Try to load boundaries from the section and pass a ``boundaries``
+        argument to the class's initialization. This should be set to true
+        for bounded proposals. Default is False.
+
+    Returns
+    -------
+    cls :
+        The class initialized with the options read from the config file.
+    """
+    # check that the name matches
+    assert cp.get_opt_tag(section, "name", tag) == cls.name, (
+        "name in specified section must match mine")
+    params, opts = load_opts(cp, seciton, tag, skip=['name'])
+    args = {'parameters': params}
+    if with_boundaries:
+        boundaries = get_param_boundaries(params, opts)
+        args['boundaries'] = boundaries
+    # if there are any options left, assume they are for setting the variance
+    if opts:
+        cov = get_variance(params, opts)
+    elif with_boundaries:
+        cov = numpy.array([abs(boundaries[p])/10. for p in params])**2.
+    else:
+        cov = None
+    args['cov'] = cov
+    # no other options should remain
+    if opts:
+        raise ValueError("unrecognized options {}"
+                         .format(', '.join(opts.keys())))
+    return cls(**args)
+
+
+def epsie_adaptive_from_config(cls, cp, section, tag, with_boundaries=True,
+                               boundary_arg_name='boundaries'):
+    """Generic function for loading adaptive epsie proposals from a config
+    file.
+
+    The section that is read should have the format ``[{section}-{tag}]``,
+    where ``{tag}`` is a :py:const:`pycbc.VARARGS_DELIM` separated list
+    of the parameters to create the jump proposal for.
+
+    Options that are read:
+
+    * name : str
+        Required. Must match the name of the proposal.
+    * adaptation-duration : int
+        Required. Sets the ``adaptation_duration``.
+    * min-{param} : float
+    * max-{param} : float
+        The bounds on each parameter. Required if ``with_boundaries`` is set to
+        True, in which case bounds must be provided for every parameter.
+    * var-{param} : float
+        Optional. Initial variance to use. If not provided, will use a
+        default based on the bounds (see
+        :py:class:`epsie.proposals.AdaptiveSupport` for details).
+    * adaptation-decay : int
+        Optional. Sets the ``adaptation_decay``. If not provided, will use
+        the class's default.
+    * start-iteration : int
+        Optional. Sets the ``start_iteration``.If not provided, will use
+        the class's default.
+    * target-rate : float
+        Optional. Sets the ``target_rate``. If not provided, will use
+        the class's default.
+
+    Parameters
+    ----------
+    cls : epsie.proposals.BaseProposal
+        The epsie proposal class to initialize. The class should have
+        :py:class:`epsie.proposals.normal.AdaptiveSupport`.
+    cp : WorkflowConfigParser instance
+        Config file to read from.
+    section : str
+        The name of the section to look in.
+    tag : str
+        :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names
+        to create proposals for.
+    with_boundaries : bool, optional
+        Try to load boundaries from the section and pass a ``boundaries``
+        argument to the class's initialization. Default is True.
+    boundary_arg_name : str, optional
+        The name of the argument for the boundaries (only used if
+        ``with_boundaries`` is True). Provided because some adaptive proposals
+        that only need the boundary widths call this ``prior_widths``. Default
+        is ``'boundaries'``.
+
+    Returns
+    -------
+    cls :
+        The class initialized with the options read from the config file.
+    """
+    # check that the name matches
+    assert cp.get_opt_tag(section, "name", tag) == cls.name, (
+        "name in specified section must match mine")
+    params, opts = load_opts(cp, seciton, tag, skip=['name'])
+    args = {'parameters': params}
+    # get the bounds
+    if with_boundaries:
+        args[boundary_arg_name] = get_param_boundaries(params, opts)
+    # get the adaptation parameters
+    args.update(get_epsie_adaptation_settings(opts))
+    # if there are any other options, assume they are for setting the
+    # initial standard deviation
+    if opts:
+        var = get_variance(params, opts)
+        args['initial_std'] = var**0.5
+        # at this point, there should be no options left
         if opts:
-            var = get_variance(params, opts)
-            args['initial_std'] = var**0.5
-            # at this point, there should be no options left
-            if opts:
-                raise ValueError('unrecognized options {} in section {}'
-                                 .format(', '.join(opts.keys()), readsection))
-        return cls(**args)
+            raise ValueError('unrecognized options {} in section {}'
+                             .format(', '.join(opts.keys()), readsection))
+    return cls(**args)
 
 
 def load_opts(cp, section, tag, skip=None):
