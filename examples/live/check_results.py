@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import glob
 import logging as log
@@ -103,7 +105,7 @@ def check_single_results(tested_detectors):
       if single_fail: log.info('Single Trigger Test Failed')
       return single_fail
 
-def check_coinc_results_old(inj_table):
+def check_coinc_results(inj_table):
       coinc_fail = False
       # gather coincident triggers
       coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
@@ -122,14 +124,13 @@ def check_coinc_results_old(inj_table):
       inj_mass2=inj_table.get_column('mass2')[0]    
       inj_spin1z=inj_table.get_column('spin1z')[0] 
       inj_spin2z=inj_table.get_column('spin2z')[0] 
-      inj_end=inj_table.get_column('snr')[0]
+      inj_time=inj_table.get_column('end_time')[0]
       inj_snr=15
       
       #print properties of coincident triggers
       for ctrigfp in coinc_trig_paths:            
             xmldoc = ligolw_utils.load_filename(
                   ctrigfp, False, contenthandler=LIGOLWContentHandler)
-            log.info('Coincident Trigger '+str(n))
             sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)    
             end_time=sngl_inspiral_table.get_column('end_time')  
             snr_list=sngl_inspiral_table.get_column('snr')
@@ -166,7 +167,7 @@ def check_coinc_results_old(inj_table):
             if not close(spin2z, inj_spin2z, 5e-7):
                   coinc_fail = True
                   log.error('Trigger spin2z does not match injection spin1z')   
-            if not close(network_snr, inj_snr, 0.05):
+            if not close(network_snr, inj_snr, 0.1):
                   coinc_fail = True
                   log.error('Network SNR test failed')
             
