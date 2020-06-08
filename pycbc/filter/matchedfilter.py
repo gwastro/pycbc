@@ -645,6 +645,7 @@ def compute_u_val_for_sky_loc_stat(hplus, hcross, hphccorr,
     # Initialize u
     u = sq_root * 0.
     # In this case u is completely degenerate, so set it to 1
+    numpy.putmask(u , dbl_bad_lgc, )
     u[dbl_bad_lgc] = 1.
     # If a->0 avoid overflow by just setting to a large value
     u[bad_lgc & ~dbl_bad_lgc] = 1E17
@@ -812,11 +813,9 @@ def compute_u_val_for_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
     # Initialize tan_kappa array
     u_val = denom * 0.
     # Catch the denominator -> 0 case
-    bad_lgc = (denom == 0)
-    u_val[bad_lgc] = 1E17
+    numpy.putmask(u_val , denom ==0, 1E17)
     # Otherwise do normal statistic
-    u_val[~bad_lgc] = (-rhoplusre+overlap*rhocrossre) / \
-        (-rhocrossre+overlap*rhoplusre)
+    numpy.putmask(u_val , denom !=0, (-rhoplusre+overlap*rhocrossre)/(-rhocrossre+overlap*rhoplusre))
     coa_phase = numpy.zeros(len(indices), dtype=numpy.float32)
 
     return u_val, coa_phase
