@@ -56,14 +56,14 @@ def epsie_proposals_from_config(cp, section='jump_proposal'):
 
     Returns
     -------
-    dict :
-        Dictionary mapping parameter names to proposal instances.
+    list :
+        List of the proposal instances.
     """
     tags = cp.get_subsections(section)
-    proposals = {}
+    proposals = []
     for tag in tags:
         # get the name of the proposal
         name = cp.get_opt_tag(section, "name", tag)
         prop = epsie_proposals[name].from_config(cp, section, tag)
-        proposals[prop.parameters] = prop
+        proposals.append(prop)
     return proposals

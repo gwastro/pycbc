@@ -18,7 +18,6 @@
 
 from __future__ import absolute_import
 
-import itertools
 import numpy
 
 import epsie
@@ -57,10 +56,10 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     betas : array, optional
         An array of inverse temperature values to be used in for the
         temperature ladder. If not provided, must provide ``ntemps``.
-    proposals : dict, optional
-        Dictionary mapping sampling parameter names to proposal classes. Any
-        parameters not listed will use the ``default_proposal``. **Note:**
-        proposals should be specified for the sampling parameters, not the
+    proposals : list, optional
+        List of proposals to use. Any parameters that do not have a proposal
+        provided will use the ``default_propsal``. **Note:** proposals should
+        be specified for the sampling parameters, not the
         variable parameters.
     default_proposal : an epsie.Proposal class, optional
         The default proposal to use for parameters not in ``proposals``.
@@ -376,7 +375,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # check that all of the sampling parameters have a specified
         # proposal
         sampling_params = set(model.sampling_params)
-        proposal_params = set(itertools.chain(*proposals.keys()))
+        proposal_params = set([param for prop in propsoals
+                               for param in prop.parameters])
         missing = sampling_params - proposal_params
         if missing:
             raise ValueError("Missing jump proposals for sampling parameters "
