@@ -17,7 +17,7 @@ def close(a, b, c):
 def get_tested_detectors(inj_table):
       #figure out how to do this
       return {'H1', 'L1', 'V1'}
-     
+
 def check_single_results(tested_detectors):
       single_fail = False
       with h5py.File('template_bank.hdf', 'r') as bankf:
@@ -102,8 +102,8 @@ def check_single_results(tested_detectors):
       
       if single_fail: log.info('Single Trigger Test Failed')
       return single_fail
-      
-def check_coinc_results(inj_table):
+
+def check_coinc_results_old(inj_table):
       coinc_fail = False
       # gather coincident triggers
       coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
@@ -116,11 +116,20 @@ def check_coinc_results(inj_table):
             coinc_fail = True
       else: 
             log.info(str(l)+' coincident trigger(s) detected')
-
-      #check properties of coincident triggers
-      for ctrigfp in coinc_trig_paths:
+      
+      #get properties of injection
+      inj_mass1=inj_table.get_column('mass1')[0]
+      inj_mass2=inj_table.get_column('mass2')[0]    
+      inj_spin1z=inj_table.get_column('spin1z')[0] 
+      inj_spin2z=inj_table.get_column('spin2z')[0] 
+      inj_end=inj_table.get_column('snr')[0]
+      inj_snr=15
+      
+      #print properties of coincident triggers
+      for ctrigfp in coinc_trig_paths:            
             xmldoc = ligolw_utils.load_filename(
                   ctrigfp, False, contenthandler=LIGOLWContentHandler)
+            log.info('Coincident Trigger '+str(n))
             sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)    
             end_time=sngl_inspiral_table.get_column('end_time')  
             snr_list=sngl_inspiral_table.get_column('snr')
@@ -139,7 +148,28 @@ def check_coinc_results(inj_table):
             log.info('Mass 2: '+str(mass2))
             log.info('Spin1z: '+str(spin1z))
             log.info('Spin2z: '+str(spin2z))
-   
+            
+            #check if trigger properties match injection's properties
+            for t in end_time:
+                  if not close(t,inj_time,1.0):    
+                        coinc_fail = True
+                        log.error('Trigger time does not match injection time')  
+            if not close(mass1, inj_mass1, 5e-7):
+                  coinc_fail = True
+                  log.error('Trigger mass 1 does not match injection mass 1')
+            if not close(mass2, inj_mass2, 5e-7):
+                  coinc_fail = True                  
+                  log.error('Trigger mass 2 does not match injection mass 2')
+            if not close(spin1z, inj_spin1z, 5e-7):
+                  coinc_fail = True
+                  log.error('Trigger spin1z does not match injection spin1z')
+            if not close(spin2z, inj_spin2z, 5e-7):
+                  coinc_fail = True
+                  log.error('Trigger spin2z does not match injection spin1z')   
+            if not close(network_snr, inj_snr, 0.05):
+                  coinc_fail = True
+                  log.error('Network SNR test failed')
+            
       if coinc_fail: log.info('Coincident Trigger Test Failed')
       return coinc_fail
       
