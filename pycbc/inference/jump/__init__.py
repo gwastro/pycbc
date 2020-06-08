@@ -22,7 +22,9 @@ from .normal import (EpsieNormal, EpsieAdaptiveNormal)
 
 epsie_proposals = {
     EpsieNormal.name: EpsieNormal,
-    EpsieAdaptiveNormal.name: EpsieAdaptiveNormal
+    EpsieAdaptiveNormal.name: EpsieAdaptiveNormal,
+    EpsieBoundedNormal.name: EpsieBoundedNormal,
+    EpsieAdaptiveBoundedNormal.name: EpsieAdaptiveBoundedNormal,
 }
 
 
