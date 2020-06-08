@@ -490,10 +490,11 @@ class LiveFilterBank(TemplateBank):
         super(LiveFilterBank, self).__init__(filename, approximant=approximant,
                 parameters=parameters, **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
-        self.hash_lookup = {}
+        self.param_lookup = {}
         for i, p in enumerate(self.table):
-            hash_value =  hash((p.mass1, p.mass2, p.spin1z, p.spin2z))
-            self.hash_lookup[hash_value] = i
+            key =  (p.mass1, p.mass2, p.spin1z, p.spin2z)
+            assert(key not in self.param_lookup) # Uh, oh, template confusion!
+            self.param_lookup[key] = i
 
     def round_up(self, num):
         """Determine the length to use for this waveform by rounding.
@@ -519,20 +520,20 @@ class LiveFilterBank(TemplateBank):
         instance.table = self.table[sindex]
         return instance
 
-    def id_from_hash(self, hash_value):
-        """Get the index of this template based on its hash value
+    def id_from_param(self, param_tuple):
+        """Get the index of this template based on its param tuple
 
         Parameters
         ----------
-        hash : int
-            Value of the template hash
+        param_tuple : tuple
+            Tuple of the parameters which uniquely identify this template
 
         Returns
         --------
         index : int
             The ordered index that this template has in the template bank.
         """
-        return self.hash_lookup[hash_value]
+        return self.param_lookup[param_tuple]
 
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -600,10 +601,10 @@ class LiveFilterBank(TemplateBank):
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
 
-        htilde.id = self.id_from_hash(hash((htilde.params.mass1,
-                                      htilde.params.mass2,
-                                      htilde.params.spin1z,
-                                      htilde.params.spin2z)))
+        htilde.id = self.id_from_param((htilde.params.mass1,
+                                        htilde.params.mass2,
+                                        htilde.params.spin1z,
+                                        htilde.params.spin2z))
         return htilde
 
 
@@ -720,15 +721,10 @@ class FilterBank(TemplateBank):
             f_end = (self.filter_length-1) * self.delta_f
 
         # Find the start frequency, if variable
-        if self.f_lower is None:
-            f_low = self.table[index].f_lower
-        elif self.max_template_length is not None:
-            f_low = find_variable_start_frequency(approximant,
-                                                  self.table[index],
-                                                  self.f_lower,
-                                                  self.max_template_length)
-        else:
-            f_low = self.f_lower
+        f_low = find_variable_start_frequency(approximant,
+                                              self.table[index],
+                                              self.f_lower,
+                                              self.max_template_length)
         logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
 
         # Clear the storage memory
@@ -778,12 +774,17 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
     """ Find a frequency value above the starting frequency that results in a
     waveform shorter than max_length.
     """
-    l = max_length + 1
-    f = f_start - delta_f
-    while l > max_length:
-        f += delta_f
-        l = pycbc.waveform.get_waveform_filter_length_in_time(approximant,
-                                                      parameters, f_lower=f)
+    if (f_start is None):
+        f = parameters.f_lower
+    elif (max_length is not None):
+        l = max_length + 1
+        f = f_start - delta_f
+        while l > max_length:
+            f += delta_f
+            l = pycbc.waveform.get_waveform_filter_length_in_time(approximant,
+                                                          parameters, f_lower=f)
+    else :
+        f = f_start
     return f
 
 
@@ -827,14 +828,10 @@ class FilterBankSkyMax(TemplateBank):
             f_end = (self.filter_length-1) * self.delta_f
 
         # Find the start frequency, if variable
-        if self.max_template_length is not None:
-            f_low = find_variable_start_frequency(approximant,
-                                                  self.table[index],
-                                                  self.f_lower,
-                                                  self.max_template_length)
-        else:
-            f_low = self.f_lower
-
+        f_low = find_variable_start_frequency(approximant,
+                                              self.table[index],
+                                              self.f_lower,
+                                              self.max_template_length)
         logging.info('%s: generating %s from %s Hz', index, approximant, f_low)
 
         # What does this do???

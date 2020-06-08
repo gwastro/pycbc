@@ -289,7 +289,7 @@ class SingleCoincForGraceDB(object):
             logging.info('Source probabilities file saved as %s', prob_fname)
 
     def upload(self, fname, gracedb_server=None, testing=True,
-               extra_strings=None):
+               extra_strings=None, search='AllSky'):
         """Upload this trigger to gracedb
 
         Parameters
@@ -302,6 +302,8 @@ class SingleCoincForGraceDB(object):
         testing: bool
             Switch to determine if the upload should be sent to gracedb as a
             test trigger (True) or a production trigger (False).
+        search: str
+            String going into the "search" field of the GraceDB event.
         """
         from ligo.gracedb.rest import GraceDb
         import matplotlib
@@ -380,7 +382,7 @@ class SingleCoincForGraceDB(object):
 
             # create GraceDB event
             group = 'Test' if testing else 'CBC'
-            r = gracedb.createEvent(group, "pycbc", fname, "AllSky").json()
+            r = gracedb.createEvent(group, "pycbc", fname, search).json()
             gid = r["graceid"]
             logging.info("Uploaded event %s", gid)
 

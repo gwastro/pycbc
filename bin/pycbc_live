@@ -266,7 +266,8 @@ class LiveEventManager(object):
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
                 gid = event.upload(fname, gracedb_server=args.gracedb_server,
                                    testing=self.gracedb_testing,
-                                   extra_strings=[comment])
+                                   extra_strings=[comment],
+                                   search=args.gracedb_search)
             else:
                 gid = None
                 event.save(fname)
@@ -339,6 +340,7 @@ class LiveEventManager(object):
                 cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant {} '.format(apr)
                 cmd += '--gracedb-server {} '.format(args.gracedb_server)
+                cmd += '--gracedb-search {} '.format(args.gracedb_search)
                 if not self.gracedb_testing:
                     cmd += '--production '
                 cmd += '--verbose '
@@ -396,7 +398,8 @@ class LiveEventManager(object):
                     and self.ifar_upload_threshold < ifar:
                 event.upload(fname, gracedb_server=args.gracedb_server,
                              testing=self.gracedb_testing,
-                             extra_strings=[comment])
+                             extra_strings=[comment],
+                             search=args.gracedb_search)
             else:
                 event.save(fname)
 
@@ -599,6 +602,9 @@ parser.add_argument('--round-start-time', type=int, metavar='X',
 parser.add_argument('--gracedb-server', metavar='URL',
                     help='URL of GraceDB server API for uploading events. '
                          'If not provided, the default URL is used.')
+parser.add_argument('--gracedb-search', type=str, default='AllSky',
+                    help='String going into the "search" field of the GraceDB '
+                         'events')
 parser.add_argument('--size-override', type=int, metavar='N',
                     help="Override the internal MPI size layout. "
                          " Useful for debugging and running a portion of a bank")
