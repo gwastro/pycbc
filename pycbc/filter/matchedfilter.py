@@ -808,7 +808,6 @@ def compute_u_val_for_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
     rhoplusre=numpy.real(hplus)
     rhocrossre=numpy.real(hcross)
     overlap=numpy.real(hphccorr)
-
     denom = (-rhocrossre+overlap*rhoplusre)
     # Initialize tan_kappa array
     u_val = denom * 0.
