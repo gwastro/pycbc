@@ -102,11 +102,13 @@ def check_single_results(tested_detectors):
             log.error('No triggers found in %s', ', '.join(missing))
             single_fail = True
       
-      if single_fail: log.info('Single Trigger Test Failed')
+      if single_fail:
+            log.error('Single Trigger Test Failed')
       return single_fail
 
 def check_coinc_results(inj_table):
       coinc_fail = False
+      print_template_parameters = False
       # gather coincident triggers
       coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
       l=len(coinc_trig_paths)
@@ -117,7 +119,7 @@ def check_coinc_results(inj_table):
             log.error('Too many coincident triggers detected')
             coinc_fail = True
       else: 
-            log.info(str(l)+' coincident trigger(s) detected')
+            log.info('%d coincident trigger(s) detected', l)
       
       #get properties of injection
       inj_mass1=inj_table.get_column('mass1')[0]
@@ -137,18 +139,20 @@ def check_coinc_results(inj_table):
             network_snr_squared=0
             for snr in snr_list:
                   network_snr_squared+=snr**2
-            network_snr=np.sqrt(network_snr_squared)
+            network_snr=np.sqrt(network_snr_squared)            
             mass1=sngl_inspiral_table.get_column('mass1')[0]
             mass2=sngl_inspiral_table.get_column('mass2')[0]    
             spin1z=sngl_inspiral_table.get_column('spin1z')[0] 
             spin2z=sngl_inspiral_table.get_column('spin2z')[0] 
             log.info('IFO SNRs: '+str(snr_list))
             log.info('Network SNR: '+str(network_snr))
-            log.info('IFO End Times: '+str(end_time)) 
-            log.info('Mass 1: '+str(mass1))
-            log.info('Mass 2: '+str(mass2))
-            log.info('Spin1z: '+str(spin1z))
-            log.info('Spin2z: '+str(spin2z))
+            
+            if print_template_parameters:
+                  log.info('IFO End Times: '+str(end_time)) 
+                  log.info('Mass 1: %f', mass1)
+                  log.info('Mass 2: %f', mass2)
+                  log.info('Spin1z: %f', spin1z)
+                  log.info('Spin2z: %f', spin2z)
             
             #check if trigger properties match injection's properties
             for t in end_time:
@@ -171,7 +175,8 @@ def check_coinc_results(inj_table):
                   coinc_fail = True
                   log.error('Network SNR test failed')
             
-      if coinc_fail: log.info('Coincident Trigger Test Failed')
+      if coinc_fail:
+            log.error('Coincident Trigger Test Failed')
       return coinc_fail
       
 
