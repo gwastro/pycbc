@@ -20,9 +20,9 @@ from __future__ import absolute_import
 import numpy
 
 from epsie import proposals as epsie_proposals
+from epsie.proposals import Boundaries
 
 from pycbc import VARARGS_DELIM
-from pycbc import boundaries
 
 
 class EpsieNormal(epsie_proposals.Normal):
@@ -148,7 +148,7 @@ def epsie_from_config(cls, cp, section, tag, with_boundaries=False):
     # check that the name matches
     assert cp.get_opt_tag(section, "name", tag) == cls.name, (
         "name in specified section must match mine")
-    params, opts = load_opts(cp, seciton, tag, skip=['name'])
+    params, opts = load_opts(cp, section, tag, skip=['name'])
     args = {'parameters': params}
     if with_boundaries:
         boundaries = get_param_boundaries(params, opts)
@@ -230,7 +230,7 @@ def epsie_adaptive_from_config(cls, cp, section, tag, with_boundaries=True,
     # check that the name matches
     assert cp.get_opt_tag(section, "name", tag) == cls.name, (
         "name in specified section must match mine")
-    params, opts = load_opts(cp, seciton, tag, skip=['name'])
+    params, opts = load_opts(cp, section, tag, skip=['name'])
     args = {'parameters': params}
     # get the bounds
     if with_boundaries:
@@ -335,7 +335,7 @@ def get_param_boundaries(params, opts):
     Returns
     -------
     dict :
-        Dictionary of parameter names -> :py:class:`boundaries.Bounds`.
+        Dictionary of parameter names -> :py:class:`epsie.proposals.Boundaries`
     """
     boundaries = {}
     for param in params:
@@ -347,8 +347,7 @@ def get_param_boundaries(params, opts):
         if maxbound is None:
             raise ValueError("Must provide a maximum bound for {p}."
                              "Syntax is max_{p} = val".format(p=param))
-        boundaries[param] = boundaries.Bounds(float(minbound),
-                                              float(maxbound))
+        boundaries[param] = Boundaries((float(minbound), float(maxbound)))
     return boundaries
 
 

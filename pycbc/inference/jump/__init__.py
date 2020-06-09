@@ -18,6 +18,8 @@ from __future__ import absolute_import
 
 
 from .normal import (EpsieNormal, EpsieAdaptiveNormal)
+from .bounded_normal import (EpsieBoundedNormal, EpsieAdaptiveBoundedNormal)
+from .angular import (EpsieAngular, EpsieAdaptiveAngular)
 
 
 epsie_proposals = {
