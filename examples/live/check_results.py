@@ -16,10 +16,6 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 def close(a, b, c):
       return abs(a - b) <= c
    
-def get_tested_detectors(inj_table):
-      #figure out how to do this
-      return {'H1', 'L1', 'V1'}
-
 def check_single_results(tested_detectors):
       single_fail = False
       with h5py.File('template_bank.hdf', 'r') as bankf:
@@ -198,7 +194,7 @@ else:
             path_to_inj_xml, False, contenthandler=LIGOLWContentHandler)
       inj_table = lsctables.SnglInspiralTable.get_table(inj_doc)
    
-      tested_detectors = get_tested_detectors(inj_table)
+      tested_detectors = {'H1', 'L1', 'V1'}
    
       single_fail = check_single_results(tested_detectors)
       coinc_fail = check_coinc_results(inj_table)
