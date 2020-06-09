@@ -28,37 +28,15 @@ class Constraint(object):
     def __init__(self, constraint_arg, transforms=None, **kwargs):
         self.constraint_arg = constraint_arg
         self.transforms = transforms
-        self._scratch = None
         for kwarg in kwargs.keys():
             setattr(self, kwarg, kwargs[kwarg])
-
-    def _getscratch(self, params):
-        """Gets FieldArray scratch space.
-
-        FieldArray creation can be slow. This tries to speed up successive
-        calls by creating a scratch FieldArray space based on the given
-        parameters.
-        """
-        if self._scratch is None or (set(params.keys()) != 
-                                     set(self._scratch.fieldnames)):
-            self._scratch = record.FieldArray.from_kwargs(**params)
-        else:
-            for p in params:
-                try:
-                    self._scratch[p][:] = params[p]
-                except ValueError:
-                    # can happen if there is a size mismatch, just
-                    # create a new one
-                    self._scratch = record.FieldArray.from_kwargs(**params)
-                    break
-        return self._scratch
 
     def __call__(self, params):
         """Evaluates constraint.
         """
         # cast to FieldArray
         if isinstance(params, dict):
-            params = self._getscratch(params)
+            params = record.FieldArray.from_kwargs(**params)
         elif not isinstance(params, record.FieldArray):
            raise ValueError("params must be dict or FieldArray instance")
 
