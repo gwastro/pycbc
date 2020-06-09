@@ -1,5 +1,3 @@
-#major work in progress
-
 inj_snr=15
 inj_time=1272790440
 inj_mass1=7.2797217
