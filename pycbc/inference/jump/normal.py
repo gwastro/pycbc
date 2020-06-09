@@ -101,7 +101,7 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
 
 
 def epsie_from_config(cls, cp, section, tag, with_boundaries=False):
-    """Generic function for loading epsie proposals from a config file.
+    r"""Generic function for loading epsie proposals from a config file.
 
     This should be used for proposals that are not adaptive.
 
@@ -245,7 +245,8 @@ def epsie_adaptive_from_config(cls, cp, section, tag, with_boundaries=True,
         # at this point, there should be no options left
         if opts:
             raise ValueError('unrecognized options {} in section {}'
-                             .format(', '.join(opts.keys()), readsection))
+                             .format(', '.join(opts.keys()),
+                                     '-'.join([section, tag])))
     return cls(**args)
 
 
@@ -321,7 +322,7 @@ def get_param_boundaries(params, opts):
     If the opts are created using ``load_opts``, then the options can be
     formatted as ``(min|max)-{param}``, since that function will turn all ``-``
     to ``_`` in option names.
-    
+
     Arguments will be popped from the given ``opts`` dictionary.
 
     Parameters
@@ -384,5 +385,5 @@ def get_epsie_adaptation_settings(opts):
         args.update({'start_iteration': int(start_iteration)})
     target_rate = opts.pop('target_rate', None)
     if target_rate is not None:
-        args({'target_rate': float(target_rate)})
+        args.update({'target_rate': float(target_rate)})
     return args

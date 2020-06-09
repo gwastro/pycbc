@@ -375,8 +375,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # check that all of the sampling parameters have a specified
         # proposal
         sampling_params = set(model.sampling_params)
-        proposal_params = set([param for prop in proposals
-                               for param in prop.parameters])
+        proposal_params = set(param for prop in proposals
+                              for param in prop.parameters)
         missing = sampling_params - proposal_params
         if missing:
             raise ValueError("Missing jump proposals for sampling parameters "
