@@ -61,7 +61,7 @@ class JointDistribution(object):
 
     >>> from pycbc.distributions import Uniform, JointDistribution
     >>> def mtotal_lt_30(params):
-        ...    return True if params["mass1"] + params["mass2"] < 30 else False
+        ...    return params["mass1"] + params["mass2"] < 30
     >>> mass_lim = (2, 50)
     >>> uniform_prior = Uniform(mass1=mass_lim, mass2=mass_lim)
     >>> prior_eval = JointDistribution(["mass1", "mass2"], uniform_prior,
@@ -115,14 +115,13 @@ class JointDistribution(object):
             for dist in self.distributions:
                 draw = dist.rvs(n_test_samples)
                 for param in dist.params:
-                    samples[param] = draw[param][:]
+                    samples[param] = draw[param]
+            samples = record.FieldArray.from_kwargs(**samples)
 
             # evaluate constraints
-            result = numpy.ones(len(tuple(samples.values())[0]), dtype=bool)
-            for n in numpy.arange(n_test_samples):
-                sample = {param: samples[param][n] for param in distparams}
-                for constraint in self._constraints:
-                    result[n] = constraint(sample) & result[n]
+            result = numpy.ones(samples.shape, dtype=bool)
+            for constraint in self._constraints:
+                result &= constraint(samples)
 
             # set new scaling factor for prior to be
             # the fraction of acceptances in random sampling of entire space
