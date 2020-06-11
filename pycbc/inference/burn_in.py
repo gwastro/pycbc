@@ -29,6 +29,8 @@ have burned in.
 from __future__ import division
 
 import numpy
+from six import add_metaclass
+from abc import ABCMeta, abstractmethod
 from scipy.stats import ks_2samp
 
 from pycbc.io.record import get_vars_from_arg
@@ -149,6 +151,91 @@ def posterior_step(logposts, dim):
     return idx
 
 
+def nacl(nsamples, acls, nacls=5):
+    """Burn in based on ACL.
+
+    This applies the following test to determine burn in:
+
+    1. The first half of the chain is ignored.
+
+    2. An ACL is calculated from the second half.
+
+    3. If ``nacls`` times the ACL is < the length of the chain / 2,
+       the chain is considered to be burned in at the half-way point.
+
+    Parameters
+    ----------
+    nsamples : int
+        The number of samples of in the chain(s).
+    acls : dict
+        Dictionary of parameter -> ACL(s). The ACLs for each parameter may
+        be an integer or an array of integers (for multiple chains).
+    nacls : int, optional
+        The number of ACLs the chain(s) must have gone past the halfway point
+        in order to be considered burned in. Default is 5.
+
+    Returns
+    -------
+    dict
+        Dictionary of parameter -> boolean(s) indicating if the chain(s) pass
+        the test. If an array of values was provided for the acls, the values
+        will be arrays of booleans.
+    """
+    kstart = int(nsamples / 2.)
+    return {param: (nacls * acl) < kstart for (param, acl) in acls.items()}
+
+
+def evaluate_tests(burn_in_test, data):
+    """Evaluates burn in data from multiple tests.
+
+    The iteration to use for burn-in depends on the logic in the burn-in
+    test string. For example, if the test was 'max_posterior | nacl' and
+    max_posterior burned-in at iteration 5000 while nacl burned in at
+    iteration 6000, we'd want to use 5000 as the burn-in iteration.
+    However, if the test was 'max_posterior & nacl', we'd want to use
+    6000 as the burn-in iteration. This function handles all cases by
+    doing the following: first, take the collection of burn in iterations
+    from all the burn in tests that were applied.  Next, cycle over the
+    iterations in increasing order, checking which tests have burned in
+    by that point. Then evaluate the burn-in string at that point to see
+    if it passes, and if so, what the iteration is. The first point that
+    the test passes is used as the burn-in iteration.
+
+    Parameters
+    ----------
+    burn_in_test : str
+        The test to apply; e.g., ``'max_posterior & nacl'``.
+    data : dict of dict
+        Dictionary of test name -> dictionary that has format
+        ``{'is_burned_in': bool, 'burn_in_iteration': int}``, giving the
+        burn-in status and iteration of each test, respectively. Data for all
+        tests used by ``burn_in_test`` must be included.
+
+    Returns
+    -------
+    is_burned_in : bool
+        Whether or not the data passes all burn in tests.
+    burn_in_iteration :
+        The iteration at which all the tests pass. If the tests did not all
+        pass (``is_burned_in`` is false), then returns
+        :py:data:`NOT_BURNED_IN_ITER`.
+    """
+    burn_in_iters = numpy.unique([data[t]['burn_in_iteration']
+                                  for t in data])
+    burn_in_iters.sort()
+    for ii in burn_in_iters:
+        test_results = {t: (data[t]['is_burned_in'] &
+                            0 <= data[t]['burn_in_iteration'] <= ii)
+                        for t in data}
+        is_burned_in = eval(burn_in_test, {"__builtins__": None},
+                            test_results)
+        if is_burned_in:
+            break
+    if not is_burned_in:
+        ii = NOT_BURNED_IN_ITER
+    return is_burned_in, ii
+
+
 #
 # =============================================================================
 #
@@ -158,11 +245,11 @@ def posterior_step(logposts, dim):
 #
 
 
-class MCMCBurnInTests(object):
-    """Provides methods for estimating burn-in of an ensemble MCMC."""
-
+@add_metaclass(ABCMeta)
+class BaseBurnInTests(object):
+    """Base class for burn in tests."""
     available_tests = ('halfchain', 'min_iterations', 'max_posterior',
-                       'posterior_step', 'nacl', 'ks_test',
+                       'posterior_step', 'nacl',
                        )
 
     def __init__(self, sampler, burn_in_test, **kwargs):
@@ -177,8 +264,6 @@ class MCMCBurnInTests(object):
         # Arguments specific to each test...
         # for nacl:
         self._nacls = int(kwargs.pop('nacls', 5))
-        # for kstest:
-        self._ksthreshold = float(kwargs.pop('ks_threshold', 0.9))
         # for max_posterior and posterior_step
         self._ndim = int(kwargs.pop('ndim', len(sampler.variable_params)))
         # for min iterations
@@ -281,6 +366,127 @@ class MCMCBurnInTests(object):
         else:
             data['burn_in_iteration'] = NOT_BURNED_IN_ITER
 
+    @abstractmethod
+    def max_posterior(self, filename):
+        """Carries out the max posterior test and stores the results."""
+        pass
+
+    @abstractmethod
+    def posterior_step(self, filename):
+        """Carries out the posterior step test and stores the results."""
+        pass
+
+    @abstractmethod
+    def nacl(self, filename):
+        """Carries out the nacl test and stores the results."""
+        pass
+
+    @abstractmethod
+    def evaluate(self, filename):
+        """Performs all tests and evaluates the results to determine if and
+        when all tests pass.
+        """
+        pass
+
+    def _extra_tests_from_config(cp, section, tag):
+        """For loading class-specific tests."""
+        return {}
+
+    @classmethod
+    def from_config(cls, cp, sampler):
+        """Loads burn in from section [sampler-burn_in]."""
+        section = 'sampler'
+        tag = 'burn_in'
+        burn_in_test = cp.get_opt_tag(section, 'burn-in-test', tag)
+        kwargs = {}
+        if cp.has_option_tag(section, 'nacl', tag):
+            kwargs['nacl'] = int(cp.get_opt_tag(section, 'nacl', tag))
+        if cp.has_option_tag(section, 'ndim', tag):
+            kwargs['ndim'] = int(
+                cp.get_opt_tag(section, 'ndim', tag))
+        if cp.has_option_tag(section, 'min-iterations', tag):
+            kwargs['min_iterations'] = int(
+                cp.get_opt_tag(section, 'min-iterations', tag))
+        # load any class specific tests
+        kwargs.update(self._extra_tests_from_config(cp, section, tag))
+        return cls(sampler, burn_in_test, **kwargs)
+
+
+class MCMCBurnInTests(_BaseBurnInTests):
+    """Burn-in tests for collections of independent MCMC chains.
+    
+    This differs from EnsembleMCMCBurnInTests in that chains are treated as
+    being independent of each other. The ``is_burned_in`` attribute will be
+    True if `any` chain passes the burn in tests (whereas in MCMCBurnInTests,
+    all chains must pass the burn in tests). In other words, independent
+    samples can be collected even if all of the chains are not burned in.
+
+    Also includes support for multiple temperatures.
+    """
+    def max_posterior(self, filename):
+        """Applies max posterior test."""
+        logposts = self._getlogposts(filename)
+        burn_in_idx, is_burned_in = max_posterior(logposts, self._ndim)
+        data = self.burn_in_data['max_posterior']
+        # required things to store
+        global_is_burned_in = is_burned_in.any()
+        if global_is_burned_in:
+            global_burn_in_iter = self._index2iter(filename, burn_in_idx.min())
+        else:
+            global_burn_in_iter = NOT_BURNED_IN_ITER
+        data['is_burned_in'] = global_is_burned_in
+        data['burn_in_iteration'] = global_burn_in_iter
+        # additional info
+        data['iteration_per_chain'] = self._index2iter(filename, burn_in_idx)
+        data['status_per_chain'] = is_burned_in
+
+    def posterior_step(self, filename):
+        """Applies the posterior-step test."""
+        logposts = self._getlogposts(filename)
+        burn_in_idx = numpy.array([posterior_step(logps, self._ndim)
+                                   for logps in logposts])
+        data = self.burn_in_data['posterior_step']
+        # this test cannot determine when something will burn in
+        # only when it was not burned in in the past
+        data['is_burned_in'] = True
+        data['burn_in_iteration'] = self._index2iter(
+            filename, burn_in_idx.min())
+        # additional info
+        data['iteration_per_chain'] = self._index2iter(filename, burn_in_idx)
+
+    def nacl(self, filename):
+        """Applies the :py:func:`nacl` test."""
+        nsamples = self._getnsamples(filename)
+        acls = self._getacls(filename, start_index=kstart)
+        is_burned_in = nacl(nsamples, acls, self._nacls)
+        # stack the burn in results into an nparams x nchains array
+        burn_in_per_chains = numpy.stack(is_burned_in.values()).all(axis=0)
+        data = self.burn_in_data['nacl']
+        # required things to store
+        data['is_burned_in'] = burn_in_per_chains.any()
+        if data['is_burned_in']:
+            data['burn_in_iteration'] = self._index2iter(filename, nsamples//2)
+        else:
+            data['burn_in_iteration'] = NOT_BURNED_IN_ITER
+        # additional information
+        data['status_per_chain'] = burn_in_per_chains
+        data['status_per_parameter'] = is_burned_in
+
+
+
+class EnsembleMCMCBurnInTests(_BaseBurnInTests):
+    """Provides methods for estimating burn-in of an ensemble MCMC."""
+
+    available_tests = ('halfchain', 'min_iterations', 'max_posterior',
+                       'posterior_step', 'nacl', 'ks_test',
+                       )
+
+    def __init__(self, sampler, burn_in_test, **kwargs):
+        super(EnsembleMCMCBurnInTests, self).__init__(
+            sampler, burn_in_test, **kwargs)
+        # for kstest
+        self._ksthreshold = float(kwargs.pop('ks_threshold', 0.9))
+
     def max_posterior(self, filename):
         """Applies max posterior test to self."""
         logposts = self._getlogposts(filename)
@@ -312,22 +518,10 @@ class MCMCBurnInTests(object):
         data['iteration_per_walker'] = self._index2iter(filename, burn_in_idx)
 
     def nacl(self, filename):
-        """Burn in based on ACL.
-
-        This applies the following test to determine burn in:
-
-        1. The first half of the chain is ignored.
-
-        2. An ACL is calculated from the second half.
-
-        3. If ``nacls`` times the ACL is < the length of the chain / 2,
-           the chain is considered to be burned in at the half-way point.
-        """
+        """Applies the :py:func:`nacl` test."""
         nsamples = self._getnsamples(filename)
-        kstart = int(nsamples / 2.)
         acls = self._getacls(filename, start_index=kstart)
-        is_burned_in = {param: (self._nacls * acl) < kstart
-                        for (param, acl) in acls.items()}
+        is_burned_in = nacl(nsamples, acls, self._nacls)
         data = self.burn_in_data['nacl']
         # required things to store
         data['is_burned_in'] = all(is_burned_in.values())
@@ -365,62 +559,27 @@ class MCMCBurnInTests(object):
 
     def evaluate(self, filename):
         """Runs all of the burn-in tests."""
+        # evaluate all the tests
         for tst in self.do_tests:
             getattr(self, tst)(filename)
-        # The iteration to use for burn-in depends on the logic in the burn-in
-        # test string. For example, if the test was 'max_posterior | nacl' and
-        # max_posterior burned-in at iteration 5000 while nacl burned in at
-        # iteration 6000, we'd want to use 5000 as the burn-in iteration.
-        # However, if the test was 'max_posterior & nacl', we'd want to use
-        # 6000 as the burn-in iteration. The code below handles all cases by
-        # doing the following: first, take the collection of burn in iterations
-        # from all the burn in tests that were applied.  Next, cycle over the
-        # iterations in increasing order, checking which tests have burned in
-        # by that point. Then evaluate the burn-in string at that point to see
-        # if it passes, and if so, what the iteration is. The first point that
-        # the test passes is used as the burn-in iteration.
-        data = self.burn_in_data
-        burn_in_iters = numpy.unique([data[t]['burn_in_iteration']
-                                      for t in self.do_tests])
-        burn_in_iters.sort()
-        for ii in burn_in_iters:
-            test_results = {t: (data[t]['is_burned_in'] &
-                                0 <= data[t]['burn_in_iteration'] <= ii)
-                            for t in self.do_tests}
-            is_burned_in = eval(self.burn_in_test, {"__builtins__": None},
-                                test_results)
-            if is_burned_in:
-                break
-        self.is_burned_in = is_burned_in
+        data = {t: self.burn_in_data[t] for t in self.do_tests}
+        is_burned_in, burn_in_iter = evaluate(self.burn_in_test, data)
         if is_burned_in:
-            self.burn_in_iteration = ii
-            self.burn_in_index = self._iter2index(filename, ii)
+            burn_in_index = self._iter2index(filename, burn_in_iter)
         else:
-            self.burn_in_iteration = NOT_BURNED_IN_ITER
-            self.burn_in_index = NOT_BURNED_IN_ITER
+            burn_in_index = NOT_BURNED_IN_ITER
+        self.is_burned_in = is_burned_in
+        self.burn_in_iteration = burn_in_iter
+        self.burn_in_index = burn_in_index
 
-    @classmethod
-    def from_config(cls, cp, sampler):
-        """Loads burn in from section [sampler-burn_in]."""
-        section = 'sampler'
-        tag = 'burn_in'
-        burn_in_test = cp.get_opt_tag(section, 'burn-in-test', tag)
-        kwargs = {}
-        if cp.has_option_tag(section, 'nacl', tag):
-            kwargs['nacl'] = int(cp.get_opt_tag(section, 'nacl', tag))
+    def _extra_tests_from_config(cp):
+        """Loads the ks test settings from the config file."""
         if cp.has_option_tag(section, 'ks-threshold', tag):
             kwargs['ks_threshold'] = float(
                 cp.get_opt_tag(section, 'ks-threshold', tag))
-        if cp.has_option_tag(section, 'ndim', tag):
-            kwargs['ndim'] = int(
-                cp.get_opt_tag(section, 'ndim', tag))
-        if cp.has_option_tag(section, 'min-iterations', tag):
-            kwargs['min_iterations'] = int(
-                cp.get_opt_tag(section, 'min-iterations', tag))
-        return cls(sampler, burn_in_test, **kwargs)
 
 
-class MultiTemperedMCMCBurnInTests(MCMCBurnInTests):
+class EnsembleMultiTemperedMCMCBurnInTests(EnsembleMCMCBurnInTests):
     """Adds support for multiple temperatures to the MCMCBurnInTests."""
 
     def _getacls(self, filename, start_index):
