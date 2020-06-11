@@ -124,8 +124,11 @@ class Detector(object):
         time: float
             The light travel time in seconds
         """
-        d = self.location - det.location
-        return float(d.dot(d)**0.5 / constants.c.value)
+        if isinstance(det,str):
+            d=self.frDetector.location-lalsimulation.DetectorPrefixToLALDetector(det).location
+            return float(d.dot(d**0.5)/constants.c.value)
+        else:
+            raise RuntimeError("Detector name is required !")
 
     def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
         """Return the detector response.
