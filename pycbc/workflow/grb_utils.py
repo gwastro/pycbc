@@ -280,9 +280,9 @@ def make_gating_node(workflow, datafind_files, outdir=None, tags=None):
     return condition_strain_nodes, condition_strain_outs
 
 
-def get_sky_grid_scale(sky_error=0.0, Fermi=False, upscale=False, 
-		       core_sigma=3.6, core_frac=0.98, tail_sigma=29.6, 
-		       containment=0.9):
+def get_sky_grid_scale(sky_error, Fermi=False, upscale=False,
+                       core_sigma=3.6, core_frac=0.98, tail_sigma=29.6,
+                       containment=0.9):
     """
     Calculate the angular radius corresponding to a desired localization
     uncertainty level. This is used to generate the search grid and involves
@@ -299,7 +299,7 @@ def get_sky_grid_scale(sky_error=0.0, Fermi=False, upscale=False,
         Whether to apply Fermi-GBM systematics. Default = False.
     upscale : bool
         Whether to apply rescale to convert from 1 sigma -> containment
-        for non-Fermi triggers. Default = True as Swift reports 90% 
+        for non-Fermi triggers. Default = True as Swift reports 90%
         radius directly.
     core_sigma : float
         Size of the GBM systematic core component.
@@ -326,12 +326,11 @@ def get_sky_grid_scale(sky_error=0.0, Fermi=False, upscale=False,
         part1 = core_frac * (1 - np.exp(-0.5 * (r / s1)**2))
         part2 = tail_frac * (1 - np.exp(-0.5 * (r / s2)**2))
         return r[(np.abs(part1 + part2 - containment)).argmin()]
-
     else:
-        # Use Rayleigh distribution to go from 1 sigma containment to containment
-        # given by function variable. interval method returns bounds of equal
-        # probability about the median, but we want 1-sided bound, hence
-        # use (2 * containment - 1)
+        # Use Rayleigh distribution to go from 1 sigma containment to
+        # containment given by function variable. Interval method returns
+        # bounds of equal probability about the median, but we want 1-sided
+        # bound, hence use (2 * containment - 1)
         if upscale:
             from scipy.stats import rayleigh
             scale = rayleigh.interval(2 * containment - 1)[-1]
