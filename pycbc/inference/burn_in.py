@@ -423,22 +423,28 @@ class MCMCBurnInTests(_BaseBurnInTests):
 
     Also includes support for multiple temperatures.
     """
+    def __init__(self, sampler, burn_in_test, **kwargs):
+        super(MCMCBurnInTests, self.).__ini__(sampler, burn_in_test, **kwargs)
+        try:
+            nchains = sampler.nchains
+        except AttributeError:
+            nchains = sampler.nwalkers
+        self.nchains = nchains
+        self.nchains_burned_in = 0
+        self.is_burned_in = numpy.zeros(self.nchains, dtype=bool)
+        self.burn_in_iteration = numpy.repeat(NOT_BURNED_IN_ITER, self.nchains)
+
     def max_posterior(self, filename):
         """Applies max posterior test."""
         logposts = self._getlogposts(filename)
         burn_in_idx, is_burned_in = max_posterior(logposts, self._ndim)
+        # convert index to iterations
+        burn_in_iter = self._index2iter(filename, burn_in_idx)
+        burn_in_iter[~is_burned_in] = NOT_BURNED_IN_ITER
+        # save
         data = self.burn_in_data['max_posterior']
-        # required things to store
-        global_is_burned_in = is_burned_in.any()
-        if global_is_burned_in:
-            global_burn_in_iter = self._index2iter(filename, burn_in_idx.min())
-        else:
-            global_burn_in_iter = NOT_BURNED_IN_ITER
-        data['is_burned_in'] = global_is_burned_in
-        data['burn_in_iteration'] = global_burn_in_iter
-        # additional info
-        data['iteration_per_chain'] = self._index2iter(filename, burn_in_idx)
-        data['status_per_chain'] = is_burned_in
+        data['is_burned_in'] = is_burned_in
+        data['burn_in_iteration'] = burn_in_iter
 
     def posterior_step(self, filename):
         """Applies the posterior-step test."""
@@ -448,11 +454,10 @@ class MCMCBurnInTests(_BaseBurnInTests):
         data = self.burn_in_data['posterior_step']
         # this test cannot determine when something will burn in
         # only when it was not burned in in the past
-        data['is_burned_in'] = True
-        data['burn_in_iteration'] = self._index2iter(
-            filename, burn_in_idx.min())
-        # additional info
-        data['iteration_per_chain'] = self._index2iter(filename, burn_in_idx)
+        if 'is_burned_in' not in data:
+            data['is_burned_in'] = numpy.ones(self.nchains, dtype=bool)
+        # convert index to iterations
+        data['burn_in_iteration'] = self._index2iter(filename, burn_in_idx)
 
     def nacl(self, filename):
         """Applies the :py:func:`nacl` test."""
@@ -462,15 +467,35 @@ class MCMCBurnInTests(_BaseBurnInTests):
         # stack the burn in results into an nparams x nchains array
         burn_in_per_chains = numpy.stack(is_burned_in.values()).all(axis=0)
         data = self.burn_in_data['nacl']
+        # add the status for each parameter as additional information
+        data.update(is_burned_in)
         # required things to store
-        data['is_burned_in'] = burn_in_per_chains.any()
-        if data['is_burned_in']:
-            data['burn_in_iteration'] = self._index2iter(filename, nsamples//2)
-        else:
-            data['burn_in_iteration'] = NOT_BURNED_IN_ITER
-        # additional information
-        data['status_per_chain'] = burn_in_per_chains
-        data['status_per_parameter'] = is_burned_in
+        data['is_burned_in'] = burn_in_per_chains
+        try:
+            burn_in_iter = data['burn_in_iteration']
+        except KeyError:
+            # hasn't been stored yet
+            burn_in_iter = numpy.repeat(NOT_BURNED_IN_ITER, self.nchains)
+            data['burn_in_iteration'] = burn_in_iter
+        burn_in_iter[burn_in_per_chains] = self._index2iter(filename,
+                                                            nsamples//2)
+
+    def evaluate(self, filename):
+        """Runs all of the burn-in tests."""
+        # evaluate all the tests
+        for tst in self.do_tests:
+            getattr(self, tst)(filename)
+        # evaluate each chain at a time
+        data = self.burn_in_data
+        for ci in range(self.nchains):
+            di = {t: {x: self.burn_in_data[t][x][ci]
+                      for x in ['is_burned_in', 'burn_in_iteration']}
+                  for t in self.do_tests}
+            is_burned_in, burn_in_iter = evaluate_tests(self.burn_in_test, di)
+            self.is_burned_in[ci] = is_burned_in
+            self.burn_in_iteration[ci] = burn_in_iter
+        self.burn_in_index[self.is_burned_in] = self._iter2index(
+            filename, burn_in_iter[self.is_burned_in])
 
 
 
@@ -563,7 +588,7 @@ class EnsembleMCMCBurnInTests(_BaseBurnInTests):
         for tst in self.do_tests:
             getattr(self, tst)(filename)
         data = {t: self.burn_in_data[t] for t in self.do_tests}
-        is_burned_in, burn_in_iter = evaluate(self.burn_in_test, data)
+        is_burned_in, burn_in_iter = evaluate_tests(self.burn_in_test, data)
         if is_burned_in:
             burn_in_index = self._iter2index(filename, burn_in_iter)
         else:
