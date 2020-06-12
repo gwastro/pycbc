@@ -97,7 +97,9 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
                            samples_group=self.sampler_group)
 
     def read_acceptance_ratio(self, temps=None, chains=None):
-        """Reads the acceptance fraction.
+        """Reads the acceptance ratios.
+
+        Ratios larger than 1 are set back to 1 before returning.
 
         Parameters
         -----------
@@ -107,13 +109,13 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
             retrieved.
         chains : (list of) int, optional
             The chain index (or a list of indices) to retrieve. If None,
-            samples from all chains will be obtained.
+            ratios from all chains will be obtained.
 
         Returns
         -------
         array
             Array of acceptance ratios with shape (requested temps,
-            requested chains).
+            requested chains, niterations).
         """
         group = self.sampler_group + '/acceptance_ratio'
         if chains is None:
@@ -129,14 +131,39 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         all_ratios = self[group][:]
         # make sure values > 1 are set back to 1
         all_ratios[all_ratios > 1] = 1.
-        # average over the number of iterations
-        all_ratios = all_ratios.mean(axis=-1)
         return all_ratios[numpy.ix_(tmask, wmask)]
 
-    def read_acceptance_fraction(self, temps=None, walkers=None):
-        """Alias for :py:func:`read_acceptance_ratio`.
+    def read_acceptance_rate(self, temps=None, chains=None):
+        """Reads the acceptance rate.
+
+        This calls :py:func:`read_acceptance_ratio`, then averages the ratios
+        over all iterations to get the average rate.
+
+        Parameters
+        -----------
+        temps : (list of) int, optional
+            The temperature index (or a list of indices) to retrieve. If None,
+            acceptance rates from all temperatures and all chains will be
+            retrieved.
+        chains : (list of) int, optional
+            The chain index (or a list of indices) to retrieve. If None,
+            rates from all chains will be obtained.
+
+        Returns
+        -------
+        array
+            Array of acceptance ratios with shape (requested temps,
+            requested chains).
         """
-        return self.read_acceptance_ratio(temps=temps, chains=walkers)
+        all_ratios = self.read_acceptance_ratio(temps, chains)
+        # average over the number of iterations
+        all_ratios = all_ratios.mean(axis=-1)
+        return all_ratios
+
+    def read_acceptance_fraction(self, temps=None, walkers=None):
+        """Alias for :py:func:`read_acceptance_rate`.
+        """
+        return self.read_acceptance_rate(temps=temps, chains=walkers)
 
     def write_temperature_data(self, swap_index, acceptance_ratio,
                                swap_interval, last_iteration):
