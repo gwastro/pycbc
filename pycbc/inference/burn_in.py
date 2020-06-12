@@ -28,6 +28,7 @@ have burned in.
 
 from __future__ import division
 
+import logging
 import numpy
 from six import add_metaclass
 from abc import ABCMeta, abstractmethod
@@ -398,6 +399,37 @@ class BaseBurnInTests(object):
         """
         pass
 
+    def write(self, fp, path=None):
+        """Writes burn-in info to an open HDF file.
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.base.BaseInferenceFile
+            Open HDF file to write the data to. The HDF file should be an
+            instance of a pycbc BaseInferenceFile.
+        path : str, optional
+            Path in the HDF file to write the data to. Default is (None) is
+            to write to the path given by the file's ``sampler_group``
+            attribute.
+        """
+        if path is None:
+            path = fp.sampler_group
+        fp.write_data('burn_in_test', self.burn_in_test, path)
+        fp.write_data('is_burned_in', self.is_burned_in, path)
+        fp.write_data('burn_in_iteration', self.burn_in_iteration, path)
+        testgroup = 'burn_in_tests'
+        # write individual test data
+        for tst in self.do_tests:
+            subpath = '/'.join([path, testgroup, tst])
+            fp.write_data('is_burned_in', self.test_is_burned_in[tst], subpath)
+            fp.write_data('burn_in_iteration',
+                          self.test_burn_in_iteration[tst],
+                          subpath)
+            # write auxiliary info
+            if tst in self.test_aux_info:
+                for name, data in self.test_aux_info[tst].items():
+                    fp.write_data(name, data, subpath)
+
     def _extra_tests_from_config(cp, section, tag):
         """For loading class-specific tests."""
         return {}
@@ -512,6 +544,27 @@ class MCMCBurnInTests(_BaseBurnInTests):
             is_burned_in, burn_in_iter = evaluate_tests(tibi, tbi)
             self.is_burned_in[ci] = is_burned_in
             self.burn_in_iteration[ci] = burn_in_iter
+        logging.info("Number of chains burned in: %i of %i",
+                     self.is_burned_in.sum(), self.nchains)
+
+    def write(self, fp, path=None):
+        """Writes burn-in info to an open HDF file.
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.base.BaseInferenceFile
+            Open HDF file to write the data to. The HDF file should be an
+            instance of a pycbc BaseInferenceFile.
+        path : str, optional
+            Path in the HDF file to write the data to. Default is (None) is
+            to write to the path given by the file's ``sampler_group``
+            attribute.
+        """
+        if path is None:
+            path = fp.sampler_group
+        super(MCMCBurnInTests, self).write(fp, path)
+        # add number of chains burned in as additional metadata
+        fp.write_data('nchains_burned_in', self.is_burned_in.sum(), path)
 
 
 class MultiTemperedMCMCBurnInTests(EnsembleMCMCBurnInTests):
@@ -677,6 +730,10 @@ class EnsembleMCMCBurnInTests(_BaseBurnInTests):
             self.test_burn_in_iteration)
         self.is_burned_in = is_burned_in
         self.burn_in_iteration = burn_in_iter
+        logging.info("Is burned in: %r", self.is_burned_in)
+        if self.is_burned_in:
+            logging.info("Burn-in iteration: %i",
+                         int(self.burn_in_iteration))
 
     def _extra_tests_from_config(cp):
         """Loads the ks test settings from the config file."""
