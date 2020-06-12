@@ -35,7 +35,7 @@ from pycbc.pool import choose_pool
 from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, MCMCAutocorrSupport, raw_samples_to_dict,
                         blob_data_to_dict, get_optional_arg_from_config)
-from ..burn_in import MCMCBurnInTests
+from ..burn_in import EnsembleMCMCBurnInTests
 from pycbc.inference.io import EmceeFile
 from .. import models
 
@@ -65,7 +65,7 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
     """
     name = "emcee"
     _io = EmceeFile
-    burn_in_class = MCMCBurnInTests
+    burn_in_class = EnsembleMCMCBurnInTests
 
     def __init__(self, model, nwalkers,
                  checkpoint_interval=None, checkpoint_signal=None,

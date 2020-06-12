@@ -31,7 +31,7 @@ from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
                         get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,
                                MultiTemperedAutocorrSupport)
-from ..burn_in import MultiTemperedMCMCBurnInTests
+from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.io import EmceePTFile
 from .. import models
 
@@ -66,7 +66,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     """
     name = "emcee_pt"
     _io = EmceePTFile
-    burn_in_class = MultiTemperedMCMCBurnInTests
+    burn_in_class = EnsembleMultiTemperedMCMCBurnInTests
 
     def __init__(self, model, ntemps, nwalkers, betas=None,
                  checkpoint_interval=None, checkpoint_signal=None,
