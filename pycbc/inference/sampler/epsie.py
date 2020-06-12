@@ -39,8 +39,7 @@ from .. import models
 
 from pycbc.filter import autocorrelation
 
-class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
-                   BaseMCMC, BaseSampler):
+class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
     """Constructs an MCMC sampler using epsie's parallel-tempered sampler.
 
     Parameters
@@ -283,6 +282,75 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         for ci, acl in enumerate(acls): 
             nsamps += int(numpy.ceil(nsamples_in_file/acl)) 
         return nsamps
+
+    @classmethod
+    def compute_acf(cls, filename, start_index=None, end_index=None,
+                    walkers=None, parameters=None, temps=None):
+        """Computes the autocorrleation function of the model params in the
+        given file.
+
+        Parameters
+        -----------
+        filename : str
+            Name of a samples file to compute ACFs for.
+        start_index : int, optional
+            The start index to compute the acl from. If None (the default),
+            will try to use the number of burn-in iterations in the file;
+            otherwise, will start at the first sample.
+        end_index : {None, int}
+            The end index to compute the acl to. If None, will go to the end
+            of the current iteration.
+        walkers : optional, int or array
+            Calculate the ACF using only the given walkers. If None (the
+            default) all walkers will be used.
+        parameters : optional, str or array
+            Calculate the ACF for only the given parameters. If None (the
+            default) will calculate the ACF for all of the model params.
+        temps : optional, (list of) int or 'all'
+            The temperature index (or list of indices) to retrieve. If None
+            (the default), the ACF will only be computed for the coldest (= 0)
+            temperature chain. To compute an ACF for all temperates pass 'all',
+            or a list of all of the temperatures.
+
+        Returns
+        -------
+        dict :
+            Dictionary of arrays giving the ACFs for each parameter. If
+            ``per-walker`` is True, the arrays will have shape
+            ``ntemps x nwalkers x niterations``. Otherwise, the returned array
+            will have shape ``ntemps x niterations``.
+        """
+        acfs = {}
+        with cls._io(filename, 'r') as fp:
+            if parameters is None:
+                parameters = fp.variable_params
+            if isinstance(parameters, string_types):
+                parameters = [parameters]
+            if isinstance(temps, int):
+                temps = [temps]
+            elif temps == 'all':
+                temps = numpy.arange(fp.ntemps)
+            elif temps is None:
+                temps = [0]
+            if walkers is None:
+                walkers = numpy.arange(fp.nwalkers)
+            for param in parameters:
+                subacfs = []
+                for tk in temps:
+                    subsubacfs = []
+                    for wi in walkers:
+                        samples = fp.read_raw_samples(
+                            param, thin_start=start_index,
+                            thin_interval=1, thin_end=end_index,
+                            walkers=wi, temps=tk)[param]
+                        thisacf = autocorrelation.calculate_acf(
+                            samples).numpy()
+                        subsubacfs.append(thisacf)
+                    # stack the walkers 
+                    subacfs.append(subsubacfs)
+                # stack the temperatures
+                acfs[param] = numpy.stack(subacfs)
+        return acfs
 
     @classmethod
     def compute_acl(cls, filename, start_index=None, end_index=None,
