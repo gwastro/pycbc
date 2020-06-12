@@ -593,11 +593,8 @@ class BaseMCMC(object):
             if self.burn_in is not None:
                 logging.info("Updating burn in")
                 self.burn_in.evaluate(self.checkpoint_file)
-                burn_in_index = self.burn_in.burn_in_index
-                logging.info("Is burned in: %r", self.burn_in.is_burned_in)
-                if self.burn_in.is_burned_in:
-                    logging.info("Burn-in iteration: %i",
-                                 int(self.burn_in.burn_in_iteration))
+                burn_in_index = self.burn_in.burn_in_index(
+                    self.checkpoint_file)
             else:
                 burn_in_index = 0
             # Compute acls; the burn_in test may have calculated an acl and
@@ -612,7 +609,7 @@ class BaseMCMC(object):
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
                     if self.burn_in is not None:
-                        fp.write_burn_in(self.burn_in)
+                        self.burn_in.write(fp)
                     if self.acls is not None:
                         fp.write_acls(self.acls)
                     # write effective number of samples
