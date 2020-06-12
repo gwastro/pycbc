@@ -295,51 +295,6 @@ class MCMCMetadataIO(object):
     attributes. Instead of integers, these return arrays.
     """
     @property
-    def thin_start(self):
-        """The default start index to use when reading samples.
-
-        This tries to read from ``thin_start`` in the ``attrs``. If it isn't
-        there, just returns 0."""
-        try:
-            return self.attrs['thin_start']
-        except KeyError:
-            return 0
-
-    @thin_start.setter
-    def thin_start(self, thin_start):
-        """Sets the thin start attribute.
-
-        Parameters
-        ----------
-        thin_start : int or None
-            Value to set the thin start to.
-        """
-        self.attrs['thin_start'] = thin_start
-
-    @property
-    def thin_interval(self):
-        """The default interval to use when reading samples.
-
-        This tries to read from ``thin_interval`` in the ``attrs``. If it
-        isn't there, just returns 1.
-        """
-        try:
-            return self.attrs['thin_interval']
-        except KeyError:
-            return 1
-
-    @thin_interval.setter
-    def thin_interval(self, thin_interval):
-        """Sets the thin start attribute.
-
-        Parameters
-        ----------
-        thin_interval : int or None
-            Value to set the thin interval to.
-        """
-        self.attrs['thin_interval'] = thin_interval
-
-    @property
     def burn_in_iteration(self):
         """Returns the burn in iteration of all the chains.
         
@@ -381,6 +336,35 @@ class MCMCMetadataIO(object):
             return self[self.sampler_group]['acl'][:]
         except KeyError:
             raise ValueError("ACL has not been calculated")
+
+    @property
+    def thin_start(self):
+        """Returns the default thin start to use for reading samples.
+
+        If burn-in tests were done, returns the burn in index. Otherwise,
+        returns 0.
+        """
+        try:
+            return self.burn_in_index
+        except ValueError:
+            # no burn in, just return array of zeros
+            return numpy.zeros(self.nchains, dtype=int)
+
+    @property
+    def thin_interval(self):
+        """Returns the default thin interval to use for reading samples.
+
+        If a finite ACL exists in the file, will return that. Otherwise,
+        returns 1.
+        """
+        try:
+            acl = self.acl
+        except ValueError:
+            return numpy.ones(self.nchains, dtype=int)
+        # replace any infs with the number of samples
+        acl[numpy.isinf(acl)] = self.niterations / self.thinned_by
+        return numpy.ceil(acl).astype(int)
+
 
 class EnsembleMCMCMetadataIO(object):
     """Provides functions for reading/writing metadata to file for ensemble
@@ -446,30 +430,34 @@ class EnsembleMCMCMetadataIO(object):
         group = self[self.sampler_group]['acls']
         return {param: group[param][()] for param in group.keys()}
  
-    def write_thinning_settings(self):
-        """Sets the thin-start and thin-interval in the file's attributes.
+    @property
+    def thin_start(self):
+        """Returns the default thin start to use for reading samples.
 
-        These are the default values used if no ``thin_start`` or
-        ``thin_interval`` are provided when reading samples. If burn-in tests
-        were done, the ``thin_start`` is set to the burn in iteration.
-        Otherwise, it is set to 0. If a finite ACL exists, then
-        ``thin_interval`` is set to that. Otherwise, it is set to 1.
+        If burn-in tests were done, returns the burn in index. Otherwise,
+        returns 0.
         """
-        # thin start 
         try:
-            self.thin_start = self.burn_in_index
+            return self.burn_in_index
         except ValueError:
-            # no burn in, just set to 0
-            self.thin_start = 0
-        # thin interval
+            # no burn in, just return 0
+            return 0
+
+    @property
+    def thin_interval(self):
+        """Returns the default thin interval to use for reading samples.
+
+        If a finite ACL exists in the file, will return that. Otherwise,
+        returns 1.
+        """
         try:
             acl = self.acl
         except ValueError:
             acl = 1
         if numpy.isfinite(acl):
-            self.thin_interval = int(numpy.ceil(acl))
+            return int(numpy.ceil(acl))
         else:
-            self.thin_interval = 1
+            return 1
 
 
 class SingleTempMCMCIO(object):

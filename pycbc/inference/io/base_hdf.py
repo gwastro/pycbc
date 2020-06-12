@@ -347,69 +347,25 @@ class BaseInferenceFile(h5py.File):
     def thin_start(self):
         """The default start index to use when reading samples.
 
-        This tries to read from ``thin_start`` in the ``attrs``. If it isn't
-        there, just returns 0."""
-        try:
-            return self.attrs['thin_start']
-        except KeyError:
-            return 0
-
-    @thin_start.setter
-    def thin_start(self, thin_start):
-        """Sets the thin start attribute.
-
-        Parameters
-        ----------
-        thin_start : int or None
-            Value to set the thin start to.
+        Unless overridden by sub-class attribute, just returns 0.
         """
-        self.attrs['thin_start'] = thin_start
+        return 0
 
     @property
     def thin_interval(self):
         """The default interval to use when reading samples.
 
-        This tries to read from ``thin_interval`` in the ``attrs``. If it
-        isn't there, just returns 1.
+        Unless overridden by sub-class attribute, just returns 1.
         """
-        try:
-            return self.attrs['thin_interval']
-        except KeyError:
-            return 1
-
-    @thin_interval.setter
-    def thin_interval(self, thin_interval):
-        """Sets the thin start attribute.
-
-        Parameters
-        ----------
-        thin_interval : int or None
-            Value to set the thin interval to.
-        """
-        self.attrs['thin_interval'] = thin_interval
+        return 1
 
     @property
     def thin_end(self):
         """The defaut end index to use when reading samples.
 
-        This tries to read from ``thin_end`` in the ``attrs``. If it isn't
-        there, just returns None.
+        Unless overriden by sub-class attribute, just return ``None``.
         """
-        try:
-            return self.attrs['thin_end']
-        except KeyError:
-            return None
-
-    @thin_end.setter
-    def thin_end(self, thin_end):
-        """Sets the thin end attribute.
-
-        Parameters
-        ----------
-        thin_end : int or None
-            Value to set the thin end to.
-        """
-        self.attrs['thin_end'] = thin_end
+        return None
 
     @property
     def cmd(self):
