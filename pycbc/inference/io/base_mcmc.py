@@ -460,7 +460,6 @@ class EnsembleMCMCMetadataIO(object):
             return 1
 
 
-
 def write_samples(fp, samples, parameters=None, last_iteration=None,
                   samples_group=None, thin_by=None):
     """Writes samples to the given file.
@@ -689,3 +688,42 @@ def thin_samples_for_writing(fp, samples, parameters, last_iteration,
     else:
         thinned_samples = samples
     return thinned_samples
+
+
+def nsamples_in_chain(start_iter, interval, niterations):
+    """Calculates the number of samples in an MCMC chain given a thinning
+    start, end, and interval.
+
+    This function will work with either python scalars, or numpy arrays.
+
+    Parameters
+    ----------
+    start_iter : (array of) int
+        Start iteration. If negative, will count as being how many iterations
+        to start before the end; otherwise, counts how many iterations to
+        start before the beginning. If this is larger than niterations, will
+        just return 0.
+    interval : (array of) int
+        Thinning interval.
+    niterations : (array of) int
+        The number of iterations.
+
+    Returns
+    -------
+    numpy.int_
+        The number of samples in a chain, >= 0.
+    """
+    # this is written in a slightly wonky way so that it will work with either
+    # python scalars or numpy arrays; it is equivalent to:
+    #    if start_iter < 0:
+    #        count = min(abs(start_iter), niterations)
+    #    else:
+    #        count = max(niterations - start_iter, 0)
+    slt0 = start_iter < 0
+    sgt0 = start_iter >= 0
+    count = slt0*abs(start_iter) + sgt0*(niterations - start_iter)
+    # ensure count is in [0, niterations]
+    cgtn = count > niterations
+    cok = (count >= 0) & (count <= niterations)
+    count = cgtn*niterations + cok*count
+    return numpy.ceil(count / interval).astype(int)
