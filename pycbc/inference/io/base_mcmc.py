@@ -460,9 +460,8 @@ class EnsembleMCMCMetadataIO(object):
             return 1
 
 
-def single_temp_write_samples(fp, samples, parameters=None,
-                              last_iteration=None,
-                              samples_group=None, thin_by=None):
+def write_samples(fp, samples, parameters=None, last_iteration=None,
+                  samples_group=None, thin_by=None):
     """Writes samples to the given file.
 
     This works for both standard MCMC and ensemble MCMC samplers without

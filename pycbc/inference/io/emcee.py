@@ -26,11 +26,11 @@
 import numpy
 
 from .base_sampler import BaseSamplerFile
-from .base_mcmc import (EnsembleMCMCMetadataIO, single_temp_write_samples,
-                        ensemble_read_raw_samples)
+from .base_mcmc import (EnsembleMCMCMetadataIO, CommonMCMCMetadataIO,
+                        write_samples, ensemble_read_raw_samples)
 
 
-class EmceeFile(EnsembleMCMCMetadataIO, BaseSamplerFile):
+class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
     """Class to handle file IO for the ``emcee`` sampler."""
 
     name = 'emcee_file'
@@ -39,13 +39,12 @@ class EmceeFile(EnsembleMCMCMetadataIO, BaseSamplerFile):
                       samples_group=None, thin_by=None):
         """Writes samples to the given file.
 
-        Calls
-        :py:func:`~pycbc.inference.io.base_mcmc.single_temp_write_samples`.
-        See that function for details.
+        Calls :py:func:`base_mcmc.write_samples`. See that function for
+        details.
         """
-        single_temp_write_samples(self, samples, parameters=parameters,
-                                  last_iteration=last_iteration,
-                                  samples_group=samples_group, thin_by=thin_by)
+        write_samples(self, samples, parameters=parameters,
+                      last_iteration=last_iteration,
+                      samples_group=samples_group, thin_by=thin_by)
 
     def read_raw_samples(self, fields, thin_start=None,
                          thin_interval=None, thin_end=None,
@@ -53,9 +52,8 @@ class EmceeFile(EnsembleMCMCMetadataIO, BaseSamplerFile):
                          group=None):
         """Base function for reading samples.
 
-        Calls
-        :py:func:`~pycbc.inference.io.base_mcmc.ensemble_read_raw_samples`.
-        See that function for details.
+        Calls :py:func:`base_mcmc.ensemble_read_raw_samples`. See that function
+        for details.
         """
         return ensemble_read_raw_samples(self, fields, thin_start=thin_start,
                                          thin_interval=thin_interval,
