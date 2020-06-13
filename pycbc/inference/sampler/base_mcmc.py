@@ -37,6 +37,7 @@ import numpy
 from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import validate_checkpoint_files
+from pycbc.inference.io.base_mcmc import nsamples_in_chain
 
 from .base import setup_output
 from .base import initial_dist_from_config
@@ -530,16 +531,15 @@ class BaseMCMC(object):
             act = numpy.array(list(self.acts.values())).max()
         except (AttributeError, TypeError):
             act = numpy.inf
-        if self.burn_in is None:
-            nperwalker = max(int(self.niterations // act), 1)
-        elif self.burn_in.is_burned_in:
-            nperwalker = int(
-                (self.niterations - self.burn_in.burn_in_iteration) // act)
+        if self.burn_in is None or not self.burn_in.is_burned_in:
+            start_iter = 0
+        else:
+            start_iter = self.burn_in.burn_in_iteration
+        nperwalker = nsamples_in_chain(start_iter, act, self.niterations)
+        if self.burn_in is not None and self.burn_in.is_burned_in:
             # after burn in, we always have atleast 1 sample per walker
             nperwalker = max(nperwalker, 1)
-        else:
-            nperwalker = 0
-        return self.nwalkers * nperwalker
+        return int(self.nwalkers * nperwalker)
 
     @abstractmethod
     def run_mcmc(self, niterations):
