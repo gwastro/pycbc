@@ -215,9 +215,8 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
 
     Returns
     -------
-    array_class
-        An instance of the given array class populated with values
-        retrieved from the fields.
+    dict
+        A dictionary of field name -> numpy array pairs.
     """
     if isinstance(fields, string_types):
         fields = [fields]

@@ -35,31 +35,43 @@ class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
 
     name = 'emcee_file'
 
-    def write_samples(self, samples, parameters=None, last_iteration=None,
-                      samples_group=None, thin_by=None):
-        """Writes samples to the given file.
+    def write_samples(self, samples, **kwargs):
+        r"""Writes samples to the given file.
 
         Calls :py:func:`base_mcmc.write_samples`. See that function for
         details.
-        """
-        write_samples(self, samples, parameters=parameters,
-                      last_iteration=last_iteration,
-                      samples_group=samples_group, thin_by=thin_by)
 
-    def read_raw_samples(self, fields, thin_start=None,
-                         thin_interval=None, thin_end=None,
-                         iteration=None, walkers=None, flatten=True,
-                         group=None):
-        """Base function for reading samples.
+        Parameters
+        ----------
+        samples : dict
+            The samples to write. Each array in the dictionary should have
+            shape nwalkers x niterations.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_mcmc.write_samples`.
+        """
+        write_samples(self, samples, **kwargs)
+
+    def read_raw_samples(self, fields, **kwargs):
+        r"""Base function for reading samples.
 
         Calls :py:func:`base_mcmc.ensemble_read_raw_samples`. See that function
         for details.
+
+        Parameters
+        -----------
+        fields : list
+            The list of field names to retrieve.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_mcmc.ensemble_read_raw_samples`.
+
+        Returns
+        -------
+        dict
+            A dictionary of field name -> numpy array pairs.
         """
-        return ensemble_read_raw_samples(self, fields, thin_start=thin_start,
-                                         thin_interval=thin_interval,
-                                         thin_end=thin_end,
-                                         iteration=iteration, walkers=walkers,
-                                         flatten=flatten, group=group)
+        return ensemble_read_raw_samples(self, fields, **kwargs)
 
     def read_acceptance_fraction(self, walkers=None):
         """Reads the acceptance fraction.
