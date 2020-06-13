@@ -460,6 +460,7 @@ class EnsembleMCMCMetadataIO(object):
             return 1
 
 
+
 def write_samples(fp, samples, parameters=None, last_iteration=None,
                   samples_group=None, thin_by=None):
     """Writes samples to the given file.
@@ -599,9 +600,15 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
         get_index = int(iteration)
         niterations = 1
     else:
+        if thin_start is None:
+            thin_start = fp.thin_start
+        if thin_interval is None:
+            thin_interval = fp.thin_interval
+        if thin_end is None:
+            thin_end = fp.thin_end
         get_index = fp.get_slice(thin_start=thin_start,
-                                   thin_end=thin_end,
-                                   thin_interval=thin_interval)
+                                 thin_interval=thin_interval,
+                                 thin_end=thin_end)
         # we'll just get the number of iterations from the returned shape
         niterations = None
     # load

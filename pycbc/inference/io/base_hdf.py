@@ -571,37 +571,29 @@ class BaseInferenceFile(h5py.File):
             previous = []
         self.attrs["cmd"] = cmd + previous
 
-    def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
-        """Formats a slice using the given arguments that can be used to
-        retrieve a thinned array from an InferenceFile.
+    @staticmethod
+    def get_slice(thin_start=None, thin_interval=None, thin_end=None):
+        """Formats a slice to retrieve a thinned array from an HDF file.
 
         Parameters
         ----------
-        thin_start : int, optional
-            The starting index to use. If None, will use the ``thin_start``
-            attribute.
-        thin_interval : int, optional
-            The interval to use. If None, will use the ``thin_interval``
-            attribute.
-        thin_end : int, optional
-            The end index to use. If None, will use the ``thin_end`` attribute.
+        thin_start : float or int, optional
+            The starting index to use. If provided, the ``int`` will be taken.
+        thin_interval : float or int, optional
+            The interval to use. If provided the ceiling of it will be taken.
+        thin_end : float or int, optional
+            The end index to use. If provided, the ``int`` will be taken.
 
         Returns
         -------
         slice :
             The slice needed.
         """
-        if thin_start is None:
-            thin_start = int(self.thin_start)
-        else:
+        if thin_start is not None:
             thin_start = int(thin_start)
-        if thin_interval is None:
-            thin_interval = self.thin_interval
-        else:
+        if thin_interval is not None:
             thin_interval = int(numpy.ceil(thin_interval))
-        if thin_end is None:
-            thin_end = self.thin_end
-        else:
+        if thin_end is not None:
             thin_end = int(thin_end)
         return slice(thin_start, thin_end, thin_interval)
 
