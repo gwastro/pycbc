@@ -27,7 +27,7 @@
 from __future__ import absolute_import
 import argparse
 from six import string_types
-from .base_mcmc import (MCMCMetadataIO, thin_samples_for_writing)
+from .base_mcmc import (CommonMCMCMetadataIO, thin_samples_for_writing)
 import numpy
 
 class ParseTempsArg(argparse.Action):
@@ -66,9 +66,9 @@ class ParseTempsArg(argparse.Action):
         setattr(namespace, self.dest, temps)
 
 
-class MultiTemperedMetadataIO(MCMCMetadataIO):
+class CommonMultiTemperedMetadataIO(CommonMCMCMetadataIO):
     """Adds support for reading/writing multi-tempered metadata to
-    MCMCMetadatIO.
+    :py:class:`~pycbc.inference.io.base_mcmc.CommonMCMCMetadatIO`.
     """
     @property
     def ntemps(self):
@@ -100,169 +100,176 @@ class MultiTemperedMetadataIO(MCMCMetadataIO):
         return parser, actions
 
 
-class MultiTemperedMCMCIO(object):
-    """Provides functions for reading/writing samples from a parallel-tempered
-    MCMC sampler.
+def write_samples(fp, samples, parameters=None, last_iteration=None,
+                  samples_group=None, thin_by=None):
+    """Writes samples to the given file.
+
+    This works both for standard MCMC and ensemble MCMC samplers with
+    parallel tempering.
+
+    Results are written to ``samples_group/{vararg}``, where ``{vararg}``
+    is the name of a model params. The samples are written as an
+    ``ntemps x nwalkers x niterations`` array.
+
+    Parameters
+    -----------
+    fp : BaseInferenceFile
+        Open file handler to write files to. Must be an instance of
+        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added. 
+    samples : dict
+        The samples to write. Each array in the dictionary should have
+        shape ntemps x nwalkers x niterations.
+    parameters : list, optional
+        Only write the specified parameters to the file. If None, will
+        write all of the keys in the ``samples`` dict.
+    last_iteration : int, optional
+        The iteration of the last sample. If the file's ``thinned_by``
+        attribute is > 1, this is needed to determine where to start
+        thinning the samples to match what has already been stored on disk.
+    samples_group : str, optional
+        Which group to write the samples to. Default (None) will result
+        in writing to "samples".
+    thin_by : int, optional
+        Override the ``thinned_by`` attribute in the file with the given
+        value. **Only set this if you are using this function to write
+        something other than inference samples!**
     """
-    def write_samples(self, samples, parameters=None, last_iteration=None,
-                      samples_group=None, thin_by=None):
-        """Writes samples to the given file.
+    ntemps, nwalkers, niterations = tuple(samples.values())[0].shape
+    assert all(p.shape == (ntemps, nwalkers, niterations)
+               for p in samples.values()), (
+           "all samples must have the same shape")
+    if samples_group is None:
+        samples_group = fp.samples_group
+    if parameters is None:
+        parameters = list(samples.keys())
+    # thin the samples
+    samples = thin_samples_for_writing(fp, samples, parameters,
+                                       last_iteration, samples_group,
+                                       thin_by=thin_by)
+    # loop over number of dimensions
+    group = samples_group + '/{name}'
+    for param in parameters:
+        dataset_name = group.format(name=param)
+        data = samples[param]
+        # check that there's something to write after thinning
+        if data.shape[2] == 0:
+            # nothing to write, move along
+            continue
+        try:
+            fp_niterations = fp[dataset_name].shape[-1]
+            istart = fp_niterations
+            istop = istart + data.shape[2]
+            if istop > fp_niterations:
+                # resize the dataset
+                fp[dataset_name].resize(istop, axis=2)
+        except KeyError:
+            # dataset doesn't exist yet
+            istart = 0
+            istop = istart + data.shape[2]
+            fp.create_dataset(dataset_name, (ntemps, nwalkers, istop),
+                                maxshape=(ntemps, nwalkers,
+                                          None),
+                                dtype=data.dtype,
+                                fletcher32=True)
+        fp[dataset_name][:, :, istart:istop] = data
 
-        Results are written to ``samples_group/{vararg}``, where ``{vararg}``
-        is the name of a model params. The samples are written as an
-        ``ntemps x nwalkers x niterations`` array.
 
-        Parameters
-        -----------
-        samples : dict
-            The samples to write. Each array in the dictionary should have
-            shape ntemps x nwalkers x niterations.
-        parameters : list, optional
-            Only write the specified parameters to the file. If None, will
-            write all of the keys in the ``samples`` dict.
-        last_iteration : int, optional
-            The iteration of the last sample. If the file's ``thinned_by``
-            attribute is > 1, this is needed to determine where to start
-            thinning the samples to match what has already been stored on disk.
-        samples_group : str, optional
-            Which group to write the samples to. Default (None) will result
-            in writing to "samples".
-        thin_by : int, optional
-            Override the ``thinned_by`` attribute in the file with the given
-            value. **Only set this if you are using this function to write
-            something other than inference samples!**
-        """
-        ntemps, nwalkers, niterations = tuple(samples.values())[0].shape
-        assert all(p.shape == (ntemps, nwalkers, niterations)
-                   for p in samples.values()), (
-               "all samples must have the same shape")
-        if samples_group is None:
-            samples_group = self.samples_group
-        if parameters is None:
-            parameters = list(samples.keys())
-        # thin the samples
-        samples = thin_samples_for_writing(self, samples, parameters,
-                                           last_iteration, samples_group,
-                                           thin_by=thin_by)
-        # loop over number of dimensions
-        group = samples_group + '/{name}'
-        for param in parameters:
-            dataset_name = group.format(name=param)
-            data = samples[param]
-            # check that there's something to write after thinning
-            if data.shape[2] == 0:
-                # nothing to write, move along
-                continue
-            try:
-                fp_niterations = self[dataset_name].shape[-1]
-                istart = fp_niterations
-                istop = istart + data.shape[2]
-                if istop > fp_niterations:
-                    # resize the dataset
-                    self[dataset_name].resize(istop, axis=2)
-            except KeyError:
-                # dataset doesn't exist yet
-                istart = 0
-                istop = istart + data.shape[2]
-                self.create_dataset(dataset_name, (ntemps, nwalkers, istop),
-                                    maxshape=(ntemps, nwalkers,
-                                              None),
-                                    dtype=data.dtype,
-                                    fletcher32=True)
-            self[dataset_name][:, :, istart:istop] = data
+def ensemble_read_raw_samples(fp, fields, thin_start=None,
+                              thin_interval=None, thin_end=None,
+                              iteration=None, temps='all', walkers=None,
+                              flatten=True, group=None):
+    """Base function for reading samples from ensemble MCMC file with
+    parallel tempering.
 
-    def read_raw_samples(self, fields,
-                         thin_start=None, thin_interval=None, thin_end=None,
-                         iteration=None, temps='all', walkers=None,
-                         flatten=True, group=None):
-        """Base function for reading samples.
+    Parameters
+    -----------
+    fp : BaseInferenceFile
+        Open file handler to write files to. Must be an instance of
+        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added. 
+    fields : list
+        The list of field names to retrieve.
+    thin_start : int, optional
+        Start reading from the given iteration. Default is to start from
+        the first iteration.
+    thin_interval : int, optional
+        Only read every ``thin_interval`` -th sample. Default is 1.
+    thin_end : int, optional
+        Stop reading at the given iteration. Default is to end at the last
+        iteration.
+    iteration : int, optional
+        Only read the given iteration. If this provided, it overrides
+        the ``thin_(start|interval|end)`` options.
+    temps : 'all' or (list of) int, optional
+        The temperature index (or list of indices) to retrieve. To retrieve
+        all temperates pass 'all', or a list of all of the temperatures.
+        Default is 'all'.
+    walkers : (list of) int, optional
+        Only read from the given walkers. Default is to read all.
+    flatten : bool, optional
+        Flatten the samples to 1D arrays before returning. Otherwise, the
+        returned arrays will have shape (requested temps x
+        requested walkers x requested iteration(s)). Default is True.
+    group : str, optional
+        The name of the group to read sample datasets from. Default is
+        the file's ``samples_group``.
 
-        Parameters
-        -----------
-        fields : list
-            The list of field names to retrieve.
-        thin_start : int, optional
-            Start reading from the given iteration. Default is to start from
-            the first iteration.
-        thin_interval : int, optional
-            Only read every ``thin_interval`` -th sample. Default is 1.
-        thin_end : int, optional
-            Stop reading at the given iteration. Default is to end at the last
-            iteration.
-        iteration : int, optional
-            Only read the given iteration. If this provided, it overrides
-            the ``thin_(start|interval|end)`` options.
-        temps : 'all' or (list of) int, optional
-            The temperature index (or list of indices) to retrieve. To retrieve
-            all temperates pass 'all', or a list of all of the temperatures.
-            Default is 'all'.
-        walkers : (list of) int, optional
-            Only read from the given walkers. Default is to read all.
-        flatten : bool, optional
-            Flatten the samples to 1D arrays before returning. Otherwise, the
-            returned arrays will have shape (requested temps x
-            requested walkers x requested iteration(s)). Default is True.
-        group : str, optional
-            The name of the group to read sample datasets from. Default is
-            the file's ``samples_group``.
-
-        Returns
-        -------
-        array_class
-            An instance of the given array class populated with values
-            retrieved from the fields.
-        """
-        if isinstance(fields, string_types):
-            fields = [fields]
-        # walkers to load
-        if walkers is not None:
-            widx = numpy.zeros(self.nwalkers, dtype=bool)
-            widx[walkers] = True
-            nwalkers = widx.sum()
+    Returns
+    -------
+    array_class
+        An instance of the given array class populated with values
+        retrieved from the fields.
+    """
+    if isinstance(fields, string_types):
+        fields = [fields]
+    # walkers to load
+    if walkers is not None:
+        widx = numpy.zeros(fp.nwalkers, dtype=bool)
+        widx[walkers] = True
+        nwalkers = widx.sum()
+    else:
+        widx = slice(None, None)
+        nwalkers = fp.nwalkers
+    # temperatures to load
+    selecttemps = False
+    if isinstance(temps, (int, numpy.int32, numpy.int64)):
+        tidx = temps
+        ntemps = 1
+    else:
+        # temps is either 'all' or a list of temperatures;
+        # in either case, we'll get all of the temperatures from the file;
+        # if not 'all', then we'll pull out the ones we want
+        tidx = slice(None, None)
+        selecttemps = temps != 'all'
+        if selecttemps:
+            ntemps = len(temps)
         else:
-            widx = slice(None, None)
-            nwalkers = self.nwalkers
-        # temperatures to load
-        selecttemps = False
-        if isinstance(temps, (int, numpy.int32, numpy.int64)):
-            tidx = temps
-            ntemps = 1
+            ntemps = fp.ntemps
+    # get the slice to use
+    if iteration is not None:
+        get_index = int(iteration)
+        niterations = 1
+    else:
+        get_index = fp.get_slice(thin_start=thin_start,
+                                   thin_end=thin_end,
+                                   thin_interval=thin_interval)
+        # we'll just get the number of iterations from the returned shape
+        niterations = None
+    # load
+    if group is None:
+        group = fp.samples_group
+    group = group + '/{name}'
+    arrays = {}
+    for name in fields:
+        arr = fp[group.format(name=name)][tidx, widx, get_index]
+        if niterations is None:
+            niterations = arr.shape[-1]
+        # pull out the temperatures we need
+        if selecttemps:
+            arr = arr[temps, ...]
+        if flatten:
+            arr = arr.flatten()
         else:
-            # temps is either 'all' or a list of temperatures;
-            # in either case, we'll get all of the temperatures from the file;
-            # if not 'all', then we'll pull out the ones we want
-            tidx = slice(None, None)
-            selecttemps = temps != 'all'
-            if selecttemps:
-                ntemps = len(temps)
-            else:
-                ntemps = self.ntemps
-        # get the slice to use
-        if iteration is not None:
-            get_index = int(iteration)
-            niterations = 1
-        else:
-            get_index = self.get_slice(thin_start=thin_start,
-                                       thin_end=thin_end,
-                                       thin_interval=thin_interval)
-            # we'll just get the number of iterations from the returned shape
-            niterations = None
-        # load
-        if group is None:
-            group = self.samples_group
-        group = group + '/{name}'
-        arrays = {}
-        for name in fields:
-            arr = self[group.format(name=name)][tidx, widx, get_index]
-            if niterations is None:
-                niterations = arr.shape[-1]
-            # pull out the temperatures we need
-            if selecttemps:
-                arr = arr[temps, ...]
-            if flatten:
-                arr = arr.flatten()
-            else:
-                # ensure that the returned array is 3D
-                arr = arr.reshape((ntemps, nwalkers, niterations))
-            arrays[name] = arr
-        return arrays
+            # ensure that the returned array is 3D
+            arr = arr.reshape((ntemps, nwalkers, niterations))
+        arrays[name] = arr
+    return arrays

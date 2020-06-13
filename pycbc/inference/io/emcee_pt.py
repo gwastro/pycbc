@@ -22,10 +22,13 @@ from __future__ import absolute_import
 import numpy
 
 from .base_sampler import BaseSamplerFile
-from .base_multitemper import (MultiTemperedMetadataIO, MultiTemperedMCMCIO)
+from .base_mcmc import EnsembleMCMCMetadataIO
+from .base_multitemper import (CommonMultiTemperedMetadataIO,
+                               write_samples,
+                               ensemble_read_raw_samples)
 
 
-class EmceePTFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
+class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
                   BaseSamplerFile):
     """Class to handle file IO for the ``emcee`` sampler."""
 
@@ -35,6 +38,32 @@ class EmceePTFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
     def betas(self):
         """The betas that were used."""
         return self[self.sampler_group].attrs["betas"]
+
+    def write_samples(self, samples, parameters=None, last_iteration=None,
+                      samples_group=None, thin_by=None):
+        """Writes samples to the given file.
+
+        Calls :py:func:`base_multitemper.write_samples`. See that function for
+        details.
+        """
+        write_samples(self, samples, parameters=parameters,
+                      last_iteration=last_iteration,
+                      samples_group=samples_group, thin_by=thin_by)
+
+    def read_raw_samples(self, fields, thin_start=None, thin_interval=None,
+                         thin_end=None, iteration=None, temps='all',
+                         walkers=None, flatten=True, group=None):
+        """Base function for reading samples.
+
+        Calls :py:func:`base_multitemper.ensemble_read_raw_samples`. See that
+        function for details.
+        """
+        return ensemble_read_raw_samples(self, fields, thin_start=thin_start,
+                                         thin_interval=thin_interval,
+                                         thin_end=thin_end,
+                                         iteration=iteration, temps=temps,
+                                         walkers=walkers, flatten=flatten,
+                                         group=group)
 
     def write_sampler_metadata(self, sampler):
         """Adds writing betas to MultiTemperedMCMCIO.
