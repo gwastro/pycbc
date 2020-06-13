@@ -460,162 +460,167 @@ class EnsembleMCMCMetadataIO(object):
             return 1
 
 
-class SingleTempMCMCIO(object):
-    """Provides functions for reading/writing samples from an MCMC sampler.
+def single_temp_write_samples(fp, samples, parameters=None,
+                              last_iteration=None,
+                              samples_group=None, thin_by=None):
+    """Writes samples to the given file.
 
-    These functions will work for samplers that have 1 or more walkers, with
-    only a single temperature.
+    This works for both standard MCMC and ensemble MCMC samplers without
+    parallel tempering.
+
+    Results are written to ``samples_group/{vararg}``, where ``{vararg}``
+    is the name of a model params. The samples are written as an
+    ``nwalkers x niterations`` array. If samples already exist, the new
+    samples are appended to the current.
+
+    If the current samples on disk have been thinned (determined by the
+    ``thinned_by`` attribute in the samples group), then the samples will
+    be thinned by the same amount before being written. The thinning is
+    started at the sample in ``samples`` that occured at the iteration
+    equal to the last iteration on disk plus the ``thinned_by`` interval.
+    If this iteration is larger than the iteration of the last given
+    sample, then none of the samples will be written.
+
+    Parameters
+    -----------
+    fp : BaseInferenceFile
+        Open file handler to write files to. Must be an instance of
+        BaseInferenceFile with CommonMCMCMetadataIO methods added. 
+    samples : dict
+        The samples to write. Each array in the dictionary should have
+        shape nwalkers x niterations.
+    parameters : list, optional
+        Only write the specified parameters to the file. If None, will
+        write all of the keys in the ``samples`` dict.
+    last_iteration : int, optional
+        The iteration of the last sample. If the file's ``thinned_by``
+        attribute is > 1, this is needed to determine where to start
+        thinning the samples such that the interval between the last sample
+        currently on disk and the first new sample is the same as all of
+        the other samples.
+    samples_group : str, optional
+        Which group to write the samples to. Default (None) will result
+        in writing to "samples".
+    thin_by : int, optional
+        Override the ``thinned_by`` attribute in the file with the given
+        value. **Only set this if you are using this function to write
+        something other than inference samples!**
     """
+    nwalkers, nsamples = list(samples.values())[0].shape
+    assert all(p.shape == (nwalkers, nsamples)
+               for p in samples.values()), (
+           "all samples must have the same shape")
+    if samples_group is None:
+        samples_group = fp.samples_group
+    if parameters is None:
+        parameters = samples.keys()
+    # thin the samples
+    samples = thin_samples_for_writing(fp, samples, parameters,
+                                       last_iteration, samples_group,
+                                       thin_by=thin_by)
+    # loop over number of dimensions
+    group = samples_group + '/{name}'
+    for param in parameters:
+        dataset_name = group.format(name=param)
+        data = samples[param]
+        # check that there's something to write after thinning
+        if data.shape[1] == 0:
+            # nothing to write, move along
+            continue
+        try:
+            fp_nsamples = fp[dataset_name].shape[-1]
+            istart = fp_nsamples
+            istop = istart + data.shape[1]
+            if istop > fp_nsamples:
+                # resize the dataset
+                fp[dataset_name].resize(istop, axis=1)
+        except KeyError:
+            # dataset doesn't exist yet
+            istart = 0
+            istop = istart + data.shape[1]
+            fp.create_dataset(dataset_name, (nwalkers, istop),
+                                maxshape=(nwalkers, None),
+                                dtype=data.dtype,
+                                fletcher32=True)
+        fp[dataset_name][:, istart:istop] = data
 
-    def write_samples(self, samples, parameters=None, last_iteration=None,
-                      samples_group=None, thin_by=None):
-        """Writes samples to the given file.
 
-        Results are written to ``samples_group/{vararg}``, where ``{vararg}``
-        is the name of a model params. The samples are written as an
-        ``nwalkers x niterations`` array. If samples already exist, the new
-        samples are appended to the current.
+def ensemble_read_raw_samples(fp, fields, thin_start=None,
+                              thin_interval=None, thin_end=None,
+                              iteration=None, walkers=None, flatten=True,
+                              group=None):
+    """Base function for reading samples from ensemble MCMC files without
+    parallel tempering.
 
-        If the current samples on disk have been thinned (determined by the
-        ``thinned_by`` attribute in the samples group), then the samples will
-        be thinned by the same amount before being written. The thinning is
-        started at the sample in ``samples`` that occured at the iteration
-        equal to the last iteration on disk plus the ``thinned_by`` interval.
-        If this iteration is larger than the iteration of the last given
-        sample, then none of the samples will be written.
+    Parameters
+    -----------
+    fp : BaseInferenceFile
+        Open file handler to write files to. Must be an instance of
+        BaseInferenceFile with EnsembleMCMCMetadataIO methods added. 
+    fields : list
+        The list of field names to retrieve.
+    thin_start : int, optional
+        Start reading from the given iteration. Default is to start from
+        the first iteration.
+    thin_interval : int, optional
+        Only read every ``thin_interval`` -th sample. Default is 1.
+    thin_end : int, optional
+        Stop reading at the given iteration. Default is to end at the last
+        iteration.
+    iteration : int, optional
+        Only read the given iteration. If this provided, it overrides
+        the ``thin_(start|interval|end)`` options.
+    walkers : int, optional
+        Only read from the given walkers. Default is to read all.
+    flatten : bool, optional
+        Flatten the samples to 1D arrays before returning. Otherwise, the
+        returned arrays will have shape (requested walkers x
+        requested iteration(s)). Default is True.
+    group : str, optional
+        The name of the group to read sample datasets from. Default is
+        the file's ``samples_group``.
 
-        Parameters
-        -----------
-        samples : dict
-            The samples to write. Each array in the dictionary should have
-            shape nwalkers x niterations.
-        parameters : list, optional
-            Only write the specified parameters to the file. If None, will
-            write all of the keys in the ``samples`` dict.
-        last_iteration : int, optional
-            The iteration of the last sample. If the file's ``thinned_by``
-            attribute is > 1, this is needed to determine where to start
-            thinning the samples such that the interval between the last sample
-            currently on disk and the first new sample is the same as all of
-            the other samples.
-        samples_group : str, optional
-            Which group to write the samples to. Default (None) will result
-            in writing to "samples".
-        thin_by : int, optional
-            Override the ``thinned_by`` attribute in the file with the given
-            value. **Only set this if you are using this function to write
-            something other than inference samples!**
-        """
-        nwalkers, nsamples = list(samples.values())[0].shape
-        assert all(p.shape == (nwalkers, nsamples)
-                   for p in samples.values()), (
-               "all samples must have the same shape")
-        if samples_group is None:
-            samples_group = self.samples_group
-        if parameters is None:
-            parameters = samples.keys()
-        # thin the samples
-        samples = thin_samples_for_writing(self, samples, parameters,
-                                           last_iteration, samples_group,
-                                           thin_by=thin_by)
-        # loop over number of dimensions
-        group = samples_group + '/{name}'
-        for param in parameters:
-            dataset_name = group.format(name=param)
-            data = samples[param]
-            # check that there's something to write after thinning
-            if data.shape[1] == 0:
-                # nothing to write, move along
-                continue
-            try:
-                fp_nsamples = self[dataset_name].shape[-1]
-                istart = fp_nsamples
-                istop = istart + data.shape[1]
-                if istop > fp_nsamples:
-                    # resize the dataset
-                    self[dataset_name].resize(istop, axis=1)
-            except KeyError:
-                # dataset doesn't exist yet
-                istart = 0
-                istop = istart + data.shape[1]
-                self.create_dataset(dataset_name, (nwalkers, istop),
-                                    maxshape=(nwalkers, None),
-                                    dtype=data.dtype,
-                                    fletcher32=True)
-            self[dataset_name][:, istart:istop] = data
-
-    def read_raw_samples(self, fields,
-                         thin_start=None, thin_interval=None, thin_end=None,
-                         iteration=None, walkers=None, flatten=True,
-                         group=None):
-        """Base function for reading samples.
-
-        Parameters
-        -----------
-        fields : list
-            The list of field names to retrieve.
-        thin_start : int, optional
-            Start reading from the given iteration. Default is to start from
-            the first iteration.
-        thin_interval : int, optional
-            Only read every ``thin_interval`` -th sample. Default is 1.
-        thin_end : int, optional
-            Stop reading at the given iteration. Default is to end at the last
-            iteration.
-        iteration : int, optional
-            Only read the given iteration. If this provided, it overrides
-            the ``thin_(start|interval|end)`` options.
-        walkers : int, optional
-            Only read from the given walkers. Default is to read all.
-        flatten : bool, optional
-            Flatten the samples to 1D arrays before returning. Otherwise, the
-            returned arrays will have shape (requested walkers x
-            requested iteration(s)). Default is True.
-        group : str, optional
-            The name of the group to read sample datasets from. Default is
-            the file's ``samples_group``.
-
-        Returns
-        -------
-        dict
-            A dictionary of field name -> numpy array pairs.
-        """
-        if isinstance(fields, string_types):
-            fields = [fields]
-        # walkers to load
-        if walkers is not None:
-            widx = numpy.zeros(self.nwalkers, dtype=bool)
-            widx[walkers] = True
-            nwalkers = widx.sum()
+    Returns
+    -------
+    dict
+        A dictionary of field name -> numpy array pairs.
+    """
+    if isinstance(fields, string_types):
+        fields = [fields]
+    # walkers to load
+    if walkers is not None:
+        widx = numpy.zeros(fp.nwalkers, dtype=bool)
+        widx[walkers] = True
+        nwalkers = widx.sum()
+    else:
+        widx = slice(0, None)
+        nwalkers = fp.nwalkers
+    # get the slice to use
+    if iteration is not None:
+        get_index = int(iteration)
+        niterations = 1
+    else:
+        get_index = fp.get_slice(thin_start=thin_start,
+                                   thin_end=thin_end,
+                                   thin_interval=thin_interval)
+        # we'll just get the number of iterations from the returned shape
+        niterations = None
+    # load
+    if group is None:
+        group = fp.samples_group
+    group = group + '/{name}'
+    arrays = {}
+    for name in fields:
+        arr = fp[group.format(name=name)][widx, get_index]
+        if niterations is None:
+            niterations = arr.shape[-1]
+        if flatten:
+            arr = arr.flatten()
         else:
-            widx = slice(0, None)
-            nwalkers = self.nwalkers
-        # get the slice to use
-        if iteration is not None:
-            get_index = int(iteration)
-            niterations = 1
-        else:
-            get_index = self.get_slice(thin_start=thin_start,
-                                       thin_end=thin_end,
-                                       thin_interval=thin_interval)
-            # we'll just get the number of iterations from the returned shape
-            niterations = None
-        # load
-        if group is None:
-            group = self.samples_group
-        group = group + '/{name}'
-        arrays = {}
-        for name in fields:
-            arr = self[group.format(name=name)][widx, get_index]
-            if niterations is None:
-                niterations = arr.shape[-1]
-            if flatten:
-                arr = arr.flatten()
-            else:
-                # ensure that the returned array is 2D
-                arr = arr.reshape((nwalkers, niterations))
-            arrays[name] = arr
-        return arrays
+            # ensure that the returned array is 2D
+            arr = arr.reshape((nwalkers, niterations))
+        arrays[name] = arr
+    return arrays
 
 
 def thin_samples_for_writing(fp, samples, parameters, last_iteration,
@@ -627,7 +632,7 @@ def thin_samples_for_writing(fp, samples, parameters, last_iteration,
 
     Parameters
     ----------
-    fp : MCMCMetadataIO instance
+    fp : CommonMCMCMetadataIO instance
         The file the sampels will be written to. Needed to determine the
         thin interval used on disk.
     samples : dict
