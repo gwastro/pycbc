@@ -24,10 +24,13 @@ from six import string_types
 from epsie import load_state
 
 from .base_sampler import BaseSamplerFile
-from .base_multitemper import (MultiTemperedMCMCIO, MultiTemperedMetadataIO)
+from .base_mcmc import MCMCMetadataIO
+from .base_multitemper import (CommonMultiTemperedMetadataIO,
+                               write_samples,
+                               read_raw_samples)
 
 
-class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
+class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
                 BaseSamplerFile):
     """Class to handle IO for Epsie's parallel-tempered sampler."""
 
@@ -82,6 +85,44 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         if ts_thin_interval > 1:
             self._thin_data(ts_group, ['swap_index', 'acceptance_ratio'],
                             ts_thin_interval)
+
+    def write_samples(self, samples, **kwargs):
+        r"""Writes samples to the given file.
+
+        Calls :py:func:`base_multitemper.write_samples`. See that function for
+        details.
+
+        Parameters
+        ----------
+        samples : dict
+            The samples to write. Each array in the dictionary should have
+            shape ntemps x nwalkers x niterations.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.write_samples`.
+        """
+        write_samples(self, samples, **kwargs)
+
+    def read_raw_samples(self, fields, **kwargs):
+        r"""Base function for reading samples.
+
+        Calls :py:func:`base_multitemper.read_raw_samples`. See that
+        function for details.
+
+        Parameters
+        -----------
+        fields : list
+            The list of field names to retrieve.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.read_raw_samples`.
+
+        Returns
+        -------
+        dict
+            A dictionary of field name -> numpy array pairs.
+        """
+        return read_raw_samples(self, fields, **kwargs)
 
     def write_acceptance_ratio(self, acceptance_ratio, last_iteration=None):
         """Writes the acceptance ratios to the sampler info group.
@@ -238,119 +279,3 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
             acls[param] = x
         return acls 
 
-    def read_raw_samples(self, fields,
-                         thin_start=None, thin_interval=None, thin_end=None,
-                         iteration=None, temps='all', walkers=None,
-                         flatten=True, group=None):
-        """Base function for reading samples.
-
-        Parameters
-        -----------
-        fields : list
-            The list of field names to retrieve.
-        thin_start : int, optional
-            Start reading from the given iteration. Default is to start from
-            the first iteration.
-        thin_interval : int, optional
-            Only read every ``thin_interval`` -th sample. Default is to use
-            the ACL for each chain.
-        thin_end : int, optional
-            Stop reading at the given iteration. Default is to end at the last
-            iteration.
-        iteration : int, optional
-            Only read the given iteration. If this provided, it overrides
-            the ``thin_(start|interval|end)`` options.
-        temps : 'all' or (list of) int, optional
-            The temperature index (or list of indices) to retrieve. To retrieve
-            all temperates pass 'all', or a list of all of the temperatures.
-            Default is 'all'.
-        walkers : (list of) int, optional
-            Only read from the given walkers. Default is to read all.
-        flatten : bool, optional
-            Flatten the samples to 1D arrays before returning. Otherwise, the
-            returned arrays will have shape (requested temps x
-            requested walkers x requested iteration(s)). Default is True.
-        group : str, optional
-            The name of the group to read sample datasets from. Default is
-            the file's ``samples_group``.
-
-        Returns
-        -------
-        array_class
-            An instance of the given array class populated with values
-            retrieved from the fields.
-        """
-        if isinstance(fields, string_types):
-            fields = [fields]
-        if group is None:
-            group = self.samples_group
-        group = group + '/{name}'
-        # walkers to load
-        if walkers is not None:
-            nwalkers = len(walkers)
-        else:
-            nwalkers = self.nwalkers
-            widx = numpy.arange(nwalkers)
-        # temperatures to load
-        selecttemps = False
-        if isinstance(temps, (int, numpy.int32, numpy.int64)):
-            tidx = temps
-            ntemps = 1
-        else:
-            # temps is either 'all' or a list of temperatures;
-            # in either case, we'll get all of the temperatures from the file;
-            # if not 'all', then we'll pull out the ones we want
-            tidx = slice(None, None)
-            selecttemps = temps != 'all'
-            if selecttemps:
-                ntemps = len(temps)
-            else:
-                ntemps = self.ntemps
-        # get the slice to use
-        if thin_end is None:
-            thin_end = self[group.format(name=fields[0])].shape[-1]
-        if iteration is not None:
-            get_index = int(iteration)
-            niterations = 1
-        else:
-            # figure out the largest extent
-            ti = thin_interval
-            if ti is None:
-                acls = self.read_acls()
-                # maximize over all parameters
-                acls = numpy.array(list(acls.values())).max(axis=0)
-                ti = acls.min()
-            if ti == numpy.inf:
-                niterations = 1
-            else:
-                s = self.get_slice(thin_start=thin_start, thin_end=thin_end,
-                                   thin_interval=int(ti))
-            niterations = int(numpy.ceil((s.stop - s.start) / s.step))
-        arrays = {}
-        for name in fields:
-            arr = numpy.full((ntemps, nwalkers, niterations), numpy.nan)
-            for wi in widx:
-                if iteration is None:
-                    ti = thin_interval
-                    if ti is None:
-                        ti =  acls[wi]
-                    if ti == numpy.inf:
-                        # just get the last one
-                        get_index = -1
-                    else:
-                        get_index = self.get_slice(thin_start=thin_start,
-                                                   thin_end=thin_end,
-                                                   thin_interval=int(ti))
-                thisarr = self[group.format(name=name)][tidx, wi, get_index]
-                # pull out the temperatures we need
-                if selecttemps:
-                    thisarr = thisarr[temps, ...]
-                # make sure its 2D
-                thisarr = thisarr.reshape(ntemps, thisarr.shape[-1])
-                arr[:, wi, :thisarr.shape[-1]] = thisarr
-            if flatten:
-                # flatten and remove nans 
-                arr = arr.flatten()
-                arr = arr[~numpy.isnan(arr)]
-            arrays[name] = arr
-        return arrays
