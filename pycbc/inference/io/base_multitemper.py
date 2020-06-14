@@ -174,6 +174,137 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
         fp[dataset_name][:, :, istart:istop] = data
 
 
+def read_raw_samples(self, fields,
+                     thin_start=None, thin_interval=None, thin_end=None,
+                     iteration=None, temps='all', chains=None,
+                     flatten=True, group=None):
+    """Base function for reading samples from a collection of independent
+    MCMC chains file with parallel tempering.
+
+    This may collect differing numbering of samples from each chains,
+    depending on the thinning settings for each chain. If not flattened the
+    returned array will have dimensions requested temps x requested chains x
+    max samples, where max samples is the largest number of samples retrieved
+    from a single chain. Chains that retrieve fewer samples will be padded with
+    ``numpy.nan``. If flattened, the NaNs are removed prior to returning.
+
+    Parameters
+    -----------
+    fields : list
+        The list of field names to retrieve.
+    thin_start : array or int, optional
+        Start reading from the given sample. May either provide an array
+        indicating the start index for each chain, or an integer. If the
+        former, the array must have the same length as the number of chains
+        that will be retrieved. If the latter, the given value will be used
+        for all chains. Default (None) is to use the file's ``thin_start``
+        attribute.
+    thin_interval : array or int, optional
+        Only read every ``thin_interval``-th sample. May either provide an
+        array indicating the interval to use for each chain, or an integer. If
+        the former, the array must have the same length as the number of chains
+        that will be retrieved. If the latter, the given value will be used for
+        all chains. Default (None) is to use the file's ``thin_interval``
+        attribute.
+    thin_end : array or int, optional
+        Stop reading at the given sample index. May either provide an
+        array indicating the end index to use for each chain, or an integer. If
+        the former, the array must have the same length as the number of chains
+        that will be retrieved. If the latter, the given value will be used for
+        all chains. Default (None) is to use the the file's ``thin_end``
+        attribute.
+    iteration : int, optional
+        Only read the given iteration from all chains. If provided, it
+        overrides the ``thin_(start|interval|end)`` options.
+    temps : 'all' or (list of) int, optional
+        The temperature index (or list of indices) to retrieve. To retrieve
+        all temperates pass 'all', or a list of all of the temperatures.
+        Default is 'all'.
+    chains : (list of) int, optional
+        Only read from the given chains. Default is to read all.
+    flatten : bool, optional
+        Remove NaNs and flatten the samples to 1D arrays before returning.
+        Otherwise, the returned arrays will have shape (requested temps x
+        requested chains x max requested iteration(s)), with chains that return
+        fewer samples padded with NaNs. Default is True.
+    group : str, optional
+        The name of the group to read sample datasets from. Default is
+        the file's ``samples_group``.
+
+    Returns
+    -------
+    dict
+        A dictionary of field name -> numpy array pairs.
+    """
+    if isinstance(fields, string_types):
+        fields = [fields]
+    if group is None:
+        group = self.samples_group
+    group = group + '/{name}'
+    # chains to load
+    if chains is None:
+        chains = numpy.arange(self.nchains)
+    elif not isinstance(chains, (list, numpy.ndarray)):
+        chains = numpy.array([chains]).astype(int)
+    # temperatures to load
+    selecttemps = False
+    if isinstance(temps, (int, numpy.int32, numpy.int64)):
+        tidx = temps
+        ntemps = 1
+    else:
+        # temps is either 'all' or a list of temperatures;
+        # in either case, we'll get all of the temperatures from the file;
+        # if not 'all', then we'll pull out the ones we want
+        tidx = slice(None, None)
+        selecttemps = temps != 'all'
+        if selecttemps:
+            ntemps = len(temps)
+        else:
+            ntemps = self.ntemps
+    # iterations to load
+    if iteration is not None:
+        maxiters = 1
+        get_index = [int(iteration)]*len(chains)
+    else:
+        if thin_start is None:
+            thin_start = self.thin_start
+        if not isinstance(thin_start, (numpy.ndarray, list)):
+            thin_start = numpy.repeat(thin_start, len(chains), dtype=int)
+        if thin_interval is None:
+            thin_interval = self.thin_interval
+        if not isinstance(thin_interval, (numpy.ndarray, list)):
+            thin_interval = numpy.repeat(thin_interval, len(chains),
+                                         dtype=int)
+        if thin_end is None:
+            thin_end = self.thin_end
+        if not isinstance(thin_end, (numpy.ndarray, list)):
+            thin_end = numpy.repeat(thin_end, len(chains))
+        # figure out the maximum number of samples we will get from all chains
+        maxiters = nsamples_in_chain(thin_start, thin_interval, thin_end).max()
+        # the slices to use for each chain
+        get_index = [self.get_slice(thin_start=thin_start[ci],
+                                    thin_interval=thin_interval[ci],
+                                    thin_end=thin_end[ci])
+                     for ci in chains]
+    # load the samples
+    for name in fields:
+        arr = numpy.full((ntemps, nchains, maxiter), numpy.nan)
+        for ci in cidx:
+            thisarr = self[group.format(name=name)][tidx, ci, get_index]
+            # pull out the temperatures we need
+            if selecttemps:
+                thisarr = thisarr[temps, ...]
+            # make sure its 2D
+            thisarr = thisarr.reshape(ntemps, thisarr.shape[-1])
+            arr[:, ci, :thisarr.shape[-1]] = thisarr
+        if flatten:
+            # flatten and remove nans 
+            arr = arr.flatten()
+            arr = arr[~numpy.isnan(arr)]
+        arrays[name] = arr
+    return arrays
+
+
 def ensemble_read_raw_samples(fp, fields, thin_start=None,
                               thin_interval=None, thin_end=None,
                               iteration=None, temps='all', walkers=None,
