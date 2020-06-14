@@ -30,14 +30,13 @@ from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
                         get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,
-                               MultiTemperedAutocorrSupport)
+                               ensemble_compute_acf, ensemble_compute_acl)
 from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.io import EmceePTFile
 from .. import models
 
 
-class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
-                     BaseMCMC, BaseSampler):
+class EmceePTSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
     """This class is used to construct a parallel-tempered MCMC sampler from
     the emcee package's PTSampler.
 
@@ -118,6 +117,53 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     @property
     def betas(self):
         return self._sampler.betas
+
+    @staticmethod
+    def compute_acf(filename, **kwargs):
+        """Computes the autocorrelation function.
+
+        Calls :py:func:`base_multitemper.ensemble_compute_acf`; see that
+        function for details.
+
+        Parameters
+        ----------
+        filename : str
+            Name of a samples file to compute ACFs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.ensemble_compute_acf`.
+
+        Returns
+        -------
+        dict :
+            Dictionary of arrays giving the ACFs for each parameter. If
+            ``per-walker=True`` is passed as a keyword argument, the arrays
+            will have shape ``ntemps x nwalkers x niterations``. Otherwise, the
+            returned array will have shape ``ntemps x niterations``.
+        """
+        return ensemble_compute_acf(filename, **kwargs)
+
+    @staticmethod
+    def compute_acl(filename, **kwargs):
+        """Computes the autocorrelation length.
+
+        Calls :py:func:`base_multitemper.ensemble_compute_acl`; see that
+        function for details.
+
+        Parameters
+        -----------
+        filename : str
+            Name of a samples file to compute ACLs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.ensemble_compute_acf`.
+
+        Returns
+        -------
+        dict
+            A dictionary of ntemps-long arrays of the ACLs of each parameter.
+        """
+        return ensemble_compute_acl(filename, **kwargs)
 
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1,

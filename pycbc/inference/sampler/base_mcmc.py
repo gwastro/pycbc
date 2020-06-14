@@ -36,7 +36,7 @@ import numpy
 
 from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
-from pycbc.inference.io import validate_checkpoint_files
+from pycbc.inference.io import (validate_checkpoint_files, loadfile)
 from pycbc.inference.io.base_mcmc import nsamples_in_chain
 
 from .base import setup_output
@@ -769,120 +769,122 @@ class BaseMCMC(object):
         pass
 
 
-class MCMCAutocorrSupport(object):
-    """Provides class methods for calculating ensemble ACFs/ACLs.
+#
+# =============================================================================
+#
+#              Functions for computing autocorrelation lengths
+#
+# =============================================================================
+#
+
+
+def ensemble_compute_acf(filename, start_index=None, end_index=None,
+                         per_walker=False, walkers=None, parameters=None):
+    """Computes the autocorrleation function for an ensemble MCMC.
+
+    By default, parameter values are averaged over all walkers at each
+    iteration. The ACF is then calculated over the averaged chain. An
+    ACF per-walker will be returned instead if ``per_walker=True``.
+
+    Parameters
+    -----------
+    filename : str
+        Name of a samples file to compute ACFs for.
+    start_index : int, optional
+        The start index to compute the acl from. If None (the default), will
+        try to use the number of burn-in iterations in the file; otherwise,
+        will start at the first sample.
+    end_index : int, optional
+        The end index to compute the acl to. If None (the default), will go to
+        the end of the current iteration.
+    per_walker : bool, optional
+        Return the ACF for each walker separately. Default is False.
+    walkers : int or array, optional
+        Calculate the ACF using only the given walkers. If None (the
+        default) all walkers will be used.
+    parameters : str or array, optional
+        Calculate the ACF for only the given parameters. If None (the
+        default) will calculate the ACF for all of the model params.
+
+    Returns
+    -------
+    dict :
+        Dictionary of arrays giving the ACFs for each parameter. If
+        ``per-walker`` is True, the arrays will have shape
+        ``nwalkers x niterations``.
     """
-
-    @classmethod
-    def compute_acf(cls, filename, start_index=None, end_index=None,
-                    per_walker=False, walkers=None, parameters=None):
-        """Computes the autocorrleation function of the model params in the
-        given file.
-
-        By default, parameter values are averaged over all walkers at each
-        iteration. The ACF is then calculated over the averaged chain. An
-        ACF per-walker will be returned instead if ``per_walker=True``.
-
-        Parameters
-        -----------
-        filename : str
-            Name of a samples file to compute ACFs for.
-        start_index : {None, int}
-            The start index to compute the acl from. If None, will try to use
-            the number of burn-in iterations in the file; otherwise, will start
-            at the first sample.
-        end_index : {None, int}
-            The end index to compute the acl to. If None, will go to the end
-            of the current iteration.
-        per_walker : optional, bool
-            Return the ACF for each walker separately. Default is False.
-        walkers : optional, int or array
-            Calculate the ACF using only the given walkers. If None (the
-            default) all walkers will be used.
-        parameters : optional, str or array
-            Calculate the ACF for only the given parameters. If None (the
-            default) will calculate the ACF for all of the model params.
-
-        Returns
-        -------
-        dict :
-            Dictionary of arrays giving the ACFs for each parameter. If
-            ``per-walker`` is True, the arrays will have shape
-            ``nwalkers x niterations``.
-        """
-        acfs = {}
-        with cls._io(filename, 'r') as fp:
-            if parameters is None:
-                parameters = fp.variable_params
-            if isinstance(parameters, string_types):
-                parameters = [parameters]
-            for param in parameters:
-                if per_walker:
-                    # just call myself with a single walker
-                    if walkers is None:
-                        walkers = numpy.arange(fp.nwalkers)
-                    arrays = [
-                        cls.compute_acf(filename, start_index=start_index,
-                                        end_index=end_index,
-                                        per_walker=False, walkers=ii,
-                                        parameters=param)[param]
-                        for ii in walkers]
-                    acfs[param] = numpy.vstack(arrays)
-                else:
-                    samples = fp.read_raw_samples(
-                        param, thin_start=start_index, thin_interval=1,
-                        thin_end=end_index, walkers=walkers,
-                        flatten=False)[param]
-                    samples = samples.mean(axis=0)
-                    acfs[param] = autocorrelation.calculate_acf(
-                        samples).numpy()
-        return acfs
-
-    @classmethod
-    def compute_acl(cls, filename, start_index=None, end_index=None,
-                    min_nsamples=10):
-        """Computes the autocorrleation length for all model params in the
-        given file.
-
-        Parameter values are averaged over all walkers at each iteration.
-        The ACL is then calculated over the averaged chain. If an ACL cannot
-        be calculated because there are not enough samples, it will be set
-        to ``inf``.
-
-        Parameters
-        -----------
-        filename : str
-            Name of a samples file to compute ACLs for.
-        start_index : int, optional
-            The start index to compute the acl from. If None, will try to use
-            the number of burn-in iterations in the file; otherwise, will start
-            at the first sample.
-        end_index : int, optional
-            The end index to compute the acl to. If None, will go to the end
-            of the current iteration.
-        min_nsamples : int, optional
-            Require a minimum number of samples to compute an ACL. If the
-            number of samples per walker is less than this, will just set to
-            ``inf``. Default is 10.
-
-        Returns
-        -------
-        dict
-            A dictionary giving the ACL for each parameter.
-        """
-        acls = {}
-        with cls._io(filename, 'r') as fp:
-            for param in fp.variable_params:
+    acfs = {}
+    with loadfile(filename, 'r') as fp:
+        if parameters is None:
+            parameters = fp.variable_params
+        if isinstance(parameters, string_types):
+            parameters = [parameters]
+        for param in parameters:
+            if per_walker:
+                # just call myself with a single walker
+                if walkers is None:
+                    walkers = numpy.arange(fp.nwalkers)
+                arrays = [
+                    ensemble_compute_acf(filename, start_index=start_index,
+                                         end_index=end_index,
+                                         per_walker=False, walkers=ii,
+                                         parameters=param)[param]
+                    for ii in walkers]
+                acfs[param] = numpy.vstack(arrays)
+            else:
                 samples = fp.read_raw_samples(
                     param, thin_start=start_index, thin_interval=1,
-                    thin_end=end_index, flatten=False)[param]
+                    thin_end=end_index, walkers=walkers,
+                    flatten=False)[param]
                 samples = samples.mean(axis=0)
-                # if < min number of samples, just set to inf
-                if samples.size < min_nsamples:
-                    acl = numpy.inf
-                else:
-                    acl = autocorrelation.calculate_acl(samples)
-                if acl <= 0:
-                    acl = numpy.inf
-                acls[param] = acl
-        return acls
+                acfs[param] = autocorrelation.calculate_acf(
+                    samples).numpy()
+    return acfs
+
+
+def ensemble_compute_acl(filename, start_index=None, end_index=None,
+                         min_nsamples=10):
+    """Computes the autocorrleation length for an ensemble MCMC.
+
+    Parameter values are averaged over all walkers at each iteration.
+    The ACL is then calculated over the averaged chain. If an ACL cannot
+    be calculated because there are not enough samples, it will be set
+    to ``inf``.
+
+    Parameters
+    -----------
+    filename : str
+        Name of a samples file to compute ACLs for.
+    start_index : int, optional
+        The start index to compute the acl from. If None, will try to use
+        the number of burn-in iterations in the file; otherwise, will start
+        at the first sample.
+    end_index : int, optional
+        The end index to compute the acl to. If None, will go to the end
+        of the current iteration.
+    min_nsamples : int, optional
+        Require a minimum number of samples to compute an ACL. If the
+        number of samples per walker is less than this, will just set to
+        ``inf``. Default is 10.
+
+    Returns
+    -------
+    dict
+        A dictionary giving the ACL for each parameter.
+    """
+    acls = {}
+    with loadfile(filename, 'r') as fp:
+        for param in fp.variable_params:
+            samples = fp.read_raw_samples(
+                param, thin_start=start_index, thin_interval=1,
+                thin_end=end_index, flatten=False)[param]
+            samples = samples.mean(axis=0)
+            # if < min number of samples, just set to inf
+            if samples.size < min_nsamples:
+                acl = numpy.inf
+            else:
+                acl = autocorrelation.calculate_acl(samples)
+            if acl <= 0:
+                acl = numpy.inf
+            acls[param] = acl
+    return acls
