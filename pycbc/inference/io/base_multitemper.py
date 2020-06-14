@@ -27,8 +27,9 @@
 from __future__ import absolute_import
 import argparse
 from six import string_types
-from .base_mcmc import (CommonMCMCMetadataIO, thin_samples_for_writing)
 import numpy
+from .base_mcmc import (CommonMCMCMetadataIO, thin_samples_for_writing,
+                        nsamples_in_chain)
 
 class ParseTempsArg(argparse.Action):
     """Argparse action that will parse temps argument.
