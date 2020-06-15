@@ -699,8 +699,8 @@ class ForegroundTriggers(object):
                 self.sngl_files[curr_ifo] = curr_dat
 
             if not sorted(self.sngl_files.keys()) == sorted(self.ifos):
-                logging.warn("WARNING: Statmap file IFOs do not match "
-                             "single-detector trigger files.")
+                logging.warning("WARNING: Statmap file IFOs do not match "
+                                "single-detector trigger files.")
 
         self.bank_file = HFile(bank_file, "r")
         self.n_loudest = n_loudest
