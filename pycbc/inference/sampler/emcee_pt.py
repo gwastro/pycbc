@@ -36,7 +36,8 @@ from pycbc.inference.io import EmceePTFile
 from .. import models
 
 
-class EmceePTSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
+class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
+                     BaseSampler):
     """This class is used to construct a parallel-tempered MCMC sampler from
     the emcee package's PTSampler.
 
@@ -156,7 +157,7 @@ class EmceePTSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
             Name of a samples file to compute ACLs for.
         \**kwargs :
             All other keyword arguments are passed to
-            :py:func:`base_multitemper.ensemble_compute_acf`.
+            :py:func:`base_multitemper.ensemble_compute_acl`.
 
         Returns
         -------

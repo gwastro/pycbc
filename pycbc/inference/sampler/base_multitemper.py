@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 from six import string_types
 
+import logging
 import numpy
 import h5py
 from pycbc.filter import autocorrelation
@@ -104,6 +105,157 @@ class MultiTemperedSupport(object):
 #
 # =============================================================================
 #
+
+
+def compute_acf(filename, start_index=None, end_index=None,
+                chains=None, parameters=None, temps=None):
+    """Computes the autocorrleation function for independent MCMC chains with
+    parallel tempering.
+
+    Parameters
+    -----------
+    filename : str
+        Name of a samples file to compute ACFs for.
+    start_index : int, optional
+        The start index to compute the acl from. If None (the default),
+        will try to use the burn in iteration for each chain;
+        otherwise, will start at the first sample.
+    end_index : {None, int}
+        The end index to compute the acl to. If None, will go to the end
+        of the current iteration.
+    chains : optional, int or array
+        Calculate the ACF for only the given chains. If None (the
+        default) ACFs for all chains will be estimated.
+    parameters : optional, str or array
+        Calculate the ACF for only the given parameters. If None (the
+        default) will calculate the ACF for all of the model params.
+    temps : optional, (list of) int or 'all'
+        The temperature index (or list of indices) to retrieve. If None
+        (the default), the ACF will only be computed for the coldest (= 0)
+        temperature chain. To compute an ACF for all temperates pass 'all',
+        or a list of all of the temperatures.
+
+    Returns
+    -------
+    dict :
+        Dictionary parameter name -> ACF arrays. The arrays have shape
+        ``ntemps x nchains``.
+    """
+    acfs = {}
+    with loadfile(filename, 'r') as fp:
+        if parameters is None:
+            parameters = fp.variable_params
+        if isinstance(parameters, string_types):
+            parameters = [parameters]
+        if isinstance(temps, int):
+            temps = [temps]
+        elif temps == 'all':
+            temps = numpy.arange(fp.ntemps)
+        elif temps is None:
+            temps = [0]
+        if chains is None:
+            chains = numpy.arange(fp.nchains)
+        for param in parameters:
+            subacfs = []
+            for tk in temps:
+                subsubacfs = []
+                for ci in chains:
+                    samples = fp.read_raw_samples(
+                        param, thin_start=start_index, thin_interval=1,
+                        thin_end=end_index, chains=ci, temps=tk)[param]
+                    thisacf = autocorrelation.calculate_acf(samples).numpy()
+                    subsubacfs.append(thisacf)
+                # stack the chains 
+                subacfs.append(subsubacfs)
+            # stack the temperatures
+            acfs[param] = numpy.stack(subacfs)
+    return acfs
+
+
+def compute_acl(filename, start_index=None, end_index=None,
+                min_nsamples=10):
+    """Computes the autocorrleation length for independent MCMC chains with
+    parallel tempering.
+
+    ACLs are calculated separately for each chain.
+
+    Parameters
+    -----------
+    filename : str
+        Name of a samples file to compute ACLs for.
+    start_index : {None, int}
+        The start index to compute the acl from. If None, will try to use
+        the number of burn-in iterations in the file; otherwise, will start
+        at the first sample.
+    end_index : {None, int}
+        The end index to compute the acl to. If None, will go to the end
+        of the current iteration.
+    min_nsamples : int, optional
+        Require a minimum number of samples to compute an ACL. If the
+        number of samples per walker is less than this, will just set to
+        ``inf``. Default is 10.
+
+    Returns
+    -------
+    dict
+        A dictionary of ntemps x nchains arrays of the ACLs of each
+        parameter.
+    """
+    acls = {}
+    with loadfile(filename, 'r') as fp:
+        tidx = numpy.arange(fp.ntemps)
+        cidx = numpy.arange(fp.nwalkers)
+        for param in fp.variable_params:
+            these_acls = numpy.zeros((fp.ntemps, fp.nwalkers))
+            for tk in tidx:
+                samples = fp.read_raw_samples(
+                    param, thin_start=start_index, thin_interval=1,
+                    thin_end=end_index, temps=tk, flatten=False)[param]
+                # flatten out the temperature
+                samples = samples[0, ...]
+                if samples.shape[-1] < min_nsamples:
+                    these_acls[tk, :] = numpy.inf
+                else:
+                    for ci in cidx:
+                        # remove any nans
+                        si = samples[ci, :]
+                        si = si[~numpy.isnan(si)]
+                        if len(si) < min_nsamples:
+                            acl = numpy.inf
+                        else:
+                            acl = autocorrelation.calculate_acl(si)
+                            if acl <= 0:
+                                acl = numpy.inf
+                        these_acls[tk, ci] = acl
+            acls[param] = these_acls
+        # report the mean ACL: take the max over the temps and parameters
+        acl = numpy.array(list(acls.values())).max(axis=2).max(axis=0)
+        act = acl*fp.thin_interval
+        logging.info("Min, mean, max ACT: %s, %s, %s",
+                     str(act.min()), str(act.mean()), str(act.max()))
+    return acls
+
+
+def acl_from_acls(acls):
+    """Calculates the ACL for one or more chains from a dictionary of ACLs.
+
+    This is for parallel tempered MCMCs in which the chains are independent
+    of each other.
+
+    The ACL for each chain is maximized over the temperatures and parameters.
+
+    Parameters
+    ----------
+    acls : dict
+        Dictionary of parameter names -> ntemps x nchains arrays of ACLs (the
+        thing returned by :py:func:`compute_acl`).
+
+    Returns
+    -------
+    array
+        The ACL of each chain.
+    """
+    return numpy.array(list(acls.values())).max(axis=0).max(axis=0)
 
 
 def ensemble_compute_acf(filename, start_index=None, end_index=None,
@@ -249,4 +401,6 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None,
                     acl = numpy.inf
                 these_acls[tk] = acl
             acls[param] = these_acls
+        maxacl = numpy.array(list(acls.values())).max()
+        logging.info("ACT: %s", str(maxacl*fp.thin_interval))
     return acls

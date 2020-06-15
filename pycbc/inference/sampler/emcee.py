@@ -49,7 +49,7 @@ from .. import models
 # =============================================================================
 #
 
-class EmceeEnsembleSampler(BaseMCMC, BaseSampler):
+class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
     """This class is used to construct an MCMC sampler from the emcee
     package's EnsembleSampler.
 
