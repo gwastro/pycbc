@@ -106,6 +106,26 @@ class NewSNRStatistic(Stat):
         """
         return (s0 ** 2. + s1 ** 2.) ** 0.5
 
+    def coinc_lim_for_thresh(self, s0, thresh):
+        """Calculate the required single detector statistic to exceed thresh.
+
+        Parameters
+        ----------
+        s0: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        thresh: float
+            The threshold of the coincident statistic
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of limits on the second detector single statistic to
+        exceed thresh
+        """
+        s1 = thresh ** 2. - s0 ** 2.
+        s1[s1 < 0] = 0
+        return s1 ** 0.5
+
     def coinc_multiifo(self, s, slide, step, to_shift,
                        **kwargs): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
@@ -126,6 +146,26 @@ class NewSNRStatistic(Stat):
             Array of coincident ranking statistic values
         """
         return sum(sngl[1] ** 2. for sngl in s) ** 0.5
+
+    def coinc_multiifo_lim_for_thresh(self, s, thresh):
+        """Calculate the required single detector statistic to exceed thresh.
+
+        Parameters
+        ----------
+        s0: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        thresh: float
+            The threshold of the coincident statistic
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of limits on the second detector single statistic to
+        exceed thresh
+        """
+        s0 = thresh ** 2. - sum(sngl[1] ** 2. for sngl in s)
+        s0[s0 < 0] = 0
+        return s0 ** 0.5
 
 
 class NewSNRSGStatistic(NewSNRStatistic):
@@ -254,6 +294,28 @@ class NewSNRCutStatistic(NewSNRStatistic):
         cstat[s1 == -1] = 0
         return cstat
 
+    def coinc_lim_for_thresh(self, s0, thresh):
+        """Calculate the required single detector statistic to exceed thresh.
+
+        Parameters
+        ----------
+        s0: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        thresh: float
+            The threshold of the coincident statistic
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of limits on the second detector single statistic to
+        exceed thresh
+        """
+        s1 = thresh ** 2. - s0 ** 2.
+        s1[s0 == -1] = numpy.inf
+        s1[s1 < 0] = 0
+        return s1 ** 0.5
+
+
 
 class PhaseTDNewStatistic(NewSNRStatistic):
     """Statistic that re-weights combined newsnr using coinc parameters.
@@ -325,6 +387,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.srbmax = histfile.attrs['srbmax']
 
         bin_volume = (self.twidth * self.pwidth * self.swidth) ** (n_ifos - 1)
+        self.hist_max = - 1. * numpy.inf
 
         # Read histogram for each ifo, to use if that ifo has smallest SNR in
         # the coinc
@@ -358,6 +421,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             # histogram entries. All histograms in a given file have the same
             # min entry by design, so use the min of the last one read in.
             self.max_penalty = self.weights[ifo].min()
+            self.hist_max = max(self.hist_max, self.weights[ifo].max())
 
             if self.two_det_flag:
                 # The density of signals is computed as a function of 3 binned
@@ -599,6 +663,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         self.bins['dphi'] = histfile['pbins'][:]
         self.bins['snr'] = histfile['sbins'][:]
         self.bins['sigma_ratio'] = histfile['rbins'][:]
+        self.hist_max = self.hist.max()
 
     def single(self, trigs):
         """Calculate the single detector statistic & assemble other parameters
@@ -722,7 +787,6 @@ class PhaseTDStatistic(NewSNRStatistic):
 
     def coinc(self, s0, s1, slide, step):
         """Calculate the coincident detection statistic.
-
         Parameters
         ----------
         s0: numpy.ndarray
@@ -734,7 +798,6 @@ class PhaseTDStatistic(NewSNRStatistic):
         interval to bring a pair of single detector triggers into coincidence.
         step: float
             The timeslide interval in seconds.
-
         Returns
         -------
         coinc_stat: numpy.ndarray
@@ -744,6 +807,29 @@ class PhaseTDStatistic(NewSNRStatistic):
         cstat = rstat + 2. * self.logsignalrate(s0, s1, slide * step)
         cstat[cstat < 0] = 0
         return cstat ** 0.5
+
+    def coinc_lim_for_thresh(self, s0, thresh):
+        """Calculate the required single detector statistic to exceed thresh.
+
+        Parameters
+        ----------
+        s0: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        thresh: float
+            The threshold of the coincident statistic
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of limits on the second detector single statistic to
+        exceed thresh
+        """
+        if self.hist is None:
+            self.get_hist()
+        s1 = thresh ** 2. - s0['snglstat'] ** 2.
+        s1 -= 2. * self.hist_max
+        s1[s1 < 0] = 0
+        return s1 ** 0.5
 
 
 class PhaseTDSGStatistic(PhaseTDStatistic):
@@ -851,6 +937,27 @@ class ExpFitStatistic(NewSNRStatistic):
         # via log likelihood ratio \propto rho_c^2 / 2
         return (2. * loglr) ** 0.5
 
+    def coinc_lim_for_thresh(self, s0, thresh):
+        """Calculate the required single detector statistic to exceed thresh.
+
+        Parameters
+        ----------
+        s0: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        thresh: float
+            The threshold of the coincident statistic
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of limits on the second detector single statistic to
+        exceed thresh
+        """
+        s1 = - (thresh ** 2.) / 2 - s0
+        threshes = [self.fits_by_tid[i]['thresh'] for i in self.bg_ifos]
+        s1 += sum([t**2. / 2. for t in threshes])
+        return s1
+
 
 class ExpFitCombinedSNR(ExpFitStatistic):
     """Reworking of ExpFitStatistic designed to resemble network SNR
@@ -882,10 +989,17 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # scale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / 2.**0.5
 
+    def coinc_lim_for_thresh(self, s0, thresh):
+        return thresh * (2. ** 0.5) - s0
+
     def coinc_multiifo(self, s, slide, step, to_shift,
                        **kwargs): # pylint:disable=unused-argument
         # scale by 1/sqrt(number of ifos) to resemble network SNR
         return sum(sngl[1] for sngl in s) / len(s)**0.5
+
+    def coinc_multiifo_lim_for_thresh(self, s, thresh,
+                                      limifo, **kwargs): # pylint:disable=unused-argument
+        return thresh * ((len(s) + 1) ** 0.5) - sum(sngl[1] for sngl in s)
 
 
 class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
@@ -941,6 +1055,13 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         # scale to resemble network SNR
         return cstat / (2.**0.5)
 
+    def coinc_lim_for_thresh(self, s0, thresh):
+        if self.hist is None:
+            self.get_hist()
+        logr_s = self.hist_max
+        s1 = (2. ** 0.5) * thresh - s0['snglstat'] - logr_s / self.alpharef
+        return s1
+
 
 class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
     """Statistic combining exponential noise model with signal histogram PDF"""
@@ -965,13 +1086,20 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
 
     def coinc(self, s0, s1, slide, step):
         # logsignalrate function inherited from PhaseTDStatistic
-        logr_s = self.logsignalrate(s0, s1, slide * step)
+        logr_s = self.hist_max
         # rescale by ExpFitCombinedSNR reference slope as for sngl stat
         cstat = s0['snglstat'] + s1['snglstat'] + logr_s / self.alpharef
         # cut off underflowing and very small values
         cstat[cstat < 8.] = 8.
         # scale to resemble network SNR
         return cstat / (2.**0.5)
+
+    def coinc_lim_for_thresh(self, s0, thresh):
+        if self.hist is None:
+            self.get_hist()
+        logr_s = self.hist_max
+        s1 = (2 ** 0.5) * thresh - s0['snglstat'] - logr_s / self.alpharef
+        return s1
 
 
 class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
@@ -1088,6 +1216,16 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         loglr = - ln_noise_rate + self.benchmark_lograte
         return loglr
 
+    def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo, **kwargs):
+        # ranking statistic is -ln(expected rate density of noise triggers)
+        # plus normalization constant
+        sngl_dict = {sngl[0]: sngl[1] for sngl in s}
+        sngl_dict[limifo] = np.zeros(len(s[s.keys()[0]]))
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                  sngl_dict, kwargs['time_addition'])
+        loglr = - thresh - ln_noise_rate + self.benchmark_lograte
+        return loglr
+
 
 class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
@@ -1174,6 +1312,28 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         loglr = logr_s + network_logvol - ln_noise_rate
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
+        return loglr
+
+    def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo,
+                                      **kwargs): # pylint:disable=unused-argument
+        sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
+        sngl_dict[limifo] = np.zeros(len(s[s.keys()[0]]))
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                  sngl_rates, kwargs['time_addition'])
+        ln_noise_rate -= self.benchmark_lograte
+
+        # Network sensitivity for a given coinc type is approximately
+        # determined by the least sensitive ifo
+        network_sigmasq = np.ones(len(s[s.keys()[0]])) * kwargs['max_sigmasq']
+        # Volume \propto sigma^3 or sigmasq^1.5
+        network_logvol = 1.5 * numpy.log(network_sigmasq)
+        # Get benchmark log volume as single-ifo information
+        # NB benchmark logvol for a given template is not ifo-dependent
+        # - choose the first ifo for convenience
+        benchmark_logvol = s[0][1]['benchmark_logvol']
+        network_logvol -= benchmark_logvol
+
+        loglr = - thresh + self.hist_max + network_logvol - ln_noise_rate
         return loglr
 
 
@@ -1309,6 +1469,54 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
 
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
+        return loglr
+
+    def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo
+                                      **kwargs): # pylint:disable=unused-argument
+        sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
+        sngl_dict[limifo] = np.zeros(len(s[s.keys()[0]]))
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                  sngl_rates, kwargs['time_addition'])
+        ln_noise_rate -= self.benchmark_lograte
+
+        # Network sensitivity for a given coinc type is approximately
+        # determined by the least sensitive ifo
+        network_sigmasq = np.ones(len(s[s.keys()[0]])) * kwargs['max_sigmasq']
+        # Volume \propto sigma^3 or sigmasq^1.5
+        network_logvol = 1.5 * numpy.log(network_sigmasq)
+        # Get benchmark log volume as single-ifo information :
+        # benchmark_logvol for a given template is not ifo-dependent, so
+        # choose the first ifo for convenience
+        benchmark_logvol = s[0][1]['benchmark_logvol']
+        network_logvol -= benchmark_logvol
+
+        # Use prior histogram to get Bayes factor for signal vs noise
+        # given the time, phase and SNR differences between IFOs
+
+        # First get signal PDF logr_s
+        logr_s = numpy.log(self.hist_max() * (kwargs['min_snr'] / self.ref_snr) ** -4.0)
+
+        # Find total volume of phase-time-amplitude space occupied by noise
+        # coincs
+        # Extent of time-difference space occupied
+        noise_twindow = coinc_rate.multiifo_noise_coincident_area(
+                            self.hist_ifos, kwargs['time_addition'])
+        # Volume is the allowed time difference window, multiplied by 2pi for
+        # each phase difference dimension and by allowed range of SNR ratio
+        # for each SNR ratio dimension : there are (n_ifos - 1) dimensions
+        # for both phase and SNR
+        n_ifos = len(self.hist_ifos)
+        hist_vol = noise_twindow * \
+            (2 * numpy.pi * (self.srbmax - self.srbmin) * self.swidth) ** \
+            (n_ifos - 1)
+        # Noise PDF is 1/volume, assuming a uniform distribution of noise
+        # coincs
+        logr_n = - numpy.log(hist_vol)
+
+        # Combine to get final statistic: log of
+        # ((rate of signals / rate of noise) * PTA Bayes factor)
+        loglr = - thresh + network_logvol - ln_noise_rate + logr_s - logr_n
+
         return loglr
 
 
