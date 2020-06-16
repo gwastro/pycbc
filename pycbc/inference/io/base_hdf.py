@@ -761,12 +761,13 @@ class BaseInferenceFile(h5py.File):
                 attrs[arg] = val
 
     def write_data(self, name, data, path=None):
-        """Writes data as either a dataset or an attr.
+        """Convenience function to write data.
 
-        If the given data is a numpy array or list, the data will be written
-        as a dataset. Otherwise, the data is written to the attrs using
-        :py:func:`write_kwargs_to_attrs`. When writing the data as a dataset,
-        it is assumed that the data has the same size everytime.
+        Given ``data`` is written as a dataset with ``name`` in ``path``.
+        If the data hasn't been written yet, the dataset will be created.
+        Otherwise, will overwrite the data that is there. If data already
+        exists in the file with the same name and path, the given data must
+        have the same shape.
 
         Parameters
         ----------
@@ -782,15 +783,8 @@ class BaseInferenceFile(h5py.File):
         if path is None:
             path = '/'
         group = self[path]
-        if isinstance(data, (numpy.ndarray, list)):
-            # write arrays as datasets
-            # Note: this assumes that the data always has the
-            # same shape.
-            try:
-                group[name][:] = data
-            except KeyError:
-                # dataset doesn't exist yet
-                group[name] = data
-        else:
-            # write all other data as attrs
-            self.write_kwargs_to_attrs(group.attrs, **{name: data})
+        try:
+            group[name][()] = data
+        except KeyError:
+            # dataset doesn't exist yet
+            group[name] = data

@@ -61,10 +61,7 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         """
         super(EpsieFile, self).write_sampler_metadata(sampler)
         self[self.sampler_group].attrs['seed'] = sampler.seed
-        try:
-            self[self.sampler_group]["betas"][:] = sampler.betas
-        except KeyError:
-            self[self.sampler_group]["betas"] = sampler.betas
+        self.write_data("betas", sampler.betas, path=self.sampler_group)
 
     def thin(self, thin_interval):
         """Thins the samples on disk to the given thinning interval.
@@ -255,27 +252,3 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
                 # corrupted for some reason
                 valid = False
         return valid
-
-    def read_acls(self, pertemp=False):
-        """Reads the acls of all the parameters.
-
-        Parameters
-        ----------
-        pertemp : bool, optional
-            Return the ACL for each temperature. Default (False) is to take
-            the maximum over all temperatures.
-
-        Returns
-        -------
-        dict
-            A dictionary of the ACLs, keyed by the parameter name.
-        """
-        group = self[self.sampler_group]['acls']
-        acls = {}
-        for param in group:
-            x = group[param][()]
-            if not pertemp:
-                x = x.max(axis=0)
-            acls[param] = x
-        return acls 
-

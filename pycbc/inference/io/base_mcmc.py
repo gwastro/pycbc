@@ -205,6 +205,87 @@ class CommonMCMCMetadataIO(object):
         # write the model's metadata
         sampler.model.write_metadata(self)
 
+    @property
+    def burn_in_iteration(self):
+        """Returns the burn in iteration of all the chains.
+        
+        Raises a ``ValueError`` if no burn in tests were done.
+        """
+        try:
+            return self[self.sampler_group]['burn_in_iteration'][()]
+        except KeyError:
+            raise ValueError("No burn in tests were performed")
+
+    @property
+    def burn_in_index(self):
+        """Returns the burn in index.
+        
+        This is the burn in iteration divided by the file's ``thinned_by``.
+        Requires the class that this is used with has a ``burn_in_iteration``
+        attribute.
+        """
+        return self.burn_in_iteration // self.thinned_by
+
+    @property
+    def acl(self):
+        """Returns the ACL.
+        
+        Raises a ``ValueError`` if the ACL has not been calculated.
+        """
+        try:
+            return self[self.sampler_group]['acl'][()]
+        except KeyError:
+            raise ValueError("ACL has not been calculated")
+
+    @acl.setter
+    def acl(self, acl):
+        """Writes the autocorrelation length(s).
+
+        ACL(s) are written to the ``sample_group`` as a dataset with name
+        ``acl``.
+
+        Parameters
+        ----------
+        acl : array or int
+            ACL(s) to write.
+        """
+        self.write_data('acl', acl, path=self.sampler_group)
+
+    @property
+    def raw_acls(self):
+        """Dictionary of parameter names -> raw autocorrelation length(s).
+
+        Depending on the sampler, the autocorrelation lengths may be integers,
+        or [ntemps x] [nchains x] arrays.
+
+        Raises a ``ValueError`` is no raw acls have been set.
+        """
+        try:
+            group = self[self.samper_group]['raw_acls']
+        except KeyError:
+            raise ValueError("ACLs have not been calculated") 
+        acls = {}
+        for param in group:
+            acls[param] = group[param][()]
+        return acls
+
+    @raw_acls.setter
+    def raw_acls(self, acls):
+        """Writes the raw autocorrelation lengths.
+
+        The ACL of each parameter is saved to
+        ``[sampler_group]/raw_acls/{param}']``. Works for all types of MCMC
+        samplers (independent chains, ensemble, parallel tempering).
+
+        Parameters
+        ----------
+        acls : dict
+            A dictionary of ACLs keyed by the parameter.
+        """
+        path = self.sampler_group + '/raw_acls'
+        for param in acls:
+            self.write_data(param, acls[param], path=path)
+
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
         """Create a parser to parse sampler-specific arguments for loading
@@ -276,16 +357,6 @@ class CommonMCMCMetadataIO(object):
             actions.append(act)
         return parser, actions
 
-    @property
-    def burn_in_index(self):
-        """Returns the burn in index.
-        
-        This is the burn in iteration divided by the file's ``thinned_by``.
-        Requires the class that this is used with has a ``burn_in_iteration``
-        attribute.
-        """
-        return self.burn_in_iteration // self.thinned_by
-
 
 class MCMCMetadataIO(object):
     """Provides functions for reading/writing metadata to file for MCMCs in
@@ -294,49 +365,6 @@ class MCMCMetadataIO(object):
     Overrides the ``BaseInference`` file's ``thin_start`` and ``thin_interval``
     attributes. Instead of integers, these return arrays.
     """
-    @property
-    def burn_in_iteration(self):
-        """Returns the burn in iteration of all the chains.
-        
-        Raises a ``ValueError`` if no burn in tests were done.
-        """
-        try:
-            return self[self.sampler_group]['burn_in_iteration'][:]
-        except KeyError:
-            raise ValueError("No burn in tests were performed")
-
-    def write_acls(self, acls):
-        """Writes the given autocorrelation lengths.
-
-        The ACL of each parameter is saved to
-        ``[sampler_group]/acls/{param}']``.  The maximum over all the
-        parameters is saved to ``[sampler_group]/acl``. In both cases, the
-        ACL are arrays of length nchains.
-
-        Parameters
-        ----------
-        acls : dict
-            A dictionary of ACLs keyed by the parameter.
-        """
-        path = self.sampler_group + '/acls'
-        # write the individual acls
-        for param in acls:
-            self.write_data(param, acls[param], path)
-        # write the maximum over all params
-        acl = numpy.array(list(acls.values())).max(axis=0)
-        self.write_data('acl', acl, self.sampler_group)
-
-    @property
-    def acl(self):
-        """Returns the ACL of the ensemble.
-        
-        Raises a ``ValueError`` if the ACL has not been calculated.
-        """
-        try:
-            return self[self.sampler_group]['acl'][:]
-        except KeyError:
-            raise ValueError("ACL has not been calculated")
-
     @property
     def thin_start(self):
         """Returns the default thin start to use for reading samples.
@@ -370,66 +398,6 @@ class EnsembleMCMCMetadataIO(object):
     """Provides functions for reading/writing metadata to file for ensemble
     MCMCs.
     """
-    @property
-    def burn_in_iteration(self):
-        """Returns the burn in iteration set in the file.
-        
-        Raises a ``ValueError`` if no burn in tests were done.
-        """
-        try:
-            return self[self.sampler_group].attrs['burn_in_iteration']
-        except KeyError:
-            raise ValueError("No burn in tests were performed")
-
-    def write_acls(self, acls):
-        """Writes the given autocorrelation lengths.
-
-        The ACL of each parameter is saved to
-        ``[sampler_group]/acls/{param}']``.  The maximum over all the
-        parameters is saved to the file's 'acl' attribute.
-
-        Parameters
-        ----------
-        acls : dict
-            A dictionary of ACLs keyed by the parameter.
-        """
-        group = self.sampler_group + '/acls/{}'
-        # write the individual acls
-        for param in acls:
-            try:
-                # we need to use the write_direct function because it's
-                # apparently the only way to update scalars in h5py
-                self[group.format(param)].write_direct(
-                    numpy.array(acls[param]))
-            except KeyError:
-                # dataset doesn't exist yet
-                self[group.format(param)] = acls[param]
-        # write the maximum over all params
-        acl = numpy.array(list(acls.values())).max()
-        self[self.sampler_group].attrs['acl'] = acl
-
-    @property
-    def acl(self):
-        """Returns the ACL of the ensemble.
-        
-        Raises a ``ValueError`` if the ACL has not been calculated.
-        """
-        try:
-            return self[self.sampler_group].attrs['acl']
-        except KeyError:
-            raise ValueError("ACL has not been calculated")
-
-    def read_acls(self):
-        """Reads the acls of all the parameters.
-
-        Returns
-        -------
-        dict
-            A dictionary of the ACLs, keyed by the parameter name.
-        """
-        group = self[self.sampler_group]['acls']
-        return {param: group[param][()] for param in group.keys()}
- 
     @property
     def thin_start(self):
         """Returns the default thin start to use for reading samples.
