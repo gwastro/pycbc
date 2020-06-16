@@ -774,17 +774,31 @@ class BaseInferenceFile(h5py.File):
         name : str
             The name to associate with the data. This will be the dataset
             name (if data is array-like) or the key in the attrs.
-        data : object
-            The data to write. Can be of any arbitrary type.
+        data : array, dict, or atomic
+            The data to write. If a dictionary, a subgroup will be created
+            for each key, and the values written there. This will be done
+            recursively until an array or atomic (e.g., float, int, str), is
+            found. Otherwise, the data is written to the given name.
         path : str, optional
             Write to the given path. Default (None) will write to the top
-            level.
+            level. If the path does not exist in the file, it will be
+            created.
         """
         if path is None:
             path = '/'
-        group = self[path]
         try:
-            group[name][()] = data
+            group = self[path]
         except KeyError:
-            # dataset doesn't exist yet
-            group[name] = data
+            # create the group
+            self.create_group(path)
+            group = self[path]
+        if isinstance(data, dict):
+            # call myself for each key, value pair in the dictionary
+            for key, val in data.items():
+                self.write_data(key, val, path='/'.join([path, name]))
+        else:
+            try:
+                group[name][()] = data
+            except KeyError:
+                # dataset doesn't exist yet
+                group[name] = data

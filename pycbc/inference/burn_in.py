@@ -227,7 +227,7 @@ def evaluate_tests(burn_in_test, test_is_burned_in, test_burn_in_iter):
     for ii in burn_in_iters:
         test_results = {t: (test_is_burned_in[t] &
                             0 <= test_burn_in_iter[t] <= ii)
-                        for t in itest_is_burned_in}
+                        for t in test_is_burned_in}
         is_burned_in = eval(burn_in_test, {"__builtins__": None},
                             test_results)
         if is_burned_in:
@@ -352,7 +352,7 @@ class BaseBurnInTests(object):
         # since we calculated it, save the acls to the sampler...
         # but only do this if this is the only burn in test
         if len(self.do_tests) == 1:
-            self.sampler.acls = acls
+            self.sampler.raw_acls = acls
         return acls
 
     def halfchain(self, filename):
@@ -430,6 +430,7 @@ class BaseBurnInTests(object):
                 for name, data in self.test_aux_info[tst].items():
                     fp.write_data(name, data, subpath)
 
+    @staticmethod
     def _extra_tests_from_config(cp, section, tag):
         """For loading class-specific tests."""
         return {}
@@ -450,11 +451,11 @@ class BaseBurnInTests(object):
             kwargs['min_iterations'] = int(
                 cp.get_opt_tag(section, 'min-iterations', tag))
         # load any class specific tests
-        kwargs.update(self._extra_tests_from_config(cp, section, tag))
+        kwargs.update(cls._extra_tests_from_config(cp, section, tag))
         return cls(sampler, burn_in_test, **kwargs)
 
 
-class MCMCBurnInTests(_BaseBurnInTests):
+class MCMCBurnInTests(BaseBurnInTests):
     """Burn-in tests for collections of independent MCMC chains.
     
     This differs from EnsembleMCMCBurnInTests in that chains are treated as
@@ -464,7 +465,7 @@ class MCMCBurnInTests(_BaseBurnInTests):
     samples can be collected even if all of the chains are not burned in.
     """
     def __init__(self, sampler, burn_in_test, **kwargs):
-        super(MCMCBurnInTests, self.).__ini__(sampler, burn_in_test, **kwargs)
+        super(MCMCBurnInTests, self).__ini__(sampler, burn_in_test, **kwargs)
         try:
             nchains = sampler.nchains
         except AttributeError:
@@ -567,7 +568,7 @@ class MCMCBurnInTests(_BaseBurnInTests):
         fp.write_data('nchains_burned_in', self.is_burned_in.sum(), path)
 
 
-class MultiTemperedMCMCBurnInTests(EnsembleMCMCBurnInTests):
+class MultiTemperedMCMCBurnInTests(MCMCBurnInTests):
     """Adds support for multiple temperatures to
     :py:class:`MCMCBurnInTests`.
     """
@@ -610,7 +611,7 @@ class MultiTemperedMCMCBurnInTests(EnsembleMCMCBurnInTests):
         return _multitemper_getlogposts(self.sampler, filename)
 
 
-class EnsembleMCMCBurnInTests(_BaseBurnInTests):
+class EnsembleMCMCBurnInTests(BaseBurnInTests):
     """Provides methods for estimating burn-in of an ensemble MCMC."""
 
     available_tests = ('halfchain', 'min_iterations', 'max_posterior',
@@ -735,11 +736,13 @@ class EnsembleMCMCBurnInTests(_BaseBurnInTests):
             logging.info("Burn-in iteration: %i",
                          int(self.burn_in_iteration))
 
-    def _extra_tests_from_config(cp):
+    def _extra_tests_from_config(cp, section, tag):
         """Loads the ks test settings from the config file."""
+        kwargs = {}
         if cp.has_option_tag(section, 'ks-threshold', tag):
             kwargs['ks_threshold'] = float(
                 cp.get_opt_tag(section, 'ks-threshold', tag))
+        return kwargs
 
 
 class EnsembleMultiTemperedMCMCBurnInTests(EnsembleMCMCBurnInTests):

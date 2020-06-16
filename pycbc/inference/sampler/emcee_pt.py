@@ -27,7 +27,7 @@ import logging
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
+from .base_mcmc import (BaseMCMC, EnsembleSupport, raw_samples_to_dict,
                         get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,
                                ensemble_compute_acf, ensemble_compute_acl)
@@ -102,7 +102,7 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         self._sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
                                         model_call, prior_call, pool=pool,
                                         betas=betas)
-        self._nwalkers = nwalkers
+        self.nwalkers = nwalkers
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
         self._checkpoint_signal = checkpoint_signal
@@ -351,7 +351,8 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params,
+            fp.write_samples(self.samples,
+                             parameters=self.model.variable_params,
                              last_iteration=self.niterations)
             # write stats
             fp.write_samples(self.model_stats, last_iteration=self.niterations)

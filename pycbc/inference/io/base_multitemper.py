@@ -79,7 +79,8 @@ class CommonMultiTemperedMetadataIO(CommonMCMCMetadataIO):
     def write_sampler_metadata(self, sampler):
         """Adds writing ntemps to file.
         """
-        super(MultiTemperedMetadataIO, self).write_sampler_metadata(sampler)
+        super(CommonMultiTemperedMetadataIO, self).write_sampler_metadata(
+            sampler)
         self[self.sampler_group].attrs["ntemps"] = sampler.ntemps
 
     @staticmethod

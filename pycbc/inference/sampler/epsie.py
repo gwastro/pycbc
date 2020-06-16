@@ -121,7 +121,7 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
             default_proposal_args=default_proposal_args,
             seed=seed, pool=pool)
         # set other parameters
-        self._nwalkers = nchains
+        self.nchains = nchains
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
         self._checkpoint_signal = checkpoint_signal
@@ -308,7 +308,8 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params,
+            fp.write_samples(self.samples,
+                             parameters=self.model.variable_params,
                              last_iteration=self.niterations)
             # write stats
             fp.write_samples(self.model_stats, last_iteration=self.niterations)

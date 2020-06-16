@@ -33,7 +33,8 @@ import emcee
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, ensemble_compute_acf, ensemble_compute_acl,
+from .base_mcmc import (BaseMCMC, EnsembleSupport,
+                        ensemble_compute_acf, ensemble_compute_acl,
                         raw_samples_to_dict,
                         blob_data_to_dict, get_optional_arg_from_config)
 from ..burn_in import EnsembleMCMCBurnInTests
@@ -88,7 +89,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             pool.count = nprocesses
 
         # set up emcee
-        self._nwalkers = nwalkers
+        self.nwalkers = nwalkers
         ndim = len(model.variable_params)
         self._sampler = emcee.EnsembleSampler(nwalkers, ndim, model_call,
                                               pool=pool)
@@ -176,7 +177,8 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params,
+            fp.write_samples(self.samples,
+                             parameters=self.model.variable_params,
                              last_iteration=self.niterations)
             # write stats
             fp.write_samples(self.model_stats,

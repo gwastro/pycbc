@@ -200,7 +200,7 @@ class CommonMCMCMetadataIO(object):
         self.attrs['sampler'] = sampler.name
         try:
             self[self.sampler_group].attrs['nchains'] = sampler.nchains
-        except AttributeError:
+        except ValueError:
             self[self.sampler_group].attrs['nwalkers'] = sampler.nwalkers
         # write the model's metadata
         sampler.model.write_metadata(self)
