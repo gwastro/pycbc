@@ -688,19 +688,19 @@ class ForegroundTriggers(object):
                          self.coinc_file.h5file.attrs['detector_2']]
         self.sngl_files = {}
         if sngl_files is not None:
-            if len(sngl_files) < len(self.ifos):
-                raise RuntimeError("Not enough single-detector trigger files "
-                                   "given the IFOs involved in the statmap "
-                                   "file.")
-
             for sngl_file in sngl_files:
                 curr_dat = FileData(sngl_file)
                 curr_ifo = curr_dat.group_key
                 self.sngl_files[curr_ifo] = curr_dat
 
-            if not sorted(self.sngl_files.keys()) == sorted(self.ifos):
-                logging.warning("WARNING: Statmap file IFOs do not match "
-                                "single-detector trigger files.")
+        if not all([ifo in self.sngl_files.keys() for ifo in self.ifos]):
+            print("sngl_files: {}".format(sngl_files))
+            print("self.ifos: {}".format(self.ifos))
+            raise RuntimeError("IFOs in statmap file not all represented "
+                               "by single-detector trigger files.")
+        if not sorted(self.sngl_files.keys()) == sorted(self.ifos):
+            logging.warning("WARNING: Single-detector trigger files "
+                            "given for IFOs not in the statmap file")
 
         self.bank_file = HFile(bank_file, "r")
         self.n_loudest = n_loudest
