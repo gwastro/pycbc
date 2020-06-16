@@ -38,6 +38,7 @@ import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
+import six, hashlib
 
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
@@ -178,6 +179,26 @@ def parse_approximant_arg(approximant_arg, warray):
     """
     return warray.parse_boolargs(boolargs_from_apprxstr(approximant_arg))[0]
 
+def list_to_hash(list_to_be_hashed):
+    """
+    Return a hash for a numpy array, avoids native (unsafe) python3 hash function
+
+    Parameters
+    ----------
+    list_to_be_hashed: list
+        The list which is being hashed
+        Must be convertable to a numpy array
+
+    Returns
+    -------
+    int
+        an integer representation of the hashed array
+    """
+    if six.PY2:
+        return hash(list_to_be_hashed)
+    h = hashlib.sha256()
+    h.update(np.array(list_to_be_hashed).tobytes('C'))
+    return int.from_bytes(h.digest(), 'big')
 
 class TemplateBank(object):
     """Class to provide some basic helper functions and information
@@ -335,7 +356,7 @@ class TemplateBank(object):
                        'spin2x', 'spin2y', 'spin2z',]
 
         fields = [f for f in hash_fields if f in fields]
-        template_hash = np.array([hash(v) for v in zip(*[self.table[p]
+        template_hash = np.array([list_to_hash(v) for v in zip(*[self.table[p]
                                   for p in fields])])
         self.table = self.table.add_fields(template_hash, 'template_hash')
 
