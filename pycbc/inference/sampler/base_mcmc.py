@@ -586,7 +586,7 @@ class BaseMCMC(object):
             logging.info("No samples written due to thinning")
         else:
             # check for burn in, compute the acls
-            self.acl = None
+            self.raw_acls = None
             if self.burn_in is not None:
                 logging.info("Updating burn in")
                 self.burn_in.evaluate(self.checkpoint_file)
@@ -594,16 +594,14 @@ class BaseMCMC(object):
             # saved it, in which case we don't need to do it again.
             if self.raw_acls is None:
                 logging.info("Computing acls")
-                self.acls = self.compute_acl(self.checkpoint_file)
+                self.raw_acls = self.compute_acl(self.checkpoint_file)
             # write
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
                     if self.burn_in is not None:
                         self.burn_in.write(fp)
-                    if self.acl is not None:
-                        fp.acl = self.acl
                     if self.raw_acls is not None:
-                        fp.raw_acls = self.raw_acls
+                        fp.write_acls(self.acl, self.raw_acls)
                     # write effective number of samples
                     fp.write_effective_nsamples(self.effective_nsamples)
         # check validity

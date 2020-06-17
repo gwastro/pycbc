@@ -286,6 +286,20 @@ class CommonMCMCMetadataIO(object):
         for param in acls:
             self.write_data(param, acls[param], path=path)
 
+    def write_acls(self, acl, raw_acls):
+        """Writes both the acl and raw acls.
+        
+        Parameters
+        ----------
+        acl : array or int
+            The autocorrelation length. See the ``acl`` attribute for details.
+        raw_acls : dict
+            Dictionary of parameter names -> acls. See the ``raw_acls``
+            attribute for details.
+        """
+        self.acl = acl
+        self.raw_acls = raw_acls
+
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
         """Create a parser to parse sampler-specific arguments for loading
