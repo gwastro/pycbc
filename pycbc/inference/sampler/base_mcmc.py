@@ -726,10 +726,10 @@ class BaseMCMC(object):
     @property
     def raw_acls(self):
         """Dictionary of parameter names -> autocorrelation lengths.
-        
+
         Depending on the sampler, the ACLs may be an integer, or an arrray of
         values per chain and/or per temperature.
-        
+
         Returns ``None`` if no ACLs have been calculated.
         """
         return self._acls
@@ -742,7 +742,7 @@ class BaseMCMC(object):
     @abstractmethod
     def acl(self):
         """The autocorrelation length.
-        
+
         This method should convert the raw ACLs into an integer or array that
         can be used to extract independent samples from a chain.
         """
@@ -768,7 +768,7 @@ class BaseMCMC(object):
         the ``thin_interval``. It gives the number of iterations between
         independent samples. Depending on the sampler, this may either be
         a single integer or an array of values.
-        
+
         Returns ``None`` if no ACLs have been calculated.
         """
         acl = self.acl
@@ -795,13 +795,10 @@ class EnsembleSupport(object):
     @property
     def nwalkers(self):
         """The number of walkers used.
-        
+
         Alias of ``nchains``.
         """
         return self.nchains
-        if self._nchains is None:
-            raise ValueError("number of walkers not set")
-        return self._nchains
 
     @nwalkers.setter
     def nwalkers(self, value):

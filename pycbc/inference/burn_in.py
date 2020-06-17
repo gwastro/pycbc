@@ -29,8 +29,8 @@ have burned in.
 from __future__ import division
 
 import logging
-from six import add_metaclass
 from abc import ABCMeta, abstractmethod
+from six import add_metaclass
 import numpy
 from scipy.stats import ks_2samp
 

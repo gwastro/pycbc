@@ -26,9 +26,8 @@ samplers."""
 
 from __future__ import absolute_import
 
-from six import string_types
-
 import logging
+from six import string_types
 import numpy
 import h5py
 from pycbc.filter import autocorrelation
@@ -139,7 +138,7 @@ def compute_acf(filename, start_index=None, end_index=None,
     -------
     dict :
         Dictionary parameter name -> ACF arrays. The arrays have shape
-        ``ntemps x nchains``.
+        ``ntemps x nchains x niterations``.
     """
     acfs = {}
     with loadfile(filename, 'r') as fp:
@@ -160,7 +159,7 @@ def compute_acf(filename, start_index=None, end_index=None,
                         thin_end=end_index, chains=ci, temps=tk)[param]
                     thisacf = autocorrelation.calculate_acf(samples).numpy()
                     subsubacfs.append(thisacf)
-                # stack the chains 
+                # stack the chains
                 subacfs.append(subsubacfs)
             # stack the temperatures
             acfs[param] = numpy.stack(subacfs)
@@ -231,7 +230,7 @@ def compute_acl(filename, start_index=None, end_index=None,
     return acls
 
 
-def acl_from_acls(acls):
+def acl_from_raw_acls(acls):
     """Calculates the ACL for one or more chains from a dictionary of ACLs.
 
     This is for parallel tempered MCMCs in which the chains are independent

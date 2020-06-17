@@ -29,14 +29,14 @@ from emcee.ptsampler import default_beta_ladder
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, get_optional_arg_from_config)
-from .base_multitemper import (MultiTemperedSupport, compute_acf, compute_acl)
+from .base_mcmc import (BaseMCMC, get_optional_arg_from_config,
+                        nsamples_in_chain)
+from .base_multitemper import (MultiTemperedSupport, compute_acf, compute_acl,
+                               acl_from_raw_acls)
 from ..burn_in import MultiTemperedMCMCBurnInTests
 from ..jump import epsie_proposals_from_config
 from ..io import EpsieFile
 from .. import models
-
-from pycbc.filter import autocorrelation
 
 
 class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
@@ -46,8 +46,8 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
     ----------
     model : model
         A model from ``pycbc.inference.models``.
-    nwalkers : int
-        Number of walkers to use in the sampler.
+    nchains : int
+        Number of chains to use in the sampler.
     ntemps : int, optional
         Number of temperatures to use in the sampler. A geometrically-spaced
         temperature ladder with the gievn number of levels will be constructed
@@ -154,7 +154,7 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
 
     @staticmethod
     def compute_acf(filename, **kwargs):
-        """Computes the autocorrelation function.
+        r"""Computes the autocorrelation function.
 
         Calls :py:func:`base_multitemper.compute_acf`; see that
         function for details.
@@ -170,16 +170,14 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         Returns
         -------
         dict :
-            Dictionary of arrays giving the ACFs for each parameter. If
-            ``per-walker=True`` is passed as a keyword argument, the arrays
-            will have shape ``ntemps x nwalkers x niterations``. Otherwise, the
-            returned array will have shape ``ntemps x niterations``.
+            Dictionary of arrays giving the ACFs for each parameter. The arrays
+            will have shape ``ntemps x nchains x niterations``.
         """
         return compute_acf(filename, **kwargs)
 
     @staticmethod
     def compute_acl(filename, **kwargs):
-        """Computes the autocorrelation length.
+        r"""Computes the autocorrelation length.
 
         Calls :py:func:`base_multitemper.compute_acl`; see that
         function for details.
@@ -203,7 +201,7 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
     def acl(self):
         """The autocorrelation lengths of the chains.
         """
-        return acl_from_acls(self.raw_acls)
+        return acl_from_raw_acls(self.raw_acls)
 
     @property
     def effective_nsamples(self):
@@ -333,24 +331,6 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
 
     def finalize(self):
         pass
-
-    @property
-    def effective_nsamples(self):
-        """The effective number of samples post burn-in that the sampler has
-        acquired so far."""
-        try:
-            acls = numpy.array(list(self.acls.values())).max(axis=1)
-        except (AttributeError, TypeError):
-            acls = numpy.full(self.nwalkers, numpy.inf)
-        if self.burn_in is None:
-            burn_in_iter = 0
-        else:
-            burn_in_iter = self.burn_in.burn_in_iteration
-        nsamples_in_file = (self.niterations-burn_in_iter)//self.thin_interval
-        nsamps = 0
-        for ci, acl in enumerate(acls): 
-            nsamps += int(numpy.ceil(nsamples_in_file/acl)) 
-        return nsamps
 
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1,

@@ -65,7 +65,7 @@ class CommonMCMCMetadataIO(object):
     @property
     def nwalkers(self):
         """Returns the number of walkers used by the sampler.
-        
+
         Alias of ``nchains``.
         """
         try:
@@ -76,7 +76,7 @@ class CommonMCMCMetadataIO(object):
     @property
     def nchains(self):
         """Returns the number of chains used by the sampler.
-        
+
         Alias of ``nwalkers``.
         """
         try:
@@ -208,7 +208,7 @@ class CommonMCMCMetadataIO(object):
     @property
     def burn_in_iteration(self):
         """Returns the burn in iteration of all the chains.
-        
+
         Raises a ``ValueError`` if no burn in tests were done.
         """
         try:
@@ -219,7 +219,7 @@ class CommonMCMCMetadataIO(object):
     @property
     def burn_in_index(self):
         """Returns the burn in index.
-        
+
         This is the burn in iteration divided by the file's ``thinned_by``.
         Requires the class that this is used with has a ``burn_in_iteration``
         attribute.
@@ -229,7 +229,7 @@ class CommonMCMCMetadataIO(object):
     @property
     def acl(self):
         """Returns the ACL.
-        
+
         Raises a ``ValueError`` if the ACL has not been calculated.
         """
         try:
@@ -249,6 +249,7 @@ class CommonMCMCMetadataIO(object):
         acl : array or int
             ACL(s) to write.
         """
+        # pylint disable=no-member
         self.write_data('acl', acl, path=self.sampler_group)
 
     @property
@@ -288,7 +289,7 @@ class CommonMCMCMetadataIO(object):
 
     def write_acls(self, acl, raw_acls):
         """Writes both the acl and raw acls.
-        
+
         Parameters
         ----------
         acl : array or int
@@ -437,9 +438,10 @@ class EnsembleMCMCMetadataIO(object):
         except ValueError:
             acl = 1
         if numpy.isfinite(acl):
-            return int(numpy.ceil(acl))
+            acl = int(numpy.ceil(acl))
         else:
-            return 1
+            acl = 1
+        return acl
 
 
 def write_samples(fp, samples, parameters=None, last_iteration=None,
@@ -466,7 +468,7 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
     -----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with CommonMCMCMetadataIO methods added. 
+        BaseInferenceFile with CommonMCMCMetadataIO methods added.
     samples : dict
         The samples to write. Each array in the dictionary should have
         shape nwalkers x niterations.
@@ -537,7 +539,7 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     -----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with EnsembleMCMCMetadataIO methods added. 
+        BaseInferenceFile with EnsembleMCMCMetadataIO methods added.
     fields : list
         The list of field names to retrieve.
     thin_start : int, optional
@@ -597,7 +599,7 @@ def _ensemble_get_walker_index(fp, walkers=None):
     ----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with EnsembleMCMCMetadataIO methods added. 
+        BaseInferenceFile with EnsembleMCMCMetadataIO methods added.
     walkers : (list of) int, optional
         Only read from the given walkers. Default (``None``) is to read all.
 
@@ -626,7 +628,7 @@ def _ensemble_get_index(fp, thin_start=None, thin_interval=None, thin_end=None,
     -----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with EnsembleMCMCMetadataIO methods added. 
+        BaseInferenceFile with EnsembleMCMCMetadataIO methods added.
     thin_start : int, optional
         Start reading from the given iteration. Default is to start from
         the first iteration.
@@ -656,10 +658,10 @@ def _ensemble_get_index(fp, thin_start=None, thin_interval=None, thin_end=None,
         get_index = fp.get_slice(thin_start=thin_start,
                                  thin_interval=thin_interval,
                                  thin_end=thin_end)
-    return get_index, niterations
+    return get_index
 
 
-def _get_index(fp, nchains, thin_start=None, thin_interval=None, thin_end=None,
+def _get_index(fp, chains, thin_start=None, thin_interval=None, thin_end=None,
                iteration=None):
     """Determines the sample indices to retrieve for an MCMC with independent
     chains.
@@ -668,9 +670,9 @@ def _get_index(fp, nchains, thin_start=None, thin_interval=None, thin_end=None,
     -----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with EnsembleMCMCMetadataIO methods added. 
-    nchains : int
-        The number of chains that will be loaded.
+        BaseInferenceFile with EnsembleMCMCMetadataIO methods added.
+    chains : array of int
+        The chains to load.
     thin_start : int, optional
         Start reading from the given iteration. Default is to start from
         the first iteration.
@@ -691,6 +693,7 @@ def _get_index(fp, nchains, thin_start=None, thin_interval=None, thin_end=None,
         The maximum number of samples from a single chain that will be
         retrieved.
     """
+    nchains = len(chains)
     if iteration is not None:
         maxiters = 1
         get_index = [int(iteration)]*nchains

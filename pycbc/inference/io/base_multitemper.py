@@ -118,7 +118,7 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
     -----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added. 
+        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
     samples : dict
         The samples to write. Each array in the dictionary should have
         shape ntemps x nwalkers x niterations.
@@ -195,7 +195,7 @@ def read_raw_samples(fp, fields,
     -----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added. 
+        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
     fields : list
         The list of field names to retrieve.
     thin_start : array or int, optional
@@ -255,12 +255,14 @@ def read_raw_samples(fp, fields,
     # temperatures to load
     tidx, selecttemps, ntemps = _get_temps_index(fp, temps)
     # iterations to load
-    get_index, maxiters = _get_index(fp, len(chains), thin_start,
+    get_index, maxiters = _get_index(fp, chains, thin_start,
                                      thin_interval, thin_end, iteration)
     # load the samples
+    arrays = {}
+    loadshape = (ntemps, len(chains), maxiters)  # shape of loaded arrays
     for name in fields:
-        arr = numpy.full((ntemps, nchains, maxiter), numpy.nan)
-        for ci in cidx:
+        arr = numpy.full(loadshape, numpy.nan)
+        for ci in chains:
             thisarr = fp[group.format(name=name)][tidx, ci, get_index]
             # pull out the temperatures we need
             if selecttemps:
@@ -269,7 +271,7 @@ def read_raw_samples(fp, fields,
             thisarr = thisarr.reshape(ntemps, thisarr.shape[-1])
             arr[:, ci, :thisarr.shape[-1]] = thisarr
         if flatten:
-            # flatten and remove nans 
+            # flatten and remove nans
             arr = arr.flatten()
             arr = arr[~numpy.isnan(arr)]
         arrays[name] = arr
@@ -287,7 +289,7 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     -----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added. 
+        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
     fields : list
         The list of field names to retrieve.
     thin_start : int, optional
@@ -356,7 +358,7 @@ def _get_temps_index(fp, temps):
     -----------
     fp : BaseInferenceFile
         Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added. 
+        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
     temps : 'all' or (list of) int
         The temperature index (or list of indices) to retrieve. To retrieve
         all temperates pass 'all', or a list of all of the temperatures.

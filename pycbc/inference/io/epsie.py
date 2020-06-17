@@ -20,7 +20,6 @@ from __future__ import (absolute_import, division)
 
 import numpy
 from pickle import UnpicklingError
-from six import string_types
 from epsie import load_state
 
 from .base_sampler import BaseSamplerFile
