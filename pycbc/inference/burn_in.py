@@ -533,6 +533,7 @@ class MCMCBurnInTests(BaseBurnInTests):
         """Runs all of the burn-in tests."""
         # evaluate all the tests
         for tst in self.do_tests:
+            logging.info("Evaluating %s burn-in test", tst)
             getattr(self, tst)(filename)
         # evaluate each chain at a time
         for ci in range(self.nchains):
@@ -725,6 +726,7 @@ class EnsembleMCMCBurnInTests(BaseBurnInTests):
         """Runs all of the burn-in tests."""
         # evaluate all the tests
         for tst in self.do_tests:
+            logging.info("Evaluating %s burn-in test", tst)
             getattr(self, tst)(filename)
         is_burned_in, burn_in_iter = evaluate_tests(
             self.burn_in_test, self.test_is_burned_in,
