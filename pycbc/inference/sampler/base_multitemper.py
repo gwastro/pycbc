@@ -225,10 +225,12 @@ def compute_acl(filename, start_index=None, end_index=None,
                     these_acls[tk, :] = list(map(_getacl, samples))
             acls[param] = these_acls
         # report the mean ACL: take the max over the temps and parameters
-        acl = numpy.array(list(acls.values())).max(axis=2).max(axis=0)
-        act = acl*fp.thinned_by
-        logging.info("Min, mean, max ACT: %s, %s, %s",
-                     str(act.min()), str(act.mean()), str(act.max()))
+        act = acl_from_raw_acls(acls)*fp.thinned_by
+        finite = act[numpy.isfinite(act)]
+        logging.info("ACTs: min %s, mean (of finite) %s, max %s",
+                     str(act.min()),
+                     str(finite.mean() if finite.size > 0 else numpy.inf),
+                     str(act.max()))
     return acls
 
 
