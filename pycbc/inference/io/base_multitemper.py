@@ -176,7 +176,7 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
         fp[dataset_name][:, :, istart:istop] = data
 
 
-def read_raw_samples(self, fields,
+def read_raw_samples(fp, fields,
                      thin_start=None, thin_interval=None, thin_end=None,
                      iteration=None, temps='all', chains=None,
                      flatten=True, group=None):
@@ -192,6 +192,9 @@ def read_raw_samples(self, fields,
 
     Parameters
     -----------
+    fp : BaseInferenceFile
+        Open file handler to write files to. Must be an instance of
+        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added. 
     fields : list
         The list of field names to retrieve.
     thin_start : array or int, optional
@@ -241,11 +244,11 @@ def read_raw_samples(self, fields,
     if isinstance(fields, string_types):
         fields = [fields]
     if group is None:
-        group = self.samples_group
+        group = fp.samples_group
     group = group + '/{name}'
     # chains to load
     if chains is None:
-        chains = numpy.arange(self.nchains)
+        chains = numpy.arange(fp.nchains)
     elif not isinstance(chains, (list, numpy.ndarray)):
         chains = numpy.array([chains]).astype(int)
     # temperatures to load
@@ -262,29 +265,29 @@ def read_raw_samples(self, fields,
         if selecttemps:
             ntemps = len(temps)
         else:
-            ntemps = self.ntemps
+            ntemps = fp.ntemps
     # iterations to load
     if iteration is not None:
         maxiters = 1
         get_index = [int(iteration)]*len(chains)
     else:
         if thin_start is None:
-            thin_start = self.thin_start
+            thin_start = fp.thin_start
         if not isinstance(thin_start, (numpy.ndarray, list)):
             thin_start = numpy.repeat(thin_start, len(chains), dtype=int)
         if thin_interval is None:
-            thin_interval = self.thin_interval
+            thin_interval = fp.thin_interval
         if not isinstance(thin_interval, (numpy.ndarray, list)):
             thin_interval = numpy.repeat(thin_interval, len(chains),
                                          dtype=int)
         if thin_end is None:
-            thin_end = self.thin_end
+            thin_end = fp.thin_end
         if not isinstance(thin_end, (numpy.ndarray, list)):
             thin_end = numpy.repeat(thin_end, len(chains))
         # figure out the maximum number of samples we will get from all chains
         maxiters = nsamples_in_chain(thin_start, thin_interval, thin_end).max()
         # the slices to use for each chain
-        get_index = [self.get_slice(thin_start=thin_start[ci],
+        get_index = [fp.get_slice(thin_start=thin_start[ci],
                                     thin_interval=thin_interval[ci],
                                     thin_end=thin_end[ci])
                      for ci in chains]
@@ -292,7 +295,7 @@ def read_raw_samples(self, fields,
     for name in fields:
         arr = numpy.full((ntemps, nchains, maxiter), numpy.nan)
         for ci in cidx:
-            thisarr = self[group.format(name=name)][tidx, ci, get_index]
+            thisarr = fp[group.format(name=name)][tidx, ci, get_index]
             # pull out the temperatures we need
             if selecttemps:
                 thisarr = thisarr[temps, ...]
