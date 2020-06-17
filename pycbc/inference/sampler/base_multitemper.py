@@ -147,12 +147,7 @@ def compute_acf(filename, start_index=None, end_index=None,
             parameters = fp.variable_params
         if isinstance(parameters, string_types):
             parameters = [parameters]
-        if isinstance(temps, int):
-            temps = [temps]
-        elif temps == 'all':
-            temps = numpy.arange(fp.ntemps)
-        elif temps is None:
-            temps = [0]
+        temps = _get_temps_idx(fp, temps)
         if chains is None:
             chains = numpy.arange(fp.nchains)
         for param in parameters:
@@ -308,12 +303,7 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
             parameters = fp.variable_params
         if isinstance(parameters, string_types):
             parameters = [parameters]
-        if isinstance(temps, int):
-            temps = [temps]
-        elif temps == 'all':
-            temps = numpy.arange(fp.ntemps)
-        elif temps is None:
-            temps = [0]
+        temps = _get_temps_idx(fp, temps)
         for param in parameters:
             subacfs = []
             for tk in temps:
@@ -404,3 +394,15 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None,
         maxacl = numpy.array(list(acls.values())).max()
         logging.info("ACT: %s", str(maxacl*fp.thin_interval))
     return acls
+
+
+def _get_temps_idx(fp, temps):
+    """Gets the indices of temperatures to load for computing ACF.
+    """
+    if isinstance(temps, int):
+        temps = [temps]
+    elif temps == 'all':
+        temps = numpy.arange(fp.ntemps)
+    elif temps is None:
+        temps = [0]
+    return temps
