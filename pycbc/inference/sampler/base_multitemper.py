@@ -226,7 +226,7 @@ def compute_acl(filename, start_index=None, end_index=None,
             acls[param] = these_acls
         # report the mean ACL: take the max over the temps and parameters
         acl = numpy.array(list(acls.values())).max(axis=2).max(axis=0)
-        act = acl*fp.thin_interval
+        act = acl*fp.thinned_by
         logging.info("Min, mean, max ACT: %s, %s, %s",
                      str(act.min()), str(act.mean()), str(act.max()))
     return acls

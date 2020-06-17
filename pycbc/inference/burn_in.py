@@ -537,7 +537,8 @@ class MCMCBurnInTests(BaseBurnInTests):
         acls = self._getacls(filename, start_index=nsamples//2)
         is_burned_in = nacl(nsamples, acls, self._nacls)
         # stack the burn in results into an nparams x nchains array
-        burn_in_per_chain = numpy.stack(is_burned_in.values()).all(axis=0)
+        burn_in_per_chain = numpy.stack(list(is_burned_in.values())).all(
+            axis=0)
         # store
         test = 'nacl'
         self.test_is_burned_in[test] = burn_in_per_chain

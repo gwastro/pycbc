@@ -687,7 +687,7 @@ def _get_index(fp, chains, thin_start=None, thin_interval=None, thin_end=None,
 
     Returns
     -------
-    get_index : slice or int
+    get_index : list of slice or int
         The indices to retrieve.
     maxiters : int
         The maximum number of samples from a single chain that will be
@@ -701,18 +701,25 @@ def _get_index(fp, chains, thin_start=None, thin_interval=None, thin_end=None,
         if thin_start is None:
             thin_start = fp.thin_start
         if not isinstance(thin_start, (numpy.ndarray, list)):
-            thin_start = numpy.repeat(thin_start, nchains, dtype=int)
+            thin_start = numpy.repeat(thin_start, nchains)
         if thin_interval is None:
             thin_interval = fp.thin_interval
         if not isinstance(thin_interval, (numpy.ndarray, list)):
-            thin_interval = numpy.repeat(thin_interval, nchains,
-                                         dtype=int)
+            thin_interval = numpy.repeat(thin_interval, nchains)
         if thin_end is None:
             thin_end = fp.thin_end
         if not isinstance(thin_end, (numpy.ndarray, list)):
             thin_end = numpy.repeat(thin_end, nchains)
         # figure out the maximum number of samples we will get from all chains
-        maxiters = nsamples_in_chain(thin_start, thin_interval, thin_end).max()
+        start_iter = thin_start * fp.thinned_by
+        iter_interval = thin_interval * fp.thinned_by
+        try:
+            end_iter = thin_end * fp.thinned_by
+        except TypeError:
+            # will get this if thin end is None; in that case, we'll just be
+            # loading all the way to the end
+            end_iter = fp.niterations
+        maxiters = nsamples_in_chain(start_iter, iter_interval, end_iter).max()
         # the slices to use for each chain
         get_index = [fp.get_slice(thin_start=thin_start[ci],
                                   thin_interval=thin_interval[ci],

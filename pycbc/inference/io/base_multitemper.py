@@ -262,7 +262,11 @@ def read_raw_samples(fp, fields,
     for name in fields:
         arr = numpy.full(loadshape, numpy.nan)
         for ci in chains:
-            thisarr = fp[group.format(name=name)][tidx, ci, get_index]
+            idx = get_index[ci]
+            thisarr = fp[group.format(name=name)][tidx, ci, get_index[ci]]
+            if isinstance(idx, (int, numpy.int_)):
+                # make sure the last dimension corresponds to iteration
+                thisarr = thisarr.reshape(list(thisarr.shape)+[1])
             # pull out the temperatures we need
             if selecttemps:
                 thisarr = thisarr[temps, ...]
