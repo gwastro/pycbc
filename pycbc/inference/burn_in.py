@@ -355,6 +355,27 @@ class BaseBurnInTests(object):
             self.sampler.raw_acls = acls
         return acls
 
+    def _getaux(test):
+        """Convenience function for getting auxilary information.
+
+        Parameters
+        ----------
+        test : str
+            The name of the test to retrieve auxilary information about.
+
+        Returns
+        -------
+        dict
+            The ``test_aux_info[test]`` dictionary. If a dictionary does
+            not exist yet for the given test, an empty dictionary will be
+            created and saved to ``test_aux_info[test]``.
+        """
+        try:
+            aux = self.test_aux_info[test]
+        except KeyError:
+            aux = self.test_aux_info[test] = {}
+        return aux
+
     def halfchain(self, filename):
         """Just uses half the chain as the burn-in iteration.
         """
@@ -645,10 +666,7 @@ class EnsembleMCMCBurnInTests(BaseBurnInTests):
         test = 'max_posterior'
         self.test_is_burned_in[test] = all_burned_in
         self.test_burn_in_iteration[test] = burn_in_iter 
-        try:
-            aux = self.test_aux_info[test]
-        except KeyError:
-            self.test_aux_info[test] = aux = {}
+        aux = self._getaux(test)
         # additional info
         aux['iteration_per_walker'] = self._index2iter(filename, burn_in_idx)
         aux['status_per_walker'] = is_burned_in
@@ -665,10 +683,7 @@ class EnsembleMCMCBurnInTests(BaseBurnInTests):
         self.test_is_burned_in[test] = True
         self.test_burn_in_iteration[test] = burn_in_iters.max()
         # store the iteration per walker as additional info
-        try:
-            aux = self.test_aux_info[test]
-        except KeyError:
-            self.test_aux_info[test] = aux = {}
+        aux = self._getaux(test)
         aux['iteration_per_walker'] = burn_in_iters
 
     def nacl(self, filename):
@@ -686,10 +701,7 @@ class EnsembleMCMCBurnInTests(BaseBurnInTests):
         self.test_is_burned_in[test] = all_burned_in
         self.test_burn_in_iteration[test] = burn_in_iter
         # store the status per parameter as additional info
-        try:
-            aux = self.test_aux_info[test]
-        except KeyError:
-            self.test_aux_info[test] = aux = {}
+        aux = self._getaux(test)
         aux['status_per_parameter'] = is_burned_in
 
     def ks_test(self, filename):
@@ -716,10 +728,7 @@ class EnsembleMCMCBurnInTests(BaseBurnInTests):
         self.test_is_burned_in[test] = is_burned_in
         self.test_burn_in_iteration[test] = burn_in_iter
         # store the test per parameter as additional info
-        try:
-            aux = self.test_aux_info[test]
-        except KeyError:
-            self.test_aux_info[test] = aux = {}
+        aux = self._getaux(test)
         aux['status_per_parameter'] = is_the_same
 
     def evaluate(self, filename):
