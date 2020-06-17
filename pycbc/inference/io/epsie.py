@@ -251,3 +251,16 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
                 # corrupted for some reason
                 valid = False
         return valid
+
+    @staticmethod
+    def _get_optional_args(args, opts, err_on_missing=False, **kwargs):
+        # need this to make sure options called "walkers" are renamed to
+        # "chains"
+        parsed = BaseSamplerFile._get_optional_args(
+            args, opts, err_on_missing=err_on_missing, **kwargs)
+        try:
+            chains = parsed.pop('walkers')
+            parsed['chains'] = chains
+        except KeyError:
+            pass
+        return parsed
