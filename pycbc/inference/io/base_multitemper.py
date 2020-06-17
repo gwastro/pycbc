@@ -29,7 +29,8 @@ import argparse
 from six import string_types
 import numpy
 from .base_mcmc import (CommonMCMCMetadataIO, thin_samples_for_writing,
-                        nsamples_in_chain)
+                        _ensemble_get_index, _ensemble_get_walker_index,
+                        _get_index)
 
 class ParseTempsArg(argparse.Action):
     """Argparse action that will parse temps argument.
@@ -252,45 +253,10 @@ def read_raw_samples(fp, fields,
     elif not isinstance(chains, (list, numpy.ndarray)):
         chains = numpy.array([chains]).astype(int)
     # temperatures to load
-    selecttemps = False
-    if isinstance(temps, (int, numpy.int32, numpy.int64)):
-        tidx = temps
-        ntemps = 1
-    else:
-        # temps is either 'all' or a list of temperatures;
-        # in either case, we'll get all of the temperatures from the file;
-        # if not 'all', then we'll pull out the ones we want
-        tidx = slice(None, None)
-        selecttemps = temps != 'all'
-        if selecttemps:
-            ntemps = len(temps)
-        else:
-            ntemps = fp.ntemps
+    tidx, selecttemps, ntemps = _get_temps_index(fp, temps)
     # iterations to load
-    if iteration is not None:
-        maxiters = 1
-        get_index = [int(iteration)]*len(chains)
-    else:
-        if thin_start is None:
-            thin_start = fp.thin_start
-        if not isinstance(thin_start, (numpy.ndarray, list)):
-            thin_start = numpy.repeat(thin_start, len(chains), dtype=int)
-        if thin_interval is None:
-            thin_interval = fp.thin_interval
-        if not isinstance(thin_interval, (numpy.ndarray, list)):
-            thin_interval = numpy.repeat(thin_interval, len(chains),
-                                         dtype=int)
-        if thin_end is None:
-            thin_end = fp.thin_end
-        if not isinstance(thin_end, (numpy.ndarray, list)):
-            thin_end = numpy.repeat(thin_end, len(chains))
-        # figure out the maximum number of samples we will get from all chains
-        maxiters = nsamples_in_chain(thin_start, thin_interval, thin_end).max()
-        # the slices to use for each chain
-        get_index = [fp.get_slice(thin_start=thin_start[ci],
-                                    thin_interval=thin_interval[ci],
-                                    thin_end=thin_end[ci])
-                     for ci in chains]
+    get_index, maxiters = _get_index(fp, len(chains), thin_start,
+                                     thin_interval, thin_end, iteration)
     # load the samples
     for name in fields:
         arr = numpy.full((ntemps, nchains, maxiter), numpy.nan)
@@ -340,7 +306,7 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
         all temperates pass 'all', or a list of all of the temperatures.
         Default is 'all'.
     walkers : (list of) int, optional
-        Only read from the given walkers. Default is to read all.
+        Only read from the given walkers. Default (``None``) is to read all.
     flatten : bool, optional
         Flatten the samples to 1D arrays before returning. Otherwise, the
         returned arrays will have shape (requested temps x
@@ -357,14 +323,54 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     if isinstance(fields, string_types):
         fields = [fields]
     # walkers to load
-    if walkers is not None:
-        widx = numpy.zeros(fp.nwalkers, dtype=bool)
-        widx[walkers] = True
-        nwalkers = widx.sum()
-    else:
-        widx = slice(None, None)
-        nwalkers = fp.nwalkers
+    widx, nwalkers = _ensemble_get_walker_index(fp, walkers)
     # temperatures to load
+    tidx, selecttemps, ntemps = _get_temps_index(fp, temps)
+    # get the slice to use
+    get_index = _ensemble_get_index(fp, thin_start, thin_interval, thin_end,
+                                    iteration)
+    # load
+    if group is None:
+        group = fp.samples_group
+    group = group + '/{name}'
+    arrays = {}
+    for name in fields:
+        arr = fp[group.format(name=name)][tidx, widx, get_index]
+        niterations = arr.shape[-1] if iteration is None else 1
+        # pull out the temperatures we need
+        if selecttemps:
+            arr = arr[temps, ...]
+        if flatten:
+            arr = arr.flatten()
+        else:
+            # ensure that the returned array is 3D
+            arr = arr.reshape((ntemps, nwalkers, niterations))
+        arrays[name] = arr
+    return arrays
+
+
+def _get_temps_index(fp, temps):
+    """Convenience function to determine which temperatures to load.
+
+    Parameters
+    -----------
+    fp : BaseInferenceFile
+        Open file handler to write files to. Must be an instance of
+        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added. 
+    temps : 'all' or (list of) int
+        The temperature index (or list of indices) to retrieve. To retrieve
+        all temperates pass 'all', or a list of all of the temperatures.
+
+    Returns
+    -------
+    tidx : slice or list of int
+        The temperature indices ot load from the file.
+    selecttemps : bool
+        Whether specific temperatures need to be pulled out of the samples
+        array after it is loaded from the file.
+    ntemps : int
+        The number of temperatures that will be loaded.
+    """
     selecttemps = False
     if isinstance(temps, (int, numpy.int32, numpy.int64)):
         tidx = temps
@@ -379,38 +385,4 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
             ntemps = len(temps)
         else:
             ntemps = fp.ntemps
-    # get the slice to use
-    if iteration is not None:
-        get_index = int(iteration)
-        niterations = 1
-    else:
-        if thin_start is None:
-            thin_start = fp.thin_start
-        if thin_interval is None:
-            thin_interval = fp.thin_interval
-        if thin_end is None:
-            thin_end = fp.thin_end
-        get_index = fp.get_slice(thin_start=thin_start,
-                                 thin_interval=thin_interval,
-                                 thin_end=thin_end)
-        # we'll just get the number of iterations from the returned shape
-        niterations = None
-    # load
-    if group is None:
-        group = fp.samples_group
-    group = group + '/{name}'
-    arrays = {}
-    for name in fields:
-        arr = fp[group.format(name=name)][tidx, widx, get_index]
-        if niterations is None:
-            niterations = arr.shape[-1]
-        # pull out the temperatures we need
-        if selecttemps:
-            arr = arr[temps, ...]
-        if flatten:
-            arr = arr.flatten()
-        else:
-            # ensure that the returned array is 3D
-            arr = arr.reshape((ntemps, nwalkers, niterations))
-        arrays[name] = arr
-    return arrays
+    return tidx, selecttemps, ntemps

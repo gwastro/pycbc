@@ -551,8 +551,8 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     iteration : int, optional
         Only read the given iteration. If this provided, it overrides
         the ``thin_(start|interval|end)`` options.
-    walkers : int, optional
-        Only read from the given walkers. Default is to read all.
+    walkers : (list of) int, optional
+        Only read from the given walkers. Default (``None``) is to read all.
     flatten : bool, optional
         Flatten the samples to 1D arrays before returning. Otherwise, the
         returned arrays will have shape (requested walkers x
@@ -569,17 +569,83 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     if isinstance(fields, string_types):
         fields = [fields]
     # walkers to load
+    widx, nwalkers = _ensemble_get_walker_index(fp, walkers)
+    # get the slice to use
+    get_index = _ensemble_get_index(fp, thin_start, thin_interval, thin_end,
+                                    iteration)
+    # load
+    if group is None:
+        group = fp.samples_group
+    group = group + '/{name}'
+    arrays = {}
+    for name in fields:
+        arr = fp[group.format(name=name)][widx, get_index]
+        niterations = arr.shape[-1] if iteration is None else 1
+        if flatten:
+            arr = arr.flatten()
+        else:
+            # ensure that the returned array is 2D
+            arr = arr.reshape((nwalkers, niterations))
+        arrays[name] = arr
+    return arrays
+
+
+def _ensemble_get_walker_index(fp, walkers=None):
+    """Convenience function to determine which walkers to load.
+
+    Parameters
+    ----------
+    fp : BaseInferenceFile
+        Open file handler to write files to. Must be an instance of
+        BaseInferenceFile with EnsembleMCMCMetadataIO methods added. 
+    walkers : (list of) int, optional
+        Only read from the given walkers. Default (``None``) is to read all.
+
+    Returns
+    -------
+    widx : array or slice
+        The walker indices to load.
+    nwalkers : int
+        The number of walkers that will be loaded.
+    """
     if walkers is not None:
         widx = numpy.zeros(fp.nwalkers, dtype=bool)
         widx[walkers] = True
         nwalkers = widx.sum()
     else:
-        widx = slice(0, None)
+        widx = slice(None, None)
         nwalkers = fp.nwalkers
-    # get the slice to use
+    return widx, nwalkers
+
+
+def _ensemble_get_index(fp, thin_start=None, thin_interval=None, thin_end=None,
+                        iteration=None):
+    """Determines the sample indices to retrieve for an ensemble MCMC.
+
+    Parameters
+    -----------
+    fp : BaseInferenceFile
+        Open file handler to write files to. Must be an instance of
+        BaseInferenceFile with EnsembleMCMCMetadataIO methods added. 
+    thin_start : int, optional
+        Start reading from the given iteration. Default is to start from
+        the first iteration.
+    thin_interval : int, optional
+        Only read every ``thin_interval`` -th sample. Default is 1.
+    thin_end : int, optional
+        Stop reading at the given iteration. Default is to end at the last
+        iteration.
+    iteration : int, optional
+        Only read the given iteration. If this provided, it overrides
+        the ``thin_(start|interval|end)`` options.
+
+    Returns
+    -------
+    slice or int
+        The indices to retrieve.
+    """
     if iteration is not None:
         get_index = int(iteration)
-        niterations = 1
     else:
         if thin_start is None:
             thin_start = fp.thin_start
@@ -590,24 +656,66 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
         get_index = fp.get_slice(thin_start=thin_start,
                                  thin_interval=thin_interval,
                                  thin_end=thin_end)
-        # we'll just get the number of iterations from the returned shape
-        niterations = None
-    # load
-    if group is None:
-        group = fp.samples_group
-    group = group + '/{name}'
-    arrays = {}
-    for name in fields:
-        arr = fp[group.format(name=name)][widx, get_index]
-        if niterations is None:
-            niterations = arr.shape[-1]
-        if flatten:
-            arr = arr.flatten()
-        else:
-            # ensure that the returned array is 2D
-            arr = arr.reshape((nwalkers, niterations))
-        arrays[name] = arr
-    return arrays
+    return get_index, niterations
+
+
+def _get_index(fp, nchains, thin_start=None, thin_interval=None, thin_end=None,
+               iteration=None):
+    """Determines the sample indices to retrieve for an MCMC with independent
+    chains.
+
+    Parameters
+    -----------
+    fp : BaseInferenceFile
+        Open file handler to write files to. Must be an instance of
+        BaseInferenceFile with EnsembleMCMCMetadataIO methods added. 
+    nchains : int
+        The number of chains that will be loaded.
+    thin_start : int, optional
+        Start reading from the given iteration. Default is to start from
+        the first iteration.
+    thin_interval : int, optional
+        Only read every ``thin_interval`` -th sample. Default is 1.
+    thin_end : int, optional
+        Stop reading at the given iteration. Default is to end at the last
+        iteration.
+    iteration : int, optional
+        Only read the given iteration. If this provided, it overrides
+        the ``thin_(start|interval|end)`` options.
+
+    Returns
+    -------
+    get_index : slice or int
+        The indices to retrieve.
+    maxiters : int
+        The maximum number of samples from a single chain that will be
+        retrieved.
+    """
+    if iteration is not None:
+        maxiters = 1
+        get_index = [int(iteration)]*nchains
+    else:
+        if thin_start is None:
+            thin_start = fp.thin_start
+        if not isinstance(thin_start, (numpy.ndarray, list)):
+            thin_start = numpy.repeat(thin_start, nchains, dtype=int)
+        if thin_interval is None:
+            thin_interval = fp.thin_interval
+        if not isinstance(thin_interval, (numpy.ndarray, list)):
+            thin_interval = numpy.repeat(thin_interval, nchains,
+                                         dtype=int)
+        if thin_end is None:
+            thin_end = fp.thin_end
+        if not isinstance(thin_end, (numpy.ndarray, list)):
+            thin_end = numpy.repeat(thin_end, nchains)
+        # figure out the maximum number of samples we will get from all chains
+        maxiters = nsamples_in_chain(thin_start, thin_interval, thin_end).max()
+        # the slices to use for each chain
+        get_index = [fp.get_slice(thin_start=thin_start[ci],
+                                    thin_interval=thin_interval[ci],
+                                    thin_end=thin_end[ci])
+                     for ci in chains]
+    return get_index, maxiters
 
 
 def thin_samples_for_writing(fp, samples, parameters, last_iteration,
