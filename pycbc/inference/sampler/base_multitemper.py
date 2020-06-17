@@ -195,32 +195,35 @@ def compute_acl(filename, start_index=None, end_index=None,
         A dictionary of ntemps x nchains arrays of the ACLs of each
         parameter.
     """
+    # following is a convenience function to calculate the acl for each chain
+    # defined here so that we can use map for this below
+    def _getacl(si):
+        # si: the samples loaded for a specific chain; may have nans in it
+        si = si[~numpy.isnan(si)]
+        if len(si) < min_nsamples:
+            acl = numpy.inf
+        else:
+            acl = autocorrelation.calculate_acl(si)
+        if acl <= 0:
+            acl = numpy.inf
+        return acl
     acls = {}
     with loadfile(filename, 'r') as fp:
         tidx = numpy.arange(fp.ntemps)
         cidx = numpy.arange(fp.nwalkers)
         for param in fp.variable_params:
-            these_acls = numpy.zeros((fp.ntemps, fp.nwalkers))
+            these_acls = numpy.zeros((fp.ntemps, fp.nchains))
             for tk in tidx:
                 samples = fp.read_raw_samples(
                     param, thin_start=start_index, thin_interval=1,
                     thin_end=end_index, temps=tk, flatten=False)[param]
                 # flatten out the temperature
                 samples = samples[0, ...]
+                # samples now has shape nchains x maxiters
                 if samples.shape[-1] < min_nsamples:
                     these_acls[tk, :] = numpy.inf
                 else:
-                    for ci in cidx:
-                        # remove any nans
-                        si = samples[ci, :]
-                        si = si[~numpy.isnan(si)]
-                        if len(si) < min_nsamples:
-                            acl = numpy.inf
-                        else:
-                            acl = autocorrelation.calculate_acl(si)
-                            if acl <= 0:
-                                acl = numpy.inf
-                        these_acls[tk, ci] = acl
+                    these_acls[tk, :] = list(map(_getacl, samples))
             acls[param] = these_acls
         # report the mean ACL: take the max over the temps and parameters
         acl = numpy.array(list(acls.values())).max(axis=2).max(axis=0)
