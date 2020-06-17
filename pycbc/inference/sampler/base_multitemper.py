@@ -210,7 +210,6 @@ def compute_acl(filename, start_index=None, end_index=None,
     acls = {}
     with loadfile(filename, 'r') as fp:
         tidx = numpy.arange(fp.ntemps)
-        cidx = numpy.arange(fp.nwalkers)
         for param in fp.variable_params:
             these_acls = numpy.zeros((fp.ntemps, fp.nchains))
             for tk in tidx:

@@ -197,14 +197,14 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         """
         return compute_acl(filename, **kwargs)
 
-    @property  # pylint: disable=invalid-overridden-method
-    def acl(self):
+    @property
+    def acl(self):  # pylint: disable=invalid-overridden-method
         """The autocorrelation lengths of the chains.
         """
         return acl_from_raw_acls(self.raw_acls)
 
-    @property  # pylint: disable=invalid-overridden-method
-    def effective_nsamples(self):
+    @property
+    def effective_nsamples(self):  # pylint: disable=invalid-overridden-method
         """The effective number of samples post burn-in that the sampler has
         acquired so far.
         """
