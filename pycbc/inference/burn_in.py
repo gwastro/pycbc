@@ -29,9 +29,9 @@ have burned in.
 from __future__ import division
 
 import logging
-import numpy
 from six import add_metaclass
 from abc import ABCMeta, abstractmethod
+import numpy
 from scipy.stats import ks_2samp
 
 from pycbc.io.record import get_vars_from_arg
@@ -355,7 +355,7 @@ class BaseBurnInTests(object):
             self.sampler.raw_acls = acls
         return acls
 
-    def _getaux(test):
+    def _getaux(self, test):
         """Convenience function for getting auxilary information.
 
         Parameters
@@ -454,6 +454,7 @@ class BaseBurnInTests(object):
     @staticmethod
     def _extra_tests_from_config(cp, section, tag):
         """For loading class-specific tests."""
+        # pylint: disable=unused-argument
         return {}
 
     @classmethod
@@ -486,7 +487,7 @@ class MCMCBurnInTests(BaseBurnInTests):
     samples can be collected even if all of the chains are not burned in.
     """
     def __init__(self, sampler, burn_in_test, **kwargs):
-        super(MCMCBurnInTests, self).__ini__(sampler, burn_in_test, **kwargs)
+        super(MCMCBurnInTests, self).__init__(sampler, burn_in_test, **kwargs)
         try:
             nchains = sampler.nchains
         except AttributeError:
@@ -519,7 +520,6 @@ class MCMCBurnInTests(BaseBurnInTests):
         logposts = self._getlogposts(filename)
         burn_in_idx = numpy.array([posterior_step(logps, self._ndim)
                                    for logps in logposts])
-        data = self.burn_in_data['posterior_step']
         # this test cannot determine when something will burn in
         # only when it was not burned in in the past
         test = 'posterior_step'
@@ -563,8 +563,9 @@ class MCMCBurnInTests(BaseBurnInTests):
             tibi = {t: r[ci] if isinstance(r, numpy.ndarray) else r
                     for t, r in self.test_is_burned_in.items()}
             tbi = {t: r[ci] if isinstance(r, numpy.ndarray) else r
-                   for t, r in self.test_burn_in_iterations.items()}
-            is_burned_in, burn_in_iter = evaluate_tests(tibi, tbi)
+                   for t, r in self.test_burn_in_iteration.items()}
+            is_burned_in, burn_in_iter = evaluate_tests(self.burn_in_test,
+                                                        tibi, tbi)
             self.is_burned_in[ci] = is_burned_in
             self.burn_in_iteration[ci] = burn_in_iter
         logging.info("Number of chains burned in: %i of %i",
@@ -649,9 +650,10 @@ class EnsembleMCMCBurnInTests(BaseBurnInTests):
     def burn_in_index(self, filename):
         """The burn in index (retrieved from the iteration)."""
         if self.is_burned_in:
-            return self._iter2index(filename, self.burn_in_iteration)
+            index = self._iter2index(filename, self.burn_in_iteration)
         else:
-            return NOT_BURNED_IN_ITER
+            index = NOT_BURNED_IN_ITER
+        return index
 
     def max_posterior(self, filename):
         """Applies max posterior test to self."""
@@ -747,6 +749,7 @@ class EnsembleMCMCBurnInTests(BaseBurnInTests):
             logging.info("Burn-in iteration: %i",
                          int(self.burn_in_iteration))
 
+    @staticmethod
     def _extra_tests_from_config(cp, section, tag):
         """Loads the ks test settings from the config file."""
         kwargs = {}
