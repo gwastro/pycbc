@@ -264,6 +264,9 @@ def read_raw_samples(fp, fields,
         for ci in chains:
             idx = get_index[ci]
             thisarr = fp[group.format(name=name)][tidx, ci, get_index[ci]]
+            if thisarr.size == 0:
+                # no samples were loaded; skip this chain
+                continue
             if isinstance(idx, (int, numpy.int_)):
                 # make sure the last dimension corresponds to iteration
                 thisarr = thisarr.reshape(list(thisarr.shape)+[1])

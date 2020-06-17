@@ -206,6 +206,17 @@ class CommonMCMCMetadataIO(object):
         sampler.model.write_metadata(self)
 
     @property
+    def is_burned_in(self):
+        """Returns whether or not chains are burned in.
+
+        Raises a ``ValueError`` if no burn in tests were done.
+        """
+        try:
+            return self[self.sampler_group]['is_burned_in'][()]
+        except KeyError:
+            raise ValueError("No burn in tests were performed")
+
+    @property
     def burn_in_iteration(self):
         """Returns the burn in iteration of all the chains.
 
@@ -384,11 +395,20 @@ class MCMCMetadataIO(object):
     def thin_start(self):
         """Returns the default thin start to use for reading samples.
 
-        If burn-in tests were done, returns the burn in index. Otherwise,
-        returns 0.
+        If burn-in tests were done, this will return the burn-in index of every
+        chain that has burned in. The start index for chains that have not
+        burned in will be greater than the number of samples, so that those
+        chains return no samples. If no burn-in tests were done, returns 0
+        for all chains.
         """
         try:
-            return self.burn_in_index
+            thin_start = self.burn_in_index
+            # replace any that have not been burned in with the number
+            # of iterations; this will cause those chains to not return
+            # any samples
+            thin_start[~self.is_burned_in] = \
+                int(numpy.ceil(self.niterations/self.thinned_by))
+            return thin_start
         except ValueError:
             # no burn in, just return array of zeros
             return numpy.zeros(self.nchains, dtype=int)
