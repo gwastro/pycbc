@@ -274,7 +274,7 @@ class BaseBurnInTests(object):
     @abstractmethod
     def burn_in_index(self, filename):
         """The burn in index (retrieved from the iteration).
-        
+
         This is an abstract method because how this is evaluated depends on
         if this is an ensemble MCMC or not.
         """
@@ -395,7 +395,7 @@ class BaseBurnInTests(object):
             burn_in_iter = self._min_iterations
         else:
             burn_in_iter = NOT_BURNED_IN_ITER
-        self.test_is_burned_in['min_iterations'] = is_burned_in 
+        self.test_is_burned_in['min_iterations'] = is_burned_in
         self.test_burn_in_iteration['min_iterations'] = burn_in_iter
 
     @abstractmethod
@@ -478,7 +478,7 @@ class BaseBurnInTests(object):
 
 class MCMCBurnInTests(BaseBurnInTests):
     """Burn-in tests for collections of independent MCMC chains.
-    
+
     This differs from EnsembleMCMCBurnInTests in that chains are treated as
     being independent of each other. The ``is_burned_in`` attribute will be
     True if `any` chain passes the burn in tests (whereas in MCMCBurnInTests,
@@ -665,7 +665,7 @@ class EnsembleMCMCBurnInTests(BaseBurnInTests):
         # store
         test = 'max_posterior'
         self.test_is_burned_in[test] = all_burned_in
-        self.test_burn_in_iteration[test] = burn_in_iter 
+        self.test_burn_in_iteration[test] = burn_in_iter
         aux = self._getaux(test)
         # additional info
         aux['iteration_per_walker'] = self._index2iter(filename, burn_in_idx)
@@ -785,7 +785,7 @@ class EnsembleMultiTemperedMCMCBurnInTests(EnsembleMCMCBurnInTests):
         ``posterior_step`` function.
         """
         return _multitemper_getlogposts(self.sampler, filename)
- 
+
 
 def _multitemper_getlogposts(sampler, filename):
     """Retrieve log posteriors for multi tempered samplers."""
