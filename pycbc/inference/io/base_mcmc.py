@@ -264,6 +264,15 @@ class CommonMCMCMetadataIO(object):
         self.write_data('acl', acl, path=self.sampler_group)
 
     @property
+    def act(self):
+        """Returns the autocorrelation time.
+
+        This is the ACL times the file's thinned by. Raises a ``ValueError``
+        if the ACL has not been calculated.
+        """
+        return self.acl * self.thinned_by
+
+    @property
     def raw_acls(self):
         """Dictionary of parameter names -> raw autocorrelation length(s).
 
