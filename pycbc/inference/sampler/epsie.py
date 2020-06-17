@@ -220,7 +220,7 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
             # ensure that any chain not burned in has zero samples
             nperchain[~self.burn_in.is_burned_in] = 0
             # and that any chain that is burned in has at least one sample
-            nperchain[self.burn_in.is_burned_in & nperchain < 1] = 1
+            nperchain[self.burn_in.is_burned_in & (nperchain < 1)] = 1
         return int(nperchain.sum())
 
     @property
