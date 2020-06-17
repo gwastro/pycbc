@@ -187,8 +187,8 @@ def tuple_to_hash(tuple_to_be_hashed):
     Parameters
     ----------
     tuple_to_be_hashed: tuple
-        The list which is being hashed
-        Must be convertable to a numpy array
+        The tuple which is being hashed
+        Must be convertible to a numpy array
 
     Returns
     -------
