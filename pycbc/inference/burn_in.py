@@ -253,6 +253,8 @@ class BaseBurnInTests(object):
                        'posterior_step', 'nacl',
                        )
 
+    # pylint: disable=unnecessary-pass
+
     def __init__(self, sampler, burn_in_test, **kwargs):
         self.sampler = sampler
         # determine the burn-in tests that are going to be done

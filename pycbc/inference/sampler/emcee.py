@@ -195,7 +195,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
     @staticmethod
     def compute_acf(filename, **kwargs):
-        """Computes the autocorrelation function.
+        r"""Computes the autocorrelation function.
 
         Calls :py:func:`base_mcmc.ensemble_compute_acf`; see that
         function for details.
@@ -219,7 +219,7 @@ class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
     @staticmethod
     def compute_acl(filename, **kwargs):
-        """Computes the autocorrelation length.
+        r"""Computes the autocorrelation length.
 
         Calls :py:func:`base_mcmc.ensemble_compute_acl`; see that
         function for details.

@@ -249,7 +249,7 @@ class CommonMCMCMetadataIO(object):
         acl : array or int
             ACL(s) to write.
         """
-        # pylint disable=no-member
+        # pylint: disable=no-member
         self.write_data('acl', acl, path=self.sampler_group)
 
     @property
@@ -264,7 +264,7 @@ class CommonMCMCMetadataIO(object):
         try:
             group = self[self.samper_group]['raw_acls']
         except KeyError:
-            raise ValueError("ACLs have not been calculated") 
+            raise ValueError("ACLs have not been calculated")
         acls = {}
         for param in group:
             acls[param] = group[param][()]
@@ -522,9 +522,9 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
             istart = 0
             istop = istart + data.shape[1]
             fp.create_dataset(dataset_name, (nwalkers, istop),
-                                maxshape=(nwalkers, None),
-                                dtype=data.dtype,
-                                fletcher32=True)
+                              maxshape=(nwalkers, None),
+                              dtype=data.dtype,
+                              fletcher32=True)
         fp[dataset_name][:, istart:istop] = data
 
 
@@ -715,8 +715,8 @@ def _get_index(fp, chains, thin_start=None, thin_interval=None, thin_end=None,
         maxiters = nsamples_in_chain(thin_start, thin_interval, thin_end).max()
         # the slices to use for each chain
         get_index = [fp.get_slice(thin_start=thin_start[ci],
-                                    thin_interval=thin_interval[ci],
-                                    thin_end=thin_end[ci])
+                                  thin_interval=thin_interval[ci],
+                                  thin_end=thin_end[ci])
                      for ci in chains]
     return get_index, maxiters
 

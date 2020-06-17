@@ -267,7 +267,7 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
     ``per_walker=True``.
 
     Parameters
-    -----------
+    ----------
     filename : str
         Name of a samples file to compute ACFs for.
     start_index : int, optional
@@ -313,13 +313,13 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
                     # just call myself with a single walker
                     if walkers is None:
                         walkers = numpy.arange(fp.nwalkers)
-                    arrays = [ensemble_compute_acfs(filename,
-                                                    start_index=start_index,
-                                                    end_index=end_index,
-                                                    per_walker=False,
-                                                    walkers=ii,
-                                                    parameters=param,
-                                                    temps=tk)[param][0, :]
+                    arrays = [ensemble_compute_acf(filename,
+                                                   start_index=start_index,
+                                                   end_index=end_index,
+                                                   per_walker=False,
+                                                   walkers=ii,
+                                                   parameters=param,
+                                                   temps=tk)[param][0, :]
                               for ii in walkers]
                     # we'll stack all of the walker arrays to make a single
                     # nwalkers x niterations array; when these are stacked

@@ -170,10 +170,9 @@ def write_samples(fp, samples, parameters=None, last_iteration=None,
             istart = 0
             istop = istart + data.shape[2]
             fp.create_dataset(dataset_name, (ntemps, nwalkers, istop),
-                                maxshape=(ntemps, nwalkers,
-                                          None),
-                                dtype=data.dtype,
-                                fletcher32=True)
+                              maxshape=(ntemps, nwalkers, None),
+                              dtype=data.dtype,
+                              fletcher32=True)
         fp[dataset_name][:, :, istart:istop] = data
 
 
