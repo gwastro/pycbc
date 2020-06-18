@@ -251,19 +251,22 @@ def read_raw_samples(fp, fields,
         chains = numpy.arange(fp.nchains)
     elif not isinstance(chains, (list, numpy.ndarray)):
         chains = numpy.array([chains]).astype(int)
-    # temperatures to load
-    tidx, selecttemps, ntemps = _get_temps_index(fp, temps)
     # iterations to load
     get_index, maxiters = _get_index(fp, chains, thin_start,
                                      thin_interval, thin_end, iteration)
     # load the samples
     arrays = {}
-    loadshape = (ntemps, len(chains), maxiters)  # shape of loaded arrays
     for name in fields:
+        dset = group.format(name=name)
+        # get the temperatures to load
+        tidx, selecttemps, ntemps = _get_temps_index(temps, fp, dset)
+        loadshape = (ntemps, len(chains), maxiters)  # shape of loaded arrays
+        # preallocate memory for the samples
         arr = numpy.full(loadshape, numpy.nan)
         for ci in chains:
             idx = get_index[ci]
-            thisarr = fp[group.format(name=name)][tidx, ci, get_index[ci]]
+            # load the data
+            thisarr = fp[dset][tidx, ci, get_index[ci]]
             if thisarr.size == 0:
                 # no samples were loaded; skip this chain
                 continue
@@ -332,8 +335,6 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
         fields = [fields]
     # walkers to load
     widx, nwalkers = _ensemble_get_walker_index(fp, walkers)
-    # temperatures to load
-    tidx, selecttemps, ntemps = _get_temps_index(fp, temps)
     # get the slice to use
     get_index = _ensemble_get_index(fp, thin_start, thin_interval, thin_end,
                                     iteration)
@@ -343,10 +344,12 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     group = group + '/{name}'
     arrays = {}
     for name in fields:
-        arr = fp[group.format(name=name)][tidx, widx, get_index]
+        dset = group.format(name=name)
         niterations = arr.shape[-1] if iteration is None else 1
-        # pull out the temperatures we need
+        tidx, selecttemps, ntemps = _get_temps_index(temps, fp, dset)
+        arr = fp[dset][tidx, widx, get_index]
         if selecttemps:
+            # pull out the temperatures we need
             arr = arr[temps, ...]
         if flatten:
             arr = arr.flatten()
@@ -357,40 +360,43 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     return arrays
 
 
-def _get_temps_index(fp, temps):
+def _get_temps_index(temps, fp, dataset):
     """Convenience function to determine which temperatures to load.
 
     Parameters
     -----------
-    fp : BaseInferenceFile
-        Open file handler to write files to. Must be an instance of
-        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
     temps : 'all' or (list of) int
         The temperature index (or list of indices) to retrieve. To retrieve
         all temperates pass 'all', or a list of all of the temperatures.
+    fp : BaseInferenceFile
+        Open file handler to read samples from. Must be an instance of
+        BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
+    dataset : str
+        The name of the dataset that samples will be loaded from.
 
     Returns
     -------
     tidx : slice or list of int
-        The temperature indices ot load from the file.
+        The temperature indices to load from the file.
     selecttemps : bool
         Whether specific temperatures need to be pulled out of the samples
         array after it is loaded from the file.
     ntemps : int
         The number of temperatures that will be loaded.
     """
-    selecttemps = False
-    if isinstance(temps, (int, numpy.int32, numpy.int64)):
-        tidx = temps
-        ntemps = 1
-    else:
-        # temps is either 'all' or a list of temperatures;
-        # in either case, we'll get all of the temperatures from the file;
-        # if not 'all', then we'll pull out the ones we want
+    if temps == 'all':
+        # all temperatures were requested; just need to know how many
+        ntemps = fp[dataset].shape[0]
         tidx = slice(None, None)
-        selecttemps = temps != 'all'
-        if selecttemps:
-            ntemps = len(temps)
-        else:
-            ntemps = fp.ntemps
+        selecttemps = False
+    elif isinstance(temps, (int, numpy.int_)):
+        # only a single temperature is requested
+        ntemps = 1
+        tidx = temps
+        selecttemps = False
+    else:
+        # a select set of temperatures are requested
+        tidx = slice(None, None)
+        ntemps = len(temps)
+        selecttemps = True
     return tidx, selecttemps, ntemps
