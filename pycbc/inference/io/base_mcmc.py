@@ -133,12 +133,18 @@ class CommonMCMCMetadataIO(object):
         self._thin_data(self.samples_group, params, new_interval)
         # store the interval that samples were thinned by
         self.thinned_by = thin_interval
-        # If a default thin interval and thin start exist, reduce them by the
-        # thinned interval. If the thin interval is not an integer multiple
+        # If acls exist, it by the thinned
+        # interval. If the thin interval is not an integer multiple
         # of the original, we'll round up, to avoid getting samples from
-        # before the burn in / at an interval less than the ACL.
-        self.thin_start = int(numpy.ceil(self.thin_start/new_interval))
-        self.thin_interval = int(numpy.ceil(self.thin_interval/new_interval))
+        # at an interval less than the ACL.
+        try:
+            acls = self.raw_acls
+        except ValueError:
+            acls = None
+        if acls is not None:
+            acls = {p: numpy.ceil(acls[p]/new_interval).astype(int)
+                    for p in acls}
+            self.raw_acls = acls
 
     @property
     def thinned_by(self):
