@@ -339,20 +339,6 @@ class CommonMCMCMetadataIO(object):
         """
         self.raw_acts = {p: acls[p] * self.thinned_by for p in acls}
 
-    def write_acts(self, act, raw_acts):
-        """Writes both the autocorrelation time and raw autcorrelation times.
-
-        Parameters
-        ----------
-        act : array or int
-            The autocorrelation time. See the ``act`` attribute for details.
-        raw_acts : dict
-            Dictionary of parameter names -> acts. See the ``raw_acts``
-            attribute for details.
-        """
-        self.act = act
-        self.raw_acts = raw_acts
-
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
         """Create a parser to parse sampler-specific arguments for loading
