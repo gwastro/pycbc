@@ -36,7 +36,7 @@ from astropy.time import Time
 from astropy import constants, coordinates
 from astropy.units.si import sday
 from numpy import cos, sin, pi
-from astropy import units as u 
+from astropy import units
 # Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
 
@@ -86,43 +86,44 @@ class Detector(object):
         self.sday = None
         self.gmst_reference = None
         self.name = str(detector_name)
-        
+
         if self.name is 'LISA':
-            t=Time(val=self.reference_time, format='gps', scale='utc').to_datetime(timezone=None)
-            t=np.sum(np.array(
-                     [t.year - 2034, t.month/12, t.day/(12 * 365),
-                     t.hour/(12 * 365 * 24), t.minute/(12 * 365 * 24 * 60),
-                     t.second/(12 * 365 * 24 * 60 * 60),
-                     t.microsecond/(12 * 365 * 24 * 60 * 60 * 1e-6)]
-                              ), axis=0)
-            
-            n=np.array(range(1, 4))
+            t = Time(val =s elf.reference_time, format = 'gps',
+                     scale = 'utc').to_datetime(timezone=None)
+            t = np.sum(np.array([t.year - 2034, t.month/12, t.day/(12*365),
+                                 t.hour/(12*365*24), 
+                                 t.minute/(12*365*24*60),
+                                 t.second/(12*365*24*60*60),
+                                 t.microsecond/(12*365*24*60*60*1e-6)]), axis=0)
+
+            n = np.array(range(1, 4))
             kappa, _lambda_ = 0, 0
-            alpha=2. * np.pi * t_ref/1 + kappa
-            beta_n=(n - 1) + (2. * np.pi/3) + _lambda_
+            alpha = 2. * np.pi * t_ref/1 + kappa
+            beta_n = (n - 1) + (2. * np.pi/3) + _lambda_
             a, L = 1., .1   # units are in AU
             e = L/(2. * a * np.sqrt(3))
-            
+
             """ 3 x 3 array (0,0)-> x coord for 1st detector,
                             (0,1)-> x coord for 1st detector,"""
-            
+
             self.location = np.array(
                 [a*cos(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + sin(alpha)**2)*cos(beta_n)),
                  a*sin(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + cos(alpha)**2)*sin(beta_n)),
                  -np.sqrt(3)*a*e*cos(alpha - beta_n)]).transpose()
-            
+
         else:
-            
-            self.frDetector = lalsimulation.DetectorPrefixToLALDetector(self.name)
+
+            self.frDetector = lalsimulation.DetectorPrefixToLALDetector(
+                self.name)
             self.response = self.frDetector.response
             self.location = self.frDetector.location
             self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
             self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
 
     def plot_LISA_orbit(self):
-           
-  """ Plots the LISA orbit for 1 year along with Sun and Earth's position"""
-        
+
+    """ Plots the LISA orbit for 1 year along with Sun and Earth's position"""
+
         from mpl_toolkits.mplot3d import Axes3D
         import matplotlib.pyplot as plt
         t = np.arange(0, 1, .01)
@@ -134,12 +135,12 @@ class Detector(object):
             [a*cos(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[0]) - (1 + sin(2.*pi*t)**2)*cos(beta_n[0])),
              a*sin(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[0]) - (1 + cos(2.*pi*t)**2)*sin(beta_n[0])),
              -np.sqrt(3)*a*e*cos(2.*pi*t - beta_n[0])])
-        
+
         orbit_2=np.array(
             [a*cos(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[1]) - (1 + sin(2.*pi*t)**2)*cos(beta_n[1])),
              a*sin(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[1]) - (1 + cos(2.*pi*t)**2)*sin(beta_n[1])),
              -np.sqrt(3)*a*e*cos(2.*pi*t - beta_n[1])])
-        
+
         orbit_3=np.array(
             [a*cos(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[2])-(1 + sin(2.*pi*t)**2)*cos(beta_n[2])),
              a*sin(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[2])-(1 + cos(2.*pi*t)**2)*sin(beta_n[2])),
@@ -148,7 +149,7 @@ class Detector(object):
         t = Time(val=self.reference_time, format='gps', scale='utc')
         earth=coordinates.get_body('earth', t, location=None).transform_to('icrs')
         sun.representation_type, earth.representation_type ='cartesian', 'cartesian'
-        
+
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(np.float32(earth.x), np.float32(earth.y), np.float32(earth.z), marker=',')
