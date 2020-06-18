@@ -590,18 +590,21 @@ class BaseMCMC(object):
             if self.burn_in is not None:
                 logging.info("Updating burn in")
                 self.burn_in.evaluate(self.checkpoint_file)
+                # write
+                for fn in [self.checkpoint_file, self.backup_file]:
+                    with self.io(fn, "a") as fp:
+                        self.burn_in.write(fp)
             # Compute acls; the burn_in test may have calculated an acl and
             # saved it, in which case we don't need to do it again.
             if self.raw_acls is None:
-                logging.info("Computing acls")
+                logging.info("Computing autocorrelation time")
                 self.raw_acls = self.compute_acl(self.checkpoint_file)
-            # write
+            # write acts, effective number of samples
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
-                    if self.burn_in is not None:
-                        self.burn_in.write(fp)
-                    if self.raw_acts is not None:
-                        fp.write_acts(self.act, self.raw_acts)
+                    if self.raw_acls is not None:
+                        fp.raw_acls = self.raw_acls
+                        fp.acl = self.acl
                     # write effective number of samples
                     fp.write_effective_nsamples(self.effective_nsamples)
         # check validity
