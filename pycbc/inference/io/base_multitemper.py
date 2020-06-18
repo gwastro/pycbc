@@ -252,23 +252,23 @@ def read_raw_samples(fp, fields,
     elif not isinstance(chains, (list, numpy.ndarray)):
         chains = numpy.array([chains]).astype(int)
     # iterations to load
-    get_index, maxiters = _get_index(fp, chains, thin_start,
-                                     thin_interval, thin_end, iteration)
+    get_index = _get_index(fp, chains, thin_start, thin_interval, thin_end,
+                           iteration)
     # load the samples
     arrays = {}
     for name in fields:
         dset = group.format(name=name)
         # get the temperatures to load
         tidx, selecttemps, ntemps = _get_temps_index(temps, fp, dset)
-        loadshape = (ntemps, len(chains), maxiters)  # shape of loaded arrays
-        # preallocate memory for the samples
-        arr = numpy.full(loadshape, numpy.nan)
+        alist = []
+        maxiters = 0
         for ci in chains:
             idx = get_index[ci]
             # load the data
             thisarr = fp[dset][tidx, ci, get_index[ci]]
             if thisarr.size == 0:
                 # no samples were loaded; skip this chain
+                alist.append(None)
                 continue
             if isinstance(idx, (int, numpy.int_)):
                 # make sure the last dimension corresponds to iteration
@@ -278,7 +278,13 @@ def read_raw_samples(fp, fields,
                 thisarr = thisarr[temps, ...]
             # make sure its 2D
             thisarr = thisarr.reshape(ntemps, thisarr.shape[-1])
-            arr[:, ci, :thisarr.shape[-1]] = thisarr
+            alist.append(thisarr)
+            maxiters = max(maxiters, thisarr.shape[-1])
+        # stack into a single array
+        arr = numpy.full((ntemps, len(chains), maxiters), numpy.nan)
+        for ci, thisarr in enumerate(alist):
+            if thisarr is not None:
+                arr[:, ci, :thisarr.shape[-1]] = thisarr
         if flatten:
             # flatten and remove nans
             arr = arr.flatten()
