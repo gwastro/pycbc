@@ -35,7 +35,7 @@ import inspect
 from pycbc.fft import fft
 from pycbc import pnutils
 from pycbc.waveform import utils as wfutils
-from pycbc.waveform import parameters
+from pycbc.waveform import parameters, plugin
 from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
 import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
@@ -1102,4 +1102,5 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
-           "NoWaveformError", "FailedWaveformError", "get_td_waveform_from_fd"]
+           "NoWaveformError", "FailedWaveformError", "get_td_waveform_from_fd",
+           'cpu_fd', 'cpu_td', '_filter_time_lengths']
