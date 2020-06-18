@@ -401,7 +401,7 @@ class CommonMCMCMetadataIO(object):
                      "load the last iteration. This overrides "
                      "the thin-start/interval/end options.")
             actions.append(act)
-        if 'walkers' not in skip_args:
+        if 'walkers' not in skip_args and 'chains' not in skip_args:
             act = parser.add_argument(
                 "--walkers", "--chains", type=int, nargs="+", default=None,
                 help="Only retrieve samples from the listed "
@@ -716,21 +716,34 @@ def _get_index(fp, chains, thin_start=None, thin_interval=None, thin_end=None,
     Parameters
     -----------
     fp : BaseInferenceFile
-        Open file handler to write files to. Must be an instance of
+        Open file handler to read samples from. Must be an instance of
         BaseInferenceFile with EnsembleMCMCMetadataIO methods added.
     chains : array of int
         The chains to load.
-    thin_start : int, optional
-        Start reading from the given iteration. Default is to start from
-        the first iteration.
-    thin_interval : int, optional
-        Only read every ``thin_interval`` -th sample. Default is 1.
-    thin_end : int, optional
-        Stop reading at the given iteration. Default is to end at the last
-        iteration.
+    thin_start : array or int, optional
+        Start reading from the given sample. May either provide an array
+        indicating the start index for each chain, or an integer. If the
+        former, the array must have the same length as the number of chains
+        that will be retrieved. If the latter, the given value will be used
+        for all chains. Default (None) is to use the file's ``thin_start``
+        attribute.
+    thin_interval : array or int, optional
+        Only read every ``thin_interval``-th sample. May either provide an
+        array indicating the interval to use for each chain, or an integer. If
+        the former, the array must have the same length as the number of chains
+        that will be retrieved. If the latter, the given value will be used for
+        all chains. Default (None) is to use the file's ``thin_interval``
+        attribute.
+    thin_end : array or int, optional
+        Stop reading at the given sample index. May either provide an
+        array indicating the end index to use for each chain, or an integer. If
+        the former, the array must have the same length as the number of chains
+        that will be retrieved. If the latter, the given value will be used for
+        all chains. Default (None) is to use the the file's ``thin_end``
+        attribute.
     iteration : int, optional
-        Only read the given iteration. If this provided, it overrides
-        the ``thin_(start|interval|end)`` options.
+        Only read the given iteration from all chains. If provided, it
+        overrides the ``thin_(start|interval|end)`` options.
 
     Returns
     -------
@@ -738,27 +751,62 @@ def _get_index(fp, chains, thin_start=None, thin_interval=None, thin_end=None,
         The indices to retrieve.
     """
     nchains = len(chains)
+    # convenience function to get the right thin start/interval/end
     if iteration is not None:
         get_index = [int(iteration)]*nchains
     else:
-        if thin_start is None:
-            thin_start = fp.thin_start
-        if not isinstance(thin_start, (numpy.ndarray, list)):
-            thin_start = numpy.repeat(thin_start, nchains)
-        if thin_interval is None:
-            thin_interval = fp.thin_interval
-        if not isinstance(thin_interval, (numpy.ndarray, list)):
-            thin_interval = numpy.repeat(thin_interval, nchains)
-        if thin_end is None:
-            thin_end = fp.thin_end
-        if not isinstance(thin_end, (numpy.ndarray, list)):
-            thin_end = numpy.repeat(thin_end, nchains)
+        # get the slice arguments
+        thin_start = _format_slice_arg(thin_start, fp.thin_start, chains)
+        thin_interval = _format_slice_arg(thin_interval, fp.thin_interval,
+                                          chains)
+        thin_end = _format_slice_arg(thin_end, fp.thin_end, chains)
         # the slices to use for each chain
         get_index = [fp.get_slice(thin_start=thin_start[ci],
                                   thin_interval=thin_interval[ci],
                                   thin_end=thin_end[ci])
-                     for ci in chains]
+                     for ci in range(nchains)]
     return get_index
+
+
+def _format_slice_arg(value, default, chains):
+    """Formats a start/interval/end argument for picking out chains.
+
+    Parameters
+    ----------
+    value : None, int, array or list of int
+        The thin-start/interval/end value to format. ``None`` indicates the
+        user did not specify anything, in which case ``default`` will be used.
+        If an integer, then it will be repeated to match the length of
+        ``chains```. If an array or list, it must have the same length as
+        ``chains``.
+    default : array
+        What to use instead if ``value`` is ``None``.
+    chains : array of int
+        The index values of chains that will be loaded.
+
+    Returns
+    -------
+    array
+        Array giving the value to use for each chain in ``chains``. The array
+        will have the same length as ``chains``.
+    """
+    if value is None and default is None:
+        # no value provided, and default is None, just return Nones with the
+        # same length as chains
+        return [None]*len(chains)
+    elif value is None:
+        # use the default, with the desired values extracted
+        value = default[chains]
+    elif isinstance(value, (int, numpy.int_)):
+        # a single integer was provided, repeat into an array 
+        value = numpy.repeat(value, len(chains))
+    elif len(value) != len(chains):
+        # a list of values was provided, but the length does not match the
+        # chains, raise an error
+        raise ValueError("Number of requested thin-start/interval/end values "
+                         "({}) does not match number of requested chains ({})"
+                         .format(len(value), len(chains)))
+    return value
 
 
 def thin_samples_for_writing(fp, samples, parameters, last_iteration,

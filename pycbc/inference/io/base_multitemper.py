@@ -193,7 +193,7 @@ def read_raw_samples(fp, fields,
     Parameters
     -----------
     fp : BaseInferenceFile
-        Open file handler to write files to. Must be an instance of
+        Open file handler to read samples from. Must be an instance of
         BaseInferenceFile with CommonMultiTemperedMetadataIO methods added.
     fields : list
         The list of field names to retrieve.
@@ -251,7 +251,6 @@ def read_raw_samples(fp, fields,
         chains = numpy.arange(fp.nchains)
     elif not isinstance(chains, (list, numpy.ndarray)):
         chains = numpy.array([chains]).astype(int)
-    # iterations to load
     get_index = _get_index(fp, chains, thin_start, thin_interval, thin_end,
                            iteration)
     # load the samples
@@ -262,10 +261,10 @@ def read_raw_samples(fp, fields,
         tidx, selecttemps, ntemps = _get_temps_index(temps, fp, dset)
         alist = []
         maxiters = 0
-        for ci in chains:
-            idx = get_index[ci]
+        for ii, cidx in enumerate(chains):
+            idx = get_index[ii]
             # load the data
-            thisarr = fp[dset][tidx, ci, get_index[ci]]
+            thisarr = fp[dset][tidx, cidx, idx]
             if thisarr.size == 0:
                 # no samples were loaded; skip this chain
                 alist.append(None)
@@ -282,9 +281,9 @@ def read_raw_samples(fp, fields,
             maxiters = max(maxiters, thisarr.shape[-1])
         # stack into a single array
         arr = numpy.full((ntemps, len(chains), maxiters), numpy.nan)
-        for ci, thisarr in enumerate(alist):
+        for ii, thisarr in enumerate(alist):
             if thisarr is not None:
-                arr[:, ci, :thisarr.shape[-1]] = thisarr
+                arr[:, ii, :thisarr.shape[-1]] = thisarr
         if flatten:
             # flatten and remove nans
             arr = arr.flatten()
