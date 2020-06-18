@@ -328,6 +328,14 @@ class Detector(object):
             The arrival time difference between the detectors.
         """
         if self.name is 'LISA':
+            other_location.location=coordinates.SkyCoord(
+                other_detector.location[0], other_detector.location[1], 
+                other_detector.location[2], frame = 'gcrs').transform_to('icrs')
+            
+            return self.time_delay_from_location(other_detector.location,
+                                                 right_ascension,
+                                                 declination,
+                                                 t_gps)
             
         return self.time_delay_from_location(other_detector.location,
                                              right_ascension,
