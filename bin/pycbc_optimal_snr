@@ -164,7 +164,7 @@ if __name__ == '__main__':
     if not opts.time_varying_psds:
         pycbc.psd.verify_psd_options_multi_ifo(opts, parser, detectors)
 
-    log_level = logging.DEBUG if opts.verbose else logging.INFO
+    log_level = logging.INFO if opts.verbose else logging.WARN
     logging.basicConfig(level=log_level,
                         format='%(asctime)s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
@@ -212,11 +212,14 @@ if __name__ == '__main__':
     def compute_optimal_snr(inj):
         for det, column in opts.snr_columns.items():
             # geocent time is robust to potentially incomplete sim tables
-            injection_time = inj.geocent_end_time
+            try:
+                injection_time = inj.geocent_end_time
+            except AttributeError:
+                injection_time = inj.tc
             psd = psds[det](injection_time)
             if psd is None:
                 continue
-            logging.info('Trying injection %s', inj.simulation_id)
+            logging.info('Trying injection %s at %s', inj.simulation_id, det)
             try:
                 wave = get_injection(injections, det, injection_time,
                                      simulation_id=inj.simulation_id)
@@ -229,23 +232,49 @@ if __name__ == '__main__':
                     logging.error('%s: waveform generation failed with the '
                                   'following exception', inj.simulation_id)
                     raise
-            logging.info('Injection %s completed', inj.simulation_id)
+            logging.info('Injection %s at %s completed', inj.simulation_id, det)
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
             setattr(inj, column, sval)
         return inj
 
     logging.info("Loading injections")
     injections = pycbc.inject.InjectionSet.from_cli(opts)
+    inj_table = injections.table
+
+    # a bit of ugly special-casing to keep the traditional behavior of
+    # pycbc_optimal_snr: if both input and output are LIGOLW documents, we want
+    # to preserve the entire content of the document and only modify the
+    # particular columns of the sim_inspiral table.  If HDF injections are
+    # involved, we do not care.
+    ligolw_suffixes = ('.xml', '.xml.gz')
+    ligolw = opts.injection_file.endswith(ligolw_suffixes) \
+            and opts.out_file.endswith(ligolw_suffixes)
+
+    if not ligolw:
+        # create placeholder fields for FieldArray injections
+        for det, column in opts.snr_columns.items():
+            inj_table = inj_table.add_fields(np.zeros(len(inj_table)),
+                                             column)
+
+        # make sure we have simulation IDs
+        if 'simulation_id' not in inj_table:
+            inj_table = inj_table.add_fields(np.arange(len(inj_table)),
+                                             'simulation_id')
+
+        inj_dtype = inj_table.dtype
 
     if opts.input_sort == 'random':
         np.random.seed(100)
         sort_func = lambda x: np.random.random()
     elif opts.input_sort == 'time':
         sort_func = lambda x: x.geocent_end_time
-    inj_table = sorted(injections.table, key=sort_func)
+    inj_table = sorted(inj_table, key=sort_func)
 
-    out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
-                                     columns=injections.table.columnnames)
+    if ligolw:
+        new_inj_table = lsctables.New(lsctables.SimInspiralTable,
+                                      columns=injections.table.columnnames)
+    else:
+        new_inj_table = []
 
     # Cut inj_table down to the range defined by opts.injection_fraction_range
     num_injections = len(inj_table)
@@ -271,16 +300,28 @@ if __name__ == '__main__':
             pass
 
     for inj in iterator:
-        out_sim_inspiral.append(inj)
+        new_inj_table.append(inj)
 
-    out_sim_inspiral.sort(key=lambda x: x.geocent_end_time)
+    # always store injections sorted by coalescence time
+    try:
+        new_inj_table.sort(key=lambda x: x.geocent_end_time)
+    except AttributeError:
+        new_inj_table.sort(key=lambda x: x.tc)
+
+    if not ligolw:
+        new_inj_table = pycbc.io.FieldArray.from_records(
+                new_inj_table, dtype=inj_dtype)
 
     logging.info('Writing output')
-    llw_doc = injections.indoc
-    llw_root = llw_doc.childNodes[0]
-    llw_root.removeChild(injections.table)
-    llw_root.appendChild(out_sim_inspiral)
-    ligolw_utils.write_filename(llw_doc, opts.out_file,
-                                gz=opts.out_file.endswith('gz'))
+
+    if ligolw:
+        llw_doc = injections.indoc
+        llw_root = llw_doc.childNodes[0]
+        llw_root.removeChild(injections.table)
+        llw_root.appendChild(new_inj_table)
+        ligolw_utils.write_filename(llw_doc, opts.out_file,
+                                    gz=opts.out_file.endswith('gz'))
+    else:
+        pycbc.inject.InjectionSet.write(opts.out_file, new_inj_table)
 
     logging.info('Done')
