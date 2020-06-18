@@ -133,18 +133,6 @@ class CommonMCMCMetadataIO(object):
         self._thin_data(self.samples_group, params, new_interval)
         # store the interval that samples were thinned by
         self.thinned_by = thin_interval
-        # If acls exist, it by the thinned
-        # interval. If the thin interval is not an integer multiple
-        # of the original, we'll round up, to avoid getting samples from
-        # at an interval less than the ACL.
-        try:
-            acls = self.raw_acls
-        except ValueError:
-            acls = None
-        if acls is not None:
-            acls = {p: numpy.ceil(acls[p]/new_interval).astype(int)
-                    for p in acls}
-            self.raw_acls = acls
 
     @property
     def thinned_by(self):
@@ -244,88 +232,126 @@ class CommonMCMCMetadataIO(object):
         return self.burn_in_iteration // self.thinned_by
 
     @property
-    def acl(self):
-        """Returns the ACL.
+    def act(self):
+        """The autocorrelation time (ACT).
 
-        Raises a ``ValueError`` if the ACL has not been calculated.
+        This is the ACL times the file's thinned by. Raises a ``ValueError``
+        if the ACT has not been calculated.
         """
         try:
-            return self[self.sampler_group]['acl'][()]
+            return self[self.sampler_group]['act'][()]
         except KeyError:
-            raise ValueError("ACL has not been calculated")
+            raise ValueError("ACT has not been calculated")
 
-    @acl.setter
-    def acl(self, acl):
-        """Writes the autocorrelation length(s).
+    @act.setter
+    def act(self, act):
+        """Writes the autocorrelation time(s).
 
-        ACL(s) are written to the ``sample_group`` as a dataset with name
-        ``acl``.
+        ACT(s) are written to the ``sample_group`` as a dataset with name
+        ``act``.
 
         Parameters
         ----------
-        acl : array or int
-            ACL(s) to write.
+        act : array or int
+            ACT(s) to write.
         """
         # pylint: disable=no-member
-        self.write_data('acl', acl, path=self.sampler_group)
+        self.write_data('act', act, path=self.sampler_group)
 
     @property
-    def act(self):
-        """Returns the autocorrelation time.
+    def raw_acts(self):
+        """Dictionary of parameter names -> raw autocorrelation time(s).
 
-        This is the ACL times the file's thinned by. Raises a ``ValueError``
-        if the ACL has not been calculated.
+        Depending on the sampler, the autocorrelation times may be floats,
+        or [ntemps x] [nchains x] arrays.
+
+        Raises a ``ValueError`` is no raw acts have been set.
         """
-        return self.acl * self.thinned_by
+        try:
+            group = self[self.sampler_group]['raw_acts']
+        except KeyError:
+            raise ValueError("ACTs have not been calculated")
+        acts = {}
+        for param in group:
+            acts[param] = group[param][()]
+        return acts
+
+    @raw_acts.setter
+    def raw_acts(self, acts):
+        """Writes the raw autocorrelation times.
+
+        The ACT of each parameter is saved to
+        ``[sampler_group]/raw_acts/{param}']``. Works for all types of MCMC
+        samplers (independent chains, ensemble, parallel tempering).
+
+        Parameters
+        ----------
+        acts : dict
+            A dictionary of ACTs keyed by the parameter.
+        """
+        path = self.sampler_group + '/raw_acts'
+        for param in acts:
+            self.write_data(param, acts[param], path=path)
+
+    @property
+    def acl(self):
+        """The autocorrelation length (ACL) of the samples.
+
+        This is the autocorrelation time (ACT) divided by the file's
+        ``thinned_by`` attribute. Raises a ``ValueError`` if the ACT has not
+        been calculated.
+        """
+        return self.act / self.thinned_by
+
+    @acl.setter
+    def acl(self, acl):
+        """Sets the autocorrelation length (ACL) of the samples.
+
+        This will convert the given value(s) to autocorrelation time(s) and
+        save to the ``act`` attribute; see that attribute for details.
+        """
+        self.act = acl * self.thinned_by
 
     @property
     def raw_acls(self):
         """Dictionary of parameter names -> raw autocorrelation length(s).
 
-        Depending on the sampler, the autocorrelation lengths may be integers,
+        Depending on the sampler, the autocorrelation lengths may be floats,
         or [ntemps x] [nchains x] arrays.
 
-        Raises a ``ValueError`` is no raw acls have been set.
+        The ACLs are the autocorrelation times (ACT) divided by the file's
+        ``thinned_by`` attribute. Raises a ``ValueError`` is no raw acts have
+        been set.
         """
-        try:
-            group = self[self.samper_group]['raw_acls']
-        except KeyError:
-            raise ValueError("ACLs have not been calculated")
-        acls = {}
-        for param in group:
-            acls[param] = group[param][()]
-        return acls
+        return {p: self.raw_acts[p] / self.thinned_by for p in self.raw_acts}
 
     @raw_acls.setter
     def raw_acls(self, acls):
-        """Writes the raw autocorrelation lengths.
+        """Sets the raw autocorrelation lengths.
 
-        The ACL of each parameter is saved to
-        ``[sampler_group]/raw_acls/{param}']``. Works for all types of MCMC
-        samplers (independent chains, ensemble, parallel tempering).
+        The given ACLs are converted to autocorrelation times (ACTs) and saved
+        to the ``raw_acts`` attribute; see that attribute for details.
 
         Parameters
         ----------
         acls : dict
             A dictionary of ACLs keyed by the parameter.
         """
-        path = self.sampler_group + '/raw_acls'
-        for param in acls:
-            self.write_data(param, acls[param], path=path)
+        self.raw_acts = {p: acls[p] * self.thinned_by for p in acls}
 
-    def write_acls(self, acl, raw_acls):
-        """Writes both the acl and raw acls.
+    def write_acts(self, act, raw_acts):
+        """Writes both the autocorrelation time and raw autcorrelation times.
 
         Parameters
         ----------
-        acl : array or int
-            The autocorrelation length. See the ``acl`` attribute for details.
-        raw_acls : dict
-            Dictionary of parameter names -> acls. See the ``raw_acls``
+        act : array or int
+            The autocorrelation time. See the ``act`` attribute for details.
+        raw_acts : dict
+            Dictionary of parameter names -> acts. See the ``raw_acts``
             attribute for details.
         """
-        self.acl = acl
-        self.raw_acls = raw_acls
+        self.act = act
+        self.raw_acts = raw_acts
 
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):

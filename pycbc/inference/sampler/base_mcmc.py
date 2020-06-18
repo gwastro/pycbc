@@ -600,8 +600,8 @@ class BaseMCMC(object):
                 with self.io(fn, "a") as fp:
                     if self.burn_in is not None:
                         self.burn_in.write(fp)
-                    if self.raw_acls is not None:
-                        fp.write_acls(self.acl, self.raw_acls)
+                    if self.raw_acts is not None:
+                        fp.write_acts(self.act, self.raw_acts)
                     # write effective number of samples
                     fp.write_effective_nsamples(self.effective_nsamples)
         # check validity
