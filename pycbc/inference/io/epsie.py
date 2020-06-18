@@ -68,10 +68,14 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         Also thins the acceptance ratio and the temperature data, both of
         which are stored in the ``sampler_info`` group.
         """
-        # thin the samples
+        # We'll need to know what the new interval to thin by will be
+        # so we can properly thin the acceptance ratio and temperatures swaps.
+        # We need to do this before calling the base thin, as we need to know
+        # what the current thinned by is.
+        new_interval = thin_interval // self.thinned_by
+        # now thin the samples
         super(EpsieFile, self).thin(thin_interval)
         # thin the acceptance ratio
-        new_interval = thin_interval // self.thinned_by
         self._thin_data(self.sampler_group, ['acceptance_ratio'],
                         new_interval)
         # thin the temperature swaps; since these may not happen every
@@ -79,7 +83,9 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         ts_group = '/'.join([self.sampler_group, 'temperature_swaps'])
         ts_thin_interval = new_interval // self.swap_interval
         if ts_thin_interval > 1:
-            self._thin_data(ts_group, ['swap_index', 'acceptance_ratio'],
+            self._thin_data(ts_group, ['swap_index'],
+                            ts_thin_interval)
+            self._thin_data(ts_group, ['acceptance_ratio'],
                             ts_thin_interval)
 
     def write_samples(self, samples, **kwargs):
