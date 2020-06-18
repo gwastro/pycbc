@@ -28,9 +28,9 @@
 """This module provides utilities for calculating detector responses and timing
 between observatories.
 """
-import lal
 import lalsimulation
 import numpy as np
+import lal
 from pycbc.types import TimeSeries
 from astropy.time import Time
 from astropy import constants, coordinates
