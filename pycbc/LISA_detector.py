@@ -1,5 +1,5 @@
-from numpy import sin,cos,pi
-from astropy import coordinates,constants
+from numpy import sin, cos, pi
+from astropy import coordinates, constants
 from astropy import units as u 
 from astropy.time import Time
 import numpy as np
