@@ -35,7 +35,7 @@ import inspect
 from pycbc.fft import fft
 from pycbc import pnutils
 from pycbc.waveform import utils as wfutils
-from pycbc.waveform import parameters, plugin
+from pycbc.waveform import parameters
 from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
 import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \

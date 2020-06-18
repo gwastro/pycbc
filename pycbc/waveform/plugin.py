@@ -3,7 +3,7 @@
 
 def add_custom_waveform(approximant, function, domain):
     """ Make custom waveform available to pycbc
-    
+
     Parameters
     ----------
     approximant : str
@@ -26,18 +26,18 @@ def add_custom_waveform(approximant, function, domain):
 def add_length_estimator(approximant, function):
     from pycbc.waveform.waveform import _filter_time_lengths
     _filter_time_lengths[approximant] = function
-   
+
 def retrieve_waveform_plugins():
     import pkg_resources
-    
+
     # Check for fd waveforms
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.fd'):
         add_custom_waveform(plugin.name, plugin.resolve(), 'frequency')
-    
+
     # Check for td waveforms
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.td'):
         add_custom_waveform(plugin.name, plugin.resolve(), 'time')
-    
+
     # Check for wavveform length estimates
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.length'):
         add_length_estimator(plugin.name, plugin.resolve())
