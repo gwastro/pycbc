@@ -18,6 +18,7 @@
 
 from __future__ import (absolute_import, division)
 
+import numpy
 from pickle import UnpicklingError
 from epsie import load_state
 
@@ -30,6 +31,11 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
     """Class to handle IO for Epsie's parallel-tempered sampler."""
 
     name = 'epsie_file'
+
+    @property
+    def nchains(self):
+        """Alias for nwalkers."""
+        return self.nwalkers
 
     @property
     def betas(self):
@@ -89,6 +95,75 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         self.write_samples({'acceptance_ratio': acceptance_ratio},
                            last_iteration=last_iteration,
                            samples_group=self.sampler_group)
+
+    def read_acceptance_ratio(self, temps=None, chains=None):
+        """Reads the acceptance ratios.
+
+        Ratios larger than 1 are set back to 1 before returning.
+
+        Parameters
+        -----------
+        temps : (list of) int, optional
+            The temperature index (or a list of indices) to retrieve. If None,
+            acceptance ratios from all temperatures and all chains will be
+            retrieved.
+        chains : (list of) int, optional
+            The chain index (or a list of indices) to retrieve. If None,
+            ratios from all chains will be obtained.
+
+        Returns
+        -------
+        array
+            Array of acceptance ratios with shape (requested temps,
+            requested chains, niterations).
+        """
+        group = self.sampler_group + '/acceptance_ratio'
+        if chains is None:
+            wmask = numpy.ones(self.nchains, dtype=bool)
+        else:
+            wmask = numpy.zeros(self.nchains, dtype=bool)
+            wmask[chains] = True
+        if temps is None:
+            tmask = numpy.ones(self.ntemps, dtype=bool)
+        else:
+            tmask = numpy.zeros(self.ntemps, dtype=bool)
+            tmask[temps] = True
+        all_ratios = self[group][:]
+        # make sure values > 1 are set back to 1
+        all_ratios[all_ratios > 1] = 1.
+        return all_ratios[numpy.ix_(tmask, wmask)]
+
+    def read_acceptance_rate(self, temps=None, chains=None):
+        """Reads the acceptance rate.
+
+        This calls :py:func:`read_acceptance_ratio`, then averages the ratios
+        over all iterations to get the average rate.
+
+        Parameters
+        -----------
+        temps : (list of) int, optional
+            The temperature index (or a list of indices) to retrieve. If None,
+            acceptance rates from all temperatures and all chains will be
+            retrieved.
+        chains : (list of) int, optional
+            The chain index (or a list of indices) to retrieve. If None,
+            rates from all chains will be obtained.
+
+        Returns
+        -------
+        array
+            Array of acceptance ratios with shape (requested temps,
+            requested chains).
+        """
+        all_ratios = self.read_acceptance_ratio(temps, chains)
+        # average over the number of iterations
+        all_ratios = all_ratios.mean(axis=-1)
+        return all_ratios
+
+    def read_acceptance_fraction(self, temps=None, walkers=None):
+        """Alias for :py:func:`read_acceptance_rate`.
+        """
+        return self.read_acceptance_rate(temps=temps, chains=walkers)
 
     def write_temperature_data(self, swap_index, acceptance_ratio,
                                swap_interval, last_iteration):

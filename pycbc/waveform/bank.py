@@ -83,9 +83,9 @@ def sigma_cached(self, psd):
                 self.sigma_view = self[self.sslice].squared_norm() * 4.0 * self.delta_f
 
             if not hasattr(psd, 'invsqrt'):
-                psd.invsqrt = 1.0 / psd[self.sslice]
+                psd.invsqrt = 1.0 / psd
 
-            self._sigmasq[key] = self.sigma_view.inner(psd.invsqrt)
+            self._sigmasq[key] = self.sigma_view.inner(psd.invsqrt[self.sslice])
     return self._sigmasq[key]
 
 # dummy class needed for loading LIGOLW files
@@ -398,6 +398,8 @@ class TemplateBank(object):
         """ Return the end frequency of the waveform at the given index value
         """
         from pycbc.waveform.waveform import props
+        if hasattr(self.table[index], 'f_final'):
+            return self.table[index].f_final
 
         return pycbc.waveform.get_waveform_end_frequency(
                                 self.table[index],
@@ -581,10 +583,13 @@ class LiveFilterBank(TemplateBank):
         # include ringdown) and the duration up to merger since they will be
         # erased by the type conversion below.
         ttotal = template_duration = -1
+        time_offset = None
         if hasattr(htilde, 'length_in_time'):
             ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
             template_duration = htilde.chirp_length
+        if hasattr(htilde, 'time_offset'):
+            time_offset = htilde.time_offset
 
         self.table[index].template_duration = template_duration
 
@@ -597,6 +602,9 @@ class LiveFilterBank(TemplateBank):
         htilde.length_in_time = ttotal
         htilde.approximant = approximant
         htilde.end_frequency = f_end
+
+        if time_offset:
+            htilde.time_offset = time_offset
 
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)

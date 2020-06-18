@@ -1308,7 +1308,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             filesystem.
         """
         super(StrainBuffer, self).__init__(frame_src, channel_name, start_time,
-                                           max_buffer=max_buffer,
+                                           max_buffer=32,
                                            force_update_cache=force_update_cache,
                                            increment_update_cache=increment_update_cache)
 
@@ -1374,7 +1374,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.psd = None
         self.psds = {}
 
-        strain_len = int(sample_rate * self.raw_buffer.delta_t * len(self.raw_buffer))
+        strain_len = int(max_buffer * self.sample_rate)
         self.strain = TimeSeries(zeros(strain_len, dtype=numpy.float32),
                                  delta_t=1.0/self.sample_rate,
                                  epoch=start_time-max_buffer)
