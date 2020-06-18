@@ -37,7 +37,6 @@ from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 
 
-
 #
 # =============================================================================
 #
@@ -65,7 +64,8 @@ class CPNestSampler(BaseSampler):
     _io = CPNestFile
 
     def __init__(self, model, nlive, maxmcmc=1000, nthreads=1, verbose=1,
-                 loglikelihood_function=None):
+                 loglikelihood_function=None, checkpoint_period=None,
+                 checkpoint_signal=None):
         self.model = model
         self.nlive = nlive
         self.maxmcmc = maxmcmc
@@ -79,15 +79,18 @@ class CPNestSampler(BaseSampler):
         self._logz = None
         self._dlogz = None
         self.checkpoint_file = None
+        self.checkpoint_period = checkpoint_period
+        self.checkpoint_signal = checkpoint_signal
 
     def run(self):
         out_dir = os.path.dirname(os.path.abspath(self.checkpoint_file))
         if self._sampler is None:
-            self._sampler = cpnest.CPNest(self.model_call, verbose=1,
-                                          output=out_dir,
-                                          nthreads=self.nthreads,
-                                          nlive=self.nlive,
-                                          maxmcmc=self.maxmcmc, resume=True)
+            self._sampler = cpnest.CPNest(
+                self.model_call, verbose=self.verbose,
+                output=out_dir, nthreads=self.nthreads,
+                nlive=self.nlive, maxmcmc=self.maxmcmc,
+                periodic_checkpoint_interval=self.checkpoint_period,
+                resume=True)
         res = self._sampler.run()
 
     @property
@@ -115,9 +118,15 @@ class CPNestSampler(BaseSampler):
         verbose = int(cp.get(section, "verbose"))
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
+        checkpoint_period = \
+            get_optional_arg_from_config(cp, section, 'checkpoint-period')
+        checkpoint_signal = \
+            get_optional_arg_from_config(cp, section, 'checkpoint-signal')
         obj = cls(model, nlive=nlive, maxmcmc=maxmcmc, nthreads=nthreads,
                   verbose=verbose,
-                  loglikelihood_function=loglikelihood_function)
+                  loglikelihood_function=loglikelihood_function,
+                  checkpoint_period=checkpoint_period,
+                  checkpoint_signal=checkpoint_signal)
 
         setup_output(obj, output_file)
         if not obj.new_checkpoint:
@@ -129,7 +138,7 @@ class CPNestSampler(BaseSampler):
 
     def finalize(self):
         logz = self._sampler.NS.logZ
-        dlogz = 0.1  #######FIXME!!!!!###############
+        dlogz = 0.1  # FIXME!!!!!###############
         logging.info("log Z, dlog Z: {}, {}".format(logz, dlogz))
         for fn in [self.checkpoint_file]:
             with self.io(fn, "a") as fp:
@@ -211,6 +220,7 @@ class CPNestModel(cpm.Model):
     model : inference.BaseModel instance
              A model instance from pycbc.
     """
+
     def __init__(self, model, loglikelihood_function=None):
         if model.sampling_transforms is not None:
             raise ValueError("CPNest does not support sampling transforms")
@@ -230,7 +240,7 @@ class CPNestModel(cpm.Model):
         return cpm.LivePoint(list(self.model.sampling_params),
                              [point[p] for p in self.model.sampling_params])
 
-    def log_prior(self,xx):
+    def log_prior(self, xx):
         self.model.update(**xx)
         return self.model.logprior
 
