@@ -8,7 +8,8 @@ export OMP_NUM_THREADS=4
 export HDF5_USE_FILE_LOCKING="FALSE"
 
 gps_start_time=1272790000
-gps_end_time=1272790500
+gps_end_time=1272790300
+
 
 # test if there is a template bank. If not, make one
 
@@ -36,35 +37,24 @@ then
 
     mv template_bank_0.hdf template_bank.hdf
     rm -f template_bank_*.hdf
+else echo -e "\\n\\n>> [`date`] Pre-existing template bank found"
 fi
 
-# test if there is a hwinj file. If not, make one.
-# if a new inj is made, delete old strain and output files
 
+# test if there is a inj file. If not, make one.
+# if a new inj is made, delete old strain
 
-
-
-if [[ "$(echo ./hwinjcbc*.xml.gz)" != "./hwinjcbc*.xml.gz" ]]
+if [[ -f test_inj.hdf ]]
 then
-    inj_names='./hwinjcbc*.xml.gz'
-    echo -e "\\n\\n>> [`date`] Pre-existing Inj Xml Found"
-    
+    echo -e "\\n\\n>> [`date`] Pre-existing Injection Found"
 else echo -e "\\n\\n>> [`date`] Generating injection"
     if [[ -d ./strain ]]
     then rm -r ./strain
     fi
-    
-    if [[ -d ./output ]]
-    then rm -r ./output
-    fi
-    
-    # this will be replaced with a python script in future
-    bash generate_injections.sh
-    
-    inj_names='./hwinjcbc*.xml.gz' 
+     ./generate_injections.py
 fi
 
-inj_file=${inj_names[0]} 
+
 
 # test if strain files exist. If they dont, make them
 
@@ -84,11 +74,19 @@ then
             --low-frequency-cutoff 10 \
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 32 \
-            --injection-file $inj_file
+            --injection-file 'test_inj.hdf'
+
     }
     simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
     simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345
     simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456
+else echo -e "\\n\\n>> [`date`] Pre-existing strain data found"
+fi
+
+
+# delete old outputs if they exist
+if [[ -d ./output ]]
+then rm -r ./output
 fi
 
 
