@@ -250,6 +250,11 @@ will remain fixed throughout the run. For example:
    approximant = IMRPhenomPv2
    f_lower = 18
 
+In the example above, we choose the waveform model 'IMRPhenomPv2'. PyCBC comes
+with access to waveforms provided by the lalsimulation package. If you'd like
+to use a custom waveform outside of what PyCBC currently supports,
+see :ref:`documentation on creating a plugin for PyCBC<waveform_plugin>`
+
 ^^^^^^^^^^^^
 Setting data
 ^^^^^^^^^^^^

@@ -2,7 +2,7 @@
 """
 
 
-def add_custom_waveform(approximant, function, domain):
+def add_custom_waveform(approximant, function, domain, force=False):
     """ Make custom waveform available to pycbc
 
     Parameters
@@ -17,12 +17,12 @@ def add_custom_waveform(approximant, function, domain):
     from pycbc.waveform.waveform import cpu_fd, cpu_td
 
     if domain == 'time':
-        if approximant in cpu_td:
+        if not force and (approximant in cpu_td):
             raise RuntimeError("Can't load plugin waveform {}, the name is"
                                " already in use.".format(approximant))
         cpu_td[approximant] = function
     elif domain == 'frequency':
-        if approximant in cpu_fd:
+        if not force and (approximant in cpu_fd):
             raise RuntimeError("Can't load plugin waveform {}, the name is"
                                " already in use.".format(approximant))
         cpu_fd[approximant] = function
