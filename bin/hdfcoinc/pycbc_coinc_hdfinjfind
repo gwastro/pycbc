@@ -222,8 +222,15 @@ for trigger_file, injection_file in zip(args.trigger_files,
     # pick up optimal SNRs
     if multi_ifo_style:
         for ifo, column in args.optimal_snr_column.items():
+            optimal_snr_all = numpy.array(sim_table.get_column(column))
+            # As a single detector being vetoed won't veto all combinations,
+            # need to set optimal_snr of a vetoed ifo to zero in order
+            # to later calculate decisive optimal snr
+            iws, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
+                                             segment_name=args.segment_name)
+            optimal_snr_all[iws] = 0
             hdf_append(fo, 'injections/optimal_snr_%s' % ifo,
-                       sim_table.get_column(column))
+                       optimal_snr_all)
     else:
         ifo_map = {f.attrs['detector_1']: 1,
                    f.attrs['detector_2']: 2}
