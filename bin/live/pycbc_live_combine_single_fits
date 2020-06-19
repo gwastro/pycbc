@@ -161,7 +161,7 @@ for ifo in args.ifos:
             alpha_lines += ax_alpha.plot([ad[0], ad[-1]], [q05_alpha, q05_alpha],
                                          c=colours[counter], linestyle=':',
                                          label="95th %%ile = %.2f" % q05_alpha)
-            count_lines += ax_count.plot(ad[valid_alpha], c / l_times,
+            count_lines += ax_count.plot(ad[valid_alpha], c / l_times[valid_alpha],
                                          c=colours[counter],
                                          label="duration %.2f-%.2f" % (l, u))
             count_lines += ax_count.plot([ad[0], ad[-1]],
