@@ -428,6 +428,7 @@ class MCMCMetadataIO(object):
         chains return no samples. If no burn-in tests were done, returns 0
         for all chains.
         """
+        # pylint: disable=no-member
         try:
             thin_start = self.burn_in_index
             # replace any that have not been burned in with the number
@@ -793,12 +794,12 @@ def _format_slice_arg(value, default, chains):
     if value is None and default is None:
         # no value provided, and default is None, just return Nones with the
         # same length as chains
-        return [None]*len(chains)
+        value = [None]*len(chains)
     elif value is None:
         # use the default, with the desired values extracted
         value = default[chains]
     elif isinstance(value, (int, numpy.int_)):
-        # a single integer was provided, repeat into an array 
+        # a single integer was provided, repeat into an array
         value = numpy.repeat(value, len(chains))
     elif len(value) != len(chains):
         # a list of values was provided, but the length does not match the
