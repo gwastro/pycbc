@@ -33,10 +33,10 @@ import numpy as np
 import lal
 from pycbc.types import TimeSeries
 from astropy.time import Time
-from astropy import constants, coordinates
+from astropy import constants
 from astropy.units.si import sday
-from numpy import cos, sin, pi
-from astropy import units
+from numpy import cos, sin
+
 # Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
 
@@ -48,7 +48,6 @@ def gmst_accurate(gps_time):
 
 def get_available_detectors():
     """Return list of detectors known in the currently sourced lalsuite.
-
     This function will query lalsuite about which detectors are known to
     lalsuite. Detectors are identified by a two character string e.g. 'K1',
     but also by a longer, and clearer name, e.g. KAGRA. This function returns
@@ -70,7 +69,6 @@ class Detector(object):
     """
     def __init__(self, detector_name, reference_time=1126259462.0):
         """ Create class representing a gravitational-wave detector
-
         Parameters
         ----------
         detector_name: str
@@ -80,84 +78,18 @@ class Detector(object):
         will be estimated from a reference time. If 'None', we will
         calculate the time for each gps time requested explicitly
         using a slower but higher precision method.
-
         """
+        self.name = str(detector_name)
+        self.frDetector = lalsimulation.DetectorPrefixToLALDetector(self.name)
+        self.response = self.frDetector.response
+        self.location = self.frDetector.location
+        self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
+        self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
+
         self.reference_time = reference_time
         self.sday = None
         self.gmst_reference = None
-        self.name = str(detector_name)
 
-        if self.name is 'LISA':
-            t = Time(val =s elf.reference_time, format = 'gps',
-                     scale = 'utc').to_datetime(timezone=None)
-            t = np.sum(np.array([t.year - 2034, t.month/12, t.day/(12*365),
-                                 t.hour/(12*365*24), 
-                                 t.minute/(12*365*24*60),
-                                 t.second/(12*365*24*60*60),
-                                 t.microsecond/(12*365*24*60*60*1e-6)]), axis=0)
-
-            n = np.array(range(1, 4))
-            kappa, _lambda_ = 0, 0
-            alpha = 2. * np.pi * t_ref/1 + kappa
-            beta_n = (n - 1) + (2. * np.pi/3) + _lambda_
-            a, L = 1., .1   # units are in AU
-            e = L/(2. * a * np.sqrt(3))
-
-            """ 3 x 3 array (0,0)-> x coord for 1st detector,
-                            (0,1)-> x coord for 1st detector,"""
-
-            self.location = np.array(
-                [a*cos(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + sin(alpha)**2)*cos(beta_n)),
-                 a*sin(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + cos(alpha)**2)*sin(beta_n)),
-                 -np.sqrt(3)*a*e*cos(alpha - beta_n)]).transpose()
-
-        else:
-
-            self.frDetector = lalsimulation.DetectorPrefixToLALDetector(
-                self.name)
-            self.response = self.frDetector.response
-            self.location = self.frDetector.location
-            self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
-            self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
-
-    def plot_LISA_orbit(self):
-
-    """ Plots the LISA orbit for 1 year along with Sun and Earth's position"""
-
-        from mpl_toolkits.mplot3d import Axes3D
-        import matplotlib.pyplot as plt
-        t = np.arange(0, 1, .01)
-        n = np.array(range(1, 4))
-        beta_n=(n - 1) + 2. * pi/3
-        a, L = 1., .1    
-        e = L/(2. * a * np.sqrt(3))
-        orbit_1=np.array(
-            [a*cos(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[0]) - (1 + sin(2.*pi*t)**2)*cos(beta_n[0])),
-             a*sin(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[0]) - (1 + cos(2.*pi*t)**2)*sin(beta_n[0])),
-             -np.sqrt(3)*a*e*cos(2.*pi*t - beta_n[0])])
-
-        orbit_2=np.array(
-            [a*cos(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[1]) - (1 + sin(2.*pi*t)**2)*cos(beta_n[1])),
-             a*sin(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[1]) - (1 + cos(2.*pi*t)**2)*sin(beta_n[1])),
-             -np.sqrt(3)*a*e*cos(2.*pi*t - beta_n[1])])
-
-        orbit_3=np.array(
-            [a*cos(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[2])-(1 + sin(2.*pi*t)**2)*cos(beta_n[2])),
-             a*sin(2.*pi*t) + a*e*(sin(2.*pi*t)*cos(2.*pi*t)*sin(beta_n[2])-(1 + cos(2.*pi*t)**2)*sin(beta_n[2])),
-             -np.sqrt(3)*a*e*cos(2.*pi*t - beta_n[2])])  
-
-        t = Time(val=self.reference_time, format='gps', scale='utc')
-        earth=coordinates.get_body('earth', t, location=None).transform_to('icrs')
-        sun.representation_type, earth.representation_type ='cartesian', 'cartesian'
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(np.float32(earth.x), np.float32(earth.y), np.float32(earth.z), marker=',')
-        ax.scatter(np.float32(sun.x), np.float32(sun.y), np.float32(sun.z), marker='h')
-        ax.scatter(orbit_1[0], orbit_1[1] ,orbit_1[2], marker='.')
-        ax.scatter(orbit_2[0], orbit_1[1] ,orbit_1[2], marker='+')
-        ax.scatter(orbit_3[0], orbit_1[1] ,orbit_1[2], marker='*')
-        
     def set_gmst_reference(self):
         if self.reference_time is not None:
             self.sday = float(sday.si.scale)
@@ -178,12 +110,10 @@ class Detector(object):
 
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
-
         Parameters
         ----------
         det: Detector
             The other detector to determine the light travel time to.
-
         Returns
         -------
         time: float
@@ -194,7 +124,6 @@ class Detector(object):
 
     def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
         """Return the detector response.
-
         Parameters
         ----------
         right_ascension: float or numpy.ndarray
@@ -203,7 +132,6 @@ class Detector(object):
             The declination of the source
         polarization: float or numpy.ndarray
             The polarization angle of the source
-
         Returns
         -------
         fplus: float or numpy.ndarray
@@ -256,11 +184,9 @@ class Detector(object):
                                  declination, t_gps):
         """Return the time delay from the given location to detector for
         a signal with the given sky location
-
         In other words return `t1 - t2` where `t1` is the
         arrival time in this detector and `t2` is the arrival time in the
         other location.
-
         Parameters
         ----------
         other_location : numpy.ndarray of coordinates
@@ -271,37 +197,20 @@ class Detector(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
-
         Returns
         -------
         float
             The arrival time difference between the detectors.
         """
-        if self.name is 'LISA':
-            pos = coordinates.SkyCoord(x=other_location[0], y=other_location[1],
-                                       z=other_location[0], unit=u.AU,
-                                       frame='gcrs').transform_to('icrs')
-            
-            """signal = coordinates.SkyCoord(ra = right_ascension, dec = declination,
-                                          unit=u.rad, frame='gcrs').transform_to('icrs')
-                Skipped assuming the user will enter in ICRS form only
-            
-            x = other_location[0] - self.location[:,0]
-            y = other_location[1] - self.location[:,1]
-            z = other_location[2] - self.location[:,2]"""
-            
-            dx = np.array([other_location[0] - self.location[:,0],
-                           other_location[1] - self.location[:,1],
-                           other_location[2] - self.location[:,2]])
-        else:
-            dx = other_location - self.location
-            
         ra_angle = self.gmst_estimate(t_gps) - right_ascension
         cosd = cos(declination)
+
         e0 = cosd * cos(ra_angle)
         e1 = cosd * -sin(ra_angle)
         e2 = sin(declination)
+
         ehat = np.array([e0, e1, e2])
+        dx = other_location - self.location
         return dx.dot(ehat) / constants.c.value
 
     def time_delay_from_detector(self, other_detector, right_ascension,
@@ -311,7 +220,6 @@ class Detector(object):
         arrival time in this detector and `t2` is the arrival time in the
         other detector. Note that this would return the same value as
         `time_delay_from_earth_center` if `other_detector` was geocentric.
-
         Parameters
         ----------
         other_detector : detector.Detector
@@ -322,22 +230,11 @@ class Detector(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
-
         Returns
         -------
         float
             The arrival time difference between the detectors.
         """
-        if self.name is 'LISA':
-            other_location.location=coordinates.SkyCoord(
-                other_detector.location[0], other_detector.location[1], 
-                other_detector.location[2], frame = 'gcrs').transform_to('icrs')
-            
-            return self.time_delay_from_location(other_detector.location,
-                                                 right_ascension,
-                                                 declination,
-                                                 t_gps)
-            
         return self.time_delay_from_location(other_detector.location,
                                              right_ascension,
                                              declination,
@@ -345,11 +242,9 @@ class Detector(object):
 
     def project_wave(self, hp, hc, longitude, latitude, polarization):
         """Return the strain of a waveform as measured by the detector.
-
         Apply the time shift for the given detector relative to the assumed
         geocentric frame and apply the antenna patterns to the plus and cross
         polarizations.
-
         """
         h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
                 hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
@@ -361,12 +256,10 @@ class Detector(object):
     def optimal_orientation(self, t_gps):
         """Return the optimal orientation in right ascension and declination
            for a given GPS time.
-
         Parameters
         ----------
         t_gps: float
             Time in gps seconds
-
         Returns
         -------
         ra: float
@@ -385,13 +278,11 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
     to the normal to the detector plane (i.e. overhead and underneath) while
     the point with zero right ascension and declination is the direction
     of one of the interferometer arms.
-
     Parameters
     ----------
     right_ascension: float
     declination: float
     polarization: float
-
     Returns
     -------
     f_plus: float
@@ -413,3 +304,94 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 def effective_distance(distance, inclination, f_plus, f_cross):
     return distance / np.sqrt( ( 1 + np.cos( inclination )**2 )**2 / 4 * f_plus**2 + np.cos( inclination )**2 * f_cross**2 )
 
+""" LISA class  """
+
+
+class LISA(object):
+    def __init__(self,kappa,_lambda_,reference_time=1126259462.0):
+        self.reference_time=reference_time
+        self.kappa=kappa
+        self._lambda_=_lambda_
+
+    def get_pos(self, t_gps):
+        if t_gps is None:
+            t_gps = Time(val = self.reference_time, format = 'gps',
+                  scale = 'utc').to_datetime(timezone = None)
+        elif isinstance(t_gps, np.ScalarType):
+            t_gps = Time(val = t_gps, format = 'gps',
+                  scale = 'utc').to_datetime(timezone = None)
+
+        t_gps = np.sum(np.array([t_gps.year - 2034, t_gps.month/12, t_gps.day/(12*365),
+                             t_gps.hour/(12*365*24), 
+                             t_gps.minute/(12*365*24*60),
+                             t_gps.second/(12*365*24*60*60),
+                             t_gps.microsecond/(12*365*24*60*60*1e-6)]), axis=0)
+        
+        n = np.array(range(1, 4))
+        kappa, _lambda_ = 0, 0
+        alpha = 2. * np.pi * t_gps/1 + kappa
+        beta_n = (n - 1) + (2. * np.pi/3) + _lambda_
+        a, L = 1., .1   # units are in AU
+        e = L/(2. * a * np.sqrt(3))
+
+        x = a*cos(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + sin(alpha)**2)*cos(beta_n))
+        y = a*sin(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + cos(alpha)**2)*sin(beta_n))
+        z = -np.sqrt(3)*a*e*cos(alpha - beta_n)
+        self.location = np.array([x,y,z])
+
+        return self.location
+
+    def plot_orbit(self):
+        from mpl_toolkits.mplot3d import Axes3D
+        import matplotlib.pyplot as plt
+        dec_center = []
+        for i in range(2000):
+          dec_center.append(self.get_pos(self.reference_time + i).mean(axis = 1))
+        """ values don't change much with GPS time"""
+        t = Time(val = self.reference_time, format = 'gps', scale ='utc')
+        sun = coordinates.get_sun(t).transform_to('icrs')
+        earth = coordinates.get_body('earth', t, location = None).transform_to('icrs')
+        sun.representation_type, earth.representation_type ='cartesian', 'cartesian'
+
+        fig = plt.figure()
+        ax = plt.axes(projection = "3d")
+        ax.scatter(np.float32(earth.x), np.float32(earth.y), np.float32(earth.z), marker = 'o')
+        ax.scatter(np.float32(sun.x), np.float32(sun.y), np.float32(sun.z), marker = '+')
+        ax.scatter(dec_center[0], dec_center[1] ,dec_center[2], marker = '*')
+        ax.set_xlabel('X axis (AU)')
+        ax.set_ylabel('Y axis (AU)')
+        ax.set_zlabel('Z axis (AU)')
+
+    def time_delay_from_location(self, other_location, right_ascension,
+                                 declination, t_gps):
+        dec_loc = self.get_pos(t_gps)
+        """signal = coordinates.SkyCoord(ra = right_ascension, dec = declination,
+                                          unit = u.rad, frame = 'gcrs').transform_to('icrs')"""
+
+        dx = np.array([other_location[0] - self.location[0],
+                       other_location[1] - self.location[1],
+                       other_location[2] - self.location[2]])
+
+        """ra_angle = self.gmst_estimate(t_gps) - right_ascension"""
+        cosd = cos(declination)
+        e0 = cosd * cos(right_ascension)
+        e1 = cosd * -sin(right_ascension)
+        e2 = sin(declination)
+        ehat = np.array([e0, e1, e2])
+        return dx.dot(ehat) / constants.c.value
+
+    def time_delay_from_detector(self, other_detector, right_ascension,
+                                 declination, t_gps):
+        return self.time_delay_from_location(other_detector.location,
+                                             right_ascension,
+                                             declination,
+                                             t_gps)
+    def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
+        if t_gps is None:
+          t_gps = Time(val = self.reference_time, format = 'gps', scale ='utc')
+        else:
+          t_gps = Time(val = t_gps, format = 'gps', scale ='utc')
+        earth = coordinates.get_body('earth', t, location = None).transform_to('icrs')
+        return self.time_delay_from_location(
+            np.array([np.float32(earth.x), np.float32(earth.y), np.float32(earth.z)]),
+            right_ascension, declination, t_gps)        
