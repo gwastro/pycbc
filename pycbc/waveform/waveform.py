@@ -179,7 +179,7 @@ def _lalsim_td_waveform(**p):
     hc = TimeSeries(hc1.data.data[:], delta_t=hc1.deltaT, epoch=hc1.epoch)
 
     return hp, hc
-    
+
 _lalsim_td_waveform.required = parameters.cbc_td_required
 
 def _spintaylor_aligned_prec_swapper(**p):
@@ -364,13 +364,13 @@ def props(obj, **kwargs):
     input_params = default_args.copy()
     input_params.update(pr)
     return input_params
-    
+
 def check_args(args, required_args):
     """ check that required args are given """
     missing = []
     for arg in required_args:
         if (arg not in args) or (args[arg] is None):
-            missing.append(arg)    
+            missing.append(arg)
 
     if len(missing) != 0:
         raise ValueError("Please provide {}".format(', '.join(missing)))
@@ -465,7 +465,7 @@ def get_td_waveform(template=None, **kwargs):
     if hasattr(wav_gen, 'required'):
         required = wav_gen.required
     else:
-        required = parameters.td_required    
+        required = parameters.td_required
     check_args(input_params, required)
     return wav_gen(**input_params)
 
@@ -513,7 +513,7 @@ def get_fd_waveform(template=None, **kwargs):
     if hasattr(wav_gen, 'required'):
         required = wav_gen.required
     else:
-        required = parameters.fd_required    
+        required = parameters.fd_required
     check_args(input_params, required)
     return wav_gen(**input_params)
 
