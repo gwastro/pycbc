@@ -304,38 +304,39 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 def effective_distance(distance, inclination, f_plus, f_cross):
     return distance / np.sqrt( ( 1 + np.cos( inclination )**2 )**2 / 4 * f_plus**2 + np.cos( inclination )**2 * f_cross**2 )
 
-""" LISA class  """
-
+    """ LISA class  """
 
 class LISA(object):
-    def __init__(self,kappa,_lambda_,reference_time=1126259462.0):
-        self.reference_time=reference_time
-        self.kappa=kappa
-        self._lambda_=_lambda_
+    def __init__(self, kappa, _lambda_, reference_time = 1126259462.0):
+        self.reference_time = reference_time
+        self.kappa = kappa
+        self._lambda_ = _lambda_
 
     def get_pos(self, t_gps):
         if t_gps is None:
             t_gps = Time(val = self.reference_time, format = 'gps',
-                  scale = 'utc').to_datetime(timezone = None)
+                         scale = 'utc').to_datetime(timezone = None)
         elif isinstance(t_gps, np.ScalarType):
             t_gps = Time(val = t_gps, format = 'gps',
-                  scale = 'utc').to_datetime(timezone = None)
+                         scale = 'utc').to_datetime(timezone = None)
 
-        t_gps = np.sum(np.array([t_gps.year - 2034, t_gps.month/12, t_gps.day/(12*365),
-                             t_gps.hour/(12*365*24), 
-                             t_gps.minute/(12*365*24*60),
-                             t_gps.second/(12*365*24*60*60),
-                             t_gps.microsecond/(12*365*24*60*60*1e-6)]), axis=0)
-        
+        t_gps = np.sum(np.array([t_gps.year - 2034, t_gps.month/12,
+                                 t_gps.day/(4380),
+                                 t_gps.hour/(105120), 
+                                 t_gps.minute/(6307200),
+                                 t_gps.second/(37843200),
+                                 t_gps.microsecond/(37843200*1e-6)]), axis=0)
+
         n = np.array(range(1, 4))
         kappa, _lambda_ = 0, 0
         alpha = 2. * np.pi * t_gps/1 + kappa
         beta_n = (n - 1) + (2. * np.pi/3) + _lambda_
         a, L = 1., .1   # units are in AU
         e = L/(2. * a * np.sqrt(3))
+        _prod_ = a*e*(sin(alpha)*cos(alpha)*sin(beta_n)
 
-        x = a*cos(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + sin(alpha)**2)*cos(beta_n))
-        y = a*sin(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + cos(alpha)**2)*sin(beta_n))
+        x = a*cos(alpha) + _prod_ - (1 + sin(alpha)**2)*cos(beta_n))
+        y = a*sin(alpha) + _prod_ - (1 + cos(alpha)**2)*sin(beta_n))
         z = -np.sqrt(3)*a*e*cos(alpha - beta_n)
         self.location = np.array([x,y,z])
 
@@ -347,7 +348,7 @@ class LISA(object):
         dec_center = []
         for i in range(2000):
           dec_center.append(self.get_pos(self.reference_time + i).mean(axis = 1))
-        """ values don't change much with GPS time"""
+
         t = Time(val = self.reference_time, format = 'gps', scale ='utc')
         sun = coordinates.get_sun(t).transform_to('icrs')
         earth = coordinates.get_body('earth', t, location = None).transform_to('icrs')
@@ -386,6 +387,7 @@ class LISA(object):
                                              right_ascension,
                                              declination,
                                              t_gps)
+
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         if t_gps is None:
           t_gps = Time(val = self.reference_time, format = 'gps', scale ='utc')
