@@ -134,8 +134,10 @@ for ifo in args.ifos:
     invalphan = np.array(counts_bin[ifo]) / np.array(alphas_bin[ifo])
     invalphan_all = np.mean(invalphan, axis=0)
     alpha_all = np.mean(counts_bin[ifo], axis=0) / invalphan_all
-    for a, c, u, l, t in zip(alphas_bin[ifo], counts_bin[ifo], bu, bl,
-                             live_times[ifo]):
+    l_times = np.array(live_times[ifo])
+    meant = l_times.mean()
+    fout[ifo + '/daily_fits/live_times'] = l_times
+    for a, c, u, l in zip(alphas_bin[ifo], counts_bin[ifo], bu, bl):
         a = np.array(a)
         c = np.array(c)
         valid_alpha = np.nonzero(a > 0)
@@ -159,17 +161,17 @@ for ifo in args.ifos:
             alpha_lines += ax_alpha.plot([ad[0], ad[-1]], [q05_alpha, q05_alpha],
                                          c=colours[counter], linestyle=':',
                                          label="95th %%ile = %.2f" % q05_alpha)
-            count_lines += ax_count.plot(ad[valid_alpha], c / t,
+            count_lines += ax_count.plot(ad[valid_alpha], c / l_times,
                                          c=colours[counter],
                                          label="duration %.2f-%.2f" % (l, u))
             count_lines += ax_count.plot([ad[0], ad[-1]],
-                                         [c.mean() / t, c.mean() / t],
+                                         [c.mean() / meant, c.mean() / meant],
                                          c=colours[counter], linestyle='--',
-                                         label="mean = %.3f" % (c.mean() / t))
+                                         label="mean = %.3f" % (c.mean() / meant))
             count_lines += ax_count.plot([ad[0], ad[-1]],
-                                         [q95_count / t, q95_count / t],
+                                         [q95_count / meant, q95_count / meant],
                                          c=colours[counter], linestyle=':',
-                                         label="95th %%ile = %.3f" % (q95_count / t))
+                                         label="95th %%ile = %.3f" % (q95_count / meant))
         fout[ifo + '/daily_fits/bin_%d/fit_coeff' % counter] = a
         fout[ifo + '/daily_fits/bin_%d/counts' % counter] = c
         fout[ifo + '/daily_fits/bin_%d/date' % counter] = ad[valid_alpha]
