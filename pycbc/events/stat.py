@@ -147,7 +147,8 @@ class NewSNRStatistic(Stat):
         """
         return sum(sngl[1] ** 2. for sngl in s) ** 0.5
 
-    def coinc_multiifo_lim_for_thresh(self, s, thresh):
+    def coinc_multiifo_lim_for_thresh(self, s, thresh,
+                                      limifo, **kwargs): # pylint:disable=unused-argument
         """Calculate the required single detector statistic to exceed thresh.
 
         Parameters
