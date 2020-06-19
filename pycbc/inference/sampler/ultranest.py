@@ -65,7 +65,8 @@ class UltranestSampler(BaseSampler):
         self._sampler = ultranest.ReactiveNestedSampler(
             list(self.model.variable_params),
             log_likelihood_call,
-            prior_call)
+            prior_call,
+            log_dir='.', resume=True)
 
         self.nlive = 0
         self.ndim = len(self.model.variable_params)
