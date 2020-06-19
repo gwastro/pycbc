@@ -17,8 +17,14 @@ def add_custom_waveform(approximant, function, domain):
     from pycbc.waveform.waveform import cpu_fd, cpu_td
 
     if domain == 'time':
+        if approximant in cpu_td:
+            raise RuntimeError("Can't load plugin waveform {}, the name is"
+                               " already in use.".format(approximant))
         cpu_td[approximant] = function
     elif domain == 'frequency':
+        if approximant in cpu_fd:
+            raise RuntimeError("Can't load plugin waveform {}, the name is"
+                               " already in use.".format(approximant))
         cpu_fd[approximant] = function
     else:
         raise ValueError("Invalid domain ({}), should be "
@@ -36,6 +42,9 @@ def add_length_estimator(approximant, function):
         A function which takes kwargs and returns the waveform length
     """
     from pycbc.waveform.waveform import _filter_time_lengths
+    if approximant in _filter_time_lengths:
+        raise RuntimeError("Can't load length estimator {}, the name is"
+                           " already in use.".format(approximant))
     _filter_time_lengths[approximant] = function
 
 
