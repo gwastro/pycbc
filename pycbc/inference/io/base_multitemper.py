@@ -350,9 +350,9 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     arrays = {}
     for name in fields:
         dset = group.format(name=name)
-        niterations = arr.shape[-1] if iteration is None else 1
         tidx, selecttemps, ntemps = _get_temps_index(temps, fp, dset)
         arr = fp[dset][tidx, widx, get_index]
+        niterations = arr.shape[-1] if iteration is None else 1
         if selecttemps:
             # pull out the temperatures we need
             arr = arr[temps, ...]
