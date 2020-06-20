@@ -26,13 +26,52 @@
 import numpy
 
 from .base_sampler import BaseSamplerFile
-from .base_mcmc import (MCMCMetadataIO, SingleTempMCMCIO)
+from .base_mcmc import (EnsembleMCMCMetadataIO, CommonMCMCMetadataIO,
+                        write_samples, ensemble_read_raw_samples)
 
 
-class EmceeFile(SingleTempMCMCIO, MCMCMetadataIO, BaseSamplerFile):
+class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
     """Class to handle file IO for the ``emcee`` sampler."""
 
     name = 'emcee_file'
+
+    def write_samples(self, samples, **kwargs):
+        r"""Writes samples to the given file.
+
+        Calls :py:func:`base_mcmc.write_samples`. See that function for
+        details.
+
+        Parameters
+        ----------
+        samples : dict
+            The samples to write. Each array in the dictionary should have
+            shape nwalkers x niterations.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_mcmc.write_samples`.
+        """
+        write_samples(self, samples, **kwargs)
+
+    def read_raw_samples(self, fields, **kwargs):
+        r"""Base function for reading samples.
+
+        Calls :py:func:`base_mcmc.ensemble_read_raw_samples`. See that function
+        for details.
+
+        Parameters
+        -----------
+        fields : list
+            The list of field names to retrieve.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_mcmc.ensemble_read_raw_samples`.
+
+        Returns
+        -------
+        dict
+            A dictionary of field name -> numpy array pairs.
+        """
+        return ensemble_read_raw_samples(self, fields, **kwargs)
 
     def read_acceptance_fraction(self, walkers=None):
         """Reads the acceptance fraction.
