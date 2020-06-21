@@ -670,9 +670,12 @@ class SphericalToCartesian(BaseTransform):
             A dict with key as parameter name and value as numpy.array or float
             of transformed values.
         """
-        a, az, po = self._inputs
-        data = coordinates.spherical_to_cartesian(maps[a], maps[az], maps[po])
-        out = {param : val for param, val in zip(self._outputs, data)}
+        a = self.radial
+        az = self.azimuthal
+        po = self.polar
+        x, y, z = coordinates.spherical_to_cartesian(maps[a], maps[az],
+                                                     maps[po])
+        out = {self.x: x, self.y: y, self.z: z}
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -688,9 +691,12 @@ class SphericalToCartesian(BaseTransform):
             A dict with key as parameter name and value as numpy.array or float
             of transformed values.
         """
-        x, y, z = self._outputs
-        data = coordinates.cartesian_to_spherical(maps[x], maps[y], maps[z])
-        out = {param : val for param, val in zip(self._outputs, data)}
+        x = self.x
+        y = self.y
+        z = self.z
+        a, az, po = coordinates.cartesian_to_spherical(maps[x], maps[y],
+                                                       maps[z])
+        out = {self.radial: a, self.azimuthal: az, self.polar: po}
         return self.format_output(maps, out)
 
 
@@ -1760,6 +1766,8 @@ class CartesianToSpherical(SphericalToCartesian):
         inputs = self._outputs
         self._inputs = inputs
         self._outputs = outputs
+        self.inputs = set(self._inputs)
+        self.outputs = set(self._outputs)
 
 
 class CartesianSpin1ToSphericalSpin1(CartesianToSpherical):
