@@ -753,9 +753,18 @@ class BaseModel(object):
         # get any waveform transforms
         if any(cp.get_subsections('waveform_transforms')):
             logging.info("Loading waveform transforms")
-            args['waveform_transforms'] = \
-                transforms.read_transforms_from_config(
-                    cp, 'waveform_transforms')
+            waveform_transforms = transforms.read_transforms_from_config(
+                cp, 'waveform_transforms')
+            args['waveform_transforms'] = waveform_transforms
+        else:
+            waveform_transforms = []
+        # safety check for spins
+        # we won't do this if the following exists in the config file
+        ignore = "no_err_on_missing_cartesian_spins"
+        check_for_cartesian_spins(1, variable_params, static_params,
+                                  waveform_transforms, cp, ignore)
+        check_for_cartesian_spins(2, variable_params, static_params,
+                                  waveform_transforms, cp, ignore)
         return args
 
     @classmethod
@@ -789,3 +798,72 @@ class BaseModel(object):
         fp.attrs['variable_params'] = list(self.variable_params)
         fp.attrs['sampling_params'] = list(self.sampling_params)
         fp.write_kwargs_to_attrs(fp.attrs, static_params=self.static_params)
+
+
+def check_for_cartesian_spins(which, variable_params, static_params,
+                              waveform_transforms, cp, ignore):
+    """Checks that if any spin parameters exist, cartesian spins also exist.
+
+    This looks for parameters starting with ``spinN`` in the variable and
+    static params, where ``N`` is either  1 or 2 (specified by the ``which``
+    argument). If any parameters are found with those names, the params and
+    the output of the waveform transforms are checked to see that there is
+    at least one of ``spinN(x|y|z)``. If not, a ``ValueError`` is raised.
+
+    This check will not be done if the config file has an section given by
+    the ignore argument.
+
+    Parameters
+    ----------
+    which : {1, 2}
+        Which component to check for. Must be either 1 or 2.
+    variable_params : list
+        List of the variable parameters.
+    static_params : dict
+        The dictionary of static params.
+    waveform_transforms : list
+        List of the transforms that will be applied to the variable and
+        static params before being passed to the waveform generator.
+    cp : ConfigParser
+        The config file.
+    ignore : str
+        The section to check for in the config file. If the section is
+        present in the config file, the check will not be done.
+    """
+    # don't do this check if the config file has the ignore section
+    if cp.has_section(ignore):
+        return
+    errmsg = (
+        "Spin parameters {sp} found in variable/static "
+        "params, but no cartesian spin parameters ({cp}) "
+        "found in either the variable/static params or "
+        "the waveform transform outputs. Most waveform "
+        "generators only recognize the cartesian spin "
+        "parameters; without them, all spins are set to "
+        "zero. If you are using spherical spin coordinates, add "
+        "the following waveform_transform to your config file:\n\n"
+        "[waveform_transforms-spin{n}x+spin{n}y+spin{n}z]\n"
+        "name = spherical_to_cartesian\n"
+        "x = spin{n}x\n"
+        "y = spin{n}y\n"
+        "z = spin{n}z\n"
+        "radial = spin{n}_a\n"
+        "azimuthal = spin{n}_azimuthal\n"
+        "polar = spin{n}_polar\n\n"
+        "If you intended to not include the cartesian spin parameters, "
+        "and do not think this is an error, add\n"
+        "[{ignore}]\n"
+        "to your config file as an empty section and rerun. This error will "
+        "no be raised in that case.")
+    allparams = set(variable_params) | set(static_params.keys())
+    spinparams = set(p.startswith('spin{}'.format(which)) for p in allparams) 
+    if any(spinparams):
+        cartspins = set('spin{}{}'.format(which, coord)
+                        for coord in ['x', 'y', 'z'])
+        # add any parameters to all params that will be output by waveform
+        # transforms
+        allparams = allparams.union(*[t.outputs for t in waveform_transforms])
+        if not any(allparams & cartspins):
+            raise ValueError(errmsg.format(sp=', '.join(spinparams),
+                                           cp=', '.join(cartspins),
+                                           n=which, ignore=ignore))
