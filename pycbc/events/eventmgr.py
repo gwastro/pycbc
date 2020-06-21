@@ -250,7 +250,7 @@ class EventManager(object):
 
         print (len(self.events), self.events)
         
-        print (abs(self.events['snr']))
+        print (abs(self.events['snr']), abs(self.events['snr'][2]))
         print (self.events['chisq'] / self.events['chisq_dof'])
         
         nsnrs = ranking.newsnr(abs(self.events['snr']),
