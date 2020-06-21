@@ -439,7 +439,7 @@ class EventManager(object):
         f = fw(outname, self.opt.channel_name[0:2])
 
         if len(self.events):
-            f['snr'] = abs(self.events['snr'])
+            f['snr'] = abs(self.events['snr'].copy())
             try:
                 # Precessing
                 f['u_vals'] = self.events['u_vals']
@@ -447,7 +447,7 @@ class EventManager(object):
                 f['hplus_cross_corr'] = self.events['hplus_cross_corr']
             except Exception:
                 # Not precessing
-                f['coa_phase'] = numpy.angle(self.events['snr'])
+                f['coa_phase'] = numpy.angle(self.events['snr'].copy())
             f['chisq'] = self.events['chisq']
             f['bank_chisq'] = self.events['bank_chisq']
             f['bank_chisq_dof'] = self.events['bank_chisq_dof']
