@@ -248,10 +248,14 @@ class EventManager(object):
             raise RuntimeError('Chi-square test must be enabled in order to '
                                'use newsnr threshold')
 
+        print (len(self.events), self.events)
         nsnrs = ranking.newsnr(abs(self.events['snr']),
                                self.events['chisq'] / self.events['chisq_dof'])
+        print (len(nsnrs), nsnrs)
         remove_idxs = numpy.where(nsnrs < threshold)[0]
+        print (len(remove_idxs), remove_idxs)
         self.events = numpy.delete(self.events, remove_idxs)
+        print (len(self.events), self.events)
 
     def keep_near_injection(self, window, injections):
         from pycbc.events.veto import indices_within_times

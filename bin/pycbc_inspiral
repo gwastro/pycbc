@@ -449,7 +449,6 @@ with ctx:
             out_vals['time_index'] = idx
             out_vals['snr'] = snrv * norm
 
-            print(out_vals)
             if opt.psdvar_short_segment is not None:
                 out_vals['psd_var_val'] = \
                             pycbc.psd.find_trigger_value(psd_var,
