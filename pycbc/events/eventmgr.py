@@ -250,17 +250,24 @@ class EventManager(object):
 
         print (len(self.events), self.events)
         
-        print (abs(self.events['snr']), abs(self.events['snr'][2]))
-        print (self.events['chisq'] / self.events['chisq_dof'])
+        sv = self.events['snr']
         
+        print (sv)
+        print (type(sv))
+        print (sv.dtype))
+        
+        print (sv[0:5])
+        print (abs(sv[0:5]))
+        
+        import numpy.version
+        print (numpy.version.version)
+        
+        print (abs(self.events['snr']), abs(self.events['snr'][2]))
         nsnrs = ranking.newsnr(abs(self.events['snr']),
                                self.events['chisq'] / self.events['chisq_dof'])
                                
-        print (len(nsnrs), nsnrs)
         remove_idxs = numpy.where(nsnrs < threshold)[0]
-        print (len(remove_idxs), remove_idxs)
         self.events = numpy.delete(self.events, remove_idxs)
-        print (len(self.events), self.events)
 
     def keep_near_injection(self, window, injections):
         from pycbc.events.veto import indices_within_times
