@@ -252,6 +252,10 @@ class EventManager(object):
 
         print (sv[0:5])
         print (abs(sv[0:5]))
+      
+        b = sv[0:5].copy()
+        print(b)
+        print(abs(b))
 
         import numpy
         a = numpy.array([-2.8498888-4.8523064j,
@@ -259,7 +263,7 @@ class EventManager(object):
                            -3.907175 -3.9876463j,
                            3.5721998-4.4356446j,
                            -0.9019761+6.379277j], dtype=numpy.complex64)
-        print (abs(a)) 
+        print (abs(a))
 
         nsnrs = ranking.newsnr(abs(self.events['snr']),
                                self.events['chisq'] / self.events['chisq_dof'])
