@@ -634,7 +634,7 @@ class SphericalToCartesian(BaseTransform):
     """
     name = "spherical_to_cartesian"
 
-    def __init__(self, x, y, z, magnitude, azimuthal, polar)::
+    def __init__(self, x, y, z, magnitude, azimuthal, polar):
         self.x = x
         self.y = y
         self.z = z
@@ -710,7 +710,7 @@ class SphericalSpin1ToCartesianSpin1(SphericalToCartesian):
                         "removed in a future update. Please use {} instead, "
                         "passing spin1x, spin1y, spin1z, spin1_a, "
                         "spin1_azimuthal, spin1_polar as arguments."
-                        .format(self.name, SphericalToCartesian.name)
+                        .format(self.name, SphericalToCartesian.name))
         super(SphericalSpin1ToCartesianSpin1, self).__init__(
             "spin1x", "spin1y", "spin1z", "spin1_a", "spin1_azimuthal",
             "spin1_polar")
@@ -732,7 +732,7 @@ class SphericalSpin2ToCartesianSpin2(SphericalToCartesian):
                         "removed in a future update. Please use {} instead, "
                         "passing spin2x, spin2y, spin2z, spin2_a, "
                         "spin2_azimuthal, spin2_polar as arguments."
-                        .format(self.name, SphericalToCartesian.name)
+                        .format(self.name, SphericalToCartesian.name))
         super(SphericalSpin2ToCartesianSpin2, self).__init__(
             "spin2x", "spin2y", "spin2z", "spin2_a", "spin2_azimuthal",
             "spin2_polar")
@@ -1775,7 +1775,7 @@ class CartesianSpin1ToSphericalSpin1(CartesianToSpherical):
                         "removed in a future update. Please use {} instead, "
                         "passing spin1x, spin1y, spin1z, spin1_a, "
                         "spin1_azimuthal, spin1_polar as arguments."
-                        .format(self.name, CartesianToSpherical.name)
+                        .format(self.name, CartesianToSpherical.name))
         super(CartesianSpin1ToSphericalSpin1, self).__init__(
             "spin1x", "spin1y", "spin1z", "spin1_a", "spin1_azimuthal",
             "spin1_polar")
@@ -1794,7 +1794,7 @@ class CartesianSpin2ToSphericalSpin2(CartesianToSpherical):
                         "removed in a future update. Please use {} instead, "
                         "passing spin2x, spin2y, spin2z, spin2_a, "
                         "spin2_azimuthal, spin2_polar as arguments."
-                        .format(self.name, CartesianToSpherical.name)
+                        .format(self.name, CartesianToSpherical.name))
         super(CartesianSpin2ToSphericalSpin2, self).__init__(
             "spin2x", "spin2y", "spin2z", "spin2_a", "spin2_azimuthal",
             "spin2_polar")
@@ -2019,13 +2019,27 @@ transforms = {
 # to coordinates understood by the waveform generator
 common_cbc_forward_transforms = [
     MchirpQToMass1Mass2(), DistanceToRedshift(),
-    SphericalSpin1ToCartesianSpin1(), SphericalSpin2ToCartesianSpin2(),
+    SphericalToCartesian(parameters.spin1x, parameters.spin1y,
+                         parameters.spin1z, parameters.spin1_a,
+                         parameters.spin1_azimuthal, parameters.spin1_polar),
+    SphericalToCartesian(parameters.spin2x, parameters.spin2y,
+                         parameters.spin2z, parameters.spin2_a,
+                         parameters.spin2_azimuthal, parameters.spin2_polar),
     AlignedMassSpinToCartesianSpin(), PrecessionMassSpinToCartesianSpin(),
     ChiPToCartesianSpin(), ChirpDistanceToDistance()
 ]
 common_cbc_inverse_transforms = [_t.inverse()
-                                   for _t in common_cbc_forward_transforms
-                                   if _t.inverse is not None]
+                                 for _t in common_cbc_forward_transforms
+                                 if not (_t.inverse is None or
+                                         _t.name == 'spherical_to_cartesian')]
+common_cbc_inverse_transforms.append([
+    CartesianToSpherical(parameters.spin1x, parameters.spin1y,
+                         parameters.spin1z, parameters.spin1_a,
+                         parameters.spin1_azimuthal, parameters.spin1_polar),
+    CartesianToSpherical(parameters.spin2x, parameters.spin2y,
+                         parameters.spin2z, parameters.spin2_a,
+                         parameters.spin2_azimuthal, parameters.spin2_polar)])
+    
 common_cbc_transforms = common_cbc_forward_transforms + \
                         common_cbc_inverse_transforms
 
