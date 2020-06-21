@@ -247,22 +247,20 @@ class EventManager(object):
         if not self.opt.chisq_bins:
             raise RuntimeError('Chi-square test must be enabled in order to '
                                'use newsnr threshold')
-
-        print (len(self.events), self.events)
         
         sv = self.events['snr']
-        
-        print (sv)
-        print (type(sv))
-        print (sv.dtype)
-        
+
         print (sv[0:5])
         print (abs(sv[0:5]))
-        
-        import numpy.version
-        print (numpy.version.version)
-        
-        print (abs(self.events['snr']), abs(self.events['snr'][2]))
+
+        import numpy
+        a = numpy.array([-2.8498888-4.8523064j,
+                          11.672292 -0.39886224j,
+                           -3.907175 -3.9876463j,
+                           3.5721998-4.4356446j,
+                           -0.9019761+6.379277j], dtype=numpy.complex64)
+        print (abs(a)) 
+
         nsnrs = ranking.newsnr(abs(self.events['snr']),
                                self.events['chisq'] / self.events['chisq_dof'])
                                
