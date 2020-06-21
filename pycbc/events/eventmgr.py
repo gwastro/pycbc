@@ -254,7 +254,7 @@ class EventManager(object):
         
         print (sv)
         print (type(sv))
-        print (sv.dtype))
+        print (sv.dtype)
         
         print (sv[0:5])
         print (abs(sv[0:5]))
