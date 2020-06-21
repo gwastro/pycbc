@@ -625,8 +625,8 @@ class SphericalToCartesian(BaseTransform):
         The name of the y parameter.
     z : str
         The name of the z parameter.
-    magnitude : str
-        The name of the magnitude parameter.
+    radial : str
+        The name of the radial parameter.
     azimuthal : str
         The name of the azimuthal angle parameter.
     polar : str
@@ -634,14 +634,14 @@ class SphericalToCartesian(BaseTransform):
     """
     name = "spherical_to_cartesian"
 
-    def __init__(self, x, y, z, magnitude, azimuthal, polar):
+    def __init__(self, x, y, z, radial, azimuthal, polar):
         self.x = x
         self.y = y
         self.z = z
-        self.magnitude = magnitude
+        self.radial = radial
         self.polar = polar
         self.azimuthal = azimuthal
-        self._inputs = [self.magnitude, self.azimuthal, self.polar]
+        self._inputs = [self.radial, self.azimuthal, self.polar]
         self._outputs = [self.x, self.y, self.z]
         super(SphericalToCartesian, self).__init__()
 
@@ -695,7 +695,7 @@ class SphericalToCartesian(BaseTransform):
 
 
 class SphericalSpin1ToCartesianSpin1(SphericalToCartesian):
-    """Converts spherical spin parameters (magnitude and two angles) to
+    """Converts spherical spin parameters (radial and two angles) to
     catesian spin parameters. This class only transforms spsins for the first
     component mass.
 
@@ -717,7 +717,7 @@ class SphericalSpin1ToCartesianSpin1(SphericalToCartesian):
 
 
 class SphericalSpin2ToCartesianSpin2(SphericalToCartesian):
-    """Converts spherical spin parameters (magnitude and two angles) to
+    """Converts spherical spin parameters (radial and two angles) to
     catesian spin parameters. This class only transforms spsins for the first
     component mass.
 
@@ -1739,8 +1739,8 @@ class CartesianToSpherical(SphericalToCartesian):
         The name of the y parameter.
     z : str
         The name of the z parameter.
-    magnitude : str
-        The name of the magnitude parameter.
+    radial : str
+        The name of the radial parameter.
     azimuthal : str
         The name of the azimuthal angle parameter.
     polar : str
@@ -1995,6 +1995,8 @@ transforms = {
     Mass1Mass2ToMchirpEta.name : Mass1Mass2ToMchirpEta,
     ChirpDistanceToDistance.name : ChirpDistanceToDistance,
     DistanceToChirpDistance.name : DistanceToChirpDistance,
+    SphericalToCartesian.name : SphericalToCartesian,
+    CartesianToSpherical.name : CartesianToSpherical,
     SphericalSpin1ToCartesianSpin1.name : SphericalSpin1ToCartesianSpin1,
     CartesianSpin1ToSphericalSpin1.name : CartesianSpin1ToSphericalSpin1,
     SphericalSpin2ToCartesianSpin2.name : SphericalSpin2ToCartesianSpin2,
@@ -2032,7 +2034,7 @@ common_cbc_inverse_transforms = [_t.inverse()
                                  for _t in common_cbc_forward_transforms
                                  if not (_t.inverse is None or
                                          _t.name == 'spherical_to_cartesian')]
-common_cbc_inverse_transforms.append([
+common_cbc_inverse_transforms.extend([
     CartesianToSpherical(parameters.spin1x, parameters.spin1y,
                          parameters.spin1z, parameters.spin1_a,
                          parameters.spin1_azimuthal, parameters.spin1_polar),
