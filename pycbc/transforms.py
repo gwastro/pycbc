@@ -614,18 +614,39 @@ class ChirpDistanceToDistance(BaseTransform):
         return (2.**(-1./5) * self.ref_mass / mchirp)**(5./6)
 
 
-class SphericalSpin1ToCartesianSpin1(BaseTransform):
-    """ Converts spherical spin parameters (magnitude and two angles) to
-    catesian spin parameters. This class only transforms spsins for the first
-    component mass.
+class SphericalToCartesian(BaseTransform):
+    """Converts spherical coordinates to cartesian.
+
+    Parameters
+    ----------
+    x : str
+        The name of the x parameter.
+    y : str
+        The name of the y parameter.
+    z : str
+        The name of the z parameter.
+    magnitude : str
+        The name of the magnitude parameter.
+    azimuthal : str
+        The name of the azimuthal angle parameter.
+    polar : str
+        The name of the polar angle parameter.
     """
-    name = "spherical_spin_1_to_cartesian_spin_1"
-    _inputs = [parameters.spin1_a, parameters.spin1_azimuthal,
-               parameters.spin1_polar]
-    _outputs = [parameters.spin1x, parameters.spin1y, parameters.spin1z]
+    name = "spherical_to_cartesian"
+
+    def __init__(self, x, y, z, magnitude, azimuthal, polar)::
+        self.x = x
+        self.y = y
+        self.z = z
+        self.magnitude = magnitude
+        self.polar = polar
+        self.azimuthal = azimuthal
+        self._inputs = [self.magnitude, self.azimuthal, self.polar]
+        self._outputs = [self.x, self.y, self.z]
+        super(SphericalToCartesian, self).__init__()
 
     def transform(self, maps):
-        """ This function transforms from spherical to cartesian spins.
+        """This function transforms from spherical to cartesian spins.
 
         Parameters
         ----------
@@ -637,10 +658,11 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
 
         >>> import numpy
         >>> from pycbc import transforms
-        >>> t = transforms.SphericalSpin1ToCartesianSpin1()
-        >>> t.transform({'spin1_a': numpy.array([0.1]), 'spin1_azimuthal': numpy.array([0.1]), 'spin1_polar': numpy.array([0.1])})
-            {'spin1_a': array([ 0.1]), 'spin1_azimuthal': array([ 0.1]), 'spin1_polar': array([ 0.1]),
-             'spin2x': array([ 0.00993347]), 'spin2y': array([ 0.00099667]), 'spin2z': array([ 0.09950042])}
+        >>> t = transforms.SphericalToCartesian('x', 'y', 'z',
+                                                'a', 'phi', 'theta')
+        >>> t.transform({'a': numpy.array([0.1]), 'phi': numpy.array([0.1]), 'theta': numpy.array([0.1])})
+            {'a': array([ 0.1]), 'phi': array([ 0.1]), 'theta': array([ 0.1]),
+             'x': array([ 0.00993347]), 'y': array([ 0.00099667]), 'z': array([ 0.09950042])}
 
         Returns
         -------
@@ -654,7 +676,7 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
-        """ This function transforms from cartesian to spherical spins.
+        """This function transforms from cartesian to spherical spins.
 
         Parameters
         ----------
@@ -666,21 +688,54 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
             A dict with key as parameter name and value as numpy.array or float
             of transformed values.
         """
-        sx, sy, sz = self._outputs
-        data = coordinates.cartesian_to_spherical(maps[sx], maps[sy], maps[sz])
+        x, y, z = self._outputs
+        data = coordinates.cartesian_to_spherical(maps[x], maps[y], maps[z])
         out = {param : val for param, val in zip(self._outputs, data)}
         return self.format_output(maps, out)
 
 
-class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
-    """ Converts spherical spin parameters (magnitude and two angles) to
-    cartesian spin parameters. This class only transforms spins for the second
+class SphericalSpin1ToCartesianSpin1(SphericalToCartesian):
+    """Converts spherical spin parameters (magnitude and two angles) to
+    catesian spin parameters. This class only transforms spsins for the first
     component mass.
+
+    **Deprecation Warning:** This will be removed in a future update. Use
+    :py:class:`SphericalToCartesian` with spin-parameter names passed in
+    instead.
+    """
+    name = "spherical_spin_1_to_cartesian_spin_1"
+
+    def __init__(self):
+        logging.warning("Deprecation warning: the {} transform will be "
+                        "removed in a future update. Please use {} instead, "
+                        "passing spin1x, spin1y, spin1z, spin1_a, "
+                        "spin1_azimuthal, spin1_polar as arguments."
+                        .format(self.name, SphericalToCartesian.name)
+        super(SphericalSpin1ToCartesianSpin1, self).__init__(
+            "spin1x", "spin1y", "spin1z", "spin1_a", "spin1_azimuthal",
+            "spin1_polar")
+
+
+class SphericalSpin2ToCartesianSpin2(SphericalToCartesian):
+    """Converts spherical spin parameters (magnitude and two angles) to
+    catesian spin parameters. This class only transforms spsins for the first
+    component mass.
+
+    **Deprecation Warning:** This will be removed in a future update. Use
+    :py:class:`SphericalToCartesian` with spin-parameter names passed in
+    instead.
     """
     name = "spherical_spin_2_to_cartesian_spin_2"
-    _inputs = [parameters.spin2_a, parameters.spin2_azimuthal,
-               parameters.spin2_polar]
-    _outputs = [parameters.spin2x, parameters.spin2y, parameters.spin2z]
+
+    def __init__(self):
+        logging.warning("Deprecation warning: the {} transform will be "
+                        "removed in a future update. Please use {} instead, "
+                        "passing spin2x, spin2y, spin2z, spin2_a, "
+                        "spin2_azimuthal, spin2_polar as arguments."
+                        .format(self.name, SphericalToCartesian.name)
+        super(SphericalSpin2ToCartesianSpin2, self).__init__(
+            "spin2x", "spin2y", "spin2z", "spin2_a", "spin2_azimuthal",
+            "spin2_polar")
 
 
 class DistanceToRedshift(BaseTransform):
@@ -1673,60 +1728,76 @@ class DistanceToChirpDistance(ChirpDistanceToDistance):
     inverse_jacobian = inverse.jacobian
 
 
-class CartesianSpin1ToSphericalSpin1(SphericalSpin1ToCartesianSpin1):
-    """The inverse of SphericalSpin1ToCartesianSpin1.
+class CartesianToSpherical(SphericalToCartesian):
+    """Converts spherical coordinates to cartesian.
+
+    Parameters
+    ----------
+    x : str
+        The name of the x parameter.
+    y : str
+        The name of the y parameter.
+    z : str
+        The name of the z parameter.
+    magnitude : str
+        The name of the magnitude parameter.
+    azimuthal : str
+        The name of the azimuthal angle parameter.
+    polar : str
+        The name of the polar angle parameter.
     """
-    name = "cartesian_spin_1_to_spherical_spin_1"
-    inverse = SphericalSpin1ToCartesianSpin1
-    _inputs = inverse._outputs
-    _outputs = inverse._inputs
+    name = "cartesian_to_spherical"
+    inverse = SphericalToCartesian
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
     jacobian = inverse.inverse_jacobian
     inverse_jacobian = inverse.jacobian
 
-    def transform(self, maps):
-        """ This function transforms from cartesian to spherical spins.
-
-        Parameters
-        ----------
-        maps : a mapping object
-
-        Returns
-        -------
-        out : dict
-            A dict with key as parameter name and value as numpy.array or float
-            of transformed values.
-        """
-        sx, sy, sz = self._inputs
-        data = coordinates.cartesian_to_spherical(maps[sx], maps[sy], maps[sz])
-        out = {param : val for param, val in zip(self._outputs, data)}
-        return self.format_output(maps, out)
-
-    def inverse_transform(self, maps):
-        """ This function transforms from spherical to cartesian spins.
-
-        Parameters
-        ----------
-        maps : a mapping object
-
-        Returns
-        -------
-        out : dict
-            A dict with key as parameter name and value as numpy.array or float
-            of transformed values.
-        """
-        a, az, po = self._outputs
-        data = coordinates.spherical_to_cartesian(maps[a], maps[az], maps[po])
-        out = {param : val for param, val in zip(self._outputs, data)}
-        return self.format_output(maps, out)
+    def __init__(self, *args):
+        super(CartesianToSpherical, self).__init__(*args)
+        # swap inputs and outputs
+        outputs = self._inputs
+        inputs = self._outputs
+        self._inputs = inputs
+        self._outputs = outputs
 
 
-class CartesianSpin2ToSphericalSpin2(CartesianSpin1ToSphericalSpin1):
+class CartesianSpin1ToSphericalSpin1(CartesianToSpherical):
+    """The inverse of SphericalSpin1ToCartesianSpin1.
+
+    **Deprecation Warning:** This will be removed in a future update. Use
+    :py:class:`CartesianToSpherical` with spin-parameter names passed in
+    instead.
+    """
+    name = "cartesian_spin_1_to_spherical_spin_1"
+    def __init__(self):
+        logging.warning("Deprecation warning: the {} transform will be "
+                        "removed in a future update. Please use {} instead, "
+                        "passing spin1x, spin1y, spin1z, spin1_a, "
+                        "spin1_azimuthal, spin1_polar as arguments."
+                        .format(self.name, CartesianToSpherical.name)
+        super(CartesianSpin1ToSphericalSpin1, self).__init__(
+            "spin1x", "spin1y", "spin1z", "spin1_a", "spin1_azimuthal",
+            "spin1_polar")
+
+
+class CartesianSpin2ToSphericalSpin2(CartesianToSpherical):
     """The inverse of SphericalSpin2ToCartesianSpin2.
+
+    **Deprecation Warning:** This will be removed in a future update. Use
+    :py:class:`CartesianToSpherical` with spin-parameter names passed in
+    instead.
     """
     name = "cartesian_spin_2_to_spherical_spin_2"
-    inverse = SphericalSpin2ToCartesianSpin2
-    _inputs = inverse._outputs
-    _outputs = inverse._inputs
+    def __init__(self):
+        logging.warning("Deprecation warning: the {} transform will be "
+                        "removed in a future update. Please use {} instead, "
+                        "passing spin2x, spin2y, spin2z, spin2_a, "
+                        "spin2_azimuthal, spin2_polar as arguments."
+                        .format(self.name, CartesianToSpherical.name)
+        super(CartesianSpin2ToSphericalSpin2, self).__init__(
+            "spin2x", "spin2y", "spin2z", "spin2_a", "spin2_azimuthal",
+            "spin2_polar")
 
 
 class CartesianSpinToAlignedMassSpin(AlignedMassSpinToCartesianSpin):
@@ -1897,6 +1968,7 @@ class Logistic(Logit):
 # set the inverse of the forward transforms to the inverse transforms
 MchirpQToMass1Mass2.inverse = Mass1Mass2ToMchirpQ
 ChirpDistanceToDistance.inverse = DistanceToChirpDistance
+SphericalToCartesian.inverse = CartesianToSpherical
 SphericalSpin1ToCartesianSpin1.inverse = CartesianSpin1ToSphericalSpin1
 SphericalSpin2ToCartesianSpin2.inverse = CartesianSpin2ToSphericalSpin2
 AlignedMassSpinToCartesianSpin.inverse = CartesianSpinToAlignedMassSpin
