@@ -98,7 +98,7 @@ parser.add_argument("--cluster-window", type=float, default = -1,
                     " Set to 0 to disable clustering.")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
 parser.add_argument("--chisq-snr-threshold", type=float,
-                    help="Minimum SNR to calculate the power chisq")
+                    help="Minimum SNR to calculate the power wchisq")
 parser.add_argument("--chisq-bins", default=0, help=
                     "Number of frequency bins to use for power chisq. Specify"
                     " an integer for a constant number of bins, or a function "
@@ -449,6 +449,7 @@ with ctx:
             out_vals['time_index'] = idx
             out_vals['snr'] = snrv * norm
 
+            print(out_vals)
             if opt.psdvar_short_segment is not None:
                 out_vals['psd_var_val'] = \
                             pycbc.psd.find_trigger_value(psd_var,
