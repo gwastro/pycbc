@@ -660,9 +660,11 @@ class SphericalToCartesian(BaseTransform):
         >>> from pycbc import transforms
         >>> t = transforms.SphericalToCartesian('x', 'y', 'z',
                                                 'a', 'phi', 'theta')
-        >>> t.transform({'a': numpy.array([0.1]), 'phi': numpy.array([0.1]), 'theta': numpy.array([0.1])})
+        >>> t.transform({'a': numpy.array([0.1]), 'phi': numpy.array([0.1]),
+                        'theta': numpy.array([0.1])})
             {'a': array([ 0.1]), 'phi': array([ 0.1]), 'theta': array([ 0.1]),
-             'x': array([ 0.00993347]), 'y': array([ 0.00099667]), 'z': array([ 0.09950042])}
+             'x': array([ 0.00993347]), 'y': array([ 0.00099667]),
+             'z': array([ 0.09950042])}
 
         Returns
         -------
@@ -1778,6 +1780,7 @@ class CartesianSpin1ToSphericalSpin1(CartesianToSpherical):
     instead.
     """
     name = "cartesian_spin_1_to_spherical_spin_1"
+
     def __init__(self):
         logging.warning("Deprecation warning: the {} transform will be "
                         "removed in a future update. Please use {} instead, "
@@ -1797,6 +1800,7 @@ class CartesianSpin2ToSphericalSpin2(CartesianToSpherical):
     instead.
     """
     name = "cartesian_spin_2_to_spherical_spin_2"
+
     def __init__(self):
         logging.warning("Deprecation warning: the {} transform will be "
                         "removed in a future update. Please use {} instead, "
