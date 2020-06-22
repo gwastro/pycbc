@@ -473,7 +473,7 @@ with ctx:
             event_mgr.save_state(t_num, opt.output + '.checkpoint')
             sys.exit(opt.checkpoint_exit_code)
             
-        if t_num >= 100:
+        if t_num >= 10:
             break         
 
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
