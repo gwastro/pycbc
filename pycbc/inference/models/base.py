@@ -861,7 +861,7 @@ def check_for_cartesian_spins(which, variable_params, static_params,
         "not be performed in that case.")
     allparams = set(variable_params) | set(static_params.keys())
     spinparams = set(p for p in allparams
-                     if p.startswith('spin{}'.format(which))) 
+                     if p.startswith('spin{}'.format(which)))
     if any(spinparams):
         cartspins = set('spin{}{}'.format(which, coord)
                         for coord in ['x', 'y', 'z'])
