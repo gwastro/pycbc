@@ -832,10 +832,12 @@ def check_for_cartesian_spins(which, variable_params, static_params,
     """
     # don't do this check if the config file has the ignore section
     if cp.has_section(ignore):
+        logging.info("[{}] found in config file; not performing check for "
+                     "cartesian spin{} parameters".format(ignore, which))
         return
     errmsg = (
         "Spin parameters {sp} found in variable/static "
-        "params, but no cartesian spin parameters ({cp}) "
+        "params for component {n}, but no cartesian spin parameters ({cp}) "
         "found in either the variable/static params or "
         "the waveform transform outputs. Most waveform "
         "generators only recognize the cartesian spin "
@@ -850,13 +852,16 @@ def check_for_cartesian_spins(which, variable_params, static_params,
         "radial = spin{n}_a\n"
         "azimuthal = spin{n}_azimuthal\n"
         "polar = spin{n}_polar\n\n"
-        "If you intended to not include the cartesian spin parameters, "
-        "and do not think this is an error, add\n"
-        "[{ignore}]\n"
-        "to your config file as an empty section and rerun. This error will "
-        "no be raised in that case.")
+        "Here, spin{n}_a, spin{n}_azimuthal, and spin{n}_polar are the names "
+        "of your radial, azimuthal, and polar coordinates, respectively. "
+        "If you intentionally did not include the cartesian spin parameters, "
+        "(e.g., you are using a custom waveform model) add\n\n"
+        "[{ignore}]\n\n"
+        "to your config file as an empty section and rerun. This check will "
+        "not be performed in that case.")
     allparams = set(variable_params) | set(static_params.keys())
-    spinparams = set(p.startswith('spin{}'.format(which)) for p in allparams) 
+    spinparams = set(p for p in allparams
+                     if p.startswith('spin{}'.format(which))) 
     if any(spinparams):
         cartspins = set('spin{}{}'.format(which, coord)
                         for coord in ['x', 'y', 'z'])
