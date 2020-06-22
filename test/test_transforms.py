@@ -67,7 +67,13 @@ class TestTransforms(unittest.TestCase):
             # check if inverse exists
             if trans.name in IGNORE:
                 continue
-            inv = trans.inverse()
+            if trans.name == 'spherical_to_cartesian':
+                # spherical to cartesian requires the cartesian and spherical
+                # parameter names to be specified, which we can get from
+                # the inputs and outputs
+                inv = trans.inverse(*trans._outputs+trans._inputs)
+            else:
+                inv = trans.inverse()
 
             # generate some random points
             in_map = {p : numpy.random.uniform(*RANGES[p])
