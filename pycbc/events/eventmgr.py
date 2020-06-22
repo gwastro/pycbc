@@ -248,7 +248,16 @@ class EventManager(object):
             raise RuntimeError('Chi-square test must be enabled in order to '
                                'use newsnr threshold')
         
-        nsnrs = ranking.newsnr(abs(self.events['snr'].copy()),
+        a = self.events['snr']
+        g = abs(a)
+        
+        
+        b = self.events['snr'].copy()
+        h = abs(b)
+        
+        print( (h - g).sum(), a, b, g, h)
+        
+        nsnrs = ranking.newsnr(abs(self.events['snr']),
                                self.events['chisq'] / self.events['chisq_dof'])
                                
         remove_idxs = numpy.where(nsnrs < threshold)[0]
