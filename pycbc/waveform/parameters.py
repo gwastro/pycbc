@@ -409,7 +409,7 @@ tc = Parameter("tc",
                 dtype=float, default=None, label=r"$t_c$ (s)",
                 description="Coalescence time (s).")
 delta_tc = Parameter("delta_tc", dtype=float,
-                     label=r"$\Delta t_c~(s)$",
+                     label=r"$\Delta t_c~(\rm{s})$",
                      description="Coalesence time offset.")
 ra = Parameter("ra",
                 dtype=float, default=None, label=r"$\alpha$",
