@@ -54,7 +54,7 @@ matrix:
 install:
 - travis_retry ./tools/install_travis.sh
 script:
-- ./tools/pycbc_test_suite.sh 
+- python t.py
 
 before_cache:
 - rm -rf $HOME/build/pycbc-sources/lalsuite
