@@ -78,7 +78,8 @@ class UltranestSampler(BaseSampler):
         if stepsampling:
             import ultranest.stepsampler
             self._sampler.stepsampler = ultranest.stepsampler.RegionBallSliceSampler(
-                nsteps=100, adaptive_nsteps='move-distance', region_filter=True)
+                nsteps=100, adaptive_nsteps='move-distance',
+                region_filter=True)
 
         self.enable_plots = enable_plots
         self.nlive = 0
@@ -89,10 +90,9 @@ class UltranestSampler(BaseSampler):
     def run(self):
         self.result = self._sampler.run(**self.kwargs)
         self._sampler.print_results()
-        
+
         if self.enable_plots:
             self._sampler.plot()
-
 
     @property
     def io(self):
