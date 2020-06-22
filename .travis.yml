@@ -1,21 +1,4 @@
 sudo: false
-addons:
-  apt:
-    packages:
-    - libfftw3-dev
-    - liblapack-dev
-    - gfortran
-    - libgsl0-dev
-    - libsqlite3-dev
-    - libhdf5-serial-dev
-    - libssl-dev
-    - zlib1g-dev
-    - libfreetype6-dev
-    - libdb-dev
-    - libopenblas-dev
-    - graphviz
-    - mpi-default-bin
-    - mpi-default-dev
 matrix:
   fast_finish: true
   include:
