@@ -266,10 +266,15 @@ for tnum in template_ids:
 
             time_nopivot = {k, v for k, v in times.items() if k != args.pivot_ifo}
             ifos_nopivot = [i for i in trigs.ifos if i != args.pivot_ifo]
-            test_ids, slide = coinc.time_multi_coincidence(times_nopivot, 0.,
-                                                           args.coinc_threshold,
-                                                           ifos_nopivot[0],
-                                                           ifos_nopivot[1])
+
+            if len(ifos_nopivot) > 1:
+                test_ids, slide = coinc.time_multi_coincidence(times_nopivot, 0.,
+                                                               args.coinc_threshold,
+                                                               ifos_nopivot[0],
+                                                               ifos_nopivot[1])
+            else:
+                det = ifos_nopivot[0]
+                test_ids = {det: np.arange(len(times[det]))}
 
             # list in ifo order of remaining trigger data
             single_info = [(i, sds[i][test_ids[i]]) for i in ifos_nopivot]
