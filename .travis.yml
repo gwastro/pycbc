@@ -48,83 +48,14 @@ env:
 matrix:
   fast_finish: true
   include:
-  - env: PYCBC_CONTAINER=pycbc_rhel_virtualenv DOCKER_IMG=ligo/lalsuite-dev:el7
-    language: minimal
-    sudo: required
-    services:
-    - docker
-  - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
-    language: minimal
-    sudo: required
-    services:
-    - docker
-  - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR
-    language: python
-    python: 2.7
-  - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
-    language: python
-    python: 3.6
   - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
     language: python
     python: 3.7
-
-before_install:
-- if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then docker pull $DOCKER_IMG; fi
-- if [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then docker build -t ${DOCKER_IMG}-tmp . ; fi
 install:
-- if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
-    travis_retry ./tools/install_travis.sh ;
-  elif [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
-    touch ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token ;
-    chmod 600 ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token ;
-    echo $ID_RSA_TRAVIS_{0..23} | base64 --decode --ignore-garbage > ~/.ssh/id_rsa ;
-    echo -e "Host sugwg-test1.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
-    echo -e "Host sugwg-condor.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
-    echo -e "Host oasis-login.opensciencegrid.org\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
-    echo -e "Host code.pycbc.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
-    echo $LDG_USER > ~/.ssh/ldg_user ;
-    echo $LDG_TOKEN > ~/.ssh/ldg_token ;
-    chmod 600 ~/.ssh/id_rsa ~/.ssh/config ~/.ssh/ldg_user ~/.ssh/ldg_token ;
-  fi
+- travis_retry ./tools/install_travis.sh
 script:
-# FIXME The line below is to work around https://github.com/travis-ci/travis-ci/issues/7940
-- export BOTO_CONFIG=/dev/null
-- if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
-    ./tools/pycbc_test_suite.sh ;
-  elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
-    docker run --privileged --name pycbc_inst -v `pwd`:/scratch:ro ${DOCKER_IMG}-tmp /bin/bash -c /scratch/docker/etc/docker-install.sh || exit 1 ;
-    docker commit --change='CMD ["/bin/su", "-l", "pycbc"]' pycbc_inst $DOCKER_IMG || exit 1 ;
-  else
-    ./tools/docker_build_and_test.sh ;
-  fi
-after_success:
-  - if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] && [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
-      docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" || exit 1 ;
-      if [ "x${TRAVIS_TAG}"  == "x" ] ; then
-        docker tag ${DOCKER_IMG} ${DOCKER_IMG}:latest || exit 1 ;
-        docker push ${DOCKER_IMG}:latest || exit 1 ;
-      else
-        docker tag ${DOCKER_IMG} ${DOCKER_IMG}:${TRAVIS_TAG} || exit 1 ;
-        docker push ${DOCKER_IMG}:${TRAVIS_TAG} || exit 1 ;
-      fi ;
-    fi
-deploy:
-- provider: pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN
-  local_dir: _gh-pages
-  keep-history: false
-  on:
-    branch: master
-    condition: $PYCBC_CONTAINER = build_and_test
-    python: 3.6
-- provider: pypi
-  user: $PYPI_USER
-  password: $PYPI_TOKEN
-  on:
-    tags: true
-    condition: $PYCBC_CONTAINER = build_and_test
-    python: 3.6
+- ./tools/pycbc_test_suite.sh 
+
 before_cache:
 - rm -rf $HOME/build/pycbc-sources/lalsuite
 - rm -rf $HOME/build/pycbc-sources/pycbc
@@ -146,6 +77,3 @@ cache:
   - $HOME/build/pycbc-sources
   - $HOME/docker-cache
   timeout: 600
-notifications:
-  slack:
-    secure: lBAWJIM+IgUeu3W5NIhQByuvxEaJCij3LtMEvyQ7uSoRNet7COEZi3g/m+vEpJ0+y1vBk9bTI1jLtX7xu9BOVDoyqj1iBIJ9sPHRkU2k2f/pTkA6KaVsi/aFEP3hOgeCs55n29ZbFnViZL/dzZ26Tchf78qKrjFCQ4ULC6OgcuZKYto9yBogo6DW/8XItHzoP0c7RRfbALHKZY+cBHeX7lpvwBrUZ1WM2HgJyE4wxqe7zDlDeXHT6guyYoGf0vyopTVi9kFPqa3ZmcIndSMEXSGzELCyJ0z1js+h7tIIQEIzB5hTKsc4MCUNvCSUUbuNPScbbNiQlROoEzZPCAJ+CWerZxcaUjgWadQ04gchumETXVZPT9CB+xmZFiCYMvjn/wbcWUdDJm2KSEN5lkmxR8k/1OkIYzZSH2zX2ujISRL1OIIYOfbHJE27MnOkGTdK+a/ExrxCKC1Xr/f8m2id4PijB8Ldl+R49t8B7fA8xkCxMYYRMykXpiOK+vR4vZBhf5FHLOqeYJ6uU1wrKbrG6UyP9XjOsrS+h51D5Y6ZD94iz84+t5bBHWSKiRWdo7lPlLvZEUNhqVdk2AphfMqej8ap858ZI2zlfadMXcbGN8aXdbQsI1kwfFotwCihbl5uWXxtkNkLA0lAVrQDk9M8TsxEoEZmWnjkRAmDPfQFPqs=
