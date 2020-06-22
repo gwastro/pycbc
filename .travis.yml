@@ -6,7 +6,8 @@ matrix:
     language: python
     python: 3.7
 install:
-- travis_retry ./tools/install_travis.sh
+- pip install --upgrade setuptools pip
+- pip install numpy --upgrade
 script:
 - python t.py
 
