@@ -837,10 +837,10 @@ def check_for_cartesian_spins(which, variable_params, static_params,
         return
     errmsg = (
         "Spin parameters {sp} found in variable/static "
-        "params for component {n}, but no cartesian spin parameters ({cp}) "
+        "params for component {n}, but no Cartesian spin parameters ({cp}) "
         "found in either the variable/static params or "
         "the waveform transform outputs. Most waveform "
-        "generators only recognize the cartesian spin "
+        "generators only recognize Cartesian spin "
         "parameters; without them, all spins are set to "
         "zero. If you are using spherical spin coordinates, add "
         "the following waveform_transform to your config file:\n\n"
@@ -854,8 +854,8 @@ def check_for_cartesian_spins(which, variable_params, static_params,
         "polar = spin{n}_polar\n\n"
         "Here, spin{n}_a, spin{n}_azimuthal, and spin{n}_polar are the names "
         "of your radial, azimuthal, and polar coordinates, respectively. "
-        "If you intentionally did not include the cartesian spin parameters, "
-        "(e.g., you are using a custom waveform model) add\n\n"
+        "If you intentionally did not include Cartesian spin parameters, "
+        "(e.g., you are using a custom waveform or model) add\n\n"
         "[{ignore}]\n\n"
         "to your config file as an empty section and rerun. This check will "
         "not be performed in that case.")
