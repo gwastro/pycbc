@@ -32,7 +32,10 @@ from __future__ import absolute_import
 import logging
 from pycbc.pool import choose_pool
 import numpy
+import time
+import os
 import dynesty
+import signal
 from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
@@ -69,7 +72,8 @@ class DynestySampler(BaseSampler):
     _io = DynestyFile
 
     def __init__(self, model, nlive, nprocesses=1,
-                 loglikelihood_function=None, use_mpi=False, run_kwds=None,
+                 loglikelihood_function=None, use_mpi=False,
+                 checkpoint_on_signal=True, run_kwds=None,
                  **kwargs):
         self.model = model
         log_likelihood_call, prior_call = setup_calls(
@@ -80,12 +84,20 @@ class DynestySampler(BaseSampler):
         pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         if pool is not None:
             pool.size = nprocesses
-
+        #self._sampler.pool = pool
+        #self._sampler.M = pool.map
         self.run_kwds = {} if run_kwds is None else run_kwds
         self.nlive = nlive
+        #self.checkpoint_interval = checkpoint_interval
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
         self.checkpoint_file = None
+        self._checkpoint_on_signal = checkpoint_on_signal
+        if ('maxcall' or 'maxiter') in self.run_kwds:
+            self.run_with_checkpoint = True
+        else:
+            self.run_with_checkpoint = False
+
         if self.nlive < 0:
             # Interpret a negative input value for the number of live points
             # (which is clearly an invalid input in all senses)
@@ -100,7 +112,30 @@ class DynestySampler(BaseSampler):
                                                   pool=pool, **kwargs)
 
     def run(self):
-        self._sampler.run_nested(**self.run_kwds)
+        if self._checkpoint_on_signal:
+             # Enable on-signal checkpointing:
+             # This purely guards against interruptions on compute clusters
+             signal.signal(signal.SIGTERM, self.checkpoint_on_signal)
+             signal.signal(signal.SIGALRM, self.checkpoint_on_signal)
+             signal.signal(signal.SIGQUIT, self.checkpoint_on_signal)
+             signal.signal(signal.SIGTSTP, self.checkpoint_on_signal)
+             signal.signal(signal.SIGINT, self.checkpoint_on_signal)
+             signal.signal(signal.SIGUSR1, self.checkpoint_on_signal)
+             signal.signal(signal.SIGUSR2, self.checkpoint_on_signal)
+        #t0 = time.time()
+        niter = 0
+        diff_niter = 1
+        if self.run_with_checkpoint is True and niter == 0:
+            while diff_niter != 0:
+                self._sampler.run_nested(**self.run_kwds)
+                self.checkpoint()
+                diff_niter = self._sampler.results.niter - niter
+                niter = self._sampler.results.niter
+        else:
+            self._sampler.run_nested(**self.run_kwds)
+
+    #def run_dynesty(self):
+        
 
     @property
     def io(self):
@@ -157,21 +192,55 @@ class DynestySampler(BaseSampler):
             obj.resume_from_checkpoint()
         return obj
 
+    def checkpoint_on_signal(self, signum, frame):
+         """Interrupt signal handler to checkpoint the sampler.
+
+         Parameters
+         ----------
+         signum : int
+             Open config parser to retrieve the argument from.
+         frame : stack frame object
+             Name of the section to retrieve from.
+         """
+         #if self.is_main_process:
+         self.checkpoint()
+         #del frame
+         self._sampler.pool.close()
+         self._sampler.pool.terminate()
+         sys.exit(signum)
+
     def checkpoint(self):
         """Checkpoint function for dynesty sampler
         """
         #for fn in [self.checkpoint_file, self.backup_file]:
         #    with self.io(fn, "a") as fp:
-        state = [item for item in self._sampler.__dict__.keys() 
-                 if item.startswith('saved_')]
-        with loadfile(self.checkpoint_file, 'a') as fp:
-            dump_state(state, fp, path=fp.sampler_group)
+        #state = [item for item in self._sampler.__dict__.keys() 
+        #         if item.startswith('saved_')]
+        #with loadfile(self.checkpoint_file, 'a') as fp:
+        #    dump_state(state, fp, path=fp.sampler_group)
+        self.__getstate__ = self.getstate()
 
+        #with open(self.checkpoint_file, 'wb') as fout:
+        pickle_obj = self._sampler
+        for fn in [self.checkpoint_file]:
+            with self.io(fn, 'a') as fp:
+                fp.write_pickled_data_into_checkpoint(pickle_obj)
 
     def resume_from_checkpoint(self):
-        with loadfile(self.checkpoint_file, 'r') as fp:
-            state = load_state(fp, path=fp.sampler_group)
-        
+        for fn in [self.checkpoint_file]:
+            with self.io(fn, 'r') as fp:
+                self._sampler = fp.read_pickled_data_from_checkpoint()
+                self._sampler.rstate = numpy.random
+                #self._sampler.M = M1
+                #self._sampler.pool = pool1 
+
+    def set_state_from_file(self, filename):
+        """Sets the state of the sampler back to the instance saved in a file.
+        """
+        with self.io(filename, 'r') as fp:
+            rstate = fp.read_random_state()
+        # set the numpy random state
+        numpy.random.set_state(rstate)
 
     def finalize(self):
         logz = self._sampler.results.logz[-1:][0]
@@ -188,6 +257,17 @@ class DynestySampler(BaseSampler):
             self.checkpoint_file, self.backup_file)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
+
+    def getstate(self):
+        """Strips unserializable attributes of sampler
+        """
+        self_dict = self._sampler.__dict__.copy()
+        # Remove multiprocessing / mpi pool-related/ rstate attributes
+        # as they cannot be pickled
+        del self_dict['pool']
+        del self_dict['M']
+        #del self_dict['rstate']
+        return self_dict
 
     @property
     def model_stats(self):
@@ -226,6 +306,7 @@ class DynestySampler(BaseSampler):
             # write log evidence
             fp.write_logevidence(self._sampler.results.logz[-1:][0],
                                  self._sampler.results.logzerr[-1:][0])
+            fp.write_random_state()
 
     @property
     def posterior_samples(self):

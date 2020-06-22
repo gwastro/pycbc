@@ -24,8 +24,20 @@
 """Provides IO for the dynesty sampler.
 """
 from .base_nested_sampler import BaseNestedSamplerFile
+import hickle
 
 class DynestyFile(BaseNestedSamplerFile):
     """Class to handle file IO for the ``dynesty`` sampler."""
 
     name = 'dynesty_file'
+
+    def write_pickled_data_into_checkpoint(self, pickle_obj):
+        """Dump the sampler state into checkpoint file
+        """
+        self.clear()
+        hickle.dump(pickle_obj,self, mode='r+', path='sampler_info/saved_state')
+
+    def read_pickled_data_from_checkpoint(self):
+        """Load the sampler state (pickled) from checkpoint file                           
+        """
+        return hickle.load(self,path='sampler_info/saved_state')    
