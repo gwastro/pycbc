@@ -258,6 +258,7 @@ class EventManager(object):
         print( (h - g).sum(), a, b, g, h)
         
         print(self.events)
+        print(self.events.dtype)
         
         nsnrs = ranking.newsnr(abs(self.events['snr']),
                                self.events['chisq'] / self.events['chisq_dof'])
