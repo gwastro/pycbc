@@ -10,24 +10,3 @@ install:
 script:
 - python t.py
 
-before_cache:
-- rm -rf $HOME/build/pycbc-sources/lalsuite
-- rm -rf $HOME/build/pycbc-sources/pycbc
-- rm -rf $HOME/build/pycbc-sources/pyinstaller
-- rm -rf $HOME/build/pycbc-sources/test/pycbc_inspiral
-- rm -f $HOME/build/pycbc-sources/test/lal-data-r7.tar.gz
-- rm -f $HOME/build/pycbc-sources/test/H1-INSPIRAL-OUT.hdf
-- rm -f $HOME/build/pycbc-sources/libframe-*.tar.gz
-- rm -f $HOME/build/pycbc-sources/metaio-*.tar.gz
-- rm -f $HOME/build/pycbc-sources/pegasus-python-source-*.tar.gz
-- rm -f $HOME/build/pycbc-sources/Python-*.tgz
-- rm -f $HOME/build/pycbc-sources/swig-*.tar.gz
-- ls -al $HOME/build/pycbc-sources
-- ls -al $HOME/build/pycbc-sources/test
-cache:
-  directories:
-  - $HOME/.cache/pip
-  - $HOME/build/.cache/pip
-  - $HOME/build/pycbc-sources
-  - $HOME/docker-cache
-  timeout: 600
