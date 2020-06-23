@@ -31,7 +31,7 @@ from __future__ import absolute_import
 
 import logging
 import os
-import time 
+import time
 from pycbc.pool import choose_pool
 import numpy
 import dynesty
@@ -123,7 +123,7 @@ class DynestySampler(BaseSampler):
                     self.resume_from_checkpoint()
                     self.niter = self._sampler.results.niter
                     logging.info('Successfully read from the checkpoint file')
-                except KeyError:# (RuntimeError, TypeError, NameError):
+                except KeyError:
                     logging.info("Could not read checkpoint file")
             else:
                 self.niter = 0
