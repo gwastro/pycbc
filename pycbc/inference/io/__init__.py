@@ -171,7 +171,7 @@ def check_integrity(filename):
             try:
                 load_state(fp,path='sampler_info/saved_state')
             except:
-                raise IOError("Could not recover dumped state")
+                raise IOError("Could not recover pickled state")
         else:
             # check that all datasets in samples have the same shape
             parameters = list(fp[fp.samples_group].keys())

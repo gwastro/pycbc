@@ -175,10 +175,9 @@ def setup_output(sampler, output_file):
     # check if we have a good checkpoint and/or backup file
     logging.info("Looking for checkpoint file")
     checkpoint_valid = validate_checkpoint_files(checkpoint_file,
-                                                 backup_file,sampler.name)
+                                                 backup_file, sampler.name)
     # Create a new file if the checkpoint doesn't exist, or if it is
     # corrupted
-    print("Checkpiint valid is: %s"%checkpoint_valid)
     sampler.new_checkpoint = False  # keeps track if this is a new file or not
     if not checkpoint_valid:
         logging.info("Checkpoint not found or not valid")

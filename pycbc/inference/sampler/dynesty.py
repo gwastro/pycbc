@@ -86,16 +86,12 @@ class DynestySampler(BaseSampler):
             pool.size = nprocesses
         self.use_mpi = use_mpi
         self.nprocesses = nprocesses
-        #self._sampler.pool = pool
-        #self._sampler.M = pool.map
         self.run_kwds = {} if run_kwds is None else run_kwds
         self.nlive = nlive
-        #self.checkpoint_interval = checkpoint_interval
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
         self.checkpoint_file = None
         self.niter = niter
-        #self._checkpoint_on_signal = checkpoint_on_signal
         if ('maxcall' or 'maxiter') in self.run_kwds:
             self.run_with_checkpoint = True
         else:
@@ -118,15 +114,14 @@ class DynestySampler(BaseSampler):
 
     def run(self):
         diff_niter = 1
-        if self.run_with_checkpoint is True:# and niter == 0:
+        if self.run_with_checkpoint is True:
             if self.checkpoint_file:
                 try:
                     self.resume_from_checkpoint()
                     self.niter = self._sampler.results.niter
-                    print('Successfully read from the file')
+                    logging.info('Successfully read from the checkpoint file')
                 except: # (RuntimeError, TypeError, NameError):
                     logging.info("Could not read checkpoint file")
-                    #pass
             else:
                 self.niter = 0
 
@@ -137,9 +132,6 @@ class DynestySampler(BaseSampler):
                 self.niter = self._sampler.results.niter
         else:
             self._sampler.run_nested(**self.run_kwds)
-
-    #def run_dynesty(self):
-
 
     @property
     def io(self):
@@ -197,41 +189,14 @@ class DynestySampler(BaseSampler):
             obj.resume_from_checkpoint()
         return obj
 
-    #def checkpoint_on_signal(self, signum, frame):
-    #     """Interrupt signal handler to checkpoint the sampler.
-
-     #    Parameters
-     #    ----------
-     #    signum : int
-     #        Open config parser to retrieve the argument from.
-     #    frame : stack frame object
-     #        Name of the section to retrieve from.
-     #    """
-     #    #if self.is_main_process:
-     #    self.checkpoint()
-     #    #del frame
-     #    self._sampler.pool.close()
-     #    self._sampler.pool.terminate()
-     #    sys.exit(signum)
-
     def checkpoint(self):
         """Checkpoint function for dynesty sampler
         """
-        #for fn in [self.checkpoint_file, self.backup_file]:
-        #    with self.io(fn, "a") as fp:
-        #state = [item for item in self._sampler.__dict__.keys()
-        #         if item.startswith('saved_')]
-        #with loadfile(self.checkpoint_file, 'a') as fp:
-        #    dump_state(state, fp, path=fp.sampler_group)
         self.__getstate__ = self.getstate()
-
-        #with open(self.checkpoint_file, 'wb') as fout:
         pickle_obj = self._sampler
         for fn in [self.checkpoint_file]:
             with loadfile(fn, 'a') as fp:
                 fp.write_pickled_data_into_checkpoint_file(pickle_obj)
-        #self._sampler.pool.close()
-        #self._sampler.pool.terminate()
 
     def resume_from_checkpoint(self):
         for fn in [self.checkpoint_file]:
