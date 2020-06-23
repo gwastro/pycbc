@@ -1,4 +1,3 @@
-
 # Copyright (C) 2016 Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -1057,6 +1056,8 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         return cstat / (2.**0.5)
 
     def coinc_lim_for_thresh(self, s0, thresh):
+        if thresh <= (8. / (2.**0.5)):
+            return -1. * np.ones(len(s0['snglstat'])) * numpy.inf
         if self.hist is None:
             self.get_hist()
         logr_s = self.hist_max
@@ -1087,7 +1088,7 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
 
     def coinc(self, s0, s1, slide, step):
         # logsignalrate function inherited from PhaseTDStatistic
-        logr_s = self.hist_max
+        logr_s = self.logsignalrate(s0, s1, slide * step)
         # rescale by ExpFitCombinedSNR reference slope as for sngl stat
         cstat = s0['snglstat'] + s1['snglstat'] + logr_s / self.alpharef
         # cut off underflowing and very small values
@@ -1096,7 +1097,9 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
         return cstat / (2.**0.5)
 
     def coinc_lim_for_thresh(self, s0, thresh):
-        if self.hist is None:
+        if thresh <= (8. / (2.**0.5)):
+            return -1. * np.ones(len(s0['snglstat'])) * numpy.inf
+        if not self.has_hist :
             self.get_hist()
         logr_s = self.hist_max
         s1 = (2 ** 0.5) * thresh - s0['snglstat'] - logr_s / self.alpharef
@@ -1221,7 +1224,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         # ranking statistic is -ln(expected rate density of noise triggers)
         # plus normalization constant
         sngl_dict = {sngl[0]: sngl[1] for sngl in s}
-        sngl_dict[limifo] = np.zeros(len(s[s.keys()[0]]))
+        sngl_dict[limifo] = numpy.zeros(len(s[0][1]))
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_dict, kwargs['time_addition'])
         loglr = - thresh - ln_noise_rate + self.benchmark_lograte
@@ -1317,15 +1320,19 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
     def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo,
                                       **kwargs): # pylint:disable=unused-argument
+        if not self.has_hist:
+            self.get_hist()
+        if thresh <= -30.:
+            return np.ones(len(s0['snglstat'])) * numpy.inf
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
-        sngl_dict[limifo] = np.zeros(len(s[s.keys()[0]]))
+        sngl_rates[limifo] = numpy.zeros(len(s[0][1]))
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
         ln_noise_rate -= self.benchmark_lograte
 
         # Network sensitivity for a given coinc type is approximately
         # determined by the least sensitive ifo
-        network_sigmasq = np.ones(len(s[s.keys()[0]])) * kwargs['max_sigmasq']
+        network_sigmasq = numpy.ones(len(s[0][1])) * kwargs['max_sigmasq']
         # Volume \propto sigma^3 or sigmasq^1.5
         network_logvol = 1.5 * numpy.log(network_sigmasq)
         # Get benchmark log volume as single-ifo information
@@ -1472,17 +1479,21 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         loglr[loglr < -30.] = -30.
         return loglr
 
-    def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo
+    def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo,
                                       **kwargs): # pylint:disable=unused-argument
+        if not self.has_hist:
+            self.get_hist()
+        if thresh <= -30:
+            return np.ones(len(s0['snglstat'])) * numpy.inf
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
-        sngl_dict[limifo] = np.zeros(len(s[s.keys()[0]]))
+        sngl_rates[limifo] = numpy.zeros(len(s[0][1]))
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
         ln_noise_rate -= self.benchmark_lograte
 
         # Network sensitivity for a given coinc type is approximately
         # determined by the least sensitive ifo
-        network_sigmasq = np.ones(len(s[s.keys()[0]])) * kwargs['max_sigmasq']
+        network_sigmasq = numpy.ones(len(s[0][1])) * kwargs['max_sigmasq']
         # Volume \propto sigma^3 or sigmasq^1.5
         network_logvol = 1.5 * numpy.log(network_sigmasq)
         # Get benchmark log volume as single-ifo information :
@@ -1495,7 +1506,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         # given the time, phase and SNR differences between IFOs
 
         # First get signal PDF logr_s
-        logr_s = numpy.log(self.hist_max() * (kwargs['min_snr'] / self.ref_snr) ** -4.0)
+        logr_s = numpy.log(self.hist_max * (kwargs['min_snr'] / self.ref_snr) ** -4.0)
 
         # Find total volume of phase-time-amplitude space occupied by noise
         # coincs
