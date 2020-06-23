@@ -24,20 +24,37 @@
 """Provides IO for the dynesty sampler.
 """
 from .base_nested_sampler import BaseNestedSamplerFile
-import hickle
+from pycbc.io.hdf import (dump_state,load_state)
 
 class DynestyFile(BaseNestedSamplerFile):
     """Class to handle file IO for the ``dynesty`` sampler."""
 
     name = 'dynesty_file'
 
-    def write_pickled_data_into_checkpoint(self, pickle_obj):
+    def write_pickled_data_into_checkpoint_file(self, pickle_obj):
         """Dump the sampler state into checkpoint file
         """
         self.clear()
-        hickle.dump(pickle_obj,self, mode='r+', path='sampler_info/saved_state')
+        self.create_group('sampler_info/saved_state')
+        dump_state(pickle_obj,self, path='sampler_info/saved_state')
 
-    def read_pickled_data_from_checkpoint(self):
+    def read_pickled_data_from_checkpoint_file(self):
         """Load the sampler state (pickled) from checkpoint file                           
         """
-        return hickle.load(self,path='sampler_info/saved_state')    
+        return load_state(self,path='sampler_info/saved_state')   
+
+    def validate(self):
+        """Runs a validation test.
+           This checks that a samples group exist, and that pickeled data can 
+           be loaded.
+        Returns
+        -------
+        bool :
+            Whether or not the file is valid as a checkpoint file.
+        """
+        try:
+            load_state(self,path='sampler_info/saved_state')
+            checkpoint_valid = True
+        except KeyError:
+            checkpoint_valid = False
+        return checkpoint_valid 

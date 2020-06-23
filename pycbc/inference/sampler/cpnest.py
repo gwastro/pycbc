@@ -139,7 +139,7 @@ class CPNestSampler(BaseSampler):
             self.write_results(fn)
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
-            self.checkpoint_file, self.backup_file)
+            self.checkpoint_file, self.backup_file, self.name)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
 
