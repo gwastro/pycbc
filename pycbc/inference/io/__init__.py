@@ -29,7 +29,7 @@ import logging
 import h5py as _h5py
 from pycbc.io.record import (FieldArray, _numpy_function_lib)
 from pycbc import waveform as _waveform
-from pycbc.io.hdf import (dump_state,load_state)
+from pycbc.io.hdf import (dump_state, load_state)
 
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
@@ -169,8 +169,8 @@ def check_integrity(filename):
     with loadfile(filename, 'r') as fp:
         if fp.name == 'dynesty_file':
             try:
-                load_state(fp,path='sampler_info/saved_state')
-            except:
+                load_state(fp, path='sampler_info/saved_state')
+            except IOError:
                 raise IOError("Could not recover pickled state")
         else:
             # check that all datasets in samples have the same shape
@@ -242,7 +242,7 @@ def validate_checkpoint_files(checkpoint_file, backup_file, sampler_name):
     if backup_valid:
         with loadfile(backup_file, 'r') as fp:
             backup_valid = fp.validate()
-    if sampler_name == 'dynesty' or sampler_name == 'cpnest':
+    if sampler_name in ['dynesty', 'cpnest']:
         pass
     else:
         # This check is not required by nested samplers

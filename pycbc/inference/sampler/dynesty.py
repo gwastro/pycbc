@@ -30,10 +30,10 @@ packages for parameter estimation.
 from __future__ import absolute_import
 
 import logging
+import os
+import time 
 from pycbc.pool import choose_pool
 import numpy
-import time
-import os
 import dynesty
 from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files,
@@ -71,8 +71,8 @@ class DynestySampler(BaseSampler):
     name = "dynesty"
     _io = DynestyFile
 
-    def __init__(self, model, nlive, nprocesses=1, niter = 0,
-                 checkpoint_time_interval = 1800, maxcall = 5000,
+    def __init__(self, model, nlive, nprocesses=1, niter=0,
+                 checkpoint_time_interval=1800, maxcall=5000,
                  loglikelihood_function=None, use_mpi=False,
                  checkpoint_on_signal=True, run_kwds=None, **kwargs):
         self.model = model
@@ -94,6 +94,7 @@ class DynestySampler(BaseSampler):
         self.ndim = len(model.sampling_params)
         self.checkpoint_file = None
         self.niter = niter
+        self._sampler.__getstate__ = self.getstate
         if ('maxcall' or 'maxiter') in self.run_kwds:
             self.run_with_checkpoint = True
         else:
@@ -122,7 +123,7 @@ class DynestySampler(BaseSampler):
                     self.resume_from_checkpoint()
                     self.niter = self._sampler.results.niter
                     logging.info('Successfully read from the checkpoint file')
-                except: # (RuntimeError, TypeError, NameError):
+                except (RuntimeError, TypeError, NameError):
                     logging.info("Could not read checkpoint file")
             else:
                 self.niter = 0
@@ -133,7 +134,7 @@ class DynestySampler(BaseSampler):
                 self._sampler.run_nested(**self.run_kwds)
                 diff_niter = self._sampler.results.niter - self.niter
                 if delta_t >= self.checkpoint_time_interval:
-                    logging.info('Checkpointing N = {}'.format(n_checkpointing))
+                    logging.info('Checkpointing N={}'.format(n_checkpointing))
                     self.checkpoint()
                     n_checkpointing += 1
                     t0 = time.time()
@@ -178,7 +179,7 @@ class DynestySampler(BaseSampler):
                  'enlarge': float,
                  'update_interval': float,
                  'sample': str,
-                 'checkpoint_time_interval':int
+                 'checkpoint_time_interval': int
                  }
         extra = {}
         run_extra = {}
@@ -239,7 +240,7 @@ class DynestySampler(BaseSampler):
             self.write_results(fn)
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
-            self.checkpoint_file, self.backup_file,self.name)
+            self.checkpoint_file, self.backup_file, self.name)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
 

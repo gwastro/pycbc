@@ -23,8 +23,8 @@
 #
 """Provides IO for the dynesty sampler.
 """
+from pycbc.io.hdf import (dump_state, load_state)
 from .base_nested_sampler import BaseNestedSamplerFile
-from pycbc.io.hdf import (dump_state,load_state)
 
 class DynestyFile(BaseNestedSamplerFile):
     """Class to handle file IO for the ``dynesty`` sampler."""
@@ -36,16 +36,16 @@ class DynestyFile(BaseNestedSamplerFile):
         """
         self.clear()
         self.create_group('sampler_info/saved_state')
-        dump_state(pickle_obj,self, path='sampler_info/saved_state')
+        dump_state(pickle_obj, self, path='sampler_info/saved_state')
 
     def read_pickled_data_from_checkpoint_file(self):
-        """Load the sampler state (pickled) from checkpoint file                           
+        """Load the sampler state (pickled) from checkpoint file
         """
-        return load_state(self,path='sampler_info/saved_state')   
+        return load_state(self, path='sampler_info/saved_state')
 
     def validate(self):
         """Runs a validation test.
-           This checks that a samples group exist, and that pickeled data can 
+           This checks that a samples group exist, and that pickeled data can
            be loaded.
         Returns
         -------
@@ -53,8 +53,8 @@ class DynestyFile(BaseNestedSamplerFile):
             Whether or not the file is valid as a checkpoint file.
         """
         try:
-            load_state(self,path='sampler_info/saved_state')
+            load_state(self, path='sampler_info/saved_state')
             checkpoint_valid = True
         except KeyError:
             checkpoint_valid = False
-        return checkpoint_valid 
+        return checkpoint_valid
