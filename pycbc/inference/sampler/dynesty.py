@@ -72,8 +72,8 @@ class DynestySampler(BaseSampler):
     _io = DynestyFile
 
     def __init__(self, model, nlive, nprocesses=1, niter = 0,
-                 loglikelihood_function=None, use_mpi=False,
-                 checkpoint_on_signal=True, run_kwds=None,
+                 checkpoint_time_interval = 1800, loglikelihood_function=None,
+                 use_mpi=False, checkpoint_on_signal=True, run_kwds=None,
                  **kwargs):
         self.model = model
         log_likelihood_call, prior_call = setup_calls(
@@ -86,6 +86,7 @@ class DynestySampler(BaseSampler):
             pool.size = nprocesses
         self.use_mpi = use_mpi
         self.nprocesses = nprocesses
+        self.checkpoint_time_interval = checkpoint_time_interval
         self.run_kwds = {} if run_kwds is None else run_kwds
         self.nlive = nlive
         self.names = model.sampling_params
@@ -124,11 +125,17 @@ class DynestySampler(BaseSampler):
                     logging.info("Could not read checkpoint file")
             else:
                 self.niter = 0
-
+            n_checkpointing = 1
+            t0 = time.time()
             while diff_niter != 0:
+                dt = time.time()-t0
                 self._sampler.run_nested(**self.run_kwds)
-                self.checkpoint()
                 diff_niter = self._sampler.results.niter - self.niter
+                if dt >= self.checkpoint_time_interval:
+                    logging.info('Checkpointing N = {}'.format(n_checkpointing))
+                    self.checkpoint()
+                    n_checkpointing += 1
+                    t0 = time.time()
                 self.niter = self._sampler.results.niter
         else:
             self._sampler.run_nested(**self.run_kwds)
@@ -169,7 +176,9 @@ class DynestySampler(BaseSampler):
                  'bootstrap': int,
                  'enlarge': float,
                  'update_interval': float,
-                 'sample': str}
+                 'sample': str,
+                 'checkpoint_time_interval':int
+                 }
         extra = {}
         run_extra = {}
         for karg in cargs:
