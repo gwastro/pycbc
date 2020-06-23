@@ -207,17 +207,28 @@ class DynestySampler(BaseSampler):
         for fn in [self.checkpoint_file]:
             with loadfile(fn, 'a') as fp:
                 fp.write_pickled_data_into_checkpoint_file(pickle_obj)
+                fp.write_random_state()
 
     def resume_from_checkpoint(self):
         for fn in [self.checkpoint_file]:
             with loadfile(fn, 'r') as fp:
                 self._sampler = fp.read_pickled_data_from_checkpoint_file()
-                self._sampler.rstate = numpy.random
+            self._sampler.rstate = numpy.random
+            self.set_state_from_file(fn)
             pool = choose_pool(mpi=self.use_mpi, processes=self.nprocesses)
             if pool is not None:
                 pool.size = self.nprocesses
             self._sampler.M = pool.map
             self._sampler.pool = pool
+
+    def set_state_from_file(self, filename):
+        """Sets the state of the sampler back to the instance saved in a file.
+        """
+        with self.io(filename, 'r') as fp:
+            rstate = fp.read_random_state()
+        # set the numpy random state
+        numpy.random.set_state(rstate)
+        self._sampler.rstate.set_state(rstate)
 
     def finalize(self):
         logz = self._sampler.results.logz[-1:][0]
