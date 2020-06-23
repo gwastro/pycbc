@@ -119,7 +119,7 @@ class CPNestSampler(BaseSampler):
                   verbose=verbose,
                   loglikelihood_function=loglikelihood_function)
 
-        setup_output(obj, output_file)
+        setup_output(obj, output_file, check_nsamples=False)
         if not obj.new_checkpoint:
             obj.resume_from_checkpoint()
         return obj
@@ -139,7 +139,7 @@ class CPNestSampler(BaseSampler):
             self.write_results(fn)
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
-            self.checkpoint_file, self.backup_file, self.name)
+            self.checkpoint_file, self.backup_file, check_nsamples=False)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
 

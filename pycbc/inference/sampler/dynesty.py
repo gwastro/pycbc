@@ -72,7 +72,7 @@ class DynestySampler(BaseSampler):
     _io = DynestyFile
 
     def __init__(self, model, nlive, nprocesses=1, niter=0,
-                 checkpoint_time_interval=1800, maxcall=5000,
+                 checkpoint_time_interval=None, maxcall=None,
                  loglikelihood_function=None, use_mpi=False,
                  run_kwds=None, **kwargs):
         self.model = model
@@ -95,7 +95,9 @@ class DynestySampler(BaseSampler):
         self.checkpoint_file = None
         self.__getstate__ = self.getstate
         self.niter = niter
-        if ('maxcall' or 'maxiter') in self.run_kwds:
+        # Enable checkpointing if checkpoint_time_interval is set in config
+        # file in sampler section
+        if self.checkpoint_time_interval:
             self.run_with_checkpoint = True
         else:
             self.run_with_checkpoint = False
@@ -141,6 +143,7 @@ class DynestySampler(BaseSampler):
                 self.niter = self._sampler.results.niter
         else:
             self._sampler.run_nested(**self.run_kwds)
+
 
     @property
     def io(self):
@@ -194,7 +197,7 @@ class DynestySampler(BaseSampler):
         obj = cls(model, nlive=nlive, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
                   use_mpi=use_mpi, run_kwds=run_extra, **extra)
-        setup_output(obj, output_file)
+        setup_output(obj, output_file, check_nsamples=False)
         if not obj.new_checkpoint:
             obj.resume_from_checkpoint()
         return obj
@@ -242,7 +245,7 @@ class DynestySampler(BaseSampler):
             self.write_results(fn)
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
-            self.checkpoint_file, self.backup_file, self.name)
+            self.checkpoint_file, self.backup_file, check_nsamples=False)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
 

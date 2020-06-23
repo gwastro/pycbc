@@ -192,7 +192,8 @@ def check_integrity(filename):
                 _ = fp[group.format(param)][lastidx]
 
 
-def validate_checkpoint_files(checkpoint_file, backup_file, sampler_name):
+def validate_checkpoint_files(checkpoint_file, backup_file,
+                              check_nsamples=True):
     """Checks if the given checkpoint and/or backup files are valid.
 
     The checkpoint file is considered valid if:
@@ -242,9 +243,7 @@ def validate_checkpoint_files(checkpoint_file, backup_file, sampler_name):
     if backup_valid:
         with loadfile(backup_file, 'r') as fp:
             backup_valid = fp.validate()
-    if sampler_name in ['dynesty', 'cpnest']:
-        pass
-    else:
+    if check_nsamples:
         # This check is not required by nested samplers
         # check that the checkpoint and backup have the same number of samples;
         # if not, assume the checkpoint has the correct number
