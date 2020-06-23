@@ -74,7 +74,7 @@ class DynestySampler(BaseSampler):
     def __init__(self, model, nlive, nprocesses=1, niter=0,
                  checkpoint_time_interval=1800, maxcall=5000,
                  loglikelihood_function=None, use_mpi=False,
-                 checkpoint_on_signal=True, run_kwds=None, **kwargs):
+                 run_kwds=None, **kwargs):
         self.model = model
         log_likelihood_call, prior_call = setup_calls(
             model,
@@ -93,8 +93,8 @@ class DynestySampler(BaseSampler):
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
         self.checkpoint_file = None
+        self.__getstate__ = self.getstate
         self.niter = niter
-        self._sampler.__getstate__ = self.getstate
         if ('maxcall' or 'maxiter') in self.run_kwds:
             self.run_with_checkpoint = True
         else:
@@ -123,7 +123,7 @@ class DynestySampler(BaseSampler):
                     self.resume_from_checkpoint()
                     self.niter = self._sampler.results.niter
                     logging.info('Successfully read from the checkpoint file')
-                except (RuntimeError, TypeError, NameError):
+                except KeyError:# (RuntimeError, TypeError, NameError):
                     logging.info("Could not read checkpoint file")
             else:
                 self.niter = 0
@@ -195,7 +195,6 @@ class DynestySampler(BaseSampler):
                   loglikelihood_function=loglikelihood_function,
                   use_mpi=use_mpi, run_kwds=run_extra, **extra)
         setup_output(obj, output_file)
-        print('Yes we did call this function, thats not the problem')
         if not obj.new_checkpoint:
             obj.resume_from_checkpoint()
         return obj
@@ -219,14 +218,6 @@ class DynestySampler(BaseSampler):
                 pool.size = self.nprocesses
             self._sampler.M = pool.map
             self._sampler.pool = pool
-
-    def set_state_from_file(self, filename):
-        """Sets the state of the sampler back to the instance saved in a file.
-        """
-        with self.io(filename, 'r') as fp:
-            rstate = fp.read_random_state()
-        # set the numpy random state
-        numpy.random.set_state(rstate)
 
     def finalize(self):
         logz = self._sampler.results.logz[-1:][0]
