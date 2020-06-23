@@ -72,9 +72,9 @@ class DynestySampler(BaseSampler):
     _io = DynestyFile
 
     def __init__(self, model, nlive, nprocesses=1, niter = 0,
-                 checkpoint_time_interval = 1800, loglikelihood_function=None,
-                 use_mpi=False, checkpoint_on_signal=True, run_kwds=None,
-                 **kwargs):
+                 checkpoint_time_interval = 1800, maxcall = 5000,
+                 loglikelihood_function=None, use_mpi=False,
+                 checkpoint_on_signal=True, run_kwds=None, **kwargs):
         self.model = model
         log_likelihood_call, prior_call = setup_calls(
             model,
@@ -86,6 +86,7 @@ class DynestySampler(BaseSampler):
             pool.size = nprocesses
         self.use_mpi = use_mpi
         self.nprocesses = nprocesses
+        self.maxcall = maxcall
         self.checkpoint_time_interval = checkpoint_time_interval
         self.run_kwds = {} if run_kwds is None else run_kwds
         self.nlive = nlive
@@ -128,10 +129,10 @@ class DynestySampler(BaseSampler):
             n_checkpointing = 1
             t0 = time.time()
             while diff_niter != 0:
-                dt = time.time()-t0
+                delta_t = time.time()-t0
                 self._sampler.run_nested(**self.run_kwds)
                 diff_niter = self._sampler.results.niter - self.niter
-                if dt >= self.checkpoint_time_interval:
+                if delta_t >= self.checkpoint_time_interval:
                     logging.info('Checkpointing N = {}'.format(n_checkpointing))
                     self.checkpoint()
                     n_checkpointing += 1
