@@ -33,7 +33,7 @@ import numpy as np
 import lal
 from pycbc.types import TimeSeries
 from astropy.time import Time
-from astropy import constants
+from astropy import constants, coordinates, units
 from astropy.units.si import sday
 from numpy import cos, sin
 
@@ -304,76 +304,45 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 def effective_distance(distance, inclination, f_plus, f_cross):
     return distance / np.sqrt( ( 1 + np.cos( inclination )**2 )**2 / 4 * f_plus**2 + np.cos( inclination )**2 * f_cross**2 )
 
-    """ LISA class  """
+def dist_lisa_gbd(det, ref_time):
+    L_pos = LISA().get_pos(ref_time)
+    if isinstance(det,str):
+        det = Detector(det, ref_time).location
+        det = (det*units.m / units.AU).decompose()
+    if isinstance(det, np.ndarray) and det.shape[0]==3:
+        det = det
+    dist = np.array([det[0] - L_pos[0],
+                     det[1] - L_pos[1],
+                     det[2] - L_pos[2]])
+    return dist
+
+"""     LISA class      """
 
 class LISA(object):
-    def __init__(self, kappa, _lambda_, reference_time = 1126259462.0):
-        self.reference_time = reference_time
-        self.kappa = kappa
-        self._lambda_ = _lambda_
+    def __init__(self):
+        None
 
     def get_pos(self, t_gps):
-        if t_gps is None:
-            t_gps = Time(val = self.reference_time, format = 'gps',
-                         scale = 'utc').to_datetime(timezone = None)
-        elif isinstance(t_gps, np.ScalarType):
-            t_gps = Time(val = t_gps, format = 'gps',
-                         scale = 'utc').to_datetime(timezone = None)
-
-        t_gps = np.sum(np.array([t_gps.year - 2034, t_gps.month/12,
-                                 t_gps.day/(4380),
-                                 t_gps.hour/(105120), 
-                                 t_gps.minute/(6307200),
-                                 t_gps.second/(37843200),
-                                 t_gps.microsecond/(37843200*1e-6)]), axis=0)
+        t_gps = Time(val=t_gps, format='gps', scale='utc').jyear
 
         n = np.array(range(1, 4))
         kappa, _lambda_ = 0, 0
         alpha = 2. * np.pi * t_gps/1 + kappa
         beta_n = (n - 1) + (2. * np.pi/3) + _lambda_
-        a, L = 1., .1   # units are in AU
+        a, L = 1., .1
         e = L/(2. * a * np.sqrt(3))
-        _prod_ = a*e*(sin(alpha)*cos(alpha)*sin(beta_n)
+        prod = a*e*(sin(alpha)*cos(alpha)*sin(beta_n))
 
-        x = a*cos(alpha) + _prod_ - (1 + sin(alpha)**2)*cos(beta_n))
-        y = a*sin(alpha) + _prod_ - (1 + cos(alpha)**2)*sin(beta_n))
+        x = a*cos(alpha) + prod - (1 + sin(alpha)**2)*cos(beta_n)
+        y = a*sin(alpha) + prod - (1 + cos(alpha)**2)*sin(beta_n)
         z = -np.sqrt(3)*a*e*cos(alpha - beta_n)
-        self.location = np.array([x,y,z])
+        self.location = np.array([x, y, z])
 
         return self.location
 
-    def plot_orbit(self):
-        from mpl_toolkits.mplot3d import Axes3D
-        import matplotlib.pyplot as plt
-        dec_center = []
-        for i in range(2000):
-          dec_center.append(self.get_pos(self.reference_time + i).mean(axis = 1))
-
-        t = Time(val = self.reference_time, format = 'gps', scale ='utc')
-        sun = coordinates.get_sun(t).transform_to('icrs')
-        earth = coordinates.get_body('earth', t, location = None).transform_to('icrs')
-        sun.representation_type, earth.representation_type ='cartesian', 'cartesian'
-
-        fig = plt.figure()
-        ax = plt.axes(projection = "3d")
-        ax.scatter(np.float32(earth.x), np.float32(earth.y), np.float32(earth.z), marker = 'o')
-        ax.scatter(np.float32(sun.x), np.float32(sun.y), np.float32(sun.z), marker = '+')
-        ax.scatter(dec_center[0], dec_center[1] ,dec_center[2], marker = '*')
-        ax.set_xlabel('X axis (AU)')
-        ax.set_ylabel('Y axis (AU)')
-        ax.set_zlabel('Z axis (AU)')
-
     def time_delay_from_location(self, other_location, right_ascension,
                                  declination, t_gps):
-        dec_loc = self.get_pos(t_gps)
-        """signal = coordinates.SkyCoord(ra = right_ascension, dec = declination,
-                                          unit = u.rad, frame = 'gcrs').transform_to('icrs')"""
-
-        dx = np.array([other_location[0] - self.location[0],
-                       other_location[1] - self.location[1],
-                       other_location[2] - self.location[2]])
-
-        """ra_angle = self.gmst_estimate(t_gps) - right_ascension"""
+        dx = dist_lisa_gbd(other_location, t_gps)
         cosd = cos(declination)
         e0 = cosd * cos(right_ascension)
         e1 = cosd * -sin(right_ascension)
@@ -381,19 +350,15 @@ class LISA(object):
         ehat = np.array([e0, e1, e2])
         return dx.dot(ehat) / constants.c.value
 
-    def time_delay_from_detector(self, other_detector, right_ascension,
+    def time_delay_from_detector(self, det, right_ascension,
                                  declination, t_gps):
-        return self.time_delay_from_location(other_detector.location,
-                                             right_ascension,
-                                             declination,
-                                             t_gps)
+        return self.time_delay_from_location(det, right_ascension,
+                                             declination, t_gps)
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
-        if t_gps is None:
-          t_gps = Time(val = self.reference_time, format = 'gps', scale ='utc')
-        else:
-          t_gps = Time(val = t_gps, format = 'gps', scale ='utc')
-        earth = coordinates.get_body('earth', t, location = None).transform_to('icrs')
+        t_gps = Time(val=t_gps, format='gps', scale='utc')
+        earth = coordinates.get_body('earth', t_gps, location=None).transform_to('icrs')
+        earth.representation_type = 'cartesian'
         return self.time_delay_from_location(
             np.array([np.float32(earth.x), np.float32(earth.y), np.float32(earth.z)]),
-            right_ascension, declination, t_gps)        
+            right_ascension, declination, t_gps)
