@@ -306,17 +306,19 @@ def effective_distance(distance, inclination, f_plus, f_cross):
 
 def dist_lisa_gbd(det, ref_time):
     L_pos = LISA().get_pos(ref_time)
-    if isinstance(det,str):
+    if isinstance(det, str):
         det = Detector(det, ref_time).location
         det = (det*units.m / units.AU).decompose()
-    if isinstance(det, np.ndarray) and det.shape[0]==3:
+    if isinstance(det, np.ndarray) and det.shape[0] == 3:
         det = det
     dist = np.array([det[0] - L_pos[0],
                      det[1] - L_pos[1],
                      det[2] - L_pos[2]])
     return dist
 
+
 """     LISA class      """
+
 
 class LISA(object):
     def __init__(self):
@@ -357,8 +359,10 @@ class LISA(object):
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         t_gps = Time(val=t_gps, format='gps', scale='utc')
-        earth = coordinates.get_body('earth', t_gps, location=None).transform_to('icrs')
+        earth = coordinates.get_body('earth', t_gps, 
+                                     location=None).transform_to('icrs')
         earth.representation_type = 'cartesian'
         return self.time_delay_from_location(
-            np.array([np.float32(earth.x), np.float32(earth.y), np.float32(earth.z)]),
-            right_ascension, declination, t_gps)
+            np.array([np.float32(earth.x), np.float32(earth.y),
+                      np.float32(earth.z)]), right_ascension,
+                      declination, t_gps)
