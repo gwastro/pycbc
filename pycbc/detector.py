@@ -271,6 +271,16 @@ class Detector(object):
         dec = self.latitude
         return ra, dec
 
+    def get_icrs_pos(self):
+        loc = self.location
+        loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.m,
+                            frame='gcrs', representation_type='cartesian').transform_to('icrs')
+        loc.representation_type = 'cartesian'
+        conv = np.float32(((loc.x.unit/units.AU).decompose()).to_string())
+        loc = np.array([np.float32(loc.x), np.float32(loc.y),
+                        np.float32(loc.z)])*conv
+        return loc
+
 def overhead_antenna_pattern(right_ascension, declination, polarization):
     """Return the antenna pattern factors F+ and Fx as a function of sky
     location and polarization angle for a hypothetical interferometer located
@@ -304,18 +314,6 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 def effective_distance(distance, inclination, f_plus, f_cross):
     return distance / np.sqrt( ( 1 + np.cos( inclination )**2 )**2 / 4 * f_plus**2 + np.cos( inclination )**2 * f_cross**2 )
 
-def dist_lisa_gbd(det, ref_time):
-    L_pos = LISA().get_pos(ref_time)
-    if isinstance(det, str):
-        det = Detector(det, ref_time).location
-        det = (det*units.m / units.AU).decompose()
-    if isinstance(det, np.ndarray) and det.shape[0] == 3:
-        det = det
-    dist = np.array([det[0] - L_pos[0],
-                     det[1] - L_pos[1],
-                     det[2] - L_pos[2]])
-    return dist
-
 
 """     LISA class      """
 
@@ -324,12 +322,12 @@ class LISA(object):
     def __init__(self):
         None
 
-    def get_pos(self, t_gps):
-        t_gps = Time(val=t_gps, format='gps', scale='utc').jyear
+    def get_pos(self, ref_time):
+        ref_time = 2034 - Time(val=ref_time, format='gps', scale='utc').jyear
 
         n = np.array(range(1, 4))
         kappa, _lambda_ = 0, 0
-        alpha = 2. * np.pi * t_gps/1 + kappa
+        alpha = 2. * np.pi * ref_time/1 + kappa
         beta_n = (n - 1) + (2. * np.pi/3) + _lambda_
         a, L = 1., .1
         e = L/(2. * a * np.sqrt(3))
@@ -342,9 +340,21 @@ class LISA(object):
 
         return self.location
 
+    def get_gcrs_pos(self, loc):
+        loc = self.location
+        loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.AU,
+                            frame='gcrs', representation_type='cartesian').transform_to('icrs')
+        loc.representation_type = 'cartesian'
+        conv = np.float32(((loc.x.unit/units.m).decompose()).to_string())
+        loc = np.array([np.float32(loc.x), np.float32(loc.y),
+                        np.float32(loc.z)])*conv
+        return loc
+
     def time_delay_from_location(self, other_location, right_ascension,
                                  declination, t_gps):
-        dx = dist_lisa_gbd(other_location, t_gps)
+        dx = np.array([self.location[0] - other_location[0],
+                       self.location[1] - other_location[1],
+                       self.location[2] - other_location[2]])
         cosd = cos(declination)
         e0 = cosd * cos(right_ascension)
         e1 = cosd * -sin(right_ascension)
@@ -354,15 +364,16 @@ class LISA(object):
 
     def time_delay_from_detector(self, det, right_ascension,
                                  declination, t_gps):
-        return self.time_delay_from_location(det, right_ascension,
+        loc = Detector(det, t_gps).get_icrs_pos()
+        return self.time_delay_from_location(loc, right_ascension,
                                              declination, t_gps)
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         t_gps = Time(val=t_gps, format='gps', scale='utc')
-        earth = coordinates.get_body('earth', t_gps, 
+        earth = coordinates.get_body('earth', t_gps,
                                      location=None).transform_to('icrs')
         earth.representation_type = 'cartesian'
         return self.time_delay_from_location(
             np.array([np.float32(earth.x), np.float32(earth.y),
                       np.float32(earth.z)]), right_ascension,
-                      declination, t_gps)
+            declination, t_gps)
