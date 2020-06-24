@@ -274,7 +274,7 @@ class Detector(object):
     def get_icrs_pos(self):
         loc = self.location
         loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.m,
-                            frame='gcrs', representation_type='cartesian').transform_to('icrs')
+                frame='gcrs', representation_type='cartesian').transform_to('icrs')
         loc.representation_type = 'cartesian'
         conv = np.float32(((loc.x.unit/units.AU).decompose()).to_string())
         loc = np.array([np.float32(loc.x), np.float32(loc.y),
@@ -343,7 +343,7 @@ class LISA(object):
     def get_gcrs_pos(self, loc):
         loc = self.location
         loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.AU,
-                            frame='gcrs', representation_type='cartesian').transform_to('icrs')
+                frame='icrs', representation_type='cartesian').transform_to('gcrs')
         loc.representation_type = 'cartesian'
         conv = np.float32(((loc.x.unit/units.m).decompose()).to_string())
         loc = np.array([np.float32(loc.x), np.float32(loc.y),
