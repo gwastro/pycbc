@@ -89,10 +89,10 @@ As discussed above, we can use the same :download:`workflow configuration file <
 the ``dynesty`` example in the standard workflow. We need to create
 an ``injections_config.ini`` file to go along with the ``workflow_config.ini``:
 
-.. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-dynesty/injections_config.ini
+.. literalinclude:: ../../examples/workflow/inference/bbh_inj-dynesty/injections_config.ini
    :language: ini
 
-:download:`Download <../../examples/workflow/inference/gw150914_gw170814-dynesty/injections_config.ini>`
+:download:`Download <../../examples/workflow/inference/bbh_inj-dynesty/injections_config.ini>`
 
 ---------------------
 Generate the workflow
@@ -101,10 +101,10 @@ Generate the workflow
 Assuming that you have downloaded all of the configuration files to the
 same directory, you can generate the workflow by running the following script:
 
-.. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-dynesty/create_inj_workflow.sh
+.. literalinclude:: ../../examples/workflow/inference/bbh_inj-dynesty/create_inj_workflow.sh
    :language: bash
 
-:download:`Download <../../examples/workflow/inference/gw150914_gw170814-dynesty/create_inj_workflow.sh>`
+:download:`Download <../../examples/workflow/inference/bbh_inj-dynesty/create_inj_workflow.sh>`
 
 Note that you need to set the ``HTML_DIR`` before running. This tells the
 workflow where to save the results page when done. You can also change
