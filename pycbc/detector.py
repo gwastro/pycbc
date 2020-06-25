@@ -275,7 +275,7 @@ class Detector(object):
         """ Transforms GCRS frame to ICRS frame
         Returns
         ----------
-        loc: numpy.ndarray of shape (3,1)
+        loc: numpy.ndarray shape (3,1) units: AU
              ICRS coordinates in cartesian system
         """
         loc = self.location
@@ -357,14 +357,19 @@ class LISA(object):
 
         return self.location
 
-    def get_gcrs_pos(self, loc):
+    def get_gcrs_pos(self, location):
         """ Transforms ICRS frame to GCRS frame
+        Parameters
+        ----------
+        loc : numpy.ndarray shape (3,1) units: AU
+              Cartesian Coordinates of the location
+              in ICRS frame
         Returns
         ----------
-        loc: numpy.ndarray of shape (3,3)
-             GCRS coordinates in cartesian system
+        loc : numpy.ndarray shape (3,1) units: meters
+              GCRS coordinates in cartesian system
         """
-        loc = self.location
+        loc = location
         loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.AU,
                 frame='icrs', representation_type='cartesian').transform_to('gcrs')
         loc.representation_type = 'cartesian'
