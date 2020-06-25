@@ -41,9 +41,9 @@ of how to setup the workflow to analyze two binary black hole events at once
 -- GW150914 and GW170814.
 
 
-==============================================
-Example: GW150914 and GW170814 with `emcee_pt`
-==============================================
+================================================
+Example: GW150914 and GW170814 with ``emcee_pt``
+================================================
 
 In this example we setup a workflow to analyze GW150914 and GW170814 using
 ``emcee_pt``. We will use a prior that is uniform in comoving volume and
@@ -65,35 +65,38 @@ Get the inference configuration files
 We need the configuration files for ``pycbc_inference``. These define the
 prior, model, sampler, and data to use for each event.
 
- * The prior:
+**The prior:**
 
 .. literalinclude:: ../../examples/inference/priors/bbh-uniform_comoving_volume.ini 
    :language: ini
 
 :download:`Download <../../examples/inference/priors/bbh-uniform_comoving_volume.ini>`
 
- * The model:
+**The model:**
 
 .. literalinclude:: ../../examples/inference/models/marginalized_phase.ini
    :language: ini
 
 :download:`Download <../../examples/inference/models/marginalized_phase.ini>`
 
- * The sampler:
+**The sampler:**
 
 .. literalinclude:: ../../examples/inference/samplers/emcee_pt-srcmasses_comoving_volume.ini 
+   :language: ini
 
 :download:`Download <../../examples/inference/samplers/emcee_pt-srcmasses_comoving_volume.ini>`
 
- * We also need configuration files for the data. Since GW150914 occured during
-   O1 while GW170814 occurred during O2, we need both the standard O1 and O2
-   files:
+**The data:** We also need configuration files for the data. Since GW150914
+occured during O1 while GW170814 occurred during O2, we need both the standard
+O1 and O2 files:
 
 .. literalinclude:: ../../examples/inference/data/o1.ini
+   :language: ini
 
 :download:`Download <../../examples/inference/data/o1.ini>`
 
 .. literalinclude:: ../../examples/inference/data/o2.ini
+   :language: ini
 
 :download:`Download <../../examples/inference/data/o2.ini>`
 
@@ -115,12 +118,14 @@ automatically combine them into a single file.
 The events:
 
 .. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-emcee_pt/events.ini 
+   :language: ini
 
 :download:`Download <../../examples/workflow/inference/gw150914_gw170814-emcee_pt/events.ini>`
 
 The rest of the configuration file:
 
 .. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-emcee_pt/workflow_config.ini 
+   :language: ini
 
 :download:`Download <../../examples/workflow/inference/gw150914_gw170814-emcee_pt/workflow_config.ini>`
 
@@ -128,8 +133,8 @@ The rest of the configuration file:
 
  * Since the ``[executables]`` section contains entries for
    ``create_fits_file`` and ``plot_skymap``, the workflow will try to create
-   sky maps. **This requires a Python 3.x environment and ``ligo.skymap`` to
-   be installed.** If you have not installed ``ligo.skymap`` yet, do so by
+   sky maps. **This requires a Python 3.x environment and** ``ligo.skymap``
+   **to be installed.** If you have not installed ``ligo.skymap`` yet, do so by
    running::
 
         pip install ligo.skymap
@@ -239,14 +244,16 @@ files as above. New files that we need are:
  * The sampler configuration file for ``dynesty``:
 
 .. literalinclude:: ../../examples/inference/samplers/dynesty.ini 
+   :language: ini
 
 :download:`Download <../../examples/inference/samplers/dynesty.ini>`
 
  * An ``events`` file which uses ``dynesty``:
 
 .. literalinclude:: ../../examples/workflow/inference/gw150914_gw170814-dynesty/events.ini
+   :language: ini
 
-:download:`Download <../../examples/workflow/inference/gw150914_gw170814--dynesty/events.ini>`
+:download:`Download <../../examples/workflow/inference/gw150914_gw170814-dynesty/events.ini>`
 
 Note that here, we are not running ``pycbc_inference`` multiple times. This is
 because a single run of ``dynesty`` with the settings we are using (2000 live
@@ -256,9 +263,9 @@ We also need a slightly different
 :download:`workflow configuration file <../../examples/workflow/inference/gw150914_gw170814-dynesty/workflow_config.ini>`. The only difference from the workflow configuration file from the one above
 is that the diagnostic plot executable have been removed
 (``plot_acceptance_rate`` and ``plot_samples``). This is because these
-diagnostics do not work for ``dynesty``, a nested sampler. As above, *set the
-nprocesses argument in the ``[inference]`` section to the number of cores that
-works for your cluster.*
+diagnostics do not work for ``dynesty``, a nested sampler. As above, **set the
+nprocesses argument in the** ``[inference]`` **section to the number of cores that
+works for your cluster.***
 
 Note that we could have run both the ``emcee_pt`` analysis, above, and the
 ``dynesty`` analysis together in a single workflow. However, to do so, we would
@@ -269,4 +276,4 @@ it using the same ``create_workflow.sh`` script and ``pycbc_submit_dax``
 commands as above, making sure to change the ``WORKFLOW_NAME`` and ``SEED``.
 
 This will produce a results page that looks like the example
-`here <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/inference/inference-gw150914_gw170814/>`_.
+`here <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/inference/inference-dynesty-gw150914_gw170814/>`_.
