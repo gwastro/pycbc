@@ -272,6 +272,12 @@ class Detector(object):
         return ra, dec
 
     def get_icrs_pos(self):
+        """ Transforms GCRS frame to ICRS frame
+        Returns
+        ----------
+        loc: numpy.ndarray of shape (3,1)
+             ICRS coordinates in cartesian system
+        """
         loc = self.location
         loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.m,
                 frame='gcrs', representation_type='cartesian').transform_to('icrs')
@@ -319,10 +325,22 @@ def effective_distance(distance, inclination, f_plus, f_cross):
 
 
 class LISA(object):
+    """For LISA detector
+    """
     def __init__(self):
         None
 
     def get_pos(self, ref_time):
+    """Return the position of LISA detector for a given reference time
+    Parameters
+    ----------
+    ref_time : numpy.ScalarType
+    Returns
+    -------
+    location : numpy.ndarray of shape (3,3)
+               Returns the position of all 3 sattelites with each row 
+               correspoding to a single axis.
+    """
         ref_time = 2034 - Time(val=ref_time, format='gps', scale='utc').jyear
 
         n = np.array(range(1, 4))
@@ -341,6 +359,12 @@ class LISA(object):
         return self.location
 
     def get_gcrs_pos(self, loc):
+        """ Transforms ICRS frame to GCRS frame
+        Returns
+        ----------
+        loc: numpy.ndarray of shape (3,3)
+             GCRS coordinates in cartesian system
+        """
         loc = self.location
         loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.AU,
                 frame='icrs', representation_type='cartesian').transform_to('gcrs')
@@ -352,6 +376,25 @@ class LISA(object):
 
     def time_delay_from_location(self, other_location, right_ascension,
                                  declination, t_gps):
+        """Return the time delay from the LISA detector to detector for
+        a signal with the given sky location. In other words return
+        `t1 - t2` where `t1` is the arrival time in this detector and
+        `t2` is the arrival time in the other location. Units(AU)
+        Parameters
+        ----------
+        other_location : numpy.ndarray of coordinates in ICRS frame
+            A detector instance.
+        right_ascension : float
+            The right ascension (in rad) of the signal.
+        declination : float
+            The declination (in rad) of the signal.
+        t_gps : float
+            The GPS time (in s) of the signal.
+        Returns
+        -------
+        numpy.ndarray
+            The arrival time difference between the detectors.
+        """
         dx = np.array([self.location[0] - other_location[0],
                        self.location[1] - other_location[1],
                        self.location[2] - other_location[2]])
@@ -364,11 +407,32 @@ class LISA(object):
 
     def time_delay_from_detector(self, det, right_ascension,
                                  declination, t_gps):
+        """Return the time delay from the LISA detector for a signal with
+        the given sky location in ICRS frame; i.e. return `t1 - t2` where
+        `t1` is the arrival time in this detector and `t2` is the arrival
+        time in the other detector.
+        Parameters
+        ----------
+        other_detector : detector.Detector
+            A detector instance.
+        right_ascension : float
+            The right ascension (in rad) of the signal.
+        declination : float
+            The declination (in rad) of the signal.
+        t_gps : float
+            The GPS time (in s) of the signal.
+        Returns
+        -------
+        numpy.ndarray
+            The arrival time difference between the detectors.
+        """
         loc = Detector(det, t_gps).get_icrs_pos()
         return self.time_delay_from_location(loc, right_ascension,
                                              declination, t_gps)
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
+        """Return the time delay from the earth center in ICRS frame
+        """
         t_gps = Time(val=t_gps, format='gps', scale='utc')
         earth = coordinates.get_body('earth', t_gps,
                                      location=None).transform_to('icrs')
