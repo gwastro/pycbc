@@ -331,18 +331,17 @@ class LISA(object):
         None
 
     def get_pos(self, ref_time):
-    """Return the position of LISA detector for a given reference time
-    Parameters
-    ----------
-    ref_time : numpy.ScalarType
-    Returns
-    -------
-    location : numpy.ndarray of shape (3,3)
-               Returns the position of all 3 sattelites with each row 
+        """Return the position of LISA detector for a given reference time
+        Parameters
+        ----------
+        ref_time : numpy.ScalarType
+        Returns
+        -------
+        location : numpy.ndarray of shape (3,3)
+               Returns the position of all 3 sattelites with each row
                correspoding to a single axis.
-    """
+        """
         ref_time = 2034 - Time(val=ref_time, format='gps', scale='utc').jyear
-
         n = np.array(range(1, 4))
         kappa, _lambda_ = 0, 0
         alpha = 2. * np.pi * ref_time/1 + kappa
