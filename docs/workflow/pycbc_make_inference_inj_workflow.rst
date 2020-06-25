@@ -12,7 +12,7 @@ Optionally, it can also run a percentile-percentile on the injections it
 analyzed.
 
 The workflow is very similar to the standard inference workflow created by
-`pycbc_make_inference_workflow <pycbc_make_inference_workflow.rst>`. The main
+`pycbc_make_inference_workflow <pycbc_make_inference_workflow.rst>`_. The main
 differences are:
 
  * Rather than providing one or more ``[event-{label}]`` sections in the
@@ -44,7 +44,7 @@ differences are:
    This may also require providing an ``injection-samples-map`` argument.
    See the example file below for details.
 
-In the `standard workflow <pycbc_make_inference_workflow.rst>` we used two
+In the `standard workflow <pycbc_make_inference_workflow.rst>`_ we used two
 workflow configuration files, a ``workflow_config.ini`` and an ``events.ini``.
 For the injection workflow, we can use the same ``workflow_config.ini``; we
 just need to setup an ``injections_config.ini`` to add the needed sections
@@ -52,7 +52,7 @@ and arguments for the injections workflow.
 
 In the example below, we demonstrate how to use the injections workflow
 using the same prior and sampler settings as given in the
-`standard workflow <pycbc_make_inference_workflow.rst>` example.
+`standard workflow <pycbc_make_inference_workflow.rst>`_ example.
 
 
 ========================================
@@ -61,7 +61,7 @@ Example: BBH injections with ``dynesty``
 
 In this example we use the same prior and sampler settings as the example
 of analyzing GW150914 and GW170814 in the
-`pycbc_make_inference_workflow <pycbc_make_inference_workflow.rst>`
+`pycbc_make_inference_workflow <pycbc_make_inference_workflow.rst>`_
 documentation. We will analyze 10 injections, and do a percentile-percentile
 test on them. (This is only as an example. To do a full PP test, we recommend
 using at least 100 injections.)
@@ -75,11 +75,11 @@ We can use the same
 :download:`model <../../examples/inference/models/marginalized_phase.ini>`,
 and :download:`sampler <../../examples/inference/samplers/dynesty.ini>`
 configuration files as used in the  
-`pycbc_make_inference_workflow <pycbc_make_inference_workflow.rst>` example.
+`pycbc_make_inference_workflow <pycbc_make_inference_workflow.rst>`_ example.
 However, instead of analyzing O1 or O2 data, we will create fake Gaussian
 noise. To do that, we will use the
 :download:`data.ini <../../examples/inference/bbh-injection/data.ini>` file
-used for the `BBH simulation example <../inference/examples/bbh.rst>`.
+used for the `BBH simulation example <../inference/examples/bbh.rst>`_.
 
 -------------------------------------
 Setup the workflow configuration file
