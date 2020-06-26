@@ -522,7 +522,7 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
                 err_msg = "Different frame types cannot overlap in time."
                 raise ValueError(err_msg)
             checked_times.append(curr_times)
- 
+
             try:
                 cache, cache_file = run_datafind_instance(
                     cp,
@@ -538,14 +538,14 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
             except:
                 connection = setup_datafind_server_connection(cp, tags=tags)
                 cache, cache_file = run_datafind_instance(
-                    cp, 
-                    outputDir, 
+                    cp,
+                    outputDir,
                     connection,
-                    observatory, 
-                    ftype, 
+                    observatory,
+                    ftype,
                     start,
-                    end, 
-                    ifo, 
+                    end,
+                    ifo,
                     tags=tags
                 )
 
