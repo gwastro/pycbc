@@ -229,9 +229,9 @@ page to the directory you specified in the ``create_workflow.sh`` script.
 You can see what the result page will look like `here <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/inference/inference-gw150914_gw170814/>`_.
 
 
-=============================================
-Example: GW150914 and GW170814 with `dynesty`
-=============================================
+===============================================
+Example: GW150914 and GW170814 with ``dynesty``
+===============================================
 
 In this example, we repeat the above analysis, but using the `dynesty`
 sampler. We can use the same
