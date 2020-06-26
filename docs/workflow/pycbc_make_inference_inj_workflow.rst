@@ -154,4 +154,4 @@ Results page
 
 When the workflow has completed successfully it will write out the results
 page to the directory you specified in the ``create_inj_workflow.sh`` script.
-You can see what the result page will look like `here <>`_.
+You can see what the result page will look like `here <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/bbh_injections-dynesty/>`_.
