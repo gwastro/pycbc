@@ -195,6 +195,19 @@ if args.use_maxalpha:
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
 
+total_factors = [1]
+threshes = [numpy.inf]
+for decstr in args.loudest_keep_values:
+    thresh, factor = decstr.split(':')
+    if int(factor) == 1:
+        continue
+    threshes.append(float(thresh))
+    # throws an error if 'factor' is not the string representation
+    # of an integer
+    total_factors.append(total_factors[-1] * int(factor))
+total_factors = numpy.array(total_factors[::-1])
+threshes = numpy.array(threshes[::-1])
+
 if args.timeslide_interval is not None and \
         time_window >= args.timeslide_interval:
     raise parser.error("The maximum time delay between detectors should be "
@@ -240,13 +253,6 @@ for tnum in template_ids:
     logging.info('Calculating Single Detector Statistic')
     s0g, s1g = rank_method.single(trigs0), rank_method.single(trigs1)
 
-    thresh, factor = args.loudest_keep_values[0].split(':')
-    thresh = float(thresh)
-
-    lower = rank_method.coinc_lim_for_thresh(s0g[:1], thresh)
-    upper = rank_method.coinc_lim_for_thresh(s0g[:1], thresh + 0.1)
-    ascending = upper >= lower
-
     # Loop over the single triggers and calculate the coincs they can
     # form
     start0 = 0
@@ -269,12 +275,10 @@ for tnum in template_ids:
             t0 = t0g[start0:end0]
             t1 = t1g[start1:end1]
 
-            total_factor = int(factor)
-
             # Do time coincidence for slides that will be kept after the first decimation
             i0, i1, slide = coinc.time_coincidence(t0, t1, time_window,
-                                                   args.timeslide_interval*total_factor)
-            slide *= total_factor
+                                                   args.timeslide_interval*total_factors[0])
+            slide *= total_factors[0]
 
             c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
 
@@ -284,95 +288,56 @@ for tnum in template_ids:
             #index values of the background triggers
             bi = numpy.where(slide != 0)[0]
 
-            bl = bi[c[bi] < thresh]
+            bl = bi[c[bi] < threshes[0]]
             ti = numpy.concatenate([fi, bl])
 
             i0 = i0[ti]
             i1 = i1[ti]
             c = c[ti]
             slide = slide[ti]
-            dec = numpy.concatenate([numpy.ones(len(fi)), numpy.repeat(total_factor, len(bl))])
+            dec = numpy.concatenate([numpy.ones(len(fi)), numpy.repeat(total_factors[0], len(bl))])
 
             try:
                 s0stat = s0['snglstat']
-                s1stat = s1['snglstat']
             except IndexError:
                 s0stat = s0.copy()
-                s1stat = s1.copy()
 
+            if not rank_method.single_increasing:
+                s0stat *= -1.
             s0sort = numpy.argsort(s0stat)
-            s1sort = numpy.argsort(s1stat)
-            s1lim = rank_method.coinc_lim_for_thresh(s0[s0sort], thresh)
+            s0sorted = s0stat[s0sort]
 
-            if ascending:
-                s1cut = numpy.searchsorted(s1stat[s1sort], s1lim, side='left')
-            else:
-                s1cut = numpy.searchsorted(s1stat[s1sort], s1lim, side='right')
-                s0sort = s0sort[::-1]
-                s1sort = s1sort[::-1]
-                s1cut = -1 * s1cut[::-1]
-                s1cut[s1cut == 0] = len(s1stat)
+            for kidx in range(1, len(threshes)):
+                s0lim = rank_method.coinc_lim_for_thresh(s1, threshes[kidx - 1])
+                if not rank_method.single_increasing:
+                    s0lim *= -1.
+                
+                s0min = s0lim.min()
+                s0cut = numpy.searchsorted(s0sorted, s0min)
 
-            loops = {}
-            s0start = 0
-            for i in range(1, len(s1cut)):
-                if s1cut[i] != s1cut[i-1]:
-                    loops[(s0start, i)] = s1cut[i-1]
-                    s0start = i
-            loops[(s0start, len(s1cut))] = s1cut[-1]
-            
-            for range0, range1 in loops.items():
-                index0, index1 = s0sort[range0[0]:range0[1]], s1sort[range1:]
-                t0tmp, t1tmp = t0[index0], t1[index1]
-                s0tmp, s1tmp = s0[index0], s1[index1]
+                test_t0 = t0[s0sort[s0cut:]]
+                test_t1 = t1.copy()
 
-                i0tmp, i1tmp, slidetmp = coinc.time_coincidence(t0tmp, t1tmp, time_window, args.timeslide_interval)
+                i0tmp, i1tmp, slidetmp = coinc.time_coincidence(test_t0, test_t1,
+                                                                time_window,
+                                                                args.timeslide_interval*total_factors[kidx])
+                slidetmp *= total_factors[kidx]
+                bitmp = slidetmp != 0
+                i0tmp = i0tmp[bitmp]
+                i1tmp = i1tmp[bitmp]
+                slidetmp = slidetmp[bitmp]
 
-                ctmp = rank_method.coinc(s0tmp[i0tmp], s1tmp[i1tmp], slidetmp, args.timeslide_interval)
+                ctmp = rank_method.coinc(s0[s0sort[s0cut:][i0tmp]], s1[i1tmp],
+                                         slidetmp, args.timeslide_interval)
 
-                bitmp = numpy.where(slidetmp != 0)[0]
+                bitmp = numpy.where(ctmp >= threshes[kidx - 1])[0]
+                bitmp = bitmp[ctmp[bitmp] < threshes[kidx]]
 
-                bu = bitmp[ctmp[bitmp] >= thresh]
-
-                i0 = numpy.concatenate([i0, index0[i0tmp][bu]])
-                i1 = numpy.concatenate([i1, index1[i1tmp][bu]])
-                c = numpy.concatenate([c, ctmp[bu]])
-                slide = numpy.concatenate([slide, slidetmp[bu]])
-                dec = numpy.concatenate([dec, numpy.ones(len(bu))])
-
-            if len(args.loudest_keep_values) > 1:
-                fi = numpy.where(slide == 0)[0]
-                bi = numpy.where(slide != 0)[0]
-                bi_dec = dec[bi]
-
-                for decstr in args.loudest_keep_values[1:]:
-                    thresh, factor = decstr.split(':')
-                    thresh = float(thresh)
-                    # throws an error if 'factor' is not the string representation
-                    # of an integer
-                    total_factor *= int(factor)
-                    
-                    # triggers not being further decimated
-                    upper = c[bi] >= thresh
-                    idxk = bi[upper]
-                    
-                    # decimate the remaining triggers
-                    idx = bi[c[bi] < thresh]
-                    idx = idx[slide[idx] % total_factor == 0]
-                    
-                    bi = numpy.concatenate([idxk, idx])
-                    bi_dec = numpy.concatenate([bi_dec[upper],
-                                                numpy.repeat(total_factor, len(idx))])
-
-                dec[bi] = bi_dec
-                ti = numpy.concatenate([fi, bi])
-                i0 = i0[ti]
-                i1 = i1[ti]
-                c = c[ti]
-                slide = slide[ti]
-                dec = dec[ti]
-
-            logging.info('%s after decimation' % len(ti))
+                i0 = numpy.concatenate([i0, s0sort[s0cut:][i0tmp][bitmp]])
+                i1 = numpy.concatenate([i1, i1tmp[bitmp]])
+                c = numpy.concatenate([c, ctmp[bitmp]])
+                slide = numpy.concatenate([slide, slidetmp[bitmp]])
+                dec = numpy.concatenate([dec, numpy.ones(len(bitmp))])
 
             data['stat'] += [c]
             data['decimation_factor'] += [dec]
