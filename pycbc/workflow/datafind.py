@@ -508,21 +508,28 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
             # This REQUIRES a coalesced segment list to work
             start = int(scienceSegsIfo[0][0])
             end = int(scienceSegsIfo[-1][1])
-            # Then check for limits
+            # Then check for limits. We're expecting something like:
+            # value[start:end], so need to extract value, start and end
             if '[' in ftype:
+                # This gets start and end out
                 bopt = ftype.split('[')[1].split(']')[0]
                 newstart, newend = bopt.split(':')
+                # Then check if the times are within science time
                 start = max(int(newstart), start)
                 end = min(int(newend), end)
                 if end <= start:
                     continue
-                ftype = ftype.replace('[' + bopt +']', '')
+                # This extracts value
+                ftype = ftype.split('[')[0]
             curr_times = segments.segment(start, end)
+            # The times here must be distinct. We cannot have two different
+            # frame files at the same time from the same ifo.
             if checked_times.intersects_segment(curr_times):
                 err_msg = "Different frame types cannot overlap in time."
                 raise ValueError(err_msg)
             checked_times.append(curr_times)
 
+            # Ask datafind where the frames are
             try:
                 cache, cache_file = run_datafind_instance(
                     cp,
