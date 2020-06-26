@@ -445,29 +445,3 @@ class LISA(object):
             np.array([np.float32(earth.x), np.float32(earth.y),
                       np.float32(earth.z)]), right_ascension,
             declination, t_gps)
-
-    def arm_response(self, ref_time, wave):
-        """ Returns response
-        Parameters
-        ----------
-        ref_time : numpy.ScalarType
-                  Reference time
-        wave : numpy.ndarray shape (2,3)
-        Returns
-        -------
-        n_r = numpy.ndarray shape (3,3)
-          position unit vectors with each row corrsp to single det"""
-        
-        pos = self.get_pos(t_ref)
-        vector = np.array([(pos[:, 0] - pos[:, 2]),
-                           (pos[:, 2] - pos[:, 1]),
-                           (pos[:, 1] - pos[:, 0])])
-        distance = np.sqrt(np.sum((pos[:, 0] - pos[:, 2])**2))
-        nr = vector/distance  #unit vectors (3,3)
-        wave = np.random.random(3) #assuming sky location
-        phi_2 = np.dot(nr[1], wave)*nr[1] #for y_(12-3) phi_2
-        t = distance/constants.c.value
-        k = np.random.random(3)
-        yGW12_3 = (phi_2*(t - np.dot(k, vector[0]) - distance) -
-                  phi_2*(t - np.dot(k, -vector[2]))) / 2*(1 - np.dot(k, -nr[1]))
-        return yGW_12_3
