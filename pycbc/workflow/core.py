@@ -865,7 +865,7 @@ class Node(pegasus_workflow.Node):
         super(Node, self).__init__(executable)
         self.executed = False
         self.set_category(executable.name)
-        self.valid_time = valid_seg
+        self.valid_seg = valid_seg
 
         if executable.universe == 'vanilla' and executable.installed:
             self.add_profile('condor', 'getenv', 'True')
@@ -1015,13 +1015,15 @@ class Node(pegasus_workflow.Node):
 
     def resolve_td_options(self, td_options):
         for opt in td_options:
+            new_opt = resolve_td_option(td_options[opt], self.valid_seg)
+            self._options += [opt, new_opt]
             set_already = False
             curr_vals = td_options[opt]
             curr_vals = curr_vals.replace(' ', '').strip().split(',')
 
             # Resolving the simple case is trivial and can be done immediately.
             if len(curr_vals) == 1 and '[' not in curr_vals[0]:
-                self.options += [opt, curr_vals[0]]
+                self._options += [opt, curr_vals[0]]
 
             for cval in curr_vals:
                 start = int(self.valid_seg[0])
@@ -1037,7 +1039,7 @@ class Node(pegasus_workflow.Node):
                     if set_already:
                         err_msg = "Time-dependent options must be disjoint."
                         raise ValueError(err_msg)
-                    self.options += [opt, cval]
+                    self._options += [opt, cval]
                     set_already = True
             if not set_already:
                 err_msg = "Could not resolve option {}".format(opt)
@@ -2063,6 +2065,58 @@ def get_random_label():
     return ''.join(random.choice(string.ascii_uppercase + string.digits) \
                    for _ in range(15))
 
+
+def resolve_td_option(val_str, valid_seg):
+    """
+    Take an option which might be time-dependent and resolve it
+
+    Some options might take different values depending on the GPS time. For
+    example if you want opt_1 to take value_a if the time is between 10 and 100,
+    value_b if between 100 and 250, and value_c if between 250 and 500 you can
+    supply:
+
+    value_a[10:100],value_b[100:250],value_c[250:500].
+
+    This function will parse that string (as opt) and return the value fully
+    contained in valid_seg. If valid_seg is not full contained in one, and only
+    one, of these options. The code will fail. If given a simple option like:
+
+    value_a
+
+    The function will just return value_a.
+    """
+    # Track if we've already found a matching option
+    output = ''
+    # Strip any whitespace, and split on comma
+    curr_vals = val_str.replace(' ', '').strip().split(',')
+
+    # Resolving the simple case is trivial and can be done immediately.
+    if len(curr_vals) == 1 and '[' not in curr_vals[0]:
+        return curr_vals[0]
+
+    # Loop over all possible values
+    for cval in curr_vals:
+        start = int(valid_seg[0])
+        end = int(valid_seg[1])
+        # Extract limits for each case, and check overlap with valid_seg
+        if '[' in cval:
+            bopt = cval.split('[')[1].split(']')[0]
+            start, end = bopt.split(':')
+            cval = cval.replace('[' + bopt +']', '')
+        curr_seg = segments.segment(int(start), int(end))
+        # The segments module is a bit weird so we need to check if the two
+        # overlap using the following code. If valid_seg is fully within
+        # curr_seg this will be true.
+        if curr_seg.intersects(self.valid_seg) and \
+                (curr_seg & self.valid_seg == self.valid_seg):
+            if output:
+                err_msg = "Time-dependent options must be disjoint."
+                raise ValueError(err_msg)
+            output = cval
+    if not output:
+        err_msg = "Could not resolve option {}".format(opt)
+        raise ValueError
+    return output
 
 def add_workflow_settings_cli(parser, include_subdax_opts=False):
     """Adds workflow options to an argument parser.
