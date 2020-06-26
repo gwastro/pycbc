@@ -163,6 +163,19 @@ for ifo in trigs.ifos:
     data['%s/time' % ifo] = []
     data['%s/trigger_id' % ifo] = []
 
+total_factors = [1]
+threshes = [numpy.inf]
+for decstr in args.loudest_keep_values:
+    thresh, factor = decstr.split(':')
+    if int(factor) == 1:
+        continue
+    threshes.append(float(thresh))
+    # throws an error if 'factor' is not the string representation
+    # of an integer
+    total_factors.append(total_factors[-1] * int(factor))
+total_factors = numpy.array(total_factors[::-1])
+threshes = numpy.array(threshes[::-1])
+
 for tnum in template_ids:
     times_full = {}
     sds_full = {}
@@ -182,32 +195,19 @@ for tnum in template_ids:
                      'skipping' % tnum)
         continue
 
-    thresh, factor = args.loudest_keep_values[0].split(':')
-    thresh = float(thresh)
-
     if type(rank_method.single_dtype) == list:
         entries = [e[0] for e in rank_method.single_dtype]
         if 'snr' in entries:
-            min_snr = numpy.min([sds_full[i]['snr'] for i in trigs.ifos])
+            min_snr = min([numpy.min(sds_full[i]['snr']) for i in trigs.ifos])
         else:
             min_snr = None
         if 'sigmasq'in entries:
-            max_sigmasq = numpy.max([sds_full[i]['sigmasq'] for i in trigs.ifos])
+            max_sigmasq = max([numpy.max(sds_full[i]['sigmasq']) for i in trigs.ifos])
         else:
             max_sigmasq = None
-
-    sds_nopivot = {k: v[:1] for k, v in sds_full.items if k != args.pivot_ifo}
-    lower = rank_method.coinc_multiifo_lim_for_thresh(sds_nopivot, thresh,
-                                                      args.pivot_ifo,
-                                                      time_addition=args.coinc_threshold,
-                                                      min_snr=min_snr,
-                                                      max_sigmasq=max_sigmasq)
-    upper = rank_method.coinc_multiifo_lim_for_thresh(sds_nopivot, thresh + 0.1,
-                                                      args.pivot_ifo,
-                                                      time_addition=args.coinc_threshold,
-                                                      min_snr=min_snr,
-                                                      max_sigmasq=max_sigmasq)
-    ascending = upper >= lower
+    else:
+        min_snr = None
+        max_sigmasq = None
 
     # Loop over the single triggers and calculate the coincs they can form
     start0 = 0
@@ -233,129 +233,133 @@ for tnum in template_ids:
             tids[args.pivot_ifo] = tids_full[args.pivot_ifo][start0:end0]
             tids[args.fixed_ifo] = tids_full[args.fixed_ifo][start1:end1]
 
-            total_factor = int(factor)
-
-            # Do time coincidence for slides that will be kept after the first decimation
+            # Do time coincidence for slides that will be kept after the last decimation
+            logging.info('Starting coinc 0')
             ids, slide = coinc.time_multi_coincidence(times,
-                                                      args.timeslide_interval*total_factor,
+                                                      args.timeslide_interval*total_factors[0],
                                                       args.coinc_threshold,
                                                       args.pivot_ifo,
                                                       args.fixed_ifo)
+            slide *= total_factors[0]
+            logging.info('Finished coinc 0')
 
-            slide *= total_factor
-
+            logging.info('Starting cstat 0')
+            single_info = [(i, sds[i][ids[i]]) for i in trigs.ifos]
             cstat = rank_method.coinc_multiifo(
                 single_info, slide, args.timeslide_interval,
                 to_shift=trigs.to_shift,
                 time_addition=args.coinc_threshold)
+            logging.info('Finished cstat 0')
 
             #index values of the zerolag triggers
             fi = numpy.where(slide == 0)[0]
 
             #index values of the background triggers
             bi = numpy.where(slide != 0)[0]
+            bl = bi[cstat[bi] < threshes[0]]
 
-            bl = bi[cstat[bi] < thresh]
             ti = numpy.concatenate([fi, bl])
 
             ids = {i: t[ti] for i, t in ids.items()}
 
             cstat = cstat[ti]
             slide = slide[ti]
-            dec = numpy.concatenate([numpy.ones(len(fi)), numpy.repeat(total_factor, len(bl))])
+            dec = numpy.concatenate([numpy.ones(len(fi)), numpy.repeat(total_factors[0], len(bl))])
 
-            time_nopivot = {k, v for k, v in times.items() if k != args.pivot_ifo}
-            ifos_nopivot = [i for i in trigs.ifos if i != args.pivot_ifo]
+            if len(threshes) > 1:
+                ifos_nopivot = [i for i in trigs.ifos if i != args.pivot_ifo]
+                time_nopivot = {i: times[i] for i in ifos_nopivot}
 
-            if len(ifos_nopivot) > 1:
-                test_ids, slide = coinc.time_multi_coincidence(times_nopivot, 0.,
-                                                               args.coinc_threshold,
-                                                               ifos_nopivot[0],
-                                                               ifos_nopivot[1])
-            else:
-                det = ifos_nopivot[0]
-                test_ids = {det: np.arange(len(times[det]))}
+                if len(ifos_nopivot) > 1:
+                    test_ids, test_slide = coinc.time_multi_coincidence(time_nopivot, 0.,
+                                                                        args.coinc_threshold,
+                                                                        ifos_nopivot[0],
+                                                                        ifos_nopivot[1])
+                    if len(test_slide) == 0:
+                        start1 += args.batch_singles
+                        continue
 
-            # list in ifo order of remaining trigger data
-            single_info = [(i, sds[i][test_ids[i]]) for i in ifos_nopivot]
-            s0lim = rank_method.coinc_multiifo_lim_for_thresh(
-                single_info, thresh,
-                args.pivot_ifo,
-                time_addition=args.coinc_threshold,
-                min_snr=min_snr,
-                max_sigmasq=max_sigmasq)
+                    # list in ifo order of remaining trigger data
+                    test_single_info = [(i, sds[i][test_ids[i]]) for i in ifos_nopivot]
+                    test_times = {i: time_nopivot[i][test_ids[i]] for i in ifos_nopivot}
 
-            s0sort = numpy.argsort(s0lim)
-            
-            if ascending:
-                s0cut = numpy.searchsorted(sds[args.pivot_ifo][s0sort], s0lim, side='left')
-            else:
-                s0cut = numpy.searchsorted(sds[args.pivot_ifo][s0sort], s0lim, side='right')
-                s0sort = s0sort[::-1]
-                s0cut = -1 * s0cut[::-1]
-                s0cut[s0cut == 0] = len(s0sort)
+                else:
+                    det = ifos_nopivot[0]
+                    test_ids = {det: numpy.arange(len(times[det]))}
+                    test_single_info = [(i, sds[i]) for i in ifos_nopivot]
+                    test_times = {i: times[i] for i in ifos_nopivot}
 
-            for idx in range(len(s0cut)):
-                tmp_ids = {i: test_ids[i][idx:idx+1] for i in ifos_nopivot}
-                tmp_ids[args.pivot_ifo] = s0sort[s0cut[idx]:]
+                try:
+                    s0stat = sds[args.pivot_ifo]['snglstat'].copy()
+                except IndexError:
+                    s0stat = sds[args.pivot_ifo].copy()
 
-                tmp_times = {i: times[tmp_ids[i]] for i in trigs.ifos}
-                tmp_sds = {i: sds[tmp_ids[i]] for i in trigs.ifos}
+                if not rank_method.single_increasing:
+                    s0stat *= -1.
+                s0sort = numpy.argsort(s0stat)
+                s0sorted = s0stat[s0sort]
 
-                tmptmp_ids, tmp_slide = coinc.time_multi_coincidence(tmp_times,
-                                                      args.timeslide_interval,
-                                                      args.coinc_threshold,
-                                                      args.pivot_ifo,
-                                                      args.fixed_ifo)
-                
-                tmp_single_info = [(i, tmp_sds[i][tmptmp_ids[i]]) for i in trigs.ifos]
+            for kidx in range(1, len(threshes)):
+                logging.info('Getting single limits {0}'.format(kidx))
+                s0lim = rank_method.coinc_multiifo_lim_for_thresh(
+                    test_single_info, threshes[kidx - 1],
+                    args.pivot_ifo,
+                    time_addition=args.coinc_threshold,
+                    min_snr=min_snr,
+                    max_sigmasq=max_sigmasq)
+                logging.info('Got single limits {0}'.format(kidx))
+
+                if not rank_method.single_increasing:
+                    s0lim *= -1.
+
+                s0min = s0lim.min()
+                s0cut = numpy.searchsorted(s0sorted, s0min)
+
+                test_times[args.pivot_ifo] = times[args.pivot_ifo][s0sort[s0cut:]]
+                test_ids[args.pivot_ifo] = s0sort[s0cut:]
+
+                logging.info('Getting coinc')
+                set_ids, set_slide = coinc.time_multi_coincidence(test_times,
+                                                                  args.timeslide_interval*total_factors[kidx],
+                                                                  args.coinc_threshold,
+                                                                  args.pivot_ifo,
+                                                                  args.fixed_ifo)
+                set_slide *= total_factors[kidx]
+                logging.info('Got coinc')
+
+                sets = set_slide != 0
+                for i in range(1, len(ifos_nopivot)):
+                    sets *= set_ids[ifos_nopivot[i-1]] == set_ids[ifos_nopivot[i]]
+
+                #lim_ids = set_ids[ifos_nopivot[0]][sets]
+                #test_ids = {i: test_ids[i][set_ids[i][sets]] for i in ifos_nopivot}
+                #test_ids[args.pivot_ifo] = set_ids[args.pivot_ifo][sets]
+                #test_slide = set_slide[sets]
+                set_ids = {i: set_ids[i][sets] for i in trigs.ifos}
+                set_slide = set_slide[sets]
+
+                logging.info('finding above {0}'.format(kidx))
+                above = s0sorted[s0cut:][set_ids[args.pivot_ifo]] >= s0lim[set_ids[ifos_nopivot[0]]]
+                logging.info('found above {0}'.format(kidx))
+
+                logging.info('Getting cstat')
+                tmp_ids = {i: test_ids[i][set_ids[i][above]] for i in trigs.ifos}
+                set_slide = set_slide[above]
+                tmp_single_info = [(i, sds[i][tmp_ids[i]]) for i in trigs.ifos]
                 tmp_cstat = rank_method.coinc_multiifo(
-                    single_info, slide, args.timeslide_interval,
+                    tmp_single_info, set_slide, args.timeslide_interval,
                     to_shift=trigs.to_shift,
                     time_addition=args.coinc_threshold)
+                logging.info('Got cstat')
 
-                tmp_bi = numpy.where(tmp_slide != 0)[0]
-                bu = tmp_bi[tmp_cstat[tmp_bi] >= thresh]
+                tmp_bi = numpy.where(tmp_cstat >= threshes[kidx - 1])[0]
+                tmp_bi = tmp_bi[tmp_cstat[tmp_bi] < threshes[kidx]]
 
                 for i in trigs.ifos:
-                    ids[i] = numpy.concatenate([ids[i], tmp_ids[i][tmptmp_ids[i]][bu]])
-                cstat = numpy.concatenate([cstat, tmp_cstat[bu]])
-                slide = numpy.concatenate([slide, tmp_slide[bu]])
-                dec = numpy.concatenate([dec, numpy.ones(len(bu))])
-
-            if len(args.loudest_keep_values) > 1:
-                fi = numpy.where(slide == 0)[0]
-                bi = numpy.where(slide != 0)[0]
-                bi_dec = dec[bi]
-
-                for decstr in args.loudest_keep_values[1:]:
-                    thresh, factor = decstr.split(':')
-                    thresh = float(thresh)
-                    # throws an error if 'factor' is not the string representation
-                    # of an integer
-                    total_factor *= int(factor)
-
-                    # triggers not being further decimated
-                    upper = cstat[bi] >= thresh
-                    idx_keep = bi[upper]
-
-                    # decimate the remaining triggers
-                    idx = bi[cstat[bi] < thresh]
-                    idx = idx[slide[idx] % total_factor == 0]
-
-                    bi = numpy.concatenate([idx_keep, idx])
-                    bi_dec = numpy.concatenate([bi_dec[upper],
-                                                numpy.repeat(total_factor, len(idx))])
-
-                dec[bi] = bi_dec
-                ti = numpy.concatenate([fi, bi])
-                for i in trigs.ifos:
-                    ids[i] = ids[i][ti]
-                cstat = cstat[ti]
-                slide = slide[ti]
-                dec = dec[ti]
-
-            logging.info('%s after decimation' % len(ti))
+                    ids[i] = numpy.concatenate([ids[i], tmp_ids[i][tmp_bi]])
+                cstat = numpy.concatenate([cstat, tmp_cstat[tmp_bi]])
+                slide = numpy.concatenate([slide, set_slide[tmp_bi]])
+                dec = numpy.concatenate([dec, numpy.repeat(total_factors[kidx], len(tmp_bi))])
 
             # temporary storage for decimated trigger ids
             for ifo in trigs.ifos:

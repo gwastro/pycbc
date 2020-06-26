@@ -64,6 +64,9 @@ class Stat(object):
         # This is used by background estimation codes that need to maintain
         # a buffer of such values.
         self.single_dtype = numpy.float32
+        # True if a larger single detector statistic will produce a larger
+        # coincident statistic
+        self.single_increasing = True
 
         self.ifos = ifos or []
 
@@ -868,6 +871,7 @@ class ExpFitStatistic(NewSNRStatistic):
             self.get_ref_vals(i)
 
         self.get_newsnr = ranking.get_newsnr
+        self.single_increasing = False
 
     def assign_fits(self, ifo):
         coeff_file = self.files[ifo+'-fit_coeffs']
@@ -970,6 +974,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         ExpFitStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
+        self.single_increasing = True
 
     def use_alphamax(self):
         # take reference slope as the harmonic mean of individual ifo slopes
@@ -1251,6 +1256,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
                                        for ifo in ['H1', 'L1']], axis=0)
         self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
+        self.single_increasing = False
 
     def assign_median_sigma(self, ifo):
         coeff_file = self.files[ifo + '-fit_coeffs']
@@ -1367,6 +1373,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
                                        for ifo in ['H1', 'L1']], axis=0)
         self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
+        self.single_increasing = False
 
     def assign_median_sigma(self, ifo):
         coeff_file = self.files[ifo + '-fit_coeffs']
