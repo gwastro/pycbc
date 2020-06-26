@@ -122,6 +122,16 @@ class Executable(pegasus_workflow.Executable):
     # file_input_options = ['--psd-file, '--bank-file'] (as an example)
     file_input_options = []
 
+    # Set this parameter to indicate that this option should take different
+    # values based on the time. E.g. something like
+    # --option1 value1[0:1000],value2[1000:2000]
+    # would be replaced with --option1 value1 if the time is within 0,1000 and
+    # value2 if in 1000,2000. A failure will be replaced if the job time is
+    # not fully contained in one of these windows, or if fully contained in
+    # multiple of these windows. This is resolved when creating the Job from the
+    # Executable
+    time_dependent_options = []
+
     # This is the default value. It will give a warning if a class is
     # used where the retention level is not set. The file will still be stored
     KEEP_BUT_RAISE_WARNING = 5
@@ -382,6 +392,13 @@ class Executable(pegasus_workflow.Executable):
                     else:
                         self.common_raw_options.append(curr_file.dax_repr)
                     self.common_raw_options.append(' ')
+            elif opt in self.time_dependent_options:
+                # There is a possibility of time-dependent, file options.
+                # For now we will avoid supporting that complication unless
+                # it is needed. This would require resolving the file first
+                # in this function, and then dealing with the time-dependent
+                # stuff later.
+                self.unresolved_td_options[opt] = value
             else:
                 self.common_options += [opt, value]
 
@@ -567,6 +584,7 @@ class Executable(pegasus_workflow.Executable):
         # from the ini file section(s)
         self.common_options = []
         self.common_raw_options = []
+        self.unresolved_td_options = {}
         self.common_input_files = []
         for sec in sections:
             if self.cp.has_section(sec):
@@ -843,10 +861,11 @@ class Workflow(pegasus_workflow.Workflow):
 
 
 class Node(pegasus_workflow.Node):
-    def __init__(self, executable):
+    def __init__(self, executable, valid_seg=None):
         super(Node, self).__init__(executable)
         self.executed = False
         self.set_category(executable.name)
+        self.valid_time = valid_seg
 
         if executable.universe == 'vanilla' and executable.installed:
             self.add_profile('condor', 'getenv', 'True')
@@ -858,6 +877,15 @@ class Node(pegasus_workflow.Node):
         self._raw_options += self.executable.common_raw_options
         for inp in self.executable.common_input_files:
             self._add_input(inp)
+
+        if len(self.executable.time_dependent_options):
+            # Resolving these options requires the concept of a valid time.
+            # To keep backwards compatibility we will allow this to work if
+            # valid_seg is not supplied and no option actually needs resolving.
+            # It would be good to get this from the workflow's valid_seg if
+            # not overriden. But the Node is not connected to the Workflow
+            # until the dax starts to be written.
+            self.resolve_td_options(self.executable.unresolved_td_options)
 
     def get_command_line(self):
         self._finalize()
@@ -985,6 +1013,35 @@ class Node(pegasus_workflow.Node):
             output_files.append(curr_file)
         self.add_multiifo_output_list_opt(opt, output_files)
 
+    def resolve_td_options(self, td_options):
+        for opt in td_options:
+            set_already = False
+            curr_vals = td_options[opt]
+            curr_vals = curr_vals.replace(' ', '').strip().split(',')
+
+            # Resolving the simple case is trivial and can be done immediately.
+            if len(curr_vals) == 1 and '[' not in curr_vals[0]:
+                self.options += [opt, curr_vals[0]]
+
+            for cval in curr_vals:
+                start = int(self.valid_seg[0])
+                end = int(self.valid_seg[1])
+                # Check for limits
+                if '[' in cval:
+                    bopt = cval.split('[')[1].split(']')[0]
+                    start, end = bopt.split(':')
+                    cval = cval.replace('[' + bopt +']', '')
+                curr_seg = segments.segment(int(start), int(end))
+                if curr_seg.intersects(self.valid_seg) and \
+                        (curr_seg & self.valid_seg == self.valid_seg):
+                    if set_already:
+                        err_msg = "Time-dependent options must be disjoint."
+                        raise ValueError(err_msg)
+                    self.options += [opt, cval]
+                    set_already = True
+            if not set_already:
+                err_msg = "Could not resolve option {}".format(opt)
+                raise ValueError(err_msg)
 
     @property
     def output_files(self):
@@ -1002,6 +1059,7 @@ class Node(pegasus_workflow.Node):
             err_msg += "%d output files." %(len(out_files))
             raise ValueError(err_msg)
         return out_files[0]
+
 
 class File(pegasus_workflow.File):
     '''
