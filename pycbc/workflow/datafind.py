@@ -494,25 +494,61 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     datafindouts = []
     datafindcaches = []
     logging.info("Querying datafind server for all science segments.")
+    checked_times = segments.segmentlist([])
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
-        frameType = cp.get_opt_tags("workflow-datafind",
-                                "datafind-%s-frame-type" % (ifo.lower()), tags)
-        # This REQUIRES a coalesced segment list to work
-        startTime = int(scienceSegsIfo[0][0])
-        endTime = int(scienceSegsIfo[-1][1])
-        try:
-            cache, cache_file = run_datafind_instance(cp, outputDir, connection,
-                                       observatory, frameType, startTime,
-                                       endTime, ifo, tags=tags)
-        except:
-            connection = setup_datafind_server_connection(cp, tags=tags)
-            cache, cache_file = run_datafind_instance(cp, outputDir, connection,
-                                       observatory, frameType, startTime,
-                                       endTime, ifo, tags=tags)
+        frame_types = cp.get_opt_tags(
+            "workflow-datafind",
+            "datafind-%s-frame-type" % (ifo.lower()), tags
+        )
+        # Check if this is one type, or time varying
+        frame_types = frame_type.replace(' ', '').strip().split(',')
+        for ftype in frame_types:
+            # Check the times, default to full time initially
+            # This REQUIRES a coalesced segment list to work
+            start = int(scienceSegsIfo[0][0])
+            end = int(scienceSegsIfo[-1][1])
+            # Then check for limits
+            if '[' in ftype:
+                bopt = ftype.split('[')[1].split(']')[0]
+                start, end = bopt.split(':')
+                start = int(start)
+                end = int(end) 
+                ftype = ftype.replace('[' + bopt +']', '')
+            curr_times = segments.segment(start, end)
+            if checked_times.intersects_semgent(curr_times):
+                err_msg = "Different frame types cannot overlap in time."
+                raise ValueError(err_msg)
+            checked_times.append(curr_times)
+ 
+            try:
+                cache, cache_file = run_datafind_instance(
+                    cp,
+                    outputDir,
+                    connection,
+                    observatory,
+                    ftype,
+                    start,
+                    end,
+                    ifo,
+                    tags=tags
+                )
+            except:
+                connection = setup_datafind_server_connection(cp, tags=tags)
+                cache, cache_file = run_datafind_instance(
+                    cp, 
+                    outputDir, 
+                    connection,
+                    observatory, 
+                    ftype, 
+                    start,
+                    end, 
+                    ifo, 
+                    tags=tags
+                )
 
-        datafindouts.append(cache_file)
-        datafindcaches.append(cache)
+            datafindouts.append(cache_file)
+            datafindcaches.append(cache)
     return datafindcaches, datafindouts
 
 def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
