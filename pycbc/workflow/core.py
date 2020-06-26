@@ -2107,8 +2107,8 @@ def resolve_td_option(val_str, valid_seg):
         # The segments module is a bit weird so we need to check if the two
         # overlap using the following code. If valid_seg is fully within
         # curr_seg this will be true.
-        if curr_seg.intersects(self.valid_seg) and \
-                (curr_seg & self.valid_seg == self.valid_seg):
+        if curr_seg.intersects(valid_seg) and \
+                (curr_seg & valid_seg == valid_seg):
             if output:
                 err_msg = "Time-dependent options must be disjoint."
                 raise ValueError(err_msg)
