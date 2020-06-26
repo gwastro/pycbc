@@ -347,69 +347,25 @@ class BaseInferenceFile(h5py.File):
     def thin_start(self):
         """The default start index to use when reading samples.
 
-        This tries to read from ``thin_start`` in the ``attrs``. If it isn't
-        there, just returns 0."""
-        try:
-            return self.attrs['thin_start']
-        except KeyError:
-            return 0
-
-    @thin_start.setter
-    def thin_start(self, thin_start):
-        """Sets the thin start attribute.
-
-        Parameters
-        ----------
-        thin_start : int or None
-            Value to set the thin start to.
+        Unless overridden by sub-class attribute, just returns 0.
         """
-        self.attrs['thin_start'] = thin_start
+        return 0
 
     @property
     def thin_interval(self):
         """The default interval to use when reading samples.
 
-        This tries to read from ``thin_interval`` in the ``attrs``. If it
-        isn't there, just returns 1.
+        Unless overridden by sub-class attribute, just returns 1.
         """
-        try:
-            return self.attrs['thin_interval']
-        except KeyError:
-            return 1
-
-    @thin_interval.setter
-    def thin_interval(self, thin_interval):
-        """Sets the thin start attribute.
-
-        Parameters
-        ----------
-        thin_interval : int or None
-            Value to set the thin interval to.
-        """
-        self.attrs['thin_interval'] = thin_interval
+        return 1
 
     @property
     def thin_end(self):
         """The defaut end index to use when reading samples.
 
-        This tries to read from ``thin_end`` in the ``attrs``. If it isn't
-        there, just returns None.
+        Unless overriden by sub-class attribute, just return ``None``.
         """
-        try:
-            return self.attrs['thin_end']
-        except KeyError:
-            return None
-
-    @thin_end.setter
-    def thin_end(self, thin_end):
-        """Sets the thin end attribute.
-
-        Parameters
-        ----------
-        thin_end : int or None
-            Value to set the thin end to.
-        """
-        self.attrs['thin_end'] = thin_end
+        return None
 
     @property
     def cmd(self):
@@ -615,37 +571,29 @@ class BaseInferenceFile(h5py.File):
             previous = []
         self.attrs["cmd"] = cmd + previous
 
-    def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
-        """Formats a slice using the given arguments that can be used to
-        retrieve a thinned array from an InferenceFile.
+    @staticmethod
+    def get_slice(thin_start=None, thin_interval=None, thin_end=None):
+        """Formats a slice to retrieve a thinned array from an HDF file.
 
         Parameters
         ----------
-        thin_start : int, optional
-            The starting index to use. If None, will use the ``thin_start``
-            attribute.
-        thin_interval : int, optional
-            The interval to use. If None, will use the ``thin_interval``
-            attribute.
-        thin_end : int, optional
-            The end index to use. If None, will use the ``thin_end`` attribute.
+        thin_start : float or int, optional
+            The starting index to use. If provided, the ``int`` will be taken.
+        thin_interval : float or int, optional
+            The interval to use. If provided the ceiling of it will be taken.
+        thin_end : float or int, optional
+            The end index to use. If provided, the ``int`` will be taken.
 
         Returns
         -------
         slice :
             The slice needed.
         """
-        if thin_start is None:
-            thin_start = int(self.thin_start)
-        else:
+        if thin_start is not None:
             thin_start = int(thin_start)
-        if thin_interval is None:
-            thin_interval = self.thin_interval
-        else:
+        if thin_interval is not None:
             thin_interval = int(numpy.ceil(thin_interval))
-        if thin_end is None:
-            thin_end = self.thin_end
-        else:
+        if thin_end is not None:
             thin_end = int(thin_end)
         return slice(thin_start, thin_end, thin_interval)
 
@@ -811,3 +759,46 @@ class BaseInferenceFile(h5py.File):
                 cls.write_kwargs_to_attrs(attrs, **val)
             else:
                 attrs[arg] = val
+
+    def write_data(self, name, data, path=None):
+        """Convenience function to write data.
+
+        Given ``data`` is written as a dataset with ``name`` in ``path``.
+        If the data hasn't been written yet, the dataset will be created.
+        Otherwise, will overwrite the data that is there. If data already
+        exists in the file with the same name and path, the given data must
+        have the same shape.
+
+        Parameters
+        ----------
+        name : str
+            The name to associate with the data. This will be the dataset
+            name (if data is array-like) or the key in the attrs.
+        data : array, dict, or atomic
+            The data to write. If a dictionary, a subgroup will be created
+            for each key, and the values written there. This will be done
+            recursively until an array or atomic (e.g., float, int, str), is
+            found. Otherwise, the data is written to the given name.
+        path : str, optional
+            Write to the given path. Default (None) will write to the top
+            level. If the path does not exist in the file, it will be
+            created.
+        """
+        if path is None:
+            path = '/'
+        try:
+            group = self[path]
+        except KeyError:
+            # create the group
+            self.create_group(path)
+            group = self[path]
+        if isinstance(data, dict):
+            # call myself for each key, value pair in the dictionary
+            for key, val in data.items():
+                self.write_data(key, val, path='/'.join([path, name]))
+        else:
+            try:
+                group[name][()] = data
+            except KeyError:
+                # dataset doesn't exist yet
+                group[name] = data

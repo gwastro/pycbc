@@ -52,11 +52,19 @@ class UltranestSampler(BaseSampler):
     ----------
     model : model
         A model from ``pycbc.inference.models``.
+    log_dir : str
+        Folder where files should be stored for resuming (optional).
+    stepsampling : bool
+        If false, uses rejection sampling. If true, uses
+        hit-and-run sampler, which scales better with dimensionality.
     """
     name = "ultranest"
     _io = UltranestFile
 
-    def __init__(self, model, **kwargs):
+    def __init__(self, model, log_dir=None,
+                 stepsampling=False,
+                 enable_plots=False,
+                 **kwargs):
         super(UltranestSampler, self).__init__(model)
 
         import ultranest
@@ -65,8 +73,15 @@ class UltranestSampler(BaseSampler):
         self._sampler = ultranest.ReactiveNestedSampler(
             list(self.model.variable_params),
             log_likelihood_call,
-            prior_call)
+            prior_call, log_dir=log_dir, resume=True)
 
+        if stepsampling:
+            import ultranest.stepsampler
+            self._sampler.stepsampler = ultranest.stepsampler.RegionBallSliceSampler(
+                nsteps=100, adaptive_nsteps='move-distance',
+                region_filter=True)
+
+        self.enable_plots = enable_plots
         self.nlive = 0
         self.ndim = len(self.model.variable_params)
         self.result = None
@@ -74,6 +89,10 @@ class UltranestSampler(BaseSampler):
 
     def run(self):
         self.result = self._sampler.run(**self.kwargs)
+        self._sampler.print_results()
+
+        if self.enable_plots:
+            self._sampler.plot()
 
     @property
     def io(self):
@@ -100,6 +119,9 @@ class UltranestSampler(BaseSampler):
                 'min_ess': int,
                 'max_iters': int,
                 'max_ncalls': int,
+                'log_dir': str,
+                'stepsampling': bool,
+                'enable_plots': bool,
                 'max_num_improvement_loops': int,
                 'min_num_live_points': int,
                 'cluster_num_live_points:': int}
