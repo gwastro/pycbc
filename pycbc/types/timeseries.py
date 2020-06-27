@@ -451,7 +451,7 @@ class TimeSeries(Array):
              The output file name
         """
         scaled = _numpy.int16(self.numpy()/max(abs(self)) * 32767)
-        write_wav(file_name, self.sample_rate, scaled)
+        write_wav(file_name, int(self.sample_rate), scaled)
 
     def psd(self, segment_duration, **kwds):
         """ Calculate the power spectral density of this time series.
