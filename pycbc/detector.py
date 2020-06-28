@@ -446,28 +446,39 @@ class LISA(object):
                       np.float32(earth.z)]), right_ascension,
             declination, t_gps)
 
-    def arm_response(self, ref_time, wave):
-        """ Returns response
-        Parameters
-        ----------
-        ref_time : numpy.ScalarType
-                  Reference time
-        wave : numpy.ndarray shape (2,3)
-        Returns
-        -------
-        n_r = numpy.ndarray shape (3,3)
-          position unit vectors with each row corrsp to single det"""
-        
-        pos = self.get_pos(t_ref)
-        vector = np.array([(pos[:, 0] - pos[:, 2]),
-                           (pos[:, 2] - pos[:, 1]),
-                           (pos[:, 1] - pos[:, 0])])
-        distance = np.sqrt(np.sum((pos[:, 0] - pos[:, 2])**2))
-        nr = vector/distance  #unit vectors (3,3)
-        wave = np.random.random(3) #assuming sky location
-        phi_2 = np.dot(nr[1], wave)*nr[1] #for y_(12-3) phi_2
-        t = distance/constants.c.value
+    def GWresponse(self, ref_time, s, l, r):
+        pos = self.get_pos(ref_time)
+        R = np.array([(pos[:, 0] - pos[:, 1]),
+                      (pos[:, 1] - pos[:, 2]),
+                      (pos[:, 2] - pos[:, 0])])
+        L = np.sqrt(np.sum((pos[:, 0] - pos[:, 2])**2))
+        nr = R/L
+        t = L/constants.c.value
         k = np.random.random(3)
-        yGW12_3 = (phi_2*(t - np.dot(k, vector[0]) - distance) -
-                  phi_2*(t - np.dot(k, -vector[2]))) / 2*(1 - np.dot(k, -nr[1]))
-        return yGW_12_3
+        hp = np.random.random(3)
+
+        items1 = [1, 2, 3]
+        cycle1 = [(items1 * 2)[x:x+3]
+                  for i in range(3) for x in [i % len(items1)]]
+        # [[1, 2, 3], [2, 3, 1], [3, 1, 2]] yGW sl-r
+        if [s, l, r] in cycle1:
+            phi = np.dot(nr[l-1], hp)
+            return (phi*(t - np.dot(k, R[s-1]) - L) -
+                    phi*(t - np.dot(k, -R[r-1]))) / 2*(1 - np.dot(k, nr[l-1]))
+
+        # [[2, 1, 3], [1, 3, 2], [3, 2, 1]] yGW s-lr
+        items2 = [2, 1, 3]
+        cycle2 = [(items2 * 2)[x:x+3]
+                  for i in range(3) for x in [i % len(items2)]]
+        if [s, l, r] in cycle2:
+            phi = np.dot(nr[l-1], k)
+            return (-phi*(t - np.dot(k, R[s-1]) - L) -
+                    -phi*(t - np.dot(k, R[r-1]))) / 2*(1 - np.dot(k, -nr[l-1]))
+
+    def noise_response(self):
+        None
+
+    def arm_response(self, ref_time):
+        s, l, r = 1, 2, 3
+        GWresponse = self.GWresponse(ref_time, s, l, r)
+        return GWresponse
