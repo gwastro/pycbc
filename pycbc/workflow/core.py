@@ -1016,6 +1016,7 @@ class Node(pegasus_workflow.Node):
     def resolve_td_options(self, td_options):
         for opt in td_options:
             new_opt = resolve_td_option(td_options[opt], self.valid_seg)
+            self._options += [opt, new_opt]
 
     @property
     def output_files(self):
