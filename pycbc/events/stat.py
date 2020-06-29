@@ -109,20 +109,21 @@ class NewSNRStatistic(Stat):
         return (s0 ** 2. + s1 ** 2.) ** 0.5
 
     def coinc_lim_for_thresh(self, s0, thresh):
-        """Calculate the required single detector statistic to exceed thresh.
+        """Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
 
         Parameters
         ----------
         s0: numpy.ndarray
             Single detector ranking statistic for the first detector.
         thresh: float
-            The threshold of the coincident statistic
+            The threshold on the coincident statistic.
 
         Returns
         -------
         numpy.ndarray
             Array of limits on the second detector single statistic to
-        exceed thresh
+        exceed thresh.
         """
         s1 = thresh ** 2. - s0 ** 2.
         s1[s1 < 0] = 0
@@ -149,22 +150,26 @@ class NewSNRStatistic(Stat):
         """
         return sum(sngl[1] ** 2. for sngl in s) ** 0.5
 
-    def coinc_multiifo_lim_for_thresh(self, s, thresh,
-                                      limifo, **kwargs): # pylint:disable=unused-argument
-        """Calculate the required single detector statistic to exceed thresh.
+    def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo,
+                                      **kwargs): # pylint:disable=unused-argument
+        """Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
 
         Parameters
         ----------
-        s0: numpy.ndarray
-            Single detector ranking statistic for the first detector.
+        s: list
+            List of (ifo, single detector statistic) tuples for all detectors
+        except limifo.
         thresh: float
-            The threshold of the coincident statistic
+            The threshold on the coincident statistic.
+        limifo: string
+            The ifo for which the limit is to be found.
 
         Returns
         -------
         numpy.ndarray
-            Array of limits on the second detector single statistic to
-        exceed thresh
+            Array of limits on the limifo single statistic to
+        exceed thresh.
         """
         s0 = thresh ** 2. - sum(sngl[1] ** 2. for sngl in s)
         s0[s0 < 0] = 0
@@ -298,26 +303,26 @@ class NewSNRCutStatistic(NewSNRStatistic):
         return cstat
 
     def coinc_lim_for_thresh(self, s0, thresh):
-        """Calculate the required single detector statistic to exceed thresh.
+        """Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
 
         Parameters
         ----------
         s0: numpy.ndarray
             Single detector ranking statistic for the first detector.
         thresh: float
-            The threshold of the coincident statistic
+            The threshold on the coincident statistic.
 
         Returns
         -------
         numpy.ndarray
             Array of limits on the second detector single statistic to
-        exceed thresh
+        exceed thresh.
         """
         s1 = thresh ** 2. - s0 ** 2.
         s1[s0 == -1] = numpy.inf
         s1[s1 < 0] = 0
         return s1 ** 0.5
-
 
 
 class PhaseTDNewStatistic(NewSNRStatistic):
@@ -812,24 +817,26 @@ class PhaseTDStatistic(NewSNRStatistic):
         return cstat ** 0.5
 
     def coinc_lim_for_thresh(self, s0, thresh):
-        """Calculate the required single detector statistic to exceed thresh.
+        """Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
 
         Parameters
         ----------
         s0: numpy.ndarray
             Single detector ranking statistic for the first detector.
         thresh: float
-            The threshold of the coincident statistic
+            The threshold on the coincident statistic.
 
         Returns
         -------
         numpy.ndarray
             Array of limits on the second detector single statistic to
-        exceed thresh
+        exceed thresh.
         """
         if self.hist is None:
             self.get_hist()
         s1 = thresh ** 2. - s0['snglstat'] ** 2.
+        # Assume best case scenario and use maximum signal rate
         s1 -= 2. * self.hist_max
         s1[s1 < 0] = 0
         return s1 ** 0.5
@@ -942,20 +949,21 @@ class ExpFitStatistic(NewSNRStatistic):
         return (2. * loglr) ** 0.5
 
     def coinc_lim_for_thresh(self, s0, thresh):
-        """Calculate the required single detector statistic to exceed thresh.
+        """Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
 
         Parameters
         ----------
         s0: numpy.ndarray
             Single detector ranking statistic for the first detector.
         thresh: float
-            The threshold of the coincident statistic
+            The threshold on the coincident statistic.
 
         Returns
         -------
         numpy.ndarray
             Array of limits on the second detector single statistic to
-        exceed thresh
+        exceed thresh.
         """
         s1 = - (thresh ** 2.) / 2 - s0
         threshes = [self.fits_by_tid[i]['thresh'] for i in self.bg_ifos]
@@ -1061,10 +1069,13 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         return cstat / (2.**0.5)
 
     def coinc_lim_for_thresh(self, s0, thresh):
+        # if the threshold is below this value all triggers will
+        # pass because of rounding in the coinc method
         if thresh <= (8. / (2.**0.5)):
-            return -1. * np.ones(len(s0['snglstat'])) * numpy.inf
+            return -1. * numpy.ones(len(s0['snglstat'])) * numpy.inf
         if self.hist is None:
             self.get_hist()
+        # Assume best case scenario and use maximum signal rate
         logr_s = self.hist_max
         s1 = (2. ** 0.5) * thresh - s0['snglstat'] - logr_s / self.alpharef
         return s1
@@ -1102,10 +1113,13 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
         return cstat / (2.**0.5)
 
     def coinc_lim_for_thresh(self, s0, thresh):
+        # if the threshold is below this value all triggers will
+        # pass because of rounding in the coinc method
         if thresh <= (8. / (2.**0.5)):
-            return -1. * np.ones(len(s0['snglstat'])) * numpy.inf
-        if not self.has_hist :
+            return -1. * numpy.ones(len(s0['snglstat'])) * numpy.inf
+        if not self.has_hist:
             self.get_hist()
+        # Assume best case scenario and use maximum signal rate
         logr_s = self.hist_max
         s1 = (2 ** 0.5) * thresh - s0['snglstat'] - logr_s / self.alpharef
         return s1
@@ -1226,8 +1240,6 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         return loglr
 
     def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo, **kwargs):
-        # ranking statistic is -ln(expected rate density of noise triggers)
-        # plus normalization constant
         sngl_dict = {sngl[0]: sngl[1] for sngl in s}
         sngl_dict[limifo] = numpy.zeros(len(s[0][1]))
         ln_noise_rate = coinc_rate.combination_noise_lograte(
@@ -1326,18 +1338,19 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
     def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo,
                                       **kwargs): # pylint:disable=unused-argument
-        if not self.has_hist:
+        if self.hist is None:
             self.get_hist()
+        # if the threshold is below this value all triggers will
+        # pass because of rounding in the coinc method
         if thresh <= -30.:
-            return np.ones(len(s0['snglstat'])) * numpy.inf
+            return numpy.ones(len(s[0][1]['snglstat'])) * numpy.inf
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
+        # Add limifo to singles dict so that overlap time is calculated correctly
         sngl_rates[limifo] = numpy.zeros(len(s[0][1]))
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
         ln_noise_rate -= self.benchmark_lograte
-
-        # Network sensitivity for a given coinc type is approximately
-        # determined by the least sensitive ifo
+        # Assume best case and use the maximum sigma squared from all triggers
         network_sigmasq = numpy.ones(len(s[0][1])) * kwargs['max_sigmasq']
         # Volume \propto sigma^3 or sigmasq^1.5
         network_logvol = 1.5 * numpy.log(network_sigmasq)
@@ -1490,16 +1503,18 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
                                       **kwargs): # pylint:disable=unused-argument
         if not self.has_hist:
             self.get_hist()
+        # if the threshold is below this value all triggers will
+        # pass because of rounding in the coinc method
         if thresh <= -30:
-            return np.ones(len(s0['snglstat'])) * numpy.inf
+            return numpy.ones(len(s[0][1]['snglstat'])) * numpy.inf
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
+        # Add limifo to singles dict so that overlap time is calculated correctly
         sngl_rates[limifo] = numpy.zeros(len(s[0][1]))
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
         ln_noise_rate -= self.benchmark_lograte
 
-        # Network sensitivity for a given coinc type is approximately
-        # determined by the least sensitive ifo
+        # Assume best case and use the maximum sigma squared from all triggers
         network_sigmasq = numpy.ones(len(s[0][1])) * kwargs['max_sigmasq']
         # Volume \propto sigma^3 or sigmasq^1.5
         network_logvol = 1.5 * numpy.log(network_sigmasq)
@@ -1509,11 +1524,9 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         benchmark_logvol = s[0][1]['benchmark_logvol']
         network_logvol -= benchmark_logvol
 
-        # Use prior histogram to get Bayes factor for signal vs noise
-        # given the time, phase and SNR differences between IFOs
-
-        # First get signal PDF logr_s
-        logr_s = numpy.log(self.hist_max * (kwargs['min_snr'] / self.ref_snr) ** -4.0)
+        # Assume best case scenario and use maximum signal rate
+        logr_s = numpy.log(self.hist_max
+                           * (kwargs['min_snr'] / self.ref_snr) ** -4.0)
 
         # Find total volume of phase-time-amplitude space occupied by noise
         # coincs
@@ -1532,8 +1545,6 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         # coincs
         logr_n = - numpy.log(hist_vol)
 
-        # Combine to get final statistic: log of
-        # ((rate of signals / rate of noise) * PTA Bayes factor)
         loglr = - thresh + network_logvol - ln_noise_rate + logr_s - logr_n
 
         return loglr
