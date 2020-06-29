@@ -355,7 +355,7 @@ for tnum in template_ids:
                 i1 = numpy.concatenate([i1, i1tmp[bitmp]])
                 c = numpy.concatenate([c, ctmp[bitmp]])
                 slide = numpy.concatenate([slide, slidetmp[bitmp]])
-                dec = numpy.concatenate([dec, numpy.ones(len(bitmp))])
+                dec = numpy.concatenate([dec, numpy.repeat(total_factors[kidx], len(bitmp))])
 
             data['stat'] += [c]
             data['decimation_factor'] += [dec]
