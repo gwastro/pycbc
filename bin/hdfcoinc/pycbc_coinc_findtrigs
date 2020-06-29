@@ -324,7 +324,9 @@ for tnum in template_ids:
                 s0min = s0lim.min()
                 s0cut = numpy.searchsorted(s0sorted, s0min)
 
-                test_t0 = t0[s0sort[s0cut:]]
+                s0s = s0sorted[s0cut:]
+                s0i = s0sort[s0cut:]
+                test_t0 = t0[s0i]
                 test_t1 = t1.copy()
 
                 # Do time coincidence for current decimation
@@ -334,25 +336,22 @@ for tnum in template_ids:
                 slidetmp *= total_factors[kidx]
 
                 # Remove foreground triggers
-                bitmp = slidetmp != 0
+                bitmp = numpy.where(slidetmp != 0)[0]
+                # remove coincidences where detector 0 has a single detector statistic
+                # below the limit calculated above
+                bitmp = bitmp[s0s[i0tmp[bitmp]] >= s0lim[i1tmp[bitmp]]]
                 i0tmp = i0tmp[bitmp]
                 i1tmp = i1tmp[bitmp]
                 slidetmp = slidetmp[bitmp]
 
-                # remove coincidences where detector 0 has a single detector statistic
-                # below the limit calculated above
-                above = s0sorted[s0cut:][i0tmp] >= s0lim[i1tmp]
-                i0tmp = i0tmp[above]
-                i1tmp = i1tmp[above]
-                slidetmp = slidetmp[above]
-
-                ctmp = rank_method.coinc(s0[s0sort[s0cut:][i0tmp]], s1[i1tmp],
+                ctmp = rank_method.coinc(s0[s0i[i0tmp]], s1[i1tmp],
                                          slidetmp, args.timeslide_interval)
 
+                # Keep triggers in the current decimation range
                 bitmp = numpy.where(ctmp >= threshes[kidx - 1])[0]
                 bitmp = bitmp[ctmp[bitmp] < threshes[kidx]]
 
-                i0 = numpy.concatenate([i0, s0sort[s0cut:][i0tmp][bitmp]])
+                i0 = numpy.concatenate([i0, s0i[i0tmp[bitmp]]])
                 i1 = numpy.concatenate([i1, i1tmp[bitmp]])
                 c = numpy.concatenate([c, ctmp[bitmp]])
                 slide = numpy.concatenate([slide, slidetmp[bitmp]])
