@@ -128,8 +128,8 @@ class Executable(pegasus_workflow.Executable):
     # would be replaced with --option1 value1 if the time is within 0,1000 and
     # value2 if in 1000,2000. A failure will be replaced if the job time is
     # not fully contained in one of these windows, or if fully contained in
-    # multiple of these windows. This is resolved when creating the Job from the
-    # Executable
+    # multiple of these windows. This is resolved when creating the Job from
+    # the Executable
     time_dependent_options = []
 
     # This is the default value. It will give a warning if a class is
@@ -1016,34 +1016,6 @@ class Node(pegasus_workflow.Node):
     def resolve_td_options(self, td_options):
         for opt in td_options:
             new_opt = resolve_td_option(td_options[opt], self.valid_seg)
-            self._options += [opt, new_opt]
-            set_already = False
-            curr_vals = td_options[opt]
-            curr_vals = curr_vals.replace(' ', '').strip().split(',')
-
-            # Resolving the simple case is trivial and can be done immediately.
-            if len(curr_vals) == 1 and '[' not in curr_vals[0]:
-                self._options += [opt, curr_vals[0]]
-
-            for cval in curr_vals:
-                start = int(self.valid_seg[0])
-                end = int(self.valid_seg[1])
-                # Check for limits
-                if '[' in cval:
-                    bopt = cval.split('[')[1].split(']')[0]
-                    start, end = bopt.split(':')
-                    cval = cval.replace('[' + bopt +']', '')
-                curr_seg = segments.segment(int(start), int(end))
-                if curr_seg.intersects(self.valid_seg) and \
-                        (curr_seg & self.valid_seg == self.valid_seg):
-                    if set_already:
-                        err_msg = "Time-dependent options must be disjoint."
-                        raise ValueError(err_msg)
-                    self._options += [opt, cval]
-                    set_already = True
-            if not set_already:
-                err_msg = "Could not resolve option {}".format(opt)
-                raise ValueError(err_msg)
 
     @property
     def output_files(self):
@@ -2071,9 +2043,9 @@ def resolve_td_option(val_str, valid_seg):
     Take an option which might be time-dependent and resolve it
 
     Some options might take different values depending on the GPS time. For
-    example if you want opt_1 to take value_a if the time is between 10 and 100,
-    value_b if between 100 and 250, and value_c if between 250 and 500 you can
-    supply:
+    example if you want opt_1 to take value_a if the time is between 10 and
+    100, value_b if between 100 and 250, and value_c if between 250 and 500 you
+    can supply:
 
     value_a[10:100],value_b[100:250],value_c[250:500].
 
@@ -2102,7 +2074,7 @@ def resolve_td_option(val_str, valid_seg):
         if '[' in cval:
             bopt = cval.split('[')[1].split(']')[0]
             start, end = bopt.split(':')
-            cval = cval.replace('[' + bopt +']', '')
+            cval = cval.replace('[' + bopt + ']', '')
         curr_seg = segments.segment(int(start), int(end))
         # The segments module is a bit weird so we need to check if the two
         # overlap using the following code. If valid_seg is fully within
@@ -2114,7 +2086,7 @@ def resolve_td_option(val_str, valid_seg):
                 raise ValueError(err_msg)
             output = cval
     if not output:
-        err_msg = "Could not resolve option {}".format(opt)
+        err_msg = "Could not resolve option {}".format(val_str)
         raise ValueError
     return output
 

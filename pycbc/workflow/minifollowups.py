@@ -18,6 +18,7 @@ import logging, os.path
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
 import distutils.spawn
+from ligo import segments
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 try:
@@ -664,7 +665,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
     # Begin by choosing "optimal" times
     start = trig_time - time_window
     end = trig_time + time_window
-    node = curr_exe.create_node(valid_seg=segments.segment([start,end]))
+    node = curr_exe.create_node(valid_seg=segments.segment([start, end]))
 
     # Then if data_segments is available, check against that, and move if
     # needed
