@@ -195,6 +195,7 @@ if args.use_maxalpha:
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
 
+# Calculate the total decimation factors for each step
 total_factors = [1]
 threshes = [numpy.inf]
 for decstr in args.loudest_keep_values:
@@ -275,19 +276,21 @@ for tnum in template_ids:
             t0 = t0g[start0:end0]
             t1 = t1g[start1:end1]
 
-            # Do time coincidence for slides that will be kept after the first decimation
-            i0, i1, slide = coinc.time_coincidence(t0, t1, time_window,
-                                                   args.timeslide_interval*total_factors[0])
+            # Do time coincidence for slides that will be kept after all decimation
+            curr_shift = args.timeslide_interval * total_factors[0]
+            i0, i1, slide = coinc.time_coincidence(t0, t1, time_window, curr_shift)
             slide *= total_factors[0]
 
             c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
 
-            #index values of the zerolag triggers
+            # index values of the zerolag triggers
             fi = numpy.where(slide == 0)[0]
 
-            #index values of the background triggers
+            # index values of the background triggers
             bi = numpy.where(slide != 0)[0]
 
+            # keep foreground triggers and background triggers below
+            # the lowest decimation threshold
             bl = bi[c[bi] < threshes[0]]
             ti = numpy.concatenate([fi, bl])
 
@@ -302,30 +305,46 @@ for tnum in template_ids:
             except IndexError:
                 s0stat = s0.copy()
 
+            # Sort triggers in detector 0 in order of increasing maximum coincident statistic
             if not rank_method.single_increasing:
                 s0stat *= -1.
             s0sort = numpy.argsort(s0stat)
             s0sorted = s0stat[s0sort]
 
+            # loop through decimation steps
             for kidx in range(1, len(threshes)):
+                # For each trigger in detector 1 get the limit in detector 0 to pass
+                # the current decimation threshold
                 s0lim = rank_method.coinc_lim_for_thresh(s1, threshes[kidx - 1])
                 if not rank_method.single_increasing:
                     s0lim *= -1.
                 
+                # Remove triggers in detector 0 that cannot form coincidences above
+                # the current decimation threshold
                 s0min = s0lim.min()
                 s0cut = numpy.searchsorted(s0sorted, s0min)
 
                 test_t0 = t0[s0sort[s0cut:]]
                 test_t1 = t1.copy()
 
+                # Do time coincidence for current decimation
+                curr_shift = args.timeslide_interval * total_factors[kidx]
                 i0tmp, i1tmp, slidetmp = coinc.time_coincidence(test_t0, test_t1,
-                                                                time_window,
-                                                                args.timeslide_interval*total_factors[kidx])
+                                                                time_window, curr_shift)
                 slidetmp *= total_factors[kidx]
+
+                # Remove foreground triggers
                 bitmp = slidetmp != 0
                 i0tmp = i0tmp[bitmp]
                 i1tmp = i1tmp[bitmp]
                 slidetmp = slidetmp[bitmp]
+
+                # remove coincidences where detector 0 has a single detector statistic
+                # below the limit calculated above
+                above = s0sorted[s0cut:][i0tmp] >= s0lim[i1tmp]
+                i0tmp = i0tmp[above]
+                i1tmp = i1tmp[above]
+                slidetmp = slidetmp[above]
 
                 ctmp = rank_method.coinc(s0[s0sort[s0cut:][i0tmp]], s1[i1tmp],
                                          slidetmp, args.timeslide_interval)
