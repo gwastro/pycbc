@@ -446,34 +446,72 @@ class LISA(object):
                       np.float32(earth.z)]), right_ascension,
             declination, t_gps)
 
-    def GWresponse(self, ref_time, s, l, r):
-        pos = self.get_pos(ref_time)
-        R = np.array([(pos[:, 0] - pos[:, 1]),
-                      (pos[:, 1] - pos[:, 2]),
-                      (pos[:, 2] - pos[:, 0])])
-        L = np.sqrt(np.sum((pos[:, 0] - pos[:, 2])**2))
-        nr = R/L
-        t = L/constants.c.value
-        k = np.random.random(3)
-        hp = np.random.random(3)
+    def __h_ij__(self, X):
+        # pos return hij
+        return np.random.random(3)
 
-        items1 = [1, 2, 3]
-        cycle1 = [(items1 * 2)[x:x+3]
-                  for i in range(3) for x in [i % len(items1)]]
+    def GWresponse(self, ref_time, s, l, r):
+        # pos wrt the SSB; vector quantity
+        R = self.get_pos(ref_time)
+
+        # vector L
+        L = np.array(
+            [R[:, 1] - R[:, 0], # vector 1-->2
+             R[:, 2] - R[:, 1], # vector 2-->3
+             R[:, 0] - R[:, 2]] # vector 3-->1
+                    )
+
+        # time taken by photons to reach other satellite
+        # when not under GW interference
+        t = L/constants.c.value
+
+        # sky location i, j, k
+        k = np.random.random(3)
+
+        # unit vector n
+        nr = L/np.sqrt(np.sum(R[:, 1] - R[:, 0])**2)
+
         # [[1, 2, 3], [2, 3, 1], [3, 1, 2]] yGW sl-r
-        if [s, l, r] in cycle1:
-            phi = np.dot(nr[l-1], hp)
-            return (phi*(t - np.dot(k, R[s-1]) - L) -
-                    phi*(t - np.dot(k, -R[r-1]))) / 2*(1 - np.dot(k, nr[l-1]))
+        cycle1 = [([1, 2, 3] * 2)[x:x+3]
+                  for i in range(3) for x in [i % len([1, 2, 3])]]
 
         # [[2, 1, 3], [1, 3, 2], [3, 2, 1]] yGW s-lr
-        items2 = [2, 1, 3]
-        cycle2 = [(items2 * 2)[x:x+3]
-                  for i in range(3) for x in [i % len(items2)]]
-        if [s, l, r] in cycle2:
-            phi = np.dot(nr[l-1], k)
-            return (-phi*(t - np.dot(k, R[s-1]) - L) -
-                    -phi*(t - np.dot(k, R[r-1]))) / 2*(1 - np.dot(k, -nr[l-1]))
+        cycle2 = [([2, 1, 3] * 2)[x:x+3]
+                  for i in range(3) for x in [i % len([2, 1, 3])]]
+
+        if [s, l, r] in cycle1:
+            pos = cycle1.index([s, l, r])
+            cycle1[pos] = [s-1, l-1, r-1]
+            # X1 = t - k.Rs(t) - Ll
+            X1 = t - np.dot(k, R[cycle1[pos][0]]) - L[cycle1[pos][1]]
+            # X2 = t - k.Rr(t) --plus below -ve --
+            X2 = t - np.dot(k, -R[cycle1[pos][2]])
+
+            # [nˆl(t) · h_ij(t')] · nˆl(t)
+            Y1 = np.dot(np.dot(nr[cycle1[pos][1]],
+                              self.__h_ij__(X1)), nr[cycle1[pos][1]])
+            Y2 = np.dot(np.dot(nr[cycle1[pos][1]],
+                              self.__h_ij__(X2)), nr[cycle1[pos][1]])
+
+            phi = Y1 - Y2/(2*(1 - np.dot(nr[cycle1[pos][1]], k)))
+            return phi
+
+        elif [s, l, r] in cycle2:
+            pos = cycle2.index([s, l, r])
+            cycle2[pos] = [s-1, l-1, r-1]            
+            # X1 = t - k.Rs(t) + Ll --plus--
+            X1 = t - np.dot(k, R[cycle2[pos][0]]) + L[cycle2[pos][1]]
+            # X2 = t - k.Rr(t)
+            X2 = t - np.dot(k, R[cycle2[pos][2]])
+
+            # [nˆl(t) · h_ij(t')] · nˆl(t)
+            Y1 = np.dot(np.dot(-nr[cycle2[pos][1]],
+                                self.__h_ij__(X1)), -nr[cycle2[pos][1]])
+            Y2 = np.dot(np.dot(-nr[cycle2[pos][1]],
+                                self.__h_ij__(X2)), -nr[cycle2[pos][1]])
+
+            phi = Y1 - Y2/(2*(1 - np.dot(-n[cycle2[pos][1]], k)))
+            return phi
 
     def noise_response(self):
         None
