@@ -47,6 +47,15 @@ class BaseSamplerFile(BaseInferenceFile):
         times.append(time.time())
         self.attrs[attrname] = times
 
+    @property
+    def run_start_time(self):
+        """The (UNIX) time pycbc inference began running.
+
+        If the run resumed from a checkpoint, the time the last checkpoint
+        started is reported.
+        """
+        return self.attrs['run_start_time'][-1]
+
     @abstractmethod
     def write_resume_point(self):
         """Should write the point that a sampler starts up.
@@ -62,6 +71,53 @@ class BaseSamplerFile(BaseInferenceFile):
         """This should write the given sampler's metadata to the file.
 
         This should also include the model's metadata.
+        """
+        pass
+
+    def update_checkpoint_history(self):
+        """Writes a copy of relevant metadata to the file's checkpoint history.
+
+        All data are written to ``sampler_info/checkpoint_history``. If the
+        group does not exist yet, it will be created.
+
+        This function writes the current time and the time since the last
+        checkpoint to the file. It will also call
+        :py:func:`_update_sampler_history` to write sampler-specific history.
+        """
+        path = '/'.join([self.sampler_group, 'checkpoint_history'])
+        try:
+            history = self[path]
+        except KeyError:
+            # assume history doesn't exist yet
+            self.create_group(path)
+            history = self[path]
+        # write the checkpoint time
+        current_time = time.time()
+        self.write_data('checkpoint_time', current_time, path=path,
+                        append=True)
+        # get the amount of time since the last checkpoint
+        checkpoint_times = history['checkpoint_time'][()]
+        if len(checkpoint_times) == 1:
+            # this is the first checkpoint, get the run time for comparison
+            lasttime = self.run_start_time
+        else:
+            lasttime = checkpoint_times[-2]
+            # if a resume happened since the last checkpoint, use the resume
+            # time instad
+            if lasttime < self.run_start_time:
+                lasttime = self.run_start_time
+        self.write_data('checkpoint_dt', lasttime, path=path, append=True)
+        # TODO: write the dt per core (requires adding a nprocesses attribute
+        # to the base sampler and base sampler file)
+        # write any sampler-specific history
+        self._update_sampler_history()
+
+    def _update_sampler_history(self):
+        """Writes sampler-specific history to the file.
+
+        This function does nothing. Classes that inherit from it may override
+        it to add any extra information they would like written. This is
+        called by :py:func:`update_checkpoint_history`.
         """
         pass
 
