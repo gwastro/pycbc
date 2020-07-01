@@ -193,6 +193,9 @@ def read_frame(location, channels, start_time=None,
         logging.info("Using frames that match regexp: %s", sieve)
         lal.CacheSieve(cum_cache, 0, 0, None, None, sieve)
     if start_time is not None and end_time is not None:
+        # Before sieving, check if this is sane. Otherwise it will fail later.
+        if (int(math.ceil(end_time)) - int(start_time)) <= 0:
+            raise ValueError("Negative or null duration")
         lal.CacheSieve(cum_cache, int(start_time), int(math.ceil(end_time)),
                        None, None, None)
 
