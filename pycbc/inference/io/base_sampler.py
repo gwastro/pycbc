@@ -17,6 +17,7 @@
 
 from __future__ import absolute_import
 
+import time
 from abc import (ABCMeta, abstractmethod)
 
 from six import add_metaclass
@@ -31,6 +32,21 @@ class BaseSamplerFile(BaseInferenceFile):
     This adds abstract methods ``write_resume_point`` and
     ``write_sampler_metadata`` to :py:class:`BaseInferenceFile`.
     """
+    def write_run_start_time(self):
+        """Writes the current (UNIX) time to the file.
+
+        Times are stored as a list in the file's ``attrs``, with name
+        ``run_start_time``. If the attrbute already exists, the current time
+        is appended. Otherwise, the attribute will be created and time added.
+        """
+        attrname = "run_start_time"
+        try:
+            times = self.attrs[attrname].tolist()
+        except KeyError:
+            times = []
+        times.append(time.time())
+        self.attrs[attrname] = times
+
     @abstractmethod
     def write_resume_point(self):
         """Should write the point that a sampler starts up.
