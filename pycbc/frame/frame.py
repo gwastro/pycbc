@@ -20,6 +20,7 @@ This modules contains functions for reading in data from frame files or caches
 import lalframe, logging
 import lal
 import numpy
+import math
 import os.path, glob, time
 import gwdatafind
 from six.moves.urllib.parse import urlparse
@@ -192,7 +193,7 @@ def read_frame(location, channels, start_time=None,
         logging.info("Using frames that match regexp: %s", sieve)
         lal.CacheSieve(cum_cache, 0, 0, None, None, sieve)
     if start_time is not None and end_time is not None:
-        lal.CacheSieve(cum_cache, int(start_time), int(end_time),
+        lal.CacheSieve(cum_cache, int(start_time), int(math.ceil(end_time)),
                        None, None, None)
 
     stream = lalframe.FrStreamCacheOpen(cum_cache)
