@@ -760,14 +760,12 @@ class BaseInferenceFile(h5py.File):
             else:
                 attrs[arg] = val
 
-    def write_data(self, name, data, path=None):
+    def write_data(self, name, data, path=None, append=False):
         """Convenience function to write data.
 
         Given ``data`` is written as a dataset with ``name`` in ``path``.
-        If the data hasn't been written yet, the dataset will be created.
-        Otherwise, will overwrite the data that is there. If data already
-        exists in the file with the same name and path, the given data must
-        have the same shape.
+        If the dataset or path do not exist yet, the dataset and path will
+        be created.
 
         Parameters
         ----------
@@ -783,6 +781,14 @@ class BaseInferenceFile(h5py.File):
             Write to the given path. Default (None) will write to the top
             level. If the path does not exist in the file, it will be
             created.
+        append : bool, optional
+            Append the data to what is currently in the file if ``path/name``
+            already exists in the file, and if it does not, create the dataset
+            so that its last dimension can be resized. The data can only
+            be appended along the last dimension, and if it already exists in
+            the data, it must be resizable along this dimension. If ``False``
+            (the default) what is in the file will be overwritten, and the
+            given data must have the same shape.
         """
         if path is None:
             path = '/'
@@ -795,7 +801,37 @@ class BaseInferenceFile(h5py.File):
         if isinstance(data, dict):
             # call myself for each key, value pair in the dictionary
             for key, val in data.items():
-                self.write_data(key, val, path='/'.join([path, name]))
+                self.write_data(key, val, path='/'.join([path, name]),
+                                append=append)
+        # if appending, we need to resize the data on disk, or, if it doesn't
+        # exist yet, create a dataset that is resizable along the last
+        # dimension
+        elif append:
+            # get the data type, in case we have to create a new dataset
+            try:
+                # this assumes data is a numpy array
+                dtype = data.dtype
+            except AttributeError:
+                # assume atomic type
+                dtype = type(data)
+            try:
+                # this assumes data is a numpy array
+                dshape = data.shape
+            except AttributeError:
+                # assume atomic type (i.e., data is a single value)
+                dshape = (1,)
+            ndata = dshape[-1]
+            try:
+                startidx = group[name].shape[-1]
+                group[name].resize(dshape[-1]+group[name].shape[-1],
+                                   axis=len(group[name].shape)-1)
+            except KeyError:
+                # dataset doesn't exist yet
+                group.create_dataset(name, dshape,
+                                     maxshape=tuple(list(dshape)[:-1]+[None]),
+                                     dtype=dtype, fletcher32=True)
+                startidx = 0
+            group[name][..., startidx:startidx+ndata] = data[..., :]
         else:
             try:
                 group[name][()] = data
