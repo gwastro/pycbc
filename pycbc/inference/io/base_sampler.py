@@ -106,9 +106,8 @@ class BaseSamplerFile(BaseInferenceFile):
             # time instad
             if lasttime < self.run_start_time:
                 lasttime = self.run_start_time
-        self.write_data('checkpoint_dt', lasttime, path=path, append=True)
-        # TODO: write the dt per core (requires adding a nprocesses attribute
-        # to the base sampler and base sampler file)
+        self.write_data('checkpoint_dt', current_time-lasttime, path=path,
+                        append=True)
         # write any sampler-specific history
         self._update_sampler_history()
 

@@ -352,11 +352,11 @@ class CommonMCMCMetadataIO(object):
         # write the act: we'll make sure that this is 2D, so that the acts
         # can be appened along the last dimension
         act = self.act
-        act = self.reshape(tuple(list(act.shape)+[1]))
+        act = act.reshape(tuple(list(act.shape)+[1]))
         self.write_data('act', act, path=path, append=True)
         # write the burn in iteration in the same way
         burn_in = self.burn_in_iteration
-        burn_in = self.reshape(tuple(list(burn_in.shape)+[1]))
+        burn_in = burn_in.reshape(tuple(list(burn_in.shape)+[1]))
         self.write_data('burn_in_iteration', burn_in, path=path, append=True)
 
     @staticmethod

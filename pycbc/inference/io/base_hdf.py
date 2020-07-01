@@ -807,19 +807,12 @@ class BaseInferenceFile(h5py.File):
         # exist yet, create a dataset that is resizable along the last
         # dimension
         elif append:
-            # get the data type, in case we have to create a new dataset
-            try:
-                # this assumes data is a numpy array
-                dtype = data.dtype
-            except AttributeError:
-                # assume atomic type
-                dtype = type(data)
-            try:
-                # this assumes data is a numpy array
-                dshape = data.shape
-            except AttributeError:
-                # assume atomic type (i.e., data is a single value)
-                dshape = (1,)
+            # cast the data to an array if it isn't already one
+            if isinstance(data, (list, tuple)):
+                data = numpy.array(data)
+            if not isinstance(data, numpy.ndarray):
+                data = numpy.array([data])
+            dshape = data.shape
             ndata = dshape[-1]
             try:
                 startidx = group[name].shape[-1]
@@ -829,7 +822,7 @@ class BaseInferenceFile(h5py.File):
                 # dataset doesn't exist yet
                 group.create_dataset(name, dshape,
                                      maxshape=tuple(list(dshape)[:-1]+[None]),
-                                     dtype=dtype, fletcher32=True)
+                                     dtype=data.dtype, fletcher32=True)
                 startidx = 0
             group[name][..., startidx:startidx+ndata] = data[..., :]
         else:
