@@ -56,6 +56,17 @@ class BaseSamplerFile(BaseInferenceFile):
         """
         return self.attrs['run_start_time'][-1]
 
+    def write_run_end_time(self):
+        """"Writes the curent (UNIX) time as the ``run_end_time`` attribute.
+        """
+        self.attrs["run_end_time"] = time.time()
+
+    @property
+    def run_end_time(self):
+        """The (UNIX) time pycbc inference finished.
+        """
+        return self.attrs["run_end_time"]
+
     @abstractmethod
     def write_resume_point(self):
         """Should write the point that a sampler starts up.
