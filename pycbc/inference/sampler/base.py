@@ -191,6 +191,7 @@ def setup_output(sampler, output_file):
         with sampler.io(fn, "a") as fp:
             fp.write_command_line()
             fp.write_resume_point()
+            fp.write_run_start_time()
     # store
     sampler.checkpoint_file = checkpoint_file
     sampler.backup_file = backup_file
