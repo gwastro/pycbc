@@ -222,8 +222,8 @@ class JointDistribution(object):
         # convert to Field array
         parray, return_atomic = self._ensure_fieldarray(params)
         # check if statisfies constraints
-        notin = ~self.contains(parray)
-        if notin.all():
+        isin = self.contains(parray)
+        if not isin.any():
             if return_atomic:
                 return -numpy.inf
             else:
@@ -232,7 +232,7 @@ class JointDistribution(object):
         # note: this step may fail if arrays of values were provided, as
         # not all distributions are vectorized currently
         logps = numpy.array([d(**params) for d in self.distributions])
-        logp = logps.sum(axis=0) + notin.astype(float)*(-numpy.inf)
+        logp = logps.sum(axis=0) + numpy.log(isin.astype(float))
         if return_atomic:
             logp = logp.item()
         return logp - self._logpdf_scale
@@ -243,26 +243,29 @@ class JointDistribution(object):
         # create output FieldArray
         dtype = [(arg, float) for arg in self.variable_args]
         out = FieldArray(size, dtype=dtype)
-        # scratch space for evaluating constraints
-        scratch = FieldArray(size, dtype=dtype)
         # loop until enough samples accepted
-        remaining = numpy.ones(size, dtype=bool)
-        while remaining.any():
-            nremaining = remaining.sum()
-            print('remaining:', nremaining)
+        remaining = size 
+        ndraw = size
+        while remaining:
+            # scratch space for evaluating constraints
+            scratch = FieldArray(ndraw, dtype=dtype)
             for dist in self.distributions:
                 # drawing samples from the distributions is generally faster
                 # then evaluating constrants, so we'll always draw the full
                 # size, even if that gives us more points than we need
-                draw = dist.rvs(size=size)
+                draw = dist.rvs(size=ndraw)
                 for param in dist.params:
                     scratch[param] = draw[param]
             # apply any constraints
             keep = self.contains(scratch)
-            kmin = size - nremaining
-            kmax = min(keep.sum(), nremaining)
+            nkeep = keep.sum()
+            kmin = size - remaining
+            kmax = min(nkeep, remaining)
             out[kmin:kmin+kmax] = scratch[keep][:kmax]
-            remaining[keep] = False
+            remaining = max(0, remaining - nkeep)
+            # to try to speed up next go around, we'll increase the draw
+            # size by the fraction of values that were kept, but cap at 1e6
+            ndraw = int(min(1e6, ndraw * numpy.ceil(ndraw / (nkeep + 1.))))
         return out
 
     def cdfinv(self, **original):
