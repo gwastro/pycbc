@@ -809,9 +809,13 @@ def imrphenomhm_length_in_time(**kwargs):
     else:
         # the highest m for all of these is 4 (from the 4,4 mode)
         maxm = 4
-    # we'll use the PhenomD length, then scale it by maxm / 2
-    dur = get_imr_length("IMRPhenomD", **kwargs)
-    return dur * maxm/2.
+    # we'll use the PhenomD length, with the frequency scaled by 2/m
+    try:
+        flow = kwargs['f_lower']
+    except KeyError:
+        raise ValueError("must provide a f_lower")
+    kwargs['f_lower'] = flow * 2./maxm
+    return get_imr_length("IMRPhenomD", **kwargs)
 
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
