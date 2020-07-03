@@ -199,8 +199,8 @@ if args.prune_param:
     pars = triggers.get_param(args.prune_param, args,
                      templatef['mass1'][:], templatef['mass2'][:],
                      templatef['spin1z'][:], templatef['spin2z'][:])
-    minpar = min(pars)
-    maxpar = max(pars)
+    minpar = min(pars) - 0.001 * abs(min(pars))
+    maxpar = max(pars) + 0.001 * abs(min(pars))
     del pars
     logging.info('%f %f' % (minpar, maxpar))
 

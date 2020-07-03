@@ -207,8 +207,8 @@ if args.prune_param:
     prpars = get_pars(args, 'prune',
                       templatef['mass1'][:], templatef['mass2'][:],
                       templatef['spin1z'][:], templatef['spin2z'][:])
-    minprpar = min(prpars)
-    maxprpar = max(prpars)
+    minprpar = min(prpars) - 0.001 * abs(min(prpars))
+    maxprpar = max(prpars) + 0.001 * abs(max(prpars))
     del prpars
     logging.info('prune param range %f %f' % (minprpar, maxprpar))
 
