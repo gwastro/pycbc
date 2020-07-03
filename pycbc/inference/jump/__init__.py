@@ -18,11 +18,24 @@ from __future__ import absolute_import
 
 
 from .normal import (EpsieNormal, EpsieAdaptiveNormal)
+from .bounded_normal import (EpsieBoundedNormal, EpsieAdaptiveBoundedNormal)
+from .angular import (EpsieAngular, EpsieAdaptiveAngular)
+from .discrete import (EpsieNormalDiscrete, EpsieBoundedDiscrete,
+                       EpsieAdaptiveNormalDiscrete,
+                       EpsieAdaptiveBoundedDiscrete)
 
 
 epsie_proposals = {
     EpsieNormal.name: EpsieNormal,
-    EpsieAdaptiveNormal.name: EpsieAdaptiveNormal
+    EpsieAdaptiveNormal.name: EpsieAdaptiveNormal,
+    EpsieBoundedNormal.name: EpsieBoundedNormal,
+    EpsieAdaptiveBoundedNormal.name: EpsieAdaptiveBoundedNormal,
+    EpsieAngular.name: EpsieAngular,
+    EpsieAdaptiveAngular.name: EpsieAdaptiveAngular,
+    EpsieNormalDiscrete.name: EpsieNormalDiscrete,
+    EpsieAdaptiveNormalDiscrete.name: EpsieAdaptiveNormalDiscrete,
+    EpsieBoundedDiscrete.name: EpsieBoundedDiscrete,
+    EpsieAdaptiveBoundedDiscrete.name: EpsieAdaptiveBoundedDiscrete,
 }
 
 
@@ -56,14 +69,14 @@ def epsie_proposals_from_config(cp, section='jump_proposal'):
 
     Returns
     -------
-    dict :
-        Dictionary mapping parameter names to proposal instances.
+    list :
+        List of the proposal instances.
     """
     tags = cp.get_subsections(section)
-    proposals = {}
+    proposals = []
     for tag in tags:
         # get the name of the proposal
         name = cp.get_opt_tag(section, "name", tag)
         prop = epsie_proposals[name].from_config(cp, section, tag)
-        proposals[prop.parameters] = prop
+        proposals.append(prop)
     return proposals

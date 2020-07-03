@@ -72,16 +72,28 @@ your own build.
 
    pip install lalsuite pycbc
 
-Full detailed installation instructions for users who want to use and develop PyCBC are available at:
+Full detailed installation instructions which covers other installation cases:
 
 .. toctree::
    :maxdepth: 1
 
    install
 
-=======================
-Documentation for Users
-=======================
+====================================================
+Parameter Estimation of Gravitational-wave Sources
+====================================================
+
+Users who want to create and run parameter estimation workflows should read the
+documentation at:
+
+.. toctree::
+   :maxdepth: 2
+
+   inference
+   
+==========================================
+Searching for Gravitational-wave Signals
+==========================================
 
 Users who want to create and run scientific workflows to search for compact
 binaries should read the documentation in the links at:
@@ -93,13 +105,9 @@ binaries should read the documentation in the links at:
    workflow/pycbc_make_coinc_search_workflow
    workflow/pygrb.rst
 
-Users who want to create and run parameter estimation workflows should read the
-documentation at:
-
-.. toctree::
-   :maxdepth: 2
-
-   inference
+===================================================
+Template Banks, Hardware Injections, and more...
+===================================================
 
 Users who are interested in tools that PyCBC provides for various other
 analysis tasks (e.g. template bank generation, hardware injections, and testing
@@ -113,6 +121,19 @@ template banks) should read the documentation at:
    banksim
    faithsim
    upload_to_gracedb
+
+==========================================
+Extending PyCBC with external plugins
+==========================================
+
+Would you like to use a waveform model that PyCBC doesn't have? Or maybe
+you have your own waveform you'd like to use for a search, parameter estimation
+, etc. PyCBC supports a plug-in archictecture for external waveform models. 
+
+.. toctree::
+   :maxdepth: 1
+    
+   waveform_plugin
 
 ==========================================
 Library Examples and Interactive Tutorials

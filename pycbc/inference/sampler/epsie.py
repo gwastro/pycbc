@@ -18,7 +18,6 @@
 
 from __future__ import absolute_import
 
-import itertools
 import numpy
 
 import epsie
@@ -30,25 +29,25 @@ from emcee.ptsampler import default_beta_ladder
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, get_optional_arg_from_config)
-from .base_multitemper import (MultiTemperedSupport,
-                               MultiTemperedAutocorrSupport)
+from .base_mcmc import (BaseMCMC, get_optional_arg_from_config,
+                        nsamples_in_chain)
+from .base_multitemper import (MultiTemperedSupport, compute_acf, compute_acl,
+                               acl_from_raw_acls)
 from ..burn_in import MultiTemperedMCMCBurnInTests
 from ..jump import epsie_proposals_from_config
 from ..io import EpsieFile
 from .. import models
 
 
-class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
-                   BaseMCMC, BaseSampler):
+class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
     """Constructs an MCMC sampler using epsie's parallel-tempered sampler.
 
     Parameters
     ----------
     model : model
         A model from ``pycbc.inference.models``.
-    nwalkers : int
-        Number of walkers to use in the sampler.
+    nchains : int
+        Number of chains to use in the sampler.
     ntemps : int, optional
         Number of temperatures to use in the sampler. A geometrically-spaced
         temperature ladder with the gievn number of levels will be constructed
@@ -57,10 +56,10 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     betas : array, optional
         An array of inverse temperature values to be used in for the
         temperature ladder. If not provided, must provide ``ntemps``.
-    proposals : dict, optional
-        Dictionary mapping sampling parameter names to proposal classes. Any
-        parameters not listed will use the ``default_proposal``. **Note:**
-        proposals should be specified for the sampling parameters, not the
+    proposals : list, optional
+        List of proposals to use. Any parameters that do not have a proposal
+        provided will use the ``default_propsal``. **Note:** proposals should
+        be specified for the sampling parameters, not the
         variable parameters.
     default_proposal : an epsie.Proposal class, optional
         The default proposal to use for parameters not in ``proposals``.
@@ -122,7 +121,7 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             default_proposal_args=default_proposal_args,
             seed=seed, pool=pool)
         # set other parameters
-        self._nwalkers = nchains
+        self.nchains = nchains
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
         self._checkpoint_signal = checkpoint_signal
@@ -134,11 +133,6 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     @property
     def base_shape(self):
         return (self.ntemps, self.nchains,)
-
-    @property
-    def nchains(self):
-        """Alias for ``nwalkers``."""
-        return self._nwalkers
 
     @property
     def betas(self):
@@ -157,6 +151,77 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     def swap_interval(self):
         """Number of iterations between temperature swaps."""
         return self._sampler.swap_interval
+
+    @staticmethod
+    def compute_acf(filename, **kwargs):
+        r"""Computes the autocorrelation function.
+
+        Calls :py:func:`base_multitemper.compute_acf`; see that
+        function for details.
+
+        Parameters
+        ----------
+        filename : str
+            Name of a samples file to compute ACFs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.compute_acf`.
+
+        Returns
+        -------
+        dict :
+            Dictionary of arrays giving the ACFs for each parameter. The arrays
+            will have shape ``ntemps x nchains x niterations``.
+        """
+        return compute_acf(filename, **kwargs)
+
+    @staticmethod
+    def compute_acl(filename, **kwargs):
+        r"""Computes the autocorrelation length.
+
+        Calls :py:func:`base_multitemper.compute_acl`; see that
+        function for details.
+
+        Parameters
+        -----------
+        filename : str
+            Name of a samples file to compute ACLs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.compute_acl`.
+
+        Returns
+        -------
+        dict
+            A dictionary of ntemps-long arrays of the ACLs of each parameter.
+        """
+        return compute_acl(filename, **kwargs)
+
+    @property
+    def acl(self):  # pylint: disable=invalid-overridden-method
+        """The autocorrelation lengths of the chains.
+        """
+        return acl_from_raw_acls(self.raw_acls)
+
+    @property
+    def effective_nsamples(self):  # pylint: disable=invalid-overridden-method
+        """The effective number of samples post burn-in that the sampler has
+        acquired so far.
+        """
+        act = self.act
+        if act is None:
+            act = numpy.inf
+        if self.burn_in is None:
+            start_iter = 0
+        else:
+            start_iter = self.burn_in.burn_in_iteration
+        nperchain = nsamples_in_chain(start_iter, act, self.niterations)
+        if self.burn_in is not None:
+            # ensure that any chain not burned in has zero samples
+            nperchain[~self.burn_in.is_burned_in] = 0
+            # and that any chain that is burned in has at least one sample
+            nperchain[self.burn_in.is_burned_in & (nperchain < 1)] = 1
+        return int(nperchain.sum())
 
     @property
     def samples(self):
@@ -241,7 +306,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params,
+            fp.write_samples(self.samples,
+                             parameters=self.model.variable_params,
                              last_iteration=self.niterations)
             # write stats
             fp.write_samples(self.model_stats, last_iteration=self.niterations)
@@ -376,7 +442,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # check that all of the sampling parameters have a specified
         # proposal
         sampling_params = set(model.sampling_params)
-        proposal_params = set(itertools.chain(*proposals.keys()))
+        proposal_params = set(param for prop in proposals
+                              for param in prop.parameters)
         missing = sampling_params - proposal_params
         if missing:
             raise ValueError("Missing jump proposals for sampling parameters "

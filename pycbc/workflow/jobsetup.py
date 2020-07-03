@@ -625,6 +625,7 @@ class PyCBCInspiralExecutable(Executable):
 
     current_retention_level = Executable.ALL_TRIGGERS
     file_input_options = ['--gating-file']
+    time_dependent_options = ['--channel-name']
 
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
                  injection_file=None, tags=None, reuse_executable=False):
@@ -653,7 +654,7 @@ class PyCBCInspiralExecutable(Executable):
     def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=None):
         if tags is None:
             tags = []
-        node = Node(self)
+        node = Node(self, valid_seg=valid_seg)
         if not self.has_opt('pad-data'):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)

@@ -20,11 +20,11 @@ from pycbc import transforms
 from pycbc.io import record
 
 class Constraint(object):
-    """ Creates a constraint that evaluates to True if parameters obey
+    """Creates a constraint that evaluates to True if parameters obey
     the constraint and False if they do not.
     """
     name = "custom"
-    required_parameters = []
+
     def __init__(self, constraint_arg, transforms=None, **kwargs):
         self.constraint_arg = constraint_arg
         self.transforms = transforms
@@ -32,7 +32,7 @@ class Constraint(object):
             setattr(self, kwarg, kwargs[kwarg])
 
     def __call__(self, params):
-        """ Evaluates constraint.
+        """Evaluates constraint.
         """
         # cast to FieldArray
         if isinstance(params, dict):
@@ -59,74 +59,8 @@ class Constraint(object):
         """
         return params[self.constraint_arg]
 
-class MtotalLT(Constraint):
-    """ Pre-defined constraint that check if total mass is less than a value.
-    """
-    name = "mtotal_lt"
-    required_parameters = ["mass1", "mass2"]
-
-    def _constraint(self, params):
-        """ Evaluates constraint function.
-        """
-        return params["mass1"] + params["mass2"] < self.mtotal
-
-class CartesianSpinSpace(Constraint):
-    """ Pre-defined constraint that check if Cartesian parameters
-    are within acceptable values.
-    """
-    name = "cartesian_spin_space"
-    required_parameters = ["mass1", "mass2", "spin1x", "spin1y", "spin1z",
-                           "spin2x", "spin2y", "spin2z"]
-
-    def _constraint(self, params):
-        """ Evaluates constraint function.
-        """
-        if (params["spin1x"]**2 + params["spin1y"]**2 +
-                params["spin1z"]**2)**2 > 1:
-            return False
-        elif (params["spin2x"]**2 + params["spin2y"]**2 +
-                  params["spin2z"]**2)**2 > 1:
-            return False
-        else:
-            return True
-
-class EffectiveSpinSpace(Constraint):
-    """ Pre-defined constraint that check if effective spin parameters
-    are within acceptable values.
-    """
-    name = "effective_spin_space"
-    required_parameters = ["mass1", "mass2", "q", "xi1", "xi2",
-                           "chi_eff", "chi_a"]
-
-    def _constraint(self, params):
-        """ Evaluates constraint function.
-        """
-
-        # ensure that mass1 > mass2
-        if params["mass1"] < params["mass2"]:
-            return False
-
-        # constraint for secondary mass
-        a = ((4.0 * params["q"]**2 + 3.0 * params["q"])
-                 / (4.0 + 3.0 * params["q"]) * params["xi2"])**2
-        b = ((1.0 + params["q"]**2) / 4.0
-                 * (params["chi_eff"] + params["chi_a"])**2)
-        if a + b > 1:
-            return False
-
-        # constraint for primary mass
-        a = params["xi1"]**2
-        b = ((1.0 + params["q"])**2 / (4.0 * params["q"]**2)
-                 * (params["chi_eff"] - params["chi_a"])**2)
-        if a + b > 1:
-            return False
-
-        return True
 
 # list of all constraints
 constraints = {
     Constraint.name : Constraint,
-    MtotalLT.name : MtotalLT,
-    CartesianSpinSpace.name : CartesianSpinSpace,
-    EffectiveSpinSpace.name : EffectiveSpinSpace,
 }

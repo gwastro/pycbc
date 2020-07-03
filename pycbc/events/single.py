@@ -72,7 +72,7 @@ class LiveSingle(object):
                                  'single trigger IFAR fitting.')
         parser.add_argument('--sngl-ifar-est-dist', nargs='+',
                             default='conservative',
-                            choices=['conservative', 'mean'],
+                            choices=['conservative', 'mean', 'fixed'],
                             action=MultiDetOptionAction,
                             help='Which trigger distribution to use when '
                                  'calculating IFAR of single triggers. '
@@ -153,7 +153,7 @@ class LiveSingle(object):
 
     def calculate_ifar(self, newsnr, duration):
         if self.fit_info['fixed_ifar']:
-            return self.fit_info['fixed_ifar']
+            return self.fit_info['fixed_ifar'][self.ifo]
         dur_bin = self.fit_info['bins'][duration]
         rate = self.fit_info['rates'][dur_bin]
         coeff = self.fit_info['coeffs'][dur_bin]

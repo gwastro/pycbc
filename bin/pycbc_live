@@ -245,11 +245,11 @@ class LiveEventManager(object):
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
-                                          mc_area_args=self.mc_area_args)
+                                          mc_area_args=self.mc_area_args,
+                                          )
 
-            end_time = int(coinc_results['foreground/%s/end_time'
-                                         % coinc_ifos[0]])
-            fname = 'coinc-{}-{}.xml.gz'.format(end_time, pycbc.random_string(6))
+            fname = 'coinc-{}-{}.xml.gz'.format(event.merger_time,
+                                                pycbc.random_string(6))
             fname = os.path.join(self.path, fname)
             logging.info('Coincident candidate! Saving as %s', fname)
 
@@ -266,7 +266,8 @@ class LiveEventManager(object):
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
                 gid = event.upload(fname, gracedb_server=args.gracedb_server,
                                    testing=self.gracedb_testing,
-                                   extra_strings=[comment])
+                                   extra_strings=[comment],
+                                   search=args.gracedb_search)
             else:
                 gid = None
                 event.save(fname)
@@ -339,6 +340,7 @@ class LiveEventManager(object):
                 cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant {} '.format(apr)
                 cmd += '--gracedb-server {} '.format(args.gracedb_server)
+                cmd += '--gracedb-search {} '.format(args.gracedb_search)
                 if not self.gracedb_testing:
                     cmd += '--production '
                 cmd += '--verbose '
@@ -379,10 +381,10 @@ class LiveEventManager(object):
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
-                                          mc_area_args=self.mc_area_args)
+                                          mc_area_args=self.mc_area_args,
+                                          )
 
-            end_time = int(single['foreground/%s/end_time' % ifo])
-            fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
+            fname = 'single-%s-%s.xml.gz' % (ifo, event.merger_time)
             fname = os.path.join(self.path, fname)
             logging.info('Single-detector candidate! Saving as %s', fname)
 
@@ -396,7 +398,8 @@ class LiveEventManager(object):
                     and self.ifar_upload_threshold < ifar:
                 event.upload(fname, gracedb_server=args.gracedb_server,
                              testing=self.gracedb_testing,
-                             extra_strings=[comment])
+                             extra_strings=[comment],
+                             search=args.gracedb_search)
             else:
                 event.save(fname)
 
@@ -599,6 +602,9 @@ parser.add_argument('--round-start-time', type=int, metavar='X',
 parser.add_argument('--gracedb-server', metavar='URL',
                     help='URL of GraceDB server API for uploading events. '
                          'If not provided, the default URL is used.')
+parser.add_argument('--gracedb-search', type=str, default='AllSky',
+                    help='String going into the "search" field of the GraceDB '
+                         'events')
 parser.add_argument('--size-override', type=int, metavar='N',
                     help="Override the internal MPI size layout. "
                          " Useful for debugging and running a portion of a bank")
@@ -768,6 +774,7 @@ with ctx:
     while data_end() < args.end_time:
         t1 = time()
         logging.info('%s: Analyzing from %s', evnt.rank, data_end())
+
         results = {}
         evnt.live_detectors = set()
 
