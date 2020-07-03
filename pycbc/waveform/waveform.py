@@ -801,6 +801,18 @@ def imrphenomd_length_in_time(**kwds):
     """
     return get_imr_length("IMRPhenomD", **kwds)
 
+def imrphenomhm_length_in_time(**kwargs):
+    """Estimates the duration of IMRPhenom waveforms that include higher modes.
+    """
+    if 'mode_array' in kwargs and kwargs['mode_array'] is not None:
+        maxm = max(m for _, m in kwargs['mode_array'])
+    else:
+        # the highest m for all of these is 4 (from the 4,4 mode)
+        maxm = 4
+    # we'll use the PhenomD length, then scale it by maxm / 2
+    dur = get_imr_length("IMRPhenomD", **kwargs)
+    return dur * maxm/2.
+
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
@@ -832,8 +844,10 @@ _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD_NRTidal"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2_NRTidal"] = imrphenomd_length_in_time
-_filter_time_lengths["IMRPhenomHM"] = imrphenomd_length_in_time
-_filter_time_lengths["IMRPhenomPv3HM"] = imrphenomd_length_in_time
+_filter_time_lengths["IMRPhenomHM"] = imrphenomhm_length_in_time
+_filter_time_lengths["IMRPhenomPv3HM"] = imrphenomhm_length_in_time
+_filter_time_lengths["IMRPhenomXHM"] = imrphenomhm_length_in_time
+_filter_time_lengths["IMRPhenomXPHM"] = imrphenomhm_length_in_time
 _filter_time_lengths["SpinTaylorF2"] = spa_length_in_time
 _filter_time_lengths["TaylorF2NL"] = spa_length_in_time
 _filter_time_lengths["PreTaylorF2"] = spa_length_in_time
