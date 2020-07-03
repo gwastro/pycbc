@@ -562,6 +562,9 @@ parser.add_argument('--store-psd', action='store_true')
 parser.add_argument('--output-background', type=str, nargs='+',
                     help='Takes a period in seconds and a file path and dumps '
                          'the coinc backgrounds to that path with that period')
+parser.add_argument('output-background-n-loudest', type=int, default=0,
+                    help="If given an integer (assumed positive), it stores loudest n triggers"
+                    "(not sorted) for each of the coinc background")
 
 parser.add_argument('--newsnr-threshold', type=float, default=0)
 parser.add_argument('--max-batch-size', type=int, default=2**27)
@@ -872,8 +875,14 @@ with ctx:
                 bg_fn = os.path.join(args.output_background[1], bg_fn)
                 with h5py.File(bg_fn, 'w') as bgf:
                     for bg_ifos, bg_data, bg_time in bg_dists:
-                        ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
-                                                data=bg_data, compression='gzip')
+                        if args.output_background_n_loudest:
+                            n_loudest = args.output_background_n_loudest
+                            assert (n_loudest > 0), "We can only store positive int loudest triggers."
+                            ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
+                                                    data=-numpy.partition(-bg_data, n_loudest), compression='gzip')
+                        else:
+                            ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
+                                                    data=bg_data, compression='gzip')
                         ds.attrs['background_time'] = bg_time
                     bgf.attrs['gps_time'] = last_bg_dump_time
 
