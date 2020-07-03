@@ -225,9 +225,10 @@ class JointDistribution(object):
         isin = self.contains(parray)
         if not isin.any():
             if return_atomic:
-                return -numpy.inf
+                out = -numpy.inf
             else:
-                return numpy.full(parrray.shape, -numpy.inf)
+                out = numpy.full(parray.shape, -numpy.inf)
+            return out
         # evaulate
         # note: this step may fail if arrays of values were provided, as
         # not all distributions are vectorized currently
@@ -244,7 +245,7 @@ class JointDistribution(object):
         dtype = [(arg, float) for arg in self.variable_args]
         out = FieldArray(size, dtype=dtype)
         # loop until enough samples accepted
-        remaining = size 
+        remaining = size
         ndraw = size
         while remaining:
             # scratch space for evaluating constraints
