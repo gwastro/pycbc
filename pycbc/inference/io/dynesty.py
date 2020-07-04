@@ -31,12 +31,12 @@ class DynestyFile(BaseNestedSamplerFile):
 
     name = 'dynesty_file'
 
-    def write_pickled_data_into_checkpoint_file(self, pickle_obj):
+    def write_pickled_data_into_checkpoint_file(self, state):
         """Dump the sampler state into checkpoint file
         """
-        self.clear()
-        self.create_group('sampler_info/saved_state')
-        dump_state(pickle_obj, self, path='sampler_info/saved_state')
+        if 'sampler_info/saved_state' not in self:
+            self.create_group('sampler_info/saved_state')
+        dump_state(state, self, path='sampler_info/saved_state')
 
     def read_pickled_data_from_checkpoint_file(self):
         """Load the sampler state (pickled) from checkpoint file
@@ -53,7 +53,8 @@ class DynestyFile(BaseNestedSamplerFile):
             Whether or not the file is valid as a checkpoint file.
         """
         try:
-            load_state(self, path='sampler_info/saved_state')
+            if 'sampler_info/saved_state' in self:
+                load_state(self, path='sampler_info/saved_state')
             checkpoint_valid = True
         except KeyError:
             checkpoint_valid = False

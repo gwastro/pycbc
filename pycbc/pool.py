@@ -136,6 +136,8 @@ def choose_pool(processes, mpi=False):
         pool = SinglePool()
     else:
         pool = BroadcastPool(processes)
+        
+    pool.size=processes
     return pool
 
 

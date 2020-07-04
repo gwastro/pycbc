@@ -1206,7 +1206,8 @@ def get_all_subkeys(grp, key):
 #
 
 
-def dump_state(state, fp, path=None, dsetname='state', protocol=None):
+def dump_state(state, fp, path=None, dsetname='state',
+               protocol=pickle.HIGHEST_PROTOCOL):
     """Dumps the given state to an hdf5 file handler.
 
     The state is stored as a raw binary array to ``{path}/{dsetname}`` in the

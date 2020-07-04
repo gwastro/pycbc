@@ -167,29 +167,23 @@ def check_integrity(filename):
     # if the file is corrupted such that it cannot be opened, the next line
     # will raise an IOError
     with loadfile(filename, 'r') as fp:
-        if fp.name == 'dynesty_file':
-            try:
-                load_state(fp, path='sampler_info/saved_state')
-            except IOError:
-                raise IOError("Could not recover pickled state")
-        else:
-            # check that all datasets in samples have the same shape
-            parameters = list(fp[fp.samples_group].keys())
-            # but only do the check if parameters have been written
-            if len(parameters) > 0:
-                group = fp.samples_group + '/{}'
-                # use the first parameter as a reference shape
-                ref_shape = fp[group.format(parameters[0])].shape
-                if not all(fp[group.format(param)].shape == ref_shape
-                           for param in parameters):
-                    raise IOError("not all datasets in the samples group have "
-                                  "the same shape")
+        # check that all datasets in samples have the same shape
+        parameters = list(fp[fp.samples_group].keys())
+        # but only do the check if parameters have been written
+        if len(parameters) > 0:
+            group = fp.samples_group + '/{}'
+            # use the first parameter as a reference shape
+            ref_shape = fp[group.format(parameters[0])].shape
+            if not all(fp[group.format(param)].shape == ref_shape
+                       for param in parameters):
+                raise IOError("not all datasets in the samples group have "
+                              "the same shape")
             # check that we can read the first/last sample
             firstidx = tuple([0]*len(ref_shape))
             lastidx = tuple([-1]*len(ref_shape))
-            for param in parameters:
-                _ = fp[group.format(param)][firstidx]
-                _ = fp[group.format(param)][lastidx]
+        for param in parameters:
+            _ = fp[group.format(param)][firstidx]
+            _ = fp[group.format(param)][lastidx]
 
 
 def validate_checkpoint_files(checkpoint_file, backup_file,
@@ -230,12 +224,14 @@ def validate_checkpoint_files(checkpoint_file, backup_file,
         checkpoint_valid = True
     except (ValueError, KeyError, IOError):
         checkpoint_valid = False
+
     # backup file
     try:
         check_integrity(backup_file)
         backup_valid = True
     except (ValueError, KeyError, IOError):
         backup_valid = False
+
     # since we can open the file, run self diagnostics
     if checkpoint_valid:
         with loadfile(checkpoint_file, 'r') as fp:

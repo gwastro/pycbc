@@ -177,6 +177,7 @@ def setup_output(sampler, output_file,check_nsamples=True):
     checkpoint_valid = validate_checkpoint_files(checkpoint_file,
                                                  backup_file,
                                                  check_nsamples)
+
     # Create a new file if the checkpoint doesn't exist, or if it is
     # corrupted
     sampler.new_checkpoint = False  # keeps track if this is a new file or not
