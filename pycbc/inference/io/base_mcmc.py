@@ -351,13 +351,24 @@ class CommonMCMCMetadataIO(object):
                         path=path, append=True)
         # write the act: we'll make sure that this is 2D, so that the acts
         # can be appened along the last dimension
-        act = self.act
-        act = act.reshape(tuple(list(act.shape)+[1]))
-        self.write_data('act', act, path=path, append=True)
+        try:
+            act = self.act
+        except ValueError:
+            # no acts were calculate
+            act = None
+        if act is not None:
+            act = act.reshape(tuple(list(act.shape)+[1]))
+            self.write_data('act', act, path=path, append=True)
         # write the burn in iteration in the same way
-        burn_in = self.burn_in_iteration
-        burn_in = burn_in.reshape(tuple(list(burn_in.shape)+[1]))
-        self.write_data('burn_in_iteration', burn_in, path=path, append=True)
+        try:
+            burn_in = self.burn_in_iteration
+        except ValueError:
+            # no burn in tests were done
+            burn_in = None
+        if burn_in is not None:
+            burn_in = burn_in.reshape(tuple(list(burn_in.shape)+[1]))
+            self.write_data('burn_in_iteration', burn_in, path=path,
+                            append=True)
 
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
