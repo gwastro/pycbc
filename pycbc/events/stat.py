@@ -965,7 +965,7 @@ class ExpFitStatistic(NewSNRStatistic):
             Array of limits on the second detector single statistic to
         exceed thresh.
         """
-        s1 = - (thresh ** 2.) / 2 - s0
+        s1 = - (thresh ** 2.) / 2. - s0
         threshes = [self.fits_by_tid[i]['thresh'] for i in self.bg_ifos]
         s1 += sum([t**2. / 2. for t in threshes])
         return s1

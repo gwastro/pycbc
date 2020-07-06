@@ -206,8 +206,6 @@ for decstr in args.loudest_keep_values:
     # throws an error if 'factor' is not the string representation
     # of an integer
     total_factors.append(total_factors[-1] * int(factor))
-total_factors = numpy.array(total_factors[::-1])
-threshes = numpy.array(threshes[::-1])
 
 if args.timeslide_interval is not None and \
         time_window >= args.timeslide_interval:
@@ -287,7 +285,7 @@ for tnum in template_ids:
 
         s1lims = {}
         s1lower = {}
-        for kidx in range(len(threshes) - 1):
+        for kidx in range(1, len(threshes)):
             # For each trigger in detector 0 get the limit in detector 1 to pass
             # the current decimation threshold
             s1lims[kidx] = rank_method.coinc_lim_for_thresh(s0, threshes[kidx])
@@ -312,9 +310,9 @@ for tnum in template_ids:
             t1 = t1g[s1gid]
 
             # Do time coincidence for slides that will be kept after all decimation
-            curr_shift = args.timeslide_interval * total_factors[0]
+            curr_shift = args.timeslide_interval * total_factors[-1]
             i0, i1, slide = coinc.time_coincidence(t0, t1, time_window, curr_shift)
-            slide *= total_factors[0]
+            slide *= total_factors[-1]
 
             c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
 
@@ -326,14 +324,14 @@ for tnum in template_ids:
 
             # keep foreground triggers and background triggers below
             # the lowest decimation threshold
-            bl = bi[c[bi] < threshes[0]]
+            bl = bi[c[bi] < threshes[-1]]
             ti = numpy.concatenate([fi, bl])
 
             i0 = i0[ti]
             i1 = i1[ti]
             c = c[ti]
             slide = slide[ti]
-            dec = numpy.concatenate([numpy.ones(len(fi)), numpy.repeat(total_factors[0], len(bl))])
+            dec = numpy.concatenate([numpy.ones(len(fi)), numpy.repeat(total_factors[-1], len(bl))])
 
             try:
                 s1stat = s1['snglstat'].copy()
@@ -345,7 +343,7 @@ for tnum in template_ids:
 
             tidx = len(threshes) - 1
             for i in range(1, len(threshes)):
-                if s1stat[-1] >= s1lower[kidx - 1]:
+                if s1stat[-1] >= s1lower[kidx]:
                     tidx = i
                     break
 
@@ -354,23 +352,23 @@ for tnum in template_ids:
                 
                 # Remove triggers in detector 1 that cannot form coincidences above
                 # the current decimation threshold
-                s1cut = numpy.searchsorted(s1stat, s1lower[kidx - 1])
+                s1cut = numpy.searchsorted(s1stat, s1lower[kidx])
 
                 s1s = s1stat[s1cut:]
                 test_t1 = t1[s1cut:]
                 test_t0 = t0.copy()
 
                 # Do time coincidence for current decimation
-                curr_shift = args.timeslide_interval * total_factors[kidx]
+                curr_shift = args.timeslide_interval * total_factors[kidx - 1]
                 i0tmp, i1tmp, slidetmp = coinc.time_coincidence(test_t0, test_t1,
                                                                 time_window, curr_shift)
-                slidetmp *= total_factors[kidx]
+                slidetmp *= total_factors[kidx - 1]
 
                 # Remove foreground triggers
                 bitmp = numpy.where(slidetmp != 0)[0]
                 # remove coincidences where detector 0 has a single detector statistic
                 # below the limit calculated above
-                bitmp = bitmp[s1s[i1tmp[bitmp]] >= s1lims[kidx - 1][i0tmp[bitmp]]]
+                bitmp = bitmp[s1s[i1tmp[bitmp]] >= s1lims[kidx][i0tmp[bitmp]]]
                 i0tmp = i0tmp[bitmp]
                 i1tmp = i1tmp[bitmp] + s1cut
                 slidetmp = slidetmp[bitmp]
@@ -379,14 +377,14 @@ for tnum in template_ids:
                                          slidetmp, args.timeslide_interval)
 
                 # Keep triggers in the current decimation range
-                bitmp = numpy.where(ctmp >= threshes[kidx - 1])[0]
-                bitmp = bitmp[ctmp[bitmp] < threshes[kidx]]
+                bitmp = numpy.where(ctmp >= threshes[kidx])[0]
+                bitmp = bitmp[ctmp[bitmp] < threshes[kidx - 1]]
 
                 i0 = numpy.concatenate([i0, i0tmp[bitmp]])
                 i1 = numpy.concatenate([i1, i1tmp[bitmp]])
                 c = numpy.concatenate([c, ctmp[bitmp]])
                 slide = numpy.concatenate([slide, slidetmp[bitmp]])
-                dec = numpy.concatenate([dec, numpy.repeat(total_factors[kidx], len(bitmp))])
+                dec = numpy.concatenate([dec, numpy.repeat(total_factors[kidx - 1], len(bitmp))])
 
             data['stat'] += [c]
             data['decimation_factor'] += [dec]
