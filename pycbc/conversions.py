@@ -662,7 +662,7 @@ def distance_from_chirp_distance_mchirp(chirp_distance, mchirp, ref_mass=1.4):
     return chirp_distance * (2.**(-1./5) * ref_mass / mchirp)**(-5./6)
 
 
-def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
+def det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
     """Returns the coalescence time of a signal in the given detector.
 
     Parameters
@@ -692,8 +692,6 @@ def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
     else:
         other = Detector(ref_frame)
         return tc + detector.time_delay_from_detector(other, ra, dec, tc)
-
-det_tc = numpy.vectorize(_det_tc)
 
 def _optimal_orientation_from_detector(detector_name, tc):
     """ Low-level function to be called from _optimal_dec_from_detector
