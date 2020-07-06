@@ -446,7 +446,7 @@ class LISA(object):
                       np.float32(earth.z)]), right_ascension,
             declination, t_gps)
 
-    def __h_ij__(self, X):
+    def _h_ij_(self, X):
         # pos return hij
         return np.random.random(3)
 
@@ -506,6 +506,5 @@ class LISA(object):
         None
 
     def arm_response(self, ref_time):
-        s, l, r = 1, 2, 3
-        GWresponse = self.GWresponse(ref_time, s, l, r)
+        GWresponse = self.GWresponse(ref_time)
         return GWresponse
