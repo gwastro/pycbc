@@ -123,11 +123,11 @@ class DynestySampler(BaseSampler):
 
         # properties of the internal sampler which should not be pickled
         self.no_pickle = ['loglikelihood',
-                        'prior_transform',
-                        'propose_point',
-                        'update_proposal',
-                        '_UPDATE', '_PROPOSE',
-                        'evolve_point']
+                          'prior_transform',
+                          'propose_point',
+                          'update_proposal',
+                          '_UPDATE', '_PROPOSE',
+                          'evolve_point']
 
     def run(self):
         diff_niter = 1
@@ -321,7 +321,7 @@ class DynestySampler(BaseSampler):
         numpy.random.shuffle(idx)
         post = {'loglikelihood': self._sampler.results.logl[idx]}
         for i, param in enumerate(self.variable_params):
-            post[param] = samples[:,i][idx]
+            post[param] = samples[:, i][idx]
         return post
 
     def set_initial_conditions(self, initial_distribution=None,

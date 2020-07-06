@@ -155,7 +155,7 @@ class BaseSampler(object):
 #
 
 
-def setup_output(sampler, output_file,check_nsamples=True):
+def setup_output(sampler, output_file, check_nsamples=True):
     r"""Sets up the sampler's checkpoint and output files.
 
     The checkpoint file has the same name as the output file, but with
