@@ -79,8 +79,8 @@ class UniformAngle(uniform.Uniform):
                 bnds = self._domain
             elif isinstance(bnds, boundaries.Bounds):
                 # convert to radians
-                bnds._min = bnds._min.__class__(bnds._min * numpy.pi)
-                bnds._max = bnds._max.__class__(bnds._max * numpy.pi)
+                bnds._min = bnds._min.__class__(bnds._min)
+                bnds._max = bnds._max.__class__(bnds._max)
             else:
                 # create a Bounds instance from the given tuple
                 bnds = boundaries.Bounds(
@@ -88,8 +88,8 @@ class UniformAngle(uniform.Uniform):
             # check that the bounds are in the domain
             if bnds.min < self._domain.min or bnds.max > self._domain.max:
                 raise ValueError("bounds must be in [{x},{y}); "
-                    "got [{a},{b})".format(x=self._domain.min/numpy.pi,
-                    y=self._domain.max/numpy.pi, a=bnds.min/numpy.pi,
+                    "got [{a},{b})".format(x=self._domain.min,
+                    y=self._domain.max/numpy.pi, a=bnds.min,
                     b=bnds.max/numpy.pi))
             # update
             params[p] = bnds
