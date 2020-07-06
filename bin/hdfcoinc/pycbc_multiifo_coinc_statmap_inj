@@ -101,8 +101,8 @@ if len(zdata) > 0:
     f['foreground/fap_exc'] = fap_exc
 
     logging.info('calculating injection backgrounds')
-    ifotimes = zip(zdata.data['%s/time' % ifo] for ifo in args.ifos)
-    ftimes = numpy.concatenate(ifotimes).mean(axis=0)
+    ifotimes = numpy.array([zdata.data['%s/time' % ifo] for ifo in args.ifos])
+    ftimes = ifotimes.mean(axis=0)
     start, end = ftimes - args.veto_window, ftimes + args.veto_window
 
     fnlouder = numpy.zeros(len(ftimes), dtype=numpy.float32)
