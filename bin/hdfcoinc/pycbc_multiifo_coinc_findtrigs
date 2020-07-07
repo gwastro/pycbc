@@ -246,7 +246,7 @@ for tnum in template_ids:
             fixed_ifos = [i for i in trigs.ifos if i != args.pivot_ifo]
             fixed_times = {i: times[i] for i in fixed_ifos}
 
-            if len(ifos_nopivot) > 1:
+            if len(fixed_ifos) > 1:
                 fixed_ids, fixed_slide = coinc.time_multi_coincidence(fixed_times, 0.,
                                                                       args.coinc_threshold,
                                                                       fixed_ifos[0],
@@ -260,7 +260,7 @@ for tnum in template_ids:
                 fixed_times = {i: fixed_times[i][fixed_ids[i]] for i in fixed_ifos}
 
             else:
-                det = ifos_nopivot[0]
+                det = fixed_ifos[0]
                 fixed_ids = {det: numpy.arange(len(times[det]))}
                 fixed_single_info = [(i, sds[i]) for i in fixed_ifos]
                 fixed_times = {i: times[i] for i in fixed_ifos}
@@ -363,7 +363,7 @@ for tnum in template_ids:
                 set_ids = {i: set_ids[i][sets] for i in trigs.ifos}
                 set_slide = set_slide[sets]
 
-                above = pivot_s[set_ids[args.pivot_ifo]] >= pivot_lim[kidx][set_ids[fixed_ifos[0]]]
+                above = pivot_s[set_ids[args.pivot_ifo]] >= pivot_lims[kidx][set_ids[fixed_ifos[0]]]
 
                 test_ids = {i: fixed_ids[i][set_ids[i][above]] for i in fixed_ifos}
                 test_ids[args.pivot_ifo] = set_ids[args.pivot_ifo][above] + pivot_cut
