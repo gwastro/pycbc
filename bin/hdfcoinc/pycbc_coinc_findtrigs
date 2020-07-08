@@ -341,7 +341,7 @@ for tnum in template_ids:
             if not rank_method.single_increasing:
                 s1stat *= -1.
 
-            tidx = len(threshes) - 1
+            tidx = len(threshes)
             for i in range(1, len(threshes)):
                 if s1stat[-1] >= s1lower[kidx]:
                     tidx = i

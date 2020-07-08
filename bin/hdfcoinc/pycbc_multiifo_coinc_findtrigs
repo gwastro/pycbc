@@ -334,7 +334,7 @@ for tnum in template_ids:
             if not rank_method.single_increasing:
                 pivot_stat *= -1.
 
-            tidx = len(threshes) - 1
+            tidx = len(threshes)
             for i in range(1, len(threshes)):
                 if pivot_stat[-1] >= pivot_lower[kidx]:
                     tidx = i
