@@ -878,8 +878,9 @@ with ctx:
                         if args.output_background_n_loudest:
                             n_loudest = args.output_background_n_loudest
                             assert (n_loudest > 0), "We can only store positive int loudest triggers."
+                            nl = min(len(bg_data), n_loudest)
                             ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
-                                    data=-numpy.partition(-bg_data, n_loudest)[:n_loudest], compression='gzip')
+                                    data=-numpy.partition(-bg_data, nl)[:nl], compression='gzip')
                         else:
                             ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
                                                     data=bg_data, compression='gzip')
