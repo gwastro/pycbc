@@ -176,9 +176,9 @@ class TestDistributions(unittest.TestCase):
         n_samples = int(1e6)
 
         # create generic angular distributions for test
-        sin_dist = distributions.SinAngle(theta=(0, 1))
-        cos_dist = distributions.CosAngle(theta=(-0.5, 0.5))
-        ang_dist = distributions.UniformAngle(theta=(0, 2))
+        sin_dist = distributions.SinAngle(theta=(0, numpy.pi))
+        cos_dist = distributions.CosAngle(theta=(-numpy.pi/2.0, numpy.pi/2.0))
+        ang_dist = distributions.UniformAngle(theta=(0, numpy.pi*2.0))
 
         # step size for PDF calculation
         step = 0.1
