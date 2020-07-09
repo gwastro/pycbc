@@ -345,7 +345,7 @@ class SingleTemplateExecutable(PlotExecutable):
     PlotExecutable but adds the file_input_options.
     """
     file_input_options = ['--gating-file']
-    time_dependent_options = ['--channel-name']
+    time_dependent_options = ['--channel-name', '--frame-type']
 
 
 class SingleTimeFreqExecutable(PlotExecutable):
@@ -354,7 +354,7 @@ class SingleTimeFreqExecutable(PlotExecutable):
     PlotExecutable but adds the file_input_options.
     """
     file_input_options = ['--gating-file']
-    time_dependent_options = ['--channel-name']
+    time_dependent_options = ['--channel-name', '--frame-type']
 
 
 class PlotQScanExecutable(PlotExecutable):
@@ -363,7 +363,7 @@ class PlotQScanExecutable(PlotExecutable):
     PlotExecutable but adds the file_input_options.
     """
     file_input_options = ['--gating-file']
-    time_dependent_options = ['--channel-name']
+    time_dependent_options = ['--channel-name', '--frame-type']
 
 
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
