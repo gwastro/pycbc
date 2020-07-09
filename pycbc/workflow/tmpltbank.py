@@ -380,7 +380,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                                 'tmpltbank-pregenerated-bank-%s' % ifo.lower(),
                                 tags)
                 file_attrs['ifos'] = [ifo]
-                curr_file = resolve_url_to_file(pre_gen_bank, attrs=file_attrs))
+                curr_file = resolve_url_to_file(pre_gen_bank, attrs=file_attrs)
                 tmplt_banks.append(curr_file)
 
             except ConfigParser.Error:
