@@ -50,8 +50,8 @@ class PlotExecutable(Executable):
 
     # plots and final results should get the highest priority
     # on the job queue
-    def create_node(self):
-        node = Executable.create_node(self)
+    def create_node(self, **kwargs):
+        node = Executable.create_node(self, **kwargs)
         node.set_priority(1000)
         return node
 
