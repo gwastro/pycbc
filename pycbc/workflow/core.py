@@ -2024,8 +2024,8 @@ def resolve_url_to_file(curr_pfn, attrs=None):
     template banks, where ifos and valid times will be checked in the workflow
     and used in the naming of child job output files.
     """
-    cvmfsstr1 = 'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'
-    cvmfsstr2 = 'file://localhost/cvmfs/oasis.opensciencegrid.org/ligo/frames'
+    cvmfsstr1 = 'file:///cvmfs/'
+    cvmfsstr2 = 'file://localhost/cvmfs/'
     cvmfsstrs = (cvmfsstr1, cvmfsstr2)
 
     # Get LFN
