@@ -2013,8 +2013,8 @@ def resolve_url_to_file(curr_pfn):
     cvmfsstr = 'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'
 
     # Get LFN
-    urlp = urllib.parse.urlparse(url)
-    curr_lfn = os.path.basename(u.path)
+    urlp = urllib.parse.urlparse(curr_pfn)
+    curr_lfn = os.path.basename(urlp.path)
 
     # Does this already exist as a File?
     if curr_lfn in file_input_from_config_dict.keys():
