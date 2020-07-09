@@ -2010,7 +2010,9 @@ def resolve_url_to_file(curr_pfn):
     addition to local. If the LFN is a duplicate of an existing one, but with a
     different PFN an AssertionError is raised.
     """
-    cvmfsstr = 'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'
+    cvmfsstr1 = 'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'
+    cvmfsstr2 = 'file://localhost/cvmfs/oasis.opensciencegrid.org/ligo/frames'
+    cvmfsstrs = (cvmfsstr1, cvmfsstr2)
 
     # Get LFN
     urlp = urllib.parse.urlparse(curr_pfn)
@@ -2029,7 +2031,7 @@ def resolve_url_to_file(curr_pfn):
         curr_file = File.from_path(local_file_path)
         # Add other PFNs for nonlocal sites as needed.
         # This block could be extended as needed
-        if curr_file.url.startswith(cvmfsstr):
+        if curr_pfn.startswith(cvmfsstrs):
             curr_file.PFN(curr_pfn, site='osg')
             curr_file.PFN(curr_pfn, site='nonfsio')
             # Also register the CVMFS PFN with the local site. We want to
