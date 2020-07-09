@@ -36,7 +36,8 @@ from six.moves import configparser as ConfigParser
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
 import pycbc
-from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
+from pycbc.workflow.core import File, FileList
+from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
 from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
@@ -366,11 +367,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
         # First check if we have a bank for all ifos
         pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
                                            'tmpltbank-pregenerated-bank', tags)
-        pre_gen_bank = resolve_url(pre_gen_bank)
-        file_url = urljoin('file:', pathname2url(pre_gen_bank))
-        curr_file = File(workflow.ifos, user_tag, global_seg, file_url,
-                                                                     tags=tags)
-        curr_file.PFN(file_url, site='local')
+        curr_file = resolve_url_to_file(pre_gen_bank)
         tmplt_banks.append(curr_file)
     except ConfigParser.Error:
         # Okay then I must have banks for each ifo
@@ -379,11 +376,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                 pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
                                 'tmpltbank-pregenerated-bank-%s' % ifo.lower(),
                                 tags)
-                pre_gen_bank = resolve_url(pre_gen_bank)
-                file_url = urljoin('file:', pathname2url(pre_gen_bank))
-                curr_file = File(ifo, user_tag, global_seg, file_url,
-                                                                     tags=tags)
-                curr_file.PFN(file_url, site='local')
+                curr_file = resolve_url_to_file(pre_gen_bank)
                 tmplt_banks.append(curr_file)
 
             except ConfigParser.Error:

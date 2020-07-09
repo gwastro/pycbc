@@ -335,6 +335,7 @@ class Executable(pegasus_workflow.Executable):
         sec : string
             The section containing options for this job.
         """
+        cvmfsstr = 'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'
         for opt in cp.options(sec):
             value = cp.get(sec, opt).strip()
             opt = '--%s' %(opt,)
@@ -376,15 +377,7 @@ class Executable(pegasus_workflow.Executable):
                     else:
                         curr_pfn = path
 
-                    if curr_lfn in file_input_from_config_dict.keys():
-                        file_pfn = file_input_from_config_dict[curr_lfn][2]
-                        assert(file_pfn == curr_pfn)
-                        curr_file = file_input_from_config_dict[curr_lfn][1]
-                    else:
-                        local_file_path = resolve_url(curr_pfn)
-                        curr_file = File.from_path(local_file_path)
-                        tuple_val = (local_file_path, curr_file, curr_pfn)
-                        file_input_from_config_dict[curr_lfn] = tuple_val
+                    curr_file = resolve_url_to_file(curr_pfn)
                     self.common_input_files.append(curr_file)
                     if ifo:
                         self.common_raw_options.append(ifo + ':')
@@ -2005,6 +1998,44 @@ class CalledProcessErrorMod(Exception):
         if self.cmdFile:
             msg += "The failed command has been printed in %s ." %(self.cmdFile)
         return msg
+
+def resolve_url_to_file(curr_pfn):
+    """
+    Resolves a PFN into a workflow.File object.
+
+    This function will resolve a PFN to a workflow.File object. If a File
+    object already exists for that PFN that will be returned, otherwise a new
+    object is returned. We will implement default site schemes here as needed,
+    for example cvfms paths will be added to the osg and nonfsio sites in
+    addition to local. If the LFN is a duplicate of an existing one, but with a
+    different PFN an AssertionError is raised.
+    """
+    cvmfsstr = 'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'
+
+    # Get LFN
+    urlp = urllib.parse.urlparse(url)
+    curr_lfn = os.path.basename(u.path)
+
+    # Does this already exist as a File?
+    if curr_lfn in file_input_from_config_dict.keys():
+        file_pfn = file_input_from_config_dict[curr_lfn][2]
+        # If the PFNs are different, but LFNs are the same then fail.
+        assert(file_pfn == curr_pfn)
+        curr_file = file_input_from_config_dict[curr_lfn][1]
+    else:
+        # Use resolve_url to download file/symlink as appropriate
+        local_file_path = resolve_url(curr_pfn)
+        # Create File object with default local path
+        curr_file = File.from_path(local_file_path)
+        # Add other PFNs for nonlocal sites as needed.
+        # This block could be extended as needed
+        if curr_file.url.startswith(cvmfsstr):
+            curr_file.PFN(curr_pfn, site='osg')
+            curr_file.PFN(curr_pfn, site='nonfsio')
+        # Store the file to avoid later duplication
+        tuple_val = (local_file_path, curr_file, curr_pfn)
+        file_input_from_config_dict[curr_lfn] = tuple_val
+    return curr_file
 
 def get_full_analysis_chunk(science_segs):
     """

@@ -36,7 +36,8 @@ import logging
 from six.moves import configparser as ConfigParser
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
-from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
+from pycbc.workflow.core import File, FileList
+from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
 
 def setup_psd_workflow(workflow, science_segs, datafind_outs,
                              output_dir=None, tags=None):
@@ -123,11 +124,7 @@ def setup_psd_pregenerated(workflow, tags=None):
     try:
         pre_gen_file = cp.get_opt_tags('workflow-psd',
                         'psd-pregenerated-file', tags)
-        pre_gen_file = resolve_url(pre_gen_file)
-        file_url = urljoin('file:', pathname2url(pre_gen_file))
-        curr_file = File(workflow.ifos, user_tag, global_seg, file_url,
-                                                    tags=tags)
-        curr_file.PFN(file_url, site='local')
+        curr_file = resolve_url_to_file(pre_gen_file)
         psd_files.append(curr_file)
     except ConfigParser.Error:
         # Check for one psd per ifo
@@ -136,11 +133,7 @@ def setup_psd_pregenerated(workflow, tags=None):
                 pre_gen_file = cp.get_opt_tags('workflow-psd',
                                 'psd-pregenerated-file-%s' % ifo.lower(),
                                 tags)
-                pre_gen_file = resolve_url(pre_gen_file)
-                file_url = urljoin('file:', pathname2url(pre_gen_file))
-                curr_file = File(ifo, user_tag, global_seg, file_url,
-                                                            tags=tags)
-                curr_file.PFN(file_url, site='local')
+                curr_file = resolve_url_to_file(pre_gen_file)
                 psd_files.append(curr_file)
 
             except ConfigParser.Error:
