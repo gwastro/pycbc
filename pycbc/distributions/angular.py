@@ -82,8 +82,7 @@ class UniformAngle(uniform.Uniform):
                 bnds._max = bnds._max.__class__(bnds._max)
             else:
                 # create a Bounds instance from the given tuple
-                bnds = boundaries.Bounds(
-                    bnds[0]*numpy.pi, bnds[1]*numpy.pi)
+                bnds = boundaries.Bounds(bnds[0], bnds[1])
             # check that the bounds are in the domain
             if bnds.min < self._domain.min or bnds.max > self._domain.max:
                 raise ValueError("bounds must be in [{x},{y}); "
@@ -117,7 +116,7 @@ class UniformAngle(uniform.Uniform):
         """
         # map values to be within the domain
         kwargs = dict([[p, self._domain.apply_conditions(val)]
-                      for p,val in kwargs.items()])
+                      for p,val in kwargs.items() if p in self._bounds])
         # now apply additional conditions
         return super(UniformAngle, self).apply_boundary_conditions(**kwargs)
 
