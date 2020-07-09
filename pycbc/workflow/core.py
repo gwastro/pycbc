@@ -2044,7 +2044,7 @@ def resolve_url_to_file(curr_pfn, attrs=None):
         # Create File object with default local path
         # To do this we first need to check the attributes
         if attrs and 'ifos' in attrs:
-            ifos = attrs[ifos]
+            ifos = attrs['ifos']
         else:
             ifos = ['H1', 'K1', 'L1', 'V1']
         if attrs and 'exe_name' in attrs:
