@@ -2032,6 +2032,11 @@ def resolve_url_to_file(curr_pfn):
         if curr_file.url.startswith(cvmfsstr):
             curr_file.PFN(curr_pfn, site='osg')
             curr_file.PFN(curr_pfn, site='nonfsio')
+            # Also register the CVMFS PFN with the local site. We want to
+            # prefer this, and symlink from here, when possible.
+            # However, I think we need a little more to avoid it symlinking
+            # to this through an NFS mount.
+            curr_file.PFN(curr_pfn, site='local')
         # Store the file to avoid later duplication
         tuple_val = (local_file_path, curr_file, curr_pfn)
         file_input_from_config_dict[curr_lfn] = tuple_val
