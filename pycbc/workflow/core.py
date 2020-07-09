@@ -2061,6 +2061,8 @@ def resolve_url_to_file(curr_pfn, attrs=None):
             tags = []
 
         curr_file = File(ifos, exe_name, segs, local_file_path, tags=tags)
+        pfn_local = urljoin('file:', pathname2url(local_file_path))
+        curr_file.PFN(pfn_local, 'local')
         # Add other PFNs for nonlocal sites as needed.
         # This block could be extended as needed
         if curr_pfn.startswith(cvmfsstrs):
