@@ -148,12 +148,18 @@ def setup_injection_workflow(workflow, output_dir=None,
             inj_file = node.output_files[0]
             inj_files.append(inj_file)
         elif injection_method == "PREGENERATED":
+            file_attrs = {
+                'ifos': ['HL'],
+                'segs' : full_segment,
+                'tags' : curr_tags
+            }
             injection_path = workflow.cp.get_opt_tags(
                 "workflow-injections",
                 "injections-pregenerated-file",
                 curr_tags
             )
-            inj_files.append(resolve_url_to_file(injection_path))
+            curr_file = resolve_url_to_file(injection_path, attrs=file_attrs)
+            inj_files.append(curr_file)
         elif injection_method in ["IN_COH_PTF_WORKFLOW", "AT_COH_PTF_RUNTIME"]:
             inj_job = LalappsInspinjExecutable(workflow.cp, inj_section_name,
                                                out_dir=output_dir, ifos=ifos,

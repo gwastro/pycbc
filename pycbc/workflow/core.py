@@ -1999,7 +1999,7 @@ class CalledProcessErrorMod(Exception):
             msg += "The failed command has been printed in %s ." %(self.cmdFile)
         return msg
 
-def resolve_url_to_file(curr_pfn):
+def resolve_url_to_file(curr_pfn, attrs=None):
     """
     Resolves a PFN into a workflow.File object.
 
@@ -2008,7 +2008,21 @@ def resolve_url_to_file(curr_pfn):
     object is returned. We will implement default site schemes here as needed,
     for example cvfms paths will be added to the osg and nonfsio sites in
     addition to local. If the LFN is a duplicate of an existing one, but with a
-    different PFN an AssertionError is raised.
+    different PFN an AssertionError is raised. The attrs keyword-argument can
+    be used to specify attributes of a file. All files have 4 possible
+    attributes. A list of ifos, an identifying string - usually used to give
+    the name of the executable that created the file, a segmentlist over which
+    the file is valid and tags specifying particular details about those files.
+    If attrs['ifos'] is set it will be used as the ifos, otherwise this will
+    default to ['H1', 'K1', 'L1', 'V1']. If attrs['exe_name'] is given this
+    will replace the "exe_name" sent to File.__init__ otherwise 'INPUT' will
+    be given. segs will default to [[1,2000000000]] unless overridden with
+    attrs['segs']. tags will default to an empty list unless overriden
+    with attrs['tag']. If attrs is None it will be ignored and all defaults
+    will be used. It is emphasized that these attributes are for the most part
+    not important with input files. Exceptions include things like input
+    template banks, where ifos and valid times will be checked in the workflow
+    and used in the naming of child job output files.
     """
     cvmfsstr1 = 'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'
     cvmfsstr2 = 'file://localhost/cvmfs/oasis.opensciencegrid.org/ligo/frames'
@@ -2028,7 +2042,25 @@ def resolve_url_to_file(curr_pfn):
         # Use resolve_url to download file/symlink as appropriate
         local_file_path = resolve_url(curr_pfn)
         # Create File object with default local path
-        curr_file = File.from_path(local_file_path)
+        # To do this we first need to check the attributes
+        if attrs and 'ifos' in attrs:
+            ifos = attrs[ifos]
+        else:
+            ifos = ['H1', 'K1', 'L1', 'V1']
+        if attrs and 'exe_name' in attrs:
+            exe_name = attrs['exe_name']
+        else:
+            exe_name = 'INPUT'
+        if attrs and 'segs' in attrs:
+            segs = attrs['segs']
+        else:
+            segs = segments.segment([1, 2000000000])
+        if attrs and 'tags' in attrs:
+            tags = attrs['tags']
+        else:
+            tags = []
+
+        curr_file = File(ifos, exe_name, segs, local_file_path, tags=tags)
         # Add other PFNs for nonlocal sites as needed.
         # This block could be extended as needed
         if curr_pfn.startswith(cvmfsstrs):

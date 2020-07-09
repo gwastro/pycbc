@@ -363,11 +363,14 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
     cp = workflow.cp
     global_seg = workflow.analysis_time
     user_tag = "PREGEN_TMPLTBANK"
+    file_attrs = {'segs' : global_seg, 'tags' : tags}
+    
     try:
         # First check if we have a bank for all ifos
         pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
                                            'tmpltbank-pregenerated-bank', tags)
-        curr_file = resolve_url_to_file(pre_gen_bank)
+        file_attrs['ifos'] = workflow.ifos
+        curr_file = resolve_url_to_file(pre_gen_bank, attrs=file_attrs)
         tmplt_banks.append(curr_file)
     except ConfigParser.Error:
         # Okay then I must have banks for each ifo
@@ -376,7 +379,8 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                 pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
                                 'tmpltbank-pregenerated-bank-%s' % ifo.lower(),
                                 tags)
-                curr_file = resolve_url_to_file(pre_gen_bank)
+                file_attrs['ifos'] = [ifo]
+                curr_file = resolve_url_to_file(pre_gen_bank, attrs=file_attrs))
                 tmplt_banks.append(curr_file)
 
             except ConfigParser.Error:

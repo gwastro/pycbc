@@ -119,12 +119,14 @@ def setup_psd_pregenerated(workflow, tags=None):
     cp = workflow.cp
     global_seg = workflow.analysis_time
     user_tag = "PREGEN_PSD"
+    file_attrs = {'segs' : global_seg, 'tags' : tags}
 
     # Check for one psd for all ifos
     try:
         pre_gen_file = cp.get_opt_tags('workflow-psd',
                         'psd-pregenerated-file', tags)
-        curr_file = resolve_url_to_file(pre_gen_file)
+        file_attrs['ifos'] = workflow.ifos
+        curr_file = resolve_url_to_file(pre_gen_file, attrs=file_attrs)
         psd_files.append(curr_file)
     except ConfigParser.Error:
         # Check for one psd per ifo
@@ -133,7 +135,8 @@ def setup_psd_pregenerated(workflow, tags=None):
                 pre_gen_file = cp.get_opt_tags('workflow-psd',
                                 'psd-pregenerated-file-%s' % ifo.lower(),
                                 tags)
-                curr_file = resolve_url_to_file(pre_gen_file)
+                file_attrs['ifos'] = [ifo]
+                curr_file = resolve_url_to_file(pre_gen_file, attrs=file_attrs)
                 psd_files.append(curr_file)
 
             except ConfigParser.Error:

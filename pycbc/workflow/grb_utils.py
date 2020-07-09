@@ -36,7 +36,7 @@ from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
 from ligo import segments
 from glue.ligolw import ligolw, lsctables, utils, ilwd
-from pycbc.workflow.core import File, FileList, resolve_url
+from pycbc.workflow.core import File, FileList, resolve_url_to_file
 from pycbc.workflow.jobsetup import select_generic_executable
 
 
@@ -224,11 +224,13 @@ def get_ipn_sky_files(workflow, file_url, tags=None):
         File object representing the IPN sky points file.
     '''
     tags = tags or []
-    ipn_sky_points = resolve_url(file_url)
-    sky_points_url = urljoin("file:", pathname2url(ipn_sky_points))
-    sky_points_file = File(workflow.ifos, "IPN_SKY_POINTS",
-            workflow.analysis_time, file_url=sky_points_url, tags=tags)
-    sky_points_file.PFN(sky_points_url, site="local")
+    file_attrs = {
+        'ifos' : workflow.ifos,
+        'segs' : workflow.analysis_time,
+        'exe_name' : "IPN_SKY_POINTS",
+        'tags' : tags
+    }
+    sky_points_file = resolve_url_to_file(file_url)
 
     return sky_points_file
 
