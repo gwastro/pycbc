@@ -111,17 +111,17 @@ class DynestySampler(BaseSampler):
             if param in cyclic:
                 logging.info('Param: %s will be cyclic', param)
                 periodic.append(i)
-            
+
         if len(periodic) == 0:
             periodic = None
-            
+
         # Check for reflected boundaries. Dynesty only supports
         # reflection on both min and max of boundary.
         reflective = []
         reflect = self.model.prior_distribution.well_reflected
         for i, param in enumerate(self.variable_params):
             if param in reflect:
-                logging.info("Param: %s will be well reflected", param) 
+                logging.info("Param: %s will be well reflected", param)
                 reflective.append(i)
         
         if len(reflective) == 0:

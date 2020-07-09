@@ -205,7 +205,7 @@ class JointDistribution(object):
             if bounds[param].reflected == 'well':
                 reflect.append(param)
         return reflect
-        
+
     @property
     def cyclic(self):
         """ Get list of which parameters are cyclic
@@ -224,8 +224,8 @@ class JointDistribution(object):
         bnds = {}
         for dist in self.distributions:
             if hasattr(dist, 'bounds'):
-                bnds.update(dist.bounds) 
-        return bnds 
+                bnds.update(dist.bounds)
+        return bnds
 
     def cdfinv(self, **original):
         """ Apply the inverse cdf to the array of values [0, 1]. Every
