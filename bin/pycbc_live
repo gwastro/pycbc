@@ -875,7 +875,7 @@ with ctx:
                 bg_fn = os.path.join(args.output_background[1], bg_fn)
                 with h5py.File(bg_fn, 'w') as bgf:
                     for bg_ifos, bg_data, bg_time in bg_dists:
-                        if args.output_background_n_loudest:
+                        if args.output_background_n_loudest and (args.output_background_n_loudest < len(bg_data)-1):
                             n_loudest = args.output_background_n_loudest
                             assert (n_loudest > 0), "We can only store positive int loudest triggers."
                             ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
