@@ -30,9 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 import logging
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
-from pycbc.workflow.core import File, FileList, make_analysis_dir
+from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
@@ -150,8 +148,8 @@ def setup_injection_workflow(workflow, output_dir=None,
         elif injection_method == "PREGENERATED":
             file_attrs = {
                 'ifos': ['HL'],
-                'segs' : full_segment,
-                'tags' : curr_tags
+                'segs': full_segment,
+                'tags': curr_tags
             }
             injection_path = workflow.cp.get_opt_tags(
                 "workflow-injections",

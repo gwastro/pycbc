@@ -118,8 +118,7 @@ def setup_psd_pregenerated(workflow, tags=None):
 
     cp = workflow.cp
     global_seg = workflow.analysis_time
-    user_tag = "PREGEN_PSD"
-    file_attrs = {'segs' : global_seg, 'tags' : tags}
+    file_attrs = {'segs': global_seg, 'tags': tags}
 
     # Check for one psd for all ifos
     try:

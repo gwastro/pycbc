@@ -225,12 +225,12 @@ def get_ipn_sky_files(workflow, file_url, tags=None):
     '''
     tags = tags or []
     file_attrs = {
-        'ifos' : workflow.ifos,
-        'segs' : workflow.analysis_time,
-        'exe_name' : "IPN_SKY_POINTS",
-        'tags' : tags
+        'ifos': workflow.ifos,
+        'segs': workflow.analysis_time,
+        'exe_name': "IPN_SKY_POINTS",
+        'tags': tags
     }
-    sky_points_file = resolve_url_to_file(file_url)
+    sky_points_file = resolve_url_to_file(file_url, attrs=file_attrs)
 
     return sky_points_file
 

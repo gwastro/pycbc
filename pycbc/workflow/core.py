@@ -335,7 +335,6 @@ class Executable(pegasus_workflow.Executable):
         sec : string
             The section containing options for this job.
         """
-        cvmfsstr = 'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'
         for opt in cp.options(sec):
             value = cp.get(sec, opt).strip()
             opt = '--%s' %(opt,)
@@ -366,8 +365,6 @@ class Executable(pegasus_workflow.Executable):
                             #IFO:path or IFO:URL
                             ifo = split_path[0]
                             path = split_path[1]
-
-                    curr_lfn = os.path.basename(path)
 
                     # If the file exists make sure to use the
                     # fill path as a file:// URL

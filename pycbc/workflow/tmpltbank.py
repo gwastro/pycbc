@@ -33,10 +33,8 @@ from __future__ import division
 import os
 import logging
 from six.moves import configparser as ConfigParser
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
 import pycbc
-from pycbc.workflow.core import File, FileList
+from pycbc.workflow.core import FileList
 from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
 from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
 
@@ -362,9 +360,8 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
 
     cp = workflow.cp
     global_seg = workflow.analysis_time
-    user_tag = "PREGEN_TMPLTBANK"
     file_attrs = {'segs' : global_seg, 'tags' : tags}
-    
+
     try:
         # First check if we have a bank for all ifos
         pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
