@@ -562,7 +562,7 @@ parser.add_argument('--store-psd', action='store_true')
 parser.add_argument('--output-background', type=str, nargs='+',
                     help='Takes a period in seconds and a file path and dumps '
                          'the coinc backgrounds to that path with that period')
-parser.add_argument('--output-background-n-loudest', type=int, default=0,
+parser.add_argument('output-background-n-loudest', type=int, default=0,
                     help="If given an integer (assumed positive), it stores loudest n triggers"
                     "(not sorted) for each of the coinc background")
 
