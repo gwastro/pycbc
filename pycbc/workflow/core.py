@@ -455,12 +455,12 @@ class Executable(pegasus_workflow.Executable):
 
         return False
 
-    def create_node(self):
+    def create_node(self, **kwargs):
         """Default node constructor.
 
         This is usually overridden by subclasses of Executable.
         """
-        return Node(self)
+        return Node(self, **kwargs)
 
     def update_current_retention_level(self, value):
         """Set a new value for the current retention level.
