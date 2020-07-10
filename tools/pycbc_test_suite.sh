@@ -159,7 +159,7 @@ popd
 
 echo -e "\\n>> [`date`] Building documentation"
 
-python setup.py build_gh_pages &
+python setup.py build_gh_pages
 if test $? -ne 0 ; then
     echo -e "    FAILED!"
     echo -e "---------------------------------------------------------"
