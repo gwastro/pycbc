@@ -168,7 +168,7 @@ class UltranestSampler(BaseSampler):
 
         # we'll do the resampling ourselves so we can pick up
         # additional parameters
-        try: # Remove me on next ultranest release
+        try:  # Remove me on next ultranest release
             wsamples = self.result['weighted_samples']['v']
             weights = self.result['weighted_samples']['w']
             logl = self.result['weighted_samples']['L']
@@ -180,7 +180,7 @@ class UltranestSampler(BaseSampler):
         wsamples = numpy.column_stack((wsamples, logl))
         params = list(self.model.variable_params) + ['loglikelihood']
         samples = resample_equal(wsamples, weights / weights.sum())
-        samples_dict = {p:samples[:,i] for i, p in enumerate(params)}
+        samples_dict = {p: samples[:, i] for i, p in enumerate(params)}
         return samples_dict
 
     def write_results(self, filename):
