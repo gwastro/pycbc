@@ -1257,7 +1257,7 @@ def dump_pickle_to_hdf(memfp, fp, path=None, dsetname='state'):
     memfp.seek(0)
     bdata = np.frombuffer(memfp.read(), dtype='S1')
     if path is not None:
-        fp = fp[path]
+        dsetname = path + '/' + dsetname
     if dsetname not in fp:
         fp.create_dataset(dsetname, shape=bdata.shape, maxshape=(None,),
                           dtype=bdata.dtype)

@@ -22,7 +22,7 @@
 # =============================================================================
 #
 """
-This modules provides classes and functions for using the dynesty sampler
+This modules provides classes and functions for using the ultranest sampler
 packages for parameter estimation.
 """
 
@@ -30,8 +30,10 @@ packages for parameter estimation.
 from __future__ import absolute_import
 
 import logging
+import numpy
 
 from pycbc.inference.io.ultranest import UltranestFile
+from pycbc.io.hdf import dump_state
 from .base import (BaseSampler, setup_output)
 from .base_cube import setup_calls
 
@@ -70,10 +72,22 @@ class UltranestSampler(BaseSampler):
         import ultranest
         log_likelihood_call, prior_call = setup_calls(model, copy_prior=True)
 
+        # Check for cyclic boundaries
+        periodic = []
+        cyclic = self.model.prior_distribution.cyclic
+        for param in self.variable_params:
+            if param in cyclic:
+                logging.info('Param: %s will be cyclic', param)
+                periodic.append(True)
+            else:
+                periodic.append(False)
+
         self._sampler = ultranest.ReactiveNestedSampler(
             list(self.model.variable_params),
             log_likelihood_call,
-            prior_call, log_dir=log_dir, resume=True)
+            prior_call, log_dir=log_dir,
+            wrapped_params=periodic,
+            resume=True)
 
         if stepsampling:
             import ultranest.stepsampler
@@ -150,8 +164,23 @@ class UltranestSampler(BaseSampler):
 
     @property
     def samples(self):
-        samples_dict = {p: self.result['samples'][:, i] for p, i in
-                        zip(self.model.variable_params, range(self.ndim))}
+        from ultranest.utils import resample_equal
+
+        # we'll do the resampling ourselves so we can pick up
+        # additional parameters
+        try:  # Remove me on next ultranest release
+            wsamples = self.result['weighted_samples']['v']
+            weights = self.result['weighted_samples']['w']
+            logl = self.result['weighted_samples']['L']
+        except KeyError:
+            wsamples = self.result['weighted_samples']['points']
+            weights = self.result['weighted_samples']['weights']
+            logl = self.result['weighted_samples']['logl']
+
+        wsamples = numpy.column_stack((wsamples, logl))
+        params = list(self.model.variable_params) + ['loglikelihood']
+        samples = resample_equal(wsamples, weights / weights.sum())
+        samples_dict = {p: samples[:, i] for i, p in enumerate(params)}
         return samples_dict
 
     def write_results(self, filename):
@@ -166,15 +195,20 @@ class UltranestSampler(BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params)
+            fp.write_samples(self.samples, self.samples.keys())
             # write log evidence
             fp.write_logevidence(self.logz, self.logz_err)
+
+            # write full ultranest formatted results
+            dump_state(self.result, fp,
+                       path='sampler_info',
+                       dsetname='presult')
 
     @property
     def logz(self):
         """
         return bayesian evidence estimated by
-        dynesty sampler
+        ultranest sampler
         """
         return self.result['logz']
 
@@ -182,6 +216,6 @@ class UltranestSampler(BaseSampler):
     def logz_err(self):
         """
         return error in bayesian evidence estimated by
-        dynesty sampler
+        ultranest sampler
         """
         return self.result['logzerr']
