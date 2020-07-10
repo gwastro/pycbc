@@ -297,7 +297,7 @@ class CosAngle(SinAngle):
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
         `boundaries.Bounds` instances or tuples. The bounds must be
-        in [-PI/2, PI/2]. 
+        in [-PI/2, PI/2].
 
     Attributes
     ----------------
