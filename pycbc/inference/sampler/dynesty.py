@@ -104,6 +104,29 @@ class DynestySampler(BaseSampler):
         else:
             self.run_with_checkpoint = False
 
+        # Check for cyclic boundaries
+        periodic = []
+        cyclic = self.model.prior_distribution.cyclic
+        for i, param in enumerate(self.variable_params):
+            if param in cyclic:
+                logging.info('Param: %s will be cyclic', param)
+                periodic.append(i)
+
+        if len(periodic) == 0:
+            periodic = None
+
+        # Check for reflected boundaries. Dynesty only supports
+        # reflection on both min and max of boundary.
+        reflective = []
+        reflect = self.model.prior_distribution.well_reflected
+        for i, param in enumerate(self.variable_params):
+            if param in reflect:
+                logging.info("Param: %s will be well reflected", param)
+                reflective.append(i)
+
+        if len(reflective) == 0:
+            reflective = None
+
         if self.nlive < 0:
             # Interpret a negative input value for the number of live points
             # (which is clearly an invalid input in all senses)
@@ -111,6 +134,8 @@ class DynestySampler(BaseSampler):
             self._sampler = dynesty.DynamicNestedSampler(log_likelihood_call,
                                                          prior_call, self.ndim,
                                                          pool=self.pool,
+                                                         reflective=reflective,
+                                                         periodic=periodic,
                                                          **kwargs)
             self.run_with_checkpoint = False
             logging.info("Checkpointing not currently supported with"
@@ -119,6 +144,8 @@ class DynestySampler(BaseSampler):
             self._sampler = dynesty.NestedSampler(log_likelihood_call,
                                                   prior_call, self.ndim,
                                                   nlive=self.nlive,
+                                                  reflective=reflective,
+                                                  periodic=periodic,
                                                   pool=self.pool, **kwargs)
 
         # properties of the internal sampler which should not be pickled

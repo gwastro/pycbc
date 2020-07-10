@@ -195,6 +195,38 @@ class JointDistribution(object):
 
         return out
 
+    @property
+    def well_reflected(self):
+        """ Get list of which parameters are well reflected
+        """
+        reflect = []
+        bounds = self.bounds
+        for param in bounds:
+            if bounds[param].reflected == 'well':
+                reflect.append(param)
+        return reflect
+
+    @property
+    def cyclic(self):
+        """ Get list of which parameters are cyclic
+        """
+        cyclic = []
+        bounds = self.bounds
+        for param in bounds:
+            if bounds[param].cyclic:
+                cyclic.append(param)
+        return cyclic
+
+    @property
+    def bounds(self):
+        """ Get the dict of boundaries
+        """
+        bnds = {}
+        for dist in self.distributions:
+            if hasattr(dist, 'bounds'):
+                bnds.update(dist.bounds)
+        return bnds
+
     def cdfinv(self, **original):
         """ Apply the inverse cdf to the array of values [0, 1]. Every
         variable parameter must be given as a keyword argument.
