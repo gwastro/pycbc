@@ -17,6 +17,8 @@
 """
 
 from . import strain
+from scipy import linalg
+
 
 def _gates_from_cli(opts, gate_opt):
     """Parses the given `gate_opt` into something understandable by
@@ -137,3 +139,35 @@ def add_gate_option_group(parser):
                                  "prior to FFT-ing the data for PSD "
                                  "estimation.")
     return gate_group
+
+
+def gate_and_paint(data, lindex, rindex, invpsd):
+    """Gates and in-paints data.
+
+    Parameters
+    ----------
+    data : TimeSeries
+        The data to gate.
+    lindex : int
+        The start index of the gate.
+    rindex : int
+        The end index of the gate.
+    invpsd : FrequencySeries
+        The inverse of the PSD.
+
+    Returns
+    -------
+    TimeSeries :
+        The gated and in-painted time series.
+    """
+    # Copy the data and zero inside the hole
+    gated_data = data.copy()
+    gated_data[lindex:rindex] *= 0
+    # get the over-whitened gated data
+    tdfilter = invpsd.astype('complex').to_timeseries()
+    owhgated_data = (gated_data.to_frequencyseries() * invpsd).to_timeseries()
+    # remove the projection into the null space
+    proj = linalg.solve_toeplitz(tdfilter.numpy()[:(rindex - lindex)],
+                                 owhgated_data.numpy()[lindex:rindex])
+    gated_data[lindex:rindex] -= proj
+    return gated_data
