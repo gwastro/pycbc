@@ -661,6 +661,7 @@ def distance_from_chirp_distance_mchirp(chirp_distance, mchirp, ref_mass=1.4):
     """
     return chirp_distance * (2.**(-1./5) * ref_mass / mchirp)**(-5./6)
 
+
 _detector_cache = {}
 def det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
     """Returns the coalescence time of a signal in the given detector.
