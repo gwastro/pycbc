@@ -123,7 +123,7 @@ class DynestySampler(BaseSampler):
             if param in reflect:
                 logging.info("Param: %s will be well reflected", param)
                 reflective.append(i)
-        
+
         if len(reflective) == 0:
             reflective = None
 
