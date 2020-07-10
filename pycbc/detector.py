@@ -346,12 +346,12 @@ class LISA(object):
         kappa, _lambda_ = 0, 0
         alpha = 2. * np.pi * ref_time/1 + kappa
         beta_n = (n - 1) + (2. * np.pi/3) + _lambda_
-        a, L = 1., .1
+        a, L = 1., 0.0334229
         e = L/(2. * a * np.sqrt(3))
-        prod = a*e*(sin(alpha)*cos(alpha)*sin(beta_n))
+        prod = sin(alpha)*cos(alpha)*sin(beta_n)
 
-        x = a*cos(alpha) + prod - (1 + sin(alpha)**2)*cos(beta_n)
-        y = a*sin(alpha) + prod - (1 + cos(alpha)**2)*sin(beta_n)
+        x = a*cos(alpha) + a*e*(prod - (1 + sin(alpha)**2)*cos(beta_n))
+        y = a*sin(alpha) + a*e*(prod - (1 + cos(alpha)**2)*sin(beta_n))
         z = -np.sqrt(3)*a*e*cos(alpha - beta_n)
         self.location = np.array([x, y, z])
 
@@ -445,66 +445,3 @@ class LISA(object):
             np.array([np.float32(earth.x), np.float32(earth.y),
                       np.float32(earth.z)]), right_ascension,
             declination, t_gps)
-
-    def _h_ij_(self, X):
-        # pos return hij
-        return np.random.random(3)
-
-    def GWresponse(self, ref_time):
-        # pos wrt the SSB; vector quantity
-        guide_cen = np.mean(self.get_pos(ref_time), axis=1)
-        # values wrt to the guiding center
-        R = self.get_pos(ref_time) - guide_cen
-
-        # vector L
-        L_l = np.array(
-            [R[:, 1] - R[:, 0],  # -->R12
-            R[:, 2] - R[:, 1],  # -->R23
-            R[:, 0] - R[:, 2]]  # -->R31
-                    )
-        dist_L = np.sqrt(np.sum(R[:, 1] - R[:, 0])**2)
-        
-        # time taken by photons to reach other satellite
-        # when not under GW interference
-        t = dist_L/constants.c.value
-
-        # sky location i, j, k
-        k = np.random.random(3)
-
-        # unit vector n
-        n_hat = L_l/dist_L
-
-        kdot_R = np.dot(k, -R.transpose())
-        kdotR = np.dot(k, R.transpose())
-        kdot_n = np.dot(k, -n_hat.transpose())
-        kdotn = np.dot(k, n_hat.transpose())
-        
-        t1 = t - kdotR - dist_L # 1x3
-        t2 = t - kdotR # 1x3
-        _t2_ = t - kdot_R # 1x3
-        print(t1, t2, _t2_) # 3x3
-
-        phi_l_t1 = np.dot(np.dot(n_hat, self._h_ij_(t1)), n_hat)
-        phi_l_t2 = np.dot(np.dot(n_hat, self._h_ij_(t2)), n_hat)
-        _phi_l_t2_ = np.dot(np.dot(n_hat, self._h_ij_(_t2_)), n_hat)
-        print(phi_l_t1, phi_l_t2, _phi_l_t2_) # 3x3
-
-        val = 2*(1 - kdotn) # 1x3
-        _val_ = 2*(1 - kdot_n) # 1x3
-
-        GWresponse = np.array([
-            [(phi_l_t1[0] - _phi_l_t2_[2])/val[1]],
-            [(phi_l_t1[1] - _phi_l_t2_[0])/val[2]],
-            [(phi_l_t1[2] - _phi_l_t2_[1])/val[0]],
-            [(phi_l_t1[0] - phi_l_t2[1])/_val_[2]],
-            [(phi_l_t1[1] - phi_l_t2[2])/_val_[0]],
-            [(phi_l_t1[2] - phi_l_t2[0])/_val_[1]],
-                                ])
-        return GWresponse
-
-    def noise_response(self):
-        None
-
-    def arm_response(self, ref_time):
-        GWresponse = self.GWresponse(ref_time)
-        return GWresponse
