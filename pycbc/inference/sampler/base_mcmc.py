@@ -607,6 +607,10 @@ class BaseMCMC(object):
                         fp.acl = self.acl
                     # write effective number of samples
                     fp.write_effective_nsamples(self.effective_nsamples)
+        # write history
+        for fn in [self.checkpoint_file, self.backup_file]:
+            with self.io(fn, "a") as fp:
+                fp.update_checkpoint_history()
         # check validity
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(

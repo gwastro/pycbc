@@ -339,6 +339,37 @@ class CommonMCMCMetadataIO(object):
         """
         self.raw_acts = {p: acls[p] * self.thinned_by for p in acls}
 
+    def _update_sampler_history(self):
+        """Writes the number of iterations, effective number of samples,
+        autocorrelation times, and burn-in iteration to the history.
+        """
+        path = '/'.join([self.sampler_group, 'checkpoint_history'])
+        # write the current number of iterations
+        self.write_data('niterations', self.niterations, path=path,
+                        append=True)
+        self.write_data('effective_nsamples', self.effective_nsamples,
+                        path=path, append=True)
+        # write the act: we'll make sure that this is 2D, so that the acts
+        # can be appened along the last dimension
+        try:
+            act = self.act
+        except ValueError:
+            # no acts were calculate
+            act = None
+        if act is not None:
+            act = act.reshape(tuple(list(act.shape)+[1]))
+            self.write_data('act', act, path=path, append=True)
+        # write the burn in iteration in the same way
+        try:
+            burn_in = self.burn_in_iteration
+        except ValueError:
+            # no burn in tests were done
+            burn_in = None
+        if burn_in is not None:
+            burn_in = burn_in.reshape(tuple(list(burn_in.shape)+[1]))
+            self.write_data('burn_in_iteration', burn_in, path=path,
+                            append=True)
+
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
         """Create a parser to parse sampler-specific arguments for loading

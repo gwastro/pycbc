@@ -158,6 +158,10 @@ if not opts.save_backup:
     logging.info("Deleting backup file")
     os.remove(sampler.backup_file)
 
+# write the end time
+with sampler.io(opts.output_file, 'a') as fp:
+    fp.write_run_end_time()
+
 if condor_ckpt:
    # create an empty checkpoint file
    open(sampler.checkpoint_file, 'a').close()
