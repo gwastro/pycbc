@@ -18,6 +18,7 @@ import logging, os.path
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
 import distutils.spawn
+from ligo import segments
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 try:
@@ -344,6 +345,7 @@ class SingleTemplateExecutable(PlotExecutable):
     PlotExecutable but adds the file_input_options.
     """
     file_input_options = ['--gating-file']
+    time_dependent_options = ['--channel-name', '--frame-type']
 
 
 class SingleTimeFreqExecutable(PlotExecutable):
@@ -352,6 +354,8 @@ class SingleTimeFreqExecutable(PlotExecutable):
     PlotExecutable but adds the file_input_options.
     """
     file_input_options = ['--gating-file']
+    time_dependent_options = ['--channel-name', '--frame-type']
+
 
 class PlotQScanExecutable(PlotExecutable):
     """Class to be used for to create workflow.Executable instances for the
@@ -359,6 +363,7 @@ class PlotQScanExecutable(PlotExecutable):
     PlotExecutable but adds the file_input_options.
     """
     file_input_options = ['--gating-file']
+    time_dependent_options = ['--channel-name', '--frame-type']
 
 
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
@@ -429,9 +434,14 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
             if params['%s_end_time' % ifo] == -1.0:
                 continue
             # Reanalyze the time around the trigger in each detector
-            node = SingleTemplateExecutable(workflow.cp, 'single_template',
-                                            ifos=[ifo], out_dir=out_dir,
-                                            tags=[tag] + tags).create_node()
+            curr_exe = SingleTemplateExecutable(workflow.cp, 'single_template',
+                                                ifos=[ifo], out_dir=out_dir,
+                                                tags=[tag] + tags)
+            start = int(params[ifo + '_end_time'])
+            end = start + 1
+            cseg = segments.segment([start, end])
+            node = curr_exe.create_node(valid_seg=cseg)
+
             if use_exact_inj_params:
                 node.add_opt('--use-params-of-closest-injection')
             else:
@@ -650,12 +660,13 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
 
     curr_exe = PlotQScanExecutable(workflow.cp, name, ifos=[ifo],
                           out_dir=out_dir, tags=tags)
-    node = curr_exe.create_node()
 
     # Determine start/end times, using data segments if needed.
     # Begin by choosing "optimal" times
     start = trig_time - time_window
     end = trig_time + time_window
+    node = curr_exe.create_node(valid_seg=segments.segment([start, end]))
+
     # Then if data_segments is available, check against that, and move if
     # needed
     if data_segments is not None:
@@ -747,14 +758,16 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
 
     curr_exe = SingleTimeFreqExecutable(workflow.cp, name, ifos=[single.ifo],
                           out_dir=out_dir, tags=tags)
-    node = curr_exe.create_node()
-    node.add_input_opt('--trig-file', single)
-    node.add_input_opt('--bank-file', bank_file)
 
     # Determine start/end times, using data segments if needed.
     # Begin by choosing "optimal" times
     start = trig_time - time_window
     end = trig_time + time_window
+
+    node = curr_exe.create_node(valid_seg=segments.segment([start, end]))
+    node.add_input_opt('--trig-file', single)
+    node.add_input_opt('--bank-file', bank_file)
+
     # Then if data_segments is available, check against that, and move if
     # needed
     if data_segments is not None:

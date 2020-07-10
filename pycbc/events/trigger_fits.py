@@ -241,7 +241,12 @@ def which_bin(par, minpar, maxpar, nbins, log=False):
     if log:
         par, minpar, maxpar = numpy.log(par), numpy.log(minpar), numpy.log(maxpar)
     # par lies some fraction of the way between min and max
-    frac = float(par - minpar) / float(maxpar - minpar)
+    if minpar != maxpar:
+        frac = float(par - minpar) / float(maxpar - minpar)
+    else:
+        # if they are equal there is only one size 0 bin
+        # must be in that bin
+        frac = 0
     # binind then lies between 0 and nbins - 1
     binind = int(frac * nbins)
     # corner case

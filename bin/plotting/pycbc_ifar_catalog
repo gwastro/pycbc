@@ -131,7 +131,9 @@ if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
     h_rm_ifar = hrm_sorted[idx_start:]
     h_rm_cumnum = numpy.arange(len(h_rm_ifar), 0, -1)
 else:
-    fore_ifar = f['foreground/' + ifar_str][:]
+    fore_ifar = numpy.array([])
+    for f in trigf:
+        fore_ifar = numpy.append(fore_ifar, f['foreground/' + ifar_str][:])
 
 if opts.remove_threshold is not None and opts.truncate_threshold is not None:
     raise RuntimeError("Can't both remove and truncate foreground events!")
