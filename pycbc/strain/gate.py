@@ -141,7 +141,7 @@ def add_gate_option_group(parser):
     return gate_group
 
 
-def gate_and_paint(data, lindex, rindex, invpsd):
+def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     """Gates and in-paints data.
 
     Parameters
@@ -154,6 +154,9 @@ def gate_and_paint(data, lindex, rindex, invpsd):
         The end index of the gate.
     invpsd : FrequencySeries
         The inverse of the PSD.
+    copy : bool, optional
+        Copy the data before applying the gate. Otherwise, the gate will
+        be applied in-place. Default is True.
 
     Returns
     -------
@@ -161,7 +164,10 @@ def gate_and_paint(data, lindex, rindex, invpsd):
         The gated and in-painted time series.
     """
     # Copy the data and zero inside the hole
-    gated_data = data.copy()
+    if copy:
+        gated_data = data.copy()
+    else:
+        gated_data = data
     gated_data[lindex:rindex] *= 0
     # get the over-whitened gated data
     tdfilter = invpsd.astype('complex').to_timeseries()
