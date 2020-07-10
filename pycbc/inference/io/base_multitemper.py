@@ -280,7 +280,8 @@ def read_raw_samples(fp, fields,
             alist.append(thisarr)
             maxiters = max(maxiters, thisarr.shape[-1])
         # stack into a single array
-        arr = numpy.full((ntemps, len(chains), maxiters), numpy.nan)
+        arr = numpy.full((ntemps, len(chains), maxiters), numpy.nan,
+                         dtype=fp[dset].dtype)
         for ii, thisarr in enumerate(alist):
             if thisarr is not None:
                 arr[:, ii, :thisarr.shape[-1]] = thisarr
