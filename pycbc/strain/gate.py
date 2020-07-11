@@ -165,15 +165,15 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     """
     # Copy the data and zero inside the hole
     if copy:
-        gated_data = data.copy()
-    else:
-        gated_data = data
-    gated_data[lindex:rindex] *= 0
+        data = data.copy()
+    data[lindex:rindex] = 0
+
     # get the over-whitened gated data
-    tdfilter = invpsd.astype('complex').to_timeseries()
-    owhgated_data = (gated_data.to_frequencyseries() * invpsd).to_timeseries()
+    tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
+    owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
+    
     # remove the projection into the null space
-    proj = linalg.solve_toeplitz(tdfilter.numpy()[:(rindex - lindex)],
-                                 owhgated_data.numpy()[lindex:rindex])
-    gated_data[lindex:rindex] -= proj
-    return gated_data
+    proj = linalg.solve_toeplitz(tdfilter[:(rindex - lindex)],
+                                 owhgated_data[lindex:rindex])
+    data[lindex:rindex] -= proj
+    return data
