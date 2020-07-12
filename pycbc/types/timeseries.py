@@ -478,25 +478,51 @@ class TimeSeries(Array):
                            seg_stride=seg_stride,
                            **kwds)
 
-    def gate(self, time, zero_width=0.25, taper_width=0.25):
+    def gate(self, time, window=0.25, method='taper',
+             taper_width=0.25, psd=None):
         """ Gate out portion of time series
 
         Parameters
         ----------
         time: float
             Central time of the gate in seconds
-        zero_width: float
-            Half-length in seconds of zeros around gate.
+        window: float
+            Half-length in seconds to remove data around gate time.
+        method: str
+            Method to apply gate, options are 'hard', 'taper', and 'paint'.
         taper_width: float
-            Lenght of tapering region on either side of zero'd data
+            Length of tapering region on either side of excized data. Only
+            applies to the taper gating method.
+        psd: pycbc.types.FrequencySeries
+            PSD to use for painting method. If not given, a default PSD is
+            generated.
 
         Returns
         -------
         data: pycbc.types.TimeSeris
             Gated time series
         """
-        from pycbc.strain import gate_data
-        return gate_data(self.copy(), [(time, zero_width, taper_width)])
+        if method == 'taper':
+            from pycbc.strain import gate_data
+            return gate_data(self.copy(), [(time, window, taper_width)])
+        elif method == 'paint':
+            from pycbc.strain.gate import gate_and_paint
+            if psd is None:
+                # These are some bare minimum settings, normally you
+                # should probably provide a psd
+                psd = self.filter_psd(self.duration/32, self.delta_f, 0)
+            lindex = int((time - window - self.start_time) / self.delta_t)
+            rindex = lindex + int(2 * window / self.delta_t)
+            lindex = lindex if lindex >=0 else 0
+            rindex = rindex if rindex <= len(self) else len(self)
+            return gate_and_paint(self, lindex, rindex, 1.0/psd)
+        elif method == 'hard':
+            data = self.copy()
+            tslice = self.time_slice(time - window, time + window)
+            tslice[:] = 0
+            return data
+        else:
+            raise ValueError('Invalid method name: {}'.format(method))
 
     def filter_psd(self, segment_duration, delta_f, flow):
         """ Calculate the power spectral density of this time series.
@@ -796,6 +822,9 @@ class TimeSeries(Array):
                 ds.attrs['delta_t'] = float(self.delta_t)
         else:
             raise ValueError('Path must end with .npy, .txt or .hdf')
+
+    def to_timeseries(self):
+        pass
 
     @_nocomplex
     def to_frequencyseries(self, delta_f=None):
