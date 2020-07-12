@@ -132,7 +132,8 @@ def use_mpi(require_mpi=False, log=True):
         comm = MPI.COMM_WORLD
         size = comm.Get_size()
         rank = comm.Get_rank()
-        use_mpi = True
+        if size > 1:
+            use_mpi = True
         if log:
             logging.info('Running under mpi with size: %s, rank: %s',
                          size, rank)
