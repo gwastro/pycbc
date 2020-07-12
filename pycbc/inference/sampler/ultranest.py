@@ -29,11 +29,13 @@ packages for parameter estimation.
 
 from __future__ import absolute_import
 
+import sys
 import logging
 import numpy
 
 from pycbc.inference.io.ultranest import UltranestFile
 from pycbc.io.hdf import dump_state
+from pycbc.pool import use_mpi
 from .base import (BaseSampler, setup_output)
 from .base_cube import setup_calls
 
@@ -101,8 +103,13 @@ class UltranestSampler(BaseSampler):
         self.result = None
         self.kwargs = kwargs  # Keywords for the run method of ultranest
 
+        do_mpi, size, rank = use_mpi()
+        self.main = (not do_mpi) or (rank == 0)
+
     def run(self):
         self.result = self._sampler.run(**self.kwargs)
+        if not self.main:
+            sys.exit(0)
         self._sampler.print_results()
 
         if self.enable_plots:
@@ -144,7 +151,10 @@ class UltranestSampler(BaseSampler):
                 value = cp.get('sampler', opt_name)
                 skeys[opt_name] = opts[opt_name](value)
         inst = cls(model, **skeys)
-        setup_output(inst, output_file)
+
+        do_mpi, size, rank = use_mpi()
+        if not do_mpi or (rank == 0):
+            setup_output(inst, output_file)
         return inst
 
     def checkpoint(self):
