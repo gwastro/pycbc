@@ -155,12 +155,12 @@ def choose_pool(processes, mpi=False):
             atexit.register(pool.close)
 
             if processes:
-                logging.info('NOTE: that for MPI process size determined by MPI'
-                             ' launch size, not the processes argument')
+                logging.info('NOTE: that for MPI process size determined by '
+                             'MPI launch size, not the processes argument')
 
             if do_mpi and not mpi:
-                logging.info('NOTE: using MPI as this process was launched under'
-                             'MPI')
+                logging.info('NOTE: using MPI as this process was launched'
+                             'under MPI')
         except ImportError:
             raise ValueError("Failed to start up an MPI pool, "
                              "install mpi4py / schwimmbad")
