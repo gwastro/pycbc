@@ -103,7 +103,7 @@ class UltranestSampler(BaseSampler):
         self.result = None
         self.kwargs = kwargs  # Keywords for the run method of ultranest
 
-        do_mpi, size, rank = use_mpi()
+        do_mpi, _, rank = use_mpi()
         self.main = (not do_mpi) or (rank == 0)
 
     def run(self):
@@ -152,7 +152,7 @@ class UltranestSampler(BaseSampler):
                 skeys[opt_name] = opts[opt_name](value)
         inst = cls(model, **skeys)
 
-        do_mpi, size, rank = use_mpi()
+        do_mpi, _, rank = use_mpi()
         if not do_mpi or (rank == 0):
             setup_output(inst, output_file)
         return inst
