@@ -131,7 +131,7 @@ def choose_pool(processes, mpi=False):
             atexit.register(pool.close)
         except ImportError:
             raise ValueError("Failed to start up an MPI pool, "
-                             "install mpi4py / schwimmbadd")
+                             "install mpi4py / schwimmbad")
     elif processes == 1:
         pool = SinglePool()
     else:
@@ -139,5 +139,4 @@ def choose_pool(processes, mpi=False):
 
     pool.size = processes
     return pool
-
 
