@@ -824,6 +824,7 @@ class TimeSeries(Array):
             raise ValueError('Path must end with .npy, .txt or .hdf')
 
     def to_timeseries(self):
+        """ Return time series"""
         pass
 
     @_nocomplex

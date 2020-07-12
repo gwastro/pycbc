@@ -437,6 +437,7 @@ class FrequencySeries(Array):
                              'or .hdf')
 
     def to_frequencyseries(self):
+        """ Return frequency series """
         return self
 
     @_noreal
