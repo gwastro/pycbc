@@ -83,24 +83,17 @@ class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
         model_call = models.CallModel(model, loglikelihood_function,
                                       return_all_stats=False)
 
-        # Set up the pool
-        if nprocesses > 1:
-            # these are used to help paralleize over multiple cores / MPI
-            models._global_instance = model_call
-            model_call = models._call_global_model
-            prior_call = models._call_global_model_logprior
-        else:
-            prior_call = models.CallModel(model, 'logprior',
-                                          return_all_stats=False)
-        pool = choose_pool(mpi=use_mpi, processes=nprocesses)
-        if pool is not None:
-            pool.count = nprocesses
-        self.pool = pool
+        # these are used to help paralleize over multiple cores / MPI
+        models._global_instance = model_call
+        model_call = models._call_global_model
+        prior_call = models._call_global_model_logprior
+        self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
+
         # construct the sampler: PTSampler needs the likelihood and prior
         # functions separately
         ndim = len(model.variable_params)
         self._sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                        model_call, prior_call, pool=pool,
+                                        model_call, prior_call, pool=self.pool,
                                         betas=betas)
         self.nwalkers = nwalkers
         self._ntemps = ntemps

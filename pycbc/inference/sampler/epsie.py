@@ -105,14 +105,14 @@ class EpsieSampler(MultiTemperedSupport, BaseMCMC, BaseSampler):
         self.model = model
         # create a wrapper for calling the model
         model_call = _EpsieCallModel(model, loglikelihood_function)
+
         # Set up the pool
-        if nprocesses > 1:
+        pool = choose_pool(mpi=use_mpi, processes=nprocesses)
+        if pool.size > 1:
             # these are used to help paralleize over multiple cores / MPI
             models._global_instance = model_call
             model_call = models._call_global_model
-        pool = choose_pool(mpi=use_mpi, processes=nprocesses)
-        if pool is not None:
-            pool.count = nprocesses
+
         # initialize the sampler
         self._sampler = ParallelTemperedSampler(
             model.sampling_params, model_call, nchains, betas=betas,

@@ -123,6 +123,8 @@ class SinglePool(object):
         return [f(a) for a in items]
 
 def use_mpi(require_mpi=False):
+    """ Get whether MPI is enabled and if so the current size and rank
+    """
     use_mpi = False
     size = rank = 0
     try:
@@ -139,6 +141,8 @@ def use_mpi(require_mpi=False):
     return use_mpi, size, rank
 
 def choose_pool(processes, mpi=False):
+    """ Get processing pool
+    """
     do_mpi, size, rank = use_mpi(require_mpi=mpi)
     if do_mpi:
         try:
@@ -164,5 +168,7 @@ def choose_pool(processes, mpi=False):
         pool = BroadcastPool(processes)
 
     pool.size = processes
+    if size:
+        pool.size = size
     return pool
 

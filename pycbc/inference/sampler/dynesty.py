@@ -80,7 +80,6 @@ class DynestySampler(BaseSampler):
         self.model = model
         log_likelihood_call, prior_call = setup_calls(
             model,
-            nprocesses=nprocesses,
             loglikelihood_function=loglikelihood_function)
         # Set up the pool
         self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
@@ -97,7 +96,7 @@ class DynestySampler(BaseSampler):
         if self.checkpoint_time_interval:
             self.run_with_checkpoint = True
             if self.maxcall is None:
-                self.maxcall = 5000 * nprocesses
+                self.maxcall = 5000 * pool.size
             logging.info("Checkpointing enabled, will verify every %s calls"
                          " and try to checkpoint every %s seconds",
                          self.maxcall, self.checkpoint_time_interval)
