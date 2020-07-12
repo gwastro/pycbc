@@ -27,7 +27,7 @@ import numpy
 
 import pycbc
 from pycbc import (distributions, transforms, fft,
-                   opt, scheme)
+                   opt, scheme, pool)
 from pycbc.waveform import generator
 
 from pycbc import __version__
@@ -80,9 +80,8 @@ opts = parser.parse_args()
 
 # setup log
 # If we're running in MPI mode, only allow the parent to print
-if opts.use_mpi:
-    from mpi4py import MPI
-    rank = MPI.COMM_WORLD.Get_rank()
+use_mpi, size, rank = pycbc.pool.use_mpi(opts.use_mpi, log=False)
+if use_mpi:
     opts.verbose &= rank == 0
 pycbc.init_logging(opts.verbose)
 
@@ -122,7 +121,7 @@ with ctx:
                 cp.get('sampler', 'checkpoint-signal')))
         # create an empty output file to keep condor happy
         open(opts.output_file, 'a').close()
-    
+
     logging.info("Setting up model")
 
     # construct class that will return the natural logarithm of likelihood
@@ -141,7 +140,7 @@ with ctx:
     # Run the sampler
     sampler.run()
 
-    # Finalize the output 
+    # Finalize the output
     sampler.finalize()
 
 if condor_ckpt:

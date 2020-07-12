@@ -122,7 +122,7 @@ class SinglePool(object):
     def map(self, f, items):
         return [f(a) for a in items]
 
-def use_mpi(require_mpi=False):
+def use_mpi(require_mpi=False, log=True):
     """ Get whether MPI is enabled and if so the current size and rank
     """
     use_mpi = False
@@ -133,7 +133,9 @@ def use_mpi(require_mpi=False):
         size = comm.Get_size()
         rank = comm.Get_rank()
         use_mpi = True
-        logging.info('Running under mpi with size: %s, rank: %s', size, rank)
+        if log:
+            logging.info('Running under mpi with size: %s, rank: %s',
+                         size, rank)
     except ImportError as e:
         if require_mpi:
             print(e)
