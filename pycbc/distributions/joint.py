@@ -16,7 +16,7 @@
 """
 import logging
 import numpy
-from pycbc.io import record
+from pycbc.io.record import FieldArray
 
 class JointDistribution(object):
     """
@@ -116,12 +116,10 @@ class JointDistribution(object):
                 draw = dist.rvs(n_test_samples)
                 for param in dist.params:
                     samples[param] = draw[param]
-            samples = record.FieldArray.from_kwargs(**samples)
+            samples = FieldArray.from_kwargs(**samples)
 
             # evaluate constraints
-            result = numpy.ones(samples.shape, dtype=bool)
-            for constraint in self._constraints:
-                result &= constraint(samples)
+            result = self.contains(samples)
 
             # set new scaling factor for prior to be
             # the fraction of acceptances in random sampling of entire space
@@ -158,41 +156,117 @@ class JointDistribution(object):
             params.update(dist.apply_boundary_conditions(**params))
         return params
 
+    @staticmethod
+    def _ensure_fieldarray(params):
+        """Ensures the given params are a ``FieldArray``.
+
+        Parameters
+        ----------
+        params : dict, FieldArray, numpy.record, or numpy.ndarray
+            If the given object is a dict, it will be converted to a
+            FieldArray.
+
+        Returns
+        -------
+        params : FieldArray
+            The given values as a FieldArray.
+        return_atomic : bool
+            Whether or not functions run on the parameters should be returned
+            as atomic types or not.
+        """
+        if isinstance(params, dict):
+            return_atomic = not any(isinstance(val, numpy.ndarray)
+                                    for val in params.values())
+            params = FieldArray.from_kwargs(**params)
+        elif isinstance(params, numpy.record):
+            return_atomic = True
+            params = FieldArray.from_records(tuple(params),
+                                             names=params.dtype.names)
+        elif isinstance(params, numpy.ndarray):
+            return_atomic = False
+            params = params.view(type=FieldArray)
+        elif isinstance(params, FieldArray):
+            return_atomic = False
+        else:
+            raise ValueError("params must be either dict, FieldArray, "
+                             "record, or structured array")
+        return params, return_atomic
+
+    def contains(self, params):
+        """Evaluates whether the given parameters satisfy the constraints.
+
+        Parameters
+        ----------
+        params : dict, FieldArray, numpy.record, or numpy.ndarray
+            The parameter values to evaluate.
+
+        Returns
+        -------
+        (array of) bool :
+            If params was an array, or if params a dictionary and one or more
+            of the parameters are arrays, will return an array of booleans.
+            Otherwise, a boolean.
+        """
+        params, return_atomic = self._ensure_fieldarray(params)
+        # convert params to a field array if it isn't one
+        result = numpy.ones(params.shape, dtype=bool)
+        for constraint in self._constraints:
+            result &= constraint(params)
+        if return_atomic:
+            result = result.item()
+        return result
+
     def __call__(self, **params):
         """Evaluate joint distribution for parameters.
         """
-        for constraint in self._constraints:
-            if not constraint(params):
-                return -numpy.inf
-        return sum([d(**params)
-                    for d in self.distributions]) - self._logpdf_scale
+        # convert to Field array
+        parray, return_atomic = self._ensure_fieldarray(params)
+        # check if statisfies constraints
+        isin = self.contains(parray)
+        if not isin.any():
+            if return_atomic:
+                out = -numpy.inf
+            else:
+                out = numpy.full(parray.shape, -numpy.inf)
+            return out
+        # evaulate
+        # note: this step may fail if arrays of values were provided, as
+        # not all distributions are vectorized currently
+        logps = numpy.array([d(**params) for d in self.distributions])
+        logp = logps.sum(axis=0) + numpy.log(isin.astype(float))
+        if return_atomic:
+            logp = logp.item()
+        return logp - self._logpdf_scale
 
     def rvs(self, size=1):
         """ Rejection samples the parameter space.
         """
-
         # create output FieldArray
-        out = record.FieldArray(size, dtype=[(arg, float)
-                                    for arg in self.variable_args])
-
+        dtype = [(arg, float) for arg in self.variable_args]
+        out = FieldArray(size, dtype=dtype)
         # loop until enough samples accepted
-        n = 0
-        while n < size:
-
-            # draw samples
-            samples = {}
+        remaining = size
+        ndraw = size
+        while remaining:
+            # scratch space for evaluating constraints
+            scratch = FieldArray(ndraw, dtype=dtype)
             for dist in self.distributions:
-                draw = dist.rvs(1)
+                # drawing samples from the distributions is generally faster
+                # then evaluating constrants, so we'll always draw the full
+                # size, even if that gives us more points than we need
+                draw = dist.rvs(size=ndraw)
                 for param in dist.params:
-                    samples[param] = draw[param][0]
-            vals = numpy.array([samples[arg] for arg in self.variable_args])
-
-            # determine if all parameter values are in prior space
-            # if they are then add to output
-            if self(**dict(zip(self.variable_args, vals))) > -numpy.inf:
-                out[n] = vals
-                n += 1
-
+                    scratch[param] = draw[param]
+            # apply any constraints
+            keep = self.contains(scratch)
+            nkeep = keep.sum()
+            kmin = size - remaining
+            kmax = min(nkeep, remaining)
+            out[kmin:kmin+kmax] = scratch[keep][:kmax]
+            remaining = max(0, remaining - nkeep)
+            # to try to speed up next go around, we'll increase the draw
+            # size by the fraction of values that were kept, but cap at 1e6
+            ndraw = int(min(1e6, ndraw * numpy.ceil(ndraw / (nkeep + 1.))))
         return out
 
     @property
