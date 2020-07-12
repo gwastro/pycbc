@@ -96,7 +96,7 @@ class DynestySampler(BaseSampler):
         if self.checkpoint_time_interval:
             self.run_with_checkpoint = True
             if self.maxcall is None:
-                self.maxcall = 5000 * pool.size
+                self.maxcall = 5000 * self.pool.size
             logging.info("Checkpointing enabled, will verify every %s calls"
                          " and try to checkpoint every %s seconds",
                          self.maxcall, self.checkpoint_time_interval)
