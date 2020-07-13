@@ -38,21 +38,16 @@ def call_global_logprior(cube):
     return models._global_instance.prior_transform(cube)
 
 
-def setup_calls(model, nprocesses=1,
-                loglikelihood_function=None, copy_prior=False):
+def setup_calls(model, loglikelihood_function=None, copy_prior=False):
     """ Configure calls for MPI support
     """
     model_call = CubeModel(model, loglikelihood_function,
                            copy_prior=copy_prior)
-    if nprocesses > 1:
-        # these are used to help paralleize over multiple cores / MPI
-        models._global_instance = model_call
-        log_likelihood_call = call_global_loglikelihood
-        prior_call = call_global_logprior
-    else:
-        prior_call = model_call.prior_transform
-        log_likelihood_call = model_call.log_likelihood
 
+    # these are used to help paralleize over multiple cores / MPI
+    models._global_instance = model_call
+    log_likelihood_call = call_global_loglikelihood
+    prior_call = call_global_logprior
     return log_likelihood_call, prior_call
 
 
