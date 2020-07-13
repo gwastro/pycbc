@@ -478,8 +478,8 @@ class TimeSeries(Array):
                            seg_stride=seg_stride,
                            **kwds)
 
-    def gate(self, time, window=0.25, method='taper',
-             taper_width=0.25, psd=None):
+    def gate(self, time, window=0.25, method='taper', inplace=False,
+             taper_width=0.25, invpsd=None):
         """ Gate out portion of time series
 
         Parameters
@@ -490,35 +490,40 @@ class TimeSeries(Array):
             Half-length in seconds to remove data around gate time.
         method: str
             Method to apply gate, options are 'hard', 'taper', and 'paint'.
+        inplace: bool
+            If True, do operations inplace to this time series, else return
+            new time series.
         taper_width: float
             Length of tapering region on either side of excized data. Only
             applies to the taper gating method.
-        psd: pycbc.types.FrequencySeries
-            PSD to use for painting method. If not given, a default PSD is
-            generated.
+        invpsd: pycbc.types.FrequencySeries
+            The inverse PSD to use for painting method. If not given,
+            a PSD is generated using default settings.
 
         Returns
         -------
         data: pycbc.types.TimeSeris
             Gated time series
         """
+        data = self if inplace else self.copy()
         if method == 'taper':
             from pycbc.strain import gate_data
-            return gate_data(self.copy(), [(time, window, taper_width)])
+            return gate_data(data, [(time, window, taper_width)])
         elif method == 'paint':
+            # Uses the hole-filling method of
+            # https://arxiv.org/pdf/1908.05644.pdf
             from pycbc.strain.gate import gate_and_paint
-            if psd is None:
+            if invpsd is None:
                 # These are some bare minimum settings, normally you
                 # should probably provide a psd
-                psd = self.filter_psd(self.duration/32, self.delta_f, 0)
+                invpsd = 1. / self.filter_psd(self.duration/32, self.delta_f, 0)
             lindex = int((time - window - self.start_time) / self.delta_t)
             rindex = lindex + int(2 * window / self.delta_t)
             lindex = lindex if lindex >=0 else 0
             rindex = rindex if rindex <= len(self) else len(self)
-            return gate_and_paint(self, lindex, rindex, 1.0/psd)
+            return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
         elif method == 'hard':
-            data = self.copy()
-            tslice = self.time_slice(time - window, time + window)
+            tslice = data.time_slice(time - window, time + window)
             tslice[:] = 0
             return data
         else:

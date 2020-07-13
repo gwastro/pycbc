@@ -163,6 +163,8 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     TimeSeries :
         The gated and in-painted time series.
     """
+    # Uses the hole-filling method of
+    # https://arxiv.org/pdf/1908.05644.pdf
     # Copy the data and zero inside the hole
     if copy:
         data = data.copy()
