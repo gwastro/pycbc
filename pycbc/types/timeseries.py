@@ -519,7 +519,7 @@ class TimeSeries(Array):
                 invpsd = 1. / self.filter_psd(self.duration/32, self.delta_f, 0)
             lindex = int((time - window - self.start_time) / self.delta_t)
             rindex = lindex + int(2 * window / self.delta_t)
-            lindex = lindex if lindex >=0 else 0
+            lindex = lindex if lindex >= 0 else 0
             rindex = rindex if rindex <= len(self) else len(self)
             return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
         elif method == 'hard':
@@ -830,7 +830,7 @@ class TimeSeries(Array):
 
     def to_timeseries(self):
         """ Return time series"""
-        pass
+        return self
 
     @_nocomplex
     def to_frequencyseries(self, delta_f=None):
