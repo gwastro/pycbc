@@ -134,9 +134,9 @@ def use_mpi(require_mpi=False, log=True):
         rank = comm.Get_rank()
         if size > 1:
             use_mpi = True
-        if log:
-            logging.info('Running under mpi with size: %s, rank: %s',
-                         size, rank)
+            if log:
+                logging.info('Running under mpi with size: %s, rank: %s',
+                             size, rank)
     except ImportError as e:
         if require_mpi:
             print(e)
