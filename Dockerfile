@@ -1,6 +1,5 @@
 FROM centos:centos7
 
-COPY docker/.singularity.d /.singularity.d
 ADD docker/etc/profile.d/pycbc.sh /etc/profile.d/pycbc.sh
 ADD docker/etc/profile.d/pycbc.csh /etc/profile.d/pycbc.csh
 ADD docker/etc/cvmfs/default.local /etc/cvmfs/default.local
@@ -16,10 +15,6 @@ RUN rpm -ivh http://software.ligo.org/lscsoft/scientific/7/x86_64/production/l/l
 
 # set up environment
 RUN cd / && \
-    ln -s .singularity.d/actions/exec .exec && \
-    ln -s .singularity.d/actions/run .run && \
-    ln -s .singularity.d/actions/test .shell && \
-    ln -s .singularity.d/runscript singularity && \
     mkdir -p /cvmfs/config-osg.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org /cvmfs/gwosc.osgstorage.org && echo "config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org cvmfs ro,noauto 0 0" >> /etc/fstab && echo "oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org cvmfs ro,noauto 0 0" >> /etc/fstab && echo "gwosc.osgstorage.org /cvmfs/gwosc.osgstorage.org cvmfs ro,noauto 0 0" >> /etc/fstab && mkdir -p /oasis /scratch /projects /usr/lib64/slurm /var/run/munge && \
     groupadd -g 1000 pycbc && useradd -u 1000 -g 1000 -d /opt/pycbc -k /etc/skel -m -s /bin/bash pycbc
 
