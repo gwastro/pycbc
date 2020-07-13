@@ -16,8 +16,8 @@
 """ Functions for applying gates to data.
 """
 
-from . import strain
 from scipy import linalg
+from . import strain
 
 
 def _gates_from_cli(opts, gate_opt):
@@ -163,6 +163,8 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     TimeSeries :
         The gated and in-painted time series.
     """
+    # Uses the hole-filling method of
+    # https://arxiv.org/pdf/1908.05644.pdf
     # Copy the data and zero inside the hole
     if copy:
         data = data.copy()
@@ -171,7 +173,7 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     # get the over-whitened gated data
     tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
     owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
-    
+
     # remove the projection into the null space
     proj = linalg.solve_toeplitz(tdfilter[:(rindex - lindex)],
                                  owhgated_data[lindex:rindex])
