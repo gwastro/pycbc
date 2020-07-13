@@ -24,7 +24,7 @@ RUN yum install -y libibverbs libibverbs-devel libibmad libibmad-devel libibumad
     cd / && rm -rf /tmp/mvapich2-2.1 && \
     pip install schwimmbad && \
     MPICC=/opt/mvapich2-2.1/bin CFLAGS='-I /opt/mvapich2-2.1/include -L /opt/mvapich2-2.1/lib -lmpi' pip install --no-cache-dir mpi4py
-RUN echo "/opt/mvapich2-2.1/lib" > /etc/ld.so.conf.d/mvaapich2-2.1.conf
+RUN echo "/opt/mvapich2-2.1/lib" > /etc/ld.so.conf.d/mvapich2-2.1.conf
 
 # Now update all of our library installations
 RUN rm -f /etc/ld.so.cache && /sbin/ldconfig
