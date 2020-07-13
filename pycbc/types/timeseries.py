@@ -478,7 +478,7 @@ class TimeSeries(Array):
                            seg_stride=seg_stride,
                            **kwds)
 
-    def gate(self, time, window=0.25, method='taper', inplace=False,
+    def gate(self, time, window=0.25, method='taper', copy=True,
              taper_width=0.25, invpsd=None):
         """ Gate out portion of time series
 
@@ -490,8 +490,8 @@ class TimeSeries(Array):
             Half-length in seconds to remove data around gate time.
         method: str
             Method to apply gate, options are 'hard', 'taper', and 'paint'.
-        inplace: bool
-            If True, do operations inplace to this time series, else return
+        copy: bool
+            If False, do operations inplace to this time series, else return
             new time series.
         taper_width: float
             Length of tapering region on either side of excized data. Only
@@ -505,7 +505,7 @@ class TimeSeries(Array):
         data: pycbc.types.TimeSeris
             Gated time series
         """
-        data = self if inplace else self.copy()
+        data = self.copy() if copy else self
         if method == 'taper':
             from pycbc.strain import gate_data
             return gate_data(data, [(time, window, taper_width)])
