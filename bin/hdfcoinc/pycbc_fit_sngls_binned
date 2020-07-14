@@ -164,7 +164,6 @@ if args.bin_spacing == "irregular":
     else:
         args.bin_edges = [float(b) for b in args.irregular_bins.split(',')]
 
-
 logging.info('Opening trigger file: %s' % args.trigger_file)
 trigf = h5py.File(args.trigger_file, 'r')
 logging.info('Opening template file: %s' % args.bank_file)
