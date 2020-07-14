@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys
+import sys
 import glob
 import logging as log
 import numpy as np
@@ -110,14 +110,12 @@ def check_coinc_results(inj_table):
     coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
     n_coincs=len(coinc_trig_paths)
     if n_coincs==0:
-        if verbose:
-            log.error('No coincident triggers detected')
+        log.error('No coincident triggers detected')
         coinc_fail = True
     elif n_coincs>=10: 
-        if verbose:
-            log.error('Too many coincident triggers detected')
+        log.error('Too many coincident triggers detected')
         coinc_fail = True
-    elif verbose: 
+    else: 
         log.info('%d coincident trigger(s) detected', n_coincs)
       
     with h5py.File('test_inj.hdf', 'r') as inj:
@@ -131,9 +129,7 @@ def check_coinc_results(inj_table):
     if n_injs > n_coincs :
         log.error('More injections than coincident triggers')
         coinc_fail = True
-    if n_injs < n_coincs :
-        log.error('Fewer injections than coincident triggers')
-          
+              
       
     #create field array to store properties of triggers
     trig_props = record.FieldArray(n_coincs, dtype=[('mass1', float), \
@@ -141,11 +137,8 @@ def check_coinc_results(inj_table):
                 ('tc', float), ('net_snr', float)])
       
     #store properties of coincident triggers
-    x=-1
-    for ctrigfp in coinc_trig_paths:     
-        x+=1
-        if verbose:
-            log.info('Checking trigger %s', ctrigfp)
+    for x, ctrigfp in enumerate(coinc_trig_paths):
+        log.info('Checking trigger %s', ctrigfp)
         xmldoc = ligolw_utils.load_filename(
                   ctrigfp, False, contenthandler=LIGOLWContentHandler)
         sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
@@ -158,20 +151,17 @@ def check_coinc_results(inj_table):
         
         
         snr_list=sngl_inspiral_table.get_column('snr')
-        network_snr_squared=0
-        for snr in snr_list:
-            network_snr_squared+=snr**2
-        network_snr=np.sqrt(network_snr_squared)         
+        network_snr = sum([snr ** 2 for snr in snr_list]) ** 0.5      
         trig_props['net_snr'][x]=network_snr
             
-        if verbose:
-            log.info('IFO SNRs: '+str(snr_list))
-            log.info('Network SNR: %f', network_snr)
-            log.info('IFO End Time: %f', trig_props['tc'][x]) 
-            log.info('Mass 1: %f', trig_props['mass1'][x])
-            log.info('Mass 2: %f', trig_props['mass2'][x])
-            log.info('Spin1z: %f', trig_props['spin1z'][x])
-            log.info('Spin2z: %f', trig_props['spin2z'][x])
+        
+        log.info('IFO SNRs: '+str(snr_list))
+        log.info('Network SNR: %f', network_snr)
+        log.info('IFO End Time: %f', trig_props['tc'][x]) 
+        log.info('Mass 1: %f', trig_props['mass1'][x])
+        log.info('Mass 2: %f', trig_props['mass2'][x])
+        log.info('Spin1z: %f', trig_props['spin1z'][x])
+        log.info('Spin2z: %f', trig_props['spin2z'][x])
       
 
     # check if injections match trigger params
@@ -206,26 +196,24 @@ def check_coinc_results(inj_table):
     return coinc_fail
 
       
-verbose = False
 log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
+
+# gps times need to match those found in run.sh
 sim_gps_start = 1272790000
-sim_gps_end =  1272790300
+sim_gps_end =  1272790500
+
+# sim f lower needs to match the value in generate_injection.sh
 sim_f_lower = 18
+
+
 fail = False
 lsctables.use_in(LIGOLWContentHandler)
-
-if not os.path.exists('./test_inj.hdf'):
-    log.error('No injection file found when checking results')
-    fail=True
-else:
-    if verbose:
-         log.info('injection hdf found')
-         
-    tested_detectors = {'H1', 'L1', 'V1'}
+       
+tested_detectors = {'H1', 'L1', 'V1'}
    
-    single_fail = check_single_results(tested_detectors)
-    coinc_fail = check_coinc_results('./test_inj.hdf')
-    fail = single_fail or coinc_fail
+single_fail = check_single_results(tested_detectors)
+coinc_fail = check_coinc_results('./test_inj.hdf')
+fail = single_fail or coinc_fail
    
 if fail:
       log.error('Test Failed')
