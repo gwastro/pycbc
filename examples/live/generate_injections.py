@@ -27,7 +27,7 @@ samples['mass1'] = [290.929321, 1.1331687]
 samples['mass2'] = [3.6755455, 1.010624]
 samples['spin1z'] = [0.9934847, 0.029544285]
 samples['spin2z'] = [0.92713535, 0.020993788]
-samples['tc'] = [1272790100.1, 1272790260.1]
+samples['tc'] = [1272790100.0, 1272790260.0]
 samples['distance'] = [292.0, 35.0]
      
 InjectionSet.write('test_inj.hdf', samples, static_args = static_params,
