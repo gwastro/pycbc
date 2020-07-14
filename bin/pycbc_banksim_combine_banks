@@ -54,9 +54,15 @@ maxmatch = []
 for fil in options.input_files:
     matches.append(loadtxt(fil, dtype=dtypef))
 
-indices = array(matches, dtype=dtypef)['match'].argmax(0)
-for i, j in enumerate(indices):
-    maxmatch.append(matches[j][i])
+# It is possible for the input files to only contain a single injection
+# if the user has split the injections many times.
+if array(matches, dtype=dtypef)['match'].ndim == 1:
+    index = array(matches, dtype=dtypef)['match'].argmax()
+    maxmatch.append(matches[index])
+else:
+    indices = array(matches, dtype=dtypef)['match'].argmax(0)
+    for i, j in enumerate(indices):
+        maxmatch.append(matches[j][i])
 
 maxmatch=array(maxmatch, dtype=dtypef)
 savetxt(options.output_file, maxmatch, 
