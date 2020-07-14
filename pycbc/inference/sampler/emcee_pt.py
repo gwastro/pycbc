@@ -27,17 +27,17 @@ import logging
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
+from .base_mcmc import (BaseMCMC, EnsembleSupport, raw_samples_to_dict,
                         get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,
-                               MultiTemperedAutocorrSupport)
-from ..burn_in import MultiTemperedMCMCBurnInTests
+                               ensemble_compute_acf, ensemble_compute_acl)
+from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.io import EmceePTFile
 from .. import models
 
 
-class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
-                     BaseMCMC, BaseSampler):
+class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
+                     BaseSampler):
     """This class is used to construct a parallel-tempered MCMC sampler from
     the emcee package's PTSampler.
 
@@ -66,7 +66,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     """
     name = "emcee_pt"
     _io = EmceePTFile
-    burn_in_class = MultiTemperedMCMCBurnInTests
+    burn_in_class = EnsembleMultiTemperedMCMCBurnInTests
 
     def __init__(self, model, ntemps, nwalkers, betas=None,
                  checkpoint_interval=None, checkpoint_signal=None,
@@ -83,26 +83,19 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         model_call = models.CallModel(model, loglikelihood_function,
                                       return_all_stats=False)
 
-        # Set up the pool
-        if nprocesses > 1:
-            # these are used to help paralleize over multiple cores / MPI
-            models._global_instance = model_call
-            model_call = models._call_global_model
-            prior_call = models._call_global_model_logprior
-        else:
-            prior_call = models.CallModel(model, 'logprior',
-                                          return_all_stats=False)
-        pool = choose_pool(mpi=use_mpi, processes=nprocesses)
-        if pool is not None:
-            pool.count = nprocesses
-        self.pool = pool
+        # these are used to help paralleize over multiple cores / MPI
+        models._global_instance = model_call
+        model_call = models._call_global_model
+        prior_call = models._call_global_model_logprior
+        self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
+
         # construct the sampler: PTSampler needs the likelihood and prior
         # functions separately
         ndim = len(model.variable_params)
         self._sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                        model_call, prior_call, pool=pool,
+                                        model_call, prior_call, pool=self.pool,
                                         betas=betas)
-        self._nwalkers = nwalkers
+        self.nwalkers = nwalkers
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
         self._checkpoint_signal = checkpoint_signal
@@ -118,6 +111,53 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     @property
     def betas(self):
         return self._sampler.betas
+
+    @staticmethod
+    def compute_acf(filename, **kwargs):
+        r"""Computes the autocorrelation function.
+
+        Calls :py:func:`base_multitemper.ensemble_compute_acf`; see that
+        function for details.
+
+        Parameters
+        ----------
+        filename : str
+            Name of a samples file to compute ACFs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.ensemble_compute_acf`.
+
+        Returns
+        -------
+        dict :
+            Dictionary of arrays giving the ACFs for each parameter. If
+            ``per-walker=True`` is passed as a keyword argument, the arrays
+            will have shape ``ntemps x nwalkers x niterations``. Otherwise, the
+            returned array will have shape ``ntemps x niterations``.
+        """
+        return ensemble_compute_acf(filename, **kwargs)
+
+    @staticmethod
+    def compute_acl(filename, **kwargs):
+        r"""Computes the autocorrelation length.
+
+        Calls :py:func:`base_multitemper.ensemble_compute_acl`; see that
+        function for details.
+
+        Parameters
+        -----------
+        filename : str
+            Name of a samples file to compute ACLs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.ensemble_compute_acl`.
+
+        Returns
+        -------
+        dict
+            A dictionary of ntemps-long arrays of the ACLs of each parameter.
+        """
+        return ensemble_compute_acl(filename, **kwargs)
 
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1,
@@ -304,7 +344,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params,
+            fp.write_samples(self.samples,
+                             parameters=self.model.variable_params,
                              last_iteration=self.niterations)
             # write stats
             fp.write_samples(self.model_stats, last_iteration=self.niterations)

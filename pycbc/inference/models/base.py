@@ -120,6 +120,8 @@ class SamplingTransforms(object):
                                 if arg not in replace_parameters]
         # add the sampling parameters
         self.sampling_params += sampling_params
+        # sort to make sure we have a consistent order
+        self.sampling_params.sort()
         self.sampling_transforms = sampling_transforms
 
     def logjacobian(self, **params):
@@ -272,7 +274,7 @@ def read_sampling_params_from_config(cp, section_group=None,
         map_args = cp.get(section, args)
         sampling_params.update(set(map(str.strip, map_args.split(','))))
         replaced_params.update(set(map(str.strip, args.split(','))))
-    return list(sampling_params), list(replaced_params)
+    return sorted(sampling_params), sorted(replaced_params)
 
 
 #

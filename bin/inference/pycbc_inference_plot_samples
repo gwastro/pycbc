@@ -32,15 +32,16 @@ from pycbc.inference import (option_utils, io)
 import sys
 
 # command line usage
-parser = argparse.parser = io.ResultsArgumentParser(skip_args=['walkers'])
+parser = argparse.parser = io.ResultsArgumentParser(
+    skip_args=['chains', 'iteration'])
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Print logging info.")
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
-parser.add_argument("--walkers", nargs='+', default=None,
-                    help="Walker indices to plot. Options are 'all' or one "
-                         "or more walker indices. Default is to plot the "
-                         "average of all walkers for the input "
+parser.add_argument("--chains", nargs='+', default=None,
+                    help="Chain/walker indices to plot. Options are 'all' or "
+                         "one or more chain indices. Default is to plot the "
+                         "average of all chains for the input "
                          "`--parameters`.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Path to output plot.")
@@ -57,11 +58,11 @@ fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 # get number of dimensions
 ndim = len(parameters)
 
-# get walker indices
-if opts.walkers == ['all'] or opts.walkers == None:
-    walkers = range(fp.nwalkers)
+# get chain indices
+if opts.chains == ['all'] or opts.chains == None:
+    chains = range(fp.nchains)
 else:
-    walkers = list(map(int, opts.walkers))
+    chains = list(map(int, opts.chains))
 
 # plot samples
 # plot each parameter as a different subplot
@@ -91,29 +92,36 @@ else:
 thinned_by = fp.thinned_by*xint
 xmin = xmin*fp.thinned_by
 
+# create the kwargs to load samples
+kwargs = {'thin_start': opts.thin_start,
+          'thin_interval': opts.thin_interval,
+          'thin_end': opts.thin_end}
 # add the temperature args if it exists
-additional_args = {}
 try:
-    additional_args['temps'] = opts.temps
+    kwargs['temps'] = opts.temps
 except AttributeError:
     pass
 
 for i, arg in enumerate(parameters):
     chains_arg = []
-    for widx in walkers:
-        chain = fp.read_samples(parameters, walkers=widx,
-                                thin_start=opts.thin_start,
-                                thin_interval=opts.thin_interval,
-                                thin_end=opts.thin_end, **additional_args)
+    for cidx in chains:
+        kwargs['chains'] = cidx
+        try:
+            chain = fp.read_samples(parameters, **kwargs)
+        except TypeError:
+            # will get this if ensemble sampler; change "chains" to "walkers"
+            kwargs['walkers'] = kwargs.pop('chains')
+            chain = fp.read_samples(parameters, **kwargs)
         chains_arg.append(chain[arg])
-    if opts.walkers is not None:
+    if opts.chains is not None:
         for chain in chains_arg:
-            # plot each walker as a different line on the subplot
-            axs[i].plot((numpy.arange(len(chain)))*thinned_by + xmin, chain, alpha=0.6)
+            # plot each chain as a different line on the subplot
+            axs[i].plot((numpy.arange(len(chain)))*thinned_by + xmin, chain,
+                        alpha=0.6)
     else:
-        # plot the average of all walkers for the parameter on the subplot
+        # plot the average of all chains for the parameter on the subplot
         chains_arg = numpy.array(chains_arg)
-        avg_chain = [chains_arg[:, j].sum()/fp.nwalkers
+        avg_chain = [chains_arg[:, j].sum()/fp.nchains
                      for j in range(len(chains_arg[0]))]
         axs[i].plot((numpy.arange(len(avg_chain)))*thinned_by + xmin, avg_chain)
     # Set y labels
@@ -124,10 +132,10 @@ fp.close()
 caption_kwargs = {
     "parameters" : ", ".join(sorted(list(labels.values()))),
 }
-caption = r"""Parameter samples from the walker chains whose indices were
-provided as inputs. Each line is a different chain of walker samples in that
-case. If no walker indices were provided, the plot shows the variation of the
-parameter sample values averaged over all walkers."""
+caption = r"""Parameter samples from the chains whose indices were
+provided as inputs. Each line is a different chain of samples in that
+case. If no chain indices were provided, the plot shows the variation of the
+parameter sample values averaged over all chains."""
 title = "Samples for {parameters}".format(**caption_kwargs)
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),

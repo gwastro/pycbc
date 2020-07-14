@@ -33,9 +33,11 @@ import emcee
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
-from .base_mcmc import (BaseMCMC, MCMCAutocorrSupport, raw_samples_to_dict,
+from .base_mcmc import (BaseMCMC, EnsembleSupport,
+                        ensemble_compute_acf, ensemble_compute_acl,
+                        raw_samples_to_dict,
                         blob_data_to_dict, get_optional_arg_from_config)
-from ..burn_in import MCMCBurnInTests
+from ..burn_in import EnsembleMCMCBurnInTests
 from pycbc.inference.io import EmceeFile
 from .. import models
 
@@ -48,7 +50,7 @@ from .. import models
 # =============================================================================
 #
 
-class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
+class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
     """This class is used to construct an MCMC sampler from the emcee
     package's EnsembleSampler.
 
@@ -65,7 +67,7 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
     """
     name = "emcee"
     _io = EmceeFile
-    burn_in_class = MCMCBurnInTests
+    burn_in_class = EnsembleMCMCBurnInTests
 
     def __init__(self, model, nwalkers,
                  checkpoint_interval=None, checkpoint_signal=None,
@@ -77,17 +79,13 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
             logpost_function = 'logposterior'
         model_call = models.CallModel(model, logpost_function)
 
-        # Set up the pool
-        if nprocesses > 1:
-            # these are used to help paralleize over multiple cores / MPI
-            models._global_instance = model_call
-            model_call = models._call_global_model
+        # these are used to help paralleize over multiple cores / MPI
+        models._global_instance = model_call
+        model_call = models._call_global_model
         pool = choose_pool(mpi=use_mpi, processes=nprocesses)
-        if pool is not None:
-            pool.count = nprocesses
 
         # set up emcee
-        self._nwalkers = nwalkers
+        self.nwalkers = nwalkers
         ndim = len(model.variable_params)
         self._sampler = emcee.EnsembleSampler(nwalkers, ndim, model_call,
                                               pool=pool)
@@ -175,7 +173,8 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params,
+            fp.write_samples(self.samples,
+                             parameters=self.model.variable_params,
                              last_iteration=self.niterations)
             # write stats
             fp.write_samples(self.model_stats,
@@ -189,6 +188,52 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         """All data is written by the last checkpoint in the run method, so
         this just passes."""
         pass
+
+    @staticmethod
+    def compute_acf(filename, **kwargs):
+        r"""Computes the autocorrelation function.
+
+        Calls :py:func:`base_mcmc.ensemble_compute_acf`; see that
+        function for details.
+
+        Parameters
+        ----------
+        filename : str
+            Name of a samples file to compute ACFs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_mcmc.ensemble_compute_acf`.
+
+        Returns
+        -------
+        dict :
+            Dictionary of arrays giving the ACFs for each parameter. If
+            ``per-walker`` is True, the arrays will have shape
+            ``nwalkers x niterations``.
+        """
+        return ensemble_compute_acf(filename, **kwargs)
+
+    @staticmethod
+    def compute_acl(filename, **kwargs):
+        r"""Computes the autocorrelation length.
+
+        Calls :py:func:`base_mcmc.ensemble_compute_acl`; see that
+        function for details.
+
+        Parameters
+        -----------
+        filename : str
+            Name of a samples file to compute ACLs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_mcmc.ensemble_compute_acf`.
+
+        Returns
+        -------
+        dict
+            A dictionary giving the ACL for each parameter.
+        """
+        return ensemble_compute_acl(filename, **kwargs)
 
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1,

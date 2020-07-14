@@ -38,6 +38,8 @@ import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
+import six
+import hashlib
 
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
@@ -178,6 +180,26 @@ def parse_approximant_arg(approximant_arg, warray):
     """
     return warray.parse_boolargs(boolargs_from_apprxstr(approximant_arg))[0]
 
+def tuple_to_hash(tuple_to_be_hashed):
+    """
+    Return a hash for a numpy array, avoids native (unsafe) python3 hash function
+
+    Parameters
+    ----------
+    tuple_to_be_hashed: tuple
+        The tuple which is being hashed
+        Must be convertible to a numpy array
+
+    Returns
+    -------
+    int
+        an integer representation of the hashed array
+    """
+    if six.PY2:
+        return hash(tuple_to_be_hashed)
+    h = hashlib.blake2b(np.array(tuple_to_be_hashed).tobytes('C'),
+                        digest_size=8)
+    return np.fromstring(h.digest(), dtype=int)[0]
 
 class TemplateBank(object):
     """Class to provide some basic helper functions and information
@@ -335,8 +357,11 @@ class TemplateBank(object):
                        'spin2x', 'spin2y', 'spin2z',]
 
         fields = [f for f in hash_fields if f in fields]
-        template_hash = np.array([hash(v) for v in zip(*[self.table[p]
+        template_hash = np.array([tuple_to_hash(v) for v in zip(*[self.table[p]
                                   for p in fields])])
+        if not np.unique(template_hash).size == template_hash.size:
+            raise RuntimeError("Some template hashes clash. This should not "
+                               "happen.")
         self.table = self.table.add_fields(template_hash, 'template_hash')
 
     def write_to_hdf(self, filename, start_index=None, stop_index=None,

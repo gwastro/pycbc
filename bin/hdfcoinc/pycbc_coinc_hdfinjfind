@@ -222,8 +222,15 @@ for trigger_file, injection_file in zip(args.trigger_files,
     # pick up optimal SNRs
     if multi_ifo_style:
         for ifo, column in args.optimal_snr_column.items():
+            optimal_snr_all = numpy.array(sim_table.get_column(column))
+            # As a single detector being vetoed won't veto all combinations,
+            # need to set optimal_snr of a vetoed ifo to zero in order
+            # to later calculate decisive optimal snr
+            iws, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
+                                             segment_name=args.segment_name)
+            optimal_snr_all[iws] = 0
             hdf_append(fo, 'injections/optimal_snr_%s' % ifo,
-                       sim_table.get_column(column))
+                       optimal_snr_all)
     else:
         ifo_map = {f.attrs['detector_1']: 1,
                    f.attrs['detector_2']: 2}
@@ -248,10 +255,14 @@ for trigger_file, injection_file in zip(args.trigger_files,
                 continue
             if key not in fo:
                 fo.create_group(key)
-            fo[key].attrs['pivot'] = f[key].attrs['pivot']
-            fo[key].attrs['fixed'] = f[key].attrs['fixed']
-            fo[key].attrs['foreground_time'] = f[key].attrs['foreground_time']
-            fo[key].attrs['foreground_time_exc'] = f[key].attrs['foreground_time_exc']
+            if key in f:
+                fkey = f[key]
+            else:
+                fkey = f
+            fo[key].attrs['pivot'] = fkey.attrs['pivot']
+            fo[key].attrs['fixed'] = fkey.attrs['fixed']
+            fo[key].attrs['foreground_time'] = fkey.attrs['foreground_time']
+            fo[key].attrs['foreground_time_exc'] = fkey.attrs['foreground_time_exc']
     else:
         fo.attrs['detector_1'] = f.attrs['detector_1']
         fo.attrs['detector_2'] = f.attrs['detector_2']

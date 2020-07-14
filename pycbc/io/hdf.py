@@ -1206,7 +1206,8 @@ def get_all_subkeys(grp, key):
 #
 
 
-def dump_state(state, fp, path=None, dsetname='state', protocol=None):
+def dump_state(state, fp, path=None, dsetname='state',
+               protocol=pickle.HIGHEST_PROTOCOL):
     """Dumps the given state to an hdf5 file handler.
 
     The state is stored as a raw binary array to ``{path}/{dsetname}`` in the
@@ -1256,7 +1257,7 @@ def dump_pickle_to_hdf(memfp, fp, path=None, dsetname='state'):
     memfp.seek(0)
     bdata = np.frombuffer(memfp.read(), dtype='S1')
     if path is not None:
-        fp = fp[path]
+        dsetname = path + '/' + dsetname
     if dsetname not in fp:
         fp.create_dataset(dsetname, shape=bdata.shape, maxshape=(None,),
                           dtype=bdata.dtype)

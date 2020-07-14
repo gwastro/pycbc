@@ -78,14 +78,11 @@ for param_name in parameters:
     logging.info("Plotting autocorrelation times")
     plt.hist(acls, opts.bins, histtype="step", label=labels[param_name])
 
-# get the file's acl
-fpacl = fp.thinned_by * fp[fp.sampler_group].attrs['acl']
-
 plt.xlabel("Autocorrelation time")
 plt.ylabel(r'Number of walkers')
 
-# plot autocorrelation length saved in hdf file
-plt.axvline(fpacl, linestyle='--')
+# plot autocorrelation time saved in hdf file
+plt.axvline(fp.act, linestyle='--')
 plt.legend()
 
 # save figure with meta-data

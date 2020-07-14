@@ -428,7 +428,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences
     """
-    time_coinc_zip = zip(*time_coincs)
+    time_coinc_zip = list(zip(*time_coincs))
     if len(time_coinc_zip) == 0:
         logging.info('No coincident triggers.')
         return numpy.array([])

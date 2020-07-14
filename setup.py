@@ -38,7 +38,7 @@ setup_requires = ['numpy>=1.16.0']
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'cython>=0.29',
                       'decorator>=3.4.2',
-                      'numpy>=1.16.0; python_version >= "3.5"',
+                      'numpy>=1.16.0,<1.19; python_version >= "3.5"',
                       'numpy>=1.16.0,<1.17.0; python_version <= "2.7"',
                       'scipy>=0.16.0; python_version >= "3.5"',
                       'scipy>=0.16.0,<1.3.0; python_version <= "3.4"',
@@ -124,7 +124,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.16.dev4'
+        vinfo.version = '1.16.dev5'
         vinfo.release = 'False'
 
     with open('pycbc/version.py', 'w') as f:

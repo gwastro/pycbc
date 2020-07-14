@@ -32,8 +32,7 @@ class UniformAngle(uniform.Uniform):
     `cyclic_domain` parameter.
 
     Bounds may be provided to limit the range for which the pdf has support.
-    If provided, the parameter bounds are initialized as multiples of pi,
-    while the stored bounds are in radians.
+    If provided, the parameter bounds are in radians.
 
     Parameters
     ----------
@@ -45,7 +44,7 @@ class UniformAngle(uniform.Uniform):
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
         `boundaries.Bounds` instances or tuples. The bounds must be
-        in [0,2). These are converted to radians for storage. None may also
+        in [0,2PI). These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
     Attributes
@@ -79,18 +78,17 @@ class UniformAngle(uniform.Uniform):
                 bnds = self._domain
             elif isinstance(bnds, boundaries.Bounds):
                 # convert to radians
-                bnds._min = bnds._min.__class__(bnds._min * numpy.pi)
-                bnds._max = bnds._max.__class__(bnds._max * numpy.pi)
+                bnds._min = bnds._min.__class__(bnds._min)
+                bnds._max = bnds._max.__class__(bnds._max)
             else:
                 # create a Bounds instance from the given tuple
-                bnds = boundaries.Bounds(
-                    bnds[0]*numpy.pi, bnds[1]*numpy.pi)
+                bnds = boundaries.Bounds(bnds[0], bnds[1])
             # check that the bounds are in the domain
             if bnds.min < self._domain.min or bnds.max > self._domain.max:
                 raise ValueError("bounds must be in [{x},{y}); "
-                    "got [{a},{b})".format(x=self._domain.min/numpy.pi,
-                    y=self._domain.max/numpy.pi, a=bnds.min/numpy.pi,
-                    b=bnds.max/numpy.pi))
+                    "got [{a},{b})".format(x=self._domain.min,
+                    y=self._domain.max, a=bnds.min,
+                    b=bnds.max))
             # update
             params[p] = bnds
         super(UniformAngle, self).__init__(**params)
@@ -118,7 +116,7 @@ class UniformAngle(uniform.Uniform):
         """
         # map values to be within the domain
         kwargs = dict([[p, self._domain.apply_conditions(val)]
-                      for p,val in kwargs.items()])
+                      for p,val in kwargs.items() if p in self._bounds])
         # now apply additional conditions
         return super(UniformAngle, self).apply_boundary_conditions(**kwargs)
 
@@ -187,8 +185,7 @@ class SinAngle(UniformAngle):
     The domain of this distribution is `[0, pi]`. This is accomplished by
     putting hard boundaries at `[0, pi]`. Bounds may be provided to further
     limit the range for which the pdf has support.  As with `UniformAngle`,
-    these are initizliaed as multiples of pi, while the stored bounds are in
-    radians.
+    these are initialized in radians.
 
     Parameters
     ----------
@@ -196,7 +193,7 @@ class SinAngle(UniformAngle):
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
         `boundaries.Bounds` instances or tuples. The bounds must be
-        in [0,1]. These are converted to radians for storage. None may also
+        in [0,PI]. These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
     Attributes
@@ -300,8 +297,7 @@ class CosAngle(SinAngle):
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
         `boundaries.Bounds` instances or tuples. The bounds must be
-        in [-0.5, 0.5]. These are converted to radians for storage.
-        None may also be passed; in that case, the domain bounds will be used.
+        in [-PI/2, PI/2].
 
     Attributes
     ----------------

@@ -224,7 +224,7 @@ else:
         # Create coinc tag
         coinctag = '{}det'.format(len(ifocomb))
         ctagcomb = ['full_data', coinctag]
-        other_ifo_keys = no_fg_exc_files.keys()
+        other_ifo_keys = list(no_fg_exc_files.keys())
         other_ifo_keys.remove(ordered_ifo_list)
         other_bg_files = {ctype: no_fg_exc_files[ctype]
                           for ctype in other_ifo_keys}

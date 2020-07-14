@@ -122,6 +122,16 @@ class Executable(pegasus_workflow.Executable):
     # file_input_options = ['--psd-file, '--bank-file'] (as an example)
     file_input_options = []
 
+    # Set this parameter to indicate that this option should take different
+    # values based on the time. E.g. something like
+    # --option1 value1[0:1000],value2[1000:2000]
+    # would be replaced with --option1 value1 if the time is within 0,1000 and
+    # value2 if in 1000,2000. A failure will be replaced if the job time is
+    # not fully contained in one of these windows, or if fully contained in
+    # multiple of these windows. This is resolved when creating the Job from
+    # the Executable
+    time_dependent_options = []
+
     # This is the default value. It will give a warning if a class is
     # used where the retention level is not set. The file will still be stored
     KEEP_BUT_RAISE_WARNING = 5
@@ -356,8 +366,6 @@ class Executable(pegasus_workflow.Executable):
                             ifo = split_path[0]
                             path = split_path[1]
 
-                    curr_lfn = os.path.basename(path)
-
                     # If the file exists make sure to use the
                     # fill path as a file:// URL
                     if os.path.isfile(path):
@@ -366,15 +374,7 @@ class Executable(pegasus_workflow.Executable):
                     else:
                         curr_pfn = path
 
-                    if curr_lfn in file_input_from_config_dict.keys():
-                        file_pfn = file_input_from_config_dict[curr_lfn][2]
-                        assert(file_pfn == curr_pfn)
-                        curr_file = file_input_from_config_dict[curr_lfn][1]
-                    else:
-                        local_file_path = resolve_url(curr_pfn)
-                        curr_file = File.from_path(local_file_path)
-                        tuple_val = (local_file_path, curr_file, curr_pfn)
-                        file_input_from_config_dict[curr_lfn] = tuple_val
+                    curr_file = resolve_url_to_file(curr_pfn)
                     self.common_input_files.append(curr_file)
                     if ifo:
                         self.common_raw_options.append(ifo + ':')
@@ -382,6 +382,13 @@ class Executable(pegasus_workflow.Executable):
                     else:
                         self.common_raw_options.append(curr_file.dax_repr)
                     self.common_raw_options.append(' ')
+            elif opt in self.time_dependent_options:
+                # There is a possibility of time-dependent, file options.
+                # For now we will avoid supporting that complication unless
+                # it is needed. This would require resolving the file first
+                # in this function, and then dealing with the time-dependent
+                # stuff later.
+                self.unresolved_td_options[opt] = value
             else:
                 self.common_options += [opt, value]
 
@@ -438,12 +445,12 @@ class Executable(pegasus_workflow.Executable):
 
         return False
 
-    def create_node(self):
+    def create_node(self, **kwargs):
         """Default node constructor.
 
         This is usually overridden by subclasses of Executable.
         """
-        return Node(self)
+        return Node(self, **kwargs)
 
     def update_current_retention_level(self, value):
         """Set a new value for the current retention level.
@@ -567,6 +574,7 @@ class Executable(pegasus_workflow.Executable):
         # from the ini file section(s)
         self.common_options = []
         self.common_raw_options = []
+        self.unresolved_td_options = {}
         self.common_input_files = []
         for sec in sections:
             if self.cp.has_section(sec):
@@ -843,10 +851,11 @@ class Workflow(pegasus_workflow.Workflow):
 
 
 class Node(pegasus_workflow.Node):
-    def __init__(self, executable):
+    def __init__(self, executable, valid_seg=None):
         super(Node, self).__init__(executable)
         self.executed = False
         self.set_category(executable.name)
+        self.valid_seg = valid_seg
 
         if executable.universe == 'vanilla' and executable.installed:
             self.add_profile('condor', 'getenv', 'True')
@@ -858,6 +867,15 @@ class Node(pegasus_workflow.Node):
         self._raw_options += self.executable.common_raw_options
         for inp in self.executable.common_input_files:
             self._add_input(inp)
+
+        if len(self.executable.time_dependent_options):
+            # Resolving these options requires the concept of a valid time.
+            # To keep backwards compatibility we will allow this to work if
+            # valid_seg is not supplied and no option actually needs resolving.
+            # It would be good to get this from the workflow's valid_seg if
+            # not overriden. But the Node is not connected to the Workflow
+            # until the dax starts to be written.
+            self.resolve_td_options(self.executable.unresolved_td_options)
 
     def get_command_line(self):
         self._finalize()
@@ -985,6 +1003,10 @@ class Node(pegasus_workflow.Node):
             output_files.append(curr_file)
         self.add_multiifo_output_list_opt(opt, output_files)
 
+    def resolve_td_options(self, td_options):
+        for opt in td_options:
+            new_opt = resolve_td_option(td_options[opt], self.valid_seg)
+            self._options += [opt, new_opt]
 
     @property
     def output_files(self):
@@ -1002,6 +1024,7 @@ class Node(pegasus_workflow.Node):
             err_msg += "%d output files." %(len(out_files))
             raise ValueError(err_msg)
         return out_files[0]
+
 
 class File(pegasus_workflow.File):
     '''
@@ -1973,6 +1996,85 @@ class CalledProcessErrorMod(Exception):
             msg += "The failed command has been printed in %s ." %(self.cmdFile)
         return msg
 
+def resolve_url_to_file(curr_pfn, attrs=None):
+    """
+    Resolves a PFN into a workflow.File object.
+
+    This function will resolve a PFN to a workflow.File object. If a File
+    object already exists for that PFN that will be returned, otherwise a new
+    object is returned. We will implement default site schemes here as needed,
+    for example cvfms paths will be added to the osg and nonfsio sites in
+    addition to local. If the LFN is a duplicate of an existing one, but with a
+    different PFN an AssertionError is raised. The attrs keyword-argument can
+    be used to specify attributes of a file. All files have 4 possible
+    attributes. A list of ifos, an identifying string - usually used to give
+    the name of the executable that created the file, a segmentlist over which
+    the file is valid and tags specifying particular details about those files.
+    If attrs['ifos'] is set it will be used as the ifos, otherwise this will
+    default to ['H1', 'K1', 'L1', 'V1']. If attrs['exe_name'] is given this
+    will replace the "exe_name" sent to File.__init__ otherwise 'INPUT' will
+    be given. segs will default to [[1,2000000000]] unless overridden with
+    attrs['segs']. tags will default to an empty list unless overriden
+    with attrs['tag']. If attrs is None it will be ignored and all defaults
+    will be used. It is emphasized that these attributes are for the most part
+    not important with input files. Exceptions include things like input
+    template banks, where ifos and valid times will be checked in the workflow
+    and used in the naming of child job output files.
+    """
+    cvmfsstr1 = 'file:///cvmfs/'
+    cvmfsstr2 = 'file://localhost/cvmfs/'
+    cvmfsstrs = (cvmfsstr1, cvmfsstr2)
+
+    # Get LFN
+    urlp = urllib.parse.urlparse(curr_pfn)
+    curr_lfn = os.path.basename(urlp.path)
+
+    # Does this already exist as a File?
+    if curr_lfn in file_input_from_config_dict.keys():
+        file_pfn = file_input_from_config_dict[curr_lfn][2]
+        # If the PFNs are different, but LFNs are the same then fail.
+        assert(file_pfn == curr_pfn)
+        curr_file = file_input_from_config_dict[curr_lfn][1]
+    else:
+        # Use resolve_url to download file/symlink as appropriate
+        local_file_path = resolve_url(curr_pfn)
+        # Create File object with default local path
+        # To do this we first need to check the attributes
+        if attrs and 'ifos' in attrs:
+            ifos = attrs['ifos']
+        else:
+            ifos = ['H1', 'K1', 'L1', 'V1']
+        if attrs and 'exe_name' in attrs:
+            exe_name = attrs['exe_name']
+        else:
+            exe_name = 'INPUT'
+        if attrs and 'segs' in attrs:
+            segs = attrs['segs']
+        else:
+            segs = segments.segment([1, 2000000000])
+        if attrs and 'tags' in attrs:
+            tags = attrs['tags']
+        else:
+            tags = []
+
+        curr_file = File(ifos, exe_name, segs, local_file_path, tags=tags)
+        pfn_local = urljoin('file:', pathname2url(local_file_path))
+        curr_file.PFN(pfn_local, 'local')
+        # Add other PFNs for nonlocal sites as needed.
+        # This block could be extended as needed
+        if curr_pfn.startswith(cvmfsstrs):
+            curr_file.PFN(curr_pfn, site='osg')
+            curr_file.PFN(curr_pfn, site='nonfsio')
+            # Also register the CVMFS PFN with the local site. We want to
+            # prefer this, and symlink from here, when possible.
+            # However, I think we need a little more to avoid it symlinking
+            # to this through an NFS mount.
+            curr_file.PFN(curr_pfn, site='local')
+        # Store the file to avoid later duplication
+        tuple_val = (local_file_path, curr_file, curr_pfn)
+        file_input_from_config_dict[curr_lfn] = tuple_val
+    return curr_file
+
 def get_full_analysis_chunk(science_segs):
     """
     Function to find the first and last time point contained in the science segments
@@ -2005,6 +2107,58 @@ def get_random_label():
     return ''.join(random.choice(string.ascii_uppercase + string.digits) \
                    for _ in range(15))
 
+
+def resolve_td_option(val_str, valid_seg):
+    """
+    Take an option which might be time-dependent and resolve it
+
+    Some options might take different values depending on the GPS time. For
+    example if you want opt_1 to take value_a if the time is between 10 and
+    100, value_b if between 100 and 250, and value_c if between 250 and 500 you
+    can supply:
+
+    value_a[10:100],value_b[100:250],value_c[250:500].
+
+    This function will parse that string (as opt) and return the value fully
+    contained in valid_seg. If valid_seg is not full contained in one, and only
+    one, of these options. The code will fail. If given a simple option like:
+
+    value_a
+
+    The function will just return value_a.
+    """
+    # Track if we've already found a matching option
+    output = ''
+    # Strip any whitespace, and split on comma
+    curr_vals = val_str.replace(' ', '').strip().split(',')
+
+    # Resolving the simple case is trivial and can be done immediately.
+    if len(curr_vals) == 1 and '[' not in curr_vals[0]:
+        return curr_vals[0]
+
+    # Loop over all possible values
+    for cval in curr_vals:
+        start = int(valid_seg[0])
+        end = int(valid_seg[1])
+        # Extract limits for each case, and check overlap with valid_seg
+        if '[' in cval:
+            bopt = cval.split('[')[1].split(']')[0]
+            start, end = bopt.split(':')
+            cval = cval.replace('[' + bopt + ']', '')
+        curr_seg = segments.segment(int(start), int(end))
+        # The segments module is a bit weird so we need to check if the two
+        # overlap using the following code. If valid_seg is fully within
+        # curr_seg this will be true.
+        if curr_seg.intersects(valid_seg) and \
+                (curr_seg & valid_seg == valid_seg):
+            if output:
+                err_msg = "Time-dependent options must be disjoint."
+                raise ValueError(err_msg)
+            output = cval
+    if not output:
+        err_msg = "Could not resolve option {}".format(val_str)
+        raise ValueError
+    return output
 
 def add_workflow_settings_cli(parser, include_subdax_opts=False):
     """Adds workflow options to an argument parser.
