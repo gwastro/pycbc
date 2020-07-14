@@ -30,9 +30,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 import logging
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
-from pycbc.workflow.core import File, FileList, make_analysis_dir, Executable, resolve_url
+from pycbc.workflow.core import FileList, make_analysis_dir
+from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
         PycbcDarkVsBrightInjectionsExecutable)
@@ -147,14 +146,18 @@ def setup_injection_workflow(workflow, output_dir=None,
             inj_file = node.output_files[0]
             inj_files.append(inj_file)
         elif injection_method == "PREGENERATED":
-            injectionFilePath = workflow.cp.get_opt_tags("workflow-injections",
-                                      "injections-pregenerated-file", curr_tags)
-            injectionFilePath = resolve_url(injectionFilePath)
-            file_url = urljoin('file:', pathname2url(injectionFilePath))
-            inj_file = File('HL', 'PREGEN_inj_file', full_segment, file_url,
-                            tags=curr_tags)
-            inj_file.PFN(injectionFilePath, site='local')
-            inj_files.append(inj_file)
+            file_attrs = {
+                'ifos': ['HL'],
+                'segs': full_segment,
+                'tags': curr_tags
+            }
+            injection_path = workflow.cp.get_opt_tags(
+                "workflow-injections",
+                "injections-pregenerated-file",
+                curr_tags
+            )
+            curr_file = resolve_url_to_file(injection_path, attrs=file_attrs)
+            inj_files.append(curr_file)
         elif injection_method in ["IN_COH_PTF_WORKFLOW", "AT_COH_PTF_RUNTIME"]:
             inj_job = LalappsInspinjExecutable(workflow.cp, inj_section_name,
                                                out_dir=output_dir, ifos=ifos,

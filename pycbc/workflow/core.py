@@ -366,8 +366,6 @@ class Executable(pegasus_workflow.Executable):
                             ifo = split_path[0]
                             path = split_path[1]
 
-                    curr_lfn = os.path.basename(path)
-
                     # If the file exists make sure to use the
                     # fill path as a file:// URL
                     if os.path.isfile(path):
@@ -376,15 +374,7 @@ class Executable(pegasus_workflow.Executable):
                     else:
                         curr_pfn = path
 
-                    if curr_lfn in file_input_from_config_dict.keys():
-                        file_pfn = file_input_from_config_dict[curr_lfn][2]
-                        assert(file_pfn == curr_pfn)
-                        curr_file = file_input_from_config_dict[curr_lfn][1]
-                    else:
-                        local_file_path = resolve_url(curr_pfn)
-                        curr_file = File.from_path(local_file_path)
-                        tuple_val = (local_file_path, curr_file, curr_pfn)
-                        file_input_from_config_dict[curr_lfn] = tuple_val
+                    curr_file = resolve_url_to_file(curr_pfn)
                     self.common_input_files.append(curr_file)
                     if ifo:
                         self.common_raw_options.append(ifo + ':')
@@ -2005,6 +1995,85 @@ class CalledProcessErrorMod(Exception):
         if self.cmdFile:
             msg += "The failed command has been printed in %s ." %(self.cmdFile)
         return msg
+
+def resolve_url_to_file(curr_pfn, attrs=None):
+    """
+    Resolves a PFN into a workflow.File object.
+
+    This function will resolve a PFN to a workflow.File object. If a File
+    object already exists for that PFN that will be returned, otherwise a new
+    object is returned. We will implement default site schemes here as needed,
+    for example cvfms paths will be added to the osg and nonfsio sites in
+    addition to local. If the LFN is a duplicate of an existing one, but with a
+    different PFN an AssertionError is raised. The attrs keyword-argument can
+    be used to specify attributes of a file. All files have 4 possible
+    attributes. A list of ifos, an identifying string - usually used to give
+    the name of the executable that created the file, a segmentlist over which
+    the file is valid and tags specifying particular details about those files.
+    If attrs['ifos'] is set it will be used as the ifos, otherwise this will
+    default to ['H1', 'K1', 'L1', 'V1']. If attrs['exe_name'] is given this
+    will replace the "exe_name" sent to File.__init__ otherwise 'INPUT' will
+    be given. segs will default to [[1,2000000000]] unless overridden with
+    attrs['segs']. tags will default to an empty list unless overriden
+    with attrs['tag']. If attrs is None it will be ignored and all defaults
+    will be used. It is emphasized that these attributes are for the most part
+    not important with input files. Exceptions include things like input
+    template banks, where ifos and valid times will be checked in the workflow
+    and used in the naming of child job output files.
+    """
+    cvmfsstr1 = 'file:///cvmfs/'
+    cvmfsstr2 = 'file://localhost/cvmfs/'
+    cvmfsstrs = (cvmfsstr1, cvmfsstr2)
+
+    # Get LFN
+    urlp = urllib.parse.urlparse(curr_pfn)
+    curr_lfn = os.path.basename(urlp.path)
+
+    # Does this already exist as a File?
+    if curr_lfn in file_input_from_config_dict.keys():
+        file_pfn = file_input_from_config_dict[curr_lfn][2]
+        # If the PFNs are different, but LFNs are the same then fail.
+        assert(file_pfn == curr_pfn)
+        curr_file = file_input_from_config_dict[curr_lfn][1]
+    else:
+        # Use resolve_url to download file/symlink as appropriate
+        local_file_path = resolve_url(curr_pfn)
+        # Create File object with default local path
+        # To do this we first need to check the attributes
+        if attrs and 'ifos' in attrs:
+            ifos = attrs['ifos']
+        else:
+            ifos = ['H1', 'K1', 'L1', 'V1']
+        if attrs and 'exe_name' in attrs:
+            exe_name = attrs['exe_name']
+        else:
+            exe_name = 'INPUT'
+        if attrs and 'segs' in attrs:
+            segs = attrs['segs']
+        else:
+            segs = segments.segment([1, 2000000000])
+        if attrs and 'tags' in attrs:
+            tags = attrs['tags']
+        else:
+            tags = []
+
+        curr_file = File(ifos, exe_name, segs, local_file_path, tags=tags)
+        pfn_local = urljoin('file:', pathname2url(local_file_path))
+        curr_file.PFN(pfn_local, 'local')
+        # Add other PFNs for nonlocal sites as needed.
+        # This block could be extended as needed
+        if curr_pfn.startswith(cvmfsstrs):
+            curr_file.PFN(curr_pfn, site='osg')
+            curr_file.PFN(curr_pfn, site='nonfsio')
+            # Also register the CVMFS PFN with the local site. We want to
+            # prefer this, and symlink from here, when possible.
+            # However, I think we need a little more to avoid it symlinking
+            # to this through an NFS mount.
+            curr_file.PFN(curr_pfn, site='local')
+        # Store the file to avoid later duplication
+        tuple_val = (local_file_path, curr_file, curr_pfn)
+        file_input_from_config_dict[curr_lfn] = tuple_val
+    return curr_file
 
 def get_full_analysis_chunk(science_segs):
     """
