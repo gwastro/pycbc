@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys
+import sys
 import glob
 import logging as log
 import numpy as np
