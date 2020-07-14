@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys
+import os, sys
 import glob
 import logging as log
 import numpy as np
@@ -162,7 +162,7 @@ def check_coinc_results(inj_table):
         log.info('Mass 2: %f', trig_props['mass2'][x])
         log.info('Spin1z: %f', trig_props['spin1z'][x])
         log.info('Spin2z: %f', trig_props['spin2z'][x])
-      
+     
 
     # check if injections match trigger params
     for i in range(n_injs):
@@ -196,6 +196,7 @@ def check_coinc_results(inj_table):
     return coinc_fail
 
       
+
 log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
 
 # gps times need to match those found in run.sh
@@ -208,6 +209,7 @@ sim_f_lower = 18
 
 fail = False
 lsctables.use_in(LIGOLWContentHandler)
+
        
 tested_detectors = {'H1', 'L1', 'V1'}
    
