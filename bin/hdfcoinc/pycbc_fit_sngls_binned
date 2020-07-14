@@ -291,7 +291,6 @@ if args.prune_param:
     del tidpruneall
     del timepruneall
 
-
 # get binning params after tuning
 if trig_dur:
     binpars = tdur + args.min_duration
