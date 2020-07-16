@@ -901,7 +901,7 @@ class ExpFitStatistic(NewSNRStatistic):
             tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
             ifo = trigs.ifo
         except AttributeError:
-            tnum = trigs['template_id']  # exists for SingleDetTriggers
+`            tnum = trigs['template_id']  # exists for SingleDetTriggers
             assert len(self.ifos) == 1
             # Should be exactly one ifo provided
             ifo = self.ifos[0]
@@ -997,7 +997,11 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
     def single_multiifo(self, s):
-        return s[1]['snglstat']
+        if self.single_increasing:
+            sngl_multiifo = s[1]['snglstat']
+        else:
+            sngl_multiifo = -1.0 *  s[1]['snglstat']
+        return sngl_multiifo
 
     def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         # scale by 1/sqrt(2) to resemble network SNR

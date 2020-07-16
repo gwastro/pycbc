@@ -119,7 +119,7 @@ headers.append("End&nbsp;time")
 data[0].append('%5.2f' % sngl_file.snr)
 data[0].append('%5.2f' % sngl_file.get_column('coa_phase'))
 data[0].append('%5.2f' % stat)
-headers.append("SNR")
+headers.append("&rho;")
 headers.append("Phase")
 headers.append(sngl_file.stat_name)
 

@@ -12,6 +12,7 @@ coincidences.
 
 import pycbc, pycbc.io, copy
 import argparse, logging, numpy as np
+from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc import conversions as conv
 from pycbc.events import veto, stat, ranking, coinc, single as sngl
 from ligo.segments import segment, segmentlist
@@ -20,6 +21,11 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde as gk
+
+# dummy class for loading LIGOLW files
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(LIGOLWContentHandler)
 
 d_power = {
     'log': 3.,
@@ -57,12 +63,14 @@ parser.add_argument("--remove-n-loudest", type=int,
 # Arguments for dealing with the injection trigger files for signal population
 parser.add_argument('--inj-single-statmap-files', nargs='+', required=True,
                     help="Single statmap files for the injections. "
-                         "Must be in same injection set order as "
-                         "--injfind-files")
-parser.add_argument('--injfind-files', nargs='+', required=True,
-                    help="File which associates single-detector triggers "
-                         "with injections. Must be in same injection set "
+                         "Must be in same order as --inj-files")
+parser.add_argument('--inj-files', nargs='+', required=True,
+                    help="File which define injections. Must be in same "
                          "order as --inj-single-trigger-files")
+parser.add_argument('--injection-window', type=float, default=1,
+                    help="Window for how close a trigger is to an "
+                         "injection to be considered to be associated "
+                         "with it (seconds). Default=1.")
 
 # Arguments to decide the weighting of the injection distribution
 parser.add_argument('--distance-param', choices=['distance', 'chirp_distance'],
@@ -175,49 +183,52 @@ if args.remove_n_loudest:
 
 logging.info("Getting injected signal triggers and information.")
 
-signal_stat = []
-signal_weights = []
-# This method requires injfind files and injection single statmap files to be
+signal_stat = np.array([])
+signal_weights = np.array([])
+# This method requires injection definition files and injection single statmap files to be
 # in the same order - would prefer to not have to do this
-for injfind_filename, trigger_filename in zip(args.injfind_files,
+for inj_filename, inj_trigger_filename in zip(args.inj_files,
                                               args.inj_single_statmap_files):
-    with pycbc.io.HFile(injfind_filename,'r') as injfind_f:
-        # deal with injfind file groups according to new or old style files
-        if sngl_ifo in injfind_f['found']:
-            tid_key = sngl_ifo + '/trigger_id'
-        elif sngl_ifo == injfind_f.attrs['detector_1']:
-            tid_key = 'trigger_id1'
-        else:
-            tid_key = 'trigger_id2'
-        found_tid = injfind_f['found'][tid_key][:]
-        found_ifar = injfind_f['found/ifar_exc'][:]
-        found_injid = injfind_f['found/injection_index'][:]
-        found_d = injfind_f['injections/distance'][:]
-        found_m1 = injfind_f['injections/mass1'][:]
-        found_m2 = injfind_f['injections/mass2'][:]
-    valid_idx = np.logical_and(found_tid > -1,
-                               found_ifar > args.signal_ifar_threshold)
-    found_tid = found_tid[valid_idx]
-    found_injid = found_injid[valid_idx]
+
+    logging.info('Read in injection statistic file')
+    with pycbc.io.HFile(inj_trigger_filename, 'r') as inj_trig_f:
+        inj_trig_id = inj_trig_f[sngl_ifo]['trigger_id'][:]
+        inj_trig_time = inj_trig_f[sngl_ifo]['time'][:]
+        inj_stat = inj_trig_f['stat'][:]
+
+    time_sort = inj_trig_time.argsort()
+
+    logging.info('Read in the injection file')
+    indoc = ligolw_utils.load_filename(inj_filename, False,
+                                       contenthandler=LIGOLWContentHandler)
+    sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+    inj_time = np.array(sim_table.get_column('geocent_end_time') +
+                        1e-9 * sim_table.get_column('geocent_end_time_ns'),
+                        dtype=np.float64)
+
+    left = np.searchsorted(inj_trig_time[time_sort],
+                           inj_time - args.injection_window, side='left')
+    right = np.searchsorted(inj_trig_time[time_sort],
+                            inj_time + args.injection_window, side='right')
+    found = np.flatnonzero((right - left) == 1)
+
+    found_d = np.array(sim_table.get_column('distance'),
+                       dtype=np.float32)[found]
+    found_m1 = np.array(sim_table.get_column('mass1'),
+                        dtype=np.float32)[found]
+    found_m2 = np.array(sim_table.get_column('mass2'),
+                        dtype=np.float32)[found]
+
+    signal_stat = np.append(signal_stat, inj_stat[left[found]])
+
     found_mchirp = conv.mchirp_from_mass1_mass2(found_m1, found_m2)
     if args.distance_param == 'chirp_distance':
         found_d = conv.chirp_distance(found_d, found_mchirp)
 
     weights = found_mchirp ** mchirp_power * found_d ** d_power
-    weights = weights[found_injid]
-    signal_weights.append(list(weights)[0])
-    with pycbc.io.HFile(trigger_filename, 'r') as trig_f:
-        _, stat_idx, _ = np.intersect1d(trig_f[sngl_ifo]['trigger_id'][:],
-                                        found_tid,
-                                        assume_unique=True,
-                                        return_indices=True)
-        if not stat_idx.size:
-            continue
-        signal_stat.append(list(trig_f['stat'][:][stat_idx])[0])
+    signal_weights = np.append(signal_weights, weights)
 
 
-signal_stat = np.array(signal_stat)
-signal_weights = np.array(signal_weights)
 bg_stat = bg_trigs.data['stat']
 fg_stat = fg_trigs.data['stat']
 

@@ -12,13 +12,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action='count')
 parser.add_argument("--version", action='version',
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument("--veto-file", default=None,
+parser.add_argument("--veto-files", nargs='+',
                     help="Optional veto file. Triggers within veto segments "
                          "contained in the file are ignored. Required if "
-                         "--segment-name given.")
-parser.add_argument("--segment-name", default=None,
+                         "--segment-names given.")
+parser.add_argument("--segment-names", nargs='+',
                     help="Optional, name of veto segment in veto file. "
-                         "Required if --veto-file given.")
+                         "Required if --veto-files given.")
 parser.add_argument("--trigger-file",type=str,
                     help="File containing single-detector triggers")
 parser.add_argument("--template-bank", required=True,
@@ -48,9 +48,12 @@ parser.add_argument("--output-file",
                     help="File to store the candidate triggers")
 args = parser.parse_args()
 
-if (args.veto_file and not args.segment_name) or \
-    (args.segment_name and not args.veto_file):
-    raise RuntimeError('--veto-file and --segment-name are mutually required')
+if (args.veto_files and not args.segment_names) or \
+    (args.segment_names and not args.veto_files):
+    raise RuntimeError('--veto-files and --segment-names are mutually required')
+
+if not len(args.veto_files) == len(args.segment_names):
+    raise RuntimeError('--segment-names are required for each --veto-files')
 
 args.statistic_files = sum(args.statistic_files, [])
 
@@ -86,21 +89,22 @@ if args.reduced_chisq_cut:
     # Select chisq-cut-kept idx from keep_idx
     keep_idx = keep_idx[chisq_keep_idx]
 
-if args.veto_file:
-    logging.info("Getting vetoed indices from file %s", args.veto_file)
-    end_time = trigf[ifo + '/end_time'][:][keep_idx]
-    veto_keep_idx, _ = veto.indices_outside_segments(end_time,
-                                                     [args.veto_file],
-                                                     segment_name=args.segment_name,
-                                                     ifo=ifo)
-    logging.info("Cutting %d triggers in vetoed segments (%.2f%%)",
-                 keep_idx.size - veto_keep_idx.size,
-                 float(keep_idx.size - veto_keep_idx.size) / float(keep_idx.size) * 100.)
-    # Select unvetoed idx from keep_idx
-    keep_idx = keep_idx[veto_keep_idx]
-    veto_segs = veto.select_segments_by_definer(args.veto_file, ifo=ifo,
-                                                segment_name=args.segment_name)
-    fg_segs = segments - veto_segs
+if args.veto_files:
+    for veto_file, segment_name in zip(args.veto_files, args.segment_names):
+        logging.info("Getting vetoed indices from file %s", veto_file)
+        end_time = trigf[ifo + '/end_time'][:][keep_idx]
+        veto_keep_idx, _ = veto.indices_outside_segments(end_time,
+                                                         [veto_file],
+                                                         segment_name=segment_name,
+                                                         ifo=ifo)
+        logging.info("Cutting %d triggers in vetoed segments (%.2f%%)",
+                     keep_idx.size - veto_keep_idx.size,
+                     float(keep_idx.size - veto_keep_idx.size) / float(keep_idx.size) * 100.)
+        # Select unvetoed idx from keep_idx
+        keep_idx = keep_idx[veto_keep_idx]
+        veto_segs = veto.select_segments_by_definer(veto_file, ifo=ifo,
+                                                    segment_name=segment_name)
+        fg_segs = segments - veto_segs
 else:
     fg_segs = segments
 
