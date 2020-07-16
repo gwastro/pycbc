@@ -901,7 +901,7 @@ class ExpFitStatistic(NewSNRStatistic):
             tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
             ifo = trigs.ifo
         except AttributeError:
-`            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            tnum = trigs['template_id']  # exists for SingleDetTriggers
             assert len(self.ifos) == 1
             # Should be exactly one ifo provided
             ifo = self.ifos[0]
