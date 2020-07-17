@@ -53,6 +53,12 @@ parser.add_argument("--single-statmap-files", nargs='+', required=True,
 parser.add_argument('--coinc-statmap-files', nargs='+', required=True,
                     help="Coincident statmap files, containing coincident "
                          "events to be removed from the background.")
+parser.add_argument('--coinc-veto-ifar-threshold', type=float, default=1.0,
+                    help="Censor triggers around coincidences with "
+                         "IFAR (years) above the threshold [default=1 yr")
+parser.add_argument('--coinc-veto-window', type=float, default=0.1,
+                    help="Time around each coincident event above threshold "
+                         "to window out. Default = 0.1s")
 parser.add_argument("--remove-n-loudest", type=int,
                     help="If given, will remove this number of triggers from "
                          "the background after applying foreground censor. "
@@ -136,32 +142,47 @@ for smap_file in args.single_statmap_files:
     sngl_detector_segs += veto.start_end_to_segments(sngl_starts, sngl_ends)
 
 fg_time = abs(sngl_detector_segs)
-fg_trigs = copy.deepcopy(sngl_trigs)
-
 coinc_segs = segmentlist([segment(0, 0)])
 fgveto_segs = segmentlist([segment(0, 0)])
 logging.info('Getting coinc segments and foreground vetoes')
 for cfilename in args.coinc_statmap_files:
     with pycbc.io.HFile(cfilename, 'r') as cfile:
-        if 'ifos' in cfile.attrs:
+        # Coinc segments are different depending on statmap file
+        if 'coinc' in cfile['segments']:
+            c_starts = cfile['segments/coinc/start'][:]
+            c_ends = cfile['segments/coinc/end'][:]
+        else:
             ctype = cfile.attrs['ifos'].replace(' ','')
             c_starts = cfile['segments/' + ctype + '/start'][:]
             c_ends = cfile['segments/' + ctype + '/end'][:]
+        # Test if the ifo is actually in this statmap file
+        if 'ifos' in cfile.attrs.keys():
+            ifolist = cfile.attrs['ifos'].split(' ')
+            time_key = sngl_ifo + '/time'
         else:
-            ctype = ''.join([cfile.attrs['detector_1'],
-                             cfile.attrs['detector_2']])
-            c_starts = cfile['segments/coinc/start'][:]
-            c_ends = cfile['segments/coinc/end'][:]
-        if sngl_ifo not in ctype:
+            ifolist = [cfile.attrs['detector_1'],
+                       cfile.attrs['detector_2']]
+            if sngl_ifo == cfile.attrs['detector_1']:
+                time_key = 'time1'
+            else:
+                time_key = 'time2'
+
+        if sngl_ifo not in ifolist:
             logging.warning("IFO %s is not in file %s", sngl_ifo, cfilename)
             continue
-        c_fgv_starts = cfile['segments/foreground_veto/start'][:]
-        c_fgv_ends = cfile['segments/foreground_veto/end'][:]
+
+        # Find the coinc events above a threshold IFAR
+        cifar = cfile['foreground/ifar'][:]
+        c_above = cifar > args.coinc_veto_ifar_threshold
+        ctime = cfile['foreground'][time_key][:][c_above]
+        c_fgv_starts = ctime - args.coinc_veto_window
+        c_fgv_ends = ctime + args.coinc_veto_window
     coinc_segs = coinc_segs + veto.start_end_to_segments(c_starts, c_ends)
     fgveto_segs = fgveto_segs + veto.start_end_to_segments(c_fgv_starts,
                                                            c_fgv_ends)
     coinc_segs.coalesce()
     fgveto_segs.coalesce()
+
 
 logging.info("Removing triggers in single-detector time from background.")
 bg_bool = np.array([t in coinc_segs
@@ -170,13 +191,13 @@ bg_idx = np.flatnonzero(bg_bool)
 bg_trigs = sngl_trigs.select(bg_idx)
 
 logging.info("Removing triggers in foreground vetoed time from background.")
-fg_veto_bool = np.array([t not in fgveto_segs
+fg_veto_bool_bg = np.array([t not in fgveto_segs
                          for t in bg_trigs.data[sngl_ifo + '/time']])
-bg_trigs = bg_trigs.select(np.flatnonzero(fg_veto_bool))
+bg_trigs = bg_trigs.select(np.flatnonzero(fg_veto_bool_bg))
 bg_time = abs(coinc_segs - fgveto_segs)
 
 if args.remove_n_loudest:
-    logging.info("Removing %d loudest remaining triggers",
+    logging.info("Removing %d loudest remaining triggers from background",
                  args.remove_n_loudest)
     loudest_idx = np.argsort(bg_trigs.data['stat'])[-args.remove_n_loudest:]
     bg_trigs = bg_trigs.remove(loudest_idx)
@@ -190,7 +211,7 @@ signal_weights = np.array([])
 for inj_filename, inj_trigger_filename in zip(args.inj_files,
                                               args.inj_single_statmap_files):
 
-    logging.info('Read in injection statistic file')
+    logging.info('Reading injection statistic file')
     with pycbc.io.HFile(inj_trigger_filename, 'r') as inj_trig_f:
         inj_trig_id = inj_trig_f[sngl_ifo]['trigger_id'][:]
         inj_trig_time = inj_trig_f[sngl_ifo]['time'][:]
@@ -198,7 +219,7 @@ for inj_filename, inj_trigger_filename in zip(args.inj_files,
 
     time_sort = inj_trig_time.argsort()
 
-    logging.info('Read in the injection file')
+    logging.info('Reading injection file')
     indoc = ligolw_utils.load_filename(inj_filename, False,
                                        contenthandler=LIGOLWContentHandler)
     sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
@@ -230,7 +251,7 @@ for inj_filename, inj_trigger_filename in zip(args.inj_files,
 
 
 bg_stat = bg_trigs.data['stat']
-fg_stat = fg_trigs.data['stat']
+fg_stat = sngl_trigs.data['stat']
 
 n_sig_exp = args.expected_signal_rate * conv.sec_to_year(fg_time)
 logging.info("%.3f signals are expected in this amount of data", n_sig_exp)
@@ -343,9 +364,9 @@ if args.plot_distribution:
     fig.savefig(args.plot_distribution)
 
 f_out = pycbc.io.HFile(args.output_file, 'w')
-for k in fg_trigs.data:
+for k in sngl_trigs.data:
     f_out.create_dataset('foreground/' + k,
-                         data=fg_trigs.data[k],
+                         data=sngl_trigs.data[k],
                          compression='gzip',
                          compression_opts=9,
                          shuffle=True)

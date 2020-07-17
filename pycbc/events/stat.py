@@ -1000,7 +1000,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         if self.single_increasing:
             sngl_multiifo = s[1]['snglstat']
         else:
-            sngl_multiifo = -1.0 *  s[1]['snglstat']
+            sngl_multiifo = -1.0 * s[1]['snglstat']
         return sngl_multiifo
 
     def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
