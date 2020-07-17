@@ -200,7 +200,7 @@ for tnum in template_ids:
         else:
             min_snr = None
         if 'sigmasq'in entries:
-            max_sigmasq = max([numpy.max(sds_full[i]['sigmasq']) for i in trigs.ifos])
+            max_sigmasq = min([numpy.max(sds_full[i]['sigmasq']) for i in trigs.ifos])
         else:
             max_sigmasq = None
     else:
