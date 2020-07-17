@@ -207,6 +207,8 @@ for tnum in template_ids:
         min_snr = None
         max_sigmasq = None
 
+    # Test whether sds_full contains single arrays or record arrays
+    # this depends on the stat being used
     try:
         pivot_stat = sds_full[args.pivot_ifo]['snglstat'].copy()
         fixed_stat = sds_full[args.fixed_ifo]['snglstat'].copy()
@@ -280,9 +282,9 @@ for tnum in template_ids:
                 pivot_lims[kidx] *= -1.
             # subtract small amount to account for errors due to rounding
             pivot_lims[kidx] -= 1e-6
-            # Get the minimum statistic required for all triggers
+            # Get the minimum statistic required for all triggers at the
+            # current decimation threshold
             pivot_lower[kidx] = pivot_lims[kidx].min()
-
 
         while start1 < len(sds_full[args.pivot_ifo]):
             end1 = start1 + args.batch_singles
@@ -334,14 +336,21 @@ for tnum in template_ids:
             if not rank_method.single_increasing:
                 pivot_stat *= -1.
 
+            # Starting from the largest decimation threshold, find the first decimation step
+            # where the loudest single detector trigger in pivot can pass the decimation threshold
+            # with any trigger in the fixed network
             tidx = len(threshes)
             for i in range(1, len(threshes)):
                 if pivot_stat[-1] >= pivot_lower[kidx]:
                     tidx = i
                     break
 
+            # loop through decimation steps starting from the first step where passing
+            # the threshold is possible
             for kidx in range(tidx, len(threshes)):
 
+                # Remove triggers in pivot that cannot form coincidences above
+                # the current decimation threshold
                 pivot_cut = numpy.searchsorted(pivot_stat, pivot_lower[kidx])
 
                 pivot_s = pivot_stat[pivot_cut:]
@@ -349,6 +358,7 @@ for tnum in template_ids:
                 test_times = fixed_times.copy()
                 test_times[args.pivot_ifo] = times[args.pivot_ifo][pivot_cut:]
 
+                # Do time coincidence for the current decimation factor
                 set_ids, set_slide = coinc.time_multi_coincidence(test_times,
                                                                   args.timeslide_interval*total_factors[kidx - 1],
                                                                   args.coinc_threshold,
@@ -356,24 +366,34 @@ for tnum in template_ids:
                                                                   args.fixed_ifo)
                 set_slide *= total_factors[kidx - 1]
 
+                # Remove foreground triggers
                 sets = set_slide != 0
+
+                # Each precalculated coincidence from the fixed network should
+                # be treated like a single trigger, only keep coincidences
+                # where all triggers from the fixed network coincidence are still
+                # together
                 for i in range(1, len(fixed_ifos)):
                     sets *= set_ids[fixed_ifos[i-1]] == set_ids[fixed_ifos[i]]
 
                 set_ids = {i: set_ids[i][sets] for i in trigs.ifos}
                 set_slide = set_slide[sets]
 
+                # Only keep coincidences where pivot has a single stat above the threshold
+                # calculated earlier
                 above = pivot_s[set_ids[args.pivot_ifo]] >= pivot_lims[kidx][set_ids[fixed_ifos[0]]]
 
                 test_ids = {i: fixed_ids[i][set_ids[i][above]] for i in fixed_ifos}
                 test_ids[args.pivot_ifo] = set_ids[args.pivot_ifo][above] + pivot_cut
                 set_slide = set_slide[above]
                 test_single_info = [(i, sds[i][test_ids[i]]) for i in trigs.ifos]
+
                 test_cstat = rank_method.coinc_multiifo(
                     test_single_info, set_slide, args.timeslide_interval,
                     to_shift=trigs.to_shift,
                     time_addition=args.coinc_threshold)
 
+                # Keep triggers in the current decimation range
                 test_bi = numpy.where(test_cstat >= threshes[kidx])[0]
                 test_bi = test_bi[test_cstat[test_bi] < threshes[kidx - 1]]
 
