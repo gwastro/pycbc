@@ -61,7 +61,7 @@ def default_channel_name(time, ifo):
     raise ValueError('Interferometer {} not supported at time {}'.format(ifo, time))
     
 
-def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, ifar, ifos, thresh_SNR, ligolw_psd_output=None, ligolw_event_output=None, window_bins=300, frame_types=None, channel_names=None, gracedb_server=None, test_event=True, custom_frame_files=None):
+def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, ifar, ifos, thresh_SNR, ligolw_skymap_output='.', ligolw_psd_output=None, ligolw_event_output=None, window_bins=300, frame_types=None, channel_names=None, gracedb_server=None, test_event=True, custom_frame_files=None):
 
     if not test_event and not gracedb_server:
         raise RuntimeError('a gracedb url must be specified if not a test event.')
@@ -293,21 +293,27 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, ifar, ifos, thresh_SNR,
     cmd = ['bayestar-localize-coincs',
            ligolw_file_path,
            ligolw_file_path,
-           '--f-low', str(f_low)]
+           '--f-low', str(f_low),
+           '-o', tmpdir]
     subprocess.call(cmd)
 
-    skymap_fits_name = './' + str(rough_time) + '.fits'
-    shutil.move('./0.fits', skymap_fits_name)
+    skymap_fits_name = tmpdir + '/0.fits'
 
     # plot the skymap
 
-    skymap_plot_name = './' + str(rough_time) + '_skymap.png'
+    skymap_plot_name = tmpdir + '/' + str(rough_time) + '_skymap.png'
     cmd = ['ligo-skymap-plot',
            skymap_fits_name,
            '-o', skymap_plot_name,
            '--contour', '50', '90',
            '--annotate']
     subprocess.call(cmd)
+
+    final_fits_dir = ligolw_skymap_output + '/' + str(rough_time) + '.fits'
+    final_png_dir = ligolw_skymap_output + '/' + str(rough_time) + '_skymap.png'
+    shutil.move(skymap_fits_name, final_fits_dir)
+    shutil.move(skymap_plot_name, final_png_dir)
+
 
     if gracedb_server:
         gracedb.writeLog(gid, 'Bayestar skymap FITS file upload',
@@ -343,6 +349,7 @@ if __name__ == '__main__':
                         help='List of interferometer names, e.g. H1 L1')
     parser.add_argument('--frame-type', type=str, nargs='+')
     parser.add_argument('--channel-name', type=str, nargs='+')
+    parser.add_argument('--ligolw-skymap-output', type=str, default='.', help='Option to output sky map files to directory')
     parser.add_argument('--ligolw-psd-output', type=str, default=None, help='Option to keep psd file under given name')
     parser.add_argument('--ligolw-event-output', type=str, default=None, help='Option to keep coinc file under given name')
     parser.add_argument('--enable-production-gracedb-upload',
@@ -368,7 +375,8 @@ if __name__ == '__main__':
 
     main(opt.trig_time, opt.mass1, opt.mass2,
          opt.spin1z, opt.spin2z, opt.f_low, opt.ifar, opt.ifos,
-         opt.thresh_SNR, opt.ligolw_psd_output, opt.ligolw_event_output,
+         opt.thresh_SNR, opt.ligolw_skymap_output,
+         opt.ligolw_psd_output, opt.ligolw_event_output,
          frame_types=frame_type_dict, channel_names=chan_name_dict,
          gracedb_server=opt.gracedb_server,
          test_event=not opt.enable_production_gracedb_upload,
