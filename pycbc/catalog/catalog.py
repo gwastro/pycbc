@@ -33,19 +33,21 @@ from astropy.utils.data import download_file
 
 # LVC catalogs
 base_lvc_url = "https://www.gw-openscience.org/eventapi/jsonfull/{}/"
-_catalogs = {'GWTC-1-confident':'LVC',
-            'GWTC-1-marginal':'LVC',
-            'Initial_LIGO_Virgo':'LVC',
-            'O1_O2-Preliminary':'LVC',
-            'O3_Discovery_Papers':'LVC'}
+_catalogs = {'GWTC-1-confident': 'LVC',
+             'GWTC-1-marginal': 'LVC',
+             'Initial_LIGO_Virgo': 'LVC',
+             'O1_O2-Preliminary': 'LVC',
+             'O3_Discovery_Papers': 'LVC'}
 
 # add some aliases
 _aliases = {}
 _aliases['gwtc-1'] = 'GWTC-1-confident'
 
+
 def list_catalogs():
     """Return a list of possible GW catalogs to query"""
     return list(_catalogs.keys())
+
 
 def get_source(source):
     """Get the source data for a particular GW catalog

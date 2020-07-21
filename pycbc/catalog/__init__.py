@@ -123,24 +123,12 @@ class Merger(object):
         from astropy.utils.data import download_file
         from pycbc.frame import read_frame
 
-        # Information is currently wrong on GWOSC!
-        # channels = self.data['files']['FrameChannels']
-        # for channel in channels:
-        #    if ifo in channel:
-        #        break
-
-        length = "{}sec".format(duration)
-        if sample_rate == 4096:
-            sampling = "4KHz"
-        elif sample_rate == 16384:
-            sampling = "16KHz"
-
         channel = "{}:GWOSC-{}_R1_STRAIN".format(ifo, sampling.upper())
 
         for fdict in self.data['strain']:
             if (fdict['detector'] == ifo and fdict['duration'] == duration and
-                fdict['sampling_rate'] == sample_rate and
-                fdict['format'] == 'gwf'):
+                    fdict['sampling_rate'] == sample_rate and
+                    fdict['format'] == 'gwf'):
                 url = fdict['url']
                 break
 
@@ -172,10 +160,11 @@ class Catalog(object):
             # Try common name
             for m in self.mergers:
                 if key == self.mergers[m].common_name:
-                    return self.mergers[m]
+                    break
             else:
                 raise ValueError('Did not find merger matching'
                                  ' name: {}'.format(key))
+            return self.mergers[m]
 
     def __setitem__(self, key, value):
         self.mergers[key] = value
