@@ -18,7 +18,7 @@ This modules contains functions for getting data from the LOSC
 """
 from astropy.utils.data import download_file
 
-_losc_url = "https://losc.ligo.org/archive/links/%s/%s/%s/%s/json/"
+_losc_url = "https://www.gw-openscience.org/archive/links/%s/%s/%s/%s/json/"
 
 def get_run(time):
     if 1164556817 <= time <= 1187733618:
