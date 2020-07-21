@@ -123,6 +123,11 @@ class Merger(object):
         from astropy.utils.data import download_file
         from pycbc.frame import read_frame
 
+        if sample_rate == 4096:
+            sampling = "4KHz"
+        elif sample_rate == 16384:
+            sampling = "16KHz"
+
         channel = "{}:GWOSC-{}_R1_STRAIN".format(ifo, sampling.upper())
 
         for fdict in self.data['strain']:
