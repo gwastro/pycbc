@@ -55,8 +55,8 @@ class Merger(object):
             for mname in data:
                 cname = data[mname]['commonName']
                 if cname == name:
-                    self.data = data[name]
                     name = mname
+                    self.data = data[name]
                     break
             else:
                 raise ValueError('Did not find merger matching'
