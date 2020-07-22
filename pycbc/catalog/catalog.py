@@ -31,16 +31,35 @@ from astropy.utils.data import download_file
 # For the time being all quantities are the 1-d median value
 # FIXME with posteriors when available and we can just post-process that
 
-# GWTC-1 catalog
-gwtc1_url = "https://www.gw-openscience.org/catalog/GWTC-1-confident/filelist/"
+# LVC catalogs
+base_lvc_url = "https://www.gw-openscience.org/eventapi/jsonfull/{}/"
+_catalogs = {'GWTC-1-confident': 'LVC',
+             'GWTC-1-marginal': 'LVC',
+             'Initial_LIGO_Virgo': 'LVC',
+             'O1_O2-Preliminary': 'LVC',
+             'O3_Discovery_Papers': 'LVC'}
+
+# add some aliases
+_aliases = {}
+_aliases['gwtc-1'] = 'GWTC-1-confident'
+
+
+def list_catalogs():
+    """Return a list of possible GW catalogs to query"""
+    return list(_catalogs.keys())
 
 
 def get_source(source):
     """Get the source data for a particular GW catalog
     """
-    if source == 'gwtc-1':
-        fname = download_file(gwtc1_url, cache=True)
-        data = json.load(open(fname, 'r'))
+    if source in _aliases:
+        source = _aliases[source]
+
+    if source in _catalogs:
+        catalog_type = _catalogs[source]
+        if catalog_type == 'LVC':
+            fname = download_file(base_lvc_url.format(source), cache=True)
+            data = json.load(open(fname, 'r'))
     else:
         raise ValueError('Unkown catalog source {}'.format(source))
-    return data['data']
+    return data['events']
