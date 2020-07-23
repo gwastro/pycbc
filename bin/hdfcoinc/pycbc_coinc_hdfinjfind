@@ -251,7 +251,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
 
     if multi_ifo_style:
         for key in f['segments'].keys():
-            if 'foreground' in key:
+            if 'foreground' in key or key is 'coinc':
                 continue
             if key not in fo:
                 fo.create_group(key)
