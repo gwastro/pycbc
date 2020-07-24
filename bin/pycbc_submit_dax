@@ -74,9 +74,18 @@ while true ; do
                  cat ${FILE_URL} >> _reuse.cache
                  FOUND_URL=0
               else
-                 # otherwise try and get the file using curl
-                 curl --fail ${URL} >> _reuse.cache
+                 # otherwise try and get the file using resolve_url
+                 DOWNLOADED_FILE=`python - <<EOF
+from pycbc.workflow import resolve_url
+import os
+filename = resolve_url("${FILE_URL}")
+print(filename)
+EOF`
                  FOUND_URL=${?}
+                 if [ ${FOUND_URL} -eq 0 ] ; then
+                   cat $DOWNLOADED_FILE >> _reuse.cache
+                   rm -f $DOWNLOADED_FILE
+                 fi
               fi
               if [ ${FOUND_URL} -ne 0 ] ; then
                  echo "$URL not found!"
