@@ -454,8 +454,14 @@ class BaseMCMC(object):
     def set_start_from_config(self, cp):
         """Sets the initial state of the sampler from config file
         """
-        init_prior = initial_dist_from_config(cp, self.variable_params)
-        self.set_p0(prior=init_prior)
+        if cp.has_option('sampler', 'start-file'):
+            start_file = cp.get('sampler', 'start-file')
+            logging.info("Using file %s for initial positions", start_file)
+            init_prior = None
+        else:
+            start_file = None
+            init_prior = initial_dist_from_config(cp, self.variable_params)
+        self.set_p0(samples_file=start_file, prior=init_prior)
 
     def resume_from_checkpoint(self):
         """Resume the sampler from the checkpoint file
