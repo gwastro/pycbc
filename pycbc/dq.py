@@ -105,7 +105,7 @@ GWOSC_URL = 'https://www.gw-openscience.org/timeline/segments/json/{}/{}_{}/{}/{
 
 
 def query_flag(ifo, segment_name, start_time, end_time,
-               source='any', server="segments.ligo.org",
+               source='any', server="https://segments.ligo.org",
                veto_definer=None, cache=False):
     """Return the times where the flag is active
 
@@ -238,7 +238,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
 
 def query_cumulative_flags(ifo, segment_names, start_time, end_time,
-                           source='any', server="segments.ligo.org",
+                           source='any', server="https://segments.ligo.org",
                            veto_definer=None,
                            bounds=None,
                            padding=None,
@@ -383,7 +383,7 @@ def parse_flag_str(flag_str):
 
 
 def query_str(ifo, flag_str, start_time, end_time, source='any',
-              server="segments.ligo.org", veto_definer=None):
+              server="https://segments.ligo.org", veto_definer=None):
     """ Query for flags based on a special str syntax
 
     Parameters

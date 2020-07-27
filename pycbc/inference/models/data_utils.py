@@ -129,7 +129,7 @@ def create_data_parser():
                          help='Where to look for DQ information. If "any" '
                               '(the default) will first try GWOSC, then '
                               'dqsegdb.')
-    dqgroup.add_argument('--dq-server', default='segments.ligo.org',
+    dqgroup.add_argument('--dq-server', default='https://segments.ligo.org',
                          help='The server to use for dqsegdb.')
     dqgroup.add_argument('--veto-definer', default=None,
                          help='Path to a veto definer file that defines '
