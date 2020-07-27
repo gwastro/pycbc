@@ -1423,7 +1423,7 @@ def get_segments_file(workflow, name, option_name, out_dir):
         veto_definer = save_veto_definer(workflow.cp, out_dir, [])
 
     # Check for provided server
-    server = "segments.ligo.org"
+    server = "https://segments.ligo.org"
     if cp.has_option("workflow-segments", "segments-database-url"):
         server = cp.get("workflow-segments",
                                  "segments-database-url")
