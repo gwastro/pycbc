@@ -45,13 +45,23 @@ fi
 # test if there is a inj file. If not, make one.
 # if a new inj is made, delete old strain
 
-if [[ -f test_inj.hdf ]]
+if [[ -f test_inj1.hdf && -f test_inj2.hdf ]]
 then
     echo -e "\\n\\n>> [`date`] Pre-existing Injection Found"
 else echo -e "\\n\\n>> [`date`] Generating injection"
+
+    if [[ -f test_inj1.hdf ]]
+    then rm test_inj1.hdf
+    fi
+    
+    if [[ -f test_inj2.hdf ]]
+    then rm test_inj2.hdf
+    fi
+    
     if [[ -d ./strain ]]
     then rm -r ./strain
     fi
+    
      ./generate_injections.py
 fi
 
@@ -64,18 +74,34 @@ then
     echo -e "\\n\\n>> [`date`] Generating simulated strain"
     
     function simulate_strain { # detector PSD_model random_seed
+        mkdir -p temp_strain/$1
         mkdir -p strain/$1
+        
+        (( t1=$gps_start_time-10 ))
+        (( t2=$gps_end_time+10 ))
+        
         pycbc_condition_strain \
             --fake-strain $2 \
             --fake-strain-seed $3 \
+            --output-strain-file "temp_strain/$1/$1-TEMP-{start}-{duration}.gwf" \
+            --gps-start-time $t1 \
+            --gps-end-time $t2 \
+            --sample-rate 16384 \
+            --low-frequency-cutoff 10 \
+            --channel-name $1:SIMULATED_STRAIN \
+            --frame-duration 32 \
+            --injection-file 'test_inj1.hdf'
+            
+        pycbc_condition_strain \
+            --frame-files temp_strain/$1/* \
             --output-strain-file "strain/$1/$1-SIMULATED_STRAIN-{start}-{duration}.gwf" \
-            --gps-start-time $gps_start_time \
+            --gps-start-time $gps_start_time  \
             --gps-end-time $gps_end_time \
             --sample-rate 16384 \
             --low-frequency-cutoff 10 \
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 32 \
-            --injection-file 'test_inj.hdf'
+            --injection-file 'test_inj2.hdf'
 
     }
     simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234

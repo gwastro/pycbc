@@ -118,14 +118,23 @@ def check_coinc_results(inj_table):
     else: 
         log.info('%d coincident trigger(s) detected', n_coincs)
       
-    with h5py.File('test_inj.hdf', 'r') as inj:
-        inj_mass1 = inj['mass1'][:]
-        inj_mass2 = inj['mass2'][:]
-        inj_spin1z = inj['spin1z'][:]
-        inj_spin2z = inj['spin2z'][:]
-        inj_time = inj['tc'][:]
+    injs = sorted(glob.glob('test_inj*.hdf'))
+    n_injs = len(injs)
+    inj_mass1 = np.empty(n_injs)
+    inj_mass2 = np.empty(n_injs)
+    inj_spin1z = np.empty(n_injs)
+    inj_spin2z = np.empty(n_injs)
+    inj_time = np.empty(n_injs)
+    
+    for idx, inj_path in enumerate(injs):
+        with h5py.File(inj_path, 'r') as inj:
+            inj_mass1[idx] = inj['mass1'][0]
+            inj_mass2[idx] = inj['mass2'][0]
+            inj_spin1z[idx] = inj['spin1z'][0]
+            inj_spin2z[idx] = inj['spin2z'][0]
+            inj_time[idx] = inj['tc'][0]
          
-    n_injs = len(inj_mass1)
+    
     if n_injs > n_coincs :
         log.error('More injections than coincident triggers')
         coinc_fail = True
