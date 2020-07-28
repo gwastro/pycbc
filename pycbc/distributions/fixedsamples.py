@@ -16,11 +16,31 @@
 This modules provides classes for evaluating distributions based on a fixed
 set of points
 """
-import logging, numpy
+import logging
+import numpy
 import numpy.random
 from pycbc import VARARGS_DELIM
 
 class FixedSamples(object):
+    """
+    A distribution consisting of a collection of a large number of fixed points.
+    Only these values can be drawn from, so the number of points may need to be
+    large to properly reflect the paramter space. This distribution is intended
+    to aid in using nested samplers for semi-abitrary or complicated
+    distributions where it is possible to provide or draw samples but less
+    straightforward to provide an analytic invcdf. This class numerically
+    approximates the invcdf for 1 or 2 dimensional distributions
+    (but no higher).
+
+    Parameters
+    ----------
+    params :
+        This of parameters this distribution should use
+    samples : dict of arrays or FieldArray
+        Sampled points of the distribution. May contain transformed parameters
+        which are different from the original distribution. If so, an inverse
+        mapping is provided to associate points with other parameters provided.
+    """
 
     name = "fixed_samples"
 
@@ -33,7 +53,7 @@ class FixedSamples(object):
         self.sort = self.p1.argsort()
         self.p1sorted = self.p1[self.sort]
 
-        assert(len(numpy.unique(self.p1)) == len(self.p1))
+        assert len(numpy.unique(self.p1)) == len(self.p1)
 
         if len(params) > 2:
             raise ValueError("Only one or two parameters supported "
@@ -41,10 +61,11 @@ class FixedSamples(object):
 
     def rvs(self, size=1, **kwds):
         "Draw random value"
-        i = numpy.random.randint(0, high=len(p1), size=size)
+        i = numpy.random.randint(0, high=len(self.p1), size=size)
         return {p: self.samples[p][i] for p in self.params}
 
     def cdfinv(self, **original):
+        """Map unit cube to parameters in the space"""
         new = {}
 
         #First dimension
@@ -84,6 +105,7 @@ class FixedSamples(object):
         return new
 
     def apply_boundary_conditions(self, **params):
+        """ Apply boundary conditions (none here) """
         return params
 
     def __call__(self, **kwds):
@@ -92,6 +114,14 @@ class FixedSamples(object):
 
     @classmethod
     def from_config(cls, cp, section, tag):
+        """ Return instance based on config file
+
+        Return a new instance based on the config file. This will draw from
+        a single distribution section provided in the config file and
+        apply a single transformation section if desired. If a transformation
+        is applied, an inverse mapping is also provided for use in the config
+        file.
+        """
         from pycbc.distributions import read_distributions_from_config
         from pycbc.transforms import (read_transforms_from_config,
                                       apply_transforms, BaseTransform)
@@ -107,7 +137,7 @@ class FixedSamples(object):
             raise ValueError("Fixed sample distrubtion only supports a single"
                              " distribution to sample from.")
 
-        logging.info('Drawing samples for fixed sample distribution:{}'.format(params))
+        logging.info('Drawing samples for fixed sample distribution:%s', params)
         samples = dist[0].rvs(size=int(float(size)))
         samples = {p: samples[p] for p in samples.dtype.names}
 
@@ -117,6 +147,9 @@ class FixedSamples(object):
             trans = trans[0]
             samples = apply_transforms(samples, [trans])
             p1 = samples[params[0]]
+
+            # We have transformed parameters, so automatically provide the
+            # inverse transform for use in passing to waveform approximants
             class Thook(BaseTransform):
                 name = subname
                 _inputs = trans.outputs
