@@ -1195,7 +1195,7 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
     """
 
     name = 'lambda_from_multiple_tov_files'
-    
+
     def __init__(self, mass_param, lambda_param, map_file, distance=None,
                  file_columns=None):
         self._map_file = map_file
@@ -1205,10 +1205,10 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
         self._inputs = [mass_param, 'eos', 'distance']
         self._outputs = [lambda_param]
         # create a dictionary of the EOS files from the map_file
-        self._eos_files = {} 
+        self._eos_files = {}
         with open(self._map_file, 'r') as fp:
             for line in fp:
-                fname = line.rstrip('\n') 
+                fname = line.rstrip('\n')
                 eosidx = int(os.path.basename(fname).split('.')[0])
                 self._eos_files[eosidx] = os.path.abspath(fname)
         # create an eos cache for fast load later
@@ -1217,8 +1217,8 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
             file_columns = ('radius', 'mass', 'lambda')
         self._file_columns = file_columns
         super(LambdaFromMultipleTOVFiles, self).__init__()
-    
-    
+
+
     @property
     def mass_param(self):
         """Returns the input mass parameter."""
@@ -1852,7 +1852,7 @@ class ChiPToCartesianSpin(CartesianSpinToChiP):
 
 class Exponent(Log):
     """Applies an exponent transform to an `inputvar` parameter.
-    
+
     This is the inverse of the log transform.
 
     Parameters
@@ -2053,7 +2053,7 @@ common_cbc_inverse_transforms.extend([
     CartesianToSpherical(parameters.spin2x, parameters.spin2y,
                          parameters.spin2z, parameters.spin2_a,
                          parameters.spin2_azimuthal, parameters.spin2_polar)])
-    
+
 common_cbc_transforms = common_cbc_forward_transforms + \
                         common_cbc_inverse_transforms
 
