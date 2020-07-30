@@ -128,7 +128,8 @@ class Merger(object):
         elif sample_rate == 16384:
             sampling = "16KHz"
 
-        channel = "{}:GWOSC-{}_R1_STRAIN".format(ifo, sampling.upper())
+        ver = int(self.data['version'])
+        channel = "{}:GWOSC-{}_R{}_STRAIN".format(ifo, sampling.upper(), ver)
 
         for fdict in self.data['strain']:
             if (fdict['detector'] == ifo and fdict['duration'] == duration and
