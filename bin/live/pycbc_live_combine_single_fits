@@ -68,15 +68,14 @@ for f in files:
                          - datetime.date(2000, 1, 1)).days
         analysis_dates += [n_since_epoch]
     else:
-        # This is the regex string to match a date in format YYYY_MM_DD, 
+        # This is the regex string to match a date in format YYYY_MM_DD,
         # or if MM or DD only have one character
         # FutureWarning: this will become obsolete in the year 3000
         re_string = '([12]\d{3}_(0?[1-9]|1[0-2])_(0?[1-9]|[12]\d|3[01]))'
         m = re.search(re_string, f)
-        date_array = m.group(0).split('_')
-        analysis_year = int(date_array[0])
-        analysis_month = int(date_array[1])
-        analysis_day = int(date_array[2])
+        analysis_year = int(m.group(1))
+        analysis_month = int(m.group(2))
+        analysis_day = int(m.group(3))
         n_since_epoch = (datetime.date(analysis_year, analysis_month,
                                        analysis_day)
                          - datetime.date(2000,1,1)).days
