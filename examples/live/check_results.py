@@ -104,7 +104,7 @@ def check_single_results(tested_detectors):
     return single_fail
 
 
-def check_coinc_results(inj_table):
+def check_coinc_results():
     coinc_fail = False    
     # gather coincident triggers
     coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
@@ -177,24 +177,11 @@ def check_coinc_results(inj_table):
     for i in range(n_injs):
         has_match = False
         for j in range(n_coincs):
-            if close(inj_time[i],trig_props['tc'][j],1.0):
-                match = True
-                if not close(inj_mass1[i], trig_props['mass1'][j], 5e-7):
-                    match = False
-                    log.error("Injection %i mass1 does not match simultaneous trigger's mass1",i)
-                if not close(inj_mass2[i], trig_props['mass2'][j], 5e-7):
-                    match = False
-                    log.error("Injection %i mass2 does not match simultaneous trigger's mass2",i)
-                if not close(inj_spin1z[i], trig_props['spin1z'][j], 5e-7):
-                    match = False
-                    log.error("Injection %i spin1z does not match simultaneous trigger's spin1z",i)
-                if not close(inj_spin2z[i], trig_props['spin2z'][j], 5e-7):
-                    match = False
-                    log.error("Injection %i spin2z does not match simultaneous trigger's spin2z",i)
-                if not close(15.0, trig_props['net_snr'][j], 0.05):
-                    match = False
-                    log.error("Injection %i network snr does not match simultaneous trigger's network snr", i)
-                has_match = match
+            if (close(inj_time[i],trig_props['tc'][j],1.0) and close(inj_mass1[i], trig_props['mass1'][j], 5e-7)
+            and close(inj_mass2[i], trig_props['mass2'][j], 5e-7) and close(inj_spin1z[i], trig_props['spin1z'][j], 5e-7)
+            and close(inj_spin2z[i], trig_props['spin2z'][j], 5e-7) and close(15.0, trig_props['net_snr'][j], 1.0)):
+                has_match = True
+                break
         
         if not has_match:
             coinc_fail = True
@@ -223,7 +210,7 @@ lsctables.use_in(LIGOLWContentHandler)
 tested_detectors = {'H1', 'L1', 'V1'}
    
 single_fail = check_single_results(tested_detectors)
-coinc_fail = check_coinc_results('./test_inj.hdf')
+coinc_fail = check_coinc_results()
 fail = single_fail or coinc_fail
    
 if fail:

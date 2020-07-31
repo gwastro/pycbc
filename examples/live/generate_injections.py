@@ -12,12 +12,12 @@ if os.path.exists('./test_inj2.hdf'):
 
     
 # injection 1    
-static_params = { 'f_lower': 18.0, 'f_ref': 18.0, 'approximant': 'SEOBNRv4', \
-               'taper': 'start', 'ra': 45.0, 'dec': 45.0, 'inclination': 0.0, \
+static_params = { 'f_lower': 18.0, 'f_ref': 18.0, 'approximant': 'SEOBNRv4', 
+               'taper': 'start', 'ra': 45.0, 'dec': 45.0, 'inclination': 0.0, 
                'coa_phase': 0.0, 'polarization': 0.0}
 
-samples = record.FieldArray(2, dtype=[('mass1', float), ('mass2', float), \
-                                      ('spin1z', float), ('spin2z', float), \
+samples = record.FieldArray(2, dtype=[('mass1', float), ('mass2', float), 
+                                      ('spin1z', float), ('spin2z', float), 
                                       ('tc', float), ('distance', float)])
 
     
@@ -36,12 +36,12 @@ InjectionSet.write('test_inj1.hdf', samples, static_args = static_params,
 
 
 #injection 2    
-static_params = { 'f_lower': 18.0, 'f_ref': 18.0, 'approximant': 'SpinTaylorT4', \
-               'taper': 'start', 'ra': 45.0, 'dec': 45.0, 'inclination': 0.0, \
+static_params = { 'f_lower': 18.0, 'f_ref': 18.0, 'approximant': 'SpinTaylorT4', 
+               'taper': 'start', 'ra': 45.0, 'dec': 45.0, 'inclination': 0.0, 
                'coa_phase': 0.0, 'polarization': 0.0}
 
-samples = record.FieldArray(2, dtype=[('mass1', float), ('mass2', float), \
-                                      ('spin1z', float), ('spin2z', float), \
+samples = record.FieldArray(2, dtype=[('mass1', float), ('mass2', float), 
+                                      ('spin1z', float), ('spin2z', float), 
                                       ('tc', float), ('distance', float)])
 
     
