@@ -35,7 +35,8 @@ import pycbc.scheme
 try:
     import skcuda.fft as cu_fft
 except:
-    raise ImportError("Unable to import skcuda.fft; try direct import to get full traceback")
+    raise ImportError("Unable to import skcuda.fft; try direct import"
+                      " to get full traceback")
 from .core import _BaseFFT, _BaseIFFT
 
 _forward_plans = {}
