@@ -971,5 +971,5 @@ def ensemble_compute_acl(filename, start_index=None, end_index=None,
                 acl = numpy.inf
             acls[param] = acl
         maxacl = numpy.array(list(acls.values())).max()
-        logging.info("ACT: %s", str(maxacl*fp.thin_interval))
+        logging.info("ACT: %s", str(maxacl*fp.thinned_by))
     return acls
