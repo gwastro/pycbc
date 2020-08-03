@@ -562,9 +562,9 @@ parser.add_argument('--store-psd', action='store_true')
 parser.add_argument('--output-background', type=str, nargs='+',
                     help='Takes a period in seconds and a file path and dumps '
                          'the coinc backgrounds to that path with that period')
-parser.add_argument('--output-background-n-loudest', type=int, default=0,
+parser.add_argument('--output-background-n-loudest', type=int, default=10000,
                     help="If given an integer (assumed positive), it stores loudest n triggers"
-                    "(not sorted) for each of the coinc background")
+                    "(not sorted) for each of the coinc background. If 0, all bkg will be dumped.")
 
 parser.add_argument('--newsnr-threshold', type=float, default=0)
 parser.add_argument('--max-batch-size', type=int, default=2**27)

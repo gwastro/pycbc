@@ -692,7 +692,7 @@ class CoincExpireBuffer(object):
             newlen = len(self.buffer) * 2
             for ifo in self.ifos:
                 self.timer[ifo].resize(newlen)
-            self.buffer.resize(newlen)
+            self.buffer.resize(newlen, refcheck=False)
 
         self.buffer[self.index:self.index+len(values)] = values
         if len(values) > 0:
