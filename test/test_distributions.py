@@ -33,7 +33,7 @@ from pycbc.workflow import WorkflowConfigParser
 EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary", "external",
                       "uniform_solidangle", "uniform_sky",
                       "independent_chip_chieff",
-                      "uniform_f0_tau"]
+                      "uniform_f0_tau", "fixed_samples"]
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Distributions")
