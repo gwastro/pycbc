@@ -289,8 +289,15 @@ counts_above = []
 fits = []
 tpars = []
 
-for tnum in trange:
-    stat_in_template = stat[tid == tnum]
+tsort = tid.argsort()
+tid = tid[tsort]
+stat = stat[tsort]
+
+left = np.searchsorted(tid, trange, side='left')
+right = np.searchsorted(tid, trange, side='right')
+
+for j, tnum in enumerate(trange):
+    stat_in_template = stat[left[j]:right[j]]
     count_above = len(stat_in_template)
     count_total = count_in_template[tnum]
     if count_above == 0:
@@ -311,8 +318,12 @@ for tnum in trange:
                                                     (tnum - tmin, tmax - tmin))
 
 logging.info("Calculating median sigma for each template")
-median_sigma = [np.sqrt(np.median(trigf[args.ifo + '/sigmasq'][reg])) for reg in
-                    trigf[args.ifo + '/sigmasq_template'][:]]
+
+sigma_regions = trigf[args.ifo + '/sigmasq_template'][:]
+median_sigma = []
+for i, reg in enumerate(sigma_regions):
+    strigs = trigf[args.ifo + '/sigmasq'][reg]
+    median_sigma.append(np.median(strigs)**0.5)
 
 outfile = h5py.File(args.output, 'w')
 # store template-dependent fit output
