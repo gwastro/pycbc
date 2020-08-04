@@ -33,8 +33,7 @@ epsie>=0.5
 # For LDG service access
 dqsegdb
 dqsegdb2>=1.0.1
-http://download.pegasus.isi.edu/pegasus/4.9.0/pegasus-python-source-4.9.0.tar.gz; python_version <= '2.7'
-https://github.com/ahnitz/pegasus-wms-python3/archive/master.tar.gz; python_version >= '3'
+https://github.com/ahnitz/pegasus-wms-python3/archive/master.tar.gz
 amqplib
 
 # For building documentation
