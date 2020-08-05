@@ -211,7 +211,7 @@ class LiveEventManager(object):
             # Calculate new ifar
             triggers['foreground/ifar'] = combine_ifar_pvalue(
                     triggers['foreground/ifar'], pvalue, self.pvalue_livetime)
-
+            triggers['foreground/pvalue_{}'.format(ifo)] = pvalue
 
     def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank):
