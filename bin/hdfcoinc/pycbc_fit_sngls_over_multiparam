@@ -117,13 +117,36 @@ nabove_smoothed = []
 if tcount: ntotal_smoothed = []
 alpha_smoothed = []
 rang = numpy.arange(0, len(nabove))
-for i in range(len(nabove)):
-    dsq = dist(i, rang)
-    l = (dsq < 1)
-    
-    if tcount: ntotal_smoothed.append(ntotal[l].mean())
-    nabove_smoothed.append(nabove[l].mean())
-    alpha_smoothed.append(nabove_smoothed[i] / invalphan[l].mean())
+
+if len(parvals) == 1:
+    sort = parvals[0].argsort()
+    parvals[0] = parvals[0][sort]
+    ntotal = ntotal[sort]
+    nabove = nabove[sort]
+    invalphan = invalphan[sort]
+
+    left = numpy.searchsorted(parvals[0], parvals[0] - args.smoothing_width[0])
+    right = numpy.searchsorted(parvals[0], parvals[0] + args.smoothing_width[0]) - 1
+
+    ntsum = ntotal.cumsum()
+    nasum = nabove.cumsum()
+    invsum = invalphan.cumsum()
+    num = right - left
+
+    if tcount: ntotal_smoothed = (ntsum[right] - ntsum[left]) / num
+    nabove_smoothed = (nasum[right] - nasum[left]) / num
+    invmean = (invsum[right] - invsum[left]) / num
+    alpha_smoothed = nabove_smoothed / invmean
+
+else:
+    for i in range(len(nabove)):
+        if len(parvals) > 1:
+            dsq = dist(i, rang)
+            l = (dsq < 1)
+            if tcount: ntotal_smoothed.append(ntotal[l].mean())
+            nabove_smoothed.append(nabove[l].mean())
+            alpha_smoothed.append(nabove_smoothed[i] / invalphan[l].mean())
+
 
 # store template-dependent fit output
 outfile = h5py.File(args.output, 'w')
