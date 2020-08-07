@@ -1,12 +1,10 @@
 import numpy
 import scipy.special
-
+from scipy.special import logsumexp
 from pycbc import filter as pyfilter
 from pycbc.waveform import get_fd_waveform
 from pycbc.detector import Detector
-
 from .gaussian_noise import BaseGaussianNoise
-
 
 class SingleTemplate_p(BaseGaussianNoise):
     r"""Model that assumes we know all the intrinsic parameters.
@@ -27,30 +25,37 @@ class SingleTemplate_p(BaseGaussianNoise):
         respective detectors to be used for computing inner products.
     sample_rate : int, optional
         The sample rate to use. Default is 32768.
+    num_samples: int, optional
+        Parameter to specify how finely to marginalize over polarization angle.
+        If None, then polarization must be a parameter.
     \**kwargs :
         All other keyword arguments are passed to
         :py:class:`BaseGaussianNoise`; see that class for details.
     """
     name = 'single_template_p'
-
     def __init__(self, variable_params, data, low_frequency_cutoff,
-                 sample_rate=32768, **kwargs):
+                 sample_rate=32768,num_samples=None,**kwargs):
         super(SingleTemplate_p, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
-
+        
         # Generate template waveforms
         df = data[self.detectors[0]].delta_f
         p = self.static_params.copy()
+        
         if 'distance' in p:
             _ = p.pop('distance')
         if 'inclination' in p:
             _ = p.pop('inclination')
         hp, _ = get_fd_waveform(delta_f=df, distance=1, inclination=0, **p)
-
         # Extend template to high sample rate
         flen = int(int(sample_rate) / df) / 2 + 1
         hp.resize(flen)
-
+        #create a polarization array to marginalize over if num_samples is specified
+        self.pflag=0
+        if num_samples!=None:
+            self.polarization=np.linspace(0,2*np.pi,num_samples)
+            self.pflag=1
+            
         # Calculate high sample rate SNR time series
         self.sh = {}
         self.hh = {}
@@ -84,6 +89,10 @@ class SingleTemplate_p(BaseGaussianNoise):
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
         p = self.current_params.copy()
         p.update(self.static_params)
+        if self.pflag==0:
+            polarization=p['polarization']
+        elif self.pflag==1:
+            polarization=self.polarization
 
         if self.time is None:
             self.time = p['tc']
@@ -91,7 +100,7 @@ class SingleTemplate_p(BaseGaussianNoise):
         shloglr = hhloglr = 0
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
-                                                   p['polarization'],
+                                                   polarization,
                                                    self.time)
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
                                                             p['dec'],
@@ -99,7 +108,6 @@ class SingleTemplate_p(BaseGaussianNoise):
             ip = numpy.cos(p['inclination'])
             ic = 0.5 * (1.0 + ip * ip)
             htf = (fp * ip + 1.0j * fc * ic) / p['distance']
-            #print(htf)
 
             sh = self.sh[ifo].at_time(p['tc'] + dt) * htf
             shloglr += sh
@@ -108,16 +116,9 @@ class SingleTemplate_p(BaseGaussianNoise):
         vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
         
         #An array of vloglr for each polarization value
-        vloglr += abs(shloglr) + hhloglr 
-        #putting all vloglr values in exp(vloglr)
-        temp=numpy.exp(vloglr)
-        #summing over the values in the array exp(vloglr)
-        loglm=(numpy.sum(temp))
-        
-        #To handle the case where loglm=0; assigned a very small value to loglm that is not equal to 0
-        #taking the log of loglm to obtain new loglikelihood ratio marginalized over pol
-        
-        if loglm!=0:
-            return float(numpy.log(loglm))  
-        else:
-            return float(numpy.log(1e-20))
+        vloglr += abs(shloglr) + hhloglr
+        #logsumexp when polarization is marginalized 
+        if self.pflag==0:
+            return(vloglr)
+        elif self.pflag==1:
+            return(logsumexp(vloglr))
