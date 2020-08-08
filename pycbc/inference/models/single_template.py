@@ -52,7 +52,7 @@ class SingleTemplate(BaseGaussianNoise):
         respective detectors to be used for computing inner products.
     sample_rate : int, optional
         The sample rate to use. Default is 32768.
-    num_samples: int, optional
+    polarization_samples: int, optional
         Parameter to specify how finely to marginalize over polarization angle.
         If None, then polarization must be a parameter.
     \**kwargs :
@@ -62,7 +62,7 @@ class SingleTemplate(BaseGaussianNoise):
     name = 'single_template'
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
-                 sample_rate=32768, num_samples=None, **kwargs):
+                 sample_rate=32768, polarization_samples=None, **kwargs):
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
 
@@ -78,12 +78,11 @@ class SingleTemplate(BaseGaussianNoise):
         # Extend template to high sample rate
         flen = int(int(sample_rate) / df) / 2 + 1
         hp.resize(flen)
-        
         #polarization array to marginalize over if num_samples given
-        self.pflag=0
-        if num_samples!=None:
-            self.polarization=np.linspace(0,2*np.pi,num_samples)
-            self.pflag=1
+        self.pflag = 0
+        if polarization_samples is not None:
+            self.polarization = numpy.linspace(0, 2*numpy.pi, polarization_samples)
+            self.pflag = 1
 
         # Calculate high sample rate SNR time series
         self.sh = {}
@@ -119,11 +118,10 @@ class SingleTemplate(BaseGaussianNoise):
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
         p = self.current_params.copy()
         p.update(self.static_params)
-        
-        if self.pflag==0:
-            polarization=p['polarization']
-        elif self.pflag==1:
-            polarization=self.polarization
+        if self.pflag == 0:
+            polarization = p['polarization']
+        elif self.pflag == 1:
+            polarization = self.polarization
 
         if self.time is None:
             self.time = p['tc']
@@ -143,12 +141,9 @@ class SingleTemplate(BaseGaussianNoise):
             sh = self.sh[ifo].at_time(p['tc'] + dt) * htf
             shloglr += sh
             hhloglr += self.hh[ifo] * abs(htf) ** 2.0
-
         vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
         vloglr += abs(shloglr) + hhloglr
-        
-        if self.pflag==0:
+        if self.pflag == 0:
             return float(vloglr)
-        elif self.pflag==1:
+        else:
             return float(logsumexp(vloglr))
-
