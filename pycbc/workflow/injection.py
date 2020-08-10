@@ -30,7 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 import logging
-from pycbc.workflow.core import FileList, make_analysis_dir
+from pycbc.workflow.core import FileList, make_analysis_dir, Node
 from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
@@ -50,19 +50,55 @@ def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None
     workflow += node
     return node.output_files[0]
 
+class PyCBCOptimalSNRExecutable(Executable):
+    """Compute optimal SNR for injections"""
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def create_node(self, workflow, inj_file, precalc_psd_files, group_str):
+        node = Node(self)
+        node.add_input_opt('--input-file', inj_file)
+        node.add_opt('--injection-fraction-range', group_str)
+        node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
+        node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+        return node
+
+class PyCBCOptimalSNRMergeExecutable(Executable):
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, workflow, opt_snr_split_files):
+        node = Node(self)
+        node.add_input_list_opt('--input-files', opt_snr_split_files)
+        node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+        return node
+
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
     "Set up a job for computing optimal SNRs of a sim_inspiral file."
     if tags is None:
         tags = []
 
-    node = Executable(workflow.cp, 'optimal_snr', ifos=workflow.ifos,
-                      out_dir=out_dir, tags=tags).create_node()
-    node.add_input_opt('--input-file', inj_file)
-    node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
-    node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
-    workflow += node
-    return node.output_files[0]
+    factor = int(workflow.cp.get_opt_tags('workflow-optimal-snr',
+                                          'parallelization-factor',
+                                          tags))
+
+    opt_snr_split_files = []
+    for i in range(factor):
+        group_str = '%s/%s' % (i, factor)
+        opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
+                                                ifos=workflow.ifos,
+                                                out_dir=out_dir, tags=tags + [str(i)])
+        node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files,
+                                       group_str)
+        opt_snr_split_files += [node.output_files[0]]
+        workflow += node
+
+    opt_snr_merge_exe = PyCBCOptimalSNRMergeExecutable(workflow.cp,
+                                                       'optimal_snr_merge',
+                                                       ifos=workflow.ifos,
+                                                       out_dir=out_dir,
+                                                       tags=tags)
+    merge_node = opt_snr_merge_exe.create_node(workflow, opt_snr_split_files)
+    workflow += merge_node
+    return merge_node.output_files[0]
 
 def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     "Set up a job for removing injections that are too distant to be seen"

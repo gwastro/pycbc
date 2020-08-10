@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2020 Gareth S. Davies
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Combine optimal SNR files into one larger file
+"""
+
+import logging
+import argparse
+from pycbc import init_logging
+from glue.ligolw import ligolw, lsctables, table, utils as ligolw_utils
+import pycbc.version
+
+# dummy class needed for loading LIGOLW files
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(LIGOLWContentHandler)
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action=pycbc.version.Version)
+parser.add_argument('--input-files', nargs='+', required=True,
+                    help='Optimal_SNR files to be combined')
+parser.add_argument('--output-file', required=True,
+                    help='output file for combined optimal_snr')
+parser.add_argument('--verbose', action='store_true',
+                    help='log progress to the terminal')
+args = parser.parse_args()
+
+init_logging(args.verbose)
+
+logging.info('setting up empty sim inspiral table')
+file_zero = ligolw_utils.load_filename(args.input_files[0], False,
+                                       contenthandler=LIGOLWContentHandler)
+sim_table_zero = table.get_table(file_zero, lsctables.SimInspiralTable.tableName)
+
+sim_table_all = lsctables.New(lsctables.SimInspiralTable,
+                              list(sim_table_zero.validcolumns.keys()))
+
+for in_file in args.input_files:
+    logging.info('Adding %s into combined sim_inspiral table', in_file)
+    indoc = ligolw_utils.load_filename(in_file, False,
+                                       contenthandler=LIGOLWContentHandler)
+    sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+    sim_table_all += sim_table
+
+logging.info('Sorting into time order')
+sim_table_all.sort(key=lambda x: x.geocent_end_time)
+
+llw_doc = file_zero
+llw_root = llw_doc.childNodes[0]
+llw_root.removeChild(sim_table_zero)
+llw_root.appendChild(sim_table_all)
+logging.info('Writing output')
+ligolw_utils.write_filename(llw_doc, args.output_file,
+                            gz=args.output_file.endswith('gz'))
