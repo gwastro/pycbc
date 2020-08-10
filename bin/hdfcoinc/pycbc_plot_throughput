@@ -26,12 +26,14 @@ fig, (ax1, ax2, ax3) = pl.subplots(3,1,figsize=(10,10))
 for pa in args.input_file:
     f = h5py.File(pa, 'r')
     ifo = tuple(f.keys())[0]
+
     dur = f['%s/search/end_time' % ifo][:] - f['%s/search/start_time' % ifo][:]
     dur /= dur.mean()
     if args.duration_weighted:
         w = dur
     else:
-        w = 1
+        w = None
+
     if 'templates_per_core' in f['%s/search' % ifo].keys():
         tpc = f['%s/search/templates_per_core' % ifo][:]
     else:
@@ -44,6 +46,7 @@ for pa in args.input_file:
         stf = f['%s/search/setup_time_fraction' % ifo][:]
     else:
         stf = None
+
     if tpc is not None:
         label = str(ifo) + ': Harmonic mean  - ' + str(hmean(tpc))
         if args.duration_weighted:
@@ -70,4 +73,3 @@ for pa in args.input_file:
 
 fig.tight_layout()
 fig.savefig(str(args.output_file))
-
