@@ -57,14 +57,18 @@ for pa in args.input_file:
         ax1.legend(loc = 'upper right')
         ax1.grid(True)
     if fpc is not None:
-        label = str(ifo) + ': Mean average - ' + str((fpc * w).mean())
+        if w is not None:
+            fpc *= w
+        label = str(ifo) + ': Mean average - ' + str(fpc.mean())
         ax2.hist(fpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label, weights=w)
         #ax2.set_title('Filter rate per core')
         ax2.set_xlabel('Filter rate per core (# FFTs per second per core)')
         ax2.legend(loc = 'upper right')
         ax2.grid(True)
     if stf is not None:
-        label = str(ifo) + ': Mean average - ' + str((stf * w).mean())
+        if w is not None:
+            stf *= w
+        label = str(ifo) + ': Mean average - ' + str(stf.mean())
         ax3.hist(stf, 100, color=ifo_color(ifo), alpha = 0.65, label = label, weights=w)
         #ax2.set_title('Filter rate per core')
         ax3.set_xlabel('Fraction of time doing setup operations')
