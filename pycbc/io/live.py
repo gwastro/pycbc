@@ -266,9 +266,10 @@ class SingleCoincForGraceDB(object):
             psd = self.psds[ifo]
             kmin = int(kwargs['low_frequency_cutoff'] / psd.delta_f)
             if kwargs['high_frequency_cutoff']:
-                #Should this raise an error if high_frequency_cutoff > f_max of PSD?
-                kmax = min(int(kwargs['high_frequency_cutoff'] / psd.delta_f),
-                           len(psd))
+                #Should this raise an error if
+                #high_frequency_cutoff > f_max of PSD?
+                kmax = min(int(kwargs['high_frequency_cutoff'] \
+                               / psd.delta_f), len(psd))
             else:
                 kmax = len(psd)
             fseries = lal.CreateREAL8FrequencySeries(
