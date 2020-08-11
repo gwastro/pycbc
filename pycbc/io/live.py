@@ -97,6 +97,8 @@ class SingleCoincForGraceDB(object):
             Dictionary providing PSD estimates for all involved detectors.
         low_frequency_cutoff: float
             Minimum valid frequency for the PSD estimates.
+        high_frequency_cutoff: float, optional
+            Maximum frequency considered for the PSD estimates. Default None.
         followup_data: dict of dicts, optional
             Dictionary providing SNR time series for each detector,
             to be used in sky localization with BAYESTAR. The format should
@@ -263,10 +265,16 @@ class SingleCoincForGraceDB(object):
         for ifo in self.psds:
             psd = self.psds[ifo]
             kmin = int(kwargs['low_frequency_cutoff'] / psd.delta_f)
+            if kwargs['high_frequency_cutoff']:
+                #Should this raise an error if high_frequency_cutoff > f_max of PSD?
+                kmax = min(int(kwargs['high_frequency_cutoff'] / psd.delta_f),
+                           len(psd))
+            else:
+                kmax = len(psd)
             fseries = lal.CreateREAL8FrequencySeries(
                 "psd", psd.epoch, kwargs['low_frequency_cutoff'], psd.delta_f,
-                lal.StrainUnit**2 / lal.HertzUnit, len(psd) - kmin)
-            fseries.data.data = psd.numpy()[kmin:] / pycbc.DYN_RANGE_FAC ** 2.0
+                lal.StrainUnit**2 / lal.HertzUnit, kmax - kmin)
+            fseries.data.data = psd.numpy()[kmin:kmax] / pycbc.DYN_RANGE_FAC ** 2.0
             psds_lal[ifo] = fseries
         make_psd_xmldoc(psds_lal, outdoc)
 

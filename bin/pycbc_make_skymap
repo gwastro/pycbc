@@ -271,6 +271,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos, th
 
     kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos + follow_up},
               'low_frequency_cutoff': f_low,
+              'high_frequency_cutoff': f_upper,
               'followup_data': followup_data,
               'channel_names': channel_names}
 
