@@ -321,7 +321,7 @@ logging.info("Calculating median sigma for each template")
 
 sigma_regions = trigf[args.ifo + '/sigmasq_template'][:]
 median_sigma = []
-for i, reg in enumerate(sigma_regions):
+for reg in sigma_regions:
     strigs = trigf[args.ifo + '/sigmasq'][reg]
     median_sigma.append(np.median(strigs)**0.5)
 

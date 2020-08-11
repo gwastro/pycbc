@@ -140,12 +140,11 @@ if len(parvals) == 1:
 
 else:
     for i in range(len(nabove)):
-        if len(parvals) > 1:
-            dsq = dist(i, rang)
-            l = (dsq < 1)
-            if tcount: ntotal_smoothed.append(ntotal[l].mean())
-            nabove_smoothed.append(nabove[l].mean())
-            alpha_smoothed.append(nabove_smoothed[i] / invalphan[l].mean())
+        dsq = dist(i, rang)
+        l = (dsq < 1)
+        if tcount: ntotal_smoothed.append(ntotal[l].mean())
+        nabove_smoothed.append(nabove[l].mean())
+        alpha_smoothed.append(nabove_smoothed[i] / invalphan[l].mean())
 
 
 # store template-dependent fit output
