@@ -50,24 +50,30 @@ def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None
     workflow += node
     return node.output_files[0]
 
+
 class PyCBCOptimalSNRExecutable(Executable):
     """Compute optimal SNR for injections"""
-
     current_retention_level = Executable.ALL_TRIGGERS
+
     def create_node(self, workflow, inj_file, precalc_psd_files, group_str):
         node = Node(self)
         node.add_input_opt('--input-file', inj_file)
         node.add_opt('--injection-fraction-range', group_str)
         node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
-        node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+        node.new_output_file_opt(workflow.analysis_time, '.xml',
+                                 '--output-file')
         return node
 
+
 class PyCBCOptimalSNRMergeExecutable(Executable):
+    """Combine optimal SNR files into one file"""
     current_retention_level = Executable.MERGED_TRIGGERS
+
     def create_node(self, workflow, opt_snr_split_files):
         node = Node(self)
         node.add_input_list_opt('--input-files', opt_snr_split_files)
-        node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+        node.new_output_file_opt(workflow.analysis_time, '.xml',
+                                 '--output-file')
         return node
 
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
@@ -85,7 +91,8 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         group_str = '%s/%s' % (i, factor)
         opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
                                                 ifos=workflow.ifos,
-                                                out_dir=out_dir, tags=tags + [str(i)])
+                                                out_dir=out_dir,
+                                                tags=tags + [str(i)])
         node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files,
                                        group_str)
         opt_snr_split_files += [node.output_files[0]]
