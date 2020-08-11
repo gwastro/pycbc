@@ -82,28 +82,37 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
     if tags is None:
         tags = []
 
-    factor = int(workflow.cp.get_opt_tags('workflow-optimal-snr',
-                                          'parallelization-factor',
-                                          tags))
+    try:
+        factor = int(workflow.cp.get_opt_tags('workflow-optimal-snr',
+                                              'parallelization-factor',
+                                              tags))
+        opt_snr_split_files = []
+        for i in range(factor):
+            group_str = '%s/%s' % (i, factor)
+            opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
+                                                    ifos=workflow.ifos,
+                                                    out_dir=out_dir,
+                                                    tags=tags + [str(i)])
+            node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files,
+                                           group_str)
+            opt_snr_split_files += [node.output_files[0]]
+            workflow += node
 
-    opt_snr_split_files = []
-    for i in range(factor):
-        group_str = '%s/%s' % (i, factor)
+        opt_snr_merge_exe = PyCBCOptimalSNRMergeExecutable(workflow.cp,
+                                                           'optimal_snr_merge',
+                                                           ifos=workflow.ifos,
+                                                           out_dir=out_dir,
+                                                           tags=tags)
+        merge_node = opt_snr_merge_exe.create_node(workflow,
+                                                   opt_snr_split_files)
+    except ConfigParser.Error:
+        # parallelization factor not given - default to single optimal snr job
         opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
-                                                ifos=workflow.ifos,
-                                                out_dir=out_dir,
-                                                tags=tags + [str(i)])
-        node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files,
-                                       group_str)
-        opt_snr_split_files += [node.output_files[0]]
-        workflow += node
-
-    opt_snr_merge_exe = PyCBCOptimalSNRMergeExecutable(workflow.cp,
-                                                       'optimal_snr_merge',
-                                                       ifos=workflow.ifos,
-                                                       out_dir=out_dir,
-                                                       tags=tags)
-    merge_node = opt_snr_merge_exe.create_node(workflow, opt_snr_split_files)
+                                                    ifos=workflow.ifos,
+                                                    out_dir=out_dir,
+                                                    tags=tags)
+        merge_node = node = opt_snr_exe.create_node(workflow, inj_file,
+                                                    precalc_psd_files, '0/1')
     workflow += merge_node
     return merge_node.output_files[0]
 
