@@ -50,7 +50,10 @@ for pa in args.input_file:
     if tpc is not None:
         label = str(ifo) + ': Harmonic mean  - ' + str(hmean(tpc))
         if args.duration_weighted:
-            label = str(ifo) + ': Average  - ' + str((tpc*w).mean())
+            avg_tpc = 1.0 / ( w / tpc).mean()
+        else:
+            avg_tpc = hmean(tpc)
+        label = str(ifo) + ': Harmonic mean  - ' + str(avg_tpc)
         ax1.hist(tpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label, weights=w)
         #ax1.set_title('Templates per Core')
         ax1.set_xlabel('Templates per Core')
