@@ -130,8 +130,16 @@ configuration.add_workflow_command_line_group(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg,
                     help='Prints version information.')
-parser.add_argument('--ninjections', required=True, type=int,
+parser.add_argument('--ninjections', type=int,
                     help='Number of injections to create.')
+parser.add_argument('--gps-start-time', type=int, help="Alternative to "
+                    "ninjections argument. Injections will be distributed "
+                    "in time by taking the cumulative sum of the tc values. "
+                    "The number will be chosen to fill the chosen time range. "
+parser.add_argument('--gps-end-time', type=int, help="Alternative to "
+                    "ninjections argument. Injections will be distributed "
+                    "in time by taking the cumulative sum of the tc values. "
+                    "The number will be chosen to fill the chosen time range. ")
 parser.add_argument('--seed', type=int, default=0,
                     help='Seed to use for the random number generator. '
                          'Default is 0.')
@@ -161,6 +169,9 @@ pycbc.init_logging(opts.verbose)
 if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
                   "overwrite it.")
+                  
+if opts.ninjections and (opts.gps_start_time or opts.gps_end_time):
+    raise ValueError("Cannot provide both ninjections and start/end time.")
 
 numpy.random.seed(opts.seed)
 
