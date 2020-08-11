@@ -118,6 +118,8 @@ if tcount: ntotal_smoothed = []
 alpha_smoothed = []
 rang = numpy.arange(0, len(nabove))
 
+# We handle the case of one-dimension specifically as it is easier to
+# increase computational peformance.
 if len(parvals) == 1:
     sort = parvals[0].argsort()
     parvals[0] = parvals[0][sort]
