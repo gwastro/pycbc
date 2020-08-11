@@ -104,7 +104,7 @@ nabove = fits['count_above_thresh'][:]
 nabove = nabove / numpy.mean(nabove)
 if tcount: ntotal = fits['count_in_template'][:]
 
-invalpha = 1. / fits['fit_coeff'][:] 
+invalpha = 1. / fits['fit_coeff'][:]
 invalphan = invalpha * nabove
 
 def dist(i1, i2):
@@ -125,9 +125,13 @@ if len(parvals) == 1:
     nabove = nabove[sort]
     invalphan = invalphan[sort]
 
+    # For each template, find the range of nearby templates which fall within
+    # the chosen window.
     left = numpy.searchsorted(parvals[0], parvals[0] - args.smoothing_width[0])
     right = numpy.searchsorted(parvals[0], parvals[0] + args.smoothing_width[0]) - 1
 
+    # precompute the sums so we can quickly look up differences between
+    # templates
     ntsum = ntotal.cumsum()
     nasum = nabove.cumsum()
     invsum = invalphan.cumsum()

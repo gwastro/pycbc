@@ -293,6 +293,7 @@ tsort = tid.argsort()
 tid = tid[tsort]
 stat = stat[tsort]
 
+# Get range of tid values which are the same
 left = np.searchsorted(tid, trange, side='left')
 right = np.searchsorted(tid, trange, side='right')
 
