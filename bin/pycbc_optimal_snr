@@ -97,8 +97,8 @@ class TimeVaryingPSD(object):
 def parse_injection_range(num_inj, rangestr):
     part = int(rangestr.split('/')[0])
     pieces = int(rangestr.split('/')[1])
-    tmin =  int(num_inj / float(pieces) * part)
-    tmax =  int(num_inj / float(pieces) * (part+1))
+    tmin =  num_inj * part // pieces
+    tmax =  num_inj * (part + 1) // pieces
     return tmin, tmax
 
 if __name__ == '__main__':
