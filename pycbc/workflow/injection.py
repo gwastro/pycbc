@@ -108,7 +108,6 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
     merge_node = llwadd_exe.create_node(workflow.analysis_time,
                                         opt_snr_split_files,
                                         use_tmp_subdirs=False)
-    merge_node.add_opt('--ilwdchar-compat')
     workflow += merge_node
 
     return merge_node.output_files[0]
