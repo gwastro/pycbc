@@ -35,6 +35,7 @@ from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
         PycbcDarkVsBrightInjectionsExecutable, LigolwAddExecutable)
+from six.moves import configparser as ConfigParser
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -75,7 +76,7 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         factor = int(workflow.cp.get_opt_tags('workflow-optimal-snr',
                                               'parallelization-factor',
                                               tags))
-    except:
+    except ConfigParser.Error:
         factor = 1
 
     if factor == 1:
