@@ -343,6 +343,8 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     # We may want to place this into a higher level frame getting tool
     if frame_type == 'LOSC_STRAIN':
         from pycbc.frame.losc import read_strain_losc
+        if not isinstance(channels, list):
+            channels = [channels]
         data = [read_strain_losc(c[:2], start_time, end_time) for c in channels]
         return data
     if frame_type == 'LOSC':
