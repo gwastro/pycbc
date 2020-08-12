@@ -82,9 +82,8 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
     if factor == 1:
         # parallelization factor not given - default to single optimal snr job
         opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
-                                                    ifos=workflow.ifos,
-                                                    out_dir=out_dir,
-                                                    tags=tags)
+                                                ifos=workflow.ifos,
+                                                out_dir=out_dir, tags=tags)
         node = opt_snr_exe.create_node(workflow, inj_file,
                                        precalc_psd_files, '0/1')
         workflow += node
