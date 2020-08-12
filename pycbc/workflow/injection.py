@@ -30,12 +30,12 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 import logging
+from six.moves import configparser as ConfigParser
 from pycbc.workflow.core import FileList, make_analysis_dir, Node
 from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
         PycbcDarkVsBrightInjectionsExecutable, LigolwAddExecutable)
-from six.moves import configparser as ConfigParser
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
