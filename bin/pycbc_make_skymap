@@ -13,6 +13,8 @@ import logging
 from pycbc import filter
 from pycbc.io import live
 from pycbc.types import TimeSeries, FrequencySeries
+from pycbc.pnutils import nearest_larger_binary_number
+from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc import frame
 from glue.ligolw import utils as ligolw_utils
 from ligo.gracedb.rest import GraceDb
@@ -61,7 +63,12 @@ def default_channel_name(time, ifo):
     raise ValueError('Interferometer {} not supported at time {}'.format(ifo, time))
     
 
-def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos, thresh_SNR, ligolw_skymap_output='.', ligolw_psd_output=None, ligolw_event_output=None, window_bins=300, frame_types=None, channel_names=None, gracedb_server=None, test_event=True, custom_frame_files=None):
+def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos, 
+         thresh_SNR, ligolw_skymap_output='.', ligolw_psd_output=None, 
+         ligolw_event_output=None, window_bins=300, 
+         frame_types=None, channel_names=None, 
+         gracedb_server=None, test_event=True, 
+         custom_frame_files=None, approximant=None):
 
     if not test_event and not gracedb_server:
         raise RuntimeError('a gracedb url must be specified if not a test event.')
@@ -91,29 +98,36 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos, th
 
     # parameters to fit a single-template inspiral job nicely
     # around the trigger time, without requiring too much data
-    segment_start_pad = 144
-    segment_end_pad = 16
-    segment_length = 256
-    gps_start_time = rough_time - segment_start_pad - (segment_length - segment_start_pad - segment_end_pad) // 2
-    gps_end_time = gps_start_time + segment_length
-    psd_segment_length = 16
-    psd_segment_stride = psd_segment_length / 2
-    psd_num_segments = 31
+    
+    # Padding set by 16 * 2 for psd and buffer for other filtering
+    pad = 60
+    template_duration = spa_length_in_time(mass1=mass1, mass2=mass2, 
+                                           f_lower=f_low, phase_order=-1)
+    segment_length = int(nearest_larger_binary_number(template_duration + pad))
+    # set minimum so there is enough for a psd estimate
+    if segment_length < 128:
+        segment_length = 128
+    logging.info('Using segment length: %s', segment_length) 
+    
+    gps_end_time = int(rough_time + pad // 2)
+    gps_start_time = gps_end_time - segment_length
+    logging.info("Using data: %s-%s", gps_start_time, gps_end_time)
+    
+    highpass_frequency = int(f_low * 0.7)
+    logging.info("Setting highpass: %s Hz", highpass_frequency)
 
     for i, ifo in enumerate(ifos):
         followup_data[ifo] = {}
         command = ["pycbc_single_template",
         "--verbose",
         "--segment-length", str(segment_length),
-        "--segment-start-pad", str(segment_start_pad),
-        "--segment-end-pad", str(segment_end_pad),
+        "--segment-start-pad", "0",
+        "--segment-end-pad", "0",
         "--psd-estimation","median",
-        "--psd-segment-length", str(psd_segment_length),
-        "--psd-segment-stride", str(psd_segment_stride),
-        "--psd-inverse-length", str(psd_segment_length),
-        "--approximant",'SPAtmplt:mtotal<4','SEOBNRv4_ROM:else',
+        "--psd-segment-length", "16",
+        "--psd-segment-stride", "8",
+        "--psd-inverse-length", "16",
         "--order","-1",
-        "--psd-num-segments", str(psd_num_segments),
         "--taper-data","1",
         "--allow-zero-padding",
         "--autogating-threshold","100",
@@ -121,10 +135,8 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos, th
         "--autogating-width","0.25",
         "--autogating-taper","0.25",
         "--autogating-pad","16",
-        "--minimum-chisq-bins","3",
-        "--strain-high-pass","15.",
-        "--pad-data","8",
-        "--template-start-frequency","27",
+        "--strain-high-pass", str(highpass_frequency),
+        "--pad-data", "8",
         "--chisq-bins",'0.72*get_freq("fSEOBNRv4Peak",params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7']
 
         coinc_results['foreground/'+ifo+'/end_time'] = float(trig_time)
@@ -139,6 +151,9 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos, th
         coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
         coinc_results['foreground/'+ifo+'/template_id'] = i
 
+        command.append("--approximant")
+        for apx in approximant:
+            command.append(apx)
         command.append("--sample-rate"),command.append(str(int(sample_rate)))
         command.append("--mass1"),command.append(str(mass1))
         command.append("--mass2"),command.append(str(mass2))
@@ -186,8 +201,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos, th
         command.append("--output-file"),command.append(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf")
         
         stderr_file = open(tmpdir + '/pycbc_single_template_{}_{}_stderr.txt'.format(str(rough_time), ifo), 'w')
-
-        procs.append(subprocess.Popen(command,stdout=subprocess.PIPE, stderr=stderr_file))
+        procs.append(subprocess.Popen(command,stdout=stderr_file, stderr=stderr_file))
 
     logging.info('Calculating SNR...')
     for proc in procs:
@@ -344,6 +358,8 @@ if __name__ == '__main__':
     parser.add_argument('--mass2', type=float, required=True)
     parser.add_argument('--spin1z', type=float, required=True)
     parser.add_argument('--spin2z', type=float, required=True)
+    parser.add_argument('--approximant', type=str, nargs='+',
+                        default=["SPAtmplt:mtotal<4", "SEOBNRv4_ROM:else"])
     parser.add_argument('--f-low', type=float,
                         help="lower frequency cut-off (float)", default=20.0)
     parser.add_argument('--f-upper', type=float,
@@ -387,4 +403,5 @@ if __name__ == '__main__':
          frame_types=frame_type_dict, channel_names=chan_name_dict,
          gracedb_server=opt.gracedb_server,
          test_event=not opt.enable_production_gracedb_upload,
-         custom_frame_files=custom_frame_dict)
+         custom_frame_files=custom_frame_dict,
+         approximant=opt.approximant)
