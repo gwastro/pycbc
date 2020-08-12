@@ -1,5 +1,11 @@
-_build
+_build/
+_include/
+pycbc-build/
+workflow/planning/
+workflow/pycbc-submit-dax-log.txt
 modules.rst
 pycbc.*.rst
 pycbc.rst
 conf.py
+_reuse.cache
+extra-properties.conf
