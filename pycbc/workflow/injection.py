@@ -34,7 +34,7 @@ from pycbc.workflow.core import FileList, make_analysis_dir, Node
 from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
-        PycbcDarkVsBrightInjectionsExecutable)
+        PycbcDarkVsBrightInjectionsExecutable, LigolwAddExecutable)
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -65,17 +65,6 @@ class PyCBCOptimalSNRExecutable(Executable):
         return node
 
 
-class PyCBCOptimalSNRMergeExecutable(Executable):
-    """Combine optimal SNR files into one file"""
-    current_retention_level = Executable.MERGED_TRIGGERS
-
-    def create_node(self, workflow, opt_snr_split_files):
-        node = Node(self)
-        node.add_input_list_opt('--input-files', opt_snr_split_files)
-        node.new_output_file_opt(workflow.analysis_time, '.xml',
-                                 '--output-file')
-        return node
-
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
     "Set up a job for computing optimal SNRs of a sim_inspiral file."
@@ -86,34 +75,42 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         factor = int(workflow.cp.get_opt_tags('workflow-optimal-snr',
                                               'parallelization-factor',
                                               tags))
-        opt_snr_split_files = []
-        for i in range(factor):
-            group_str = '%s/%s' % (i, factor)
-            opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
-                                                    ifos=workflow.ifos,
-                                                    out_dir=out_dir,
-                                                    tags=tags + [str(i)])
-            node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files,
-                                           group_str)
-            opt_snr_split_files += [node.output_files[0]]
-            workflow += node
+    except:
+        factor = 1
 
-        opt_snr_merge_exe = PyCBCOptimalSNRMergeExecutable(workflow.cp,
-                                                           'optimal_snr_merge',
-                                                           ifos=workflow.ifos,
-                                                           out_dir=out_dir,
-                                                           tags=tags)
-        merge_node = opt_snr_merge_exe.create_node(workflow,
-                                                   opt_snr_split_files)
-    except ConfigParser.Error:
+    if factor == 1:
         # parallelization factor not given - default to single optimal snr job
         opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
                                                     ifos=workflow.ifos,
                                                     out_dir=out_dir,
                                                     tags=tags)
-        merge_node = node = opt_snr_exe.create_node(workflow, inj_file,
-                                                    precalc_psd_files, '0/1')
+        node = opt_snr_exe.create_node(workflow, inj_file,
+                                       precalc_psd_files, '0/1')
+        workflow += node
+
+        return node.output_files[0]
+
+    opt_snr_split_files = []
+    for i in range(factor):
+        group_str = '%s/%s' % (i, factor)
+        opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
+                                                ifos=workflow.ifos,
+                                                out_dir=out_dir,
+                                                tags=tags + [str(i)])
+        node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files,
+                                       group_str)
+        opt_snr_split_files += [node.output_files[0]]
+        workflow += node
+
+    llwadd_exe = LigolwAddExecutable(workflow.cp, 'optimal_snr_merge',
+                                     ifos=workflow.ifos, out_dir=out_dir,
+                                     tags=tags)
+    merge_node = llwadd_exe.create_node(workflow.analysis_time,
+                                        opt_snr_split_files,
+                                        use_tmp_subdirs=False)
+    merge_node.add_opt('--ilwdchar-compat')
     workflow += merge_node
+
     return merge_node.output_files[0]
 
 def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
