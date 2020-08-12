@@ -49,10 +49,11 @@ def strain_from_cli_multi_ifos(*args, **kwargs):
         try:
             return strain.from_cli_multi_ifos(*args, **kwargs)
         except RuntimeError as e:
+            exception = e
             count += 1
             sleep(10)
     # if get to here, we've tries 3 times and still got an error, so exit
-    raise RuntimeError(e)
+    raise RuntimeError(exception)
 
 
 #
