@@ -103,11 +103,10 @@ The veto definer file groups a set of flags together, defining what is meant as 
 
 When using a veto-definer we have access to "special" flag names corresponding to what's in the veto-definer. These special flag names are:
 
-`CAT_1`: All flags given the `category` value of 1 within the veto-definer file.
-`CAT_2`: All flags given the `category` value of 2 within the veto-definer file.
-`CAT_H`: All flags given the `category` value of 3 within the veto-definer file. 
-There's some history/confusion here : since S6 we've been storing hardware injections in the `category=3` field of the veto-definer. Don't worry about that, this just means all hardware injection flags.
-`CAT_3`. All flags given the `category` value of 4 within the veto-definer file. As mentioned above, this is where category 3 vetoes are traditionally stored. These vetoes have not been used since the start of Advanced LIGO/Virgo, so we can probably ignore this now.
+* `CAT_1`: All flags given the `category` value of 1 within the veto-definer file.
+* `CAT_2`: All flags given the `category` value of 2 within the veto-definer file.
+* `CAT_H`: All flags given the `category` value of 3 within the veto-definer file. There's some history/confusion here: since S6 we've been storing hardware injections in the `category=3` field of the veto-definer. Don't worry about that, this just means all hardware injection flags.
+* `CAT_3`. All flags given the `category` value of 4 within the veto-definer file. As mentioned above, this is where category 3 vetoes are traditionally stored. These vetoes have not been used since the start of Advanced LIGO/Virgo, so we can probably ignore this now.
 
 Examples of using these flags are given at the top. All of the stuff below also applies to these "special" flags, but some of these combinations may be a little odd.
 
@@ -149,6 +148,23 @@ At the moment it is not possible to provide a flag that is active in two distinc
 Valid times must also be provided after the flag name and version. If providing *both* this and a padding it would look like:
 
 `+H1:SCIENCE:1<-8:8>[0:1000000000]` or `-H1:SCIENCE:1<-8:8>[0:1000000000]`
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Obtaining segments from pre-existing XML files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of obtaining science and veto segments from a segment database and veto
+definer file, they can be read directly from XML segment files. This can be
+useful, for example, to test new kinds of vetoes. To do this, use the following
+options in the `[workflow-segments]` section:
+
+* `segments-source = file`
+* `segments-science-file = /path/to/science/segments/file.xml`
+* `segments-vetoes-file = /path/to/veto/segments/file.xml`
+
+In order for this to work, the `name` field of the `segment_definer` tables of
+the science and vetoes files should be set to `science` and `vetoes`
+respectively.
 
 
 ==========
