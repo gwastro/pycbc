@@ -97,6 +97,8 @@ class SingleCoincForGraceDB(object):
             Dictionary providing PSD estimates for all involved detectors.
         low_frequency_cutoff: float
             Minimum valid frequency for the PSD estimates.
+        high_frequency_cutoff: float, optional
+            Maximum frequency considered for the PSD estimates. Default None.
         followup_data: dict of dicts, optional
             Dictionary providing SNR time series for each detector,
             to be used in sky localization with BAYESTAR. The format should
