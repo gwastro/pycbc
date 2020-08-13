@@ -94,6 +94,13 @@ class TimeVaryingPSD(object):
             self._curr_psd_index[curr_pid] = index
         return self._curr_psd[curr_pid]
 
+def parse_injection_range(num_inj, rangestr):
+    part = int(rangestr.split('/')[0])
+    pieces = int(rangestr.split('/')[1])
+    tmin =  num_inj * part // pieces
+    tmax =  num_inj * (part + 1) // pieces
+    return tmin, tmax
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", action=pycbc.version.Version)
@@ -147,6 +154,9 @@ if __name__ == '__main__':
                            help='Instead of time-independent PSDs, use time-varying '
                            'PSDs from the given HDF5 files and pick the appropriate '
                            'PSD for each injection')
+    parser.add_argument('--injection-fraction-range', default='0/1',
+                        help='Optional, analyze only a certain range of the '
+                             'injections. Format PART/NUM_PARTS')
     opts = parser.parse_args()
 
     detectors = opts.snr_columns.keys()
@@ -236,6 +246,12 @@ if __name__ == '__main__':
 
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
+
+    # Cut inj_table down to the range defined by opts.injection_fraction_range
+    num_injections = len(inj_table)
+    imin, imax = parse_injection_range(num_injections,
+                                       opts.injection_fraction_range)
+    inj_table = inj_table[imin:imax]
 
     if opts.cores > 1:
         logging.info('Starting workers')
