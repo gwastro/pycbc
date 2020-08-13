@@ -297,12 +297,13 @@ stat = stat[tsort]
 left = np.searchsorted(tid, trange, side='left')
 right = np.searchsorted(tid, trange, side='right')
 
+logging.info("Fitting ...")
 for j, tnum in enumerate(trange):
     stat_in_template = stat[left[j]:right[j]]
     count_above = len(stat_in_template)
     count_total = count_in_template[tnum]
     if count_above == 0:
-        # 'stupid' value to indicate no data, shouldn't hurt if 1/alpha is averaged
+        # default/sentinel value to indicate no data, shouldn't hurt if 1/alpha is averaged
         alpha = -100.
     else:
         alpha, sig_alpha = trstats.fit_above_thresh(
@@ -319,15 +320,13 @@ for j, tnum in enumerate(trange):
                                                     (tnum - tmin, tmax - tmin))
 
 logging.info("Calculating median sigma for each template")
-
 sigma_regions = trigf[args.ifo + '/sigmasq_template'][:]
 median_sigma = []
 for reg in sigma_regions:
     strigs = trigf[args.ifo + '/sigmasq'][reg]
-    median_sigma.append(np.median(strigs)**0.5)
+    median_sigma.append(np.median(strigs) ** 0.5)
 
 outfile = h5py.File(args.output, 'w')
-# store template-dependent fit output
 outfile.create_dataset("template_id", data=trange)
 outfile.create_dataset("count_above_thresh", data=counts_above)
 outfile.create_dataset("fit_coeff", data=fits)
@@ -346,4 +345,3 @@ outfile.attrs.create("analysis_time", data=total_time)
 
 outfile.close()
 logging.info('Done!')
-
