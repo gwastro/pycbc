@@ -58,7 +58,9 @@ parser.add_argument('--include-summary-page-link', action='store_true',
 parser.add_argument('--include-gracedb-link', action='store_true',
     help="If given, will provide a link to search GraceDB for events "
          "within a 3s window around the coincidence time.")
-
+parser.add_argument('--significance-file',
+    help="If given, will search for this trigger's id in the file to see if "
+         "stat and p_astro values exists for this trigger.")
 
 
 args = parser.parse_args()
@@ -69,9 +71,9 @@ pycbc.init_logging(args.verbose)
 sngl_file = hdf.SingleDetTriggers(args.single_trigger_file, args.bank_file,
                 args.veto_file, args.veto_segment_name, None, args.instrument)
 
-
 if args.trigger_id is not None:
     sngl_file.mask = [args.trigger_id]
+    trig_id = args.trigger_id
     sngl_file.mask_to_n_loudest_clustered_events(n_loudest=1,
                                       ranking_statistic=args.ranking_statistic)
     stat = sngl_file.stat[0]
@@ -119,7 +121,7 @@ data[0].append('%5.2f' % sngl_file.get_column('coa_phase'))
 data[0].append('%5.2f' % stat)
 headers.append("&rho;")
 headers.append("Phase")
-headers.append("Stat")
+headers.append(sngl_file.stat_name)
 
 # Signal-glitch discrimators
 data[0].append('%5.2f' % sngl_file.rchisq)
@@ -150,6 +152,20 @@ headers.append("M<sub>c</sub>")
 headers.append("s<sub>1z</sub>")
 headers.append("s<sub>2z</sub>")
 headers.append("Duration")
+
+if args.significance_file and not args.n_loudest:
+    with hdf.HFile(args.significance_file, 'r') as sig_f:
+        trigger_ids = sig_f['foreground'][args.instrument]['trigger_id'][:]
+        sngl_stat = sig_f['foreground/stat'][:]
+        sngl_pastro = sig_f['foreground/p_astro_exc'][:]
+
+    if trig_id in trigger_ids:
+        trig_idx = numpy.nonzero(trigger_ids == trig_id)[0][0]
+        headers.append("Single-detector statistic")
+        data[0].append("%.2f" % sngl_stat[trig_idx])
+        headers.append("Single-detector p_astro")
+        pastro_form = "%.3f" if sngl_pastro[trig_idx] >= 0.001 else "%.3e"
+        data[0].append(pastro_form % sngl_pastro[trig_idx])
 
 # GraceDB search link
 if args.include_gracedb_link:
