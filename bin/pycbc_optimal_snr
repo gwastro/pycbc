@@ -101,6 +101,18 @@ def parse_injection_range(num_inj, rangestr):
     tmax =  num_inj * (part + 1) // pieces
     return tmin, tmax
 
+def get_gc_end_time(injection):
+    """Return the geocenter end time of an injection. Required for seamless
+    compatibility with LIGOLW and HDF injection objects, which use different
+    names.
+    """
+    try:
+        # geocent time is robust to potentially incomplete sim tables
+        return injection.geocent_end_time
+    except AttributeError:
+        return injection.tc
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", action=pycbc.version.Version)
@@ -211,11 +223,7 @@ if __name__ == '__main__':
 
     def compute_optimal_snr(inj):
         for det, column in opts.snr_columns.items():
-            # geocent time is robust to potentially incomplete sim tables
-            try:
-                injection_time = inj.geocent_end_time
-            except AttributeError:
-                injection_time = inj.tc
+            injection_time = get_gc_end_time(inj)
             psd = psds[det](injection_time)
             if psd is None:
                 continue
@@ -267,7 +275,7 @@ if __name__ == '__main__':
         np.random.seed(100)
         sort_func = lambda x: np.random.random()
     elif opts.input_sort == 'time':
-        sort_func = lambda x: x.geocent_end_time
+        sort_func = get_gc_end_time
     inj_table = sorted(inj_table, key=sort_func)
 
     if ligolw:
@@ -303,10 +311,7 @@ if __name__ == '__main__':
         new_inj_table.append(inj)
 
     # always store injections sorted by coalescence time
-    try:
-        new_inj_table.sort(key=lambda x: x.geocent_end_time)
-    except AttributeError:
-        new_inj_table.sort(key=lambda x: x.tc)
+    new_inj_table.sort(key=get_gc_end_time)
 
     if not ligolw:
         new_inj_table = pycbc.io.FieldArray.from_records(
