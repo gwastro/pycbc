@@ -124,7 +124,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.16.7'
+        vinfo.version = '1.16.8'
         vinfo.release = 'True'
 
     with open('pycbc/version.py', 'w') as f:
