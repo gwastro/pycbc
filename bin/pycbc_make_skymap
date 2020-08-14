@@ -63,9 +63,9 @@ def default_channel_name(time, ifo):
     raise ValueError('Interferometer {} not supported at time {}'.format(ifo, time))
     
 
-def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos, 
-         thresh_SNR, ligolw_skymap_output='.', ligolw_psd_output=None, 
-         ligolw_event_output=None, window_bins=300, 
+def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
+         ifar, ifos, thresh_SNR, ligolw_skymap_output='.',
+         ligolw_psd_output=None, ligolw_event_output=None, window_bins=300, 
          frame_types=None, channel_names=None, 
          gracedb_server=None, test_event=True, 
          custom_frame_files=None, approximant=None):
@@ -92,7 +92,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos,
             channel_names[ifo] = default_channel_name(trig_time, ifo)
 
     rough_time = int(np.round(trig_time))
-    sample_rate = 2048.0
+    
     window = 1.
     start_time = trig_time - window
 
@@ -197,7 +197,9 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos,
                 logging.info("Trigger time should be within your frame file(s)")
                 logging.info("Exit the program")
                 sys.exit()
-            command.append("--frame-files"),command.append(custom_frame)
+            command.append("--frame-files")
+            for custom_frame in custom_frame_files[ifo]:
+                command.append(custom_frame)
         # till here
         command.append("--channel-name")
         command.append(channel_names[ifo])
@@ -206,6 +208,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, ifar, ifos,
         command.append("--output-file"),command.append(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf")
         
         stderr_file = open(tmpdir + '/pycbc_single_template_{}_{}_stderr.txt'.format(str(rough_time), ifo), 'w')
+        
         procs.append(subprocess.Popen(command,stdout=stderr_file, stderr=stderr_file))
 
     logging.info('Calculating SNR...')
@@ -369,6 +372,8 @@ if __name__ == '__main__':
                         help="lower frequency cut-off (float)", default=20.0)
     parser.add_argument('--f-upper', type=float,
                         help="upper frequency cut-off (float)")
+    parser.add_argument('--sample-rate', type=float, default=2048.0,
+                        help='sample rate of the data')
     parser.add_argument('--ifar', type=float, help="false alarm rate (float)",
                         default=1)
     parser.add_argument('--thresh-SNR', type=float, help="Threshold SNR (float)",
@@ -401,8 +406,8 @@ if __name__ == '__main__':
     
 
     main(opt.trig_time, opt.mass1, opt.mass2,
-         opt.spin1z, opt.spin2z, opt.f_low, opt.f_upper, opt.ifar, opt.ifos,
-         opt.thresh_SNR, opt.ligolw_skymap_output,
+         opt.spin1z, opt.spin2z, opt.f_low, opt.f_upper, opt.sample_rate,
+         opt.ifar, opt.ifos, opt.thresh_SNR, opt.ligolw_skymap_output,
          opt.ligolw_psd_output, opt.ligolw_event_output,
          frame_types=frame_type_dict, channel_names=chan_name_dict,
          gracedb_server=opt.gracedb_server,
