@@ -110,6 +110,7 @@ def noise_from_psd(length, delta_t, psd, seed=None):
 
     psd = (psd[0:n]).lal()
     psd.data.data[n-1] = 0
+    psd.data.data[0] = 0
 
     segment = TimeSeries(zeros(N), delta_t=delta_t).lal()
     length_generated = 0
