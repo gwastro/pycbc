@@ -36,7 +36,7 @@ def default_frame_type(time, ifo):
             return 'V1Online'
         elif ifo in ['H1', 'L1']:
             return ifo + '_HOFT_C00'
-    raise ValueError('Interferometer {} not supported at time {}'.format(ifo, time))
+    raise ValueError('Detector {} not supported at time {}'.format(ifo, time))
 
 def default_channel_name(time, ifo):
     """Sensible defaults for channel name based on interferometer and time.
@@ -57,14 +57,13 @@ def default_channel_name(time, ifo):
             return ifo + ':Hrec_hoft_16384Hz'
         elif ifo in ['H1', 'L1']:
             return ifo + ':GDS-CALIB_STRAIN'
-    raise ValueError('Interferometer {} not supported at time {}'.format(ifo, time))
-    
+    raise ValueError('Detector {} not supported at time {}'.format(ifo, time))
 
 def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          ifar, ifos, thresh_SNR, ligolw_skymap_output='.',
          ligolw_event_output=None, window_bins=300,
-         frame_types=None, channel_names=None, 
-         gracedb_server=None, test_event=True, 
+         frame_types=None, channel_names=None,
+         gracedb_server=None, test_event=True,
          custom_frame_files=None, approximant=None):
 
     if not test_event and not gracedb_server:
@@ -87,27 +86,27 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             channel_names[ifo] = default_channel_name(trig_time, ifo)
 
     rough_time = int(np.round(trig_time))
-    
+
     window = 1.
     start_time = trig_time - window
 
     # parameters to fit a single-template inspiral job nicely
     # around the trigger time, without requiring too much data
-    
+
     # Padding set by 16 * 2 for psd and buffer for other filtering
     pad = 60
-    template_duration = spa_length_in_time(mass1=mass1, mass2=mass2, 
+    template_duration = spa_length_in_time(mass1=mass1, mass2=mass2,
                                            f_lower=f_low, phase_order=-1)
     segment_length = int(nearest_larger_binary_number(template_duration + pad))
     # set minimum so there is enough for a psd estimate
     if segment_length < 128:
         segment_length = 128
-    logging.info('Using segment length: %s', segment_length) 
-    
+    logging.info('Using segment length: %s', segment_length)
+
     gps_end_time = int(rough_time + pad // 2)
     gps_start_time = gps_end_time - segment_length
     logging.info("Using data: %s-%s", gps_start_time, gps_end_time)
-    
+
     highpass_frequency = int(f_low * 0.7)
     logging.info("Setting highpass: %s Hz", highpass_frequency)
 
@@ -235,7 +234,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         coinc_results['foreground/'+ifo+'/delta_f'] = float(g[1][0])-float(g[0][0])
         coinc_results['foreground/'+ifo+'/event_id'] = 'sngl_inspiral:event_id:'+str(i)
         df = float(g[1][0])-float(g[0][0])
-        dt = 1.0/sample_rate 
+        dt = 1.0/sample_rate
 
         snr_series_peak = np.argmax(np.absolute(coinc_results['foreground/'+ifo+'/snr_series']))
         SNR=abs(coinc_results['foreground/'+ifo+'/snr_series'][snr_series_peak])
@@ -393,14 +392,14 @@ if __name__ == '__main__':
     parser.add_argument('--channel-name', type=str, nargs='+')
     parser.add_argument('--ligolw-skymap-output', type=str, default='.',
                         help='Option to output sky map files to directory')
-    parser.add_argument('--ligolw-event-output', type=str, default=None,
+    parser.add_argument('--ligolw-event-output', type=str,
                         help='Option to keep coinc file under given name')
     parser.add_argument('--enable-production-gracedb-upload',
                         action='store_true', default=False,
                         help='Do not mark triggers uploaded to GraceDB as test '
                              'events. This option should *only* be enabled in '
                              'production analyses!')
-    parser.add_argument('--gracedb-server', metavar='URL', default=None,
+    parser.add_argument('--gracedb-server', metavar='URL',
                         help='URL of GraceDB server API for uploading events.')
     parser.add_argument('--custom-frame-file', type=str, nargs='+',
                         action=MultiDetOptionAppendAction,
