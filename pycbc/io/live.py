@@ -4,12 +4,12 @@ import pycbc
 import numpy
 import lal
 import json
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw.param import Param as LIGOLWParam
-from glue.ligolw.array import Array as LIGOLWArray
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
+from ligo.lw.param import Param as LIGOLWParam
+from ligo.lw.array import Array as LIGOLWArray
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
@@ -143,7 +143,7 @@ class SingleCoincForGraceDB(object):
         outdoc.appendChild(ligolw.LIGO_LW())
 
         proc_id = ligolw_process.register_to_xmldoc(
-            outdoc, 'pycbc', {}, ifos=usable_ifos, comment='',
+            outdoc, 'pycbc', {}, instruments=usable_ifos, comment='',
             version=pycbc_version.version,
             cvs_repository='pycbc/'+pycbc_version.git_branch,
             cvs_entry_time=pycbc_version.date).process_id

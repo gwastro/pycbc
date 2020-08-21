@@ -24,10 +24,10 @@ import numpy as np
 from utils import parse_args_cpu_only, simple_exit
 from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.io.live import SingleCoincForGraceDB
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import table
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import table
+from ligo.lw import utils as ligolw_utils
 from lal import series as lalseries
 
 # if we have the GraceDb module then we can do deeper tests,
