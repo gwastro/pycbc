@@ -5,18 +5,15 @@ Runs a single-template matched filter on strain data from a number of detectors
 and calls BAYESTAR to produce a sky localization from the resulting set of SNR
 time series."""
 
-import h5py, sys, pycbc, os, subprocess, argparse, json, tempfile, shutil
-import time as TIME
+import h5py, pycbc, subprocess, argparse, tempfile, shutil
 import numpy as np
-import lal
 import logging
-from pycbc import filter
+from pycbc.filter import sigmasq
 from pycbc.io import live
 from pycbc.types import TimeSeries, FrequencySeries, MultiDetOptionAppendAction
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc import frame
-from glue.ligolw import utils as ligolw_utils
 from ligo.gracedb.rest import GraceDb
 
 
@@ -65,15 +62,13 @@ def default_channel_name(time, ifo):
 
 def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          ifar, ifos, thresh_SNR, ligolw_skymap_output='.',
-         ligolw_psd_output=None, ligolw_event_output=None, window_bins=300, 
+         ligolw_event_output=None, window_bins=300,
          frame_types=None, channel_names=None, 
          gracedb_server=None, test_event=True, 
          custom_frame_files=None, approximant=None):
 
     if not test_event and not gracedb_server:
-        raise RuntimeError('a gracedb url must be specified if not a test event.')
-
-    start = TIME.time()
+        raise RuntimeError('a GraceDB URL must be specified if not a test event.')
 
     tmpdir = tempfile.mkdtemp()
     coinc_results = {}
@@ -166,58 +161,72 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append("--gps-end-time"),command.append(str(gps_end_time))
         command.append("--trigger-time"),command.append(str(np.round(trig_time,5)))
         command.append("--window"),command.append(str(window))
-        
 
-        if custom_frame_files is None:
+        if custom_frame_files is None or ifo not in custom_frame_files:
             command.append("--frame-type")
             command.append(frame_types[ifo])
         else:
-            logging.info("check if the segment in the custom frame file is safe")
+            logging.info("Check if the segment in the custom frame file is safe")
             fr_start_times = []
             fr_end_times = []
             for custom_frame in custom_frame_files[ifo]:
                 try:
                     frame_data = frame.read_frame(custom_frame, channel_names[ifo])
                 except RuntimeError:
-                    logging.info("Channel name in {} is not {}".format(custom_frame, channel_names[ifo]))
-                    logging.info("Unable to open it")
-                    logging.info("Exit the program")
-                    sys.exit(1)
+                    msg = 'Channel name in {} is not {}'.format(
+                            custom_frame, channel_names[ifo])
+                    raise RuntimeError(msg)
                 fr_start_times.append(frame_data.start_time)
                 fr_end_times.append(frame_data.end_time)
             if gps_start_time < np.min(fr_start_times):
-                logging.info("Start time of {} should be before the required start time {}".format(np.min(fr_start_times), gps_start_time))
-                logging.info("Exit the program")
-                sys.exit(1)
+                msg = 'Start time of {} must be before the required start time {}'
+                msg = msg.format(np.min(fr_start_times), gps_start_time)
+                raise RuntimeError(msg)
             if np.max(fr_end_times) < gps_end_time:
-                logging.info("End time of {} should be after the required end time {}".format(np.max(fr_end_times), gps_end_time))
-                logging.info("Exit the program")
-                sys.exit(1)
+                msg = 'End time of {} must be after the required end time {}'
+                msg = msg.format(np.max(fr_end_times), gps_end_time)
+                raise RuntimeError(msg)
             if trig_time < np.min(fr_start_times) or np.max(fr_end_times) < trig_time:
-                logging.info("Trigger time should be within your frame file(s)")
-                logging.info("Exit the program")
-                sys.exit(1)
+                msg = 'Trigger time must be within your frame file(s)'
+                raise RuntimeError(msg)
+
             command.append("--frame-files")
             for custom_frame in custom_frame_files[ifo]:
                 command.append(custom_frame)
-        # till here
+
         command.append("--channel-name")
         command.append(channel_names[ifo])
 
-        command.append("--psd-output"),command.append(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
-        command.append("--output-file"),command.append(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf")
-        
-        stderr_file = open(tmpdir + '/pycbc_single_template_{}_{}_stderr.txt'.format(str(rough_time), ifo), 'w')
-        
-        #TODO: This call should probably not redirect the stderr.
-        #      Makes debugging difficult.
-        procs.append(subprocess.Popen(command,stdout=stderr_file, stderr=stderr_file))
+        command.append("--psd-output")
+        command.append(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
+        command.append("--output-file")
+        command.append(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf")
 
-    logging.info('Calculating SNR...')
-    for proc in procs:
+        log_path = tmpdir + '/pycbc_single_template_{}_{}_log.txt'.format(str(rough_time), ifo)
+        log_file = open(log_path, 'w')
+        log_file.write(' '.join(command) + '\n\n')
+        log_file.flush()
+
+        proc = subprocess.Popen(command, stdout=log_file, stderr=log_file)
+        procs.append((ifo, proc, log_path, log_file))
+
+    logging.info('Waiting for pycbc_single_template to complete')
+
+    snr_errors = False
+    for ifo, proc, log_path, log_file in procs:
         proc.wait()
+        if proc.returncode != 0:
+            logging.error('%s pycbc_single_template failed, see %s',
+                          ifo, log_path)
+            snr_errors = True
+        log_file.close()
+    if snr_errors:
+        raise RuntimeError('one or more pycbc_single_template failed, '
+                           'please see the messages above for details.')
 
-    for i,ifo in enumerate(ifos):
+    logging.info('Gathering info from pycbc_single_template results')
+
+    for i, ifo in enumerate(ifos):
         f = h5py.File(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf",'r')
         g = np.loadtxt(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
 
@@ -239,18 +248,16 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             continue
 
         coinc_results['foreground/'+ifo+'/snr'] = SNR
-        coinc_results['foreground/'+ifo+'/sigmasq'] = filter.sigmasq(FrequencySeries(np.complex128(f['template'][()]), delta_f=df),
-                                                      psd=FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'], delta_f=df))
+        coinc_results['foreground/'+ifo+'/sigmasq'] = \
+                sigmasq(FrequencySeries(np.complex128(f['template'][()]), delta_f=df),
+                        psd=FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'], delta_f=df))
         coinc_results['foreground/'+ifo+'/coa_phase'] = coa_phase
         coinc_results['foreground/'+ifo+'/chisq'] = chisq
-
 
     ifos = [x for x in ifos if x not in follow_up]
     if not ifos:
         raise RuntimeError('all interferometers have SNR below threshold.'
                            ' Is this really a candidate event?')
-
-    logging.info('SNR process time: %.2f s', TIME.time() - start)
 
     sumsq_snr = 0.0
     for i,ifo in enumerate(ifos):
@@ -293,7 +300,8 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             min_bin = peak_bin - window_bins
 
         epoch = time - window_bins*dt
-        series = TimeSeries(coinc_results['foreground/'+ifo+'/snr_series'][min_bin:max_bin].astype(np.complex64), delta_t=dt, epoch=epoch)
+        series = TimeSeries(coinc_results['foreground/'+ifo+'/snr_series'][min_bin:max_bin].astype(np.complex64),
+                            delta_t=dt, epoch=epoch)
         followup_data[ifo]['snr_series'] = series
 
     kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos + follow_up},
@@ -343,7 +351,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     shutil.move(skymap_fits_name, final_fits_dir)
     shutil.move(skymap_plot_name, final_png_dir)
 
-
     if gracedb_server:
         gracedb.writeLog(gid, 'Bayestar skymap FITS file upload',
                          filename=skymap_fits_name,
@@ -384,20 +391,22 @@ if __name__ == '__main__':
                         help='List of interferometer names, e.g. H1 L1')
     parser.add_argument('--frame-type', type=str, nargs='+')
     parser.add_argument('--channel-name', type=str, nargs='+')
-    parser.add_argument('--ligolw-skymap-output', type=str, default='.', help='Option to output sky map files to directory')
-    parser.add_argument('--ligolw-psd-output', type=str, default=None, help='Option to keep psd file under given name')
-    parser.add_argument('--ligolw-event-output', type=str, default=None, help='Option to keep coinc file under given name')
+    parser.add_argument('--ligolw-skymap-output', type=str, default='.',
+                        help='Option to output sky map files to directory')
+    parser.add_argument('--ligolw-event-output', type=str, default=None,
+                        help='Option to keep coinc file under given name')
     parser.add_argument('--enable-production-gracedb-upload',
                         action='store_true', default=False,
                         help='Do not mark triggers uploaded to GraceDB as test '
                              'events. This option should *only* be enabled in '
                              'production analyses!')
     parser.add_argument('--gracedb-server', metavar='URL', default=None,
-                        help='URL of GraceDB server API for uploading events. ')
+                        help='URL of GraceDB server API for uploading events.')
     parser.add_argument('--custom-frame-file', type=str, nargs='+',
                         action=MultiDetOptionAppendAction,
-                        help='lists of local frame files, e.g., H1:/path/to/frame/file L1:/path/to/frame/file')
-    
+                        help='Lists of local frame files, e.g., '
+                             'H1:/path/to/frame/file L1:/path/to/frame/file')
+
     opt = parser.parse_args()
 
     frame_type_dict = {f.split(':')[0]: f.split(':')[1] for f in opt.frame_type} \
@@ -405,12 +414,10 @@ if __name__ == '__main__':
     chan_name_dict = {f.split(':')[0]: f for f in opt.channel_name} \
             if opt.channel_name is not None else None
 
-    
-
     main(opt.trig_time, opt.mass1, opt.mass2,
          opt.spin1z, opt.spin2z, opt.f_low, opt.f_upper, opt.sample_rate,
          opt.ifar, opt.ifos, opt.thresh_SNR, opt.ligolw_skymap_output,
-         opt.ligolw_psd_output, opt.ligolw_event_output,
+         opt.ligolw_event_output,
          frame_types=frame_type_dict, channel_names=chan_name_dict,
          gracedb_server=opt.gracedb_server,
          test_event=not opt.enable_production_gracedb_upload,
