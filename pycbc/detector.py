@@ -444,3 +444,70 @@ class LISA(object):
             np.array([np.float32(earth.x), np.float32(earth.y),
                       np.float32(earth.z)]), right_ascension,
             declination, t_gps)
+
+    def interpolate_hij(self, hp, hc):
+        """Returns the values of hp, hc after
+            interpoalting it to the desired time
+        Parameters
+        ----------
+        ref_time : numpy.ScalarType
+            GPS time
+        hp, hc : pycbc.types.TimeSeries
+            Plus and cross polarizations in order
+        time : numpy.ndarray (3,1)
+            GPS time
+        Returns
+        -------
+        numpy.ndarray shape (3,1)
+            The values of hij at the required time
+        """
+        fhp = scipy.interpolate.interpolate.interp1d(hp.sample_times, hp)
+        fhc = scipy.interpolate.interpolate.interp1d(hc.sample_times, hc)
+        xnew = np.linspace(hp.sample_times[0], hp.sample_times[-1], len(hp)*100)
+        hp, hc = fhp(xnew), fhc(xnew)
+        fhp = pycbc.types.TimeSeries(hp, delta_t=1/len(hp))
+        fhc = pycbc.types.TimeSeries(hc, delta_t=1/len(hc))
+
+        return fhp, fhc
+
+    def eval_hij(self, hp, hc, k, ref_time, t):
+        """Returns the values of hij
+        Parameters
+        ----------
+        hp, hc : pycbc.types.TimeSeries
+            Plus and cross polarizations in order
+        k : numpy.ndarray shape(3,1)
+            Sky-loaction in Cartesian system
+        ref_time : numpy.ScalarType
+            GPS time
+        time : numpy.ScalarType
+            GPS time
+        Returns
+        -------
+        numpy.ndarray shape (3,1)
+            The values of hij at the required time
+        """
+
+        k=k/(k[0]**2 + k[1]**2+ k[2]**2)**.5
+
+        beta =  np.arcsin(-k[2])
+        theta = np.pi/2 - beta
+        lam =   np.arcsin(-k[1]/cos(beta))
+
+        e_theta = np.array([sin(beta)*cos(lam), sin(beta)*sin(lam), -cos(beta)])
+        e_phi = np.array([-sin(lam), cos(lam), 0])
+
+        u = np.copy(-e_phi)
+        v = np.copy(-e_theta)
+        phi = np.copy(lam)
+        psi = np.arctan((-sin(beta)*sin(theta)*cos(lam - phi) + cos(theta)*cos(beta)) / (sin(theta)*sin(lam-phi)))
+        epij = np.outer(u,u) - np.outer(v,v)
+        ecij = np.outer(u,v) + np.outer(v,u)
+
+        hp, hc = self.interpolate_hij(hp, hc)
+
+        hij = np.zeros((3,3))
+        hij[0,0:2] = (hp[t]*cos(2*psi) - hc[t]*sin(2*psi))*epij[0][0:2] + (hp[t]*sin(2*psi) - hc[t]*cos(2*psi))*ecij[0][0:2]
+        hij[1,0:2] = (hp[t]*cos(2*psi) - hc[t]*sin(2*psi))*epij[1][1:3] + (hp[t]*sin(2*psi) - hc[t]*cos(2*psi))*ecij[1][1:3]
+
+        return np.array(hij)
