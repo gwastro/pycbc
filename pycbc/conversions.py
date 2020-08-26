@@ -658,10 +658,10 @@ def spin_from_pulsar_freq(mass, radius, freq):
     freq : float
         The spin frequency of the pulsar, in Hz.
     """
-    omega = 2 * numpy.pi * freq 
-    mt = mass * lal.MTSUN_SI 
-    I = (2/3.) * mt * (radius * 1000 / lal.C_SI)**2 
-    return I * omega / mt**2 
+    omega = 2 * numpy.pi * freq
+    mt = mass * lal.MTSUN_SI
+    mominert = (2/3.) * mt * (radius * 1000 / lal.C_SI)**2
+    return mominert * omega / mt**2
 
 
 #
