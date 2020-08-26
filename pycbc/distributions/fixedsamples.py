@@ -109,8 +109,8 @@ class FixedSamples(object):
         return params
 
     def __call__(self, **kwds):
-        raise NotImplementedError("Fixed Sample distributions doesn't support"
-                                  "for evaluating a PDF")
+        """ Dummy function, not the actual pdf """
+        return 0
 
     @classmethod
     def from_config(cls, cp, section, tag):
