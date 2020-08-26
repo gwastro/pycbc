@@ -643,6 +643,27 @@ def dquadmon_from_lambda(lambdav):
     ln_quad_moment = ai + bi*ll + ci*ll**2.0 + di*ll**3.0 + ei*ll**4.0
     return numpy.exp(ln_quad_moment) - 1
 
+
+def spin_from_pulsar_freq(mass, radius, freq):
+    """Returns the dimensionless spin of a pulsar.
+
+    Assumes the pulsar is a solid sphere when computing the moment of inertia.
+
+    Parameters
+    ----------
+    mass : float
+        The mass of the pulsar, in solar masses.
+    radius : float
+        The assumed radius of the pulsar, in kilometers.
+    freq : float
+        The spin frequency of the pulsar, in Hz.
+    """
+    omega = 2 * numpy.pi * freq
+    mt = mass * lal.MTSUN_SI
+    mominert = (2/3.) * mt * (radius * 1000 / lal.C_SI)**2
+    return mominert * omega / mt**2
+
+
 #
 # =============================================================================
 #
@@ -1512,5 +1533,5 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'final_mass_from_initial', 'final_spin_from_initial',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
-           'nltides_gw_phase_diff_isco',
+           'nltides_gw_phase_diff_isco', 'spin_from_pulsar_freq',
           ]
