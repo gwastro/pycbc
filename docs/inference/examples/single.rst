@@ -4,11 +4,11 @@ Using the single template model
 
 The single template model is useful for when you know all the intrinsic parameters
 of your signal (say the masses, spins, etc of a merger). In this case, we don't
-need to recalculate the waveform model to sample different possible extrinsic 
+need to recalculate the waveform model to sample different possible extrinsic
 parameters (i.e. distance, sky location, inclination). This can greatly
 speed up the calculation of the likelihood. To use this model
 you provide the intrinsic parameters as fixed arguments as in the configuration
-file below. 
+file below.
 
 This example demonstrates using the ``single_template`` model with the
 ``emcee_pt`` sampler. First, we create the following configuration file:
@@ -30,7 +30,7 @@ Now run:
 
 .. literalinclude:: ../../../examples/inference/single/run.sh
    :language: bash
-   
+
 :download:`Download <../../../examples/inference/single/run.sh>`
 
 This will run the ``emcee_pt`` sampler. When it is done, you will have a file called
@@ -53,3 +53,16 @@ This will create the following plot:
 The scatter points show each walker's position after the last iteration. The
 points are colored by the log likelihood at that point, with the 50th and 90th
 percentile contours drawn.
+
+--------------------------------
+Advanced Configuration Examples
+--------------------------------
+
+The single template model also supports marginalization over the polarization
+angle by numerical sampling. The following example features two adanced options.
+This marginalization and also arbitrary sampling coordinates with nested samplers
+using the ``fixed_samples`` distribution. Here we sample in the time delay
+space rather than sky location directly.
+
+.. literalinclude:: ../../../examples/inference/single/single_adv.ini
+   :language: ini
