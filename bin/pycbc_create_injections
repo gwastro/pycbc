@@ -223,15 +223,21 @@ while True:
 
     # We are drawing until we hit a time so check if we've reached it
     if opts.gps_start_time:
+        if 'tc' in samples.fieldnames:
+            raise RuntimeError("A distribution was given for 'tc'. This is "
+                               "not compatible with providing start/end times.")
+
         if old_samples is not None:
             samples = numpy.concatenate([old_samples, samples])
+
         old_samples = samples
 
         # We have enough to cover out time span so we can fixup the times
         # and stop here
-        if samples['tc'].sum() > opts.gps_end_time - opts.gps_start_time:
-            samples = numpy.sort(samples, order='tc')
-            samples['tc'] = opts.gps_start_time + samples['tc'].cumsum()
+        if samples['time_delay'].sum() > opts.gps_end_time - opts.gps_start_time:
+            samples = numpy.sort(samples, order='time_delay')
+            tc = opts.gps_start_time + samples['time_delay'].cumsum()
+            samples = samples.add_fields([tc], ['tc'])
             samples = samples[samples['tc'] < opts.gps_end_time]
             logging.info('Total Injections: %s', len(samples))
             break
