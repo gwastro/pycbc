@@ -233,7 +233,7 @@ class JointDistribution(object):
         # note: this step may fail if arrays of values were provided, as
         # not all distributions are vectorized currently
         logps = numpy.array([d(**params) for d in self.distributions])
-        logp = logps.sum(axis=0)
+        logp = logps.sum(axis=0) + numpy.log(isin.astype(float))
         if numpy.isscalar(logp):
             logp = logp.item()
         return logp - self._logpdf_scale
