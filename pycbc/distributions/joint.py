@@ -219,22 +219,22 @@ class JointDistribution(object):
     def __call__(self, **params):
         """Evaluate joint distribution for parameters.
         """
-        # convert to Field array
-        parray, return_atomic = self._ensure_fieldarray(params)
         # check if statisfies constraints
-        isin = self.contains(parray)
-        if not isin.any():
-            if return_atomic:
-                out = -numpy.inf
-            else:
-                out = numpy.full(parray.shape, -numpy.inf)
-            return out
-        # evaulate
+        if len(self._constraints) != 0:
+            isin = self.contains(parray)
+            if not isin.any():
+                if numpy.isscalar(isin):
+                    out = -numpy.inf
+                else:
+                    out = numpy.full(parray.shape, -numpy.inf)
+                return out
+
+        # evaluate
         # note: this step may fail if arrays of values were provided, as
         # not all distributions are vectorized currently
         logps = numpy.array([d(**params) for d in self.distributions])
-        logp = logps.sum(axis=0) + numpy.log(isin.astype(float))
-        if return_atomic:
+        logp = logps.sum(axis=0)
+        if numpy.isscalar(logp):
             logp = logp.item()
         return logp - self._logpdf_scale
 
