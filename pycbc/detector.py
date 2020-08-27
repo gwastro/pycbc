@@ -467,8 +467,7 @@ class LISA(object):
         hp, hc = fhp(xnew), fhc(xnew)
         fhp = pycbc.types.TimeSeries(hp, delta_t=1/len(hp))
         fhc = pycbc.types.TimeSeries(hc, delta_t=1/len(hc))
-
-        return fhp, fhc
+        return fhp, fhc, xnew
 
     def eval_hij(self, hp, hc, k, ref_time, t):
         """Returns the values of hij
@@ -487,12 +486,10 @@ class LISA(object):
         numpy.ndarray shape (3,1)
             The values of hij at the required time
         """
-
-        k=k/(k[0]**2 + k[1]**2+ k[2]**2)**.5
-
-        beta =  np.arcsin(-k[2])
+        k=k/(k[0]**2 + k[1]**2 + k[2]**2)**.5
+        beta = np.arcsin(-k[2])
         theta = np.pi/2 - beta
-        lam =   np.arcsin(-k[1]/cos(beta))
+        lam = np.arcsin(-k[1]/cos(beta))
 
         e_theta = np.array([sin(beta)*cos(lam), sin(beta)*sin(lam), -cos(beta)])
         e_phi = np.array([-sin(lam), cos(lam), 0])
@@ -501,13 +498,59 @@ class LISA(object):
         v = np.copy(-e_theta)
         phi = np.copy(lam)
         psi = np.arctan((-sin(beta)*sin(theta)*cos(lam - phi) + cos(theta)*cos(beta)) / (sin(theta)*sin(lam-phi)))
-        epij = np.outer(u,u) - np.outer(v,v)
-        ecij = np.outer(u,v) + np.outer(v,u)
+        epij = np.outer(u, u) - np.outer(v, v)
+        ecij = np.outer(u, v) + np.outer(v, u)
 
-        hp, hc = self.interpolate_hij(hp, hc)
+        hp, hc, sample_time = self.interpolate_hij(hp, hc)
+        h = []
+        for i in range(len(t)):
+            t0 = np.abs(sample_time - t[i]).argmin()
+            hij = np.zeros((3, 3))
+            hij[0, 0:2] = (hp[t0]*cos(2*psi) - hc[t0]*sin(2*psi))*epij[0][0:2] + (hp[t0]*sin(2*psi) - hc[t0]*cos(2*psi))*ecij[0][0:2]
+            hij[1, 0:2] = (hp[t0]*cos(2*psi) - hc[t0]*sin(2*psi))*epij[1][1:3] + (hp[t0]*sin(2*psi) - hc[t0]*cos(2*psi))*ecij[1][1:3]
+            h.append(hij)
+        return np.array(h)
 
-        hij = np.zeros((3,3))
-        hij[0,0:2] = (hp[t]*cos(2*psi) - hc[t]*sin(2*psi))*epij[0][0:2] + (hp[t]*sin(2*psi) - hc[t]*cos(2*psi))*ecij[0][0:2]
-        hij[1,0:2] = (hp[t]*cos(2*psi) - hc[t]*sin(2*psi))*epij[1][1:3] + (hp[t]*sin(2*psi) - hc[t]*cos(2*psi))*ecij[1][1:3]
+    def GWresponse(self, ref_time, hp, hc, k):
+        """Returns the response to the GW signals
+        Parameters
+        ----------
+        ref_time : numpy.ScalarType
+            GPS time
+        hp, hc : pycbc.types.TimeSeries
+            Plus and cross polarizations in order
+        k : numpy.ndarray shape (3,1)
+            sky-location of the signal
+        Returns
+        -------
+        numpy.ndarray
+            The values of response to GW signals.
+        """
 
-        return np.array(hij)
+        guide_cen = np.transpose(np.mean(self.get_pos(ref_time), axis=1))
+        guide_cen.shape = (3, 1)
+        R = self.get_pos(ref_time) - guide_cen
+        L_l = np.array([R[:, 1] - R[:, 0], R[:, 2] - R[:, 1], R[:, 0] - R[:, 2]])
+        dist_L = np.array([np.sqrt(np.sum(L_l[0]**2)),
+                        np.sqrt(np.sum(L_l[1]**2)),
+                        np.sqrt(np.sum(L_l[2]**2))])
+
+        dist_L.shape = (3, 1)
+        n_hat = L_l/dist_L
+        kdotR = np.dot(k, R.transpose())
+        kdotn = np.dot(k, n_hat.transpose())
+        dist_L.shape = (3)
+        variation = np.array([0, 1, 2, 3, 4])
+        t1 = np.array([ref_time - kdotR - np.outer(variation[1:].transpose(), dist_L)]).reshape(4, 3)
+        t2 = np.array([ref_time - kdotR - np.outer(variation[:4].transpose(), dist_L)]).reshape(4, 3)
+
+        phi_l_t1, phi_l_t2, _phi_l_t2_ = [], [], []
+        for i in range(t1.shape[0]):
+            phi_l_t1.append(np.dot(np.dot(n_hat, np.transpose(self.eval_hij(hp, hc, k, ref_time, t1[i]))), np.transpose(n_hat)))
+            phi_l_t2.append(np.dot(np.dot(n_hat, np.transpose(self.eval_hij(hp, hc, k, ref_time, t2[i]))), np.transpose(n_hat)))
+            _phi_l_t2_.append(np.dot(np.dot(n_hat, np.transpose(self.eval_hij(hp, hc, k, ref_time, t2[i] + 2*kdotR))), np.transpose(n_hat)))
+
+        phi_l_t1, phi_l_t2, _phi_l_t2_ = np.array(phi_l_t1), np.array(phi_l_t2), np.array(_phi_l_t2_)
+        val = 2*(1 - kdotn)
+
+        return np.array([phi_l_t1, phi_l_t2, _phi_l_t2_]), val, kdotn
