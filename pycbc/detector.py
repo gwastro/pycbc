@@ -36,6 +36,7 @@ from astropy.time import Time
 from astropy import constants, coordinates, units
 from astropy.units.si import sday
 from numpy import cos, sin
+from scipy import interpolate
 
 # Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
@@ -345,7 +346,7 @@ class LISA(object):
         n = np.array(range(1, 4))
         kappa, _lambda_ = 0, 0
         alpha = 2. * np.pi * ref_time/1 + kappa
-        beta_n = (n - 1) * 2.0 * pi / 3.0 + _lambda_
+        beta_n = (n - 1) * 2.0 * np.pi / 3.0 + _lambda_
         a, L = 1., 0.03342293561
         e = L/(2. * a * np.sqrt(3))
 
@@ -461,12 +462,12 @@ class LISA(object):
         numpy.ndarray shape (3,1)
             The values of hij at the required time
         """
-        fhp = scipy.interpolate.interpolate.interp1d(hp.sample_times, hp)
-        fhc = scipy.interpolate.interpolate.interp1d(hc.sample_times, hc)
+        fhp = interpolate.interpolate.interp1d(hp.sample_times, hp)
+        fhc = interpolate.interpolate.interp1d(hc.sample_times, hc)
         xnew = np.linspace(hp.sample_times[0], hp.sample_times[-1], len(hp)*100)
         hp, hc = fhp(xnew), fhc(xnew)
-        fhp = pycbc.types.TimeSeries(hp, delta_t=1/len(hp))
-        fhc = pycbc.types.TimeSeries(hc, delta_t=1/len(hc))
+        fhp = TimeSeries(hp, delta_t=1/len(hp))
+        fhc = TimeSeries(hc, delta_t=1/len(hc))
         return fhp, fhc, xnew
 
     def eval_hij(self, hp, hc, k, ref_time, t):
