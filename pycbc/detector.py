@@ -486,21 +486,18 @@ class LISA(object):
         numpy.ndarray shape (3,1)
             The values of hij at the required time
         """
-        k=k/(k[0]**2 + k[1]**2 + k[2]**2)**.5
+        k = k/(k[0]**2 + k[1]**2 + k[2]**2)**.5
         beta = np.arcsin(-k[2])
         theta = np.pi/2 - beta
         lam = np.arcsin(-k[1]/cos(beta))
-
         e_theta = np.array([sin(beta)*cos(lam), sin(beta)*sin(lam), -cos(beta)])
         e_phi = np.array([-sin(lam), cos(lam), 0])
-
         u = np.copy(-e_phi)
         v = np.copy(-e_theta)
         phi = np.copy(lam)
         psi = np.arctan((-sin(beta)*sin(theta)*cos(lam - phi) + cos(theta)*cos(beta)) / (sin(theta)*sin(lam-phi)))
         epij = np.outer(u, u) - np.outer(v, v)
         ecij = np.outer(u, v) + np.outer(v, u)
-
         hp, hc, sample_time = self.interpolate_hij(hp, hc)
         h = []
         for i in range(len(t)):
@@ -526,7 +523,6 @@ class LISA(object):
         numpy.ndarray
             The values of response to GW signals.
         """
-
         guide_cen = np.transpose(np.mean(self.get_pos(ref_time), axis=1))
         guide_cen.shape = (3, 1)
         R = self.get_pos(ref_time) - guide_cen
@@ -534,23 +530,52 @@ class LISA(object):
         dist_L = np.array([np.sqrt(np.sum(L_l[0]**2)),
                         np.sqrt(np.sum(L_l[1]**2)),
                         np.sqrt(np.sum(L_l[2]**2))])
-
         dist_L.shape = (3, 1)
         n_hat = L_l/dist_L
         kdotR = np.dot(k, R.transpose())
         kdotn = np.dot(k, n_hat.transpose())
         dist_L.shape = (3)
-        variation = np.array([0, 1, 2, 3, 4])
-        t1 = np.array([ref_time - kdotR - np.outer(variation[1:].transpose(), dist_L)]).reshape(4, 3)
-        t2 = np.array([ref_time - kdotR - np.outer(variation[:4].transpose(), dist_L)]).reshape(4, 3)
 
-        phi_l_t1, phi_l_t2, _phi_l_t2_ = [], [], []
-        for i in range(t1.shape[0]):
-            phi_l_t1.append(np.dot(np.dot(n_hat, np.transpose(self.eval_hij(hp, hc, k, ref_time, t1[i]))), np.transpose(n_hat)))
-            phi_l_t2.append(np.dot(np.dot(n_hat, np.transpose(self.eval_hij(hp, hc, k, ref_time, t2[i]))), np.transpose(n_hat)))
-            _phi_l_t2_.append(np.dot(np.dot(n_hat, np.transpose(self.eval_hij(hp, hc, k, ref_time, t2[i] + 2*kdotR))), np.transpose(n_hat)))
-
-        phi_l_t1, phi_l_t2, _phi_l_t2_ = np.array(phi_l_t1), np.array(phi_l_t2), np.array(_phi_l_t2_)
+        phi_t1, phi_t2, phi_t_2 = [], [], []
+        for i in range(3):
+            for j in range(4):
+                t1 = ref_time - kdotR - dist_L[0] - j*dist_L[0]
+                t2 = ref_time - kdotR - j*dist_L[0]
+                phi_t1.append(np.dot(np.dot(n_hat[i], np.transpose(self.eval_hij(hp, hc, k, ref_time, t1))), n_hat[i].transpose()))
+                phi_t2.append(np.dot(np.dot(n_hat[i], np.transpose(self.eval_hij(hp, hc, k, ref_time, t2))), n_hat[i].transpose()))
+                phi_t_2.append(np.dot(np.dot(n_hat[i], np.transpose(self.eval_hij(hp, hc, k, ref_time, t2 + 2*kdotR))), n_hat[i].transpose()))
         val = 2*(1 - kdotn)
+        return np.array([phi_t1, phi_t2, phi_t_2]), val, kdotn
 
-        return np.array([phi_l_t1, phi_l_t2, _phi_l_t2_]), val, kdotn
+
+    def eval_XYZ(self, ref_time, hp, hc, k):
+        """Returns the values of X, Y, Z
+        Parameters
+        ----------
+        ref_time : numpy.ScalarType
+            GPS time
+        signal : numpy.ndarray
+            signal at that time
+        k : numpy.ndarray shape (3,1)
+            sky-location of the signal
+        Returns
+        -------
+        numpy.ndarray shape (3,1)
+            The values of X, Y, Z at the ref_time.
+        """
+        data = self.GWresponse(ref_time, hp, hc, k)
+        Phi, den, kdotn = data[0], data[1], data[2]
+
+        cycle = [([0, 1, 2] * 2)[x:x+3] for i in range(3) for x in [i % len([0, 1, 2])]]
+        xyz = np.zeros(3)
+        for i in range(3):
+            a,b,c = cycle[i]
+            xyz[i] = np.array([(Phi[0][3][a] - Phi[1][3][b])/(den + 4*kdotn)[c] +
+                               (Phi[0][2][b] - Phi[2][2][a])/den[c] +
+                               (Phi[0][1][b] - Phi[2][1][a])/den[c] +
+                               (Phi[0][0][c] - Phi[1][0][a])/(den + 4*kdotn)[b] -
+                               (Phi[0][3][a] - Phi[2][3][c])/den[b] -
+                               (Phi[0][2][c] - Phi[1][2][a])/(den + 4*kdotn)[b] -
+                               (Phi[0][1][a] - Phi[1][1][b])/(den + 4*kdotn)[c] -
+                               (Phi[0][0][b] - Phi[2][0][a])/den[c]])
+        return xyz    
