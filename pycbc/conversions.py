@@ -684,7 +684,7 @@ def distance_from_chirp_distance_mchirp(chirp_distance, mchirp, ref_mass=1.4):
 
 
 _detector_cache = {}
-def det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
+def det_tc(detector_name, ra, dec, tc, ref_frame='geocentric', relative=False):
     """Returns the coalescence time of a signal in the given detector.
 
     Parameters
@@ -706,16 +706,20 @@ def det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
     float :
         The GPS time of the coalescence in detector `detector_name`.
     """
+    ref_time = tc
+    if relative:
+        tc = 0
+
     if ref_frame == detector_name:
         return tc
     if detector_name not in _detector_cache:
         _detector_cache[detector_name] = Detector(detector_name)
     detector = _detector_cache[detector_name]
     if ref_frame == 'geocentric':
-        return tc + detector.time_delay_from_earth_center(ra, dec, tc)
+        return tc + detector.time_delay_from_earth_center(ra, dec, ref_time)
     else:
         other = Detector(ref_frame)
-        return tc + detector.time_delay_from_detector(other, ra, dec, tc)
+        return tc + detector.time_delay_from_detector(other, ra, dec, ref_time)
 
 def optimal_orientation_from_detector(detector_name, tc):
     """ Low-level function to be called from _optimal_dec_from_detector
