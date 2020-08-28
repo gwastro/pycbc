@@ -112,7 +112,7 @@ class EpsieAdaptiveAngularProposal(epsie_proposals.AdaptiveAngularProposal):
         Example::
 
             [jump_proposal-ra]
-            name = adaptive_angular
+            name = adaptive_angular_proposal
             adaptation-duration = 1000
 
         Parameters
@@ -127,7 +127,7 @@ class EpsieAdaptiveAngularProposal(epsie_proposals.AdaptiveAngularProposal):
 
         Returns
         -------
-        :py:class:`epsie.proposals.AdaptiveAngular`:
+        :py:class:`epsie.proposals.AdaptiveAngularProposal`:
             An adaptive angular proposal for use with ``epsie`` samplers.
         """
         return epsie_adaptive_proposal_from_config(cls, cp, section, tag,
