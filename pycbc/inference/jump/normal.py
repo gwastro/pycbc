@@ -100,6 +100,42 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
                                           boundary_arg_name='prior_widths')
 
 
+class EpsieAdaptiveProposal(epsie_proposals.AdaptiveProposal):
+    """Adds ``from_config`` method to epsie's adaptive proposal."""
+
+    @classmethod
+    def from_config(cls, cp, section, tag):
+        """Loads a proposal from a config file.
+
+        This calls :py:func:`epsie_from_config` with ``cls`` set to
+        :py:class:`epsie.proposals.AdaptiveProposal` and ``with_boundaries``
+        set to False. See that function for details on options that can be read.
+
+        Example::
+
+            [jump_proposal-mchrip+q]
+            name = adaptive_proposal
+            diagonal = False
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser instance
+            Config file to read from.
+        section : str
+            The name of the section to look in.
+        tag : str
+            :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names
+            to create proposals for.
+
+        Returns
+        -------
+        :py:class:`epsie.proposals.AdaptiveProposal`:
+            An adaptive proposal for use with ``epsie`` samplers.
+        """
+        return epsie_adaptive_proposal_from_config(cls, cp, section, tag,
+                                                   with_boundaries=False)
+
+
 def epsie_from_config(cls, cp, section, tag, with_boundaries=False):
     r"""Generic function for loading epsie proposals from a config file.
 
@@ -250,6 +286,81 @@ def epsie_adaptive_from_config(cls, cp, section, tag, with_boundaries=True,
     return cls(**args)
 
 
+def epsie_adaptive_proposal_from_config(cls, cp, section, tag,
+                                        with_boundaries=False):
+    """Generic function for loading adaptive epsie proposals from a config
+    file.
+
+    The section that is read should have the format ``[{section}-{tag}]``,
+    where ``{tag}`` is a :py:const:`pycbc.VARARGS_DELIM` separated list
+    of the parameters to create the jump proposal for.
+
+    Options that are read:
+
+    * name : str
+        Required. Must match the name of the proposal.
+    * diagonal : bool
+        Determines whether only to adapt the variance. If False will adapt
+        the elements' covariance. If not provided will use the class's
+        default.
+    * adaptation-duration : int
+        Sets the ``adaptation_duration``. If not provided will use the class's
+        default.
+    * min-{param} : float
+    * max-{param} : float
+        The bounds on each parameter. Required if ``with_boundaries`` is set to
+        True, in which case bounds must be provided for every parameter.
+    * start-iteration : int
+        Optional. Sets the ``start_iteration``. If not provided, will use
+        the class's default.
+    * target-rate : float
+        Optional. Sets the ``target_rate``. If not provided, will use
+        the class's default.
+
+    Parameters
+    ----------
+    cls : epsie.proposals.BaseProposal
+        The epsie proposal class to initialize. The class should have
+        :py:class:`epsie.proposals.normal.AdaptiveSupport`.
+    cp : WorkflowConfigParser instance
+        Config file to read from.
+    section : str
+        The name of the section to look in.
+    tag : str
+        :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names
+        to create proposals for.
+    with_boundaries : bool, optional
+        Try to load boundaries from the section and pass a ``boundaries``
+        argument to the class's initialization. Default is True.
+
+    Returns
+    -------
+    cls :
+        The class initialized with the options read from the config file.
+    """
+    # check that the name matches
+    assert cp.get_opt_tag(section, "name", tag) == cls.name, (
+        "name in specified section must match mine")
+    params, opts = load_opts(cp, section, tag, skip=['name'])
+    args = {'parameters': params}
+    # get the bounds
+    if with_boundaries:
+        args['boundaries'] = get_param_boundaries(params, opts)
+    # get the adaptation parameters
+    args.update(get_epsie_adaptation_settings(opts, cls.name))
+    # bounded and angular adaptive proposals support diagonal-only
+    if any(p in cls.name.split('_') for p in ['bounded', 'angular']):
+        try:
+            if not args['diagonal']:
+                raise ValueError("Angular and bounded adaptive proposals "
+                                 "do not support `diagonal=False`")
+            else:
+                __ = args.pop('diagonal', None)
+        except KeyError:
+            pass
+    return cls(**args)
+
+
 def load_opts(cp, section, tag, skip=None):
     """Loads config options for jump proposals.
 
@@ -352,7 +463,7 @@ def get_param_boundaries(params, opts):
     return boundaries
 
 
-def get_epsie_adaptation_settings(opts):
+def get_epsie_adaptation_settings(opts, name=None):
     """Get settings for Epsie adaptive proposals from a config file.
 
     This requires that ``adaptation_duration`` is in the given dictionary.
@@ -365,6 +476,8 @@ def get_epsie_adaptation_settings(opts):
     opts : dict
         Dictionary of option -> value that was loaded from a config file
         section.
+    name : str (optional)
+        Proposal name
 
     Returns
     -------
@@ -374,8 +487,13 @@ def get_epsie_adaptation_settings(opts):
     args = {}
     adaptation_duration = opts.pop('adaptation_duration', None)
     if adaptation_duration is None:
-        raise ValueError("No adaptation_duration specified")
-    args['adaptation_duration'] = int(adaptation_duration)
+        if name is not None:
+            if all(p in name.split('_') for p in ['adaptive', 'proposal']):
+                args.update({'adaptation_duration': None})
+        else:
+            raise ValueError("No adaptation_duration specified")
+    else:
+        args.update({'adaptation_duration': int(adaptation_duration)})
     # optional args
     adaptation_decay = opts.pop('adaptation_decay', None)
     if adaptation_decay is not None:
@@ -386,4 +504,13 @@ def get_epsie_adaptation_settings(opts):
     target_rate = opts.pop('target_rate', None)
     if target_rate is not None:
         args.update({'target_rate': float(target_rate)})
+    diagonal = opts.pop('diagonal', None)
+    if diagonal is not None:
+        if diagonal == 'True':
+            diagonal = True
+        elif diagonal == 'False':
+            diagonal = False
+        else:
+            raise ValueError("diagonal only supports ``True`` or ``False``")
+        args.update({'diagonal': diagonal})
     return args

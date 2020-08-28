@@ -20,7 +20,8 @@ from __future__ import absolute_import
 
 from epsie import proposals as epsie_proposals
 
-from .normal import (epsie_from_config, epsie_adaptive_from_config)
+from .normal import (epsie_from_config, epsie_adaptive_from_config,
+                     epsie_adaptive_proposal_from_config)
 
 
 class EpsieAngular(epsie_proposals.Angular):
@@ -94,3 +95,40 @@ class EpsieAdaptiveAngular(epsie_proposals.AdaptiveAngular):
         """
         return epsie_adaptive_from_config(cls, cp, section, tag,
                                           with_boundaries=False)
+
+class EpsieAdaptiveAngularProposal(epsie_proposals.AdaptiveAngularProposal):
+    """Adds ``from_config`` method to epsie's adaptive angular proposal."""
+
+    @classmethod
+    def from_config(cls, cp, section, tag):
+        r"""Loads a proposal from a config file.
+
+        This calls :py:func:`epsie_adaptive_from_config` with ``cls`` set to
+        :py:class:`epsie.proposals.AdaptiveBoundedNormal` and
+        ``with_boundaries`` set to False (since the boundaries for the angular
+        proposals are always :math:`[0, 2\pi)`). See that function
+        for details on options that can be read.
+
+        Example::
+
+            [jump_proposal-ra]
+            name = adaptive_angular
+            adaptation-duration = 1000
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser instance
+            Config file to read from.
+        section : str
+            The name of the section to look in.
+        tag : str
+            :py:const:`pycbc.VARARGS_DELIM` separated list of parameter names
+            to create proposals for.
+
+        Returns
+        -------
+        :py:class:`epsie.proposals.AdaptiveAngular`:
+            An adaptive angular proposal for use with ``epsie`` samplers.
+        """
+        return epsie_adaptive_proposal_from_config(cls, cp, section, tag,
+                                                   with_boundaries=False)

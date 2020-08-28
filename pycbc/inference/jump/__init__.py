@@ -17,9 +17,11 @@
 from __future__ import absolute_import
 
 
-from .normal import (EpsieNormal, EpsieAdaptiveNormal)
-from .bounded_normal import (EpsieBoundedNormal, EpsieAdaptiveBoundedNormal)
-from .angular import (EpsieAngular, EpsieAdaptiveAngular)
+from .normal import (EpsieNormal, EpsieAdaptiveNormal, EpsieAdaptiveProposal)
+from .bounded_normal import (EpsieBoundedNormal, EpsieAdaptiveBoundedNormal,
+                             EpsieAdaptiveBoundedProposal)
+from .angular import (EpsieAngular, EpsieAdaptiveAngular,
+                      EpsieAdaptiveAngularProposal)
 from .discrete import (EpsieNormalDiscrete, EpsieBoundedDiscrete,
                        EpsieAdaptiveNormalDiscrete,
                        EpsieAdaptiveBoundedDiscrete)
@@ -28,10 +30,13 @@ from .discrete import (EpsieNormalDiscrete, EpsieBoundedDiscrete,
 epsie_proposals = {
     EpsieNormal.name: EpsieNormal,
     EpsieAdaptiveNormal.name: EpsieAdaptiveNormal,
+    EpsieAdaptiveProposal.name: EpsieAdaptiveProposal,
     EpsieBoundedNormal.name: EpsieBoundedNormal,
     EpsieAdaptiveBoundedNormal.name: EpsieAdaptiveBoundedNormal,
+    EpsieAdaptiveBoundedProposal.name: EpsieAdaptiveBoundedProposal,
     EpsieAngular.name: EpsieAngular,
     EpsieAdaptiveAngular.name: EpsieAdaptiveAngular,
+    EpsieAdaptiveAngularProposal.name: EpsieAdaptiveAngularProposal,
     EpsieNormalDiscrete.name: EpsieNormalDiscrete,
     EpsieAdaptiveNormalDiscrete.name: EpsieAdaptiveNormalDiscrete,
     EpsieBoundedDiscrete.name: EpsieBoundedDiscrete,
