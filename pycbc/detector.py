@@ -446,79 +446,92 @@ class LISA(object):
                       np.float32(earth.z)]), right_ascension,
             declination, t_gps)
 
-    def interpolate_hij(self, hp, hc):
-        """Returns the values of hp, hc after
-            interpoalting it to the desired time
+    def interpolate_waveform(self, hp, hc):
+        """Returns the interpolated waveform
         Parameters
         ----------
-        ref_time : numpy.ScalarType
-            GPS time
         hp, hc : pycbc.types.TimeSeries
-            Plus and cross polarizations in order
-        time : numpy.ndarray (3,1)
-            GPS time
+            plus and cross polarizations in order
         Returns
         -------
-        numpy.ndarray shape (3,1)
-            The values of hij at the required time
+        numpy.ndarray
+            interpolated waveform
         """
-        fhp = interpolate.interpolate.interp1d(hp.sample_times, hp)
-        fhc = interpolate.interpolate.interp1d(hc.sample_times, hc)
-        xnew = np.linspace(hp.sample_times[0], hp.sample_times[-1], len(hp)*100)
-        hp, hc = fhp(xnew), fhc(xnew)
-        fhp = TimeSeries(hp, delta_t=1/len(hp))
-        fhc = TimeSeries(hc, delta_t=1/len(hc))
-        return fhp, fhc, xnew
+        fhp = scipy.interpolate.interpolate.interp1d(hp.sample_times, hp)
+        fhc = scipy.interpolate.interpolate.interp1d(hc.sample_times, hc)
+        return fhp(hp.sample_times), fhc(hc.sample_times)
 
-    def eval_hij(self, hp, hc, k, ref_time, t):
+    def eval_k(self, beta, lam):
+        """Returns the unit propogation vector
+        Parameters
+        ----------
+        beta, lam : numpy.Scalar
+            position of the source in the sky in spherical coordinates
+        Returns
+        -------
+        numpy.ndarray shape (1,3)
+        """
+        k = np.array([-cos(beta)*cos(lam), -cos(beta)*sin(lam), -sin(beta)])
+        return k/(k[0]**2 + k[1]**2 + k[2]**2)**.5
+
+    def eval_pol_tensor(self, beta, lam):
+        """Evaluates the polarization basis tensors
+        Parameters
+        ----------
+        beta, lam : numpy.Scalar
+            position of the source in the sky in spherical coordinates
+        Returns
+        -------
+        epij, ecij : two numpy.ndarray shape (3,3)
+            polarization basis tensors in order
+        """
+        u = np.array([-sin(beta)*cos(lam), -sin(beta)*sin(lam), cos(beta)])
+        v = np.array([sin(lam), -cos(lam), 0])
+        return np.outer(u, u) - np.outer(v, v), np.outer(u, v) + np.outer(v, u)
+
+    def eval_hij(self, waveform, beta, lam, t):
         """Returns the values of hij
         Parameters
         ----------
-        hp, hc : pycbc.types.TimeSeries
-            Plus and cross polarizations in order
-        k : numpy.ndarray shape(3,1)
-            Sky-loaction in Cartesian system
-        ref_time : numpy.ScalarType
-            GPS time
-        time : numpy.ScalarType
+        waveform : array of pycbc.types.TimeSeries
+            plus and cross polarizations in order
+        beta, lam : numpy.Scalar
+            position of the source in the sky in spherical coordinates
+        t : numpy.ndarray
             GPS time
         Returns
         -------
         numpy.ndarray shape (3,1)
             The values of hij at the required time
         """
-        k = k/(k[0]**2 + k[1]**2 + k[2]**2)**.5
-        beta = np.arcsin(-k[2])
+        hp, hc = waveform
+        epij, ecij = self.eval_pol_tensor(beta, lam)
         theta = np.pi/2 - beta
-        lam = np.arcsin(-k[1]/cos(beta))
-        e_theta = np.array([sin(beta)*cos(lam), sin(beta)*sin(lam), -cos(beta)])
-        e_phi = np.array([-sin(lam), cos(lam), 0])
-        u = np.copy(-e_phi)
-        v = np.copy(-e_theta)
         phi = np.copy(lam)
-        psi = np.arctan((-sin(beta)*sin(theta)*cos(lam - phi) + cos(theta)*cos(beta)) / (sin(theta)*sin(lam-phi)))
-        epij = np.outer(u, u) - np.outer(v, v)
-        ecij = np.outer(u, v) + np.outer(v, u)
-        hp, hc, sample_time = self.interpolate_hij(hp, hc)
+        psi = np.arctan((-sin(beta)*sin(theta)*cos(lam - phi) + \
+                         cos(theta)*cos(beta)) / (sin(theta)*sin(lam - phi)))
+        fhp, fhc = self.interpolate_waveform(hp, hc)
         h = []
         for i in range(len(t)):
-            t0 = np.abs(sample_time - t[i]).argmin()
+            t0 = np.abs(hp.sample_times.data - t[i]).argmin()
             hij = np.zeros((3, 3))
-            hij[0, 0:2] = (hp[t0]*cos(2*psi) - hc[t0]*sin(2*psi))*epij[0][0:2] + (hp[t0]*sin(2*psi) - hc[t0]*cos(2*psi))*ecij[0][0:2]
-            hij[1, 0:2] = (hp[t0]*cos(2*psi) - hc[t0]*sin(2*psi))*epij[1][1:3] + (hp[t0]*sin(2*psi) - hc[t0]*cos(2*psi))*ecij[1][1:3]
+            hij[0, 0:2] = (fhp[t0]*cos(2*psi) - fhc[t0]*sin(2*psi))*epij[0][0:2] + \
+                          (fhp[t0]*sin(2*psi) - fhc[t0]*cos(2*psi))*ecij[0][0:2]
+            hij[1, 0:2] = (fhp[t0]*cos(2*psi) - fhc[t0]*sin(2*psi))*epij[1][1:3] + \
+                          (fhp[t0]*sin(2*psi) - fhc[t0]*cos(2*psi))*ecij[1][1:3]
             h.append(hij)
         return np.array(h)
 
-    def GWresponse(self, ref_time, hp, hc, k):
+    def GWresponse(self, waveform, beta, lam, ref_time):
         """Returns the response to the GW signals
         Parameters
         ----------
-        ref_time : numpy.ScalarType
+        waveform : array of pycbc.types.TimeSeries
+            plus and cross polarizations in order
+        beta, lam : numpy.Scalar
+            position of the source in the sky in spherical coordinates
+        ref_time : numpy.Scalar
             GPS time
-        hp, hc : pycbc.types.TimeSeries
-            Plus and cross polarizations in order
-        k : numpy.ndarray shape (3,1)
-            sky-location of the signal
         Returns
         -------
         numpy.ndarray
@@ -529,10 +542,11 @@ class LISA(object):
         R = self.get_pos(ref_time) - guide_cen
         L_l = np.array([R[:, 1] - R[:, 0], R[:, 2] - R[:, 1], R[:, 0] - R[:, 2]])
         dist_L = np.array([np.sqrt(np.sum(L_l[0]**2)),
-                        np.sqrt(np.sum(L_l[1]**2)),
-                        np.sqrt(np.sum(L_l[2]**2))])
+                           np.sqrt(np.sum(L_l[1]**2)),
+                           np.sqrt(np.sum(L_l[2]**2))])
         dist_L.shape = (3, 1)
         n_hat = L_l/dist_L
+        k = self.eval_k(beta, lam)
         kdotR = np.dot(k, R.transpose())
         kdotn = np.dot(k, n_hat.transpose())
         dist_L.shape = (3)
@@ -542,29 +556,38 @@ class LISA(object):
             for j in range(4):
                 t1 = ref_time - kdotR - dist_L[0] - j*dist_L[0]
                 t2 = ref_time - kdotR - j*dist_L[0]
-                phi_t1.append(np.dot(np.dot(n_hat[i], np.transpose(self.eval_hij(hp, hc, k, ref_time, t1))), n_hat[i].transpose()))
-                phi_t2.append(np.dot(np.dot(n_hat[i], np.transpose(self.eval_hij(hp, hc, k, ref_time, t2))), n_hat[i].transpose()))
-                phi_t_2.append(np.dot(np.dot(n_hat[i], np.transpose(self.eval_hij(hp, hc, k, ref_time, t2 + 2*kdotR))), n_hat[i].transpose()))
+
+                phi_t1.append(np.dot(np.dot(n_hat[i],
+                              np.transpose(self.eval_hij(waveform, beta, lam, t1))),
+                              n_hat[i].transpose()))
+
+                phi_t2.append(np.dot(np.dot(n_hat[i],
+                              np.transpose(self.eval_hij(waveform, beta, lam, t2))),
+                              n_hat[i].transpose()))
+
+                phi_t_2.append(np.dot(np.dot(n_hat[i],
+                               np.transpose(self.eval_hij(waveform, beta, lam, t2 + 2*kdotR))),
+                               n_hat[i].transpose()))
+
         val = 2*(1 - kdotn)
         return np.array([phi_t1, phi_t2, phi_t_2]), val, kdotn
 
 
-    def eval_XYZ(self, ref_time, hp, hc, k):
+    def eval_XYZ(self, waveform, beta, lam, ref_time):
         """Returns the values of X, Y, Z
         Parameters
         ----------
-        ref_time : numpy.ScalarType
+        waveform : array of pycbc.types.TimeSeries
+            plus and cross polarizations in order
+        beta, lam : numpy.Scalar
+            position of the source in the sky in spherical coordinates
+        ref_time : numpy.Scalar
             GPS time
-        signal : numpy.ndarray
-            signal at that time
-        k : numpy.ndarray shape (3,1)
-            sky-location of the signal
-        Returns
         -------
         numpy.ndarray shape (3,1)
             The values of X, Y, Z at the ref_time.
         """
-        data = self.GWresponse(ref_time, hp, hc, k)
+        data = self.GWresponse(waveform, beta, lam, ref_time)
         Phi, den, kdotn = data[0], data[1], data[2]
 
         cycle = [([0, 1, 2] * 2)[x:x+3] for i in range(3) for x in [i % len([0, 1, 2])]]
@@ -579,4 +602,20 @@ class LISA(object):
                                (Phi[0][2][c] - Phi[1][2][a])/(den + 4*kdotn)[b] -
                                (Phi[0][1][a] - Phi[1][1][b])/(den + 4*kdotn)[c] -
                                (Phi[0][0][b] - Phi[2][0][a])/den[c]])
-        return xyz    
+        return xyz 
+
+    def eval_AET_from_XYZ(self, xyz):
+        """Evaluates the values of E A T
+        Parameters
+        ----------
+        xyz : numpy.ndarray shape (1,3)
+            X, Y, Z in order
+        Returns
+        -------
+        E A T : numpy.ndarray shape (1,3)
+        """
+        X, Y, Z = xyz[0], xyz[1], xyz[2]
+        E = (X - 2*Y + Z) / 6**.5
+        A = (Z - X) / 2**.5
+        T = (X + Y + Z) / 3**.5
+        return E, A, T
