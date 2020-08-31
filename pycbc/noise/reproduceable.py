@@ -32,7 +32,7 @@ SAMPLE_RATE = 16384
 BLOCK_SIZE = 100
 FILTER_LENGTH = 128
 
-def block(seed):
+def block(seed, SAMPLE_RATE = 16384):
     """ Return block of normal random numbers
 
     Parameters
@@ -50,7 +50,7 @@ def block(seed):
     variance = SAMPLE_RATE / 2
     return rng.normal(size=num, scale=variance**0.5)
 
-def normal(start, end, seed=0):
+def normal(start, end, seed=0, SAMPLE_RATE = 16384):
     """ Generate data with a white Gaussian (normal) distribution
 
     Parameters
@@ -80,7 +80,7 @@ def normal(start, end, seed=0):
     ts = TimeSeries(data, delta_t=1.0 / SAMPLE_RATE, epoch=start)
     return ts.time_slice(start, end)
 
-def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
+def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0, SAMPLE_RATE = 16384):
     """ Create noise from a PSD
 
     Return noise from the chosen PSD. Note that if unique noise is desired
@@ -161,6 +161,10 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     colored = white_noise.to_timeseries()
     del white_noise
     return colored.time_slice(start_time, end_time)
+
+def LISA_colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=.01):
+    return colored_noise(psd, start_time, end_time, seed=seed,
+                         low_frequency_cutoff=low_frequency_cutoff, SAMPLE_RATE = 10)
 
 def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """ Create noise from an analytic PSD
