@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from epsie import proposals as epsie_proposals
 
 from .normal import (epsie_from_config, epsie_adaptive_from_config,
-                     epsie_adaptive_proposal_from_config)
+                     epsie_at_adaptive_from_config)
 
 
 class EpsieBoundedNormal(epsie_proposals.BoundedNormal):
@@ -99,7 +99,7 @@ class EpsieAdaptiveBoundedNormal(epsie_proposals.AdaptiveBoundedNormal):
         return epsie_adaptive_from_config(cls, cp, section, tag)
 
 
-class EpsieAdaptiveBoundedProposal(epsie_proposals.AdaptiveBoundedProposal):
+class EpsieATAdaptiveBoundedNormal(epsie_proposals.ATAdaptiveBoundedNormal):
     """Adds ``from_config`` method to epsie's adaptive bounded proposal."""
 
     @classmethod
@@ -132,5 +132,5 @@ class EpsieAdaptiveBoundedProposal(epsie_proposals.AdaptiveBoundedProposal):
         :py:class:`epsie.proposals.AdaptiveBoundedProposal`:
             An adaptive bounded proposal for use with ``epsie`` samplers.
         """
-        return epsie_adaptive_proposal_from_config(cls, cp, section, tag,
-                                                   with_boundaries=True)
+        return epsie_at_adaptive_from_config(cls, cp, section, tag,
+                                             with_boundaries=True)

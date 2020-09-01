@@ -100,8 +100,8 @@ class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
                                           boundary_arg_name='prior_widths')
 
 
-class EpsieAdaptiveProposal(epsie_proposals.AdaptiveProposal):
-    """Adds ``from_config`` method to epsie's adaptive proposal."""
+class EpsieATAdaptiveNormal(epsie_proposals.ATAdaptiveNormal):
+    """Adds ``from_config`` method to epsie's ATAdaptiveProposal."""
 
     @classmethod
     def from_config(cls, cp, section, tag):
@@ -109,13 +109,14 @@ class EpsieAdaptiveProposal(epsie_proposals.AdaptiveProposal):
 
         This calls :py:func:`epsie_from_config` with ``cls`` set to
         :py:class:`epsie.proposals.AdaptiveProposal` and ``with_boundaries``
-        set to False. See that function for details on options that can be read.
+        set to False. See that function for details on options that can be
+        read.
 
         Example::
 
             [jump_proposal-mchrip+q]
             name = adaptive_proposal
-            diagonal = False
+            diagonal =
 
         Parameters
         ----------
@@ -132,8 +133,8 @@ class EpsieAdaptiveProposal(epsie_proposals.AdaptiveProposal):
         :py:class:`epsie.proposals.AdaptiveProposal`:
             An adaptive proposal for use with ``epsie`` samplers.
         """
-        return epsie_adaptive_proposal_from_config(cls, cp, section, tag,
-                                                   with_boundaries=False)
+        return epsie_at_adaptive_from_config(cls, cp, section, tag,
+                                             with_boundaries=False)
 
 
 def epsie_from_config(cls, cp, section, tag, with_boundaries=False):
@@ -285,10 +286,9 @@ def epsie_adaptive_from_config(cls, cp, section, tag, with_boundaries=True,
                                      '-'.join([section, tag])))
     return cls(**args)
 
-
-def epsie_adaptive_proposal_from_config(cls, cp, section, tag,
-                                        with_boundaries=False):
-    """Generic function for loading adaptive epsie proposals from a config
+def epsie_at_adaptive_from_config(cls, cp, section, tag,
+                                  with_boundaries=False):
+    """Generic function for loading AT Adaptive Normal proposals from a config
     file.
 
     The section that is read should have the format ``[{section}-{tag}]``,
@@ -299,13 +299,12 @@ def epsie_adaptive_proposal_from_config(cls, cp, section, tag,
 
     * name : str
         Required. Must match the name of the proposal.
-    * diagonal : bool
-        Determines whether only to adapt the variance. If False will adapt
-        the elements' covariance. If not provided will use the class's
-        default.
     * adaptation-duration : int
         Sets the ``adaptation_duration``. If not provided will use the class's
         default.
+    * diagonal : bool, optional
+        Determines whether only to adapt the variance. If True will only train
+        the diagonal elements.
     * min-{param} : float
     * max-{param} : float
         The bounds on each parameter. Required if ``with_boundaries`` is set to
@@ -349,15 +348,13 @@ def epsie_adaptive_proposal_from_config(cls, cp, section, tag,
     # get the adaptation parameters
     args.update(get_epsie_adaptation_settings(opts, cls.name))
     # bounded and angular adaptive proposals support diagonal-only
-    if any(p in cls.name.split('_') for p in ['bounded', 'angular']):
-        try:
-            if not args['diagonal']:
-                raise ValueError("Angular and bounded adaptive proposals "
-                                 "do not support `diagonal=False`")
-            else:
-                __ = args.pop('diagonal', None)
-        except KeyError:
-            pass
+    diagonal = opts.pop('diagonal', None)
+    if not any(p in cls.name.split('_') for p in ['bounded', 'angular']):
+        if diagonal is not None:
+            diagonal = True
+        else:
+            diagonal = False
+        args.update({'diagonal': diagonal})
     return cls(**args)
 
 
@@ -488,7 +485,7 @@ def get_epsie_adaptation_settings(opts, name=None):
     adaptation_duration = opts.pop('adaptation_duration', None)
     if adaptation_duration is None:
         if name is not None:
-            if all(p in name.split('_') for p in ['adaptive', 'proposal']):
+            if all(p in name.split('_') for p in ['at', 'adaptive']):
                 args.update({'adaptation_duration': None})
         else:
             raise ValueError("No adaptation_duration specified")
@@ -504,13 +501,4 @@ def get_epsie_adaptation_settings(opts, name=None):
     target_rate = opts.pop('target_rate', None)
     if target_rate is not None:
         args.update({'target_rate': float(target_rate)})
-    diagonal = opts.pop('diagonal', None)
-    if diagonal is not None:
-        if diagonal == 'True':
-            diagonal = True
-        elif diagonal == 'False':
-            diagonal = False
-        else:
-            raise ValueError("diagonal only supports ``True`` or ``False``")
-        args.update({'diagonal': diagonal})
     return args

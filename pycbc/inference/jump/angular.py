@@ -21,7 +21,7 @@ from __future__ import absolute_import
 from epsie import proposals as epsie_proposals
 
 from .normal import (epsie_from_config, epsie_adaptive_from_config,
-                     epsie_adaptive_proposal_from_config)
+                     epsie_at_adaptive_from_config)
 
 
 class EpsieAngular(epsie_proposals.Angular):
@@ -96,7 +96,8 @@ class EpsieAdaptiveAngular(epsie_proposals.AdaptiveAngular):
         return epsie_adaptive_from_config(cls, cp, section, tag,
                                           with_boundaries=False)
 
-class EpsieAdaptiveAngularProposal(epsie_proposals.AdaptiveAngularProposal):
+
+class EpsieATAdaptiveAngular(epsie_proposals.ATAdaptiveAngular):
     """Adds ``from_config`` method to epsie's adaptive angular proposal."""
 
     @classmethod
@@ -130,5 +131,5 @@ class EpsieAdaptiveAngularProposal(epsie_proposals.AdaptiveAngularProposal):
         :py:class:`epsie.proposals.AdaptiveAngularProposal`:
             An adaptive angular proposal for use with ``epsie`` samplers.
         """
-        return epsie_adaptive_proposal_from_config(cls, cp, section, tag,
-                                                   with_boundaries=False)
+        return epsie_at_adaptive_from_config(cls, cp, section, tag,
+                                             with_boundaries=False)
