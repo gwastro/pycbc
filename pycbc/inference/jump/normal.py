@@ -190,6 +190,9 @@ def epsie_from_config(cls, cp, section, tag, with_boundaries=False):
     if with_boundaries:
         boundaries = get_param_boundaries(params, opts)
         args['boundaries'] = boundaries
+    if 'discrete' in cls.name.split('_'):
+        args.update({'successive':
+                     get_epsie_discrete_successive_settings(params, opts)})
     # if there are any options left, assume they are for setting the variance
     if opts:
         cov = get_variance(params, opts)
@@ -272,6 +275,9 @@ def epsie_adaptive_from_config(cls, cp, section, tag, with_boundaries=True,
     # get the bounds
     if with_boundaries:
         args[boundary_arg_name] = get_param_boundaries(params, opts)
+    if 'discrete' in cls.name.split('_'):
+        args.update({'successive':
+                     get_epsie_discrete_successive_settings(params, opts)})
     # get the adaptation parameters
     args.update(get_epsie_adaptation_settings(opts))
     # if there are any other options, assume they are for setting the
@@ -285,6 +291,7 @@ def epsie_adaptive_from_config(cls, cp, section, tag, with_boundaries=True,
                              .format(', '.join(opts.keys()),
                                      '-'.join([section, tag])))
     return cls(**args)
+
 
 def epsie_at_adaptive_from_config(cls, cp, section, tag,
                                   with_boundaries=False):
@@ -345,16 +352,19 @@ def epsie_at_adaptive_from_config(cls, cp, section, tag,
     # get the bounds
     if with_boundaries:
         args['boundaries'] = get_param_boundaries(params, opts)
+    if 'discrete' in cls.name.split('_'):
+        args.update({'successive':
+                     get_epsie_discrete_successive_settings(params, opts)})
     # get the adaptation parameters
     args.update(get_epsie_adaptation_settings(opts, cls.name))
     # bounded and angular adaptive proposals support diagonal-only
     diagonal = opts.pop('diagonal', None)
     if not any(p in cls.name.split('_') for p in ['bounded', 'angular']):
-        if diagonal is not None:
-            diagonal = True
-        else:
-            diagonal = False
+        diagonal = diagonal is not None
         args.update({'diagonal': diagonal})
+    if opts:
+        raise ValueError("unrecognized options {}"
+                         .format(', '.join(opts.keys())))
     return cls(**args)
 
 
@@ -502,3 +512,38 @@ def get_epsie_adaptation_settings(opts, name=None):
     if target_rate is not None:
         args.update({'target_rate': float(target_rate)})
     return args
+
+
+def get_epsie_discrete_successive_settings(params, opts):
+    """Get settings for Epsie successive discrete proposal successive jumps
+    from a config file.
+
+    If ``successive`` is not defined for a parameter then assumes successive
+    jumps are not allowed (i.e. jumps from an integer to the same integer).
+    Arguments will be popped from the given dictionary.
+
+    Example::
+        [jump_proposal-k+n]
+        name = discrete
+        successive-k =
+
+    This example sets successive jumps for ``k`` but does not do so for ``n``.
+
+    Parameters
+    ----------
+    params : list of str
+        List of parameter names to get the successive option for.
+    opts : dict
+        Dictionary of option -> value that was loaded from a config file
+        section.
+
+    Returns
+    -------
+    dict :
+        Dictionary of parameter names -> bools
+    """
+    successive = {}
+    for param in params:
+        successive.update(
+            {param: opts.pop('successive_{}'.format(param), None) is not None})
+    return successive
