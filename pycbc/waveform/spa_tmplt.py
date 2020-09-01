@@ -142,7 +142,7 @@ def spa_distance(psd, mass1, mass2, lower_frequency_cutoff, snr=8):
     kend = int(spa_tmplt_end(mass1=mass1, mass2=mass2) / psd.delta_f)
     norm1 = spa_tmplt_norm(psd, len(psd), psd.delta_f, lower_frequency_cutoff)
     norm2 = (spa_amplitude_factor(mass1=mass1, mass2=mass2)) ** 2.0
-    print kend, norm1, norm2
+
     if kend >= len(psd):
         kend = len(psd) - 2
     return sqrt(norm1[kend] * norm2) / snr
