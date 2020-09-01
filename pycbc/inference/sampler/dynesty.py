@@ -35,7 +35,7 @@ import os
 import time
 import numpy
 import dynesty, dynesty.dynesty, dynesty.nestedsamplers
-from dynesty.utils import unitcheck
+from dynesty.utils import unitcheck, reflect
 from pycbc.pool import choose_pool
 from dynesty import utils as dyfunc
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files,
@@ -403,8 +403,11 @@ class DynestySampler(BaseSampler):
         """
         return self._sampler.results.logzerr[-1:][0]
 
+
 def sample_rwalk_mod(args):
     """ Modified version of dynesty.sampling.sample_rwalk
+
+        Adapted from version used in bilby/dynesty
     """
 
     # Unzipping.
@@ -494,7 +497,7 @@ def sample_rwalk_mod(args):
 
         # If we've taken too many likelihood evaluations then break
         if accept + reject > maxmcmc:
-            warnings.warn(
+            logging.warning(
                 "Hit maximum number of walks {} with accept={}, reject={}, "
                 "and nfail={} try increasing maxmcmc"
                 .format(maxmcmc, accept, reject, nfail))
@@ -507,7 +510,8 @@ def sample_rwalk_mod(args):
         v = v_list[idx]
         logl = logl_list[idx]
     else:
-        logger.debug("Unable to find a new point using walk: returning a random point")
+        logging.debug("Unable to find a new point using walk: "
+                      "returning a random point")
         u = numpy.random.uniform(size=n)
         v = prior_transform(u)
         logl = loglikelihood(v)
