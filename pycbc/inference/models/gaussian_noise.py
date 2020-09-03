@@ -1028,7 +1028,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
             hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
 
             cplx_loglr = cplx_hd - 0.5 * hh
-            lr += logsumexp(cplx_loglr.real)
+            lr += logsumexp(cplx_loglr.real) - numpy.log(len(self.pol))
 
         return float(lr)
 
