@@ -950,7 +950,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
             self.variable_params, self.data,
             waveform_transforms=self.waveform_transforms,
             recalibration=self.recalibration,
-            generator_class=generator.FDomainDetFrameTwoPolGenerator
+            generator_class=generator.FDomainDetFrameTwoPolGenerator,
             gates=self.gates, **self.static_params)
 
         self.polarization_samples = polarization_samples
