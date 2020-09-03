@@ -931,6 +931,7 @@ class GaussianNoise(BaseGaussianNoise):
             # now try returning again
             return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
 
+
 class MarginalizedPolarization(BaseGaussianNoise):
     r"""
     """
@@ -941,7 +942,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
                  polarization_samples=1000,
                  static_params=None, **kwargs):
         # set up the boiler-plate attributes
-        super(GaussianNoise, self).__init__(
+        super(MarginalizedPolarization, self).__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
@@ -993,14 +994,13 @@ class MarginalizedPolarization(BaseGaussianNoise):
         for det, (hp, hc) in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            det = self.dets[det]
-            fp, fc = det.antenna_pattern(self.current_params['ra'],
-                                         self.current_params['dec'],
-                                         self.pol,
-                                         self.current_params['tc'])
+            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
+                                                    self.current_params['dec'],
+                                                    self.pol,
+                                                    self.current_params['tc'])
 
             # the kmax of the waveforms may be different than internal kmax
-            kmax = min(len(h), self._kmax[det])
+            kmax = min(max(len(hp), len(hc)), self._kmax[det])
             slc = slice(self._kmin[det], kmax)
 
             # whiten both polarizations
@@ -1022,8 +1022,8 @@ class MarginalizedPolarization(BaseGaussianNoise):
 
             # Below could be combined, but too tired to figure out
             # if there should be a sign applied if so
-            hphc = h[slc].inner(h[slc]).real  # <hp, hc>
-            hchp = h[slc].inner(h[slc]).real  # <hc, hp>
+            hphc = hp[slc].inner(hc[slc]).real  # <hp, hc>
+            hchp = hc[slc].inner(hp[slc]).real  # <hc, hp>
 
             hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
 

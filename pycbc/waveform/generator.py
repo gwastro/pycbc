@@ -562,7 +562,7 @@ class FDomainDetFrameTwoPolGenerator(object):
                         dethp, **self.current_params)
                     dethc = self.recalib[detname].map_to_adjust(
                         dethc, **self.current_params)
-                h[det] = (dethp, dethc)
+                h[detname] = (dethp, dethc)
         else:
             # no detector response, just use the + polarization
             if 'tc' in self.current_params:
