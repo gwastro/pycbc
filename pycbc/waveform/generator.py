@@ -439,7 +439,6 @@ class FDomainDetFrameTwoPolGenerator(object):
           * tc: The GPS time of coalescence (should be geocentric time).
           * ra: Right ascension.
           * dec: declination
-          * polarization: polarization.
 
         All of these must be provided in either the variable args or the
         frozen params if detectors is not None. If detectors
@@ -525,8 +524,13 @@ class FDomainDetFrameTwoPolGenerator(object):
         return _lal.LIGOTimeGPS(self._epoch)
 
     def generate(self, **kwargs):
-        """Generates a waveform, applies a time shift and the detector response
-        function from the given kwargs.
+        """Generates a waveform polarizations and applies a time shift.
+
+        Returns
+        -------
+        dict :
+            Dictionary of ``detector names -> (hp, hc)``, where ``hp, hc`` are
+            the plus and cross polarization, respectively.
         """
         self.current_params.update(kwargs)
         rfparams = {param: self.current_params[param]
