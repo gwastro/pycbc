@@ -950,6 +950,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
             self.variable_params, self.data,
             waveform_transforms=self.waveform_transforms,
             recalibration=self.recalibration,
+            generator_class=generator.FDomainDetFrameTwoPolGenerator
             gates=self.gates, **self.static_params)
 
         self.polarization_samples = polarization_samples
@@ -1150,6 +1151,7 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
 
 def create_waveform_generator(variable_params, data, waveform_transforms=None,
                               recalibration=None, gates=None,
+                              generator_class=generator.FDomainDetFrameGenerator,
                               **static_params):
     """Creates a waveform generator for use with a model.
 
@@ -1191,6 +1193,7 @@ def create_waveform_generator(variable_params, data, waveform_transforms=None,
         approximant = static_params['approximant']
     except KeyError:
         raise ValueError("no approximant provided in the static args")
+
     generator_function = generator.select_waveform_generator(approximant)
     # get data parameters; we'll just use one of the data to get the
     # values, then check that all the others are the same
@@ -1205,7 +1208,7 @@ def create_waveform_generator(variable_params, data, waveform_transforms=None,
                         d.start_time == start_time]):
                 raise ValueError("data must all have the same delta_t, "
                                  "delta_f, and start_time")
-    waveform_generator = generator.FDomainDetFrameGenerator(
+    waveform_generator = generator_class(
         generator_function, epoch=start_time,
         variable_args=variable_params, detectors=list(data.keys()),
         delta_f=delta_f, delta_t=delta_t,
