@@ -938,7 +938,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 polarization_sampes=1000,
+                 polarization_samples=1000,
                  static_params=None, **kwargs):
         # set up the boiler-plate attributes
         super(GaussianNoise, self).__init__(
