@@ -399,6 +399,191 @@ class TDomainFreqTauRingdownGenerator(BaseGenerator):
         super(TDomainFreqTauRingdownGenerator, self).__init__(ringdown.get_td_from_freqtau,
             variable_args=variable_args, **frozen_params)
 
+
+class FDomainDetFrameTwoPolGenerator(object):
+    """Generates frequency-domain waveform in a specific frame.
+
+    Generates both polarizations of a waveform using the given radiation frame
+    generator class, and applies the time shift. Detector response functions
+    are not applied.
+
+    Parameters
+    ----------
+    rFrameGeneratorClass : class
+        The class to use for generating the waveform in the radiation frame,
+        e.g., FDomainCBCGenerator. This should be the class, not an
+        instance of the class (the class will be initialized with the
+        appropriate arguments internally).
+    detectors : {None, list of strings}
+        The names of the detectors to use. If provided, all location parameters
+        must be included in either the variable args or the frozen params. If
+        None, the generate function will just return the plus polarization
+        returned by the rFrameGeneratorClass shifted by any desired time shift.
+    epoch : {float, lal.LIGOTimeGPS
+        The epoch start time to set the waveform to. A time shift = tc - epoch is
+        applied to waveforms before returning.
+    variable_args : {(), list or tuple}
+        A list or tuple of strings giving the names and order of parameters
+        that will be passed to the generate function.
+    \**frozen_params
+        Keyword arguments setting the parameters that will not be changed from
+        call-to-call of the generate function.
+
+    Attributes
+    ----------
+    location_args : set(['tc', 'ra', 'dec'])
+        The set of location parameters. These are not passed to the rFrame
+        generator class; instead, they are used to apply the detector response
+        function and/or shift the waveform in time. The parameters are:
+
+          * tc: The GPS time of coalescence (should be geocentric time).
+          * ra: Right ascension.
+          * dec: declination
+          * polarization: polarization.
+
+        All of these must be provided in either the variable args or the
+        frozen params if detectors is not None. If detectors
+        is None, tc may optionally be provided.
+
+    Attributes
+    ----------
+    detectors : dict
+        The dictionary of detectors that antenna patterns are calculated for
+        on each call of generate. If no detectors were provided, will be
+        ``{'RF': None}``, where "RF" means "radiation frame".
+    detector_names : list
+        The list of detector names. If no detectors were provided, then this
+        will be ['RF'] for "radiation frame".
+    epoch : lal.LIGOTimeGPS
+        The GPS start time of the frequency series returned by the generate function.
+        A time shift is applied to the waveform equal to tc-epoch. Update by using
+        ``set_epoch``.
+    current_params : dict
+        A dictionary of name, value pairs of the arguments that were last
+        used by the generate function.
+    rframe_generator : instance of rFrameGeneratorClass
+        The instance of the radiation-frame generator that is used for waveform
+        generation. All parameters in current_params except for the
+        location params are passed to this class's generate function.
+    frozen_location_args : dict
+        Any location parameters that were included in the frozen_params.
+    variable_args : tuple
+        The list of names of arguments that are passed to the generate
+        function.
+
+    """
+    location_args = set(['tc', 'ra', 'dec'])
+
+    def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
+                 variable_args=(), recalib=None, gates=None, **frozen_params):
+        # initialize frozen & current parameters:
+        self.current_params = frozen_params.copy()
+        self._static_args = frozen_params.copy()
+        # we'll separate out frozen location parameters from the frozen
+        # parameters that are sent to the rframe generator
+        self.frozen_location_args = {}
+        loc_params = set(frozen_params.keys()) & self.location_args
+        for param in loc_params:
+            self.frozen_location_args[param] = frozen_params.pop(param)
+        # set the order of the variable parameters
+        self.variable_args = tuple(variable_args)
+        # variables that are sent to the rFrame generator
+        rframe_variables = list(set(self.variable_args) - self.location_args)
+        # initialize the radiation frame generator
+        self.rframe_generator = rFrameGeneratorClass(
+            variable_args=rframe_variables, **frozen_params)
+        self.set_epoch(epoch)
+        # set calibration model
+        self.recalib = recalib
+        # if detectors are provided, convert to detector type; also ensure that
+        # location variables are specified
+        if detectors is not None:
+            self.detectors = {det: Detector(det) for det in detectors}
+            missing_args = [arg for arg in self.location_args if not
+                (arg in self.current_params or arg in self.variable_args)]
+            if any(missing_args):
+                raise ValueError("detectors provided, but missing location "
+                    "parameters %s. " %(', '.join(missing_args)) +
+                    "These must be either in the frozen params or the "
+                    "variable args.")
+        else:
+            self.detectors = {'RF': None}
+        self.detector_names = sorted(self.detectors.keys())
+        self.gates = gates
+
+    def set_epoch(self, epoch):
+        """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
+        self._epoch = float(epoch)
+
+    @property
+    def static_args(self):
+        """Returns a dictionary of the static arguments."""
+        return self._static_args
+
+    @property
+    def epoch(self):
+        return _lal.LIGOTimeGPS(self._epoch)
+
+    def generate(self, **kwargs):
+        """Generates a waveform, applies a time shift and the detector response
+        function from the given kwargs.
+        """
+        self.current_params.update(kwargs)
+        rfparams = {param: self.current_params[param]
+            for param in kwargs if param not in self.location_args}
+        hp, hc = self.rframe_generator.generate(**rfparams)
+        if isinstance(hp, TimeSeries):
+            df = self.current_params['delta_f']
+            hp = hp.to_frequencyseries(delta_f=df)
+            hc = hc.to_frequencyseries(delta_f=df)
+            # time-domain waveforms will not be shifted so that the peak amp
+            # happens at the end of the time series (as they are for f-domain),
+            # so we add an additional shift to account for it
+            tshift = 1./df - abs(hp._epoch)
+        else:
+            tshift = 0.
+        hp._epoch = hc._epoch = self._epoch
+        h = {}
+        if self.detector_names != ['RF']:
+            for detname, det in self.detectors.items():
+                # apply the time shift
+                tc = self.current_params['tc'] + \
+                    det.time_delay_from_earth_center(self.current_params['ra'],
+                         self.current_params['dec'], self.current_params['tc'])
+                dethp = apply_fd_time_shift(hp, tc+tshift, copy=True)
+                dethc = apply_fd_time_shift(hc, tc+tshift, copy=True)
+                if self.recalib:
+                    # recalibrate with given calibration model
+                    dethp = self.recalib[detname].map_to_adjust(
+                        dethp, **self.current_params)
+                    dethc = self.recalib[detname].map_to_adjust(
+                        dethc, **self.current_params)
+                h[det] = (dethp, dethc)
+        else:
+            # no detector response, just use the + polarization
+            if 'tc' in self.current_params:
+                hp = apply_fd_time_shift(hp, self.current_params['tc']+tshift,
+                                         copy=False)
+                hc = apply_fd_time_shift(hc, self.current_params['tc']+tshift,
+                                         copy=False)
+            h['RF'] = (hp, hc)
+        if self.gates is not None:
+            # resize all to nearest power of 2
+            hps = {}
+            hcs = {}
+            for det in h:
+                hp = h[det]
+                hc = h[det]
+                hp.resize(ceilpow2(len(hp)-1) + 1)
+                hc.resize(ceilpow2(len(hc)-1) + 1)
+                hps[det] = hp
+                hcs[det] = hc
+            hps = strain.apply_gates_to_fd(hps, self.gates)
+            hcs = strain.apply_gates_to_fd(hps, self.gates)
+            h = {det: (hps[det], hcs[det]) for det in h}
+        return h
+
+
 class FDomainDetFrameGenerator(object):
     """Generates frequency-domain waveform in a specific frame.
 
@@ -585,6 +770,7 @@ class FDomainDetFrameGenerator(object):
                 d.resize(ceilpow2(len(d)-1) + 1)
             h = strain.apply_gates_to_fd(h, self.gates)
         return h
+
 
 
 def select_waveform_generator(approximant):
