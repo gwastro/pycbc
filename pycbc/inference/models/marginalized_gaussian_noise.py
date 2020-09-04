@@ -235,7 +235,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
         """
-        setattr(self._current_stats, 'loglikelihood', -numpy.inf)
+        setattr(self._current_stats, 'loglr', -numpy.inf)
         # maxl phase doesn't exist, so set it to nan
         setattr(self._current_stats, 'maxl_polarization', numpy.nan)
         for det in self._data:
