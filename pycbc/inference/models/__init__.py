@@ -22,8 +22,9 @@ assuming various noise models.
 
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
                        TestPrior)
-from .gaussian_noise import GaussianNoise, MarginalizedPolarization
+from .gaussian_noise import GaussianNoise
 from .marginalized_gaussian_noise import MarginalizedPhaseGaussianNoise
+from .marginalized_gaussian_noise import MarginalizedPolarization
 from .single_template import SingleTemplate
 from .relbin import Relative
 
