@@ -190,6 +190,7 @@ class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
         self._current_stats.maxl_phase = numpy.angle(hd)
         return numpy.log(special.i0e(hd)) + hd - 0.5*hh
 
+
 class MarginalizedPolarization(BaseGaussianNoise):
     r""" This likelihood numerically marginalizes over polarization angle
 

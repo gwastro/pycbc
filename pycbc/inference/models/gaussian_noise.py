@@ -935,6 +935,8 @@ class GaussianNoise(BaseGaussianNoise):
 #
 # =============================================================================
 #
+
+
 def get_values_from_injection(cp, injection_file, update_cp=True):
     """Replaces all FROM_INJECTION values in a config file with the
     corresponding value from the injection.
@@ -1045,10 +1047,11 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
     return replace_params
 
 
-def create_waveform_generator(variable_params, data, waveform_transforms=None,
-                              recalibration=None, gates=None,
-                              generator_class=generator.FDomainDetFrameGenerator,
-                              **static_params):
+def create_waveform_generator(
+                variable_params, data, waveform_transforms=None,
+                recalibration=None, gates=None,
+                generator_class=generator.FDomainDetFrameGenerator,
+                **static_params):
     """Creates a waveform generator for use with a model.
 
     Parameters
