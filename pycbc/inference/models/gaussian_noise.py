@@ -958,9 +958,23 @@ class MarginalizedPolarization(BaseGaussianNoise):
         self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
         self.dets = {}
 
+    @property
+    def _extra_stats(self):
+        """Adds ``loglr``, ``maxl_polarization``, and the ``optimal_snrsq`` in
+        each detector.
+        """
+        return ['loglr', 'maxl_polarization'] + \
+               ['{}_optimal_snrsq'.format(det) for det in self._data]
+
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
         """
+        setattr(self._current_stats, 'loglikelihood', -numpy.inf)
+        # maxl phase doesn't exist, so set it to nan
+        setattr(self._current_stats, 'maxl_polarization', numpy.nan)
+        for det in self._data:
+            # snr can't be < 0 by definition, so return 0
+            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
         return -numpy.inf
 
     def _loglr(self):
@@ -1026,11 +1040,18 @@ class MarginalizedPolarization(BaseGaussianNoise):
             hchp = hc[slc].inner(hp[slc]).real  # <hc, hp>
 
             hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
-
+            # store
+            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh)
             lr += cplx_hd.real - 0.5 * hh
-
         lr_total = logsumexp(lr) - numpy.log(len(self.pol))
-
+        # store the maxl polarization
+        idx = lr.argmax()
+        setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
+        # just store the maxl optimal snrsq
+        for det in wfs:
+            p = '{}_optimal_snrsq'.format(det)
+            setattr(self._current_stats, p,
+                    getattr(self._current_stats, p)[idx]) 
         return float(lr_total)
 
 #
