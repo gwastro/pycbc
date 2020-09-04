@@ -489,7 +489,7 @@ class LISA(object):
         v = np.array([sin(lam), -cos(lam), 0])
         return np.outer(u, u) - np.outer(v, v), np.outer(u, v) + np.outer(v, u)
 
-    def eval_hij(self, waveform, beta, lam, t):
+    def eval_hij(self, waveform, beta, lam, psi, t):
         """Returns the values of hij
         Parameters
         ----------
@@ -506,10 +506,6 @@ class LISA(object):
         """
         hp, hc = waveform
         epij, ecij = self.eval_pol_tensor(beta, lam)
-        theta = np.pi/2 - beta
-        phi = np.copy(lam)
-        psi = np.arctan((-sin(beta)*sin(theta)*cos(lam - phi) + \
-                         cos(theta)*cos(beta)) / (sin(theta)*sin(lam - phi)))
         fhp, fhc = self.interpolate_waveform(hp, hc)
         h = []
         for i in range(len(t)):
@@ -522,7 +518,7 @@ class LISA(object):
             h.append(hij)
         return np.array(h)
 
-    def GWresponse(self, waveform, beta, lam, ref_time):
+    def GWresponse(self, waveform, beta, lam, psi, ref_time):
         """Returns the response to the GW signals
         Parameters
         ----------
@@ -558,22 +554,22 @@ class LISA(object):
                 t2 = ref_time - kdotR - j*dist_L[0]
 
                 phi_t1.append(np.dot(np.dot(n_hat[i],
-                              np.transpose(self.eval_hij(waveform, beta, lam, t1))),
+                              np.transpose(self.eval_hij(waveform, beta, lam, psi, t1))),
                               n_hat[i].transpose()))
 
                 phi_t2.append(np.dot(np.dot(n_hat[i],
-                              np.transpose(self.eval_hij(waveform, beta, lam, t2))),
+                              np.transpose(self.eval_hij(waveform, beta, lam, psi, t2))),
                               n_hat[i].transpose()))
 
                 phi_t_2.append(np.dot(np.dot(n_hat[i],
-                               np.transpose(self.eval_hij(waveform, beta, lam, t2 + 2*kdotR))),
+                               np.transpose(self.eval_hij(waveform, beta, lam, psi, t2 + 2*kdotR))),
                                n_hat[i].transpose()))
 
         val = 2*(1 - kdotn)
         return np.array([phi_t1, phi_t2, phi_t_2]), val, kdotn
 
 
-    def eval_XYZ(self, waveform, beta, lam, ref_time):
+    def eval_XYZ(self, waveform, beta, lam, psi, ref_time):
         """Returns the values of X, Y, Z
         Parameters
         ----------
@@ -587,7 +583,7 @@ class LISA(object):
         numpy.ndarray shape (3,1)
             The values of X, Y, Z at the ref_time.
         """
-        data = self.GWresponse(waveform, beta, lam, ref_time)
+        data = self.GWresponse(waveform, beta, lam, psi, ref_time)
         Phi, den, kdotn = data[0], data[1], data[2]
 
         cycle = [([0, 1, 2] * 2)[x:x+3] for i in range(3) for x in [i % len([0, 1, 2])]]
