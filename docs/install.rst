@@ -54,6 +54,7 @@ Finally, install the most common pycbc develeopment environment packages
 as follows.
 
 .. code-block:: bash
+
     cd pycbc
     pip install -r requirements.txt
     python setup.py install
@@ -79,7 +80,7 @@ You can then build the documentation locally as
 
 .. code-block:: bash
 
-    python setup.py build_gh_pages
+    python setup.py build_docs
 
 ========================================
 Use of Intel MKL Optimized FFT libraries
