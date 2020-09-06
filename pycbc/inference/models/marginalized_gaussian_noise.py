@@ -336,7 +336,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
     The 'polarization_samples' argument can be passed to set an alternate
     number of integration points.
     """
-    name = 'marginalized_polarization'
+    name = 'marginalized_hmpolphase'
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
