@@ -449,7 +449,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 hp, hc = modes[mode]
 
                 if m not in self.phase_fac:
-                    self.phase_fac[m] = numpy.exp(1.0j * m * self.phase).conj()
+                    self.phase_fac[m] = numpy.exp(1.0j * m * self.phase)
                 phase_coef = self.phase_fac[m]
 
                 # h = fp * hp + hc * hc
@@ -474,7 +474,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
 
                     # Below could be combined, but too tired to figure out
                     # if there should be a sign applied if so
-                    pfac = phase_coef * self.phase_fac[m2]
+                    pfac = phase_coef * self.phase_fac[m2].conj()
 
                     hphc = (pfac * hp2[slc].inner(hc[slc])).real  # <hp, hc>
                     hchp = (pfac * hc2[slc].inner(hp[slc])).real  # <hc, hp>
