@@ -432,6 +432,8 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 hp[self._kmin[det]:kmax] *= self._weight[det][slc]
                 hc[self._kmin[det]:kmax] *= self._weight[det][slc]
 
+                if m not in self.phase_fac:
+                    self.phase_fac[m] = numpy.exp(1.0j * m * self.phase)
 
         lr = 0.
         for det, modes in wfs.items():
@@ -442,14 +444,10 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                                                     self.current_params['dec'],
                                                     self.pol,
                                                     self.current_params['tc'])
-
             # loop over modes
             for mode in modes:
                 h, l, m  = mode
                 hp, hc = modes[mode]
-
-                if m not in self.phase_fac:
-                    self.phase_fac[m] = numpy.exp(1.0j * m * self.phase)
                 phase_coef = self.phase_fac[m]
 
                 # h = fp * hp + hc * hc
@@ -467,18 +465,11 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                     # <h, h> = <fp * hp + fc * hc, fp * hp + fc * hc>
                     # = Real(fpfp * <hp,hp> + fcfc * <hc,hc> + \
                     #  fphc * (<hp, hc> + <hc, hp>))
-
-                    # phase factor cancels for hphp / hchc so not included
-                    hphp = hp2[slc].inner(hp[slc]).real  # <hp, hp>
-                    hchc = hc2[slc].inner(hc[slc]).real  # <hc, hc>
-
-                    # Below could be combined, but too tired to figure out
-                    # if there should be a sign applied if so
                     pfac = phase_coef * self.phase_fac[m2].conj()
-
-                    hphc = (pfac * hp2[slc].inner(hc[slc])).real  # <hp, hc>
-                    hchp = (pfac * hc2[slc].inner(hp[slc])).real  # <hc, hp>
-
+                    hphp = (pfac * hp2[slc].inner(hp[slc])).real  # <hp, hp2>
+                    hchc = (pfac * hc2[slc].inner(hc[slc])).real  # <hc, hc2>
+                    hphc = (pfac * hp2[slc].inner(hc[slc])).real  # <hp, hc2>
+                    hchp = (pfac * hc2[slc].inner(hp[slc])).real  # <hc, hp2>
                     hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
                     lr += - 0.5 * hh
 
@@ -488,5 +479,4 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         idx = lr.argmax()
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
         setattr(self._current_stats, 'maxl_phase', self.phase[idx])
-
         return float(lr_total)
