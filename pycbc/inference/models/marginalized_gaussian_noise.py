@@ -324,3 +324,150 @@ class MarginalizedPolarization(BaseGaussianNoise):
                     getattr(self._current_stats, p)[idx])
 
         return float(lr_total)
+
+
+class MarginalizedHMPolPhase(BaseGaussianNoise):
+    r""" This likelihood numerically marginalizes over polarization angle
+
+    This class implements the Gaussian likelihood with an explicit numerical
+    marginalization over polarization angle. This is accomplished using
+    a fixed set of integration points distribution uniformation between
+    0 and 2pi. By default, 1000 integration points are used.
+    The 'polarization_samples' argument can be passed to set an alternate
+    number of integration points.
+    """
+    name = 'marginalized_polarization'
+
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 polarization_samples=100,
+                 coa_phase_samples=100,
+                 static_params=None, **kwargs):
+        # set up the boiler-plate attributes
+        super(MarginalizedPolarization, self).__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
+        # create the waveform generator
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data,
+            waveform_transforms=self.waveform_transforms,
+            recalibration=self.recalibration,
+            generator_class=generator.FDomainDetFrameModePolGenerator,
+            gates=self.gates, **self.static_params)
+
+        self.pol = numpy.linspace(0, 2*numpy.pi, polarization_samples)
+        self.phase = numpy.linspace(0, 2*numpy.pi, coa_phase_samples)
+
+        # remap to every combination of the parameters
+        # this gets every combination by mappin them to an NxM grid
+        # one needs to be transposed so that they run allong opposite
+        # dimensions
+        self.pol = numpy.resize(self.pol, len(self.pol)*len(self.phase))
+        self.phase = numpy.resize(self.phase, len(self.pol)*len(self.phase))
+
+        self.phase = self.phase.reshape(coa_phase_samples, polarization_samples)
+        self.phase = self.phase.T.flatten()
+
+        self.dets = {}
+
+    @property
+    def _extra_stats(self):
+        """Adds ``loglr``, ``maxl_polarization``, and the ``optimal_snrsq`` in
+        each detector.
+        """
+        return ['loglr', 'maxl_polarization'] + \
+               ['{}_optimal_snrsq'.format(det) for det in self._data]
+
+    def _nowaveform_loglr(self):
+        """Convenience function to set loglr values if no waveform generated.
+        """
+        setattr(self._current_stats, 'loglr', -numpy.inf)
+        # maxl phase doesn't exist, so set it to nan
+        setattr(self._current_stats, 'maxl_polarization', numpy.nan)
+        for det in self._data:
+            # snr can't be < 0 by definition, so return 0
+            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
+        return -numpy.inf
+
+    def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
+        params = self.current_params
+        try:
+            wfs = self.waveform_generator.generate(**params)
+        except NoWaveformError:
+            return self._nowaveform_loglr()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_loglr()
+            else:
+                raise e
+
+        lr = 0.
+        for det, (hp, hc) in wfs.items():
+            if det not in self.dets:
+                self.dets[det] = Detector(det)
+            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
+                                                    self.current_params['dec'],
+                                                    self.pol,
+                                                    self.current_params['tc'])
+
+            # the kmax of the waveforms may be different than internal kmax
+            kmax = min(max(len(hp), len(hc)), self._kmax[det])
+            slc = slice(self._kmin[det], kmax)
+
+            # whiten both polarizations
+            hp[self._kmin[det]:kmax] *= self._weight[det][slc]
+            hc[self._kmin[det]:kmax] *= self._weight[det][slc]
+
+            # h = fp * hp + hc * hc
+            # <h, d> = fp * <hp,d> + fc * <hc,d>
+            # the inner products
+            cplx_hpd = self._whitened_data[det][slc].inner(hp[slc])  # <hp, d>
+            cplx_hcd = self._whitened_data[det][slc].inner(hc[slc])  # <hc, d>
+
+            cplx_hd = fp * cplx_hpd + fc * cplx_hcd
+
+            # <h, h> = <fp * hp + fc * hc, fp * hp + fc * hc>
+            # = Real(fpfp * <hp,hp> + fcfc * <hc,hc> + \
+            #  fphc * (<hp, hc> + <hc, hp>))
+            hphp = hp[slc].inner(hp[slc]).real  # < hp, hp>
+            hchc = hc[slc].inner(hc[slc]).real  # <hc, hc>
+
+            # Below could be combined, but too tired to figure out
+            # if there should be a sign applied if so
+            hphc = hp[slc].inner(hc[slc]).real  # <hp, hc>
+            hchp = hc[slc].inner(hp[slc]).real  # <hc, hp>
+
+            hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
+            # store
+            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh)
+            lr += cplx_hd.real - 0.5 * hh
+
+        lr_total = special.logsumexp(lr) - numpy.log(len(self.pol))
+
+        # store the maxl polarization
+        idx = lr.argmax()
+        setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
+
+        # just store the maxl optimal snrsq
+        for det in wfs:
+            p = '{}_optimal_snrsq'.format(det)
+            setattr(self._current_stats, p,
+                    getattr(self._current_stats, p)[idx])
+
+        return float(lr_total)
