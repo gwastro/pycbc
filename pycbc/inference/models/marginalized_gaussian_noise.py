@@ -446,7 +446,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
 
             # loop over modes
             for mode in modes:
-                h, l, m  = mode
+                l, m  = mode
                 hp, hc = modes[mode]
                 phase_coef = self.phase_fac[m]
 
@@ -459,7 +459,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 lr += cpx_hd.real
 
                 for mode2 in modes:
-                    h2, l2, m2  = mode2
+                    l2, m2  = mode2
                     hp2, hc2 = modes[mode2]
 
                     # <h, h> = <fp * hp + fc * hc, fp * hp + fc * hc>
