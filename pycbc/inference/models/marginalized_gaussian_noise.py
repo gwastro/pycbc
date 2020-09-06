@@ -421,6 +421,18 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         # can compress modes to only those that differ by m
         ##############################################
 
+        # Whiten all the modes / polarizations ahead of time
+        for det, modes in wfs.items():
+            for mode in modes:
+                # the kmax of the waveforms may be different than internal kmax
+                kmax = min(max(len(hp), len(hc)), self._kmax[det])
+                slc = slice(self._kmin[det], kmax)
+
+                # whiten both polarizations
+                hp[self._kmin[det]:kmax] *= self._weight[det][slc]
+                hc[self._kmin[det]:kmax] *= self._weight[det][slc]
+
+
         lr = 0.
         for det, modes in wfs.items():
             if det not in self.dets:
@@ -440,14 +452,6 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                     self.phase_fac[m] = numpy.exp(1.0j * m * self.phase).conj()
                 phase_coef = self.phase_fac[m]
 
-                # the kmax of the waveforms may be different than internal kmax
-                kmax = min(max(len(hp), len(hc)), self._kmax[det])
-                slc = slice(self._kmin[det], kmax)
-
-                # whiten both polarizations
-                hp[self._kmin[det]:kmax] *= self._weight[det][slc]
-                hc[self._kmin[det]:kmax] *= self._weight[det][slc]
-
                 # h = fp * hp + hc * hc
                 # <h, d> = fp * <hp,d> + fc * <hc,d>
                 # the inner products
@@ -465,15 +469,15 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                     #  fphc * (<hp, hc> + <hc, hp>))
 
                     # phase factor cancels for hphp / hchc so not included
-                    hphp = hp[slc].inner(hp2[slc]).real  # <hp, hp>
-                    hchc = hc[slc].inner(hc2[slc]).real  # <hc, hc>
+                    hphp = hp2[slc].inner(hp[slc]).real  # <hp, hp>
+                    hchc = hc2[slc].inner(hc[slc]).real  # <hc, hc>
 
                     # Below could be combined, but too tired to figure out
                     # if there should be a sign applied if so
                     pfac = phase_coef * self.phase_fac[m2]
 
-                    hphc = (pfac * hp[slc].inner(hc2[slc])).real  # <hp, hc>
-                    hchp = (pfac * hc[slc].inner(hp2[slc])).real  # <hc, hp>
+                    hphc = (pfac * hp2[slc].inner(hc[slc])).real  # <hp, hc>
+                    hchp = (pfac * hc2[slc].inner(hp[slc])).real  # <hc, hp>
 
                     hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
                     lr += - 0.5 * hh
