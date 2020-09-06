@@ -417,7 +417,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
 
         ############# Some optimizations not yet taken
         # higher m calculations could have a lot of redundancy
-        # fp / fc need not be calculated except where polariation is different
+        # fp / fc need not be calculated except where polarization is different
         # can compress modes to only those that differ by m
         ##############################################
         lr = 0.
@@ -433,6 +433,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             # Whiten all the modes / polarizations ahead of time
             for mode in modes:
                 # the kmax of the waveforms may be different than internal kmax
+                hp, hc = modes[mode]
                 kmax = min(max(len(hp), len(hc)), self._kmax[det])
                 slc = slice(self._kmin[det], kmax)
 
@@ -442,7 +443,6 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
 
                 if m not in self.phase_fac:
                     self.phase_fac[m] = numpy.exp(1.0j * m * self.phase)
-
 
             # loop over modes
             for mode in modes:
@@ -461,7 +461,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 for mode2 in modes:
                     h2, l2, m2  = mode2
                     hp2, hc2 = modes[mode2]
-                    #
+
                     # <h, h> = <fp * hp + fc * hc, fp * hp + fc * hc>
                     # = Real(fpfp * <hp,hp> + fcfc * <hc,hc> + \
                     #  fphc * (<hp, hc> + <hc, hp>))
