@@ -465,13 +465,14 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                     # <h, h> = <fp * hp + fc * hc, fp * hp + fc * hc>
                     # = Real(fpfp * <hp,hp> + fcfc * <hc,hc> + \
                     #  fphc * (<hp, hc> + <hc, hp>))
-                    pfac = phase_coef * self.phase_fac[m2].conj()
-                    hphp = (pfac * hp2[slc].inner(hp[slc])).real  # <hp, hp2>
-                    hchc = (pfac * hc2[slc].inner(hc[slc])).real  # <hc, hc2>
-                    hphc = (pfac * hp2[slc].inner(hc[slc])).real  # <hp, hc2>
-                    hchp = (pfac * hc2[slc].inner(hp[slc])).real  # <hc, hp2>
+                    hphp = hp2[slc].inner(hp[slc])  # <hp, hp2>
+                    hchc = hc2[slc].inner(hc[slc])  # <hc, hc2>
+                    hphc = hp2[slc].inner(hc[slc])  # <hp, hc2>
+                    hchp = hc2[slc].inner(hp[slc])  # <hc, hp2>
                     hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
-                    lr += - 0.5 * hh
+
+                    pfac = phase_coef * self.phase_fac[m2].conj()
+                    lr += - 0.5 * (hh * pfac).real
 
         lr_total = special.logsumexp(lr) - numpy.log(len(self.pol))
 
