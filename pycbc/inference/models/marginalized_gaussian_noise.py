@@ -420,9 +420,17 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         # fp / fc need not be calculated except where polariation is different
         # can compress modes to only those that differ by m
         ##############################################
-
-        # Whiten all the modes / polarizations ahead of time
+        lr = 0.
         for det, modes in wfs.items():
+            if det not in self.dets:
+                self.dets[det] = Detector(det)
+
+            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
+                                                    self.current_params['dec'],
+                                                    self.pol,
+                                                    self.current_params['tc'])
+
+            # Whiten all the modes / polarizations ahead of time
             for mode in modes:
                 # the kmax of the waveforms may be different than internal kmax
                 kmax = min(max(len(hp), len(hc)), self._kmax[det])
@@ -435,15 +443,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 if m not in self.phase_fac:
                     self.phase_fac[m] = numpy.exp(1.0j * m * self.phase)
 
-        lr = 0.
-        for det, modes in wfs.items():
-            if det not in self.dets:
-                self.dets[det] = Detector(det)
 
-            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
-                                                    self.current_params['dec'],
-                                                    self.pol,
-                                                    self.current_params['tc'])
             # loop over modes
             for mode in modes:
                 h, l, m  = mode
