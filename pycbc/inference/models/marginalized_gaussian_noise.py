@@ -356,38 +356,36 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             generator_class=generator.FDomainDetFrameModePolGenerator,
             gates=self.gates, **self.static_params)
 
-        self.pol = numpy.linspace(0, 2*numpy.pi, polarization_samples)
-        self.phase = numpy.linspace(0, 2*numpy.pi, coa_phase_samples)
+        pol = numpy.linspace(0, 2*numpy.pi, polarization_samples)
+        phase = numpy.linspace(0, 2*numpy.pi, coa_phase_samples)
 
         # remap to every combination of the parameters
         # this gets every combination by mappin them to an NxM grid
         # one needs to be transposed so that they run allong opposite
         # dimensions
-        self.pol = numpy.resize(self.pol, len(self.pol)*len(self.phase))
-        self.phase = numpy.resize(self.phase, len(self.pol)*len(self.phase))
+        n = coa_phase_samples * polarization_samples
+        self.pol = numpy.resize(pol, n)
+        phase = numpy.resize(phase, n)
 
-        self.phase = self.phase.reshape(coa_phase_samples, polarization_samples)
-        self.phase = self.phase.T.flatten()
+        phase = phase.reshape(coa_phase_samples, polarization_samples)
+        self.phase = phase.T.flatten()
 
+
+        self.phase_fac = {}
         self.dets = {}
 
     @property
     def _extra_stats(self):
-        """Adds ``loglr``, ``maxl_polarization``, and the ``optimal_snrsq`` in
-        each detector.
+        """Adds ``maxl_polarization`` and the ``max_phase``
         """
-        return ['loglr', 'maxl_polarization'] + \
-               ['{}_optimal_snrsq'.format(det) for det in self._data]
+        return ['maxl_polarization', 'max_phase',]
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
         """
-        setattr(self._current_stats, 'loglr', -numpy.inf)
         # maxl phase doesn't exist, so set it to nan
         setattr(self._current_stats, 'maxl_polarization', numpy.nan)
-        for det in self._data:
-            # snr can't be < 0 by definition, so return 0
-            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
+        setattr(self._current_stats, 'maxl_phase', numpy.nan)
         return -numpy.inf
 
     def _loglr(self):
@@ -417,57 +415,74 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             else:
                 raise e
 
+        ############# Some optimizations not yet taken
+        # higher m calculations could have a lot of redundancy
+        # fp / fc need not be calculated except where polariation is different
+        # can compress modes to only those that differ by m
+        ##############################################
+
         lr = 0.
-        for det, (hp, hc) in wfs.items():
+        for det, modes in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
+
             fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
                                                     self.current_params['dec'],
                                                     self.pol,
                                                     self.current_params['tc'])
 
-            # the kmax of the waveforms may be different than internal kmax
-            kmax = min(max(len(hp), len(hc)), self._kmax[det])
-            slc = slice(self._kmin[det], kmax)
+            # loop over modes
+            for mode in modes:
+                h, l, m  = mode
+                hp, hc = modes[mode]
 
-            # whiten both polarizations
-            hp[self._kmin[det]:kmax] *= self._weight[det][slc]
-            hc[self._kmin[det]:kmax] *= self._weight[det][slc]
+                if m not in self.phase_fac:
+                    self.phase_fac[m] = numpy.exp(1.0j * m * self.phase).conj()
+                phase_coef = self.phase_fac[m]
 
-            # h = fp * hp + hc * hc
-            # <h, d> = fp * <hp,d> + fc * <hc,d>
-            # the inner products
-            cplx_hpd = self._whitened_data[det][slc].inner(hp[slc])  # <hp, d>
-            cplx_hcd = self._whitened_data[det][slc].inner(hc[slc])  # <hc, d>
+                # the kmax of the waveforms may be different than internal kmax
+                kmax = min(max(len(hp), len(hc)), self._kmax[det])
+                slc = slice(self._kmin[det], kmax)
 
-            cplx_hd = fp * cplx_hpd + fc * cplx_hcd
+                # whiten both polarizations
+                hp[self._kmin[det]:kmax] *= self._weight[det][slc]
+                hc[self._kmin[det]:kmax] *= self._weight[det][slc]
 
-            # <h, h> = <fp * hp + fc * hc, fp * hp + fc * hc>
-            # = Real(fpfp * <hp,hp> + fcfc * <hc,hc> + \
-            #  fphc * (<hp, hc> + <hc, hp>))
-            hphp = hp[slc].inner(hp[slc]).real  # < hp, hp>
-            hchc = hc[slc].inner(hc[slc]).real  # <hc, hc>
+                # h = fp * hp + hc * hc
+                # <h, d> = fp * <hp,d> + fc * <hc,d>
+                # the inner products
+                cplx_hpd = self._whitened_data[det][slc].inner(hp[slc])  # <hp, d>
+                cplx_hcd = self._whitened_data[det][slc].inner(hc[slc])  # <hc, d>
+                cplx_hd = self.phase_fac * (fp * cplx_hpd + fc * cplx_hcd)
+                lr += cpx_hd.real
 
-            # Below could be combined, but too tired to figure out
-            # if there should be a sign applied if so
-            hphc = hp[slc].inner(hc[slc]).real  # <hp, hc>
-            hchp = hc[slc].inner(hp[slc]).real  # <hc, hp>
+                for mode2 in modes:
+                    h2, l2, m2  = mode2
+                    hp2, hc2 = modes[mode2]
+                    #
+                    # <h, h> = <fp * hp + fc * hc, fp * hp + fc * hc>
+                    # = Real(fpfp * <hp,hp> + fcfc * <hc,hc> + \
+                    #  fphc * (<hp, hc> + <hc, hp>))
 
-            hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
-            # store
-            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh)
-            lr += cplx_hd.real - 0.5 * hh
+                    # phase factor cancels for hphp / hchc so not included
+                    hphp = hp2[slc].inner(hp[slc]).real  # < hp, hp>
+                    hchc = hc2[slc].inner(hc[slc]).real  # <hc, hc>
+
+                    # Below could be combined, but too tired to figure out
+                    # if there should be a sign applied if so
+                    pfac = phase_coef * self.phase_fac[m2]
+
+                    hphc = (pfac * hp2[slc].inner(hc[slc])).real  # <hp, hc>
+                    hchp = (pfac * hc2[slc].inner(hp[slc])).real  # <hc, hp>
+
+                    hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
+                    lr += - 0.5 * hh
 
         lr_total = special.logsumexp(lr) - numpy.log(len(self.pol))
 
         # store the maxl polarization
         idx = lr.argmax()
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
-
-        # just store the maxl optimal snrsq
-        for det in wfs:
-            p = '{}_optimal_snrsq'.format(det)
-            setattr(self._current_stats, p,
-                    getattr(self._current_stats, p)[idx])
+        setattr(self._current_stats, 'maxl_phase', self.phase[idx])
 
         return float(lr_total)
