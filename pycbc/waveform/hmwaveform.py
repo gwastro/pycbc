@@ -20,7 +20,10 @@ from string import Formatter
 import lal
 import lalsimulation
 
-from .waveform import props, _check_lal_pars 
+from .waveform import props, _check_lal_pars
+from . import parameters
+
+from pycbc.types import TimeSeries
 
 def sum_modes(hlms, inclination, phi):
     """Applies spherical harmonics and sums modes to produce a plus and cross
@@ -48,12 +51,12 @@ def sum_modes(hlms, inclination, phi):
         ell, m = mode
         hlm = hlms[ell, m]
         ylm = lal.SpinWeightedSphericalHarmonic(
-            inclination, numpy.pi/2-phi, -2,
+            inclination, numpy.pi/2 - phi, -2,
             ell, m)
         if out is None:
-            out = ylm*hlm
+            out = ylm * hlm
         else:
-            out += ylm*hlm
+            out += ylm * hlm
     # return the conjugate, since h = h_+ - ih_x
     return numpy.conj(out)
 
@@ -110,9 +113,8 @@ def get_nrsur_modes(template=None, **kwargs):
         ret = ret.next
     return hlms
 
-
-get_nrsur_modes.__doc__ = get_nrsur_modes.__doc__.format(
-    **{_p[1]: getattr(parameters, _p[1]).docstr(
-        prefix="    ", include_label=False).lstrip(' ')
-       for _p in Formatter().parse(get_nrsur_modes.__doc__)
-       })
+#get_nrsur_modes.__doc__ = get_nrsur_modes.__doc__.format(
+#    **{_p[1]: getattr(parameters, _p[1]).docstr(
+#        prefix="    ", include_label=False).lstrip(' ')
+#       for _p in Formatter().parse(get_nrsur_modes.__doc__)
+#       })

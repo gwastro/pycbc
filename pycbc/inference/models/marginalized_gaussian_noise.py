@@ -437,9 +437,13 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 kmax = min(max(len(hp), len(hc)), self._kmax[det])
                 slc = slice(self._kmin[det], kmax)
 
-                # whiten both polarizations
-                hp[self._kmin[det]:kmax] *= self._weight[det][slc]
-                hc[self._kmin[det]:kmax] *= self._weight[det][slc]
+                # whiten both polarizations and add in ylm
+                import lal
+                l, m = mode
+                ylm = lal.SpinWeightedSphericalHarmonic(
+                            self.current_params['inclination'], 0, -2, l, m)
+                hp[self._kmin[det]:kmax] *= self._weight[det][slc] * ylm
+                hc[self._kmin[det]:kmax] *= self._weight[det][slc] * ylm
 
                 if m not in self.phase_fac:
                     self.phase_fac[m] = numpy.exp(1.0j * m * self.phase)
