@@ -113,6 +113,24 @@ def get_nrsur_modes(template=None, **kwargs):
         ret = ret.next
     return hlms
 
+_mode_waveform_td = {'NRSur7dq4':get_nrsur_modes,
+                     'NRSur7dq2':get_nrsur_modes,
+                     }
+_mode_waveform_fd = {}
+
+def get_td_modes(template=None, **kwargs):
+    """ Return all modes composing a time domain waveform
+    """
+    params = props(template, **kwargs)
+    return _mode_waveform_td[params['approximant']](**params)
+
+def get_fd_modes(template=None, **kwargs):
+    """ Return all modes composing a frequency domain waveform
+    """
+    params = props(template, **kwargs)
+    return _mode_waveform_fd[params['approximant']](**params)
+
+# Collin, this doesn't run, needs fixing
 #get_nrsur_modes.__doc__ = get_nrsur_modes.__doc__.format(
 #    **{_p[1]: getattr(parameters, _p[1]).docstr(
 #        prefix="    ", include_label=False).lstrip(' ')
