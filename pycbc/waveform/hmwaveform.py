@@ -17,6 +17,7 @@
 """
 
 from string import Formatter
+import numpy
 import lal
 import lalsimulation
 
@@ -145,7 +146,7 @@ def get_nrsur_modes(**params):
         # correct the phase and apply inclination if desired
         if 'inclination' in params:
             ylm = lal.SpinWeightedSphericalHarmonic(
-                inclination, dphi, -2, ret.l, ret.m)
+                params['inclination'], dphi, -2, ret.l, ret.m)
         else:
             # just apply the phase shift to make LAL standard
             ylm = numpy.exp(1j * ret.m * dphi)
@@ -213,7 +214,7 @@ def get_fd_hmwaveform(template=None, **kwargs):
     required = parameters.fd_required
     check_args(params, required)
     try:
-        return _mode_waveform_fd[params['approximant']]
+        return _mode_waveform_fd[params['approximant']](**params)
     except KeyError:
         raise ValueError("I don't support approximant {}, sorry"
                          .format(approx))
@@ -226,7 +227,7 @@ def get_td_hmwaveform(template=None, **kwargs):
     required = parameters.fd_required
     check_args(params, required)
     try:
-        return _mode_waveform_td[params['approximant']]
+        return _mode_waveform_td[params['approximant']](**params)
     except KeyError:
         raise ValueError("I don't support approximant {}, sorry"
                          .format(approx))
