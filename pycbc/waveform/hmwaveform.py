@@ -20,10 +20,21 @@ from string import Formatter
 import lal
 import lalsimulation
 
-from .waveform import props, _check_lal_pars
+from .waveform import (props, _check_lal_pars, check_args)
+from .waveform import get_td_waveform, get_fd_waveform
 from . import parameters
-
 from pycbc.types import TimeSeries
+
+
+def _formatdocstr(docstr):
+    """Utility for formatting docstrings with parameter information.
+    """
+    return docstr.__doc__.format(
+        **{_p[1]: getattr(parameters, _p[1]).docstr(
+            prefix="    ", include_label=False).lstrip(' ')
+           for _p in Formatter().parse(docstr.__doc__)
+           })
+
 
 def sum_modes(hlms, inclination, phi):
     """Applies spherical harmonics and sums modes to produce a plus and cross
@@ -33,8 +44,8 @@ def sum_modes(hlms, inclination, phi):
     ----------
     hlms : dict
         Dictionary of ``(l, m)`` -> complex ``hlm``. The ``hlm`` may be a
-        complex number or array, complex ``TimeSeries``, or complex
-        ``FrequencySeries``. All modes in the dictionary will be summed.
+        complex number or array, or complex ``TimeSeries``. All modes in the
+        dictionary will be summed.
     inclination : float
         The inclination to use.
     phi : float
@@ -50,9 +61,7 @@ def sum_modes(hlms, inclination, phi):
     for mode in hlms:
         ell, m = mode
         hlm = hlms[ell, m]
-        ylm = lal.SpinWeightedSphericalHarmonic(
-            inclination, numpy.pi/2 - phi, -2,
-            ell, m)
+        ylm = lal.SpinWeightedSphericalHarmonic(inclination, phi, -2, ell, m)
         if out is None:
             out = ylm * hlm
         else:
@@ -61,10 +70,29 @@ def sum_modes(hlms, inclination, phi):
     return numpy.conj(out)
 
 
-def get_nrsur_modes(template=None, **kwargs):
+def default_modes(approximant):
+    """Returns the default modes for the given approximant.
+    """
+    # FIXME: this should be replaced to a call to a lalsimulation function,
+    # whenever that's added
+    if approximant in ['IMRPhenomXPHM', 'IMRPhenomXHM']:
+        # according to arXiv:2004.06503
+        return [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4)]
+    elif approximant in ['IMRPhenomPv3HM', 'IMRPhenomHM']:
+        # according to arXiv:1911.06050
+        return [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4), (4, 3)]
+    elif approximant.startswith('NRSur7dq4'):
+        # according to arXiv:1905.09300
+        return [(ell, m) for ell in [2, 3, 4] for m in range(-ell, ell+1)]
+    else:
+        raise ValueError("I don't know what the default modes are for "
+                         "approximant {}, sorry!".format(approximant))
+
+
+def get_nrsur_modes(**params):
     """Generates NRSurrogate waveform mode-by-mode.
 
-    All waveform parameters are should be provided as keyword arguments.
+    All waveform parameters should be provided as keyword arguments.
     Recognized parameters are listed below. Unrecognized arguments are ignored.
 
     Parameters
@@ -86,14 +114,16 @@ def get_nrsur_modes(template=None, **kwargs):
     {f_lower}
     {f_ref}
     {distance}
+    inclination : float, optional
+        If provided, will apply the spherical harmonic for the given
+        inclination to each mode.
     {mode_array}
 
     Returns
     -------
     dict :
-        Dictionary of ``(l, m)`` -> complex ``TimeSeries`` giving each ``hlm``.
+        Dictionary of ``(l, m)`` -> ``(h_+, h_x)`` ``TimeSeries``.
     """
-    params = props(template, **kwargs)
     laldict = _check_lal_pars(params)
     ret = lalsimulation.SimInspiralPrecessingNRSurModes(
         params['delta_t'],
@@ -106,33 +136,97 @@ def get_nrsur_modes(template=None, **kwargs):
         getattr(lalsimulation, params['approximant'])
     )
     hlms = {}
+    # the NR surrogates use a different coordinate system than other lal
+    # lal waveforms; to make standard, we need to shift the phase by -pi/2
+    dphi = -numpy.pi/2
     while ret:
-        hlms[ret.l, ret.m] =  TimeSeries(ret.mode.data.data,
-                                     delta_t=ret.mode.deltaT,
-                                     epoch=ret.mode.epoch)
+        hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
+                         epoch=ret.mode.epoch)
+        # correct the phase and apply inclination if desired
+        if 'inclination' in params:
+            ylm = lal.SpinWeightedSphericalHarmonic(
+                inclination, dphi, -2, ret.l, ret.m)
+        else:
+            # just apply the phase shift to make LAL standard
+            ylm = numpy.exp(1j * ret.m * dphi)
+        hlm *= ylm
+        # store the conjugate, since h = h_+ - ih_x
+        hlms[ret.l, ret.m] = (hlm.real(), -hlm.imag())
         ret = ret.next
     return hlms
 
-_mode_waveform_td = {'NRSur7dq4':get_nrsur_modes,
-                     'NRSur7dq2':get_nrsur_modes,
+get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
+
+
+def get_imrphenomhm_modes(**kwargs):
+    """Generates ``IMRPhenom*HM`` waveforms mode-by-mode.
+    """
+    approx = kwargs['approximant']
+    try:
+        mode_array = kwargs['mode_array']
+    except KeyError:
+        mode_array = None
+    if mode_array is None:
+        mode_array = default_modes(approx)
+    hlms = {}
+    for mode in mode_array:
+        ma = [mode]
+        # PhenomPv3HM always needs the 2,2 mode, so we'll generate it then
+        # subract it off
+        if approx == 'IMRPhenomPv3HM' and mode != (2, 2):
+            ma.append((2,2))
+        kwargs.update({'mode_array': ma})
+        hp, hc = get_fd_waveform(**kwargs)
+        hlms[mode] = (hp, hc)
+    # subtract off the 2,2 mode for PhenomPv3HM
+    if approx == 'IMRPhenomPv3HM':
+        try:
+            hp22, hc22 = hlms[(2,2)]
+        except KeyError:
+            # 2,2 mode wasn't requested; generate it separately
+            kwargs.update({'mode_array': (2, 2)})
+            hp22, hc22 = get_fd_waveform(**kwargs) 
+        for mode in hlms:
+            if mode != (2, 2):
+                hp, hc = hlms[mode]
+                hp -= hp22
+                hc -= hc22
+    return hlms
+
+
+_mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
+                     'NRSur7dq2': get_nrsur_modes,
                      }
-_mode_waveform_fd = {}
 
-def get_td_modes(template=None, **kwargs):
-    """ Return all modes composing a time domain waveform
+
+_mode_waveform_fd = {'IMRPhenomHM': get_imrphenomhm_modes,
+                     'IMRPhenomPv3HM': get_imrphenomhm_modes,
+                     'IMRPhenomXHM': get_imrphenomhm_modes,
+                     'IMRPhenomXPHM' : get_imrphenomhm_modes,
+                    }
+
+
+def get_fd_hmwaveform(template=None, **kwargs):
+    """Generates frequency domain waveforms, but does not sum over the modes.
     """
     params = props(template, **kwargs)
-    return _mode_waveform_td[params['approximant']](**params)
+    required = parameters.fd_required
+    check_args(params, required)
+    try:
+        return _mode_waveform_fd[params['approximant']]
+    except KeyError:
+        raise ValueError("I don't support approximant {}, sorry"
+                         .format(approx))
 
-def get_fd_modes(template=None, **kwargs):
-    """ Return all modes composing a frequency domain waveform
+
+def get_td_hmwaveform(template=None, **kwargs):
+    """Generates time domain waveforms, but does not sum over the modes.
     """
     params = props(template, **kwargs)
-    return _mode_waveform_fd[params['approximant']](**params)
-
-# Collin, this doesn't run, needs fixing
-#get_nrsur_modes.__doc__ = get_nrsur_modes.__doc__.format(
-#    **{_p[1]: getattr(parameters, _p[1]).docstr(
-#        prefix="    ", include_label=False).lstrip(' ')
-#       for _p in Formatter().parse(get_nrsur_modes.__doc__)
-#       })
+    required = parameters.fd_required
+    check_args(params, required)
+    try:
+        return _mode_waveform_td[params['approximant']]
+    except KeyError:
+        raise ValueError("I don't support approximant {}, sorry"
+                         .format(approx))
