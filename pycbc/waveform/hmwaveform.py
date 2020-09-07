@@ -29,10 +29,10 @@ from pycbc.types import TimeSeries
 def _formatdocstr(docstr):
     """Utility for formatting docstrings with parameter information.
     """
-    return docstr.__doc__.format(
+    return docstr.format(
         **{_p[1]: getattr(parameters, _p[1]).docstr(
             prefix="    ", include_label=False).lstrip(' ')
-           for _p in Formatter().parse(docstr.__doc__)
+           for _p in Formatter().parse(docstr) if _p[1] is not None
            })
 
 
