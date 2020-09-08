@@ -78,10 +78,16 @@ def default_modes(approximant):
     # whenever that's added
     if approximant in ['IMRPhenomXPHM', 'IMRPhenomXHM']:
         # according to arXiv:2004.06503
-        return [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4)]
+        ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4)]
+        # add the -m modes
+        ma += [(ell, -m) for ell, m in ma]
+        return ma 
     elif approximant in ['IMRPhenomPv3HM', 'IMRPhenomHM']:
         # according to arXiv:1911.06050
-        return [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4), (4, 3)]
+        ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4), (4, 3)]
+        # add the -m modes
+        ma += [(ell, -m) for ell, m in ma]
+        return ma 
     elif approximant.startswith('NRSur7dq4'):
         # according to arXiv:1905.09300
         return [(ell, m) for ell in [2, 3, 4] for m in range(-ell, ell+1)]
@@ -159,8 +165,38 @@ def get_nrsur_modes(**params):
 get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 
 
+def get_imrphenomx_modes(**params):
+    """Generates ``IMRPhenomX[P]HM`` waveforms mode-by-mode.
+    """
+    raise NotImplementedError("Not currently supported")
+    approx = params['approximant']
+    if not approx.startswith('IMRPhenomX'):
+        raise ValueError("unsupported approximant")
+    mode_array = params.pop('mode_array', None)
+    if mode_array is None:
+        mode_array = default_modes(approx)
+    laldict = _check_lal_pars(params)
+    if 'f_final' not in params:
+        # setting to 0 will default to ringdown frequency
+        params['f_final'] = 0. 
+    hlms = {}
+    for (ell, m) in mode_array:
+        hpos, hneg = lalsimulation.SimIMRPhenomXPHMOneMode(
+            ell, m, 
+            params['mass1']*lal.MSUN_SI,
+            params['mass2']*lal.MSUN_SI,
+            params['spin1x'], params['spin1y'], params['spin1z'],
+            params['spin2x'], params['spin2y'], params['spin2z'],
+            params['distance']*1e6*lal.PC_SI, params['coa_phase'],
+            params['delta_f'], params['f_lower'], params['f_final'],
+            params['f_ref'],
+            laldict)
+       hlms[ell, m] = hpos, hneg 
+    return hlms
+
+
 def get_imrphenomhm_modes(**kwargs):
-    """Generates ``IMRPhenom*HM`` waveforms mode-by-mode.
+    """Generates ``IMRPhenom[Pv3]HM`` waveforms mode-by-mode.
     """
     approx = kwargs['approximant']
     try:
@@ -202,8 +238,8 @@ _mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
 
 _mode_waveform_fd = {'IMRPhenomHM': get_imrphenomhm_modes,
                      'IMRPhenomPv3HM': get_imrphenomhm_modes,
-                     'IMRPhenomXHM': get_imrphenomhm_modes,
-                     'IMRPhenomXPHM' : get_imrphenomhm_modes,
+                     'IMRPhenomXHM': get_imrphenomx_modes,
+                     'IMRPhenomXPHM' : get_imrphenomx_modes,
                     }
 
 
