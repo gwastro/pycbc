@@ -121,9 +121,6 @@ def get_nrsur_modes(**params):
     {f_lower}
     {f_ref}
     {distance}
-    inclination : float, optional
-        If provided, will apply the spherical harmonic for the given
-        inclination to each mode.
     {mode_array}
 
     Returns
@@ -149,14 +146,8 @@ def get_nrsur_modes(**params):
     while ret:
         hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
                          epoch=ret.mode.epoch)
-        # correct the phase and apply inclination if desired
-        if 'inclination' in params:
-            ylm = lal.SpinWeightedSphericalHarmonic(
-                params['inclination'], dphi, -2, ret.l, ret.m)
-        else:
-            # just apply the phase shift to make LAL standard
-            ylm = numpy.exp(1j * ret.m * dphi)
-        hlm *= ylm
+        # correct the phase to make LAL standard
+        hlm *= numpy.exp(1j * ret.m * dphi)
         # store the conjugate, since h = h_+ - ih_x
         hlms[ret.l, ret.m] = (hlm.real(), -hlm.imag())
         ret = ret.next
