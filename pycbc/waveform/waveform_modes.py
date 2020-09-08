@@ -182,7 +182,7 @@ def get_imrphenomx_modes(**params):
             params['delta_f'], params['f_lower'], params['f_final'],
             params['f_ref'],
             laldict)
-       hlms[ell, m] = hpos, hneg 
+        hlms[ell, m] = (hpos, hneg)
     return hlms
 
 
