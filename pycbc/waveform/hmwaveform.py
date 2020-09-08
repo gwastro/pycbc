@@ -243,7 +243,7 @@ _mode_waveform_fd = {'IMRPhenomHM': get_imrphenomhm_modes,
                     }
 
 
-def get_fd_hmwaveform(template=None, **kwargs):
+def get_fd_waveform_modes(template=None, **kwargs):
     """Generates frequency domain waveforms, but does not sum over the modes.
     """
     params = props(template, **kwargs)
@@ -256,7 +256,7 @@ def get_fd_hmwaveform(template=None, **kwargs):
                          .format(approx))
 
 
-def get_td_hmwaveform(template=None, **kwargs):
+def get_td_waveform_modes(template=None, **kwargs):
     """Generates time domain waveforms, but does not sum over the modes.
     """
     params = props(template, **kwargs)
