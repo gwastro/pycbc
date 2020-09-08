@@ -140,16 +140,10 @@ def get_nrsur_modes(**params):
         getattr(lalsimulation, params['approximant'])
     )
     hlms = {}
-    # the NR surrogates use a different coordinate system than other lal
-    # lal waveforms; to make standard, we need to shift the phase by -pi/2
-    dphi = -numpy.pi/2
     while ret:
         hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
                          epoch=ret.mode.epoch)
-        # correct the phase to make LAL standard
-        hlm *= numpy.exp(1j * ret.m * dphi)
-        # store the conjugate, since h = h_+ - ih_x
-        hlms[ret.l, ret.m] = (hlm.real(), -hlm.imag())
+        hlms[ret.l, ret.m] = hlm
         ret = ret.next
     return hlms
 
