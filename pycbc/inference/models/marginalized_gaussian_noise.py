@@ -353,7 +353,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             self.variable_params, self.data,
             waveform_transforms=self.waveform_transforms,
             recalibration=self.recalibration,
-            generator_class=generator.FDomainDetFrameModeGenerator,
+            generator_class=generator.FDomainDetFrameModesGenerator,
             gates=self.gates, **self.static_params)
 
         pol = numpy.linspace(0, 2*numpy.pi, polarization_samples)
