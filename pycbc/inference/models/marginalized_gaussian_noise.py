@@ -455,7 +455,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 glm = lal.SpinWeightedSphericalHarmonic(
                     self.current_params['inclination'], 0, -2, l, m).real
 
-                if m not in zeta:
+                if m not in zetas:
                     zetas[m] = 0j
                 zeta = zetas[m]
 
@@ -504,8 +504,9 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             hphp = 0.
             hchc = 0.
             hphc = 0.
+
             for m, zeta in zetas.items():
-                phase_coef = self.phase_fac[m]
+                phase_coeff = self.phase_fac[m]
 
                 # <h+, d> = (exp[i m phi] * zeta).real()
                 # <hx, d> = -(exp[i m phi] * zeta).imag()
