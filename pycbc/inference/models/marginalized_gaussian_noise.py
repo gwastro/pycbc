@@ -355,22 +355,18 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             recalibration=self.recalibration,
             generator_class=generator.FDomainDetFrameModesGenerator,
             gates=self.gates, **self.static_params)
-
         pol = numpy.linspace(0, 2*numpy.pi, polarization_samples)
         phase = numpy.linspace(0, 2*numpy.pi, coa_phase_samples)
-
         # remap to every combination of the parameters
         # this gets every combination by mappin them to an NxM grid
         # one needs to be transposed so that they run allong opposite
         # dimensions
         n = coa_phase_samples * polarization_samples
+        self.nsamples = n
         self.pol = numpy.resize(pol, n)
         phase = numpy.resize(phase, n)
-
         phase = phase.reshape(coa_phase_samples, polarization_samples)
         self.phase = phase.T.flatten()
-
-
         self.phase_fac = {}
         self.dets = {}
 
@@ -418,7 +414,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         ############# Some optimizations not yet taken
         # higher m calculations could have a lot of redundancy
         # fp / fc need not be calculated except where polarization is different
-        # can compress modes to only those that differ by m
+        # may be possible to simplify this by making smarter use of real/imag
         ##############################################
         lr = 0.
         for det, modes in wfs.items():
@@ -430,57 +426,130 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                                                     self.pol,
                                                     self.current_params['tc'])
 
-            # Whiten all the modes / polarizations ahead of time
-            for mode in modes:
-                # the kmax of the waveforms may be different than internal kmax
-                hp, hc = modes[mode]
-                kmax = min(max(len(hp), len(hc)), self._kmax[det])
-                slc = slice(self._kmin[det], kmax)
-
-                # whiten both polarizations and add in ylm
-                import lal
-                l, m = mode
-                ylm = lal.SpinWeightedSphericalHarmonic(
-                            self.current_params['inclination'], 0, -2, l, m)
-                hp[self._kmin[det]:kmax] *= self._weight[det][slc] * ylm
-                hc[self._kmin[det]:kmax] *= self._weight[det][slc] * ylm
-
-                if m not in self.phase_fac:
-                    self.phase_fac[m] = numpy.exp(1.0j * m * self.phase)
-
             # loop over modes
+            # we will sum up zetalm = glm <ulm, d> + i glm <vlm, d>
+            # over all common m, then apply the phase once
+            zetas = {}
+            # we will also need to sum up the ulm and vlm for all common ms,
+            # for the <h, h> terms
+            rlms = {}
+            slms = {}
             for mode in modes:
                 l, m  = mode
-                hp, hc = modes[mode]
-                phase_coef = self.phase_fac[m]
-
-                # h = fp * hp + hc * hc
-                # <h, d> = fp * <hp,d> + fc * <hc,d>
+                ulm, vlm = modes[mode]
+                # whiten the waveforms
+                # the kmax of the waveforms may be different than internal kmax
+                kmax = min(max(len(ulm), len(vlm)), self._kmax[det])
+                slc = slice(self._kmin[det], kmax)
+                # whiten
+                ulm[self._kmin[det]:kmax] *= self._weight[det][slc]
+                vlm[self._kmin[det]:kmax] *= self._weight[det][slc]
                 # the inner products
-                cplx_hpd = self._whitened_data[det][slc].inner(hp[slc])  # <hp, d>
-                cplx_hcd = self._whitened_data[det][slc].inner(hc[slc])  # <hc, d>
-                cplx_hd = self.phase_fac * (fp * cplx_hpd + fc * cplx_hcd)
-                lr += cpx_hd.real
-
-                for mode2 in modes:
-                    l2, m2  = mode2
-                    hp2, hc2 = modes[mode2]
-
-                    # <h, h> = <fp * hp + fc * hc, fp * hp + fc * hc>
-                    # = Real(fpfp * <hp,hp> + fcfc * <hc,hc> + \
-                    #  fphc * (<hp, hc> + <hc, hp>))
-                    hphp = hp2[slc].inner(hp[slc])  # <hp, hp2>
-                    hchc = hc2[slc].inner(hc[slc])  # <hc, hc2>
-                    hphc = hp2[slc].inner(hc[slc])  # <hp, hc2>
-                    hchp = hc2[slc].inner(hp[slc])  # <hc, hp2>
-                    hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
-
-                    pfac = phase_coef * self.phase_fac[m2].conj()
-                    lr += - 0.5 * (hh * pfac).real
-
-        lr_total = special.logsumexp(lr) - numpy.log(len(self.pol))
-
-        # store the maxl polarization
+                # <ulm, d>
+                ulmd = self._whitened_data[det][slc].inner(ulm[slc]).real
+                # <vlm, d>
+                vlmd = self._whitened_data[det][slc].inner(vlm[slc]).real
+                # add inclination, and pack into a complex number
+                import lal
+                glm = lal.SpinWeightedSphericalHarmonic(
+                    self.current_params['inclination'], 0, -2, l, m).real
+                try:
+                    zeta = zetas[m]
+                except KeyError:
+                    zeta = zetas[m] = 0j
+                zetas[m] += glm * (ulmd + 1j*vlmd)
+                # add up the vectors for the <h, h>
+                r = glm * ulm
+                s = glm * vlm
+                try:
+                    rlms[m] += r
+                except KeyError:
+                    rlms[m] = r
+                try:
+                    slms[m] += s
+                except KeyError:
+                    slms[m] = s
+            # now compute all possible <hlm, hlm>
+            rr_m = {}
+            ss_m = {}
+            rs_m = {}
+            sr_m = {}
+            combos = itertools.combinations_with_replacement(rlms.keys(), 2)
+            for m, mprime in combos:
+                r = rlms[m]
+                s = slms[m]
+                rprime = rlms[mprime]
+                sprime = slms[mprime]
+                rr_m[m, mprime] = r[slc].inner(rprime[slc]).real
+                ss_m[m, mprime] = s[slc].inner(sprime[slc]).real
+                rs_m[m, mprime] = s[slc].inner(rprime[slc]).real
+                sr_m[m, mprime] = r[slc].inner(sprime[slc]).real
+                # store the conjugate for easy retrieval later
+                rr_m[mprime, m] = rr_m[m, mprime]
+                ss_m[mprime, m] = ss_m[m, mprime]
+                rs_m[mprime, m] = rs_m[m, mprime]
+                sr_m[mprime, m] = sr_m[m, mprime]
+            # now apply the phase to all the common ms
+            hpd = 0.
+            hcd = 0.
+            hphp = 0.
+            hchc = 0.
+            hphc = 0.
+            for m, zeta in zetas.items():
+                try:
+                    phase_coef = self.phase_fac[m]
+                except KeyError:
+                    phase_coef = self.phase_fac[m] = \
+                        numpy.exp(1.0j * m * self.phase)
+                # <h+, d> = (exp[i m phi] * zeta).real()
+                # <hx, d> = -(exp[i m phi] * zeta).imag()
+                z = phase_coeff * zeta
+                hpd += z.real
+                hcd += -z.imag
+                # now calculate the contribution to <h, h>
+                cosm = phase_coeff.real
+                sinm = phase_coeff.imag
+                for mprime in zetas:
+                    try:
+                        pcprime = self.phase_fac[mprime]
+                    except KeyError:
+                        pcprime = self.phase_fac[mprime] = \
+                            numpy.exp(1.0j * mprime * self.phase)
+                    cosmprime = pcprime.real
+                    sinmprime = pcprime.imag
+                    # needed components
+                    rr = rr_m[m, mprime]
+                    ss = ss_m[m, mprime]
+                    rs = rs_m[m, mprime]
+                    sr = sr_m[m, mprime]
+                    # <hp, hp>
+                    hphp += rr * cosm * cosmprime \
+                        + ss * sinm * sinmprime \
+                        - rs * cosm * sinmprime \
+                        - sr * sinm * cosmprime
+                    # <hc, hc>
+                    hchc += rr * sinm * sinmprime \
+                        + ss * cosm * cosmprime \
+                        + rs * sinm * cosmprime \
+                        + sr * cosm * sinmprime
+                    # < hp, hc>
+                    hphc += -rr * cosm * sinmprime \
+                        + ss * sinm * cosmprime \
+                        + sr * sinm * sinmprime \
+                        - rs * cosm * cosmprime
+            # Now apply the polarizations and calculate the loglr
+            # We have h = Fp * hp + Fc * hc
+            # loglr = <h, d> - <h, h>/2
+            #       = Fp*<hp, d> + Fc*<hc, d> 
+            #          - (1/2)*(Fp*Fp*<hp, hp> + Fc*Fc*<hc, hc> 
+            #                   + 2*Fp*Fc<hp, hc>)
+            # (in the last line we have made use of the time series being
+            #  real, so that <a, b> = <b, a>).
+            hd = fp * hpd + fc * hcd
+            hh = fp * fp * hphp + fc * fc * hchc + 2 * fp * fc * hphc
+            lr += hd - 0.5 * hh
+        lr_total = special.logsumexp(lr) - numpy.log(self.nsamples)
+        # store the maxl values
         idx = lr.argmax()
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
         setattr(self._current_stats, 'maxl_phase', self.phase[idx])
