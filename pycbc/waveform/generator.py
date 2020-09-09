@@ -363,7 +363,6 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
     def _postgenerate(self, res):
         """Applies a taper if it is in current params.
         """
-        hlms = res
         if 'taper' in self.current_params:
             tapermethod = self.current_params['taper']
             for mode in res:
@@ -371,7 +370,7 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
                 hp = taper_timeseries(hp, tapermethod=tapermethod)
                 hc = taper_timeseries(hc, tapermethod=tapermethod)
                 res[mode] = (hp, hc)
-        return hp, hc
+        return res
 
 
 class FDomainMassSpinRingdownGenerator(BaseGenerator):
