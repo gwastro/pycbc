@@ -56,7 +56,7 @@ def sum_modes(hlms, inclination, phi):
     -------
     complex float or array
         The plus and cross polarization as a complex number. The real part
-        gives the plus, the imaginary the cross.
+        gives the plus, the negative imaginary part the cross.
     """
     out = None
     for mode in hlms:
@@ -67,8 +67,7 @@ def sum_modes(hlms, inclination, phi):
             out = ylm * hlm
         else:
             out += ylm * hlm
-    # return the conjugate, since h = h_+ - ih_x
-    return numpy.conj(out)
+    return out
 
 
 def default_modes(approximant):
@@ -126,7 +125,7 @@ def get_nrsur_modes(**params):
     Returns
     -------
     dict :
-        Dictionary of ``(l, m)`` -> ``(h_+, h_x)`` ``TimeSeries``.
+        Dictionary of ``(l, m)`` -> ``(h_+, -h_x)`` ``TimeSeries``.
     """
     laldict = _check_lal_pars(params)
     ret = lalsimulation.SimInspiralPrecessingNRSurModes(
@@ -143,7 +142,7 @@ def get_nrsur_modes(**params):
     while ret:
         hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
                          epoch=ret.mode.epoch)
-        hlms[ret.l, ret.m] = hlm
+        hlms[ret.l, ret.m] = (hlm.real(), -hlm.imag())
         ret = ret.next
     return hlms
 

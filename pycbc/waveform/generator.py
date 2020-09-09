@@ -983,13 +983,15 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
     location_args = set(['tc', 'ra', 'dec'])
 
     def generate(self, **kwargs):
-        """Generates a waveform polarizations and applies a time shift.
+        """Generates and returns a waveform decompsed into separate modes.
 
         Returns
         -------
         dict :
-            Dictionary of ``detector names -> modes -> (hp, hc)``, where
-            ``hp, hc`` are the plus and cross polarization, respectively.
+            Dictionary of ``detector names -> modes -> (ulm, vlm)``, where
+            ``ulm, vlm`` are the frequency-domain representations of the real
+            and imaginary parts, respectively, of the complex time series
+            representation of the ``hlm``.
         """
         self.current_params.update(kwargs)
         rfparams = {param: self.current_params[param]
@@ -997,19 +999,19 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         hlms = self.rframe_generator.generate(**rfparams)
         h = {}
         for mode in hlms:
-            hp, hc = hlms[mode]
-            if isinstance(hp, TimeSeries):
+            ulm, vlm = hlms[mode]
+            if isinstance(ulm, TimeSeries):
                 df = self.current_params['delta_f']
-                hp = hp.to_frequencyseries(delta_f=df)
-                hc = hc.to_frequencyseries(delta_f=df)
+                ulm = ulm.to_frequencyseries(delta_f=df)
+                vlm = vlm.to_frequencyseries(delta_f=df)
                 # time-domain waveforms will not be shifted so that the peak
                 # amplitude happens at the end of the time series (as they are
                 # for f-domain), so we add an additional shift to account for
                 # it
-                tshift = 1./df - abs(hp._epoch)
+                tshift = 1./df - abs(ulm._epoch)
             else:
                 tshift = 0.
-            hp._epoch = hc._epoch = self._epoch
+            ulm._epoch = vlm._epoch = self._epoch
             h[mode] = {}
             if self.detector_names != ['RF']:
                 for detname, det in self.detectors.items():
@@ -1019,39 +1021,39 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
                             self.current_params['ra'],
                             self.current_params['dec'],
                             self.current_params['tc'])
-                    dethp = apply_fd_time_shift(hp, tc+tshift, copy=True)
-                    dethc = apply_fd_time_shift(hc, tc+tshift, copy=True)
+                    detulm = apply_fd_time_shift(ulm, tc+tshift, copy=True)
+                    detvlm = apply_fd_time_shift(vlm, tc+tshift, copy=True)
                     if self.recalib:
                         # recalibrate with given calibration model
-                        dethp = self.recalib[detname].map_to_adjust(
-                            dethp, **self.current_params)
-                        dethc = self.recalib[detname].map_to_adjust(
-                            dethc, **self.current_params)
-                    h[mode][detname] = (dethp, dethc)
+                        detulm = self.recalib[detname].map_to_adjust(
+                            detulm, **self.current_params)
+                        detvlm = self.recalib[detname].map_to_adjust(
+                            detvlm, **self.current_params)
+                    h[mode][detname] = (detulm, detvlm)
             else:
                 # no detector response, just apply time shift
                 if 'tc' in self.current_params:
-                    hp = apply_fd_time_shift(hp,
+                    ulm = apply_fd_time_shift(ulm,
                                              self.current_params['tc']+tshift,
                                              copy=False)
-                    hc = apply_fd_time_shift(hc,
+                    vlm = apply_fd_time_shift(vlm,
                                              self.current_params['tc']+tshift,
                                              copy=False)
-                h[mode]['RF'] = (hp, hc)
+                h[mode]['RF'] = (ulm, vlm)
             if self.gates is not None:
                 # resize all to nearest power of 2
-                hps = {}
-                hcs = {}
+                ulms = {}
+                vlms = {}
                 for det in h:
-                    hp = h[det]
-                    hc = h[det]
-                    hp.resize(ceilpow2(len(hp)-1) + 1)
-                    hc.resize(ceilpow2(len(hc)-1) + 1)
-                    hps[det] = hp
-                    hcs[det] = hc
-                hps = strain.apply_gates_to_fd(hps, self.gates)
-                hcs = strain.apply_gates_to_fd(hps, self.gates)
-                h[mode] = {det: (hps[det], hcs[det]) for det in h}
+                    ulm = h[det]
+                    vlm = h[det]
+                    ulm.resize(ceilpow2(len(ulm)-1) + 1)
+                    vlm.resize(ceilpow2(len(vlm)-1) + 1)
+                    ulms[det] = ulm
+                    vlms[det] = vlm
+                ulms = strain.apply_gates_to_fd(ulms, self.gates)
+                vlms = strain.apply_gates_to_fd(ulms, self.gates)
+                h[mode] = {det: (ulms[det], vlms[det]) for det in h}
         return h
 
     @staticmethod
