@@ -488,8 +488,8 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 # store the conjugate for easy retrieval later
                 rr_m[mprime, m] = rr_m[m, mprime]
                 ss_m[mprime, m] = ss_m[m, mprime]
-                rs_m[mprime, m] = rs_m[m, mprime]
-                sr_m[mprime, m] = sr_m[m, mprime]
+                rs_m[mprime, m] = sr_m[m, mprime]
+                sr_m[mprime, m] = rs_m[m, mprime]
             # now apply the phase to all the common ms
             hpd = 0.
             hcd = 0.
