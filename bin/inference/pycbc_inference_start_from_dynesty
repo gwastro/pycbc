@@ -2,28 +2,34 @@
 """ Convert dynesty output file to emcee_pt compatible start format
 """
 
+import argparse
 import numpy
 from numpy.random import choice
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--input-file')
+parser.add_argument('--output-file')
+parser.add_argument('--ntemps', type=int)
+parser.add_argument('--nwalkers', type=int)
+args = parser.parse_args()
 
 # populate an emcee start file with
 # values chosen from a dynesty file
 # each temperature and walker will get a random
 # point from the dynesty output
 
-ntemps = 10
-nwalkers = 4000
+ntemps = args.ntemps
+nwalkers = args.nwalkers
 
 import h5py
-f = h5py.File('./result.hdf', 'r')
+f = h5py.File(args.input_file, 'r')
 
 nsample = len(f['samples'][f['samples'].keys()[0]])
 
 # These are the ids we'll use for the temps / walkers
 use = choice(nsample, replace=False, size=ntemps * nwalkers)
 
-o.close()
-o = h5py.File('start_file.hdf', 'w')
-
+o = h5py.File(args.output_file, 'w')
 for k in f['samples']:
     data = f['samples'][k][:][use]
     o['samples/' + k] = data.reshape(ntemps, nwalkers, 1)
