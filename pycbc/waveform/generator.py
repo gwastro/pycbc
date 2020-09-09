@@ -495,7 +495,7 @@ class TDomainFreqTauRingdownGenerator(BaseGenerator):
 #
 
 
-@add_metaclass(abcmeta)
+@add_metaclass(ABCMeta)
 class BaseFDomainDetFrameGenerator(object):
     """Base generator for frquency-domain waveforms in a detector frame.
 

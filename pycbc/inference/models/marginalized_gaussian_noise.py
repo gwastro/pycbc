@@ -19,6 +19,7 @@ distance.
 """
 
 import numpy
+import itertools
 from scipy import special
 
 from pycbc.waveform import generator
