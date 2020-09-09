@@ -312,6 +312,10 @@ def epsie_at_adaptive_from_config(cls, cp, section, tag,
     * diagonal : bool, optional
         Determines whether only to adapt the variance. If True will only train
         the diagonal elements.
+    * componentwise : bool, optional
+        Whether to include a componentwise scaling of the parameters.
+        By default set to False. Componentwise scaling `ndim` times more
+        expensive than global scaling.
     * min-{param} : float
     * max-{param} : float
         The bounds on each parameter. Required if ``with_boundaries`` is set to
@@ -362,6 +366,7 @@ def epsie_at_adaptive_from_config(cls, cp, section, tag,
     if not any(p in cls.name.split('_') for p in ['bounded', 'angular']):
         diagonal = diagonal is not None
         args.update({'diagonal': diagonal})
+    args.update({'componentwise': opts.pop('componentwise', None) is not None})
     if opts:
         raise ValueError("unrecognized options {}"
                          .format(', '.join(opts.keys())))
