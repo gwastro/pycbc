@@ -427,49 +427,57 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                                                     self.pol,
                                                     self.current_params['tc'])
 
-            # loop over modes
+            # loop over modes and prepare the waveform modes
             # we will sum up zetalm = glm <ulm, d> + i glm <vlm, d>
-            # over all common m, then apply the phase once
+            # over all common m so that we can apply the phase once
             zetas = {}
-            # we will also need to sum up the ulm and vlm for all common ms,
-            # for the <h, h> terms
             rlms = {}
             slms = {}
             for mode in modes:
                 l, m  = mode
                 ulm, vlm = modes[mode]
+
                 # whiten the waveforms
                 # the kmax of the waveforms may be different than internal kmax
                 kmax = min(max(len(ulm), len(vlm)), self._kmax[det])
                 slc = slice(self._kmin[det], kmax)
-                # whiten
                 ulm[self._kmin[det]:kmax] *= self._weight[det][slc]
                 vlm[self._kmin[det]:kmax] *= self._weight[det][slc]
+
                 # the inner products
                 # <ulm, d>
                 ulmd = self._whitened_data[det][slc].inner(ulm[slc]).real
                 # <vlm, d>
                 vlmd = self._whitened_data[det][slc].inner(vlm[slc]).real
+
                 # add inclination, and pack into a complex number
                 import lal
                 glm = lal.SpinWeightedSphericalHarmonic(
                     self.current_params['inclination'], 0, -2, l, m).real
-                try:
-                    zeta = zetas[m]
-                except KeyError:
-                    zeta = zetas[m] = 0j
+
+                if m not in zeta:
+                    zetas[m] = 0j
+                zeta = zetas[m]
+
                 zetas[m] += glm * (ulmd + 1j*vlmd)
-                # add up the vectors for the <h, h>
+
+                # Get condense set of the parts of the waveform that only diff
+                # by m, this is used next to help calculate <h, h>
                 r = glm * ulm
                 s = glm * vlm
-                try:
-                    rlms[m] += r
-                except KeyError:
+
+                if m not in rlms:
                     rlms[m] = r
-                try:
-                    slms[m] += s
-                except KeyError:
                     slms[m] = s
+                else:
+                    rlms[m] += r
+                    slms[m] += s
+
+            # Precalculate the phase factors for each m mode
+            for m in zetas:
+                if m not in self.phase_fac:
+                    self.phase_fac[m] = numpy.exp(1.0j * m * self.phase)
+
             # now compute all possible <hlm, hlm>
             rr_m = {}
             ss_m = {}
@@ -497,25 +505,21 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             hchc = 0.
             hphc = 0.
             for m, zeta in zetas.items():
-                try:
-                    phase_coef = self.phase_fac[m]
-                except KeyError:
-                    phase_coef = self.phase_fac[m] = \
-                        numpy.exp(1.0j * m * self.phase)
+                phase_coef = self.phase_fac[m]
+
                 # <h+, d> = (exp[i m phi] * zeta).real()
                 # <hx, d> = -(exp[i m phi] * zeta).imag()
                 z = phase_coeff * zeta
                 hpd += z.real
                 hcd += -z.imag
+
                 # now calculate the contribution to <h, h>
                 cosm = phase_coeff.real
                 sinm = phase_coeff.imag
+
                 for mprime in zetas:
-                    try:
-                        pcprime = self.phase_fac[mprime]
-                    except KeyError:
-                        pcprime = self.phase_fac[mprime] = \
-                            numpy.exp(1.0j * mprime * self.phase)
+                    pcprime = self.phase_fac[mprime]
+
                     cosmprime = pcprime.real
                     sinmprime = pcprime.imag
                     # needed components
@@ -538,18 +542,21 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                         + ss * sinm * cosmprime \
                         + sr * sinm * sinmprime \
                         - rs * cosm * cosmprime
+
             # Now apply the polarizations and calculate the loglr
             # We have h = Fp * hp + Fc * hc
             # loglr = <h, d> - <h, h>/2
-            #       = Fp*<hp, d> + Fc*<hc, d> 
-            #          - (1/2)*(Fp*Fp*<hp, hp> + Fc*Fc*<hc, hc> 
+            #       = Fp*<hp, d> + Fc*<hc, d>
+            #          - (1/2)*(Fp*Fp*<hp, hp> + Fc*Fc*<hc, hc>
             #                   + 2*Fp*Fc<hp, hc>)
             # (in the last line we have made use of the time series being
             #  real, so that <a, b> = <b, a>).
             hd = fp * hpd + fc * hcd
             hh = fp * fp * hphp + fc * fc * hchc + 2 * fp * fc * hphc
             lr += hd - 0.5 * hh
+
         lr_total = special.logsumexp(lr) - numpy.log(self.nsamples)
+
         # store the maxl values
         idx = lr.argmax()
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
