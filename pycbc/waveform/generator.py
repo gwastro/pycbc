@@ -356,7 +356,7 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
     :py:class:`BaseGenerator`.
     """
     def __init__(self, variable_args=(), **frozen_params):
-        super(TDomainCBCGenerator, self).__init__(
+        super(TDomainCBCModesGenerator, self).__init__(
             waveform_modes.get_td_waveform_modes,
             variable_args=variable_args, **frozen_params)
 
@@ -365,7 +365,7 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
         """
         hlms = res
         if 'taper' in self.current_params:
-            tapermethod = self.current_params['taper'] 
+            tapermethod = self.current_params['taper']
             for mode in res:
                 hp, hc = res[mode]
                 hp = taper_timeseries(hp, tapermethod=tapermethod)
