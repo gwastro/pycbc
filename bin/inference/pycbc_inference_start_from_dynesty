@@ -1,0 +1,40 @@
+#!/bin/env python
+""" Convert dynesty output file to emcee_pt compatible start format
+"""
+
+import numpy
+from numpy.random import choice
+
+# populate an emcee start file with
+# values chosen from a dynesty file
+# each temperature and walker will get a random
+# point from the dynesty output
+
+ntemps = 10
+nwalkers = 4000
+
+import h5py
+f = h5py.File('./result.hdf', 'r')
+
+nsample = len(f['samples'][f['samples'].keys()[0]])
+
+# These are the ids we'll use for the temps / walkers
+use = choice(nsample, replace=False, size=ntemps * nwalkers)
+
+o.close()
+o = h5py.File('start_file.hdf', 'w')
+
+for k in f['samples']:
+    data = f['samples'][k][:][use]
+    o['samples/' + k] = data.reshape(ntemps, nwalkers, 1)
+
+o.attrs['filetype'] = 'emcee_pt_file'
+o.attrs['static_params'] = []
+o.attrs['variable_params'] = f['samples'].keys()
+
+o['sampler_info/acceptance_fraction'] = numpy.zeros(nwalkers)
+o['sampler_info'].attrs['nchains'] = nwalkers
+
+
+o.close()
+f.close()
