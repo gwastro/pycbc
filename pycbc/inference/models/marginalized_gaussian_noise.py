@@ -385,7 +385,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         setattr(self._current_stats, 'maxl_phase', numpy.nan)
         return -numpy.inf
 
-    def _loglr(self):
+    def _loglr(self, return_unmarginalized=False):
         r"""Computes the log likelihood ratio,
 
         .. math::
@@ -555,6 +555,9 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             hd = fp * hpd + fc * hcd
             hh = fp * fp * hphp + fc * fc * hchc + 2 * fp * fc * hphc
             lr += hd - 0.5 * hh
+
+        if return_unmarginalized:
+            return self.pol, self.phase, lr
 
         lr_total = special.logsumexp(lr) - numpy.log(self.nsamples)
 
