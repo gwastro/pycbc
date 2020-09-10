@@ -186,6 +186,7 @@ models = {_cls.name: _cls for _cls in (
     GaussianNoise,
     MarginalizedPhaseGaussianNoise,
     MarginalizedPolarization,
+    MarginalizedHMPolPhase,
     BruteParallelGaussianMarginalize,
     SingleTemplate,
     Relative
