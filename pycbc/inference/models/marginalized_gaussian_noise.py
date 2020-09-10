@@ -368,9 +368,18 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         phase = numpy.resize(phase, n)
         phase = phase.reshape(coa_phase_samples, polarization_samples)
         self.phase = phase.T.flatten()
-        self.phase_fac = {}
+        self._phase_fac = {}
         self.dets = {}
 
+    def phase_fac(self, m):
+        r"""The phase :math:`\exp[i m \phi]`."""
+        try:
+            return self._phase_fac[m]
+        except KeyError:
+            # hasn't been computed yet, calculate it
+            self._phase_fac[m] = numpy.exp(1.0j * m * self.phase)
+            return self._phase_fac[m]
+        
     @property
     def _extra_stats(self):
         """Adds ``maxl_polarization`` and the ``max_phase``
@@ -418,6 +427,8 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         # may be possible to simplify this by making smarter use of real/imag
         ##############################################
         lr = 0.
+        hds = {}
+        hhs = {}
         for det, modes in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
@@ -457,8 +468,6 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
 
                 if m not in zetas:
                     zetas[m] = 0j
-                zeta = zetas[m]
-
                 zetas[m] += glm * (ulmd + 1j*vlmd)
 
                 # Get condense set of the parts of the waveform that only diff
@@ -473,11 +482,6 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                     rlms[m] += r
                     slms[m] += s
 
-            # Precalculate the phase factors for each m mode
-            for m in zetas:
-                if m not in self.phase_fac:
-                    self.phase_fac[m] = numpy.exp(1.0j * m * self.phase)
-
             # now compute all possible <hlm, hlm>
             rr_m = {}
             ss_m = {}
@@ -489,10 +493,10 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 s = slms[m]
                 rprime = rlms[mprime]
                 sprime = slms[mprime]
-                rr_m[m, mprime] = r[slc].inner(rprime[slc]).real
-                ss_m[m, mprime] = s[slc].inner(sprime[slc]).real
-                rs_m[m, mprime] = s[slc].inner(rprime[slc]).real
-                sr_m[m, mprime] = r[slc].inner(sprime[slc]).real
+                rr_m[m, mprime] = rprime[slc].inner(r[slc]).real
+                ss_m[m, mprime] = sprime[slc].inner(s[slc]).real
+                rs_m[m, mprime] = sprime[slc].inner(r[slc]).real
+                sr_m[m, mprime] = rprime[slc].inner(s[slc]).real
                 # store the conjugate for easy retrieval later
                 rr_m[mprime, m] = rr_m[m, mprime]
                 ss_m[mprime, m] = ss_m[m, mprime]
@@ -504,22 +508,21 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             hphp = 0.
             hchc = 0.
             hphc = 0.
-
             for m, zeta in zetas.items():
-                phase_coeff = self.phase_fac[m]
+                phase_coeff = self.phase_fac(m)
 
                 # <h+, d> = (exp[i m phi] * zeta).real()
                 # <hx, d> = -(exp[i m phi] * zeta).imag()
                 z = phase_coeff * zeta
                 hpd += z.real
-                hcd += -z.imag
+                hcd -= z.imag
 
                 # now calculate the contribution to <h, h>
                 cosm = phase_coeff.real
                 sinm = phase_coeff.imag
 
                 for mprime in zetas:
-                    pcprime = self.phase_fac[mprime]
+                    pcprime = self.phase_fac(mprime)
 
                     cosmprime = pcprime.real
                     sinmprime = pcprime.imag
@@ -538,7 +541,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                         + ss * cosm * cosmprime \
                         + rs * sinm * cosmprime \
                         + sr * cosm * sinmprime
-                    # < hp, hc>
+                    # <hp, hc>
                     hphc += -rr * cosm * sinmprime \
                         + ss * sinm * cosmprime \
                         + sr * sinm * sinmprime \
@@ -554,10 +557,12 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             #  real, so that <a, b> = <b, a>).
             hd = fp * hpd + fc * hcd
             hh = fp * fp * hphp + fc * fc * hchc + 2 * fp * fc * hphc
+            hds[det] = hd
+            hhs[det] = hh
             lr += hd - 0.5 * hh
 
         if return_unmarginalized:
-            return self.pol, self.phase, lr
+            return self.pol, self.phase, lr, hds, hhs
 
         lr_total = special.logsumexp(lr) - numpy.log(self.nsamples)
 

@@ -142,7 +142,7 @@ def get_nrsur_modes(**params):
     while ret:
         hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
                          epoch=ret.mode.epoch)
-        hlms[ret.l, ret.m] = (hlm.real(), -hlm.imag())
+        hlms[ret.l, ret.m] = (hlm.real(), hlm.imag())
         ret = ret.next
     return hlms
 
