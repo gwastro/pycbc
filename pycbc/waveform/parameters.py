@@ -554,9 +554,10 @@ extrinsic_params = orientation_params + location_params
 
 
 # testing GR parameters
-testingGR_params = ParameterList([dchi0, dchi1, dchi2, dchi3, dchi4,\
-    dchi5, dchi5l, dchi6, dchi6l, dchi7, dalpha1, dalpha2, dalpha3,\
-    dalpha4, dalpha5, dbeta1, dbeta2, dbeta3])
+testingGR_params = ParameterList\
+    ([dchi0, dchi1, dchi2, dchi3, dchi4, dchi5, dchi5l, dchi6, dchi6l, 
+    dchi7, dalpha1, dalpha2, dalpha3,dalpha4, dalpha5, 
+    dbeta1, dbeta2, dbeta3])
 
 # intrinsic parameters of a CBC waveform. Some of these are not recognized
 # by every waveform model
@@ -564,7 +565,7 @@ cbc_intrinsic_params = ParameterList\
     ([mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
       eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2, lambda_octu1,
       lambda_octu2, quadfmode1, quadfmode2, octufmode1, octufmode2])\
-       + testingGR_params
+      + testingGR_params
 
 # the parameters of a cbc in the radiation frame
 cbc_rframe_params = cbc_intrinsic_params + orientation_params
