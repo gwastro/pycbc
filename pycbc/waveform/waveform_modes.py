@@ -24,7 +24,7 @@ import lalsimulation
 from .waveform import (props, _check_lal_pars, check_args)
 from .waveform import get_td_waveform, get_fd_waveform
 from . import parameters
-from pycbc.types import TimeSeries
+from pycbc.types import (TimeSeries, FrequencySeries)
 
 
 def _formatdocstr(docstr):
@@ -152,19 +152,19 @@ get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 def get_imrphenomx_modes(**params):
     """Generates ``IMRPhenomX[P]HM`` waveforms mode-by-mode.
     """
-    raise NotImplementedError("Not currently supported")
     approx = params['approximant']
     if not approx.startswith('IMRPhenomX'):
         raise ValueError("unsupported approximant")
     mode_array = params.pop('mode_array', None)
     if mode_array is None:
         mode_array = default_modes(approx)
-    laldict = _check_lal_pars(params)
     if 'f_final' not in params:
         # setting to 0 will default to ringdown frequency
         params['f_final'] = 0. 
     hlms = {}
     for (ell, m) in mode_array:
+        params['mode_array'] = [(ell, m)]
+        laldict = _check_lal_pars(params)
         hpos, hneg = lalsimulation.SimIMRPhenomXPHMOneMode(
             ell, m, 
             params['mass1']*lal.MSUN_SI,
@@ -175,6 +175,10 @@ def get_imrphenomx_modes(**params):
             params['delta_f'], params['f_lower'], params['f_final'],
             params['f_ref'],
             laldict)
+        hpos = FrequencySeries(hpos.data.data, delta_f=hpos.deltaF,
+                               epoch=hpos.epoch)
+        hneg = FrequencySeries(hneg.data.data, delta_f=hneg.deltaF,
+                               epoch=hneg.epoch)
         hlms[ell, m] = (hpos, hneg)
     return hlms
 
@@ -182,6 +186,7 @@ def get_imrphenomx_modes(**params):
 def get_imrphenomhm_modes(**kwargs):
     """Generates ``IMRPhenom[Pv3]HM`` waveforms mode-by-mode.
     """
+    raise NotImplementedError("Not currently supported")
     approx = kwargs['approximant']
     try:
         mode_array = kwargs['mode_array']
@@ -237,7 +242,7 @@ def get_fd_waveform_modes(template=None, **kwargs):
         return _mode_waveform_fd[params['approximant']](**params)
     except KeyError:
         raise ValueError("I don't support approximant {}, sorry"
-                         .format(approx))
+                         .format(params['approximant']))
 
 
 def get_td_waveform_modes(template=None, **kwargs):
@@ -250,4 +255,4 @@ def get_td_waveform_modes(template=None, **kwargs):
         return _mode_waveform_td[params['approximant']](**params)
     except KeyError:
         raise ValueError("I don't support approximant {}, sorry"
-                         .format(approx))
+                         .format(params['approximant']))

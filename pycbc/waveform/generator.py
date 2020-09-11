@@ -290,7 +290,7 @@ class FDomainCBCModesGenerator(BaseCBCGenerator):
     :py:class:`BaseGenerator`.
     """
     def __init__(self, variable_args=(), **frozen_params):
-        super(FDomainCBCGenerator, self).__init__(
+        super(FDomainCBCModesGenerator, self).__init__(
             waveform_modes.get_fd_waveform_modes,
             variable_args=variable_args, **frozen_params)
 
