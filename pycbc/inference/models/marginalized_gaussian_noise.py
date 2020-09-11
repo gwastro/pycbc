@@ -457,9 +457,9 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
 
                 # the inner products
                 # <ulm, d>
-                ulmd = self._whitened_data[det][slc].inner(ulm[slc]).real
+                ulmd = ulm[slc].inner(self._whitened_data[det][slc]).real
                 # <vlm, d>
-                vlmd = self._whitened_data[det][slc].inner(vlm[slc]).real
+                vlmd = vlm[slc].inner(self._whitened_data[det][slc]).real
 
                 # add inclination, and pack into a complex number
                 import lal
@@ -493,15 +493,15 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 s = slms[m]
                 rprime = rlms[mprime]
                 sprime = slms[mprime]
-                rr_m[m, mprime] = rprime[slc].inner(r[slc]).real
-                ss_m[m, mprime] = sprime[slc].inner(s[slc]).real
-                rs_m[m, mprime] = sprime[slc].inner(r[slc]).real
-                sr_m[m, mprime] = rprime[slc].inner(s[slc]).real
+                rr_m[mprime, m] = r[slc].inner(rprime[slc]).real
+                ss_m[mprime, m] = s[slc].inner(sprime[slc]).real
+                rs_m[mprime, m] = s[slc].inner(rprime[slc]).real
+                sr_m[mprime, m] = r[slc].inner(sprime[slc]).real
                 # store the conjugate for easy retrieval later
-                rr_m[mprime, m] = rr_m[m, mprime]
-                ss_m[mprime, m] = ss_m[m, mprime]
-                rs_m[mprime, m] = sr_m[m, mprime]
-                sr_m[mprime, m] = rs_m[m, mprime]
+                rr_m[m, mprime] = rr_m[mprime, m]
+                ss_m[m, mprime] = ss_m[mprime, m]
+                rs_m[m, mprime] = sr_m[mprime, m]
+                sr_m[m, mprime] = rs_m[mprime, m]
             # now apply the phase to all the common ms
             hpd = 0.
             hcd = 0.
