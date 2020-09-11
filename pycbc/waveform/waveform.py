@@ -135,6 +135,43 @@ def _check_lal_pars(p):
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
         lalsimulation.SimInspiralWaveformParamsInsertModeArray(lal_pars, ma)
 
+    # TestingGR parameters:
+    if p['dchi0'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi0(lal_pars,p['dchi0'])
+    if p['dchi1'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi1(lal_pars,p['dchi1'])
+    if p['dchi2'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi2(lal_pars,p['dchi2'])
+    if p['dchi3'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi3(lal_pars,p['dchi3'])
+    if p['dchi4'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi4(lal_pars,p['dchi4'])
+    if p['dchi5'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi5(lal_pars,p['dchi5'])
+    if p['dchi5l'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi5L(lal_pars,p['dchi5l'])
+    if p['dchi6'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi6(lal_pars,p['dchi6'])
+    if p['dchi6l'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi6L(lal_pars,p['dchi6l'])
+    if p['dchi7'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi7(lal_pars,p['dchi7'])
+    if p['dalpha1'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha1(lal_pars,p['dalpha1'])
+    if p['dalpha2'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha2(lal_pars,p['dalpha2'])
+    if p['dalpha3'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha3(lal_pars,p['dalpha3'])
+    if p['dalpha4'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha4(lal_pars,p['dalpha4'])
+    if p['dalpha5'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha5(lal_pars,p['dalpha5'])
+    if p['dbeta1'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDBeta1(lal_pars,p['dbeta1'])
+    if p['dbeta2'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDBeta2(lal_pars,p['dbeta2'])
+    if p['dbeta3'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDBeta3(lal_pars,p['dbeta3'])
     return lal_pars
 
 def _lalsim_td_waveform(**p):
