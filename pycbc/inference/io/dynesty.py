@@ -23,17 +23,18 @@
 #
 """Provides IO for the dynesty sampler.
 """
-from pycbc.io.hdf import (dump_state, load_state)
-from .base_nested_sampler import BaseNestedSamplerFile
-from .posterior import write_samples_to_file, read_raw_samples_from_file
 
 import numpy
 import argparse
+from pycbc.io.hdf import (dump_state, load_state)
 
+from .base_nested_sampler import BaseNestedSamplerFile
+from .posterior import write_samples_to_file, read_raw_samples_from_file
+
+@staticmethod
 class CommonNestedMetadataIO(object):
     """Provides functions for reading/writing dynesty metadata to file.
     """
-    @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
         """Create a parser to parse sampler-specific arguments for loading
         samples.
@@ -68,11 +69,12 @@ class CommonNestedMetadataIO(object):
 
         if 'raw_samples' not in skip_args:
             act = parser.add_argument(
-                "--raw-samples", type=numpy.array, default=False,
+                "--raw-samples", action='store_true', default=False,
                 help="Raw samples are the unweighted samples obtained from "
                      "dynesty sampler."
                      "Default value is False which means raw samples are"
                      "weighted by log-weight array obtained from the sampler.")
+            actions.append(act)
         return parser, actions
 
 class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
@@ -80,17 +82,12 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
 
     name = 'dynesty_file'
 
-    def read_raw_samples(self, fields, raw_samples=False, **kwargs):                                
-        print(fields)
+    def read_raw_samples(self, fields, raw_samples=False, **kwargs):
         samples = read_raw_samples_from_file(self, fields, **kwargs)
-        print(type(raw_samples))
-        print(raw_samples)
-        #logwt = raw_samples['logwt']
         logwt = read_raw_samples_from_file(self, ['logwt'], **kwargs)['logwt']
         loglikelihood = read_raw_samples_from_file(self, ['loglikelihood'],
                                                    **kwargs)['loglikelihood']
         logz = self.attrs.get('log_evidence')
-        print(logz,logwt)
         if raw_samples is False:
             weights = numpy.exp(logwt - logz)
             N = len(weights)
@@ -107,13 +104,10 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
             numpy.random.shuffle(idx)
             post = {'loglikelihood': loglikelihood[idx]}
             for i, param in enumerate(self.variable_params):
-                #post[param] = samples[:, i][idx]
                 post[param] = samples[param][idx]
             return post
         else:
-            return raw_samples
-
-
+            return samples
 
     def write_pickled_data_into_checkpoint_file(self, state):
         """Dump the sampler state into checkpoint file
