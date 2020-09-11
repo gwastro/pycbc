@@ -31,10 +31,11 @@ from pycbc.io.hdf import (dump_state, load_state)
 from .base_nested_sampler import BaseNestedSamplerFile
 from .posterior import write_samples_to_file, read_raw_samples_from_file
 
-@staticmethod
 class CommonNestedMetadataIO(object):
     """Provides functions for reading/writing dynesty metadata to file.
     """
+
+    @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
         """Create a parser to parse sampler-specific arguments for loading
         samples.
@@ -138,12 +139,6 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
         bool :
             Whether or not the file is valid as a checkpoint file.
         """
-        #try:
-        #    group = '{}/{}'.format(self.samples_group, self.variable_params[0])
-        #    checkpoint_valid = self[group].size != 0
-        #except KeyError:
-        #    checkpoint_valid = False
-        #return checkpoint_valid
         try:
             if 'sampler_info/saved_state' in self:
                 load_state(self, path='sampler_info/saved_state')

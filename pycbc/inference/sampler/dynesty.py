@@ -315,30 +315,6 @@ class DynestySampler(BaseSampler):
             raise IOError("error writing to checkpoint file")
 
     @property
-    def samples(self):
-        results = self._sampler.results
-        samples = results.samples
-        weights = numpy.exp(results.logwt - results.logz[-1])
-        N = len(weights)
-        positions = (numpy.random.random() + numpy.arange(N)) / N
-
-        idx = numpy.zeros(N, dtype=numpy.int)
-        cumulative_sum = numpy.cumsum(weights)
-        i, j = 0, 0
-        while i < N:
-            if positions[i] < cumulative_sum[j]:
-                idx[i] = j
-                i += 1
-            else:
-                j += 1
-
-        numpy.random.shuffle(idx)
-        post = {'loglikelihood': self._sampler.results.logl[idx]}
-        for i, param in enumerate(self.variable_params):
-            post[param] = samples[:, i][idx]
-        return post
-
-    @property
     def raw_samples(self):
         """Returns raw nested samples
         """
