@@ -135,7 +135,7 @@ def _check_lal_pars(p):
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
         lalsimulation.SimInspiralWaveformParamsInsertModeArray(lal_pars, ma)
 
-    # TestingGR parameters:
+    #TestingGR parameters:
     if p['dchi0'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi0(lal_pars,p['dchi0'])
     if p['dchi1'] is not None:
