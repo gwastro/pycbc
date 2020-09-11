@@ -179,7 +179,10 @@ def get_imrphenomx_modes(**params):
                                epoch=hpos.epoch)
         hneg = FrequencySeries(hneg.data.data, delta_f=hneg.deltaF,
                                epoch=hneg.epoch)
-        hlms[ell, m] = (hpos, hneg)
+        # convert to ulm, vlm
+        ulm = 0.5 * (hpos + hneg.conj())
+        vlm = 0.5j * (hneg.conj() - hpos)
+        hlms[ell, m] = (ulm, vlm)
     return hlms
 
 
