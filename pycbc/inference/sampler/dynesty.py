@@ -263,7 +263,7 @@ class DynestySampler(BaseSampler):
                 fp.write_pickled_data_into_checkpoint_file(self._sampler)
 
                 # Write nested samples
-                fp.write_raw_samples(self.raw_samples)
+                fp.write_raw_samples(self.samples)
 
         # Restore properties that couldn't be pickled if we are continuing
         for key in saved:
@@ -307,7 +307,7 @@ class DynestySampler(BaseSampler):
         for fn in [self.checkpoint_file, self.backup_file]:
             #self.write_results(fn)
             with self.io(fn, "a") as fp:
-                fp.write_raw_samples(self.raw_samples)
+                fp.write_raw_samples(self.samples)
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
             self.checkpoint_file, self.backup_file, check_nsamples=False)
@@ -315,7 +315,7 @@ class DynestySampler(BaseSampler):
             raise IOError("error writing to checkpoint file")
 
     @property
-    def raw_samples(self):
+    def samples(self):
         """Returns raw nested samples
         """
         results = self._sampler.results

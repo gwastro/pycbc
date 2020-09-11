@@ -24,8 +24,8 @@
 """Provides IO for the dynesty sampler.
 """
 
-import numpy
 import argparse
+import numpy
 from pycbc.io.hdf import (dump_state, load_state)
 
 from .base_nested_sampler import BaseNestedSamplerFile
