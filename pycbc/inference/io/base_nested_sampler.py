@@ -26,7 +26,6 @@
 from .base_sampler import BaseSamplerFile
 from .posterior import read_raw_samples_from_file, write_samples_to_file
 
-
 class BaseNestedSamplerFile(BaseSamplerFile):
     """Class to handle file IO for the nested samplers cpnest and dynesty."""
 
@@ -75,3 +74,5 @@ class BaseNestedSamplerFile(BaseSamplerFile):
         # since we're just writing a posterior use
         # PosteriorFile's write_samples
         write_samples_to_file(self, samples, parameters=parameters)
+
+
