@@ -564,7 +564,8 @@ testingGR_params = ParameterList\
 cbc_intrinsic_params = ParameterList\
     ([mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
       eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2, lambda_octu1,
-      lambda_octu2, quadfmode1, quadfmode2, octufmode1, octufmode2]) + testingGR_params
+      lambda_octu2, quadfmode1, quadfmode2, octufmode1, octufmode2])
+    + testingGR_params
 
 # the parameters of a cbc in the radiation frame
 cbc_rframe_params = cbc_intrinsic_params + orientation_params
