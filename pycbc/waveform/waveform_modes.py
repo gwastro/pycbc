@@ -149,7 +149,7 @@ def get_nrsur_modes(**params):
 get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 
 
-def get_imrphenomx_modes(**params):
+def get_imrphenomx_modes(return_posneg=False, **params):
     """Generates ``IMRPhenomX[P]HM`` waveforms mode-by-mode.
     """
     approx = params['approximant']
@@ -179,10 +179,15 @@ def get_imrphenomx_modes(**params):
                                epoch=hpos.epoch)
         hneg = FrequencySeries(hneg.data.data, delta_f=hneg.deltaF,
                                epoch=hneg.epoch)
-        # convert to ulm, vlm
-        ulm = 0.5 * (hpos + hneg.conj())
-        vlm = 0.5j * (hneg.conj() - hpos)
-        hlms[ell, m] = (ulm, vlm)
+        if return_posneg:
+            print('returning pos, neg')
+            hlms[ell, m] = (hpos, hneg)
+        else:
+            print('returning ulm, vlm')
+            # convert to ulm, vlm
+            ulm = 0.5 * (hpos + hneg.conj())
+            vlm = 0.5j * (hneg.conj() - hpos)
+            hlms[ell, m] = (ulm, vlm)
     return hlms
 
 
@@ -241,11 +246,11 @@ def get_fd_waveform_modes(template=None, **kwargs):
     params = props(template, **kwargs)
     required = parameters.fd_required
     check_args(params, required)
-    try:
-        return _mode_waveform_fd[params['approximant']](**params)
-    except KeyError:
+    apprx = params['approximant']
+    if apprx not in _mode_waveform_fd:
         raise ValueError("I don't support approximant {}, sorry"
-                         .format(params['approximant']))
+                         .format(apprx))
+    return _mode_waveform_fd[apprx](**params)
 
 
 def get_td_waveform_modes(template=None, **kwargs):
@@ -254,8 +259,8 @@ def get_td_waveform_modes(template=None, **kwargs):
     params = props(template, **kwargs)
     required = parameters.fd_required
     check_args(params, required)
-    try:
-        return _mode_waveform_td[params['approximant']](**params)
-    except KeyError:
+    apprx = params['approximant']
+    if apprx not in _mode_waveform_td:
         raise ValueError("I don't support approximant {}, sorry"
-                         .format(params['approximant']))
+                         .format(apprx))
+    return _mode_waveform_td[apprx](**params)
