@@ -347,7 +347,8 @@ class SingleCoincForGraceDB(object):
                 if ifo in self.ifos:
                     base = 'foreground/{}/'.format(ifo)
                     snr = self.coinc_results[base + 'snr']
-                    mt = self.coinc_results[base + 'end_time'] + self.time_offset
+                    mt = (self.coinc_results[base + 'end_time']
+                          + self.time_offset)
                     pl.plot([mt - ref_time], [snr], c=ifo_color(ifo),
                             marker='x')
 
