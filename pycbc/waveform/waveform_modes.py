@@ -242,7 +242,7 @@ def l0frame_to_jframe(approximant, mass1, mass2, f_ref, phiref=0.,
     spin2_l : float
         Component of the smaller object's spin that is aligned with the orbital
         angular momentum.
-    {chip}
+    {chi_p}
     """
     phenomv = approximant.replace('HM', '') + '_V'
     spin1_l, spin2_l, chip, thetajn, alpha0, phi_aligned, zeta_polarization = \
@@ -274,8 +274,21 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
     inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
         lalsimulation.SimInspiralTransformPrecessingNewInitialConditions(
             thetajn, phijl, spin1_polar, spin2_polar, spin12_deltaphi,
-            spin1_a, spin2_a, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref, phiref)
+            spin1_a, spin2_a, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref,
+            phiref)
     return inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z
+
+
+def _shiftparams(theta, phi, **params):
+    # XXX: ignoring spins
+    fref = params['f_ref']
+    if fref == 0:
+        fref = params['f_lower']
+    jparams = jframe_to_l0frame(
+        params['mass1'], params['mass2'], fref,
+        phiref=phi, thetajn=theta)
+    params.update({'inclination': jparams[0], 'coa_phase': phi})
+    return params
 
 
 def get_imrphenomhm_modes(**params):
@@ -294,16 +307,19 @@ def get_imrphenomhm_modes(**params):
         mode_array = default_modes(approx)
     # make sure everything is specified as +m modes
     mode_array = list(set([(ell, abs(m)) for (ell, m) in mode_array]))
+    # Our goal below is to set the polar and azimuthal angles of the
+    # spherical harmonics. In the Phenom waveforms, this corresponds to
+    # thetaJN and alpha0, respectively. However, since we're using the
+    # ChooseFDWaveform interface, we need to put these in he L0 frame (which
+    # (the waveform generator will then undo... sigh)
+    # XXX: ignoring spins for now
+
     # we need the in plane spins for some modes
-    spin1perp = (params['spin1x']**2 + params['spin1y']**2.)**0.5
-    spin1az = numpy.arctan2(params['spin1y'], params['spin1x'])
-    spin2perp = (params['spin2x']**2 + params['spin2y']**2.)**0.5
-    spin2az = numpy.arctan2(params['spin2y'], params['spin2x'])
-    # to call through the get_fd_waveform interface, we need to 
-    # PhenomPv3HM always needs the 2,2 mode, so we'll generate it then
-    # subtract it off later
-    if approx == 'IMRPhenomPv3HM':
-        hp22, hc22 = get_fd_waveform(mode_array=[(2,2)], **params)
+    #spin1perp = (params['spin1x']**2 + params['spin1y']**2.)**0.5
+    #spin1az = numpy.arctan2(params['spin1y'], params['spin1x'])
+    #spin2perp = (params['spin2x']**2 + params['spin2y']**2.)**0.5
+    #spin2az = numpy.arctan2(params['spin2y'], params['spin2x'])
+
     # We will need to isolate the + and - m modes from each other. How to do
     # that depends on the mode. For:
     # m = 2:
@@ -324,53 +340,53 @@ def get_imrphenomhm_modes(**params):
             ma.append((2, 2))
         if m == 2:
             # generate once face on and once face off
-            ulm, vlm = get_fd_waveform(mode_array=ma, inclination=0.,
-                                           **params)
-            ulmm, vlmm = get_fd_waveform(mode_array=ma, inclination=numpy.pi,
-                                           **params)
+            ulm, vlm = get_fd_waveform(
+                mode_array=ma, **_shiftparams(0., 0., **params))
+            # face off
+            ulmm, vlmm = get_fd_waveform(
+                mode_array=ma, **_shiftparams(numpy.pi, 0., **params))
+            # subtract off the 2,2 mode for PhenomPv3HM
             if approx == 'IMRPhenomPv3HM' and mode != (2, 2):
-                # generate the 2,2 and subtract it off
-                hp22, hc22 = get_fd_waveform(mode_array=[(2,2)],
-                                             inclination=0., **params)
+                # +m
+                hp22, hc22 = get_fd_waveform(
+                    mode_array=[(2, 2)], **_shiftparams(0., 0., **params))
                 ulm -= hp22
                 vlm -= hc22
-                # negative m
-                hp22, hc22 = get_fd_waveform(mode_array=[(2,2)],
-                                             inclination=numpy.pi, **params)
+                # -m
+                hp22, hc22 = get_fd_waveform(
+                    mode_array=[(2, 2)], **_shiftparams(numpy.pi, 0.,
+                                                        **params))
                 ulmm -= hp22
                 vlmm -= hc22
             # divide out the inclination part
             glm = get_glm(ell, m, 0.)
             ulm /= glm
             vlm /= glm
+            # -m: although same magnitude, may have opposite sign
+            glm = get_glm(ell, -m, numpy.pi)
             ulmm /= glm
             vlmm /= glm
-            # the -m has the same magnitude but opposite sign
-            #ulmm /= -glm
-            #vlmm /= -glm
         elif mode in [(2, 1), (3, 3), (4, 4), (4, 3)]: 
             inc = numpy.pi/2.
-            hp1, hc1 = get_fd_waveform(mode_array=ma, inclination=inc,
-                                       coa_phase=0., **params)
+            hp1, hc1 = get_fd_waveform(mode_array=ma,
+                                       **_shiftparams(inc, 0., **params))
             phi = (1./m)*(numpy.pi/2.)
             # rotate the spins to accomodate the change in phase
-            shifted_ps = params.copy()
-            shifted_ps['spin1x'] = spin1perp * numpy.cos(spin1az-phi)
-            shifted_ps['spin1y'] = spin1perp * numpy.sin(spin1az-phi)
-            shifted_ps['spin2x'] = spin2perp * numpy.cos(spin2az-phi)
-            shifted_ps['spin2y'] = spin2perp * numpy.sin(spin2az-phi)
-            hp2, hc2 = get_fd_waveform(mode_array=ma, inclination=inc,
-                                       coa_phase=phi, **shifted_ps)
+            #shifted_ps = params.copy()
+            #shifted_ps['spin1x'] = spin1perp * numpy.cos(spin1az-phi)
+            #shifted_ps['spin1y'] = spin1perp * numpy.sin(spin1az-phi)
+            #shifted_ps['spin2x'] = spin2perp * numpy.cos(spin2az-phi)
+            #shifted_ps['spin2y'] = spin2perp * numpy.sin(spin2az-phi)
+            hp2, hc2 = get_fd_waveform(mode_array=ma,
+                                       **_shiftparams(inc, phi, **params))
             if approx == 'IMRPhenomPv3HM':
                 # generate the 2,2 and subtract it off
                 hp22, hc22 = get_fd_waveform(mode_array=[(2, 2)],
-                                             inclination=inc, coa_phase=0.,
-                                             **params)
+                                             **_shiftparams(inc, 0., **params))
                 hp1 -= hp22
                 hc1 -= hc22
                 hp22, hc22 = get_fd_waveform(mode_array=[(2, 2)],
-                                             inclination=inc, coa_phase=phi,
-                                             **shifted_ps)
+                                             **_shiftparams(inc, phi, **params))
                 hp2 -= hp22
                 hc2 -= hc22
             # divide out the inclination part
@@ -389,8 +405,11 @@ def get_imrphenomhm_modes(**params):
         else:
             raise ValueError("I don't know what to do with mode {}"
                              .format(mode))
-        hlms[ell, m] = (ulm, vlm)
-        hlms[ell, -m] = (ulmm, vlmm)
+        # XXX: tests showed that the vlms have the wrong sign, so adding a
+        # negative here. Not sure what the cause is, but doing so seems to
+        # work.
+        hlms[ell, m] = (ulm, -vlm)
+        hlms[ell, -m] = (ulmm, -vlmm)
     return hlms
 
 
