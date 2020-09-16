@@ -364,9 +364,10 @@ def epsie_at_adaptive_from_config(cls, cp, section, tag,
     # bounded and angular adaptive proposals support diagonal-only
     diagonal = opts.pop('diagonal', None)
     if not any(p in cls.name.split('_') for p in ['bounded', 'angular']):
-        diagonal = diagonal is not None
-        args.update({'diagonal': diagonal})
-    args.update({'componentwise': opts.pop('componentwise', None) is not None})
+        args.update({'diagonal': diagonal is not None})
+    componentwise = opts.pop('componentwise', None)
+    if componentwise is not None:
+        args.update({'componentwise': True})
     if opts:
         raise ValueError("unrecognized options {}"
                          .format(', '.join(opts.keys())))
