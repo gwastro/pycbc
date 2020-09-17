@@ -27,7 +27,16 @@ for the PyCBC package.
 """
 
 import pycbc.scheme
-import skcuda.fft as cu_fft
+# The following is a hack, to ensure that any error in importing
+# cufft is treated as the module being unavailable at runtime.
+# Ideally, the real error and its traceback would be appended to
+# the ImportError we raise here.  But the method to do that is very
+# different between python 2 and python 3.
+try:
+    import skcuda.fft as cu_fft
+except:
+    raise ImportError("Unable to import skcuda.fft; try direct import"
+                      " to get full traceback")
 from .core import _BaseFFT, _BaseIFFT
 
 _forward_plans = {}

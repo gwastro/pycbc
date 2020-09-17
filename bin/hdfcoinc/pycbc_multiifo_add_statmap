@@ -104,6 +104,10 @@ else:
     foreground_segs = indiv_segs.values()[0]
 f.attrs['foreground_time'] = abs(foreground_segs)
 
+# Output the segments which are in *any* type of coincidence
+f['segments/coinc/start'], f['segments/coinc/end'] = \
+    pycbc.events.veto.segments_to_start_end(foreground_segs)
+
 # obtain list of all ifos involved in the coinc_statmap files
 all_ifos = np.unique([ifo for fi in files
                       for ifo in get_ifo_string(fi).split(' ')])

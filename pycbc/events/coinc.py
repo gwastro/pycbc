@@ -692,7 +692,7 @@ class CoincExpireBuffer(object):
             newlen = len(self.buffer) * 2
             for ifo in self.ifos:
                 self.timer[ifo].resize(newlen)
-            self.buffer.resize(newlen)
+            self.buffer.resize(newlen, refcheck=False)
 
         self.buffer[self.index:self.index+len(values)] = values
         if len(values) > 0:
@@ -1123,7 +1123,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.coincs.remove(num_coincs)
 
     def add_singles(self, results):
-        """Add singles to the bacckground estimate and find candidates
+        """Add singles to the background estimate and find candidates
 
         Parameters
         ----------

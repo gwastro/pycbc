@@ -97,6 +97,8 @@ class SingleCoincForGraceDB(object):
             Dictionary providing PSD estimates for all involved detectors.
         low_frequency_cutoff: float
             Minimum valid frequency for the PSD estimates.
+        high_frequency_cutoff: float, optional
+            Maximum frequency considered for the PSD estimates. Default None.
         followup_data: dict of dicts, optional
             Dictionary providing SNR time series for each detector,
             to be used in sky localization with BAYESTAR. The format should
@@ -119,10 +121,10 @@ class SingleCoincForGraceDB(object):
                                       and coinc_results['HWINJ'])
 
         # Check if we need to apply a time offset (this may be permerger)
-        time_offset = 0
+        self.time_offset = 0
         rtoff = 'foreground/{}/time_offset'.format(ifos[0])
         if rtoff in coinc_results:
-            time_offset = coinc_results[rtoff]
+            self.time_offset = coinc_results[rtoff]
 
         if 'followup_data' in kwargs:
             fud = kwargs['followup_data']
@@ -132,9 +134,8 @@ class SingleCoincForGraceDB(object):
             usable_ifos = fud.keys()
             followup_ifos = list(set(usable_ifos) - set(ifos))
 
-            if time_offset:
-                for ifo in self.snr_series:
-                    self.snr_series[ifo].start_time += time_offset
+            for ifo in self.snr_series:
+                self.snr_series[ifo].start_time += self.time_offset
         else:
             self.snr_series = None
             usable_ifos = ifos
@@ -191,8 +192,7 @@ class SingleCoincForGraceDB(object):
             for name in names:
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
                 if name == 'end_time':
-                    if time_offset:
-                        val += time_offset
+                    val += self.time_offset
                     sngl.set_end(lal.LIGOTimeGPS(val))
                 else:
                     try:
@@ -223,9 +223,9 @@ class SingleCoincForGraceDB(object):
                 snr_series_to_xml(self.snr_series[ifo], outdoc, sngl.event_id)
 
         # set merger time to the average of the ifo peaks
-        self.merger_time = ave_time = numpy.mean(
+        self.merger_time = numpy.mean(
                     [coinc_results['foreground/{}/end_time'.format(ifo)]
-                     for ifo in ifos])
+                     for ifo in ifos]) + self.time_offset
 
         # for subthreshold detectors, respect BAYESTAR's assumptions and checks
         bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
@@ -234,7 +234,7 @@ class SingleCoincForGraceDB(object):
             if sngl.ifo in followup_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
-                sngl.set_end(lal.LIGOTimeGPS(ave_time))
+                sngl.set_end(lal.LIGOTimeGPS(self.merger_time))
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
@@ -322,7 +322,7 @@ class SingleCoincForGraceDB(object):
         from ligo.gracedb.rest import GraceDb
         import matplotlib
         matplotlib.use('Agg')
-        import pylab
+        import pylab as pl
 
         # first of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
@@ -337,41 +337,43 @@ class SingleCoincForGraceDB(object):
                                                              '_snr.png')
             psd_series_plot_fname = snr_series_fname.replace('.hdf',
                                                              '_psd.png')
-            pylab.figure()
+            pl.figure()
+            ref_time = int(self.merger_time)
             for ifo in sorted(self.snr_series):
                 curr_snrs = self.snr_series[ifo]
                 curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
-                pylab.plot(curr_snrs.sample_times, abs(curr_snrs),
-                           c=ifo_color(ifo), label=ifo)
+                pl.plot(curr_snrs.sample_times - ref_time, abs(curr_snrs),
+                        c=ifo_color(ifo), label=ifo)
                 if ifo in self.ifos:
-                    snr = self.coinc_results['foreground/%s/%s' %
-                                             (ifo, 'snr')]
-                    endt = self.coinc_results['foreground/%s/%s' %
-                                              (ifo, 'end_time')]
-                    pylab.plot([endt], [snr], c=ifo_color(ifo), marker='x')
+                    base = 'foreground/{}/'.format(ifo)
+                    snr = self.coinc_results[base + 'snr']
+                    mt = (self.coinc_results[base + 'end_time']
+                          + self.time_offset)
+                    pl.plot([mt - ref_time], [snr], c=ifo_color(ifo),
+                            marker='x')
 
-            pylab.legend()
-            pylab.xlabel('GPS time (s)')
-            pylab.ylabel('SNR')
-            pylab.savefig(snr_series_plot_fname)
-            pylab.close()
+            pl.legend()
+            pl.xlabel('GPS time from {:d} (s)'.format(ref_time))
+            pl.ylabel('SNR')
+            pl.savefig(snr_series_plot_fname)
+            pl.close()
 
-            pylab.figure()
+            pl.figure()
             for ifo in sorted(self.snr_series):
                 # Undo dynamic range factor
                 curr_psd = self.psds[ifo].astype(numpy.float64)
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
                 # Can't plot log(0) so start from point 1
-                pylab.loglog(curr_psd.sample_frequencies[1:],
-                             curr_psd[1:]**0.5, c=ifo_color(ifo), label=ifo)
-            pylab.legend()
-            pylab.xlim([10, 1300])
-            pylab.ylim([3E-24, 1E-20])
-            pylab.xlabel('Frequency (Hz)')
-            pylab.ylabel('ASD')
-            pylab.savefig(psd_series_plot_fname)
-            pylab.close()
+                pl.loglog(curr_psd.sample_frequencies[1:],
+                          curr_psd[1:]**0.5, c=ifo_color(ifo), label=ifo)
+            pl.legend()
+            pl.xlim([10, 1300])
+            pl.ylim([3E-24, 1E-20])
+            pl.xlabel('Frequency (Hz)')
+            pl.ylabel('ASD')
+            pl.savefig(psd_series_plot_fname)
+            pl.close()
 
         if self.probabilities is not None:
             prob_fname = fname.replace('.xml.gz', '_probs.json')
@@ -381,12 +383,12 @@ class SingleCoincForGraceDB(object):
                          if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
             colors = [source_color(label) for label in labels]
-            fig, ax = pylab.subplots()
+            fig, ax = pl.subplots()
             ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
                    textprops={'fontsize': 15})
             ax.axis('equal')
             fig.savefig(prob_plot_fname)
-            pylab.close()
+            pl.close()
 
         gid = None
         try:

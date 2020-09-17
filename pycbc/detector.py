@@ -341,17 +341,16 @@ class LISA(object):
                Returns the position of all 3 sattelites with each row
                correspoding to a single axis.
         """
-        ref_time = 2034 - Time(val=ref_time, format='gps', scale='utc').jyear
+        ref_time = Time(val=ref_time, format='gps', scale='utc').jyear
         n = np.array(range(1, 4))
         kappa, _lambda_ = 0, 0
         alpha = 2. * np.pi * ref_time/1 + kappa
-        beta_n = (n - 1) + (2. * np.pi/3) + _lambda_
-        a, L = 1., .1
+        beta_n = (n - 1) * 2.0 * pi / 3.0 + _lambda_
+        a, L = 1., 0.03342293561
         e = L/(2. * a * np.sqrt(3))
-        prod = a*e*(sin(alpha)*cos(alpha)*sin(beta_n))
 
-        x = a*cos(alpha) + prod - (1 + sin(alpha)**2)*cos(beta_n)
-        y = a*sin(alpha) + prod - (1 + cos(alpha)**2)*sin(beta_n)
+        x = a*cos(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + sin(alpha)**2)*cos(beta_n))
+        y = a*sin(alpha) + a*e*(sin(alpha)*cos(alpha)*cos(beta_n) - (1 + cos(alpha)**2)*sin(beta_n))
         z = -np.sqrt(3)*a*e*cos(alpha - beta_n)
         self.location = np.array([x, y, z])
 

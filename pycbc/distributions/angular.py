@@ -89,6 +89,7 @@ class UniformAngle(uniform.Uniform):
                     "got [{a},{b})".format(x=self._domain.min,
                     y=self._domain.max, a=bnds.min,
                     b=bnds.max))
+
             # update
             params[p] = bnds
         super(UniformAngle, self).__init__(**params)

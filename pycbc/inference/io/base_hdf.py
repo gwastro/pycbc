@@ -661,6 +661,8 @@ class BaseInferenceFile(h5py.File):
         # if list of desired parameters is different, rename
         if set(parameters) != set(self.variable_params):
             other.attrs['variable_params'] = parameters
+        if read_args is None:
+            read_args = {}
         samples = self.read_samples(parameters, **read_args)
         logging.info("Copying {} samples".format(samples.size))
         # if different parameter names are desired, get them from the samples
@@ -671,7 +673,10 @@ class BaseInferenceFile(h5py.File):
             samples = FieldArray.from_kwargs(**arrs)
             other.attrs['variable_params'] = samples.fieldnames
         logging.info("Writing samples")
-        other.write_samples(other, samples, **write_args)
+        if write_args is None:
+            write_args = {}
+        other.write_samples({p: samples[p] for p in samples.fieldnames},
+                            **write_args)
 
     def copy(self, other, ignore=None, parameters=None, parameter_names=None,
              read_args=None, write_args=None):

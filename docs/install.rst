@@ -11,8 +11,7 @@ Simple Installation
 PyCBC is available through the PyPI. For straightforward use of the PyCBC library
 and executables, we recommend installing with the following command. If you 
 are not running in a specialized computing environment, this is probably the
-appropriate thing to do. Note, that at this time, PyCBC supports Python2. Python3
-support is under development.
+appropriate thing to do.
 
 .. code-block:: bash
     

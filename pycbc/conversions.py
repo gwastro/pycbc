@@ -643,6 +643,27 @@ def dquadmon_from_lambda(lambdav):
     ln_quad_moment = ai + bi*ll + ci*ll**2.0 + di*ll**3.0 + ei*ll**4.0
     return numpy.exp(ln_quad_moment) - 1
 
+
+def spin_from_pulsar_freq(mass, radius, freq):
+    """Returns the dimensionless spin of a pulsar.
+
+    Assumes the pulsar is a solid sphere when computing the moment of inertia.
+
+    Parameters
+    ----------
+    mass : float
+        The mass of the pulsar, in solar masses.
+    radius : float
+        The assumed radius of the pulsar, in kilometers.
+    freq : float
+        The spin frequency of the pulsar, in Hz.
+    """
+    omega = 2 * numpy.pi * freq
+    mt = mass * lal.MTSUN_SI
+    mominert = (2/3.) * mt * (radius * 1000 / lal.C_SI)**2
+    return mominert * omega / mt**2
+
+
 #
 # =============================================================================
 #
@@ -662,7 +683,8 @@ def distance_from_chirp_distance_mchirp(chirp_distance, mchirp, ref_mass=1.4):
     return chirp_distance * (2.**(-1./5) * ref_mass / mchirp)**(-5./6)
 
 
-def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
+_detector_cache = {}
+def det_tc(detector_name, ra, dec, tc, ref_frame='geocentric', relative=False):
     """Returns the coalescence time of a signal in the given detector.
 
     Parameters
@@ -684,28 +706,30 @@ def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
     float :
         The GPS time of the coalescence in detector `detector_name`.
     """
+    ref_time = tc
+    if relative:
+        tc = 0
+
     if ref_frame == detector_name:
         return tc
-    detector = Detector(detector_name)
+    if detector_name not in _detector_cache:
+        _detector_cache[detector_name] = Detector(detector_name)
+    detector = _detector_cache[detector_name]
     if ref_frame == 'geocentric':
-        return tc + detector.time_delay_from_earth_center(ra, dec, tc)
+        return tc + detector.time_delay_from_earth_center(ra, dec, ref_time)
     else:
         other = Detector(ref_frame)
-        return tc + detector.time_delay_from_detector(other, ra, dec, tc)
+        return tc + detector.time_delay_from_detector(other, ra, dec, ref_time)
 
-det_tc = numpy.vectorize(_det_tc)
-
-def _optimal_orientation_from_detector(detector_name, tc):
+def optimal_orientation_from_detector(detector_name, tc):
     """ Low-level function to be called from _optimal_dec_from_detector
     and _optimal_ra_from_detector"""
 
     d = Detector(detector_name)
     ra, dec = d.optimal_orientation(tc)
-
     return ra, dec
 
-
-def _optimal_dec_from_detector(detector_name, tc):
+def optimal_dec_from_detector(detector_name, tc):
     """For a given detector and GPS time, return the optimal orientation
     (directly overhead of the detector) in declination.
 
@@ -722,13 +746,9 @@ def _optimal_dec_from_detector(detector_name, tc):
     float :
         The declination of the signal, in radians.
     """
-    return _optimal_orientation_from_detector(detector_name, tc)[1]
+    return optimal_orientation_from_detector(detector_name, tc)[1]
 
-
-optimal_dec_from_detector = numpy.vectorize(_optimal_dec_from_detector)
-
-
-def _optimal_ra_from_detector(detector_name, tc):
+def optimal_ra_from_detector(detector_name, tc):
     """For a given detector and GPS time, return the optimal orientation
     (directly overhead of the detector) in right ascension.
 
@@ -745,11 +765,7 @@ def _optimal_ra_from_detector(detector_name, tc):
     float :
         The declination of the signal, in radians.
     """
-    return _optimal_orientation_from_detector(detector_name, tc)[0]
-
-
-optimal_ra_from_detector = numpy.vectorize(_optimal_ra_from_detector)
-
+    return optimal_orientation_from_detector(detector_name, tc)[0]
 
 #
 # =============================================================================
@@ -1521,5 +1537,5 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'final_mass_from_initial', 'final_spin_from_initial',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
-           'nltides_gw_phase_diff_isco',
+           'nltides_gw_phase_diff_isco', 'spin_from_pulsar_freq',
           ]

@@ -825,7 +825,6 @@ class Array(object):
     def roll(self, shift):
         """shift vector
         """
-        self._saved = LimitedSizeDict(size_limit=2**5)
         new_arr = zeros(len(self), dtype=self.dtype)
 
         if shift < 0:
@@ -836,7 +835,9 @@ class Array(object):
         
         new_arr[0:shift] = self[len(self)-shift: len(self)]
         new_arr[shift:len(self)] = self[0:len(self)-shift]
-            
+        
+        self._saved = LimitedSizeDict(size_limit=2**5)
+        
         self._data = new_arr._data
 
     @_returntype

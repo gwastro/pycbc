@@ -93,6 +93,8 @@ parser.add_argument("-V", "--verbose", action="store_true",
                   help="print extra debugging information", default=False )
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
+parser.add_argument("--high-frequency-cutoff", type=float,
+                  help="The high frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
 parser.add_argument("--minimum-chisq-bins", default=0, type=int, help=
@@ -315,6 +317,11 @@ with ctx:
                                     f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
             template = tc.multiply_and_add(tp, opt.u_val)
+    
+    if opt.high_frequency_cutoff:
+        kmax = int(opt.high_frequency_cutoff / template.delta_f)
+        if kmax < len(template):
+            template[kmax:] = 0
 
     # FIXME: should probably switch to something like what is done for parsing
     # the approximant for chisq bins at some point
