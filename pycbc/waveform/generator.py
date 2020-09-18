@@ -161,7 +161,7 @@ class BaseGenerator(object):
                 if self.mpi_enabled:
                     outname = 'failed/params_%s.hdf' % self.mpi_rank
                 else:
-                    outname = 'failed/params.hdf')
+                    outname = 'failed/params.hdf'
 
                 if not os.path.exists('failed'):
                     os.makedirs('failed')
