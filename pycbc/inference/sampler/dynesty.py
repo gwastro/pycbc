@@ -247,41 +247,27 @@ class DynestySampler(BaseSampler):
     def checkpoint(self):
         """Checkpoint function for dynesty sampler
         """
-        with loadfile(self.checkpoint_file, 'a') as fp:
-            fp.write_random_state()
+        # Dynesty has its own __getstate__ which deletes
+        # random state information and the pool
+        saved = {}
+        for key in self.no_pickle:
+            if hasattr(self._sampler, key):
+                saved[key] = getattr(self._sampler, key)
+                setattr(self._sampler, key, None)
+        for fn in [self.checkpoint_file, self.backup_file]:
+            with self.io(fn, "a") as fp:
+                # Write random state
+                fp.write_random_state()
 
-            # Dynesty has its own __getstate__ which deletes
-            # random state information and the pool
-            saved = {}
-            for key in self.no_pickle:
-                if hasattr(self._sampler, key):
-                    saved[key] = getattr(self._sampler, key)
-                    setattr(self._sampler, key, None)
+                # Write pickled data
+                fp.write_pickled_data_into_checkpoint_file(self._sampler)
 
-            # For the dynamic sampler, we must also handle the internal
-            # sampler object
-            #saved_internal = {}
-            #if self.nlive < 0:
-            #    for key in self.no_pickle:
-            #        if hasattr(self._sampler.sampler, key):
-            #            saved[key] = getattr(self._sampler.sampler, key)
-            #            setattr(self._sampler.sampler, key, None)
-
-            #for key in self._sampler.__dict__:
-            #    print(key, type(self._sampler.__dict__[key]))
-
-            #for key in self._sampler.sampler.__dict__:
-            #    print(key, type(self._sampler.sampler.__dict__[key]))
-
-            fp.write_pickled_data_into_checkpoint_file(self._sampler)
+                # Write nested samples
+                fp.write_raw_samples(self.samples)
 
         # Restore properties that couldn't be pickled if we are continuing
         for key in saved:
             setattr(self._sampler, key, saved[key])
-
-        # Restore for dynamic nested sampler's internal sampler
-        #for key in saved_internal:
-        #    setattr(self._sampler.sampler, key, saved_internal[key])
 
     def resume_from_checkpoint(self):
         try:
@@ -292,13 +278,6 @@ class DynestySampler(BaseSampler):
                     if key not in self.no_pickle:
                         value = getattr(sampler, key)
                         setattr(self._sampler, key, value)
-
-                # If dynamic sampling, also restore internal sampler
-                #if self.nlive < 0:
-                #    for key in sampler.__dict__:
-                #       if key not in self.no_pickle:
-                #           value = getattr(sampler.sampler, key)
-                #           setattr(self._sampler.sampler, key, value)
 
             self.set_state_from_file(self.checkpoint_file)
             logging.info("Found valid checkpoint file: %s",
@@ -326,7 +305,9 @@ class DynestySampler(BaseSampler):
                 fp.write_logevidence(logz, dlogz)
         logging.info("Writing samples to files")
         for fn in [self.checkpoint_file, self.backup_file]:
-            self.write_results(fn)
+            #self.write_results(fn)
+            with self.io(fn, "a") as fp:
+                fp.write_raw_samples(self.samples)
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
             self.checkpoint_file, self.backup_file, check_nsamples=False)
@@ -335,27 +316,16 @@ class DynestySampler(BaseSampler):
 
     @property
     def samples(self):
+        """Returns raw nested samples
+        """
         results = self._sampler.results
         samples = results.samples
-        weights = numpy.exp(results.logwt - results.logz[-1])
-        N = len(weights)
-        positions = (numpy.random.random() + numpy.arange(N)) / N
-
-        idx = numpy.zeros(N, dtype=numpy.int)
-        cumulative_sum = numpy.cumsum(weights)
-        i, j = 0, 0
-        while i < N:
-            if positions[i] < cumulative_sum[j]:
-                idx[i] = j
-                i += 1
-            else:
-                j += 1
-
-        numpy.random.shuffle(idx)
-        post = {'loglikelihood': self._sampler.results.logl[idx]}
+        nest_samp = {}
         for i, param in enumerate(self.variable_params):
-            post[param] = samples[:, i][idx]
-        return post
+            nest_samp[param] = samples[:, i]
+        nest_samp['logwt'] = results.logwt
+        nest_samp['loglikelihood'] = results.logl
+        return nest_samp
 
     def set_initial_conditions(self, initial_distribution=None,
                                samples_file=None):
@@ -377,7 +347,7 @@ class DynestySampler(BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples)
+            fp.write_raw_samples(self.samples)
 
             # write log evidence
             fp.write_logevidence(self._sampler.results.logz[-1:][0],
