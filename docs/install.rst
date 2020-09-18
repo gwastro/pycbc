@@ -40,6 +40,7 @@ do a clean install. The following will create a python3 environment.
 
     virtualenv -p python3 env
     source env/bin/activate
+    pip install --upgrade pip setuptools
 
 We can then make a fresh clone of the repository.
 
@@ -54,8 +55,8 @@ as follows.
 
     cd pycbc
     pip install -r requirements.txt
+    pip install -r companion.txt
     python setup.py install
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Other scenarios
@@ -78,6 +79,8 @@ You can then build the documentation locally as
 .. code-block:: bash
 
     python setup.py build_docs
+
+The documentation will show up locally in 'docs/_build/html'.
 
 ========================================
 Use of Intel MKL Optimized FFT libraries
