@@ -185,10 +185,8 @@ def get_imrphenomx_modes(return_posneg=False, **params):
         hneg = FrequencySeries(hneg.data.data, delta_f=hneg.deltaF,
                                epoch=hneg.epoch)
         if return_posneg:
-            print('returning pos, neg')
             hlms[ell, m] = (hpos, hneg)
         else:
-            print('returning ulm, vlm')
             # convert to ulm, vlm
             ulm = 0.5 * (hpos + hneg.conj())
             vlm = 0.5j * (hneg.conj() - hpos)
@@ -196,13 +194,11 @@ def get_imrphenomx_modes(return_posneg=False, **params):
     return hlms
 
 
-def l0frame_to_jframe(approximant, mass1, mass2, f_ref, phiref=0.,
+def phenom_l0frame_to_jframe(approximant, mass1, mass2, f_ref, phiref=0.,
                       inclination=0.,
                       spin1x=0., spin1y=0., spin1z=0.,
                       spin2x=0., spin2y=0., spin2z=0.):
-    r"""Converts L0 frame parameters to J frame.
-
-    Only works for IMRPhenom approximants.
+    r"""Converts L0- to J-frame parameters used by IMRPhenomP waveforms.
 
     Parameters
     ----------
@@ -225,32 +221,101 @@ def l0frame_to_jframe(approximant, mass1, mass2, f_ref, phiref=0.,
 
     Returns
     -------
-    thetajn : float
-        Angle between the line of sight and the total angular momentum. This
-        is the thing that goes into the polar angle part of the spherical
-        harmonics.
-    alpha0 : float
-        Azimuthal angle in the J frame. This is the thing that goes into the
-        azimuthal part of the spherical harmonics.
-    phi_aligned : float
-        Beats me.
-    zeta_polarization : float
-        Another mystery.
-    spin1_l : float
-        Component of the larger object's spin that is aligned with the orbital
-        angular momentum.
-    spin2_l : float
-        Component of the smaller object's spin that is aligned with the orbital
-        angular momentum.
-    {chi_p}
+    dict :
+        Dictionary of:
+        * thetajn : float
+            Angle between the line of sight and the total angular momentum.
+            This is the thing that goes into the polar angle part of the
+            spherical harmonics.
+        * alpha0 : float
+            Azimuthal angle in the J frame. This is the thing that goes into
+            the azimuthal part of the spherical harmonics.
+        * phi_aligned : float
+            Beats me.
+        * zeta_polarization : float
+            Another mystery.
+        * spin1_l : float
+            Component of the larger object's spin that is aligned with the
+            orbital angular momentum.
+        * spin2_l : float
+            Component of the smaller object's spin that is aligned with the
+            orbital angular momentum.
+        * {chi_p}
     """
     phenomv = approximant.replace('HM', '') + '_V'
-    spin1_l, spin2_l, chip, thetajn, alpha0, phi_aligned, zeta_polarization = \
+    spin1_l, spin2_l, chip, thetajn, alpha0, phi_aligned, zeta_pol = \
         lalsimulation.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
             mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref, phiref, inclination,
             spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
             getattr(lalsimulation, phenomv))
-    return thetajn, alpha0, phi_aligned, zeta_pol, spin1_l, spin2_l, chi_p
+    out = {'thetajn': thetajn,
+           'alpha0': alpha0,
+           'phi_aligned': phi_aligned,
+           'zeta_polarization': zeta_pol,
+           'spin1_l': spin1_l,
+           'spin2_l': spin2_l,
+           'chi_p': chip}
+    #return thetajn, alpha0, phi_aligned, zeta_pol, spin1_l, spin2_l, chi_p
+    return out
+
+
+phenom_l0frame_to_jframe.__doc__ = _formatdocstr(
+    phenom_l0frame_to_jframe.__doc__)
+
+
+def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
+                      spin1x=0., spin1y=0., spin1z=0.,
+                      spin2x=0., spin2y=0., spin2z=0.):
+    """Converts L0-frame parameters to J-frame.
+
+    Parameters
+    ----------
+    {mass1}
+    {mass2}
+    {f_ref}
+    phiref : float
+        The orbital phase at ``f_ref``.
+    {inclination}
+    {spin1x}
+    {spin1y}
+    {spin1z}
+    {spin2x}
+    {spin2y}
+    {spin2z}
+
+    Returns
+    -------
+    dict :
+        Dictionary of:
+        * thetajn : float
+            Angle between the line of sight and the total angular momentume J.
+        * phijl : float
+            Azimuthal angle of L on its cone about J.
+        * {spin1_a}
+        * {spin2_a}
+        * spin1_polar : float
+            Angle between L and the spin magnitude of the larger object.
+        * spin2_polar : float
+            Angle betwen L and the spin magnitude of the smaller object.
+        * spin12_deltaphi : float
+            Difference between the azimuthal angles of the spin of the larger
+            object (S1) and the spin of the smaller object (S2).
+    """
+    # Note: unlike other LALSimulation functions, this one takes masses in
+    # solar masses
+    thetajn, phijl, s1pol, s2pol, s12_deltaphi, spin1_a, spin2_a = \
+        lalsimulation.SimInspiralTransformPrecessingWvf2PE(
+            inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+            mass1, mass2, f_ref, phiref)
+    out = {'thetajn': thetajn,
+           'phijl' : phijl,
+           'spin1_polar': s1pol,
+           'spin2_polar': s2pol,
+           'spin12_deltaphi': s12_deltaphi,
+           'spin1_a': spin1_a,
+           'spin2_a': spin2_a}
+    return out
+    #return thetajn, phijl, spin1_a, spin2_a, s1pol, s2pol, spin12_deltaphi
 
 
 l0frame_to_jframe.__doc__ = _formatdocstr(l0frame_to_jframe.__doc__)
@@ -267,27 +332,77 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
     {mass1}
     {mass2}
     {f_ref}
-    phiref : float
     thetajn : float
+        Angle between the line of sight and the total angular momentume J.
+    phijl : float
+        Azimuthal angle of L on its cone about J.
+    {spin1_a}
+    {spin2_a}
+    spin1_polar : float
+        Angle between L and the spin magnitude of the larger object.
+    spin2_polar : float
+        Angle betwen L and the spin magnitude of the smaller object.
+    spin12_deltaphi : float
+        Difference between the azimuthal angles of the spin of the larger
+        object (S1) and the spin of the smaller object (S2).
 
+    Returns
+    -------
+    dict :
+        Dictionary of:
+        * {inclination}
+        * {spin1x}
+        * {spin1y}
+        * {spin1z}
+        * {spin2x}
+        * {spin2y}
+        * {spin2z}
     """
     inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
         lalsimulation.SimInspiralTransformPrecessingNewInitialConditions(
             thetajn, phijl, spin1_polar, spin2_polar, spin12_deltaphi,
             spin1_a, spin2_a, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref,
             phiref)
-    return inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z
+    out = {'inclination': inclination,
+           'spin1x': spin1x,
+           'spin1y': spin1y,
+           'spin1z': spin1z,
+           'spin2x': spin2x,
+           'spin2y': spin2y,
+           'spin2z': spin2z}
+    return out
+    #return inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z
+
+
+jframe_to_l0frame.__doc__ = _formatdocstr(jframe_to_l0frame.__doc__)
 
 
 def _shiftparams(theta, phi, **params):
-    # XXX: ignoring spins
     fref = params['f_ref']
     if fref == 0:
         fref = params['f_lower']
-    jparams = jframe_to_l0frame(
-        params['mass1'], params['mass2'], fref,
-        phiref=phi, thetajn=theta)
-    params.update({'inclination': jparams[0], 'coa_phase': phi})
+    # account for lal convention
+    phi = numpy.pi/2 - phi
+    if False:
+        # convert to jframe
+        jparams = l0frame_to_jframe(params['mass1'], params['mass2'], fref,
+                                    phi, 0.,
+                                    params['spin1x'], params['spin1y'],
+                                    params['spin1z'], params['spin2x'],
+                                    params['spin2y'], params['spin2z'])
+        # now call back with thetajn set to theta and phijl set to phi
+        jparams['thetajn'] = theta
+        #jparams['phijl'] = -phi
+        lparams = jframe_to_l0frame(params['mass1'], params['mass2'], fref,
+                                    phiref=phi,
+                                    **jparams)
+        #jparams = jframe_to_l0frame(
+        #    params['mass1'], params['mass2'], fref,
+        #    phiref=phi, thetajn=theta)
+        #params.update({'inclination': jparams[0], 'coa_phase': phi})
+        params.update(lparams)
+    params['coa_phase'] = phi
+    params['inclination'] = theta
     return params
 
 
@@ -307,19 +422,6 @@ def get_imrphenomhm_modes(**params):
         mode_array = default_modes(approx)
     # make sure everything is specified as +m modes
     mode_array = list(set([(ell, abs(m)) for (ell, m) in mode_array]))
-    # Our goal below is to set the polar and azimuthal angles of the
-    # spherical harmonics. In the Phenom waveforms, this corresponds to
-    # thetaJN and alpha0, respectively. However, since we're using the
-    # ChooseFDWaveform interface, we need to put these in he L0 frame (which
-    # (the waveform generator will then undo... sigh)
-    # XXX: ignoring spins for now
-
-    # we need the in plane spins for some modes
-    #spin1perp = (params['spin1x']**2 + params['spin1y']**2.)**0.5
-    #spin1az = numpy.arctan2(params['spin1y'], params['spin1x'])
-    #spin2perp = (params['spin2x']**2 + params['spin2y']**2.)**0.5
-    #spin2az = numpy.arctan2(params['spin2y'], params['spin2x'])
-
     # We will need to isolate the + and - m modes from each other. How to do
     # that depends on the mode. For:
     # m = 2:
@@ -371,12 +473,6 @@ def get_imrphenomhm_modes(**params):
             hp1, hc1 = get_fd_waveform(mode_array=ma,
                                        **_shiftparams(inc, 0., **params))
             phi = (1./m)*(numpy.pi/2.)
-            # rotate the spins to accomodate the change in phase
-            #shifted_ps = params.copy()
-            #shifted_ps['spin1x'] = spin1perp * numpy.cos(spin1az-phi)
-            #shifted_ps['spin1y'] = spin1perp * numpy.sin(spin1az-phi)
-            #shifted_ps['spin2x'] = spin2perp * numpy.cos(spin2az-phi)
-            #shifted_ps['spin2y'] = spin2perp * numpy.sin(spin2az-phi)
             hp2, hc2 = get_fd_waveform(mode_array=ma,
                                        **_shiftparams(inc, phi, **params))
             if approx == 'IMRPhenomPv3HM':
@@ -386,7 +482,8 @@ def get_imrphenomhm_modes(**params):
                 hp1 -= hp22
                 hc1 -= hc22
                 hp22, hc22 = get_fd_waveform(mode_array=[(2, 2)],
-                                             **_shiftparams(inc, phi, **params))
+                                             **_shiftparams(inc, phi,
+                                                            **params))
                 hp2 -= hp22
                 hc2 -= hc22
             # divide out the inclination part
@@ -405,11 +502,8 @@ def get_imrphenomhm_modes(**params):
         else:
             raise ValueError("I don't know what to do with mode {}"
                              .format(mode))
-        # XXX: tests showed that the vlms have the wrong sign, so adding a
-        # negative here. Not sure what the cause is, but doing so seems to
-        # work.
-        hlms[ell, m] = (ulm, -vlm)
-        hlms[ell, -m] = (ulmm, -vlmm)
+        hlms[ell, m] = (ulm, vlm)
+        hlms[ell, -m] = (ulmm, vlmm)
     return hlms
 
 
