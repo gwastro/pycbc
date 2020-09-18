@@ -95,7 +95,7 @@ class BaseGenerator(object):
         # keep a list of functions to call before waveform generation
         self._pregenerate_functions = []
         # we'll cache the last generated waveform here
-        self._cache = {'hash': None, 'waveform': None}
+        self._cache = {}
 
     @property
     def static_args(self):
@@ -137,21 +137,24 @@ class BaseGenerator(object):
     def _generate_from_current(self):
         """Generates a waveform from the current parameters.
         """
-        values_hash = hash(frozenset(**self.current_params.values()))
-        if values_hash == self._cache['hash']:
-            return self._cache['waveform']
+        values_hash = hash(self.current_params.values())
         try:
-            waveform = self.generator(**self.current_params)
-            self._cache.update({'hash': values_hash, 'waveform': waveform})
-            return waveform
-        except RuntimeError as e:
-            # we'll get a RuntimeError if lalsimulation failed to generate
-            # the waveform for whatever reason
-            strparams = ' | '.join(['{}: {}'.format(p, str(val))
-                                   for p, val in self.current_params.items()])
-            raise FailedWaveformError("Failed to generate waveform with "
-                                      "parameters:\n{}\nError was: {}"
-                                      .format(strparams, e))
+            return self._cache[values_hash]
+        except KeyError:
+            try:
+                waveform = self.generator(**self.current_params)
+                self._cache.clear()
+                self._cache[values_hash] = waveform
+                return waveform
+            except RuntimeError as e:
+                # we'll get a RuntimeError if lalsimulation failed to generate
+                # the waveform for whatever reason
+                strparams = ' | '.join([
+                    '{}: {}'.format(p, str(val))
+                    for p, val in self.current_params.items()])
+                raise FailedWaveformError("Failed to generate waveform with "
+                                          "parameters:\n{}\nError was: {}"
+                                          .format(strparams, e))
 
 
 class BaseCBCGenerator(BaseGenerator):
