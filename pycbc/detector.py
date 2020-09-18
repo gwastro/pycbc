@@ -33,7 +33,7 @@ import numpy as np
 import lal
 from pycbc.types import TimeSeries
 from astropy.time import Time
-from astropy import constants, coordinates, units
+from astropy import constants
 from astropy.units.si import sday
 from numpy import cos, sin
 
@@ -48,6 +48,7 @@ def gmst_accurate(gps_time):
 
 def get_available_detectors():
     """Return list of detectors known in the currently sourced lalsuite.
+
     This function will query lalsuite about which detectors are known to
     lalsuite. Detectors are identified by a two character string e.g. 'K1',
     but also by a longer, and clearer name, e.g. KAGRA. This function returns
@@ -69,6 +70,7 @@ class Detector(object):
     """
     def __init__(self, detector_name, reference_time=1126259462.0):
         """ Create class representing a gravitational-wave detector
+
         Parameters
         ----------
         detector_name: str
@@ -78,6 +80,7 @@ class Detector(object):
         will be estimated from a reference time. If 'None', we will
         calculate the time for each gps time requested explicitly
         using a slower but higher precision method.
+
         """
         self.name = str(detector_name)
         self.frDetector = lalsimulation.DetectorPrefixToLALDetector(self.name)
@@ -110,10 +113,12 @@ class Detector(object):
 
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
+
         Parameters
         ----------
         det: Detector
             The other detector to determine the light travel time to.
+
         Returns
         -------
         time: float
@@ -122,8 +127,10 @@ class Detector(object):
         d = self.location - det.location
         return float(d.dot(d)**0.5 / constants.c.value)
 
-    def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
+    # Addition to incorporate extra polarizations - Haris
+    def antenna_pattern(self, right_ascension, declination, polarization, t_gps, pol_flag= 'Tensor'):
         """Return the detector response.
+
         Parameters
         ----------
         right_ascension: float or numpy.ndarray
@@ -132,6 +139,9 @@ class Detector(object):
             The declination of the source
         polarization: float or numpy.ndarray
             The polarization angle of the source
+        pol_flag: string flag
+            The polarization modelto be used
+
         Returns
         -------
         fplus: float or numpy.ndarray
@@ -163,14 +173,33 @@ class Detector(object):
         y = np.array([y0, y1, y2])
         dy = self.response.dot(y)
 
+
+        z0 = -cosdec * cosgha
+        z1 = cosdec * singha
+        z2= -sindec
+        z = np.array([z0, z1, z2])
+
+        dz = self.response.dot(z)
+
         if hasattr(dx, 'shape'):
             fplus = (x * dx - y * dy).sum(axis=0)
             fcross = (x * dy + y * dx).sum(axis=0)
+            fx = (z * dx + x * dz).sum(axis=0)
+            fy = (z * dy + y * dz).sum(axis=0)
+            fb = (x * dx + y * dy).sum(axis=0)
+            fi = (z * dz).sum(axis=0)
         else:
             fplus = (x * dx - y * dy).sum()
             fcross = (x * dy + y * dx).sum()
+            fx = (z * dx + x * dz).sum()
+            fy = (z * dy + y * dz).sum()
+            fb = (x * dx + y * dy).sum()
+            fi = (z * dz).sum()
 
-        return fplus, fcross
+        if pol_flag=='Tensor':
+            return fplus, fcross
+        else:
+            return fplus, fcross, fx, fy, fb, fi
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         """Return the time delay from the earth center
@@ -184,9 +213,11 @@ class Detector(object):
                                  declination, t_gps):
         """Return the time delay from the given location to detector for
         a signal with the given sky location
+
         In other words return `t1 - t2` where `t1` is the
         arrival time in this detector and `t2` is the arrival time in the
         other location.
+
         Parameters
         ----------
         other_location : numpy.ndarray of coordinates
@@ -197,6 +228,7 @@ class Detector(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
+
         Returns
         -------
         float
@@ -220,6 +252,7 @@ class Detector(object):
         arrival time in this detector and `t2` is the arrival time in the
         other detector. Note that this would return the same value as
         `time_delay_from_earth_center` if `other_detector` was geocentric.
+
         Parameters
         ----------
         other_detector : detector.Detector
@@ -230,6 +263,7 @@ class Detector(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
+
         Returns
         -------
         float
@@ -240,26 +274,44 @@ class Detector(object):
                                              declination,
                                              t_gps)
 
-    def project_wave(self, hp, hc, longitude, latitude, polarization):
+    def project_wave(self, hp, hc, longitude, latitude, polarization, tc=0., pol_flag=None):
         """Return the strain of a waveform as measured by the detector.
+
         Apply the time shift for the given detector relative to the assumed
         geocentric frame and apply the antenna patterns to the plus and cross
         polarizations.
+
         """
-        h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
-                hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
-                longitude, latitude, polarization, self.frDetector)
-        return TimeSeries(
-                h_lal.data.data, delta_t=h_lal.deltaT, epoch=h_lal.epoch,
-                dtype=np.float64, copy=False)
+        print pol_flag
+        if (pol_flag==None):
+               h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
+                       hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
+                       longitude, latitude, polarization, self.frDetector)
+               return TimeSeries(
+                      h_lal.data.data, delta_t=h_lal.deltaT, epoch=h_lal.epoch,
+                      dtype=np.float64, copy=False)
+        else:
+           f_det = self.antenna_pattern(longitude, latitude, polarization, tc, pol_flag) ##New polarization --Haris
+           det_delay = self.time_delay_from_earth_center(longitude, latitude, tc)
+           if pol_flag=='Tensor':
+               thish = f_det[0]*hp + f_det[1]*hc
+           elif pol_flag=='Vector':
+               thish = f_det[2]*hp + f_det[3]*hc
+           elif pol_flag=='Scalar':
+               thish = f_det[4]*hp + f_det[5]*hc
+           thish._epoch +=det_delay
+           print pol_flag
+           return thish
 
     def optimal_orientation(self, t_gps):
         """Return the optimal orientation in right ascension and declination
            for a given GPS time.
+
         Parameters
         ----------
         t_gps: float
             Time in gps seconds
+
         Returns
         -------
         ra: float
@@ -271,22 +323,6 @@ class Detector(object):
         dec = self.latitude
         return ra, dec
 
-    def get_icrs_pos(self):
-        """ Transforms GCRS frame to ICRS frame
-        Returns
-        ----------
-        loc: numpy.ndarray shape (3,1) units: AU
-             ICRS coordinates in cartesian system
-        """
-        loc = self.location
-        loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.m,
-                frame='gcrs', representation_type='cartesian').transform_to('icrs')
-        loc.representation_type = 'cartesian'
-        conv = np.float32(((loc.x.unit/units.AU).decompose()).to_string())
-        loc = np.array([np.float32(loc.x), np.float32(loc.y),
-                        np.float32(loc.z)])*conv
-        return loc
-
 def overhead_antenna_pattern(right_ascension, declination, polarization):
     """Return the antenna pattern factors F+ and Fx as a function of sky
     location and polarization angle for a hypothetical interferometer located
@@ -294,11 +330,13 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
     to the normal to the detector plane (i.e. overhead and underneath) while
     the point with zero right ascension and declination is the direction
     of one of the interferometer arms.
+
     Parameters
     ----------
     right_ascension: float
     declination: float
     polarization: float
+
     Returns
     -------
     f_plus: float
@@ -320,127 +358,3 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 def effective_distance(distance, inclination, f_plus, f_cross):
     return distance / np.sqrt( ( 1 + np.cos( inclination )**2 )**2 / 4 * f_plus**2 + np.cos( inclination )**2 * f_cross**2 )
 
-
-"""     LISA class      """
-
-
-class LISA(object):
-    """For LISA detector
-    """
-    def __init__(self):
-        None
-
-    def get_pos(self, ref_time):
-        """Return the position of LISA detector for a given reference time
-        Parameters
-        ----------
-        ref_time : numpy.ScalarType
-        Returns
-        -------
-        location : numpy.ndarray of shape (3,3)
-               Returns the position of all 3 sattelites with each row
-               correspoding to a single axis.
-        """
-        ref_time = Time(val=ref_time, format='gps', scale='utc').jyear
-        n = np.array(range(1, 4))
-        kappa, _lambda_ = 0, 0
-        alpha = 2. * np.pi * ref_time/1 + kappa
-        beta_n = (n - 1) * 2.0 * pi / 3.0 + _lambda_
-        a, L = 1., 0.03342293561
-        e = L/(2. * a * np.sqrt(3))
-
-        x = a*cos(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + sin(alpha)**2)*cos(beta_n))
-        y = a*sin(alpha) + a*e*(sin(alpha)*cos(alpha)*cos(beta_n) - (1 + cos(alpha)**2)*sin(beta_n))
-        z = -np.sqrt(3)*a*e*cos(alpha - beta_n)
-        self.location = np.array([x, y, z])
-
-        return self.location
-
-    def get_gcrs_pos(self, location):
-        """ Transforms ICRS frame to GCRS frame
-        Parameters
-        ----------
-        loc : numpy.ndarray shape (3,1) units: AU
-              Cartesian Coordinates of the location
-              in ICRS frame
-        Returns
-        ----------
-        loc : numpy.ndarray shape (3,1) units: meters
-              GCRS coordinates in cartesian system
-        """
-        loc = location
-        loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.AU,
-                frame='icrs', representation_type='cartesian').transform_to('gcrs')
-        loc.representation_type = 'cartesian'
-        conv = np.float32(((loc.x.unit/units.m).decompose()).to_string())
-        loc = np.array([np.float32(loc.x), np.float32(loc.y),
-                        np.float32(loc.z)])*conv
-        return loc
-
-    def time_delay_from_location(self, other_location, right_ascension,
-                                 declination, t_gps):
-        """Return the time delay from the LISA detector to detector for
-        a signal with the given sky location. In other words return
-        `t1 - t2` where `t1` is the arrival time in this detector and
-        `t2` is the arrival time in the other location. Units(AU)
-        Parameters
-        ----------
-        other_location : numpy.ndarray of coordinates in ICRS frame
-            A detector instance.
-        right_ascension : float
-            The right ascension (in rad) of the signal.
-        declination : float
-            The declination (in rad) of the signal.
-        t_gps : float
-            The GPS time (in s) of the signal.
-        Returns
-        -------
-        numpy.ndarray
-            The arrival time difference between the detectors.
-        """
-        dx = np.array([self.location[0] - other_location[0],
-                       self.location[1] - other_location[1],
-                       self.location[2] - other_location[2]])
-        cosd = cos(declination)
-        e0 = cosd * cos(right_ascension)
-        e1 = cosd * -sin(right_ascension)
-        e2 = sin(declination)
-        ehat = np.array([e0, e1, e2])
-        return dx.dot(ehat) / constants.c.value
-
-    def time_delay_from_detector(self, det, right_ascension,
-                                 declination, t_gps):
-        """Return the time delay from the LISA detector for a signal with
-        the given sky location in ICRS frame; i.e. return `t1 - t2` where
-        `t1` is the arrival time in this detector and `t2` is the arrival
-        time in the other detector.
-        Parameters
-        ----------
-        other_detector : detector.Detector
-            A detector instance.
-        right_ascension : float
-            The right ascension (in rad) of the signal.
-        declination : float
-            The declination (in rad) of the signal.
-        t_gps : float
-            The GPS time (in s) of the signal.
-        Returns
-        -------
-        numpy.ndarray
-            The arrival time difference between the detectors.
-        """
-        loc = Detector(det, t_gps).get_icrs_pos()
-        return self.time_delay_from_location(loc, right_ascension,
-                                             declination, t_gps)
-
-    def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
-        """Return the time delay from the earth center in ICRS frame
-        """
-        t_gps = Time(val=t_gps, format='gps', scale='utc')
-        earth = coordinates.get_body('earth', t_gps,
-                                     location=None).transform_to('icrs')
-        earth.representation_type = 'cartesian'
-        return self.time_delay_from_location(
-            np.array([np.float32(earth.x), np.float32(earth.y),
-                      np.float32(earth.z)]), right_ascension,
-            declination, t_gps)
