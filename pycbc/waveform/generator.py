@@ -137,7 +137,8 @@ class BaseGenerator(object):
     def _generate_from_current(self):
         """Generates a waveform from the current parameters.
         """
-        values_hash = hash(self.current_params.values())
+        values_hash = frozenset(self.current_params[p]
+                                for p in self.variable_args)
         try:
             return self._cache[values_hash]
         except KeyError:
