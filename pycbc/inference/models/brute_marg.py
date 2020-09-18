@@ -16,40 +16,50 @@
 """This module provides model classes that do brute force marginalization
 using at the likelihood level.
 """
+import numpy
+
 from multiprocessing import Pool
-
 from .gaussian_noise import BaseGaussianNoise
-from scipy.misc import logsumexp
+from scipy.special import logsumexp
 
-class BruteParallelGaussianMarginalize(BaseGaussianModel):
+_model = None
+class likelihood_wrapper(object):
+    def __init__(self, model):
+        global _model
+        _model = model
+
+    def __call__(self, params):
+        global _model
+        _model.update(**params)
+        return _model.loglr
+
+class BruteParallelGaussianMarginalize(BaseGaussianNoise):
     name = "brute_parallel_gaussian_marginalize"
 
     def __init__(self, variable_params,
                  cores=10,
                  base_model=None,
+                 marginalize_phase=None,
                  **kwds):
-        super(BruteParallelMarginalize, self).__init__(variable_params, **kwds)
+        super(BruteParallelGaussianMarginalize, self).__init__(variable_params,
+                                     **kwds)
 
         from pycbc.inference.models import models
         self.model = models[base_model](variable_params, **kwds)
 
-        def likelihood_wrapper(self, params):
-            self.model.update(**params)
-            return self.model.loglr
-
-        self.call = likelihood_wrapper
+        self.call = likelihood_wrapper(self.model)
 
         # size of pool for each likelihood call
         self.pool = Pool(int(cores))
 
         # Only one for now, but can be easily extended
         self.phase = None
-        if 'marginalize_phase' in kwds:
-            samples = kwds['marginalize_phase']
-            self.phase = numpy.linspace(0, 2.0 * numpy.pi, int(samples))
+        if marginalize_phase:
+            samples = int(marginalize_phase)
+            self.phase = numpy.linspace(0, 2.0 * numpy.pi, samples)
 
     def _loglr(self):
-        if self.phase:
+        if self.phase is not None:
             params = []
             for p in self.phase:
                 pref = self.current_params.copy()
