@@ -509,7 +509,7 @@ class PTEmceeSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
             # write random state
             fp.write_random_state()
             # write betas
-            fp.write_betas(self.betas)
+            fp.write_betas(self.betas, last_iteration=self.niterations)
             # write random state
             fp.write_random_state()
             # write attributes of the ensemble

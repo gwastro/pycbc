@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import numpy
 
 from .base_sampler import BaseSamplerFile
+from . import base_mcmc
 from .base_mcmc import EnsembleMCMCMetadataIO
 from .base_multitemper import (CommonMultiTemperedMetadataIO,
                                write_samples,
@@ -54,64 +55,34 @@ class PTEmceeFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         """The starting betas that were used."""
         return self[self.sampler_group].attrs["starting_betas"]
 
-    def write_betas(self, betas):
+    def write_betas(self, betas, last_iteration=None):
         """Writes the betas to sampler group.
 
         As the betas may change with iterations, this writes the betas as
         a ntemps x niterations array to the file.
         """
-        group = self[self.sampler_group]
-        ntemps, niterations = betas.shape
-        try:
-            fp_ntemps, fp_niterations = group['betas'].shape
-            # check that the number of temps matches
-            assert ntemps == fp_ntemps, ("length of betas' first axis must "
-                                         "match the betas array in the file")
-            istart = fp_niterations
-            istop = istart + niterations
-            # resize the dataset to accomodate the new temps
-            group['betas'].resize(istop, axis=1)
-        except KeyError:
-            # dataset doesn't exist yet
-            istart = 0
-            istop = niterations
-            group.create_dataset('betas', (ntemps, istop),
-                                 maxshape=(ntemps, None),
-                                 dtype=float, fletcher32=True)
-        group['betas'][:, istart:istop] = betas
+        # we'll use the single temperature write_samples to write the betas,
+        # so that we get the thinning settings
+        base_mcmc.write_samples(self, {'betas': betas},
+                                last_iteration=last_iteration,
+                                samples_group=self.sampler_group)
 
-    def read_betas(self, thin_start=None, thin_interval=None, thin_end=None,
-                   iteration=None):
+    def read_betas(self):
         """Reads betas from the file.
-        Parameters
-        ----------
-        thin_start : int, optional
-            Start reading from the given iteration. Default is start from the
-            first iteration.
-        thin_interval : int, optional
-            Ony read every ``thin_interval`` -th sample. Default is 1.
-        thin_end : int, optional
-            Stop reading at the given iteration. Default is to end at the last
-            iteration.
-        iteration : int, optional
-            Only read betas from the given iteration. If provided, overrides
-            the ``thin_(start|interval|end)`` options.
+
         Returns
         -------
         array
-            A ntemps x niterations array of the betas.
+            A ntemps x (niterations//thinned_by) array of the betas. The number
+            of iterations returned will correspond to what is saved on disk;
+            i.e., it will be the number of iterations divided by the file's
+            ``thinned_by`` attribute.
         """
-        group = self[self.sampler_group]
-        if iteration is not None:
-            get_index = int(iteration)
-        else:
-            get_index = self.get_slice(thin_start=thin_start,
-                                       thin_end=thin_end,
-                                       thin_interval=thin_interval)
-        return group['betas'][:, get_index]
+        return self[self.sampler_group]['betas'][:]
 
     def write_ensemble_attrs(self, ensemble):
         """Writes ensemble attributes necessary to restart from checkpoint.
+
         Paramters
         ---------
         ensemble : ptemcee.Ensemble
@@ -127,6 +98,7 @@ class PTEmceeFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
 
     def read_ensemble_attrs(self):
         """Reads ensemble attributes from the file.
+
         Returns
         -------
         dict :
