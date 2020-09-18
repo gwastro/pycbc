@@ -44,6 +44,7 @@ from .txt import InferenceTXTFile
 filetypes = {
     EmceeFile.name: EmceeFile,
     EmceePTFile.name: EmceePTFile,
+    PTEmceeFile.name: PTEmceeFile,
     CPNestFile.name: CPNestFile,
     MultinestFile.name: MultinestFile,
     DynestyFile.name: DynestyFile,
