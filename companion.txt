@@ -8,7 +8,6 @@ healpy
 ligo-gracedb
 
 # auxiliary samplers
-ptemcee
 cpnest
 pymultinest
 ultranest
