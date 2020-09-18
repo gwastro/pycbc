@@ -93,7 +93,7 @@ class LiveEventManager(object):
 
         self.run_snr_optimization = run_snr_optimization
 
-        if self.rank == 0:
+        if self.run_snr_optimization and self.rank == 0:
             # preestimate the number of CPU cores that we can afford giving to
             # followup processes without slowing down the main search
             available_cores = len(os.sched_getaffinity(0))
@@ -657,9 +657,8 @@ if bank.min_f_lower < args.low_frequency_cutoff:
                  'minimum f_lower across all templates '
                  '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
 
-# ifos used for primary analysis
 ifos = set(args.channel_name.keys())
-logging.info('Running with %s', ppdets(ifos))
+logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
 evnt = LiveEventManager(args.output_path,
                         use_date_prefix=args.day_hour_output_prefix,
@@ -670,6 +669,7 @@ evnt = LiveEventManager(args.output_path,
                         run_snr_optimization=args.run_snr_optimization,
                         mc_area_args=mchirp_area.from_cli(args))
 
+# include MPI rank and functional description into proctitle
 task_name = 'root' if evnt.rank == 0 else 'filtering'
 setproctitle('PyCBC Live rank {:d} [{}]'.format(evnt.rank, task_name))
 
