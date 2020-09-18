@@ -19,7 +19,7 @@ using at the likelihood level.
 from multiprocessing import Pool
 
 from .gaussian_noise import BaseGaussianNoise
-from scipy.miscm import logsumexp
+from scipy.misc import logsumexp
 
 class BruteParallelGaussianMarginalize(BaseGaussianModel):
     name = "brute_parallel_gaussian_marginalize"
@@ -45,7 +45,7 @@ class BruteParallelGaussianMarginalize(BaseGaussianModel):
         # Only one for now, but can be easily extended
         self.phase = None
         if 'marginalize_phase' in kwds:
-            samples = kwds['marginalize_phase_samples']
+            samples = kwds['marginalize_phase']
             self.phase = numpy.linspace(0, 2.0 * numpy.pi, int(samples))
 
     def _loglr(self):
