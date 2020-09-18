@@ -265,6 +265,11 @@ class DynestySampler(BaseSampler):
                 # Write nested samples
                 fp.write_raw_samples(self.samples)
 
+                # Write logz and dlogz
+                logz = self._sampler.results.logz[-1:][0]
+                dlogz = self._sampler.results.logzerr[-1:][0]
+                fp.write_logevidence(logz, dlogz)
+
         # Restore properties that couldn't be pickled if we are continuing
         for key in saved:
             setattr(self._sampler, key, saved[key])
