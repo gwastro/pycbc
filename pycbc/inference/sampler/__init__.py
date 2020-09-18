@@ -40,6 +40,12 @@ except ImportError:
     pass
 
 try:
+    from .ptemcee import PTEmceeSampler
+    samplers[PTEmceeSampler.name] = PTEmceeSampler
+except ImportError:
+    pass
+
+try:
     from .cpnest import CPNestSampler
     samplers[CPNestSampler.name] = CPNestSampler
 except ImportError:
