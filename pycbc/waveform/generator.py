@@ -143,10 +143,10 @@ class BaseGenerator(object):
             return self._cache[values_hash]
         except KeyError:
             try:
-                waveform = self.generator(**self.current_params)
+                new_waveform = self.generator(**self.current_params)
                 self._cache.clear()
-                self._cache[values_hash] = waveform
-                return waveform
+                self._cache[values_hash] = new_waveform
+                return new_waveform
             except RuntimeError as e:
                 # we'll get a RuntimeError if lalsimulation failed to generate
                 # the waveform for whatever reason
