@@ -94,6 +94,8 @@ class BaseGenerator(object):
         self.current_params = frozen_params.copy()
         # keep a list of functions to call before waveform generation
         self._pregenerate_functions = []
+        # we'll cache the last generated waveform here
+        self._cache = {'hash': None, 'waveform': None}
 
     @property
     def static_args(self):
@@ -135,8 +137,13 @@ class BaseGenerator(object):
     def _generate_from_current(self):
         """Generates a waveform from the current parameters.
         """
+        values_hash = hash(frozenset(**self.current_params.values()))
+        if values_hash == self._cache['hash']:
+            return self._cache['waveform']
         try:
-            return self.generator(**self.current_params)
+            waveform = self.generator(**self.current_params)
+            self._cache.update({'hash': values_hash, 'waveform': waveform})
+            return waveform
         except RuntimeError as e:
             # we'll get a RuntimeError if lalsimulation failed to generate
             # the waveform for whatever reason
