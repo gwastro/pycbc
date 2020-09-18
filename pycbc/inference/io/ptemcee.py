@@ -67,18 +67,35 @@ class PTEmceeFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
                                 last_iteration=last_iteration,
                                 samples_group=self.sampler_group)
 
-    def read_betas(self):
+    def read_betas(self, thin_start=None, thin_interval=None, thin_end=None,
+                   iteration=None):
         """Reads betas from the file.
+
+        Parameters
+        -----------
+        thin_start : int, optional
+            Start reading from the given iteration. Default is to start from
+            the first iteration.
+        thin_interval : int, optional
+            Only read every ``thin_interval`` -th sample. Default is 1.
+        thin_end : int, optional
+            Stop reading at the given iteration. Default is to end at the last
+            iteration.
+        iteration : int, optional
+            Only read the given iteration. If this provided, it overrides
+            the ``thin_(start|interval|end)`` options.
 
         Returns
         -------
         array
-            A ntemps x (niterations//thinned_by) array of the betas. The number
-            of iterations returned will correspond to what is saved on disk;
-            i.e., it will be the number of iterations divided by the file's
-            ``thinned_by`` attribute.
+            A ntemps x niterations array of the betas.
         """
-        return self[self.sampler_group]['betas'][:]
+        slc = base_mcmc._ensemble_get_index(self, thin_start=thin_start,
+                                            thin_interval=thin_interval,
+                                            thin_end=thin_end,
+                                            iteration=iteration)
+        betas = self[self.sampler_group]['betas'][:]
+        return betas[:, slc]
 
     def write_ensemble_attrs(self, ensemble):
         """Writes ensemble attributes necessary to restart from checkpoint.
