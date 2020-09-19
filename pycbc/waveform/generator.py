@@ -24,6 +24,8 @@
 """
 This modules provides classes for generating waveforms.
 """
+import os
+import logging
 
 from . import waveform
 from .waveform import (NoWaveformError, FailedWaveformError)
@@ -35,15 +37,17 @@ from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries, \
                                  ceilpow2
 from pycbc.detector import Detector
+from pycbc.pool import use_mpi
 import lal as _lal
 from pycbc import strain
-import logging
+
 
 #
 #   Generator for CBC waveforms
 #
 
 # utility functions/class
+failed_counter = 0
 
 class BaseGenerator(object):
     """A wrapper class to call a waveform generator with a set of frozen
@@ -61,6 +65,9 @@ class BaseGenerator(object):
         A tuple or list of strings giving the names and order of variable
         parameters that will be passed to the waveform generator when the
         generate function is called.
+    record_failures : boolean
+        Store output files containing the parameters of failed waveform
+        generation. Default is False.
     \**frozen_params :
         These keyword arguments are the ones that will be frozen in the
         waveform generator. For a list of possible parameters, see
@@ -85,7 +92,8 @@ class BaseGenerator(object):
         Generates a waveform using the variable arguments and the frozen
         arguments.
     """
-    def __init__(self, generator, variable_args=(), **frozen_params):
+    def __init__(self, generator, variable_args=(), record_failures=False,
+                 **frozen_params):
         self.generator = generator
         self.variable_args = tuple(variable_args)
         self.frozen_params = frozen_params
@@ -94,6 +102,13 @@ class BaseGenerator(object):
         self.current_params = frozen_params.copy()
         # keep a list of functions to call before waveform generation
         self._pregenerate_functions = []
+
+        # If we are under mpi, then failed waveform will be stored by
+        # mpi rank to avoid file writing conflicts. We'll check for this
+        # upfront
+        self.record_failures = (record_failures or
+                                ('PYCBC_RECORD_FAILED_WAVEFORMS' in os.environ))
+        self.mpi_enabled, _, self.mpi_rank = use_mpi()
 
     @property
     def static_args(self):
@@ -112,7 +127,6 @@ class BaseGenerator(object):
         before waveform generation.
         """
         self._pregenerate_functions.append(func)
-
 
     def _postgenerate(self, res):
         """Allows the waveform returned by the generator function to be
@@ -138,6 +152,25 @@ class BaseGenerator(object):
         try:
             return self.generator(**self.current_params)
         except RuntimeError as e:
+            if self.record_failures:
+                import h5py
+                from pycbc.io.hdf import dump_state
+
+                global failed_counter
+
+                if self.mpi_enabled:
+                    outname = 'failed/params_%s.hdf' % self.mpi_rank
+                else:
+                    outname = 'failed/params.hdf'
+
+                if not os.path.exists('failed'):
+                    os.makedirs('failed')
+
+                with h5py.File(outname) as f:
+                    dump_state(self.current_params, f,
+                               dsetname=str(failed_counter))
+                    failed_counter += 1
+
             # we'll get a RuntimeError if lalsimulation failed to generate
             # the waveform for whatever reason
             strparams = ' | '.join(['{}: {}'.format(p, str(val))
