@@ -25,6 +25,7 @@ from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
 from .gaussian_noise import GaussianNoise
 from .marginalized_gaussian_noise import MarginalizedPhaseGaussianNoise
 from .marginalized_gaussian_noise import MarginalizedPolarization
+from .brute_marg import BruteParallelGaussianMarginalize
 from .single_template import SingleTemplate
 from .relbin import Relative
 
@@ -184,6 +185,7 @@ models = {_cls.name: _cls for _cls in (
     GaussianNoise,
     MarginalizedPhaseGaussianNoise,
     MarginalizedPolarization,
+    BruteParallelGaussianMarginalize,
     SingleTemplate,
     Relative
 )}
