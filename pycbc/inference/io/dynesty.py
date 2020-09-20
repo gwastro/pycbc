@@ -71,7 +71,8 @@ class CommonNestedMetadataIO(object):
         if 'raw_samples' not in skip_args:
             act = parser.add_argument(
                 "--raw-samples", action='store_true', default=False,
-                help="Raw samples are the unweighted samples obtained from "
+                help="Extract raw samples rather than a posterior. "
+                     "Raw samples are the unweighted samples obtained from "
                      "the nested sampler. Default value is False, which means "
                      "raw samples are weighted by the log-weight array "
                      "obtained from the sampler, giving an estimate of the "
@@ -83,7 +84,8 @@ class CommonNestedMetadataIO(object):
                 help="Set the random-number seed used for extracting the "
                      "posterior samples. This is needed because the "
                      "unweighted samples are randomly shuffled to produce "
-                     "a posterior. Default is 0.")
+                     "a posterior. Default is 0. Ignored if raw-samples are "
+                     "extracted instead.")
         return parser, actions
 
 class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
@@ -130,8 +132,8 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
                     i += 1
                 else:
                     j += 1
-            numpy.random.seed(seed)
-            numpy.random.shuffle(idx)
+            rng = numpy.random.default_rng(seed)
+            rng.shuffle(idx)
             post = {'loglikelihood': loglikelihood[idx]}
             for i, param in enumerate(fields):
                 post[param] = samples[param][idx]
