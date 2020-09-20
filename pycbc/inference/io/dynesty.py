@@ -72,10 +72,18 @@ class CommonNestedMetadataIO(object):
             act = parser.add_argument(
                 "--raw-samples", action='store_true', default=False,
                 help="Raw samples are the unweighted samples obtained from "
-                     "dynesty sampler."
-                     "Default value is False which means raw samples are"
-                     "weighted by log-weight array obtained from the sampler.")
+                     "the nested sampler. Default value is False, which means "
+                     "raw samples are weighted by the log-weight array "
+                     "obtained from the sampler, giving an estimate of the "
+                     "posterior.")
             actions.append(act)
+        if 'seed' not in skip_args:
+            act = parser.add_argument(
+                "--seed", type=int, default=0,
+                help="Set the random-number seed used for extracting the "
+                     "posterior samples. This is needed because the "
+                     "unweighted samples are randomly shuffled to produce "
+                     "a posterior. Default is 0.")
         return parser, actions
 
 class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
@@ -83,13 +91,33 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
 
     name = 'dynesty_file'
 
-    def read_raw_samples(self, fields, raw_samples=False, **kwargs):
-        samples = read_raw_samples_from_file(self, fields, **kwargs)
-        logwt = read_raw_samples_from_file(self, ['logwt'], **kwargs)['logwt']
-        loglikelihood = read_raw_samples_from_file(self, ['loglikelihood'],
-                                                   **kwargs)['loglikelihood']
+    def read_raw_samples(self, fields, raw_samples=False, seed=0):
+        """Reads samples from a dynesty file and constructs a posterior.
+
+        Parameters
+        ----------
+        fields : list of str
+            The names of the parameters to load. Names must correspond to
+            dataset names in the file's ``samples`` group.
+        raw_samples : bool, optional
+            Return the raw (unweighted) samples instead of the estimated
+            posterior samples. Default is False.
+        seed : int, optional
+            When extracting the posterior, samples are randomly shuffled. To
+            make this reproduceable, numpy's random generator seed is set with
+            the given value prior to the extraction. Default is 0.
+
+        Returns
+        -------
+        dict :
+            Dictionary of parameter names -> samples.
+        """
+        samples = read_raw_samples_from_file(self, fields)
+        logwt = read_raw_samples_from_file(self, ['logwt'])['logwt']
+        loglikelihood = read_raw_samples_from_file(
+            self, ['loglikelihood'])['loglikelihood']
         logz = self.attrs.get('log_evidence')
-        if raw_samples is False:
+        if not raw_samples:
             weights = numpy.exp(logwt - logz)
             N = len(weights)
             positions = (numpy.random.random() + numpy.arange(N)) / N
@@ -102,9 +130,10 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
                     i += 1
                 else:
                     j += 1
+            numpy.random.seed(seed)
             numpy.random.shuffle(idx)
             post = {'loglikelihood': loglikelihood[idx]}
-            for i, param in enumerate(self.variable_params):
+            for i, param in enumerate(fields):
                 post[param] = samples[param][idx]
             return post
         else:
