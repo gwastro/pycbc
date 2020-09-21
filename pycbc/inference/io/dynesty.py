@@ -132,7 +132,12 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
                     i += 1
                 else:
                     j += 1
-            rng = numpy.random.default_rng(seed)
+            try:
+                rng = numpy.random.default_rng(seed)
+            except AttributeError:
+                # numpy pre-1.17 uses RandomState
+                # Py27: delete this after we drop python 2.7 support
+                rng = numpy.random.RandomState(seed)
             rng.shuffle(idx)
             post = {'loglikelihood': loglikelihood[idx]}
             for i, param in enumerate(fields):
