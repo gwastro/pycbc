@@ -799,6 +799,17 @@ class ForegroundTriggers(object):
             ref_times = self.get_coincfile_array('time1')
         return ref_times
 
+    def get_ifos(self):
+        ifo_list = []
+        try:
+            ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
+            for ifo in ifos:
+                ifo_list.append(np.where(self.get_coincfile_array('{}/time'.format(ifo))<0,'-',ifo))
+            ifo_list = np.array([','.join(trig[trig!='-']) for trig in np.array(ifo_list).T])
+        except KeyError:  # Else fall back on old two-det format
+            ifo_list = np.tile('H1,L1',len(self.get_coincfile_array('template_id')))
+        return ifo_list
+
     def to_coinc_xml_object(self, file_name):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
