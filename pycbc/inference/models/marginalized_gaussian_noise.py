@@ -328,14 +328,57 @@ class MarginalizedPolarization(BaseGaussianNoise):
 
 
 class MarginalizedHMPolPhase(BaseGaussianNoise):
-    r""" This likelihood numerically marginalizes over polarization angle
+    r"""Numerically marginalizes waveforms with higher modes over polarization
+    `and` phase.
 
     This class implements the Gaussian likelihood with an explicit numerical
-    marginalization over polarization angle. This is accomplished using
-    a fixed set of integration points distribution uniformation between
-    0 and 2pi. By default, 1000 integration points are used.
-    The 'polarization_samples' argument can be passed to set an alternate
-    number of integration points.
+    marginalization over polarization angle and orbital phase. This is
+    accomplished using a fixed set of integration points distributed uniformly
+    between 0 and 2:math:`\pi` for both the polarization and phase. By default,
+    100 integration points are used for each parameter, giving :math:`10^4`
+    evaluation points in total. This can be modified using the
+    ``polarization_samples`` and ``coa_phase_samples`` arguments.
+
+    This only works with waveforms that return separate spherical harmonic
+    modes for each waveform. For a list of currently supported approximants,
+    see :py:func:`pycbc.waveform.waveform_modes.fd_waveform_mode_approximants`
+    and :py:func:`pycbc.waveform.waveform_modes.td_waveform_mode_approximants`.
+
+    Parameters
+    ----------
+    variable_params : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    data : dict
+        A dictionary of data, in which the keys are the detector names and the
+        values are the data (assumed to be unwhitened). All data must have the
+        same frequency resolution.
+    low_frequency_cutoff : dict
+        A dictionary of starting frequencies, in which the keys are the
+        detector names and the values are the starting frequencies for the
+        respective detectors to be used for computing inner products.
+    psds : dict, optional
+        A dictionary of FrequencySeries keyed by the detector names. The
+        dictionary must have a psd for each detector specified in the data
+        dictionary. If provided, the inner products in each detector will be
+        weighted by 1/psd of that detector.
+    high_frequency_cutoff : dict, optional
+        A dictionary of ending frequencies, in which the keys are the
+        detector names and the values are the ending frequencies for the
+        respective detectors to be used for computing inner products. If not
+        provided, the minimum of the largest frequency stored in the data
+        and a given waveform will be used.
+    normalize : bool, optional
+        If True, the normalization factor :math:`alpha` will be included in the
+        log likelihood. See :py:class:`GaussianNoise` for details. Default is
+        to not include it.
+    polarization_samples : int, optional
+        How many points to use in polarization. Default is 100.
+    coa_phase_samples : int, optional
+        How many points to use in phase. Defaults is 100.
+    \**kwargs :
+        All other keyword arguments are passed to
+        :py:class:`gaussian_noise.BaseGaussianNoisei <BaseGaussianNoise>`.
+
     """
     name = 'marginalized_hmpolphase'
 
