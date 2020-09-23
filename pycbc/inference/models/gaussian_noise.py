@@ -1078,7 +1078,7 @@ def create_waveform_generator(
     \**static_params :
         All other keyword arguments are passed as static parameters to the
         waveform generator.
-    
+
     Returns
     -------
     pycbc.waveform.FDomainDetFrameGenerator

@@ -17,14 +17,12 @@
 """
 
 from string import Formatter
-import numpy
 import lal
 import lalsimulation
 
-from .waveform import (props, _check_lal_pars, check_args)
-from .waveform import get_td_waveform, get_fd_waveform
-from . import parameters
 from pycbc.types import (TimeSeries, FrequencySeries)
+from .waveform import (props, _check_lal_pars, check_args)
+from . import parameters
 
 
 def _formatdocstr(docstr):
@@ -37,9 +35,11 @@ def _formatdocstr(docstr):
            })
 
 
-def _formatdocstrlist(docstr, paramlist, skip_params=[]):
+def _formatdocstrlist(docstr, paramlist, skip_params=None):
     """Utility for formatting docstrings with parameter information.
     """
+    if skip_params is None:
+        skip_params = []
     pl = '\n'.join([_p.docstr(prefix="    ", include_label=False)
                     for _p in paramlist if _p not in skip_params]).lstrip(' ')
     return docstr.format(params=pl)
@@ -88,19 +88,18 @@ def default_modes(approximant):
         ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4)]
         # add the -m modes
         ma += [(ell, -m) for ell, m in ma]
-        return ma 
     elif approximant in ['IMRPhenomPv3HM', 'IMRPhenomHM']:
         # according to arXiv:1911.06050
         ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4), (4, 3)]
         # add the -m modes
         ma += [(ell, -m) for ell, m in ma]
-        return ma 
     elif approximant.startswith('NRSur7dq4'):
         # according to arXiv:1905.09300
-        return [(ell, m) for ell in [2, 3, 4] for m in range(-ell, ell+1)]
+        ma = [(ell, m) for ell in [2, 3, 4] for m in range(-ell, ell+1)]
     else:
         raise ValueError("I don't know what the default modes are for "
                          "approximant {}, sorry!".format(approximant))
+    return ma
 
 
 def get_glm(ell, m, theta):
@@ -159,6 +158,7 @@ def get_nrsur_modes(**params):
         ret = ret.next
     return hlms
 
+
 get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 
 
@@ -178,13 +178,13 @@ def get_imrphenomx_modes(return_posneg=False, **params):
         mode_array = default_modes(approx)
     if 'f_final' not in params:
         # setting to 0 will default to ringdown frequency
-        params['f_final'] = 0. 
+        params['f_final'] = 0.
     hlms = {}
     for (ell, m) in mode_array:
         params['mode_array'] = [(ell, m)]
         laldict = _check_lal_pars(params)
         hpos, hneg = lalsimulation.SimIMRPhenomXPHMOneMode(
-            ell, m, 
+            ell, m,
             params['mass1']*lal.MSUN_SI,
             params['mass2']*lal.MSUN_SI,
             params['spin1x'], params['spin1y'], params['spin1z'],
@@ -208,9 +208,9 @@ def get_imrphenomx_modes(return_posneg=False, **params):
 
 
 def phenom_l0frame_to_jframe(approximant, mass1, mass2, f_ref, phiref=0.,
-                      inclination=0.,
-                      spin1x=0., spin1y=0., spin1z=0.,
-                      spin2x=0., spin2y=0., spin2z=0.):
+                             inclination=0.,
+                             spin1x=0., spin1y=0., spin1z=0.,
+                             spin2x=0., spin2y=0., spin2z=0.):
     r"""Converts L0- to J-frame parameters used by IMRPhenomP waveforms.
 
     Parameters
@@ -388,7 +388,6 @@ jframe_to_l0frame.__doc__ = _formatdocstr(jframe_to_l0frame.__doc__)
 
 
 _mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
-                     'NRSur7dq2': get_nrsur_modes,
                      }
 
 

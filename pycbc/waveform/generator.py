@@ -46,7 +46,6 @@ import lal as _lal
 from pycbc import strain
 
 
-
 #
 # =============================================================================
 #
@@ -1032,11 +1031,11 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
                 # no detector response, just apply time shift
                 if 'tc' in self.current_params:
                     ulm = apply_fd_time_shift(ulm,
-                                             self.current_params['tc']+tshift,
-                                             copy=False)
+                                              self.current_params['tc']+tshift,
+                                              copy=False)
                     vlm = apply_fd_time_shift(vlm,
-                                             self.current_params['tc']+tshift,
-                                             copy=False)
+                                              self.current_params['tc']+tshift,
+                                              copy=False)
                 h['RF'][mode] = (ulm, vlm)
             if self.gates is not None:
                 # resize all to nearest power of 2

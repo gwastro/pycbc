@@ -18,8 +18,8 @@ allows for the likelihood to be marginalized over phase and/or time and/or
 distance.
 """
 
-import numpy
 import itertools
+import numpy
 from scipy import special
 
 from pycbc.waveform import generator
@@ -422,7 +422,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             # hasn't been computed yet, calculate it
             self._phase_fac[m] = numpy.exp(1.0j * m * self.phase)
             return self._phase_fac[m]
-        
+
     @property
     def _extra_stats(self):
         """Adds ``maxl_polarization`` and the ``max_phase``
@@ -464,11 +464,12 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             else:
                 raise e
 
-        ############# Some optimizations not yet taken
-        # higher m calculations could have a lot of redundancy
-        # fp / fc need not be calculated except where polarization is different
-        # may be possible to simplify this by making smarter use of real/imag
-        ##############################################
+        # ---------------------------------------------------------------------
+        # Some optimizations not yet taken:
+        # * higher m calculations could have a lot of redundancy
+        # * fp/fc need not be calculated except where polarization is different
+        # * may be possible to simplify this by making smarter use of real/imag
+        # ---------------------------------------------------------------------
         lr = 0.
         hds = {}
         hhs = {}
@@ -488,7 +489,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             rlms = {}
             slms = {}
             for mode in modes:
-                l, m  = mode
+                l, m = mode
                 ulm, vlm = modes[mode]
 
                 # whiten the waveforms
