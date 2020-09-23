@@ -31,7 +31,8 @@ class likelihood_wrapper(object):
     def __call__(self, params):
         global _model
         _model.update(**params)
-        return _model.loglr
+        loglr = _model.loglr
+        return loglr, _model.current_stats
 
 class BruteParallelGaussianMarginalize(BaseGaussianNoise):
     name = "brute_parallel_gaussian_marginalize"
@@ -58,6 +59,10 @@ class BruteParallelGaussianMarginalize(BaseGaussianNoise):
             samples = int(marginalize_phase)
             self.phase = numpy.linspace(0, 2.0 * numpy.pi, samples)
 
+    @property
+    def _extra_stats(self):
+        return self.model._extra_stats + ['maxl_phase', 'maxl_loglr']
+
     def _loglr(self):
         if self.phase is not None:
             params = []
@@ -65,5 +70,16 @@ class BruteParallelGaussianMarginalize(BaseGaussianNoise):
                 pref = self.current_params.copy()
                 pref['coa_phase'] = p
                 params.append(pref)
-            loglr = numpy.array(list(self.pool.map(self.call, params)))
+            vals = list(self.pool.map(self.call, params))
+            loglr = numpy.array([v[0] for v in vals])
+            # get the maxl values
+            maxidx = loglr.argmax()
+            maxstats = vals[maxidx][1]
+            maxphase = self.phase[maxidx]
+            # set the stats
+            for stat in maxstats:
+                setattr(self._current_stats, stat, maxstats[stat])
+            self._current_stats.maxl_phase = maxphase
+            self._current_stats.maxl_loglr = loglr[maxidx]
+            # calculate the marginal loglr and return
             return logsumexp(loglr) - numpy.log(len(self.phase))
