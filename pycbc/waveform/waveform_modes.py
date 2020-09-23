@@ -519,6 +519,16 @@ _mode_waveform_fd = {'IMRPhenomHM': get_imrphenomhm_modes,
                     }
 
 
+def fd_waveform_mode_approximants():
+    """Frequency domain approximants that will return separate modes."""
+    return sorted(_mode_waveform_fd.keys())
+
+
+def td_waveform_mode_approximants():
+    """Time domain approximants that will return separate modes."""
+    return sorted(_mode_waveform_td.keys())
+
+
 def get_fd_waveform_modes(template=None, **kwargs):
     """Generates frequency domain waveforms, but does not sum over the modes.
     """
