@@ -162,6 +162,9 @@ def get_ctypes_library(libname, packages, mode=None):
         libdirs += pkg_config_libdirs(packages)
     except ValueError:
         pass
+    # Next, if we are in a virtual environment, search inside its '/lib'
+    if "VIRTUAL_ENV" in os.environ:
+        libdirs.append(os.path.join(os.environ["VIRTUAL_ENV"], "lib"))
 
     # Note that the function below can accept an empty list for libdirs, in which case
     # it will return None
