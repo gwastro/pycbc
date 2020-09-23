@@ -21,6 +21,7 @@ packages for parameter estimation.
 
 from __future__ import absolute_import
 
+import shlex
 import numpy
 import ptemcee
 import logging
@@ -29,15 +30,14 @@ from pycbc.pool import choose_pool
 from .base import (BaseSampler, setup_output)
 from .base_mcmc import (BaseMCMC, EnsembleSupport, raw_samples_to_dict,
                         get_optional_arg_from_config)
-from .base_multitemper import (MultiTemperedSupport,
+from .base_multitemper import (read_betas_from_hdf,
                                ensemble_compute_acf, ensemble_compute_acl)
 from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.io import PTEmceeFile
 from .. import models
 
 
-class PTEmceeSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
-                     BaseSampler):
+class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
     """This class is used to construct the parallel-tempered ptemcee sampler.
 
     Parameters
@@ -134,6 +134,11 @@ class PTEmceeSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
     @property
     def io(self):
         return self._io
+
+    @property
+    def ntemps(self):
+        """The number of temeratures that are set."""
+        return self._ntemps
 
     @property
     def base_shape(self):
@@ -395,49 +400,67 @@ class PTEmceeSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
 
         The following options are retrieved in the ``[sampler]`` section:
 
-        * ``name`` :
+        * ``name = INT`` :
             Required. This must match the samlper's name.
-        * ``nwalkers`` :
+        * ``nwalkers = INT`` :
             Required. The number of walkers to use.
-        * ``ntemps`` :
-            The number of temperatures to use. Either this, or
-            ``inverse-temperatures-file`` must be provided (but not both).
-        * ``inverse-temperatures-file`` :
+        * ``ntemps = INT`` :
+            The number of temperatures to use. This may be used in combination
+            with ``Tmax``. Either this, ``Tmax``, ``betas`` or ``betas-file``
+            must be provided.
+        * ``tmax = FLOAT`` :
+            The maximum temperature to use. This may be used in combination
+            with ``ntemps``, or alone.
+        * ``betas = FLOAT1 FLOAT2 [...]`` :
+            Space-separated list of (intial) inverse temperatures ("betas") to
+            use. This sets both the number of temperatures and the tmax. A
+            ``ValueError`` will be raised if both this and ``ntemps`` or
+            ``Tmax`` are provided.
+        * ``betas-file = STR`` :
             Path to an hdf file containing the inverse temperatures ("betas")
             to use. The betas will be retrieved from the file's
-            ``.attrs['betas']``. Either this or ``ntemps`` must be provided
-            (but not both).
-        * ``niterations`` :
+            ``.attrs['betas']``. A ``ValueError`` will be raised if both this
+            and ``betas`` are provided.
+        * ``adaptive =`` :
+            If provided, temperature adaptation will be turned on.
+        * ``adaptation-lag = INT`` : 
+            The adaptation lag to use (see ptemcee for details).
+        * ``adaptation-time = INT`` :
+            The adaptation time to use (see ptemcee for details).
+        * ``scale-factor = FLOAT`` :
+            The scale factor to use for the emcee stretch.
+        * ``niterations = INT`` :
             The number of iterations to run the sampler for. Either this or
             ``effective-nsamples`` must be provided (but not both).
-        * ``effective-nsamples`` :
+        * ``effective-nsamples = INT`` :
             Run the sampler until the given number of effective samples are
             obtained. A ``checkpoint-interval`` must also be provided in this
             case. Either this or ``niterations`` must be provided (but not
             both).
-        * ``thin-interval`` :
+        * ``thin-interval = INT`` :
             Thin the samples by the given value before saving to disk. May
             provide this, or ``max-samples-per-chain``, but not both. If
             neither options are provided, will save all samples.
-        * ``max-samples-per-chain`` :
+        * ``max-samples-per-chain = INT`` :
             Thin the samples such that the number of samples per chain per
             temperature that are saved to disk never exceeds the given value.
             May provide this, or ``thin-interval``, but not both. If neither
             options are provided, will save all samples.
-        * ``checkpoint-interval`` :
+        * ``checkpoint-interval = INT`` :
             Sets the checkpoint interval to use. Must be provided if using
             ``effective-nsamples``.
-        * ``checkpoint-signal`` :
+        * ``checkpoint-signal = STR`` :
             Set the checkpoint signal, e.g., "USR2". Optional.
-        * ``logl-function`` :
+        * ``logl-function = STR`` :
             The attribute of the model to use for the loglikelihood. If
             not provided, will default to ``loglikelihood``.
 
         Settings for burn-in tests are read from ``[sampler-burn_in]``. In
         particular, the ``burn-in-test`` option is used to set the burn in
         tests to perform. See
-        :py:func:`MultiTemperedMCMCBurnInTests.from_config` for details. If no
-        ``burn-in-test`` is provided, no burn in tests will be carried out.
+        :py:func:`EnsembleMultiTemperedMCMCBurnInTests.from_config` for
+        details. If no ``burn-in-test`` is provided, no burn in tests will be
+        carried out.
 
         Parameters
         ----------
@@ -463,18 +486,56 @@ class PTEmceeSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
             "name in section [sampler] must match mine")
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
-        # get the temps/betas
-        ntemps, betas = cls.betas_from_config(cp, section)
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
+        optargs = {}
+        # get the temperature level settings
+        ntemps = get_optional_arg_from_config(cp, section, 'ntemps', int)
+        if ntemps is not None:
+            optargs['ntemps'] = ntemps
+        tmax = get_optional_arg_from_config(cp, section, 'tmax', float)
+        if tmax is not None:
+            optargs['Tmax'] = tmax
+        betas = get_optional_arg_from_config(cp, section, 'betas')
+        if betas is not None:
+            # convert to list sorted in descencding order
+            betas = numpy.sort(list(map(float, shlex.split(betas))))[::-1]
+            optargs['betas'] = betas
+        betas_file = get_optional_arg_from_config(cp, section, 'betas-file')
+        if betas_file is not None:
+            optargs['betas'] = read_betas_from_hdf(betas_file)
+        # check for consistency
+        if betas is not None and betas_file is not None:
+            raise ValueError("provide either betas or betas-file, not both")
+        if 'betas' in optargs and (ntemps is not None or tmax is not None):
+            raise ValueError("provide either ntemps/tmax or betas/betas-file, "
+                             "not both")
+        # adaptation parameters
+        adpative = get_optional_arg_from_config(cp, section, 'adaptive')
+        if adaptive is not None:
+            optargs['adaptive'] = True
+        else:
+            optargs['adaptive'] = False
+        adaptation_lag = get_optional_arg_from_config(cp, section,
+                                                      'adaptation-lag', int)
+        if adaptation_lag is not None:
+            optargs['adaptation_lag'] = adaptation_lag
+        adaptation_time = get_optional_arg_from_config(cp, section,
+                                                       'adaptation-time', int)
+        if adaptation_time is not None:
+            optargs['adaptation_time'] = adaptation_time
+        scale_factor = get_optional_arg_from_config(cp, section,
+                                                    'scale-factor', float)
+        if scale_factor is not None:
+            optargs['scale_factor'] = scale_factor
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
-        obj = cls(model, ntemps, nwalkers, betas=betas,
+        obj = cls(model, nwalkers,
                   checkpoint_interval=checkpoint_interval,
                   checkpoint_signal=checkpoint_signal,
                   loglikelihood_function=logl, nprocesses=nprocesses,
-                  use_mpi=use_mpi)
+                  use_mpi=use_mpi, **optargs)
         # set target
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
