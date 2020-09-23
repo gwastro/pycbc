@@ -40,9 +40,9 @@ def _formatdocstr(docstr):
 def _formatdocstrlist(docstr, paramlist, skip_params=[]):
     """Utility for formatting docstrings with parameter information.
     """
-    return docstr.format(
-        params=[_p.docstr(prefix="    ", include_label=False).lstrip(' ')
-                for _p in paramlist if _p not in skip_params])
+    pl = '\n'.join([_p.docstr(prefix="    ", include_label=False)
+                    for _p in paramlist if _p not in skip_params]).lstrip(' ')
+    return docstr.format(params=pl)
 
 
 def sum_modes(hlms, inclination, phi):
@@ -535,7 +535,7 @@ def td_waveform_mode_approximants():
 
 
 def get_fd_waveform_modes(template=None, **kwargs):
-    """Generates frequency domain waveforms, but does not sum over the modes.
+    r"""Generates frequency domain waveforms, but does not sum over the modes.
 
     The returned values are the frequency-domain equivalents of the real and
     imaginary parts of the complex :math:`\mathfrak{{h}}_{{\ell m}}(t)` time
@@ -570,12 +570,12 @@ def get_fd_waveform_modes(template=None, **kwargs):
 
 
 get_fd_waveform_modes.__doc__ = _formatdocstrlist(
-    get_fd_waveform_modes, parameters.fd_waveform_params,
+    get_fd_waveform_modes.__doc__, parameters.fd_waveform_params,
     skip_params=['inclination', 'coa_phase'])
 
 
 def get_td_waveform_modes(template=None, **kwargs):
-    """Generates time domain waveforms, but does not sum over the modes.
+    r"""Generates time domain waveforms, but does not sum over the modes.
 
     The returned values are the real and imaginary parts of the complex
     :math:`\mathfrak{{h}}_{{\ell m}}(t)`. These are defined such that the plus
@@ -614,5 +614,5 @@ def get_td_waveform_modes(template=None, **kwargs):
 
 
 get_td_waveform_modes.__doc__ = _formatdocstrlist(
-    get_td_waveform_modes, parameters.td_waveform_params,
+    get_td_waveform_modes.__doc__, parameters.td_waveform_params,
     skip_params=['inclination', 'coa_phase'])
