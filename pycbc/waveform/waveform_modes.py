@@ -37,6 +37,14 @@ def _formatdocstr(docstr):
            })
 
 
+def _formatdocstrlist(docstr, paramlist, skip_params=[]):
+    """Utility for formatting docstrings with parameter information.
+    """
+    return docstr.format(
+        params=[_p.docstr(prefix="    ", include_label=False).lstrip(' ')
+                for _p in paramlist if _p not in skip_params])
+
+
 def sum_modes(hlms, inclination, phi):
     """Applies spherical harmonics and sums modes to produce a plus and cross
     polarization.
@@ -255,7 +263,6 @@ def phenom_l0frame_to_jframe(approximant, mass1, mass2, f_ref, phiref=0.,
            'spin1_l': spin1_l,
            'spin2_l': spin2_l,
            'chi_p': chip}
-    #return thetajn, alpha0, phi_aligned, zeta_pol, spin1_l, spin2_l, chi_p
     return out
 
 
@@ -315,7 +322,6 @@ def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
            'spin1_a': spin1_a,
            'spin2_a': spin2_a}
     return out
-    #return thetajn, phijl, spin1_a, spin2_a, s1pol, s2pol, spin12_deltaphi
 
 
 l0frame_to_jframe.__doc__ = _formatdocstr(l0frame_to_jframe.__doc__)
@@ -371,7 +377,6 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
            'spin2y': spin2y,
            'spin2z': spin2z}
     return out
-    #return inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z
 
 
 jframe_to_l0frame.__doc__ = _formatdocstr(jframe_to_l0frame.__doc__)
@@ -531,6 +536,28 @@ def td_waveform_mode_approximants():
 
 def get_fd_waveform_modes(template=None, **kwargs):
     """Generates frequency domain waveforms, but does not sum over the modes.
+
+    The returned values are the frequency-domain equivalents of the real and
+    imaginary parts of the complex :math:`\mathfrak{{h}}_{{\ell m}}(t)` time
+    series. In other words, the returned values are equivalent to the Fourier
+    Transform of the two time series returned by
+    :py:func:`get_td_waveform_modes`; see that function for more details.
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to subsitute
+        for keyword arguments.
+    {params}
+
+    Returns
+    -------
+    ulm : dict
+        Dictionary of mode tuples -> fourier transform of the real part of the
+        hlm time series, as a :py:class:`pycbc.types.FrequencySeries`.
+    vlm : dict
+        Dictionary of mode tuples -> fourier transform of the imaginary part of
+        the hlm time series, as a :py:class:`pycbc.types.FrequencySeries`.
     """
     params = props(template, **kwargs)
     required = parameters.fd_required
@@ -542,8 +569,39 @@ def get_fd_waveform_modes(template=None, **kwargs):
     return _mode_waveform_fd[apprx](**params)
 
 
+get_fd_waveform_modes.__doc__ = _formatdocstrlist(
+    get_fd_waveform_modes, parameters.fd_waveform_params,
+    skip_params=['inclination', 'coa_phase'])
+
+
 def get_td_waveform_modes(template=None, **kwargs):
     """Generates time domain waveforms, but does not sum over the modes.
+
+    The returned values are the real and imaginary parts of the complex
+    :math:`\mathfrak{{h}}_{{\ell m}}(t)`. These are defined such that the plus
+    and cross polarizations :math:`h_{{+,\times}}` are:
+
+    .. math::
+
+       h_{{+,\times}}(\theta, \phi; t) = (\Re, -\Im) \sum_{{\ell m}}
+        {{}}_{{-2}}Y_{{\ell m}}(\theta, \phi) \mathfrak{{h}}_{{\ell m}}(t).
+
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to subsitute
+        for keyword arguments.
+    {params}
+
+    Returns
+    -------
+    ulm : dict
+        Dictionary of mode tuples -> real part of the hlm, as a
+        :py:class:`pycbc.types.TimeSeries`.
+    vlm : dict
+        Dictionary of mode tuples -> real part of the hlm, as a
+        :py:class:`pycbc.types.TimeSeries`.
     """
     params = props(template, **kwargs)
     required = parameters.fd_required
@@ -553,3 +611,8 @@ def get_td_waveform_modes(template=None, **kwargs):
         raise ValueError("I don't support approximant {}, sorry"
                          .format(apprx))
     return _mode_waveform_td[apprx](**params)
+
+
+get_td_waveform_modes.__doc__ = _formatdocstrlist(
+    get_td_waveform_modes, parameters.td_waveform_params,
+    skip_params=['inclination', 'coa_phase'])
