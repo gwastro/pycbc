@@ -165,6 +165,11 @@ get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 def get_imrphenomx_modes(return_posneg=False, **params):
     """Generates ``IMRPhenomX[P]HM`` waveforms mode-by-mode.
     """
+    # FIXME: raising not implemented error because this currently does not
+    # work. The issue is the OneMode function adds the +/- m modes together
+    # automatically. Remove once this is fixed in lalsimulation, and/or I
+    # figure out a reliable way to separate the +/-m modes.
+    raise NotImplementedError("Currently not implemented")
     approx = params['approximant']
     if not approx.startswith('IMRPhenomX'):
         raise ValueError("unsupported approximant")
@@ -382,145 +387,14 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
 jframe_to_l0frame.__doc__ = _formatdocstr(jframe_to_l0frame.__doc__)
 
 
-def _shiftparams(theta, phi, **params):
-    fref = params['f_ref']
-    if fref == 0:
-        fref = params['f_lower']
-    # account for lal convention
-    phi = numpy.pi/2 - phi
-    if False:
-        # convert to jframe
-        jparams = l0frame_to_jframe(params['mass1'], params['mass2'], fref,
-                                    phi, 0.,
-                                    params['spin1x'], params['spin1y'],
-                                    params['spin1z'], params['spin2x'],
-                                    params['spin2y'], params['spin2z'])
-        # now call back with thetajn set to theta and phijl set to phi
-        jparams['thetajn'] = theta
-        #jparams['phijl'] = -phi
-        lparams = jframe_to_l0frame(params['mass1'], params['mass2'], fref,
-                                    phiref=phi,
-                                    **jparams)
-        #jparams = jframe_to_l0frame(
-        #    params['mass1'], params['mass2'], fref,
-        #    phiref=phi, thetajn=theta)
-        #params.update({'inclination': jparams[0], 'coa_phase': phi})
-        params.update(lparams)
-    params['coa_phase'] = phi
-    params['inclination'] = theta
-    return params
-
-
-def get_imrphenomhm_modes(**params):
-    """Generates ``IMRPhenom[Pv3]HM`` waveforms mode-by-mode.
-    """
-    approx = params['approximant']
-    # remove inclination and phase if they were included
-    inc = params.pop('inclination', 0.)
-    phi = params.pop('coa_phase', 0.)
-    if inc != 0.:
-        raise ValueError("non zero inclination given")
-    if phi != 0.:
-        raise ValueError("non zero coalescence phase given")
-    mode_array = params.pop('mode_array', None)
-    if mode_array is None:
-        mode_array = default_modes(approx)
-    # make sure everything is specified as +m modes
-    mode_array = list(set([(ell, abs(m)) for (ell, m) in mode_array]))
-    # We will need to isolate the + and - m modes from each other. How to do
-    # that depends on the mode. For:
-    # m = 2:
-    #   generate once face-on (-m is zero) and once face-off (+m is zero).
-    # (l, m) = (2, 1), (4, 4), or (4, 3):
-    #   generate at inc = (pi/2). At that angle y_{l, m} = y_{l,-m} != 0. 
-    #   we can then ioslate the +/-m by generating once at phi = 0 and once at
-    #   phi = (1/m)*(pi/2), then taking combinations of the hplus and hcross.
-    # (l, m) = (3, 3):
-    #   generate at inc = (pi/2). At that angle, y_{3,3} = -y_{3,-3} != 0.
-    #   we can then ioslate the +/-m by generating once at phi = 0 and once at
-    #   phi = (1/m)*(pi/2), then taking combinations of the hplus and hcross.
-    hlms = {}
-    for mode in mode_array:
-        ell, m = mode
-        ma = [mode]
-        if approx == 'IMRPhenomPv3HM' and mode != (2, 2):
-            ma.append((2, 2))
-        if m == 2:
-            # generate once face on and once face off
-            ulm, vlm = get_fd_waveform(
-                mode_array=ma, **_shiftparams(0., 0., **params))
-            # face off
-            ulmm, vlmm = get_fd_waveform(
-                mode_array=ma, **_shiftparams(numpy.pi, 0., **params))
-            # subtract off the 2,2 mode for PhenomPv3HM
-            if approx == 'IMRPhenomPv3HM' and mode != (2, 2):
-                # +m
-                hp22, hc22 = get_fd_waveform(
-                    mode_array=[(2, 2)], **_shiftparams(0., 0., **params))
-                ulm -= hp22
-                vlm -= hc22
-                # -m
-                hp22, hc22 = get_fd_waveform(
-                    mode_array=[(2, 2)], **_shiftparams(numpy.pi, 0.,
-                                                        **params))
-                ulmm -= hp22
-                vlmm -= hc22
-            # divide out the inclination part
-            glm = get_glm(ell, m, 0.)
-            ulm /= glm
-            vlm /= glm
-            # -m: although same magnitude, may have opposite sign
-            glm = get_glm(ell, -m, numpy.pi)
-            ulmm /= glm
-            vlmm /= glm
-        elif mode in [(2, 1), (3, 3), (4, 4), (4, 3)]: 
-            inc = numpy.pi/2.
-            hp1, hc1 = get_fd_waveform(mode_array=ma,
-                                       **_shiftparams(inc, 0., **params))
-            phi = (1./m)*(numpy.pi/2.)
-            hp2, hc2 = get_fd_waveform(mode_array=ma,
-                                       **_shiftparams(inc, phi, **params))
-            if approx == 'IMRPhenomPv3HM':
-                # generate the 2,2 and subtract it off
-                hp22, hc22 = get_fd_waveform(mode_array=[(2, 2)],
-                                             **_shiftparams(inc, 0., **params))
-                hp1 -= hp22
-                hc1 -= hc22
-                hp22, hc22 = get_fd_waveform(mode_array=[(2, 2)],
-                                             **_shiftparams(inc, phi,
-                                                            **params))
-                hp2 -= hp22
-                hc2 -= hc22
-            # divide out the inclination part
-            glm = get_glm(ell, m, inc)
-            hp1 /= glm
-            hc1 /= glm
-            hp2 /= glm
-            hc2 /= glm
-            # if gl(-m) = -glm, we pick up a negative sign in the -m
-            sgn = numpy.sign(get_glm(ell, -m, inc)/glm)
-            # now convert to the ulm and vlm
-            ulm = (hp1 - hc2)/2.
-            vlm = -(hp2 + hc1)/2.
-            ulmm = sgn*(hp1 + hc2)/2.
-            vlmm = sgn*(hp2 - hc1)/2.
-        else:
-            raise ValueError("I don't know what to do with mode {}"
-                             .format(mode))
-        hlms[ell, m] = (ulm, vlm)
-        hlms[ell, -m] = (ulmm, vlmm)
-    return hlms
-
-
 _mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
                      'NRSur7dq2': get_nrsur_modes,
                      }
 
 
-_mode_waveform_fd = {'IMRPhenomHM': get_imrphenomhm_modes,
-                     'IMRPhenomPv3HM': get_imrphenomhm_modes,
-                     'IMRPhenomXHM': get_imrphenomhm_modes,
-                     'IMRPhenomXPHM' : get_imrphenomhm_modes,
+# Remove commented out once IMRPhenomX one mode is fixed
+_mode_waveform_fd = {#'IMRPhenomXHM': get_imrphenomhm_modes,
+                     #'IMRPhenomXPHM' : get_imrphenomhm_modes,
                     }
 
 
