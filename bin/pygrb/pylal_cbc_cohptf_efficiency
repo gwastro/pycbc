@@ -34,22 +34,30 @@ import copy
 start = int(time.time()*10**6)
 elapsed_time = lambda: int(time.time()*10**6-start)
 
-import os,sys,matplotlib,re,copy,optparse
+import os,sys,matplotlib,re,copy,optparse,glob
 import numpy as np
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import rc,cm,colors
 import scipy
 from scipy import stats
-from glue import segments,markup
+from ligo import segments
+from glue import markup
 from glue.ligolw import table,lsctables,utils,ligolw
-
 from pycbc import __version__
-from pylal.coh_PTF_pyutils import *
-from pylal import SimInspiralUtils,MultiInspiralUtils,plotutils,git_version
-from pylal.dq import dqSegmentUtils,dqHTMLUtils
+from pycbc.detector import Detector
+import pycbc.results
+from pycbc.results.pygrb_plotting_utils import extract_vetoes, extract_ifos, load_xml_file
+
+from pylal.coh_PTF_pyutils import get_bestnr,readSegFiles,get_f_resp
+# import MultiInspiralUtils
+from pylal import plotutils
+# from pylal.dq import dqHTMLUtils
 
 vprint = lambda x: sys.stdout.write(x) if verbose else str
+
+print("setting random seed to 1234\n")
+np.random.seed(1234)
 
 # =============================================================================
 # Parse command line
@@ -246,6 +254,73 @@ def parse_command_line():
   
   return opts, args
 
+def get_antenna_response(ra, dec, geocent_time, ifo):
+  """This function should be moved to pygrb_plotting_utils to replace 
+  get_f_resp.
+  """
+  i = Detector(ifo)
+  fp, fc = i.antenna_pattern(ra, dec, 0, geocent_time)
+  return fp**2 + fc**2
+  
+def load_xml_table(xmlFile, table_name):
+  '''Load xml table from file.
+  '''
+  xmldoc = load_xml_file(xmlFile)
+  return table.get_table(xmldoc, table_name)
+
+def get_id_numbers(ligolw_table, column):
+    ids = [int(getattr(row, column)) for row in ligolw_table]
+    return ids
+
+def load_time_slides(xmldoc):
+  time_slide = table.get_table(xmldoc, lsctables.TimeSlideTable.tableName)
+  time_slide_unsorted = [dict(i) for i in time_slide.as_dict().values()]
+  # NB: sorting not necessary if using python 3
+  sort_idx = np.argsort(np.array([
+      int(time_slide.get_time_slide_id(ov)) for ov in time_slide_unsorted
+  ]))
+  time_slide_list = np.array(time_slide_unsorted)[sort_idx]
+  # check time_slide_ids are ordered correctly. 
+  ids = get_id_numbers(time_slide, "time_slide_id")[::len(time_slide_list[0].keys())]
+  if not (np.all(ids[1:] == np.array(ids[:-1])+1) and ids[0]==0):
+    raise ValueError("time_slide_ids list should start at zero and increase by one for every element")
+  # check that the zero-lag slide has time_slide_id == 0.
+  if not np.all(np.array(list(time_slide_list[0].values())) == 0):
+    raise ValueError(
+      "zero-lag slide should have time_slide_id == 0\n"
+      "but first element of time_slide_list is %s \n" % 
+      time_slide_list[0]
+    )
+  return time_slide_list
+
+def load_segment_dict(xmldoc):
+  # Get the mapping table
+  # NB: unclear whether this step is necessary (seems the 
+  # segment_def_id and time_slide_id are always identical)
+  time_slide_map_table = table.get_table(xmldoc,
+      lsctables.TimeSlideSegmentMapTable.tableName)
+  segment_map = {
+      int(entry.segment_def_id): int(entry.time_slide_id) 
+      for entry in time_slide_map_table
+  }
+  # Extract the segment table
+  segment_table = table.get_table(
+    xmldoc,lsctables.SegmentTable.tableName
+    )
+  segmentDict = {}
+  for entry in segment_table:
+    currSlidId = segment_map[int(entry.segment_def_id)]
+    currSeg = entry.get()
+#     print(abs(currSeg), currSlidId, ts[currSlidId])
+    if not currSlidId in segmentDict.keys():
+      segmentDict[currSlidId] = segments.segmentlist()
+    segmentDict[currSlidId].append(currSeg)
+    segmentDict[currSlidId].coalesce()
+  return segmentDict
+
+def load_multi_inspiral(xmldoc):
+    return table.get_table(xmldoc, "multi_inspiral")
+
 # =============================================================================
 # Main function
 # =============================================================================
@@ -264,8 +339,6 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
   # setup
   #
 
-  lsctables.SimInspiral.get_theta = sim_inspiral_get_theta
-
   # set output directory
   vprint("setting output directory")
   if not os.path.isdir(outdir):
@@ -276,28 +349,26 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
   #
 
   # FIXME: This is nasty, we actually read the file twice, can we fix this?
-  xmldoc = utils.load_filename(trigFile,gz=trigFile.endswith("gz"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
-  searchSumm = table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
-  ifos = sorted(map(str,searchSumm[0].get_ifos()))
+  ifos = extract_ifos(trigFile)
   ifoAtt = {'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t'}
 
-  trigs, slideDict, segmentDict = \
-      MultiInspiralUtils.ReadMultiInspiralTimeSlidesFromFiles([trigFile])
+  # import MultiInspiralUtils
+  # import pdb
+  # pdb.set_trace()
+  # trigs, slideDict, segmentDict = \
+  #     MultiInspiralUtils.ReadMultiInspiralTimeSlidesFromFiles([trigFile])
+  xmldoc = load_xml_file(trigFile)
+  trigs = load_multi_inspiral(xmldoc)
+  slideDict = load_time_slides(xmldoc)
+  segmentDict = load_segment_dict(xmldoc)
+
 
   # Identify the zero-lag slide
-  zeroLagSlideID = None
   numSlides = len(slideDict)
-  for i in range(numSlides):
-    # Is this slide the zero-lag?
-    if max(slideDict[i].values()) == 0:
-      if min(slideDict[i].values()) == 0:
-        if zeroLagSlideID is None:
-          zeroLagSlideID = i
-        else:
-          raise BrokenError
-
-  if zeroLagSlideID is None:
-    raise BrokenError
+  zero_lag_count = [np.count_nonzero(slideDict[i].values()) for i in range(numSlides)]
+  zeroLagSlideID = zero_lag_count.index(0)
+  if np.count_nonzero(np.array(zero_lag_count)==0) != 1:
+    raise ValueError, "slideDict should contain exactly one zero lag slide"
 
 
   vprint("%d triggers loaded at %d.\n"\
@@ -318,21 +389,7 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
   #
 
   # Construct veto list
-  vetoes = segments.segmentlistdict()
-  for ifo in ifos:
-    vetoes[ifo] = segments.segmentlist()
-
-  if vetoFiles:
-    for file in vetoFiles:
-      ifo = os.path.basename(file)[:2]
-      if ifo in ifos:
-        # This returns a coalesced list of the vetoes
-        tmpVetoSegs = dqSegmentUtils.fromsegmentxml(open(file,'r'))
-        for entry in tmpVetoSegs:
-          vetoes[ifo].append(entry)
-
-  for ifo in ifos:
-    vetoes[ifo].coalesce()
+  vetoes = extract_vetoes(vetoFiles, ifos)
   #
   # construct trials
   #
@@ -357,6 +414,8 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
 
     # These can only *reduce* the analysis time
     currSegList = segmentDict[slideID]
+
+    ###### below is a check we can possibly remove #####
     # Check the triggers are all in the analysed segment lists
     for trig in sortedTrigs[slideID]:
       if trig.end_time not in currSegList:
@@ -369,6 +428,7 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
         err_msg = "Triggers found in input files not in the list of analysed " 
         err_msg += "segments. This shouldn't happen."
         raise ValueError(err_msg)
+    ###### end of check #####
 
     # Construct the buffer segment list
     buffer = segments.segmentlist()
@@ -383,6 +443,19 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
     for ifo in ifos:
       slidVetoes[ifo].shift(-slideDict[slideID][ifo])
     
+    #### load_triggers uses the timeslide vetoes to veto trigs
+    #### but the below will veto an entire offtrial if there is a
+    #### veto that intersects with it. Could use the load_trigs function
+    #### to first discard trigs that are vetoes and then additionally do the veto
+    #### of entire segments below. 
+    #### The below will for each timeslide, check how many 6s trials 
+    #### can be constructed that don't intersect with the buffer or 
+    #### vetoes. It will also throw away triggers if they fall into the 
+    #### last bin that has a trial <6s. This might explain why a 
+    #### really loud trigger that appears in offsource doesn't appear
+    #### in the bestNRs list, or affect FAP.
+    #### this is the only time the segmentDict and currSegList is used
+ 
     # Construct trial list and check against buffer      
     trialDict[slideID] = segments.segmentlist()
     for currSeg in currSegList:
@@ -399,7 +472,8 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
           else:
             trialDict[slideID].append(currTrial)
         iterInt += 1
-
+    # the below line works like the inverse of .veto and only returns trigs 
+    # that are within the segment specified by trialDict[slideID]
     sortedTrigs[slideID] = sortedTrigs[slideID].vetoed(trialDict[slideID])
 
   totalTrials = sum([len(trialDict[slideID]) for slideID in range(numSlides)]) 
@@ -531,7 +605,7 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
   quietestFile.close()
 
   #
-  # print details of loudest 10 offsouce triggers
+  # print details of loudest 10 offsouce triggers (looks like its the loudest 30)
   #
 
   offSourceTrigs = []
@@ -601,13 +675,23 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
     d.append('%.2f' % bestNR)
     td.append(d)
 
-  file = open("%s/loudest_offsource_trigs.html" % outdir, "w")
-  file.write(dqHTMLUtils.write_table(markup.page(), th, td)())
-  file.close()
+  html = pycbc.results.dq.redirect_javascript + \
+                                  str(pycbc.results.static_table(td, th))
+  # should pass output_file arg on command line and put this in a seperate executable
+  title = 'Parameters of loudest offsource triggers'
+  caption = ('Parameters of 30 loudest offsource triggers.')
+  pycbc.results.save_fig_with_metadata(html, "%s/loudest_offsource_trigs.html" % outdir, 
+                          {},
+                          cmd=' '.join(sys.argv),
+                          title=title,
+                          caption=caption)
 
   # ==========================
   # print loudest SNRs to file
-  # THIS OUTPUT FILE IS CURRENTLY UNUSED - MAYBE DELETE?
+  # THIS OUTPUT FILE IS CURRENTLY UNUSED - MAYBE DELETE? 
+  # note: the only new information from above is the median SNR and bestNR
+  # and the loudest SNR
+  # so could just add this to the above's caption.
   # ==========================
  
   maxSNR       = {}
@@ -678,9 +762,20 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
   td.append(d)
 
   # write html table with results
-  file = open('%s/loudest_offsource.html' % outdir, 'w') 
-  file.write(dqHTMLUtils.write_table(markup.page(), th, td)())
-  file.close()
+  # file = open(', 'w') 
+  # file.write(dqHTMLUtils.write_table(markup.page(), th, td)())
+  # file.close()
+
+  html = pycbc.results.dq.redirect_javascript + \
+                                  str(pycbc.results.static_table(td, th))
+  # should pass output_file arg on command line and put this in a seperate executable
+  title = 'Re-weighted SNR and SNR of the loudest and median offsource trigger'
+  caption = ('Re-weighted SNR and SNR of the loudest and median offsource trigger')
+  pycbc.results.save_fig_with_metadata(html, "%s/loudest_median_offsource.html" % outdir, 
+                          {},
+                          cmd=' '.join(sys.argv),
+                          title=title,
+                          caption=caption)
 
   # =======================
   # load on source triggers
@@ -689,7 +784,7 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
   if onsourceFile:
 
     # get trigs
-    onTrigs = MultiInspiralUtils.ReadMultiInspiralFromFiles([onsourceFile])
+    onTrigs = load_xml_table(onsourceFile, "multi_inspiral")
     # separate off mass column
     onMchirp = onTrigs.get_column('mchirp')
 
@@ -734,7 +829,7 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
 
     vprint("Onsource analysed at %d.\n" % elapsed_time())
   
-    file2 = open('%s/loud_numbers.txt' % outdir, 'w')
+
     th = ['Bin', 'FAP', 'GPS', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
           'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
          ['%s SNR' % ifo for ifo in ifos ] + ['BestNR']
@@ -756,19 +851,71 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
              trig.snr, trig.chisq, trig.bank_chisq,\
              trig.cont_chisq, nullsnr] + \
             [trig.get_sngl_snr(ifo) for ifo in ifos] + [loudOnBestNR[bin[0]]]
-        file2.write('%s\n' % pval.replace('<', '&lt'))
+        # would be good to rename or remove the below output file
+        with open('%s/loud_numbers.txt' % outdir, 'w') as file2:
+          file2.write('%s\n' % pval.replace('<', '&lt'))
         td.append(d)
 
       else:
         td.append(["In mass bin %s to %s there are no events" % tuple(bin)])
-        file2.write('-2\n')
+        with open('%s/loud_numbers.txt' % outdir, 'w') as file2:
+          file2.write('-2\n')
       binNum += 1
 
-    file = open("%s/loudest_events.html" % outdir, "w")
-    file.write(dqHTMLUtils.write_table(markup.page(), th, td)())
-    file.close()
-    file2.close()
+
+    html = pycbc.results.dq.redirect_javascript + \
+                                  str(pycbc.results.static_table(td, th))
+    # should pass output_file arg on command line and put this in a seperate executable
+    title = 'Loudest event'
+    caption = ('Recovered parameters and statistic values of the loudest trigger')
+    pycbc.results.save_fig_with_metadata(html, "%s/loudest_events.html" % outdir, 
+                            {},
+                            cmd=' '.join(sys.argv),
+                            title=title,
+                            caption=caption)
   
+
+  #
+  # Next we make the cumulative histogram FAP plots
+  #
+
+  # plot cumulative histograms
+  for i,bin in enumerate(massBins):
+    np.savetxt('%s/bestnr_vs_fap_%s_%s_numbers.txt' %(outdir, bin[0], bin[1]),
+               fullTimeBinVetoMaxBestNR[i], delimiter='/t')
+    fig = plt.figure()
+    ax = fig.gca()
+    cumplot = plotutils.CumulativeHistogramPlot("BestNR",
+                                                 "False alarm probability",
+                                                 "")
+    cumplot.add_background([item] for item in fullTimeBinVetoMaxBestNR[i])
+    cumplot.finalize(num_bins=50)
+    cumplot.ax.set_ylim(ymax=1.2)
+    cumplot.savefig('%s/bestnr_vs_fap_%s_%s.png' % (outdir, bin[0], bin[1]))
+    plt.close()
+
+    fig = plt.figure()
+    ax = fig.gca()
+    cumplot = plotutils.CumulativeHistogramPlot("SNR",
+                                                 "False alarm probability",
+                                                 "")
+    cumplot.add_background([item] for item in fullTimeBinVetoMaxSNR[i])
+    cumplot.finalize(num_bins=50)
+    cumplot.ax.set_ylim(ymax=1.2)
+    cumplot.savefig('%s/snr_vs_fap_%s_%s.png' % (outdir, bin[0], bin[1]))
+    plt.close()
+
+    fig = plt.figure()
+    ax = fig.gca()
+    cumplot = plotutils.CumulativeHistogramPlot("SNR after signal based vetoes",
+                                                 "False alarm probability",
+                                                 "")
+    cumplot.add_background([item] for item in fullTimeBinVetoMaxSNRUncut[i])
+    cumplot.finalize(num_bins=50)
+    cumplot.ax.set_ylim(ymax=1.2)
+    cumplot.savefig('%s/snruncut_vs_fap_%s_%s.png' % (outdir, bin[0], bin[1]))
+    plt.close()
+
   #
   # Now we can start dealing with the injections
   #
@@ -777,11 +924,10 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
 
     sites = [ifo[0] for ifo in ifos]
 
-    missedInjs = SimInspiralUtils.ReadSimInspiralFromFiles([missedFile])\
-            .veto(vetoes.union(vetoes.keys()))
+    missedInjs = load_xml_table(missedFile, "sim_inspiral").veto(vetoes.union(vetoes.keys()))
 
-    foundInjsNoVeto  = SimInspiralUtils.ReadSimInspiralFromFiles([foundFile])
-    foundTrigsNVeto = MultiInspiralUtils.ReadMultiInspiralFromFiles([foundFile])
+    foundInjsNoVeto = load_xml_table(foundFile, "sim_inspiral")
+    foundTrigsNVeto = load_xml_table(foundFile, "multi_inspiral")
 
     foundInjs = lsctables.New(lsctables.SimInspiralTable)
     foundTrigs = lsctables.New(lsctables.MultiInspiralTable)
@@ -990,8 +1136,19 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
                                              " triggers.\n")
                 injSigma[ifo][:] = 1.
 
+
     fResp        = dict((ifo, np.asarray([get_f_resp(inj)[ifo] \
                         for inj in foundInjs]))  for ifo in ifos)
+    # fResp        = {
+    #   ifo: get_antenna_response(
+    #     foundInjRA, foundInjDec, foundInjTime, ifo
+    #     ) 
+    #     for ifo in ifos
+    #   }
+    # the above should work with pycbc, but for now it fails due to old version of
+    # astropy. (but would work in current pycbc environment). 
+    # for now lets use the "process pyGRB filter output class in utils which naturally save f_resp"
+    # the old way. 
 
     injSigmaMult  = (np.asarray(injSigma.values()) *\
                     np.asarray(fResp.values()))
@@ -1200,6 +1357,10 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
         nearTest = np.zeros((foundExcl).sum()).astype(bool)
         for j,(t,bestNR) in enumerate(zip(foundInjTime[foundExcl],\
                                           foundTrigBestNR[foundExcl])):
+          if j==0:
+            print(zeroLagSlideID)
+            print(len(trigAllBestNR[zeroLagSlideID]))
+            print(np.shape(np.array(trigAllBestNR)))
           nearBestNR  = trigAllBestNR[zeroLagSlideID]\
                         [np.abs(trigAllTime[zeroLagSlideID]-t) < clusterWindow]
           nearTest[j] = ~((nearBestNR * glitchCheckFac > bestNR).any())
@@ -1334,70 +1495,19 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
     td = [[i]+list(td[i]) for i in\
           range(nonzeroFAP.sum()+missed.sum()+len(missedInjs))]
 
-    file = open("%s/quiet_found_triggers.html" % outdir, "w")
-    file.write(dqHTMLUtils.write_table(markup.page(), th, td)())
-    file.close()
+    html = pycbc.results.dq.redirect_javascript + \
+                                  str(pycbc.results.static_table(td, th))
+    # should pass output_file arg on command line and put this in a seperate executable
+    title = 'Close injections with FAP>0.'
+    caption = ('Missed injections and found injections with FAP>0.')
+    pycbc.results.save_fig_with_metadata(html, "%s/quiet_found_triggers.html" % outdir, 
+                            {},
+                            cmd=' '.join(sys.argv),
+                            title=title,
+                            caption=caption)
     vprint("%d triggers written to file at %d.\n"\
                                  % (len(td), elapsed_time()))
 
-    t_missed = zip(*[gMissed2Dist] + \
-                    [gMissed2EffSiteDist[ifo] for ifo in sites] + \
-                    [gMissed2m1, gMissed2m2, gMissed2Mchirp, gMissed2Recm1,
-                     gMissed2Recm2, gMissed2RecMchirp, gMissed2Inc, gMissed2RA,
-                     gMissed2Dec, gMissed2RecRA, gMissed2RecDec, gMissed2SNR,
-                     gMissed2Chisq, gMissed2Bank, gMissed2Auto,
-                     gMissed2Null] + \
-                    [gMissed2SnglSNR[ifo] for ifo in ifos] + \
-                    [gMissed2DetStat, gMissed2Spin1x, gMissed2Spin1y,
-                     gMissed2Spin1z, gMissed2Spin2x, gMissed2Spin2y,
-                     gMissed2Spin2z])
-    t_missed.sort(key=lambda elem: elem[0])
-    t_missed = [[i] + list(t_missed[i]) for i in range(missed.sum())]
-    file = open("%s/missed_found_triggers.html" % outdir, "w")
-    file.write(dqHTMLUtils.write_table(markup.page(), th, t_missed)())
-    file.close()
-
-  # ==========
-  # make plots
-  # ==========
-#  makePaperPlots()
-
-  # plot cumulative histograms
-  for i,bin in enumerate(massBins):
-    np.savetxt('%s/bestnr_vs_fap_%s_%s_numbers.txt' %(outdir, bin[0], bin[1]),
-               fullTimeBinVetoMaxBestNR[i], delimiter='/t')
-    fig = plt.figure()
-    ax = fig.gca()
-    cumplot = plotutils.CumulativeHistogramPlot("BestNR",
-                                                 "False alarm probability",
-                                                 "")
-    cumplot.add_background([item] for item in fullTimeBinVetoMaxBestNR[i])
-    cumplot.finalize(num_bins=50)
-    cumplot.ax.set_ylim(ymax=1.2)
-    cumplot.savefig('%s/bestnr_vs_fap_%s_%s.png' % (outdir, bin[0], bin[1]))
-    plt.close()
-
-    fig = plt.figure()
-    ax = fig.gca()
-    cumplot = plotutils.CumulativeHistogramPlot("SNR",
-                                                 "False alarm probability",
-                                                 "")
-    cumplot.add_background([item] for item in fullTimeBinVetoMaxSNR[i])
-    cumplot.finalize(num_bins=50)
-    cumplot.ax.set_ylim(ymax=1.2)
-    cumplot.savefig('%s/snr_vs_fap_%s_%s.png' % (outdir, bin[0], bin[1]))
-    plt.close()
-
-    fig = plt.figure()
-    ax = fig.gca()
-    cumplot = plotutils.CumulativeHistogramPlot("SNR after signal based vetoes",
-                                                 "False alarm probability",
-                                                 "")
-    cumplot.add_background([item] for item in fullTimeBinVetoMaxSNRUncut[i])
-    cumplot.finalize(num_bins=50)
-    cumplot.ax.set_ylim(ymax=1.2)
-    cumplot.savefig('%s/snruncut_vs_fap_%s_%s.png' % (outdir, bin[0], bin[1]))
-    plt.close()
 
   if doinj:
     distPlotVals = [np.asarray(bin).mean() for bin in distBins]
