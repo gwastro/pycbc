@@ -512,7 +512,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             raise ValueError("provide either ntemps/tmax or betas/betas-file, "
                              "not both")
         # adaptation parameters
-        adpative = get_optional_arg_from_config(cp, section, 'adaptive')
+        adaptive = get_optional_arg_from_config(cp, section, 'adaptive')
         if adaptive is not None:
             optargs['adaptive'] = True
         else:
