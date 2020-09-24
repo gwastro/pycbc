@@ -799,6 +799,22 @@ class ForegroundTriggers(object):
             ref_times = self.get_coincfile_array('time1')
         return ref_times
 
+    def get_ifos(self):
+        ifo_list = []
+        n_trigs = len(self.get_coincfile_array('template_id'))
+        try:  # First try new-style format
+            ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
+            for ifo in ifos:
+                ifo_trigs = np.where(self.get_coincfile_array(ifo+'/time') < 0,
+                                     '-', ifo)
+                ifo_list.append(ifo_trigs)
+            ifo_list = [list(trig[trig != '-']) \
+                        for trig in iter(np.array(ifo_list).T)]
+        except KeyError:  # Else fall back on old two-det format
+            # Currently assumes two-det is Hanford and Livingston
+            ifo_list = [['H1', 'L1'] for i in range(n_trigs)]
+        return ifo_list
+
     def to_coinc_xml_object(self, file_name):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
