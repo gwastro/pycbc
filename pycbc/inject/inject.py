@@ -434,7 +434,15 @@ class _HDFInjectionSet(object):
                     # try decoding it and writing
                     fp.attrs[arg] = str(val)
             for field in write_params:
-                fp[field] = samples[field]
+                try:
+                    fp[field] = samples[field]
+                except TypeError as e:
+                    # can get this in python 3 if the val was a numpy.str_ type
+                    # we'll try again as a string type
+                    if samples[field].dtype.char == 'U':
+                        fp[field] = samples[field].astype('S')
+                    else:
+                        raise e
 
 
 class CBCHDFInjectionSet(_HDFInjectionSet):
