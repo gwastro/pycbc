@@ -361,6 +361,9 @@ class _HDFInjectionSet(object):
                 # otherwise, we can just repeat the value the needed number of
                 # times
                 arr = np.repeat(val, numinj)
+            # make sure any byte strings are stored as strings instead
+            if arr.dtype.char == 'S':
+                arr = arr.astype('U')
             injvals[param] = arr
         # make sure a coalescence time is specified for injections
         if 'tc' not in injvals:
