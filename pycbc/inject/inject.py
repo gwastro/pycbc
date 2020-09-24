@@ -343,7 +343,8 @@ class _HDFInjectionSet(object):
             numinj = tuple(injvals.values())[0].size
         # add any static args in the file
         try:
-            self.static_args = group.attrs['static_args']
+            # ensure parameter names are string types
+            self.static_args = group.attrs['static_args'].astype('U')
         except KeyError:
             self.static_args = []
         parameters.extend(self.static_args)
