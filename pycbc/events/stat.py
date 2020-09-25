@@ -1606,7 +1606,7 @@ class ExpFitSGPSDFgBgNormBBHThreshStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
     def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
         ExpFitSGPSDFgBgNormBBHStatistic.__init__(self, files=files, ifos=ifos,
                                                  max_chirp_mass=None, **kwargs)
-        self.get_newsnr = ranking.newsnr_sgveto_psdvar_threshold
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_threshold
 
 
 statistic_dict = {

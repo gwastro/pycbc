@@ -188,6 +188,29 @@ def get_newsnr_sgveto_psdvar(trigs):
                                       trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
 
+def get_newsnr_sgveto_psdvar_threshold(trigs):
+    """
+    Calculate newsnr re-weighted by the sine-gaussian veto and scaled
+    psd variation statistic
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    'chisq_dof', 'snr', 'chisq' and 'psd_var_val' are required keys
+
+    Returns
+    -------
+     numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg_psdt = newsnr_sgveto_psdvar_threshold(
+                     trigs['snr'][:], trigs['chisq'][:] / dof,
+                     trigs['sg_chisq'][:],
+                     trigs['psd_var_val'][:])
+    return numpy.array(nsnr_sg_psdt, ndmin=1, dtype=numpy.float32)
+
 
 def get_newsnr_sgveto_psdvar_scaled(trigs):
     """
