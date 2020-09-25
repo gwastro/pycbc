@@ -1602,6 +1602,12 @@ class ExpFitSGPSDSTFgBgNormBBHStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
                                                  max_chirp_mass=None, **kwargs)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
 
+class ExpFitSGPSDFgBgNormBBHThreshStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
+    def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
+        ExpFitSGPSDFgBgNormBBHStatistic.__init__(self, files=files, ifos=ifos,
+                                                 max_chirp_mass=None, **kwargs)
+        self.get_newsnr = ranking.newsnr_sgveto_psdvar_threshold
+
 
 statistic_dict = {
     'newsnr': NewSNRStatistic,
@@ -1629,6 +1635,8 @@ statistic_dict = {
     '2ogcbbh': ExpFitSGPSDSTFgBgNormBBHStatistic, # backwards compatible
     'exp_fit_sg_fgbg_norm_psdvar': ExpFitSGPSDFgBgNormStatistic,
     'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic
+    'exp_fit_sg_fgbg_norm_psdvar_bbh_thresh': 
+        ExpFitSGPSDFgBgNormBBHThreshStatistic
 }
 
 sngl_statistic_dict = {
