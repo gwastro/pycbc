@@ -72,13 +72,16 @@ def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
         return nsnr[0]
 
 def newsnr_sgveto_psdvar_threshold(snr, brchisq, sgchisq, psd_var_val,
-                                   min_expected_psdvar=0.65, threshold=2.0):
+                                   min_expected_psdvar=0.65,
+                                   brchisq_threshold=10.0,
+                                   psd_var_val_threshold=10.0):
     """ newsnr_sgveto_psdvar with a chi-squared threshold applied.
     """
     nsnr = newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
                                 min_expected_psdvar=min_expected_psdvar)
     nsnr = numpy.array(nsnr, ndmin=1)
-    nsnr[brchisq > threshold] = 1.
+    nsnr[brchisq > brchisq_threshold] = 1.
+    nsnr[psd_var_val > psd_var_val_threshold] = 1.
 
     # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
