@@ -1634,8 +1634,8 @@ statistic_dict = {
     '2ogc': ExpFitSGPSDScaledFgBgNormStatistic, # backwards compatible
     '2ogcbbh': ExpFitSGPSDSTFgBgNormBBHStatistic, # backwards compatible
     'exp_fit_sg_fgbg_norm_psdvar': ExpFitSGPSDFgBgNormStatistic,
-    'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic
-    'exp_fit_sg_fgbg_norm_psdvar_bbh_thresh': 
+    'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic,
+    'exp_fit_sg_fgbg_norm_psdvar_bbh_thresh':
         ExpFitSGPSDFgBgNormBBHThreshStatistic
 }
 
