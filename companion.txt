@@ -11,3 +11,4 @@ ligo-gracedb
 cpnest
 pymultinest
 ultranest
+https://github.com/willvousden/ptemcee/archive/master.tar.gz
