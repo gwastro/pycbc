@@ -214,6 +214,25 @@ class NewSNRSGPSDStatistic(NewSNRSGStatistic):
         return ranking.get_newsnr_sgveto_psdvar(trigs)
 
 
+class NewSNRSGPSDThresholdStatistic(NewSNRSGStatistic):
+    """Calculate the NewSNRSGPSD coincident detection statistic"""
+
+    def single(self, trigs):
+        """Calculate the single detector statistic, here equal to newsnr
+        combined with sgveto and psdvar statistic
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return ranking.get_newsnr_sgveto_psdvar_threshold(trigs)
+
+
 class NewSNRSGPSDScaledStatistic(NewSNRSGStatistic):
     """Calculate the NewSNRSGPSD coincident detection statistic"""
 
@@ -1603,6 +1622,13 @@ class ExpFitSGPSDSTFgBgNormBBHStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
 
 
+class ExpFitSGPSDFgBgNormBBHThreshStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
+    def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
+        ExpFitSGPSDFgBgNormBBHStatistic.__init__(self, files=files, ifos=ifos,
+                                                 max_chirp_mass=None, **kwargs)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_threshold
+
+
 statistic_dict = {
     'newsnr': NewSNRStatistic,
     'network_snr': NetworkSNRStatistic,
@@ -1628,7 +1654,9 @@ statistic_dict = {
     '2ogc': ExpFitSGPSDScaledFgBgNormStatistic, # backwards compatible
     '2ogcbbh': ExpFitSGPSDSTFgBgNormBBHStatistic, # backwards compatible
     'exp_fit_sg_fgbg_norm_psdvar': ExpFitSGPSDFgBgNormStatistic,
-    'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic
+    'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic,
+    'exp_fit_sg_fgbg_norm_psdvar_bbh_thresh':
+        ExpFitSGPSDFgBgNormBBHThreshStatistic
 }
 
 sngl_statistic_dict = {
@@ -1641,6 +1669,7 @@ sngl_statistic_dict = {
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
+    'newsnr_sgveto_psdvar_threshold': NewSNRSGPSDThresholdStatistic,
     'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
     'newsnr_sgveto_psdvar_scaled_threshold':
         NewSNRSGPSDScaledThresholdStatistic,
