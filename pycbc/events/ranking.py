@@ -71,12 +71,13 @@ def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
     else:
         return nsnr[0]
 
+
 def newsnr_sgveto_psdvar_threshold(snr, brchisq, sgchisq, psd_var_val,
                                    min_expected_psdvar=0.65,
                                    brchisq_threshold=10.0,
                                    psd_var_val_threshold=10.0):
     """ newsnr_sgveto_psdvar with thresholds applied.
-    
+
     This is the newsnr_sgveto_psdvar statistic with additional options
     to threshold on chi-squared or PSD variation.
     """
@@ -91,6 +92,7 @@ def newsnr_sgveto_psdvar_threshold(snr, brchisq, sgchisq, psd_var_val,
         return nsnr
     else:
         return nsnr[0]
+
 
 def newsnr_sgveto_psdvar_scaled(snr, brchisq, sgchisq, psd_var_val,
                                 scaling=0.33, min_expected_psdvar=0.65):
@@ -191,6 +193,7 @@ def get_newsnr_sgveto_psdvar(trigs):
                                       trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
 
+
 def get_newsnr_sgveto_psdvar_threshold(trigs):
     """
     Calculate newsnr re-weighted by the sine-gaussian veto and scaled
@@ -209,9 +212,10 @@ def get_newsnr_sgveto_psdvar_threshold(trigs):
     """
     dof = 2. * trigs['chisq_dof'][:] - 2.
     nsnr_sg_psdt = newsnr_sgveto_psdvar_threshold(
-                     trigs['snr'][:], trigs['chisq'][:] / dof,
-                     trigs['sg_chisq'][:],
-                     trigs['psd_var_val'][:])
+        trigs['snr'][:], trigs['chisq'][:] / dof,
+        trigs['sg_chisq'][:],
+        trigs['psd_var_val'][:]
+    )
     return numpy.array(nsnr_sg_psdt, ndmin=1, dtype=numpy.float32)
 
 
