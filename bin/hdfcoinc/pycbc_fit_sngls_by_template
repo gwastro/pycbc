@@ -191,6 +191,20 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
         tparam = tparam[retain]
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
+#now include gating veto
+gate_times = trigf[args.ifo + '/gating/auto/time'][:]
+gating_veto_segs = events.veto.start_end_to_segments(gate_times - 1,
+                                                     gate_times + 2.5).coalesce()
+all_segments -= gating_veto_segs
+gating_retain_idx = events.veto.indices_outside_times(time, gate_times -1,
+                                                      gate_times + 2.5)
+stat = stat[gating_retain_idx]
+tid = tid[gating_retain_idx]
+time = time[gating_retain_idx]
+if args.save_trig_param:
+    tparam = tparam[gating_retain_idx]
+logging.info('%i trigs left after vetoing triggers near gates' %len(stat))
+
 total_time = abs(all_segments)
 
 # do pruning (removal of trigs at N loudest times defined over param bins)
