@@ -75,7 +75,10 @@ def newsnr_sgveto_psdvar_threshold(snr, brchisq, sgchisq, psd_var_val,
                                    min_expected_psdvar=0.65,
                                    brchisq_threshold=10.0,
                                    psd_var_val_threshold=10.0):
-    """ newsnr_sgveto_psdvar with a chi-squared threshold applied.
+    """ newsnr_sgveto_psdvar with thresholds applied.
+    
+    This is the newsnr_sgveto_psdvar statistic with additional options
+    to threshold on chi-squared or PSD variation.
     """
     nsnr = newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
                                 min_expected_psdvar=min_expected_psdvar)
