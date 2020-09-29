@@ -72,7 +72,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     f = numpy.linspace(f_lo, f_hi, 10000)
     # f^ga power law index
     ga = gammas if gammas is not None else \
-         numpy.array([-5./3, -2./3, 1., 5./3, 7./3])
+        numpy.array([-5./3, -2./3, 1., 5./3, 7./3])
     logging.info("Using powerlaw indices: %s", ga)
     dalp = chi * 2.0 * numpy.pi / numpy.absolute((f_lo ** ga) - (f_hi ** ga))
     dphi = numpy.sum(numpy.array([numpy.sign(g) * d * (f ** g) for
@@ -190,9 +190,9 @@ class Relative(BaseGaussianNoise):
             nremove = numzeros - n_above_fhi
             new_kmax = kmaxs[0] - nremove
             f_hi = new_kmax * self.df
-            logging.warn("WARNING! Fiducial waveform terminates below "
+            logging.info("WARNING! Fiducial waveform terminates below "
                          "high-frequency-cutoff, final bin frequency "
-                         "will be {} Hz".format(f_hi))
+                         "will be %s Hz", f_hi)
         self.h00 = {}
         for ifo in self.data:
             # make copy of fiducial wfs, adding back in low frequencies
