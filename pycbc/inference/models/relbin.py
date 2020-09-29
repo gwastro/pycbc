@@ -190,6 +190,17 @@ class Relative(BaseGaussianNoise):
         fid_hp, fid_hc = get_fd_waveform_sequence(approximant=approx,
                                                   sample_points=fpoints,
                                                   **self.fid_params)
+        # check for zeros at high frequencies
+        numzeros = list(fid_hp[::-1] != 0j).index(True)
+        n_above_fhi = (len(self.f) - 1) - kmaxs[0]
+        # make sure only nonzero samples are included in bins
+        if numzeros > n_above_fhi:
+            nremove = numzeros - n_above_fhi
+            new_kmax = kmaxs[0] - nremove
+            f_hi = new_kmax * self.df
+            logging.warn("WARNING! Fiducial waveform terminates below "
+                         "high-frequency-cutoff, final bin frequency "
+                         "will be {} Hz".format(f_hi))
         self.h00 = {}
         for ifo in self.data:
             # make copy of fiducial wfs, adding back in low frequencies
@@ -203,8 +214,7 @@ class Relative(BaseGaussianNoise):
 
         # compute frequency bins
         logging.info("Computing frequency bins")
-        nbin, fbin, fbin_ind = setup_bins(f_full=self.f, f_lo=kmins[0]*self.df,
-                                          f_hi=kmaxs[0]*self.df,
+        nbin, fbin, fbin_ind = setup_bins(f_full=self.f, f_lo=f_lo, f_hi=f_hi,
                                           eps=self.epsilon)
         logging.info("Using %s bins for this model", nbin)
         # store bins and edges in sample and frequency space
