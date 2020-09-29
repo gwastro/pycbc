@@ -78,7 +78,7 @@ def format_lmns(lmns):
     will return the appropriate list of strings. If a different format is
     given, raise an error.
     """
-    
+
     # Case 1: the lmns are given as a string, e.g. '221 331'
     if isinstance(lmns, str):
         lmns = lmns.split(' ')
