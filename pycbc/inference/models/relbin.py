@@ -57,6 +57,8 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     eps : float, optional
         Tunable parameter, see [Barak, Dai & Venumadhav 2018]. Lower values
         result in larger number of bins.
+    gammas : array, optional
+        Frequency powerlaw indices to be used in computing bins.
 
     Returns
     -------
@@ -117,25 +119,13 @@ class Relative(BaseGaussianNoise):
         A dictionary of starting frequencies, in which the keys are the
         detector names and the values are the starting frequencies for the
         respective detectors to be used for computing inner products.
-    mass1_ref : float
-        The primary mass in solar masses used for generating the fiducial
-        waveform.
-    mass2_ref : float
-        The secondary mass in solar masses used for generating the fiducial
-        waveform.
-    spin1z_ref : float
-        The component of primary dimensionless spin along the orbital angular
-        momentum used for generating the fiducial waveform.
-    spin2z_ref : float
-        The component of secondary dimensionless spin along the orbital angular
-        momentum used for generating the fiducial waveform.
-    ra_ref : float
-        The right ascension in radians used for generating the fiducial
-        waveform.
-    dec_ref : float
-        The declination in radians used for generating the fiducial waveform.
-    tc_ref : float
-        The GPS time of coalescence used for generating the fiducial waveform.
+    figucial_params : dict
+        A dictionary of waveform parameters to be used for generating the
+        fiducial waveform. Keys must be parameter names in the form
+        'PARAM_ref' where PARAM is a recognized extrinsic parameter or
+        an intrinsic parameter compatible with the chosen approximant.
+    gammas : array of floats, optional
+        Frequency powerlaw indices to be used in computing frequency bins.
     epsilon : float, optional
         Tuning parameter used in calculating the frequency bins. Lower values
         will result in higher resolution and more bins.
