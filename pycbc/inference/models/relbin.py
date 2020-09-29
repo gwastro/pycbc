@@ -38,7 +38,7 @@ from pycbc.types import Array
 from .gaussian_noise import BaseGaussianNoise
 
 
-def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
+def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     """Construct frequency bins for use in a relative likelihood
     model. For details, see [Barak, Dai & Venumadhav 2018].
 
@@ -69,7 +69,8 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     """
     f = numpy.linspace(f_lo, f_hi, 10000)
     # f^ga power law index
-    ga = numpy.array([-5./3, -2./3, 1., 5./3, 7./3])
+    ga = gammas if gammas is not None else \
+         numpy.array([-5./3, -2./3, 1., 5./3, 7./3])
     dalp = chi * 2.0 * numpy.pi / numpy.absolute((f_lo ** ga) - (f_hi ** ga))
     dphi = numpy.sum(numpy.array([numpy.sign(g) * d * (f ** g) for
                                   g, d in zip(ga, dalp)]), axis=0)
@@ -145,7 +146,7 @@ class Relative(BaseGaussianNoise):
     name = "relative"
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
-                 fiducial_params=None, epsilon=0.5, **kwargs):
+                 fiducial_params=None, gammas=None, epsilon=0.5, **kwargs):
         super(Relative, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
         # check that all of the frequency cutoffs are the same
@@ -215,7 +216,7 @@ class Relative(BaseGaussianNoise):
         # compute frequency bins
         logging.info("Computing frequency bins")
         nbin, fbin, fbin_ind = setup_bins(f_full=self.f, f_lo=f_lo, f_hi=f_hi,
-                                          eps=self.epsilon)
+                                          gammas=gammas, eps=self.epsilon)
         logging.info("Using %s bins for this model", nbin)
         # store bins and edges in sample and frequency space
         self.edges = fbin_ind
@@ -339,6 +340,13 @@ class Relative(BaseGaussianNoise):
         # add fiducial params to skip list
         skip_args += [option for option in cp.options(section) if
                       option.endswith('_ref')]
+        # get frequency power-law indices if specified
+        # NOTE these should be supplied in units of 1/3
+        gammas = None
+        if cp.has_option(section, 'gammas'):
+            skip_args.append('gammas')
+            gammas = numpy.array([float(g) / 3. for g in
+                                  cp.get(section, 'gammas').split()])
         args = super(Relative, Relative).extra_args_from_config(
             cp, section, skip_args=skip_args, dtypes=dtypes)
         # get fiducial params from config
@@ -349,5 +357,5 @@ class Relative(BaseGaussianNoise):
                       'polarization': numpy.pi}
         fid_params.update({p: opt_params[p] for p in opt_params if p
                            not in fid_params})
-        args.update({'fiducial_params': fid_params})
+        args.update({'fiducial_params': fid_params, 'gammas': gammas})
         return args
