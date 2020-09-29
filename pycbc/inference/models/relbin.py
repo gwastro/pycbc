@@ -73,6 +73,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     # f^ga power law index
     ga = gammas if gammas is not None else \
          numpy.array([-5./3, -2./3, 1., 5./3, 7./3])
+    logging.info("Using powerlaw indices: %s", ga)
     dalp = chi * 2.0 * numpy.pi / numpy.absolute((f_lo ** ga) - (f_hi ** ga))
     dphi = numpy.sum(numpy.array([numpy.sign(g) * d * (f ** g) for
                                   g, d in zip(ga, dalp)]), axis=0)
