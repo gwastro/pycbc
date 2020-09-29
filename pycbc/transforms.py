@@ -1015,14 +1015,15 @@ class CartesianSpinToChiP(BaseTransform):
 class LambdaFromTOVFile(BaseTransform):
     """Transforms mass values corresponding to Lambda values for a given EOS
     interpolating from the mass-Lambda data for that EOS read in from an
-    external ASCII file. The interpolation of the mass-Lambda data is a
-    one-dimensional piecewise linear interpolation. The mass values to be
-    transformed are assumed to be detector frame masses, so a distance should
-    be provided along with the mass for transformation to the source frame
-    mass before the Lambda values are extracted from the interpolation. If
-    the mass value inputted is in the source frame, then provide distance=0.
-    If the transform is read in from a config file, an example code block
-    would be:
+    external ASCII file.
+
+    The interpolation of the mass-Lambda data is a one-dimensional piecewise
+    linear interpolation. If the ``redshift_mass`` keyword argument is ``True``
+    (the default), the mass values to be transformed are assumed to be detector
+    frame masses. In that case, a distance should be provided along with the
+    mass for transformation to the source frame mass before the Lambda values
+    are extracted from the interpolation. If the transform is read in from a
+    config file, an example code block would be:
 
     .. code-block:: ini
 
@@ -1045,6 +1046,20 @@ class LambdaFromTOVFile(BaseTransform):
         lambda_param = lambda1
         mass_lambda_file = filepath
 
+    If your prior is in terms of the source-frame masses (``srcmass``), then
+    you can shut off the redshifting by adding ``do-not-redshift-mass`` to the
+    config file. In this case you do not need to worry about a distance.
+    Example:
+
+    .. code-block:: ini
+
+        [{section}-lambda1]
+        name = lambda_from_tov_file
+        mass_param = srcmass1
+        lambda_param = lambda1
+        mass_lambda_file = filepath
+        do-not-redshift-mass =
+
     Parameters
     ----------
     mass_param : str
@@ -1056,8 +1071,12 @@ class LambdaFromTOVFile(BaseTransform):
         Path of the mass-Lambda data file. The first column in the data file
         should contain mass values, and the second column Lambda values.
     distance : float, optional
-        The distance (in Mpc) of the source. Used to redshift the mass. If
+        The distance (in Mpc) of the source. Used to redshift the mass. Needed
+        if ``redshift_mass`` is True and no distance parameter exists If
         None, then a distance must be provided to the transform.
+    redshift_mass : bool, optional
+        Redshift the mass parameters when computing the lambdas. Default is
+        False.
     file_columns : list of str, optional
         The names and order of columns in the ``mass_lambda_file``. Must
         contain at least 'mass' and 'lambda'. If not provided, will assume the
