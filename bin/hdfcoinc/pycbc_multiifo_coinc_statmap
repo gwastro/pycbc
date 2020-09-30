@@ -104,9 +104,13 @@ else:
     ifos = args.ifos
     logging.info('using ifos from command line input')
 
+logging.info("We have %s triggers" % len(all_trigs.stat))
+
 # Remove triggers from manually flagged times:
 if args.additional_event_times:
-    rm_cent_times = np.array(args.additional_event_times)
+    logging.info("Removing triggers around times %s",
+                 " ".join([str(et) for et in args.additional_event_times]))
+    rm_cent_times = numpy.array(args.additional_event_times)
     rm_start_times = rm_cent_times - args.veto_window
     rm_end_times = rm_cent_times + args.veto_window
     manual_rm_idx = []
@@ -114,9 +118,10 @@ if args.additional_event_times:
         rm_idx = veto.indices_within_times(all_trigs.data['%s/time' % ifo],
                                            rm_start_times, rm_end_times)
         manual_rm_idx += list(rm_idx)
+    logging.info("Removing %d triggers", len(manual_rm_idx))
     all_trigs = all_trigs.remove(manual_rm_idx)
 
-logging.info("We have %s triggers" % len(all_trigs.stat))
+logging.info("%s triggers remain" % len(all_trigs.stat))
 fore_locs = all_trigs.timeslide_id == 0
 
 # Foreground trigger times for ifos
