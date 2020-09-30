@@ -379,10 +379,10 @@ if opts.filter_points:
     logging.info("Setting up KDtree to compute distances.")
     if opts.threed_lattice:
         tree = spatial.KDTree(xis[:,:3])
-        xi_points = zip(v1s,v2s,v3s)
+        xi_points = list(zip(v1s,v2s,v3s))
     else:
         tree = spatial.KDTree(xis[:,:2])
-        xi_points = zip(v1s,v2s)
+        xi_points = list(zip(v1s,v2s))
 
     logging.info("Computing distances using KDtree.")
     dists, pointargs = tree.query(xi_points)
