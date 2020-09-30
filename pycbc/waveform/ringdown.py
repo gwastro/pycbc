@@ -68,29 +68,26 @@ def format_lmns(lmns):
     """ Checks if the format of the parameter lmns is correct, returning the
     appropriate format if not, and raise an error if nmodes=0.
     The required format for the ringdown approximants is a list of lmn modes
-    as strings, with n the number of overtones desired. For instance,
-    lmns = ['223','331'] are the modes 220, 221, 222, and 330.
+    as a single whitespace-separated string, with n the number
+    of overtones desired. Alternatively, a list object may be used,
+    containing individual strings as elements for the lmn modes.
+    For instance, lmns = '223 331' are the modes 220, 221, 222, and 330.
+    Giving lmns = ['223', '331'] is equivalent.
     The ConfigParser of a workflow might convert that to a single string
     (case 1 below) or a list with a single string (case 2), and this function
     will return the appropriate list of strings. If a different format is
     given, raise an error.
     """
 
-    # Case 1: the list is in a string "['221', '331']"
-    # In Python3 this might be "[b'221', b'331']"
+    # Case 1: the lmns are given as a string, e.g. '221 331'
     if isinstance(lmns, str):
-        # strip off brackets and convert to list
-        for char in ["[", "]", "'", " ", "b"]:
-            lmns = lmns.replace(char,'')
-        lmns = lmns.split(',')
-
-    # Case 2: a list with only one string with a list ["221', '331"]
-    # In Python3 this might be ["b221', b'331"]
-    elif (len(lmns) == 1 and isinstance(lmns[0], str)
-          and len(lmns[0]) > 3):
-        for char in ["[", "]", "'", " ", "b"]:
-            lmns[0] = lmns[0].replace(char,'')
-        lmns = lmns[0].split(',')
+        lmns = lmns.split(' ')
+    # Case 2: the lmns are given as strings in a list, e.g. ['221', '331']
+    elif isinstance(lmns, list):
+        pass
+    else:
+        raise ValueError('Format of parameter lmns not recognized. See '
+                         'approximant documentation for more info.')
 
     out = []
     # Cycle over the lmns to ensure that we get back a list of strings that
