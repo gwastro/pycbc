@@ -47,7 +47,7 @@ parser.add_argument('--use-hierarchical-level', type=int, default=None,
                     help='Indicate which inclusive background and FARs of '
                          'foreground triggers to plot if there were any '
                          'hierarchical removals done. Choosing None plots '
-                         'the inclusive backgrounds prior to any '
+                         'the inclusive backgrounds after all '
                          'hierarchical removals with the updated FARs for '
                          'foreground triggers after hierarchical removal(s). '
                          'Choosing 0 means plotting inclusive background '
