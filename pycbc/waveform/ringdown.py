@@ -506,8 +506,9 @@ def multimode_base(input_params):
             hplus, hcross = fd_damped_sinusoid(freqs[lmn], taus[lmn],
                             amps[lmn], phis[lmn], outplus.delta_f,
                             input_params['f_lower'],
-                            outplus.sample_frequencies[-1], int(lmn[0]),
-                            int(lmn[1]), input_params['inclination'])
+                            input_params['f_final'],
+                            l=int(lmn[0]), m=int(lmn[1]),
+                            inclination=input_params['inclination'])
             outplus.data += hplus.data
             outcross.data += hcross.data
 
