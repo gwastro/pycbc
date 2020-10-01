@@ -199,21 +199,27 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
                                                        (len(stat), veto_file))
 #now include gating veto
 if args.gating_veto_windows:
-    gate_times = trigf[args.ifo + '/gating/auto/time'][:]
     gating_veto = args.gating_veto_windows[args.ifo].split(',')
     gveto_before = float(gating_veto[0])
     gveto_after = float(gating_veto[1])
-    gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
-                                                   gate_times + gveto_after).coalesce()
-    all_segments -= gveto_segs
-    gveto_retain_idx = events.veto.indices_outside_times(time, gate_times + gveto_before,
-                                                         gate_times + gveto_after)
-    stat = stat[gveto_retain_idx]
-    tid = tid[gveto_retain_idx]
-    time = time[gveto_retain_idx]
-    if args.save_trig_param:
-        tparam = tparam[gveto_retain_idx]
-    logging.info('%i trigs left after vetoing triggers near gates' %len(stat))
+    if gveto_before > 0 or gveto_after < 0:
+        raise ValueError("Gating veto window values must be negative before "
+                         "gates and positive after gates.")
+    if gveto_before == 0 and gveto_after == 0:
+        pass
+    else:
+        gate_times = trigf[args.ifo + '/gating/auto/time'][:]
+        gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
+                                                       gate_times + gveto_after).coalesce()
+        all_segments -= gveto_segs
+        gveto_retain_idx = events.veto.indices_outside_times(time, gate_times + gveto_before,
+                                                             gate_times + gveto_after)
+        stat = stat[gveto_retain_idx]
+        tid = tid[gveto_retain_idx]
+        time = time[gveto_retain_idx]
+        if args.save_trig_param:
+            tparam = tparam[gveto_retain_idx]
+        logging.info('%i trigs left after vetoing triggers near gates' %len(stat))
 
 total_time = abs(all_segments)
 
