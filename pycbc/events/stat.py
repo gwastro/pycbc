@@ -1589,6 +1589,13 @@ class ExpFitSGPSDScaledFgBgNormStatistic(ExpFitSGFgBgNormNewStatistic):
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled
 
 
+class ExpFitSGPSDFgBgNormThreshStatistic(ExpFitSGFgBgNormNewStatistic):
+    def __init__(self, files=None, ifos=None, **kwargs):
+        ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
+                                              **kwargs)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_threshold
+
+
 class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
     def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
         ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
@@ -1615,18 +1622,18 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
         return logr_s
 
 
-class ExpFitSGPSDSTFgBgNormBBHStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
-    def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
-        ExpFitSGPSDFgBgNormBBHStatistic.__init__(self, files=files, ifos=ifos,
-                                                 max_chirp_mass=None, **kwargs)
-        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
-
-
 class ExpFitSGPSDFgBgNormBBHThreshStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
     def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
         ExpFitSGPSDFgBgNormBBHStatistic.__init__(self, files=files, ifos=ifos,
                                                  max_chirp_mass=None, **kwargs)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_threshold
+
+
+class ExpFitSGPSDSTFgBgNormBBHStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
+    def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
+        ExpFitSGPSDFgBgNormBBHStatistic.__init__(self, files=files, ifos=ifos,
+                                                 max_chirp_mass=None, **kwargs)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
 
 
 statistic_dict = {
@@ -1654,6 +1661,7 @@ statistic_dict = {
     '2ogc': ExpFitSGPSDScaledFgBgNormStatistic, # backwards compatible
     '2ogcbbh': ExpFitSGPSDSTFgBgNormBBHStatistic, # backwards compatible
     'exp_fit_sg_fgbg_norm_psdvar': ExpFitSGPSDFgBgNormStatistic,
+    'exp_fit_sg_fgbg_norm_psdvar_thresh': ExpFitSGPSDFgBgNormThreshStatistic,
     'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic,
     'exp_fit_sg_fgbg_norm_psdvar_bbh_thresh':
         ExpFitSGPSDFgBgNormBBHThreshStatistic
