@@ -183,8 +183,8 @@ class BaseGenerator(object):
 
                 # we'll get a RuntimeError if lalsimulation failed to generate
                 # the waveform for whatever reason
-                strparams = ' | '.join(['{}: {}'.format(p, str(val))
-                                       for p, val in self.current_params.items()])
+                strparams = ' | '.join(['{}: {}'.format(
+                    p, str(val)) for p, val in self.current_params.items()])
                 raise FailedWaveformError("Failed to generate waveform with "
                                           "parameters:\n{}\nError was: {}"
                                           .format(strparams, e))
