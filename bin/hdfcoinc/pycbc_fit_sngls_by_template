@@ -22,6 +22,7 @@ import copy, numpy as np
 from pycbc import io, events
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events.stat import sngl_statistic_dict
+from pycbc.types.optparse import MultiDetOptionAction
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
@@ -74,6 +75,11 @@ parser.add_argument("--veto-file", nargs='*', default=[], action='append',
 parser.add_argument("--veto-segment-name", nargs='*', default=[], action='append',
                     help="Name(s) of veto segments to apply. Optional, if not "
                     "given all segments for a given ifo will be used")
+parser.add_argument("--gating-veto-windows", nargs='+',
+                    action=MultiDetOptionAction,
+                    help="Time in seconds to be vetoed before and after each "
+                         "gate. Given as detector-values pairs, e.g. "
+                         "H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument("--output", required=True,
                     help="Location for output file containing fit coefficients"
                     ". Required")
@@ -192,18 +198,22 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
 #now include gating veto
-gate_times = trigf[args.ifo + '/gating/auto/time'][:]
-gating_veto_segs = events.veto.start_end_to_segments(gate_times - 1,
-                                                     gate_times + 2.5).coalesce()
-all_segments -= gating_veto_segs
-gating_retain_idx = events.veto.indices_outside_times(time, gate_times -1,
-                                                      gate_times + 2.5)
-stat = stat[gating_retain_idx]
-tid = tid[gating_retain_idx]
-time = time[gating_retain_idx]
-if args.save_trig_param:
-    tparam = tparam[gating_retain_idx]
-logging.info('%i trigs left after vetoing triggers near gates' %len(stat))
+if args.gating_veto_windows:
+    gate_times = trigf[args.ifo + '/gating/auto/time'][:]
+    gating_veto = args.gating_veto_windows[args.ifo].split(',')
+    gveto_before = float(gating_veto[0])
+    gveto_after = float(gating_veto[1])
+    gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
+                                                   gate_times + gveto_after).coalesce()
+    all_segments -= gveto_segs
+    gveto_retain_idx = events.veto.indices_outside_times(time, gate_times + gveto_before,
+                                                         gate_times + gveto_after)
+    stat = stat[gveto_retain_idx]
+    tid = tid[gveto_retain_idx]
+    time = time[gveto_retain_idx]
+    if args.save_trig_param:
+        tparam = tparam[gveto_retain_idx]
+    logging.info('%i trigs left after vetoing triggers near gates' %len(stat))
 
 total_time = abs(all_segments)
 
