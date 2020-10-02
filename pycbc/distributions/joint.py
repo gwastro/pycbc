@@ -221,10 +221,10 @@ class JointDistribution(object):
         """
         # check if statisfies constraints
         if len(self._constraints) != 0:
-            parray, _ = self._ensure_fieldarray(params)
+            parray, return_atomic = self._ensure_fieldarray(params)
             isin = self.contains(parray)
             if not isin.any():
-                if numpy.isscalar(isin):
+                if return_atomic:
                     out = -numpy.inf
                 else:
                     out = numpy.full(parray.shape, -numpy.inf)
