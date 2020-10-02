@@ -637,7 +637,7 @@ class TDomainSupernovaeGenerator(BaseGenerator):
     using a set of Principal Components provided in a .hdf file.
     """
     def __init__(self, variable_args=(), **frozen_params):
-        super(TDomainSupernovaeGenerator, self).__init__(supernovae.get_td_corecollapse_bounce_signal, 
+        super(TDomainSupernovaeGenerator, self).__init__(supernovae.get_corecollapse_bounce,
            variable_args=variable_args, **frozen_params)
 
 
