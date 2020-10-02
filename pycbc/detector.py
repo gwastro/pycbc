@@ -122,8 +122,9 @@ class Detector(object):
         d = self.location - det.location
         return float(d.dot(d)**0.5 / constants.c.value)
 
-    def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
+    def antenna_pattern(self, right_ascension, declination, polarization, t_gps, pol_flag= 'Tensor'):
         """Return the detector response.
+
         Parameters
         ----------
         right_ascension: float or numpy.ndarray
@@ -132,6 +133,9 @@ class Detector(object):
             The declination of the source
         polarization: float or numpy.ndarray
             The polarization angle of the source
+        pol_flag: string flag
+            The polarization modelto be used
+
         Returns
         -------
         fplus: float or numpy.ndarray
@@ -163,6 +167,14 @@ class Detector(object):
         y = np.array([y0, y1, y2])
         dy = self.response.dot(y)
 
+
+        z0 = -cosdec * cosgha
+        z1 = cosdec * singha
+        z2= -sindec
+        z = np.array([z0, z1, z2])
+
+        dz = self.response.dot(z)
+
         if hasattr(dx, 'shape'):
             fplus = (x * dx - y * dy).sum(axis=0)
             fcross = (x * dy + y * dx).sum(axis=0)
@@ -170,7 +182,21 @@ class Detector(object):
             fplus = (x * dx - y * dy).sum()
             fcross = (x * dy + y * dx).sum()
 
-        return fplus, fcross
+        if pol_flag=='Tensor':
+            return fplus, fcross
+        else:
+            if hasattr(dx, 'shape'):
+                fx = (z * dx + x * dz).sum(axis=0)
+                fy = (z * dy + y * dz).sum(axis=0)
+                fb = (x * dx + y * dy).sum(axis=0)
+                fi = (z * dz).sum(axis=0)
+            else:
+                fx = (z * dx + x * dz).sum()
+                fy = (z * dy + y * dz).sum()
+                fb = (x * dx + y * dy).sum()
+                fi = (z * dz).sum()
+
+            return fplus, fcross, fx, fy, fb, fi
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         """Return the time delay from the earth center
