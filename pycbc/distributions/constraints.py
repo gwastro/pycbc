@@ -73,7 +73,8 @@ class SupernovaeConvexHull(Constraint):
     required_parameters = ["coeff_0", "coeff_1"]
 
     def __init__(self, constraint_arg, transforms=None, **kwargs):
-        super(SupernovaeConvexHull, self).__init__(constraint_arg, transforms=transforms, **kwargs)
+        super(SupernovaeConvexHull,
+              self).__init__(constraint_arg, transforms=transforms, **kwargs)
 
         if 'principal_components_file' in kwargs:
             pc_filename = kwargs['principal_components_file']
@@ -88,7 +89,6 @@ class SupernovaeConvexHull(Constraint):
             hull_points = numpy.array(hull_points).T
             pc_coeffs_hull = scipy.spatial.Delaunay(hull_points)
             self._hull = pc_coeffs_hull
-
 
     def _constraint(self, params):
 

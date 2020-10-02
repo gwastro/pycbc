@@ -6,7 +6,7 @@ import numpy
 import h5py
 from pycbc.types import TimeSeries
 
-_principal_components = {}
+_pc_dict = {}
 
 
 def get_corecollapse_bounce(**kwargs):
@@ -17,11 +17,11 @@ def get_corecollapse_bounce(**kwargs):
     """
 
     try:
-        principal_components = _principal_components['principal_components']
+        principal_components = _pc_dict['principal_components']
     except KeyError:
         with h5py.File(kwargs['principal_components_file'], 'r') as pc_file:
             principal_components = numpy.array(pc_file['principal_components'])
-            _principal_components['principal_components'] = principal_components
+            _pc_dict['principal_components'] = principal_components
 
     if 'coefficients_array' in kwargs:
         coefficients_array = kwargs['coefficients_array']
