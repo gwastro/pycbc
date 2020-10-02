@@ -115,7 +115,6 @@ class BaseGaussianNoise(BaseDataModel):
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, ignore_failed_waveforms=False,
-                 principal_components=None, pc_coefficients=None, pc_coeffs_hull=None,
                  **kwargs):
         # set up the boiler-plate attributes
         super(BaseGaussianNoise, self).__init__(variable_params, data,
@@ -176,10 +175,6 @@ class BaseGaussianNoise(BaseDataModel):
         self.normalize = normalize
         # store the psds and whiten the data
         self.psds = psds
-        # For supernovae waveforms
-        self.principal_components = principal_components
-        self.pc_coefficients = pc_coefficients
-        self.pc_coeffs_hull = pc_coeffs_hull
 
 
     @property
@@ -541,19 +536,6 @@ class BaseGaussianNoise(BaseDataModel):
         get_values_from_injection(cp, injection_file, update_cp=True)
         args = cls._init_args_from_config(cp)
         
-        # Read in the principal components for supernovae waveforms:
-        if cp.has_option('model', 'principal_components_file'):
-            pc_file = h5py.File(cp.get('model', 'principal_components_file'), 'r')
-            principal_components = numpy.array(pc_file.get('principal_components'))
-            pc_coefficients = numpy.array(pc_file.get('coefficients'))
-            args['principal_components'] = principal_components
-            args['pc_coefficients'] = pc_coefficients
-            hull_points = numpy.array([pc_coefficients[:,0], pc_coefficients[:,1], 
-                                       pc_coefficients[:,2], pc_coefficients[:,3]]).T
-            pc_coeffs_hull = Delaunay(hull_points)
-            args['pc_coeffs_hull'] = pc_coeffs_hull
-            pc_file.close()
-
         # add the injection file
         args['injection_file'] = injection_file
         # check if normalize is set
@@ -563,7 +545,7 @@ class BaseGaussianNoise(BaseDataModel):
             args['ignore_failed_waveforms'] = True
         # get any other keyword arguments provided in the model section
         ignore_args = ['name', 'normalize', 
-                       'ignore-failed-waveforms', 'principal_components_file']
+                       'ignore-failed-waveforms']
         for option in cp.options("model"):
             if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)
@@ -869,12 +851,6 @@ class GaussianNoise(BaseGaussianNoise):
             The value of the log likelihood ratio.
         """
         params = self.current_params
-
-        # Add principal components as parameters for supernovae waveforms
-        if self.principal_components is not None:
-            params['principal_components'] = self.principal_components
-            params['pc_coefficients'] = self.pc_coefficients
-            params['pc_coeffs_hull'] = self.pc_coeffs_hull
 
         try:
             wfs = self.waveform_generator.generate(**params)
