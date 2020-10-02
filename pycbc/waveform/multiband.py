@@ -3,7 +3,6 @@
 import numpy
 
 from pycbc.types import TimeSeries, zeros
-from pycbc.waveform import get_fd_waveform
 
 
 def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
@@ -38,6 +37,8 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     hc: pycbc.type.FrequencySeries
         Cross polarization
     """
+    from pycbc.waveform import get_fd_waveform
+
     if isinstance(bands, str):
         bands = [float(s) for s in bands.split(' ')]
 
