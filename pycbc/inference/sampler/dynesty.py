@@ -294,7 +294,8 @@ class DynestySampler(BaseSampler):
         first_update = {}
         if 'first_update_min_ncall' in extra:
             first_update['min_ncall'] = extra.pop('first_update_min_ncall')
-            logging.info('First update: min_ncall:%s', first_update['min_ncall'])
+            logging.info('First update: min_ncall:%s',
+                         first_update['min_ncall'])
         if 'first_update_min_eff' in extra:
             first_update['min_eff'] = extra.pop('first_update_min_eff')
             logging.info('First update: min_eff:%s', first_update['min_eff'])
