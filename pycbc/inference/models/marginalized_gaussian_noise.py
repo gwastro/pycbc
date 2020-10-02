@@ -18,6 +18,7 @@ allows for the likelihood to be marginalized over phase and/or time and/or
 distance.
 """
 
+import itertools
 import numpy
 from scipy import special
 
@@ -324,4 +325,294 @@ class MarginalizedPolarization(BaseGaussianNoise):
             setattr(self._current_stats, p,
                     getattr(self._current_stats, p)[idx])
 
+        return float(lr_total)
+
+
+class MarginalizedHMPolPhase(BaseGaussianNoise):
+    r"""Numerically marginalizes waveforms with higher modes over polarization
+    `and` phase.
+
+    This class implements the Gaussian likelihood with an explicit numerical
+    marginalization over polarization angle and orbital phase. This is
+    accomplished using a fixed set of integration points distributed uniformly
+    between 0 and 2:math:`\pi` for both the polarization and phase. By default,
+    100 integration points are used for each parameter, giving :math:`10^4`
+    evaluation points in total. This can be modified using the
+    ``polarization_samples`` and ``coa_phase_samples`` arguments.
+
+    This only works with waveforms that return separate spherical harmonic
+    modes for each waveform. For a list of currently supported approximants,
+    see :py:func:`pycbc.waveform.waveform_modes.fd_waveform_mode_approximants`
+    and :py:func:`pycbc.waveform.waveform_modes.td_waveform_mode_approximants`.
+
+    Parameters
+    ----------
+    variable_params : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    data : dict
+        A dictionary of data, in which the keys are the detector names and the
+        values are the data (assumed to be unwhitened). All data must have the
+        same frequency resolution.
+    low_frequency_cutoff : dict
+        A dictionary of starting frequencies, in which the keys are the
+        detector names and the values are the starting frequencies for the
+        respective detectors to be used for computing inner products.
+    psds : dict, optional
+        A dictionary of FrequencySeries keyed by the detector names. The
+        dictionary must have a psd for each detector specified in the data
+        dictionary. If provided, the inner products in each detector will be
+        weighted by 1/psd of that detector.
+    high_frequency_cutoff : dict, optional
+        A dictionary of ending frequencies, in which the keys are the
+        detector names and the values are the ending frequencies for the
+        respective detectors to be used for computing inner products. If not
+        provided, the minimum of the largest frequency stored in the data
+        and a given waveform will be used.
+    normalize : bool, optional
+        If True, the normalization factor :math:`alpha` will be included in the
+        log likelihood. See :py:class:`GaussianNoise` for details. Default is
+        to not include it.
+    polarization_samples : int, optional
+        How many points to use in polarization. Default is 100.
+    coa_phase_samples : int, optional
+        How many points to use in phase. Defaults is 100.
+    \**kwargs :
+        All other keyword arguments are passed to
+        :py:class:`gaussian_noise.BaseGaussianNoisei <BaseGaussianNoise>`.
+
+    """
+    name = 'marginalized_hmpolphase'
+
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 polarization_samples=100,
+                 coa_phase_samples=100,
+                 static_params=None, **kwargs):
+        # set up the boiler-plate attributes
+        super(MarginalizedHMPolPhase, self).__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
+        # create the waveform generator
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data,
+            waveform_transforms=self.waveform_transforms,
+            recalibration=self.recalibration,
+            generator_class=generator.FDomainDetFrameModesGenerator,
+            gates=self.gates, **self.static_params)
+        pol = numpy.linspace(0, 2*numpy.pi, polarization_samples)
+        phase = numpy.linspace(0, 2*numpy.pi, coa_phase_samples)
+        # remap to every combination of the parameters
+        # this gets every combination by mappin them to an NxM grid
+        # one needs to be transposed so that they run allong opposite
+        # dimensions
+        n = coa_phase_samples * polarization_samples
+        self.nsamples = n
+        self.pol = numpy.resize(pol, n)
+        phase = numpy.resize(phase, n)
+        phase = phase.reshape(coa_phase_samples, polarization_samples)
+        self.phase = phase.T.flatten()
+        self._phase_fac = {}
+        self.dets = {}
+
+    def phase_fac(self, m):
+        r"""The phase :math:`\exp[i m \phi]`."""
+        try:
+            return self._phase_fac[m]
+        except KeyError:
+            # hasn't been computed yet, calculate it
+            self._phase_fac[m] = numpy.exp(1.0j * m * self.phase)
+            return self._phase_fac[m]
+
+    @property
+    def _extra_stats(self):
+        """Adds ``maxl_polarization`` and the ``max_phase``
+        """
+        return ['maxl_polarization', 'max_phase',]
+
+    def _nowaveform_loglr(self):
+        """Convenience function to set loglr values if no waveform generated.
+        """
+        # maxl phase doesn't exist, so set it to nan
+        setattr(self._current_stats, 'maxl_polarization', numpy.nan)
+        setattr(self._current_stats, 'maxl_phase', numpy.nan)
+        return -numpy.inf
+
+    def _loglr(self, return_unmarginalized=False):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
+        params = self.current_params
+        try:
+            wfs = self.waveform_generator.generate(**params)
+        except NoWaveformError:
+            return self._nowaveform_loglr()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_loglr()
+            else:
+                raise e
+
+        # ---------------------------------------------------------------------
+        # Some optimizations not yet taken:
+        # * higher m calculations could have a lot of redundancy
+        # * fp/fc need not be calculated except where polarization is different
+        # * may be possible to simplify this by making smarter use of real/imag
+        # ---------------------------------------------------------------------
+        lr = 0.
+        hds = {}
+        hhs = {}
+        for det, modes in wfs.items():
+            if det not in self.dets:
+                self.dets[det] = Detector(det)
+
+            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
+                                                    self.current_params['dec'],
+                                                    self.pol,
+                                                    self.current_params['tc'])
+
+            # loop over modes and prepare the waveform modes
+            # we will sum up zetalm = glm <ulm, d> + i glm <vlm, d>
+            # over all common m so that we can apply the phase once
+            zetas = {}
+            rlms = {}
+            slms = {}
+            for mode in modes:
+                l, m = mode
+                ulm, vlm = modes[mode]
+
+                # whiten the waveforms
+                # the kmax of the waveforms may be different than internal kmax
+                kmax = min(max(len(ulm), len(vlm)), self._kmax[det])
+                slc = slice(self._kmin[det], kmax)
+                ulm[self._kmin[det]:kmax] *= self._weight[det][slc]
+                vlm[self._kmin[det]:kmax] *= self._weight[det][slc]
+
+                # the inner products
+                # <ulm, d>
+                ulmd = ulm[slc].inner(self._whitened_data[det][slc]).real
+                # <vlm, d>
+                vlmd = vlm[slc].inner(self._whitened_data[det][slc]).real
+
+                # add inclination, and pack into a complex number
+                import lal
+                glm = lal.SpinWeightedSphericalHarmonic(
+                    self.current_params['inclination'], 0, -2, l, m).real
+
+                if m not in zetas:
+                    zetas[m] = 0j
+                zetas[m] += glm * (ulmd + 1j*vlmd)
+
+                # Get condense set of the parts of the waveform that only diff
+                # by m, this is used next to help calculate <h, h>
+                r = glm * ulm
+                s = glm * vlm
+
+                if m not in rlms:
+                    rlms[m] = r
+                    slms[m] = s
+                else:
+                    rlms[m] += r
+                    slms[m] += s
+
+            # now compute all possible <hlm, hlm>
+            rr_m = {}
+            ss_m = {}
+            rs_m = {}
+            sr_m = {}
+            combos = itertools.combinations_with_replacement(rlms.keys(), 2)
+            for m, mprime in combos:
+                r = rlms[m]
+                s = slms[m]
+                rprime = rlms[mprime]
+                sprime = slms[mprime]
+                rr_m[mprime, m] = r[slc].inner(rprime[slc]).real
+                ss_m[mprime, m] = s[slc].inner(sprime[slc]).real
+                rs_m[mprime, m] = s[slc].inner(rprime[slc]).real
+                sr_m[mprime, m] = r[slc].inner(sprime[slc]).real
+                # store the conjugate for easy retrieval later
+                rr_m[m, mprime] = rr_m[mprime, m]
+                ss_m[m, mprime] = ss_m[mprime, m]
+                rs_m[m, mprime] = sr_m[mprime, m]
+                sr_m[m, mprime] = rs_m[mprime, m]
+            # now apply the phase to all the common ms
+            hpd = 0.
+            hcd = 0.
+            hphp = 0.
+            hchc = 0.
+            hphc = 0.
+            for m, zeta in zetas.items():
+                phase_coeff = self.phase_fac(m)
+
+                # <h+, d> = (exp[i m phi] * zeta).real()
+                # <hx, d> = -(exp[i m phi] * zeta).imag()
+                z = phase_coeff * zeta
+                hpd += z.real
+                hcd -= z.imag
+
+                # now calculate the contribution to <h, h>
+                cosm = phase_coeff.real
+                sinm = phase_coeff.imag
+
+                for mprime in zetas:
+                    pcprime = self.phase_fac(mprime)
+
+                    cosmprime = pcprime.real
+                    sinmprime = pcprime.imag
+                    # needed components
+                    rr = rr_m[m, mprime]
+                    ss = ss_m[m, mprime]
+                    rs = rs_m[m, mprime]
+                    sr = sr_m[m, mprime]
+                    # <hp, hp>
+                    hphp += rr * cosm * cosmprime \
+                        + ss * sinm * sinmprime \
+                        - rs * cosm * sinmprime \
+                        - sr * sinm * cosmprime
+                    # <hc, hc>
+                    hchc += rr * sinm * sinmprime \
+                        + ss * cosm * cosmprime \
+                        + rs * sinm * cosmprime \
+                        + sr * cosm * sinmprime
+                    # <hp, hc>
+                    hphc += -rr * cosm * sinmprime \
+                        + ss * sinm * cosmprime \
+                        + sr * sinm * sinmprime \
+                        - rs * cosm * cosmprime
+
+            # Now apply the polarizations and calculate the loglr
+            # We have h = Fp * hp + Fc * hc
+            # loglr = <h, d> - <h, h>/2
+            #       = Fp*<hp, d> + Fc*<hc, d>
+            #          - (1/2)*(Fp*Fp*<hp, hp> + Fc*Fc*<hc, hc>
+            #                   + 2*Fp*Fc<hp, hc>)
+            # (in the last line we have made use of the time series being
+            #  real, so that <a, b> = <b, a>).
+            hd = fp * hpd + fc * hcd
+            hh = fp * fp * hphp + fc * fc * hchc + 2 * fp * fc * hphc
+            hds[det] = hd
+            hhs[det] = hh
+            lr += hd - 0.5 * hh
+
+        if return_unmarginalized:
+            return self.pol, self.phase, lr, hds, hhs
+
+        lr_total = special.logsumexp(lr) - numpy.log(self.nsamples)
+
+        # store the maxl values
+        idx = lr.argmax()
+        setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
+        setattr(self._current_stats, 'maxl_phase', self.phase[idx])
         return float(lr_total)
