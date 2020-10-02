@@ -400,8 +400,8 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
         The following options are retrieved in the ``[sampler]`` section:
 
-        * ``name = INT`` :
-            Required. This must match the samlper's name.
+        * ``name = STR`` :
+            Required. This must match the sampler's name.
         * ``nwalkers = INT`` :
             Required. The number of walkers to use.
         * ``ntemps = INT`` :
@@ -423,7 +423,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
             and ``betas`` are provided.
         * ``adaptive =`` :
             If provided, temperature adaptation will be turned on.
-        * ``adaptation-lag = INT`` : 
+        * ``adaptation-lag = INT`` :
             The adaptation lag to use (see ptemcee for details).
         * ``adaptation-time = INT`` :
             The adaptation time to use (see ptemcee for details).
