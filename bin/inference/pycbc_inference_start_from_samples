@@ -34,13 +34,14 @@ nsample = len(samples)
 # These are the ids we'll use for the temps / walkers
 use = choice(nsample, replace=False, size=ntemps * nwalkers)
 
-o = loadfile(args.output_file, 'w', filetype=samplers[args.sampler].io.name)
+o = loadfile(args.output_file, 'w', filetype=samplers[args.sampler]._io.name)
 for k in params:
     data = samples[k][use]
     o['samples/' + k] = data.reshape(ntemps, nwalkers, 1)
 
 o.attrs['static_params'] = []
 o.attrs['variable_params'] = f.variable_params
+o.create_group('sampler_info')
 o['sampler_info'].attrs['nchains'] = nwalkers
 
 o.close()
