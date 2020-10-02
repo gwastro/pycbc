@@ -16,11 +16,11 @@
 This modules provides classes for evaluating multi-dimensional constraints.
 """
 
-from pycbc import transforms
-from pycbc.io import record
-from scipy.spatial import Delaunay
+import scipy.spatial
 import numpy
 import h5py
+from pycbc import transforms
+from pycbc.io import record
 
 
 class Constraint(object):
@@ -35,24 +35,9 @@ class Constraint(object):
         for kwarg in kwargs.keys():
             setattr(self, kwarg, kwargs[kwarg])
 
-        # For supernovae waveforms:
-        if 'principal_components_file' in kwargs:
-            pc_filename = kwargs['principal_components_file']
-            hull_dimention = numpy.array(kwargs['hull_dimention'])
-            self.hull_dimention = int(hull_dimention)
-            pc_file = h5py.File(pc_filename, 'r')
-            pc_coefficients = numpy.array(pc_file.get('coefficients'))
-            pc_file.close()
-            hull_points = []
-            for dim in range(self.hull_dimention):
-                hull_points.append(pc_coefficients[:, dim])
-            hull_points = numpy.array(hull_points).T
-            pc_coeffs_hull = Delaunay(hull_points)
-            self._hull = pc_coeffs_hull
-
     def __call__(self, params):
         """Evaluates constraint.
-        """''
+        """
         # cast to FieldArray
         if isinstance(params, dict):
             params = record.FieldArray.from_kwargs(**params)
@@ -79,27 +64,46 @@ class Constraint(object):
         return params[self.constraint_arg]
 
 
-class ConvexHull(Constraint):
+class SupernovaeConvexHull(Constraint):
     """Pre defined constraint for core-collapse waveforms that checks
     whether a given set of coefficients lie within the convex hull of
     the coefficients of the principal component basis vectors.
     """
     name = "supernovae_convex_hull"
     required_parameters = ["coeff_0", "coeff_1"]
-    def _constraint(self, params):
-        output_array = []
 
+    def __init__(self, constraint_arg, transforms=None, **kwargs):
+        super(SupernovaeConvexHull, self).__init__(constraint_arg, transforms=transforms, **kwargs)
+
+        if 'principal_components_file' in kwargs:
+            pc_filename = kwargs['principal_components_file']
+            hull_dimention = numpy.array(kwargs['hull_dimention'])
+            self.hull_dimention = int(hull_dimention)
+            pc_file = h5py.File(pc_filename, 'r')
+            pc_coefficients = numpy.array(pc_file.get('coefficients'))
+            pc_file.close()
+            hull_points = []
+            for dim in range(self.hull_dimention):
+                hull_points.append(pc_coefficients[:, dim])
+            hull_points = numpy.array(hull_points).T
+            pc_coeffs_hull = scipy.spatial.Delaunay(hull_points)
+            self._hull = pc_coeffs_hull
+
+
+    def _constraint(self, params):
+
+        output_array = []
         points = numpy.array([params["coeff_0"],
                               params["coeff_1"],
                               params["coeff_2"]])
         for coeff_index in range(len(params["coeff_0"])):
             point = points[:, coeff_index][:self.hull_dimention]
-            output_array.append(self._hull.find_simplex(point)>=0)
+            output_array.append(self._hull.find_simplex(point) >= 0)
         return numpy.array(output_array)
 
 
 # list of all constraints
 constraints = {
     Constraint.name : Constraint,
-    ConvexHull.name : ConvexHull,
+    SupernovaeConvexHull.name : SupernovaeConvexHull,
 }

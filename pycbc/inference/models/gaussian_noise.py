@@ -533,7 +533,7 @@ class BaseGaussianNoise(BaseDataModel):
         # update any values that are to be retrieved from the injection
         # Note: this does nothing if there are FROM_INJECTION values
         get_values_from_injection(cp, injection_file, update_cp=True)
-        args = cls._init_args_from_config(cp)        
+        args = cls._init_args_from_config(cp)
         # add the injection file
         args['injection_file'] = injection_file
         # check if normalize is set
