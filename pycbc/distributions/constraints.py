@@ -35,18 +35,17 @@ class Constraint(object):
         for kwarg in kwargs.keys():
             setattr(self, kwarg, kwargs[kwarg])
 
-
-        #For supernovae waveforms:
+        # For supernovae waveforms:
         if 'principal_components_file' in kwargs:
-            pc_file = kwargs['principal_components_file']
+            pc_filename = kwargs['principal_components_file']
             hull_dimention = numpy.array(kwargs['hull_dimention'])
             self.hull_dimention = int(hull_dimention)
-            f = h5py.File(pc_file, 'r')
-            pc_coefficients = numpy.array(f.get('coefficients'))
-            f.close()
+            pc_file = h5py.File(pc_filename, 'r')
+            pc_coefficients = numpy.array(pc_file.get('coefficients'))
+            pc_file.close()
             hull_points = []
             for dim in range(self.hull_dimention):
-                hull_points.append(pc_coefficients[:,dim])
+                hull_points.append(pc_coefficients[:, dim])
             hull_points = numpy.array(hull_points).T
             pc_coeffs_hull = Delaunay(hull_points)
             self._hull = pc_coeffs_hull
@@ -93,8 +92,8 @@ class ConvexHull(Constraint):
         points = numpy.array([params["coeff_0"],
                               params["coeff_1"],
                               params["coeff_2"]])
-        for ii in range(len(params["coeff_0"])):
-            point = points[:,ii][:self.hull_dimention]
+        for coeff_index in range(len(params["coeff_0"])):
+            point = points[:, coeff_index][:self.hull_dimention]
             output_array.append(self._hull.find_simplex(point)>=0)
         return numpy.array(output_array)
 

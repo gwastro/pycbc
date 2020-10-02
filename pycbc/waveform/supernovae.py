@@ -1,21 +1,20 @@
-"""Generate core-collapse supernovae waveform for core bounce and 
-subsequent postbounce oscillations. 
+"""Generate core-collapse supernovae waveform for core bounce and
+subsequent postbounce oscillations.
 """
 
 import numpy
-import math
 import h5py
 from pycbc.types import TimeSeries, FrequencySeries
 
 _principal_components = {}
 
 def get_td_corecollapse_bounce_signal(template=None, **kwargs):
-    """ Generates core bounce and postbounce waveform by using principal 
-    component basis vectors from a .hdf file. The waveform parameters are the 
-    coefficients of the principal components and the distance. The number of 
-    principal components used can also be varied. 
+    """ Generates core bounce and postbounce waveform by using principal
+    component basis vectors from a .hdf file. The waveform parameters are the
+    coefficients of the principal components and the distance. The number of
+    principal components used can also be varied.
     """
-    
+
     try:
         principal_components = _principal_components['principal_components']
     except KeyError:
@@ -29,9 +28,8 @@ def get_td_corecollapse_bounce_signal(template=None, **kwargs):
         coeffs_keys = [x for x in kwargs if x.startswith('coeff_')]
         coeffs_keys = numpy.sort(numpy.array(coeffs_keys))
         coefficients_array = numpy.array([kwargs[x] for x in coeffs_keys])
-        
+
     no_of_pcs = int(kwargs['no_of_pcs'])
-    
     coefficients_array = coefficients_array[:no_of_pcs]
     principal_components = principal_components[:no_of_pcs]
 
@@ -43,11 +41,9 @@ def get_td_corecollapse_bounce_signal(template=None, **kwargs):
     distance *=  mpc_conversion
 
     wf = numpy.dot(coefficients_array, principal_components) / distance
-    
     delta_t = kwargs['delta_t']
     outhp = TimeSeries(wf, delta_t=delta_t)
     outhc = TimeSeries(numpy.zeros(len(wf)), delta_t=delta_t)
-    
     return outhp, outhc
 
 

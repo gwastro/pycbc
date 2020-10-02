@@ -444,7 +444,6 @@ class TDomainFreqTauRingdownGenerator(BaseGenerator):
             variable_args=variable_args, **frozen_params)
 
 
-<<<<<<< HEAD
 class FDomainDetFrameTwoPolGenerator(object):
     """Generates frequency-domain waveform in a specific frame.
 
@@ -631,7 +630,8 @@ class FDomainDetFrameTwoPolGenerator(object):
             hcs = strain.apply_gates_to_fd(hps, self.gates)
             h = {det: (hps[det], hcs[det]) for det in h}
         return h
-=======
+
+
 class TDomainSupernovaeGenerator(BaseGenerator):
     """Uses supernovae.py to create time domain core-collapse supernovae waveforms
     using a set of Principal Components provided in a .hdf file.
@@ -639,7 +639,6 @@ class TDomainSupernovaeGenerator(BaseGenerator):
     def __init__(self, variable_args=(), **frozen_params):
         super(TDomainSupernovaeGenerator, self).__init__(supernovae.get_td_corecollapse_bounce_signal, 
            variable_args=variable_args, **frozen_params)
->>>>>>> Added core bounce waveform; convex hull constraint
 
 
 class FDomainDetFrameGenerator(object):

@@ -176,7 +176,6 @@ class BaseGaussianNoise(BaseDataModel):
         # store the psds and whiten the data
         self.psds = psds
 
-
     @property
     def high_frequency_cutoff(self):
         """The high frequency cutoff of the inner product.
@@ -534,8 +533,7 @@ class BaseGaussianNoise(BaseDataModel):
         # update any values that are to be retrieved from the injection
         # Note: this does nothing if there are FROM_INJECTION values
         get_values_from_injection(cp, injection_file, update_cp=True)
-        args = cls._init_args_from_config(cp)
-        
+        args = cls._init_args_from_config(cp)        
         # add the injection file
         args['injection_file'] = injection_file
         # check if normalize is set
@@ -544,8 +542,7 @@ class BaseGaussianNoise(BaseDataModel):
         if cp.has_option('model', 'ignore-failed-waveforms'):
             args['ignore_failed_waveforms'] = True
         # get any other keyword arguments provided in the model section
-        ignore_args = ['name', 'normalize', 
-                       'ignore-failed-waveforms']
+        ignore_args = ['name', 'normalize', 'ignore-failed-waveforms']
         for option in cp.options("model"):
             if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)
@@ -851,7 +848,6 @@ class GaussianNoise(BaseGaussianNoise):
             The value of the log likelihood ratio.
         """
         params = self.current_params
-
         try:
             wfs = self.waveform_generator.generate(**params)
         except NoWaveformError:
