@@ -2,7 +2,9 @@
 """
 import numpy
 
-from pycbc.types import TimeSeries, zeros, FrequencySeries
+from pycbc.types import TimeSeries, zeros
+from pycbc.waveform import get_fd_waveform
+
 
 def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     """ Generate a fourier domain waveform using multibanding
@@ -36,8 +38,6 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     hc: pycbc.type.FrequencySeries
         Cross polarization
     """
-    from pycbc.waveform import get_fd_waveform
-
     if isinstance(bands, str):
         bands = [float(s) for s in bands.split(' ')]
 
@@ -56,9 +56,9 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     tlen = int(1.0 / dt / df)
     flen = tlen / 2 + 1
     wf_plus = TimeSeries(zeros(tlen, dtype=numpy.float32),
-                    copy=False, delta_t=dt, epoch=-1.0/df)
+                         copy=False, delta_t=dt, epoch=-1.0/df)
     wf_cross = TimeSeries(zeros(tlen, dtype=numpy.float32),
-                    copy=False, delta_t=dt, epoch=-1.0/df)
+                          copy=False, delta_t=dt, epoch=-1.0/df)
 
     # Iterate over the sub-bands
     for i in range(len(lengths)+1):
@@ -102,7 +102,7 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
                 l, r = kmax - (len(taper) - len(taper) // 2), kmax
                 h[l:r] *= taper[len(taper)//2:]
 
-            # add frequency band of waveform to total and use fft to interpolate
+            # add frequency band to total and use fft to interpolate
             h.resize(flen)
             h = h.to_timeseries()
             wf[len(wf)-len(h):] += h
