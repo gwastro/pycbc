@@ -33,7 +33,7 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     -------
     hp: pycbc.types.FrequencySeries
         Plus polarization
-    hc: pycbc.type.TimeSeries
+    hc: pycbc.type.FrequencySeries
         Cross polarization
     """
     from pycbc.waveform import get_fd_waveform
