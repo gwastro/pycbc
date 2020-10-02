@@ -197,8 +197,65 @@ class DynestySampler(BaseSampler):
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1,
                     use_mpi=False, loglikelihood_function=None):
-        """
-        Loads the sampler from the given config file.
+        """Loads the sampler from the given config file. Many options are
+        directly passed to the underlying dynesty sampler, see the official
+        dynesty documentation for more details on these.
+
+        The following options are retrieved in the ``[sampler]`` section:
+        * ``name = STR`` :
+            Required. This must match the sampler's name.
+        * ``maxiter = INT``:
+            The maximum number of iterations to run.
+        * ``dlogz = FLOAT``:
+            The target dlogz stopping condition.
+        * ``logl_max = FLOAT``:
+            The maximum logl stopping condition.
+        * ``n_effective = INT``:
+            Target effective number of samples stopping condition
+        * ``samples = STR``:
+            The method to sample the space. Should be one of 'uniform',
+            'rwalk', 'rwalk2' (a modified version of rwalk), or 'slice'.
+        * ``first_update_min_ncall = INT``:
+            The minimum number of calls before updating the bounding region
+            for the first time.
+        * ``first_update_min_neff = FLOAT``:
+            Don't update the the bounding region untill the efficiency drops
+            below this value.
+        * ``bound = STR``:
+            The method of bounding of the prior volume.
+            Should be one of 'single', 'balls', 'cubes', 'multi' or 'none'.
+        * ``update_interval = INT``:
+            Number of iterations between updating the bounding regions
+        * ``enlarge = FLOAT``:
+            Factor to enlarge the bonding region.
+        * ``bootstrap = INT``:
+            The number of bootstrap iterations to determine the enlargement
+            factor.
+        * ``maxcall = INT``:
+            The maximum number of calls before checking if we should checkpoint
+        * ``checkpoint_time_interval`` :
+            Sets the time in seconds between checkpointing.
+        * ``loglikelihood-function`` :
+            The attribute of the model to use for the loglikelihood. If
+            not provided, will default to ``loglikelihood``.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser instance
+            Config file object to parse.
+        model : pycbc.inference.model.BaseModel instance
+            The model to use.
+        output_file : str, optional
+            The name of the output file to checkpoint and write results to.
+        nprocesses : int, optional
+            The number of parallel processes to use. Default is 1.
+        use_mpi : bool, optional
+            Use MPI for parallelization. Default is False.
+
+        Returns
+        -------
+        DynestySampler :
+            The sampler instance.
         """
         section = "sampler"
         # check name
@@ -223,13 +280,26 @@ class DynestySampler(BaseSampler):
                  'enlarge': float,
                  'update_interval': float,
                  'sample': str,
-                 'checkpoint_time_interval': float
+                 'checkpoint_time_interval': float,
+                 'first_update_min_ncall': int,
+                 'first_update_min_eff': float,
                  }
         extra = {}
         run_extra = {}
         for karg in cargs:
             if cp.has_option(section, karg):
                 extra[karg] = cargs[karg](cp.get(section, karg))
+
+        #This arg needs to be a dict
+        first_update = {}
+        if 'first_update_min_ncall' in extra:
+            first_update['min_ncall'] = extra.pop('first_update_min_ncall')
+            logging.info('First update: min_ncall:%s',
+                         first_update['min_ncall'])
+        if 'first_update_min_eff' in extra:
+            first_update['min_eff'] = extra.pop('first_update_min_eff')
+            logging.info('First update: min_eff:%s', first_update['min_eff'])
+        extra['first_update'] = first_update
 
         for karg in rargs:
             if cp.has_option(section, karg):
