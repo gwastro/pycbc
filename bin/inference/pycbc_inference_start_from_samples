@@ -11,6 +11,8 @@ from pycbc.inference.io import loadfile
 parser = argparse.ArgumentParser()
 parser.add_argument('--input-file')
 parser.add_argument('--output-file')
+parser.add_argument('--sampler', default='emcee_pt_file',
+    help="The output sampler type, if none, we assume emcee_pt")
 parser.add_argument('--ntemps', type=int)
 parser.add_argument('--nwalkers', type=int)
 args = parser.parse_args()
@@ -25,20 +27,13 @@ nwalkers = args.nwalkers
 
 f = loadfile(args.input_file)
 params = list(f.variable_params) + ['loglikelihood']
-
-params.remove('srcmtotal')
-params.remove('q')
-
-params += ['mass1_from_mtotal_q(srcmtotal, q)']
-params += ['mass2_from_mtotal_q(srcmtotal, q)']
-
 samples = f.read_samples(params)
 nsample = len(samples)
 
 # These are the ids we'll use for the temps / walkers
 use = choice(nsample, replace=False, size=ntemps * nwalkers)
 
-o = h5py.File(args.output_file, 'w')
+o = loadfile(args.output_file, 'w', filetype=args.sampler)
 for k in params:
     data = samples[k][use]
     o['samples/' + k] = data.reshape(ntemps, nwalkers, 1)
