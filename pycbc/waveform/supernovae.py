@@ -4,11 +4,12 @@ subsequent postbounce oscillations.
 
 import numpy
 import h5py
-from pycbc.types import TimeSeries, FrequencySeries
+from pycbc.types import TimeSeries
 
 _principal_components = {}
 
-def get_td_corecollapse_bounce_signal(template=None, **kwargs):
+
+def get_corecollapse_bounce(**kwargs):
     """ Generates core bounce and postbounce waveform by using principal
     component basis vectors from a .hdf file. The waveform parameters are the
     coefficients of the principal components and the distance. The number of
@@ -18,9 +19,9 @@ def get_td_corecollapse_bounce_signal(template=None, **kwargs):
     try:
         principal_components = _principal_components['principal_components']
     except KeyError:
-        pc_file = h5py.File(kwargs['principal_components_file'], 'r')
-        principal_components = pc_file['principal_components']
-        _principal_components['principal_components'] = principal_components
+        with h5py.File(kwargs['principal_components_file'], 'r') as pc_file:
+            principal_components = numpy.array(pc_file['principal_components'])
+            _principal_components['principal_components'] = principal_components
 
     if 'coefficients_array' in kwargs:
         coefficients_array = kwargs['coefficients_array']
@@ -38,14 +39,14 @@ def get_td_corecollapse_bounce_signal(template=None, **kwargs):
 
     distance = kwargs['distance']
     mpc_conversion = 3.08567758128e+22
-    distance *=  mpc_conversion
+    distance *= mpc_conversion
 
-    wf = numpy.dot(coefficients_array, principal_components) / distance
+    strain = numpy.dot(coefficients_array, principal_components) / distance
     delta_t = kwargs['delta_t']
-    outhp = TimeSeries(wf, delta_t=delta_t)
-    outhc = TimeSeries(numpy.zeros(len(wf)), delta_t=delta_t)
+    outhp = TimeSeries(strain, delta_t=delta_t)
+    outhc = TimeSeries(numpy.zeros(len(strain)), delta_t=delta_t)
     return outhp, outhc
 
 
 # Approximant names ###########################################################
-supernovae_td_approximants = {'CoreCollapseBounce' : get_td_corecollapse_bounce_signal}
+supernovae_td_approximants = {'CoreCollapseBounce': get_corecollapse_bounce}
