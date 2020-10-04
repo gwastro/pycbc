@@ -658,6 +658,11 @@ class SingleDetTriggers(object):
         return ranking.newsnr_sgveto_psdvar(self.snr, self.rchisq,
                                            self.sgchisq, self.psd_var_val)
 
+    @property
+    def newsnr_sgveto_psdvar_threshold(self):
+        return ranking.newsnr_sgveto_psdvar_threshold(self.snr, self.rchisq,
+                                           self.sgchisq, self.psd_var_val)
+
     def get_column(self, cname):
         # Fiducial value that seems to work, not extensively tuned.
         MFRAC = 0.3
