@@ -208,7 +208,7 @@ if args.gating_veto_windows:
     if gveto_before == 0 and gveto_after == 0:
         pass
     else:
-        gate_times = trigf[args.ifo + '/gating/auto/time'][:]
+        gate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
         gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
                                                        gate_times + gveto_after).coalesce()
         all_segments -= gveto_segs

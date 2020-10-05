@@ -1002,7 +1002,7 @@ class ReadByTemplate(object):
             veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
                                                         segment_name=name)
             self.segs = (self.segs - veto_segs).coalesce()
-        gate_times = self.file[self.ifo + '/gating/auto/time'][:]
+        gate_times = np.unique(self.file[self.ifo + '/gating/auto/time'][:])
         gating_veto_segs = veto.start_end_to_segments(gate_times -1,
                                                       gate_times + 2.5).coalesce()
         self.segs = (self.segs - gating_veto_segs).coalesce()
