@@ -982,7 +982,8 @@ class ForegroundTriggers(object):
         ligolw_utils.write_filename(outdoc, file_name)
 
 class ReadByTemplate(object):
-    def __init__(self, filename, bank=None, segment_name=None, veto_files=None):
+    def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
+                 gating_veto_windows=None):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
         self.ifo = tuple(self.file.keys())[0]
@@ -1002,10 +1003,20 @@ class ReadByTemplate(object):
             veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
                                                         segment_name=name)
             self.segs = (self.segs - veto_segs).coalesce()
-        gate_times = np.unique(self.file[self.ifo + '/gating/auto/time'][:])
-        gating_veto_segs = veto.start_end_to_segments(gate_times -1,
-                                                      gate_times + 2.5).coalesce()
-        self.segs = (self.segs - gating_veto_segs).coalesce()
+        if gating_veto_windows is not None:
+            gating_veto = gating_veto_windows[self.ifo].split(',')
+            gveto_before = float(gating_veto[0])
+            gveto_after = float(gating_veto[1])
+            if gveto_before > 0 or gveto_after < 0:
+                raise ValueError("Gating veto window values must be negative "
+                                 "before gates and positive after gates.")
+            if gveto_before == 0 and gveto_after == 0:
+                pass
+            else:
+                gate_times = np.unique(self.file[self.ifo + '/gating/auto/time'][:])
+                gating_veto_segs = veto.start_end_to_segments(gate_times + gveto_before,
+                                                      gate_times + gveto_after).coalesce()
+                self.segs = (self.segs - gating_veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
 
     def get_data(self, col, num):
