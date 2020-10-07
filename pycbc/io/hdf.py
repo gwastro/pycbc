@@ -26,11 +26,9 @@ from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events.stat import sngl_statistic_dict
 
-
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
-
     def select(self, fcn, *args, **kwds):
         """ Return arrays from an hdf5 file that satisfy the given function
 
@@ -79,13 +77,13 @@ class HFile(h5py.File):
         while i < size:
             r = i + chunksize if i + chunksize < size else size
 
-            # Read each chunks worth of data and find where it passes the function
+            #Read each chunks worth of data and find where it passes the function
             partial = [refs[arg][i:r] for arg in args]
             keep = fcn(*partial)
             if return_indices:
                 indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
-            # store only the results that pass the function
+            #store only the results that pass the function
             for arg, part in zip(args, partial):
                 data[arg].append(part[keep])
 
@@ -114,7 +112,6 @@ class DictArray(object):
     data is always in memory and all operations create new instances of the
     DictArray.
     """
-
     def __init__(self, data=None, files=None, groups=None):
         """ Create a DictArray
 
@@ -193,9 +190,9 @@ class DictArray(object):
 
         for k in self.data:
             f.create_dataset(k, data=self.data[k],
-                             compression='gzip',
-                             compression_opts=9,
-                             shuffle=True)
+                      compression='gzip',
+                      compression_opts=9,
+                      shuffle=True)
         f.close()
 
 
@@ -208,8 +205,8 @@ class StatmapData(DictArray):
                                           groups=groups)
 
         if data:
-            self.seg = seg
-            self.attrs = attrs
+            self.seg=seg
+            self.attrs=attrs
         elif files:
             f = HFile(files[0], "r")
             self.seg = f['segments']
@@ -228,7 +225,7 @@ class StatmapData(DictArray):
         from pycbc.events import cluster_coincs
         interval = self.attrs['timeslide_interval']
         cid = cluster_coincs(self.stat, self.time1, self.time2,
-                             self.timeslide_id, interval, window)
+                                 self.timeslide_id, interval, window)
         return self.select(cid)
 
     def save(self, outname):
@@ -241,7 +238,7 @@ class StatmapData(DictArray):
 
 class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None,
-                 files=None, ifos=None):
+                       files=None, ifos=None):
         groups = ['decimation_factor', 'stat', 'template_id', 'timeslide_id']
         for ifo in ifos:
             groups += ['%s/time' % ifo]
@@ -290,8 +287,7 @@ class FileData(object):
             String should evaluate to a Boolean expression using attributes
             of the class instance derived from columns: ex. 'self.snr < 6.5'
         """
-        if not fname:
-            raise RuntimeError("Didn't get a file!")
+        if not fname: raise RuntimeError("Didn't get a file!")
         self.fname = fname
         self.h5file = HFile(fname, "r")
         if group is None:
@@ -302,7 +298,7 @@ class FileData(object):
         self.group_key = group
         self.group = self.h5file[group]
         self.columns = columnlist if columnlist is not None \
-            else list(self.group.keys())
+                       else list(self.group.keys())
         self.filter_func = filter_func
         self._mask = None
 
@@ -394,7 +390,6 @@ class SingleDetTriggers(object):
     Provides easy access to the parameters of single-detector CBC triggers.
     """
     # FIXME: Some of these are optional and should be kwargs.
-
     def __init__(self, trig_file, bank_file, veto_file,
                  segment_name, filter_func, detector, premask=None):
         logging.info('Loading triggers')
@@ -428,7 +423,7 @@ class SingleDetTriggers(object):
             self.mask[:] = False
             self.mask[idx] = True
             logging.info('%i triggers remain after vetoes',
-                         len(self.veto_mask))
+                          len(self.veto_mask))
 
         # FIXME this should use the hfile select interface to avoid
         # memory and processing limitations.
@@ -443,13 +438,12 @@ class SingleDetTriggers(object):
                 if c in filter_func:
                     # get template parameters corresponding to triggers
                     setattr(self, '_'+c,
-                            np.array(self.bank[c])[self.trigs['template_id'][:]])
+                          np.array(self.bank[c])[self.trigs['template_id'][:]])
 
             self.filter_mask = eval(filter_func.replace('self.', 'self._'))
             # remove the dummy attributes
             for c in chain(self.trigs.keys(), self.bank.keys()):
-                if c in filter_func:
-                    delattr(self, '_'+c)
+                if c in filter_func: delattr(self, '_'+c)
 
             self.mask = self.mask & self.filter_mask
             logging.info('%i triggers remain after cut on %s',
@@ -458,7 +452,7 @@ class SingleDetTriggers(object):
     def checkbank(self, param):
         if self.bank == {}:
             return RuntimeError("Can't get %s values without a bank file"
-                                % param)
+                                                                       % param)
 
     def trig_dict(self):
         """Returns dict of the masked trigger valuse """
@@ -474,8 +468,8 @@ class SingleDetTriggers(object):
     @classmethod
     def get_param_names(cls):
         """Returns a list of plottable CBC parameter variables"""
-        return [m[0] for m in inspect.getmembers(cls)
-                if type(m[1]) == property]
+        return [m[0] for m in inspect.getmembers(cls) \
+            if type(m[1]) == property]
 
     def apply_mask(self, logic_mask):
         """Apply a boolean array to the set of triggers"""
@@ -662,7 +656,7 @@ class SingleDetTriggers(object):
     @property
     def newsnr_sgveto_psdvar(self):
         return ranking.newsnr_sgveto_psdvar(self.snr, self.rchisq,
-                                            self.sgchisq, self.psd_var_val)
+                                           self.sgchisq, self.psd_var_val)
 
     def get_column(self, cname):
         # Fiducial value that seems to work, not extensively tuned.
@@ -671,8 +665,8 @@ class SingleDetTriggers(object):
         # If the mask accesses few enough elements then directly use it
         # This can be slower than reading in all the elements if most of them
         # will be read.
-        if self.mask is not None and (isinstance(self.mask, list) or
-                                      (len(self.mask.nonzero()[0]) < (len(self.mask) * MFRAC))):
+        if self.mask is not None and (isinstance(self.mask, list) or \
+                (len(self.mask.nonzero()[0]) < (len(self.mask) * MFRAC))):
             return self.trigs[cname][self.mask]
 
         # We have a lot of elements to read so we resort to readin the entire
@@ -682,11 +676,10 @@ class SingleDetTriggers(object):
         else:
             return self.trigs[cname][:]
 
-
 class ForegroundTriggers(object):
     # FIXME: A lot of this is hardcoded to expect two ifos
     def __init__(self, coinc_file, bank_file, sngl_files=None, n_loudest=None,
-                 group='foreground'):
+                     group='foreground'):
         self.coinc_file = FileData(coinc_file, group=group)
         if 'ifos' in self.coinc_file.h5file.attrs:
             self.ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
@@ -815,7 +808,7 @@ class ForegroundTriggers(object):
                 ifo_trigs = np.where(self.get_coincfile_array(ifo+'/time') < 0,
                                      '-', ifo)
                 ifo_list.append(ifo_trigs)
-            ifo_list = [list(trig[trig != '-'])
+            ifo_list = [list(trig[trig != '-']) \
                         for trig in iter(np.array(ifo_list).T)]
         except KeyError:  # Else fall back on old two-det format
             # Currently assumes two-det is Hanford and Livingston
@@ -828,9 +821,9 @@ class ForegroundTriggers(object):
 
         ifos = list(self.sngl_files.keys())
         proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
-                                                    {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
-                                                    cvs_repository='pycbc/'+pycbc_version.git_branch,
-                                                    cvs_entry_time=pycbc_version.date).process_id
+                     {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
+                     cvs_repository='pycbc/'+pycbc_version.git_branch,
+                     cvs_entry_time=pycbc_version.date).process_id
 
         search_summ_table = lsctables.New(lsctables.SearchSummaryTable)
         coinc_h5file = self.coinc_file.h5file
@@ -933,9 +926,9 @@ class ForegroundTriggers(object):
                     val = bank_col_vals[name][idx]
                     setattr(sngl, name, val)
                 sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
-                    sngl.mass1, sngl.mass2)
+                        sngl.mass1, sngl.mass2)
                 sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
-                    sngl.mass1, sngl.mass2)
+                        sngl.mass1, sngl.mass2)
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
                 sngl_combined_mchirp += sngl.mchirp
                 sngl_combined_mtot += sngl.mtotal
@@ -973,7 +966,7 @@ class ForegroundTriggers(object):
             coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
             # Transform to Hz
             coinc_inspiral_row.combined_far = \
-                coinc_inspiral_row.combined_far / YRJUL_SI
+                                    coinc_inspiral_row.combined_far / YRJUL_SI
             coinc_event_row.likelihood = coinc_event_vals['stat'][idx]
             coinc_inspiral_row.minimum_duration = 0.
             coinc_event_table.append(coinc_event_row)
@@ -987,7 +980,6 @@ class ForegroundTriggers(object):
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
         ligolw_utils.write_filename(outdoc, file_name)
-
 
 class ReadByTemplate(object):
     def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
@@ -1027,7 +1019,7 @@ class ReadByTemplate(object):
                                                               gate_times + gveto_after).coalesce()
                 self.segs = (self.segs - gating_veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
-
+        
     def get_data(self, col, num):
         """ Get a column of data for template with id 'num'
 
@@ -1083,7 +1075,7 @@ class ReadByTemplate(object):
         # to the absolute beginning index of this templates triggers stored
         # in 'template_boundaries'
         trigger_id = self.keep + \
-            self.file['%s/template_boundaries' % self.ifo][num]
+                         self.file['%s/template_boundaries' % self.ifo][num]
         return trigger_id
 
     def __getitem__(self, col):
@@ -1111,23 +1103,22 @@ class ReadByTemplate(object):
 chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
                  'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
 
-
 def get_chisq_from_file_choice(hdfile, chisq_choice):
     f = hdfile
-    if chisq_choice in ['traditional', 'max_cont_trad', 'max_bank_trad',
-                        'max_bank_cont_trad']:
+    if chisq_choice in ['traditional','max_cont_trad', 'max_bank_trad',
+                             'max_bank_cont_trad']:
         trad_chisq = f['chisq'][:]
         # We now need to handle the case where chisq is not actually calculated
         # 0 is used as a sentinel value
         trad_chisq_dof = f['chisq_dof'][:]
         trad_chisq /= (trad_chisq_dof * 2 - 2)
     if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont',
-                        'max_bank_cont_trad']:
+                             'max_bank_cont_trad']:
         cont_chisq = f['cont_chisq'][:]
         cont_chisq_dof = f['cont_chisq_dof'][:]
         cont_chisq /= cont_chisq_dof
     if chisq_choice in ['bank', 'max_bank_cont', 'max_bank_trad',
-                        'max_bank_cont_trad']:
+                             'max_bank_cont_trad']:
         bank_chisq = f['bank_chisq'][:]
         bank_chisq_dof = f['bank_chisq_dof'][:]
         bank_chisq /= bank_chisq_dof
@@ -1152,7 +1143,6 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         raise ValueError(err_msg)
     return chisq
 
-
 def save_dict_to_hdf5(dic, filename):
     """
     Parameters
@@ -1164,7 +1154,6 @@ def save_dict_to_hdf5(dic, filename):
     """
     with h5py.File(filename, 'w') as h5file:
         recursively_save_dict_contents_to_group(h5file, '/', dic)
-
 
 def recursively_save_dict_contents_to_group(h5file, path, dic):
     """
@@ -1182,11 +1171,9 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
                              bytes, tuple, list)):
             h5file[path + str(key)] = item
         elif isinstance(item, dict):
-            recursively_save_dict_contents_to_group(
-                h5file, path + key + '/', item)
+            recursively_save_dict_contents_to_group(h5file, path + key + '/', item)
         else:
             raise ValueError('Cannot save %s type' % type(item))
-
 
 def load_hdf5_to_dict(h5file, path):
     """
@@ -1212,14 +1199,12 @@ def load_hdf5_to_dict(h5file, path):
             raise ValueError('Cannot load %s type' % type(item))
     return dic
 
-
 def combine_and_copy(f, files, group):
     """ Combine the same column from multiple files and save to a third"""
     # ensure that the files input is stable for iteration order
     assert isinstance(files, (list, tuple))
-    f[group] = np.concatenate([fi[group][:] if group in fi else
-                               np.array([], dtype=np.uint32) for fi in files])
-
+    f[group] = np.concatenate([fi[group][:] if group in fi else \
+                                   np.array([], dtype=np.uint32) for fi in files])
 
 def name_all_datasets(files):
     assert isinstance(files, (list, tuple))
@@ -1227,7 +1212,6 @@ def name_all_datasets(files):
     for fi in files:
         datasets += get_all_subkeys(fi, '/')
     return set(datasets)
-
 
 def get_all_subkeys(grp, key):
     subkey_list = []
