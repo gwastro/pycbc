@@ -1019,7 +1019,7 @@ class ReadByTemplate(object):
                                                               gate_times + gveto_after).coalesce()
                 self.segs = (self.segs - gating_veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
-        
+ 
     def get_data(self, col, num):
         """ Get a column of data for template with id 'num'
 
