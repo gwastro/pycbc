@@ -1623,8 +1623,8 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
 
     def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo,
                                       **kwargs): # pylint:disable=unused-argument
-        loglr = ExpFitSGFgBgNormNewStatistic.coinc_multiifo_lim_for_thresh(self, s, thresh, limifo,
-                                      **kwargs)
+        loglr = ExpFitSGFgBgNormNewStatistic.coinc_multiifo_lim_for_thresh(
+                    self, s, thresh, limifo, **kwargs)
         loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
 
         return loglr
