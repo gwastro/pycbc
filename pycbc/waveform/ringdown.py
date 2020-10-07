@@ -531,7 +531,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
             outcross.data += hcross.data
     else:
         raise ValueError('unrecognised domain argument {}; '
-                                   'must be either fd or td'.format(domain))
+                         'must be either fd or td'.format(domain))
 
     return norm * outplus, norm * outcross
 
