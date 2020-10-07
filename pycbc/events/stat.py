@@ -1571,7 +1571,6 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         logr_n = - numpy.log(hist_vol)
 
         loglr = - thresh + network_logvol - ln_noise_rate + logr_s - logr_n
-
         return loglr
 
 
@@ -1626,7 +1625,6 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
         loglr = ExpFitSGFgBgNormNewStatistic.coinc_multiifo_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
         loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
-
         return loglr
 
 
