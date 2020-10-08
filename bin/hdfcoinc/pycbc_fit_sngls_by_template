@@ -77,8 +77,8 @@ parser.add_argument("--veto-segment-name", nargs='*', default=[], action='append
                     "given all segments for a given ifo will be used")
 parser.add_argument("--gating-veto-windows", nargs='+',
                     action=MultiDetOptionAction,
-                    help="Time in seconds to be vetoed before and after each "
-                         "gate. Given as detector-values pairs, e.g. "
+                    help="Seconds to be vetoed before and after the central time "
+                         "of each gate. Given as detector-values pairs, e.g. "
                          "H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument("--output", required=True,
                     help="Location for output file containing fit coefficients"
@@ -205,21 +205,20 @@ if args.gating_veto_windows:
     if gveto_before > 0 or gveto_after < 0:
         raise ValueError("Gating veto window values must be negative before "
                          "gates and positive after gates.")
-    if gveto_before == 0 and gveto_after == 0:
-        pass
-    else:
+    if not (gveto_before == 0 and gveto_after == 0):
         gate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
         gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
                                                        gate_times + gveto_after).coalesce()
         all_segments -= gveto_segs
-        gveto_retain_idx = events.veto.indices_outside_times(time, gate_times + gveto_before,
+        gveto_retain_idx = events.veto.indices_outside_times(time,
+                                                             gate_times + gveto_before,
                                                              gate_times + gveto_after)
         stat = stat[gveto_retain_idx]
         tid = tid[gveto_retain_idx]
         time = time[gveto_retain_idx]
         if args.save_trig_param:
             tparam = tparam[gveto_retain_idx]
-        logging.info('%i trigs left after vetoing triggers near gates' %len(stat))
+        logging.info('%i trigs left after vetoing triggers near gates' % len(stat))
 
 total_time = abs(all_segments)
 

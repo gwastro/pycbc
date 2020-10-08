@@ -17,8 +17,8 @@ parser.add_argument("--segment-name", nargs='*', action='append', default=[],
                     help="Optional, name of veto segment in veto file")
 parser.add_argument("--gating-veto-windows", nargs='+',
                     action=MultiDetOptionAction,
-                    help="Time in seconds to be vetoed before and after each "
-                         "gate. Given as detector-values pairs, e.g. "
+                    help="Seconds to be vetoed before and after the central time "
+                         "of each gate. Given as detector-values pairs, e.g. "
                          "H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument("--trigger-files", nargs='*', action='append', default=[],
                     help="Files containing single-detector triggers")
