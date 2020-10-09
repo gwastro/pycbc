@@ -68,9 +68,9 @@ def sum_modes(hlms, inclination, phi):
     """
     out = None
     for mode in hlms:
-        ell, m = mode
-        hlm = hlms[ell, m]
-        ylm = lal.SpinWeightedSphericalHarmonic(inclination, phi, -2, ell, m)
+        l, m = mode
+        hlm = hlms[l, m]
+        ylm = lal.SpinWeightedSphericalHarmonic(inclination, phi, -2, l, m)
         if out is None:
             out = ylm * hlm
         else:
@@ -87,24 +87,43 @@ def default_modes(approximant):
         # according to arXiv:2004.06503
         ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4)]
         # add the -m modes
-        ma += [(ell, -m) for ell, m in ma]
+        ma += [(l, -m) for l, m in ma]
     elif approximant in ['IMRPhenomPv3HM', 'IMRPhenomHM']:
         # according to arXiv:1911.06050
         ma = [(2, 2), (2, 1), (3, 3), (3, 2), (4, 4), (4, 3)]
         # add the -m modes
-        ma += [(ell, -m) for ell, m in ma]
+        ma += [(l, -m) for l, m in ma]
     elif approximant.startswith('NRSur7dq4'):
         # according to arXiv:1905.09300
-        ma = [(ell, m) for ell in [2, 3, 4] for m in range(-ell, ell+1)]
+        ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l+1)]
     else:
         raise ValueError("I don't know what the default modes are for "
                          "approximant {}, sorry!".format(approximant))
     return ma
 
 
-def get_glm(ell, m, theta):
-    """The inclination part of the ylm."""
-    return lal.SpinWeightedSphericalHarmonic(theta, 0., -2, ell, m).real
+def get_glm(l, m, theta):
+    r"""The maginitude of the :math:`{}_{-2}Y_{\ell m}`.
+
+    The spin-weighted spherical harmonics can be written as
+    :math:`{}_{-2}Y_{\ell m}(\theta, \phi) = g_{\ell m}(\theta)e^{i m \phi}`.
+    This returns the `g_{\ell m}(\theta)` part. Note that this is real.
+
+    Parameters
+    ----------
+    l : int
+        The :math:`\ell` index of the spherical harmonic.
+    m : int
+        The :math:`m` index of the spherical harmonic.
+    theta : float
+        The polar angle (in radians).
+
+    Returns
+    -------
+    float :
+        The amplitude of the harmonic at the given polar angle.
+    """
+    return lal.SpinWeightedSphericalHarmonic(theta, 0., -2, l, m).real
 
 
 def get_nrsur_modes(**params):
@@ -180,11 +199,11 @@ def get_imrphenomx_modes(return_posneg=False, **params):
         # setting to 0 will default to ringdown frequency
         params['f_final'] = 0.
     hlms = {}
-    for (ell, m) in mode_array:
-        params['mode_array'] = [(ell, m)]
+    for (l, m) in mode_array:
+        params['mode_array'] = [(l, m)]
         laldict = _check_lal_pars(params)
         hpos, hneg = lalsimulation.SimIMRPhenomXPHMOneMode(
-            ell, m,
+            l, m,
             params['mass1']*lal.MSUN_SI,
             params['mass2']*lal.MSUN_SI,
             params['spin1x'], params['spin1y'], params['spin1z'],
@@ -198,12 +217,12 @@ def get_imrphenomx_modes(return_posneg=False, **params):
         hneg = FrequencySeries(hneg.data.data, delta_f=hneg.deltaF,
                                epoch=hneg.epoch)
         if return_posneg:
-            hlms[ell, m] = (hpos, hneg)
+            hlms[l, m] = (hpos, hneg)
         else:
             # convert to ulm, vlm
             ulm = 0.5 * (hpos + hneg.conj())
             vlm = 0.5j * (hneg.conj() - hpos)
-            hlms[ell, m] = (ulm, vlm)
+            hlms[l, m] = (ulm, vlm)
     return hlms
 
 
@@ -473,7 +492,7 @@ def get_td_waveform_modes(template=None, **kwargs):
         Dictionary of mode tuples -> real part of the hlm, as a
         :py:class:`pycbc.types.TimeSeries`.
     vlm : dict
-        Dictionary of mode tuples -> real part of the hlm, as a
+        Dictionary of mode tuples -> imaginary part of the hlm, as a
         :py:class:`pycbc.types.TimeSeries`.
     """
     params = props(template, **kwargs)
