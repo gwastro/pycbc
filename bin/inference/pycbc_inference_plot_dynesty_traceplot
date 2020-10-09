@@ -66,7 +66,7 @@ fig, axes = dyplot.traceplot(sampler_state.results, truth_color='black',
                              connect=True)
 #plt.savefig()
 # save figure with meta-data
-caption = """Set of plots shows 'evolution of particles (and their marginal 
+caption = """Set of plots shows 'evolution of particles (and their marginal
              posterior distributions) in 1-D projections'."""
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
