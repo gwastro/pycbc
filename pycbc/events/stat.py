@@ -214,6 +214,25 @@ class NewSNRSGPSDStatistic(NewSNRSGStatistic):
         return ranking.get_newsnr_sgveto_psdvar(trigs)
 
 
+class NewSNRSGPSDThresholdStatistic(NewSNRSGStatistic):
+    """Calculate the NewSNRSGPSD coincident detection statistic"""
+
+    def single(self, trigs):
+        """Calculate the single detector statistic, here equal to newsnr
+        combined with sgveto and psdvar statistic
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return ranking.get_newsnr_sgveto_psdvar_threshold(trigs)
+
+
 class NewSNRSGPSDScaledStatistic(NewSNRSGStatistic):
     """Calculate the NewSNRSGPSD coincident detection statistic"""
 
@@ -1552,7 +1571,6 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         logr_n = - numpy.log(hist_vol)
 
         loglr = - thresh + network_logvol - ln_noise_rate + logr_s - logr_n
-
         return loglr
 
 
@@ -1568,6 +1586,13 @@ class ExpFitSGPSDScaledFgBgNormStatistic(ExpFitSGFgBgNormNewStatistic):
         ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
                                               **kwargs)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled
+
+
+class ExpFitSGPSDFgBgNormThreshStatistic(ExpFitSGFgBgNormNewStatistic):
+    def __init__(self, files=None, ifos=None, **kwargs):
+        ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
+                                              **kwargs)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_threshold
 
 
 class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
@@ -1594,6 +1619,20 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
                                                   self, stats, shift, to_shift)
         logr_s += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
         return logr_s
+
+    def coinc_multiifo_lim_for_thresh(self, s, thresh, limifo,
+                                      **kwargs): # pylint:disable=unused-argument
+        loglr = ExpFitSGFgBgNormNewStatistic.coinc_multiifo_lim_for_thresh(
+                    self, s, thresh, limifo, **kwargs)
+        loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
+        return loglr
+
+
+class ExpFitSGPSDFgBgNormBBHThreshStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
+    def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
+        ExpFitSGPSDFgBgNormBBHStatistic.__init__(self, files=files, ifos=ifos,
+                                                 max_chirp_mass=None, **kwargs)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_threshold
 
 
 class ExpFitSGPSDSTFgBgNormBBHStatistic(ExpFitSGPSDFgBgNormBBHStatistic):
@@ -1628,7 +1667,10 @@ statistic_dict = {
     '2ogc': ExpFitSGPSDScaledFgBgNormStatistic, # backwards compatible
     '2ogcbbh': ExpFitSGPSDSTFgBgNormBBHStatistic, # backwards compatible
     'exp_fit_sg_fgbg_norm_psdvar': ExpFitSGPSDFgBgNormStatistic,
-    'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic
+    'exp_fit_sg_fgbg_norm_psdvar_thresh': ExpFitSGPSDFgBgNormThreshStatistic,
+    'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic,
+    'exp_fit_sg_fgbg_norm_psdvar_bbh_thresh':
+        ExpFitSGPSDFgBgNormBBHThreshStatistic
 }
 
 sngl_statistic_dict = {
@@ -1641,6 +1683,7 @@ sngl_statistic_dict = {
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
+    'newsnr_sgveto_psdvar_threshold': NewSNRSGPSDThresholdStatistic,
     'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
     'newsnr_sgveto_psdvar_scaled_threshold':
         NewSNRSGPSDScaledThresholdStatistic,

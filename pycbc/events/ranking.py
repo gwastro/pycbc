@@ -72,6 +72,28 @@ def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
         return nsnr[0]
 
 
+def newsnr_sgveto_psdvar_threshold(snr, brchisq, sgchisq, psd_var_val,
+                                   min_expected_psdvar=0.65,
+                                   brchisq_threshold=10.0,
+                                   psd_var_val_threshold=10.0):
+    """ newsnr_sgveto_psdvar with thresholds applied.
+
+    This is the newsnr_sgveto_psdvar statistic with additional options
+    to threshold on chi-squared or PSD variation.
+    """
+    nsnr = newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
+                                min_expected_psdvar=min_expected_psdvar)
+    nsnr = numpy.array(nsnr, ndmin=1)
+    nsnr[brchisq > brchisq_threshold] = 1.
+    nsnr[psd_var_val > psd_var_val_threshold] = 1.
+
+    # If snr input is float, return a float. Otherwise return numpy array.
+    if hasattr(snr, '__len__'):
+        return nsnr
+    else:
+        return nsnr[0]
+
+
 def newsnr_sgveto_psdvar_scaled(snr, brchisq, sgchisq, psd_var_val,
                                 scaling=0.33, min_expected_psdvar=0.65):
     """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and scaled PSD
@@ -170,6 +192,31 @@ def get_newsnr_sgveto_psdvar(trigs):
                                       trigs['sg_chisq'][:],
                                       trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
+
+
+def get_newsnr_sgveto_psdvar_threshold(trigs):
+    """
+    Calculate newsnr re-weighted by the sine-gaussian veto and scaled
+    psd variation statistic
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    'chisq_dof', 'snr', 'chisq' and 'psd_var_val' are required keys
+
+    Returns
+    -------
+     numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg_psdt = newsnr_sgveto_psdvar_threshold(
+        trigs['snr'][:], trigs['chisq'][:] / dof,
+        trigs['sg_chisq'][:],
+        trigs['psd_var_val'][:]
+    )
+    return numpy.array(nsnr_sg_psdt, ndmin=1, dtype=numpy.float32)
 
 
 def get_newsnr_sgveto_psdvar_scaled(trigs):

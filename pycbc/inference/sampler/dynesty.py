@@ -197,8 +197,65 @@ class DynestySampler(BaseSampler):
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1,
                     use_mpi=False, loglikelihood_function=None):
-        """
-        Loads the sampler from the given config file.
+        """Loads the sampler from the given config file. Many options are
+        directly passed to the underlying dynesty sampler, see the official
+        dynesty documentation for more details on these.
+
+        The following options are retrieved in the ``[sampler]`` section:
+        * ``name = STR`` :
+            Required. This must match the sampler's name.
+        * ``maxiter = INT``:
+            The maximum number of iterations to run.
+        * ``dlogz = FLOAT``:
+            The target dlogz stopping condition.
+        * ``logl_max = FLOAT``:
+            The maximum logl stopping condition.
+        * ``n_effective = INT``:
+            Target effective number of samples stopping condition
+        * ``samples = STR``:
+            The method to sample the space. Should be one of 'uniform',
+            'rwalk', 'rwalk2' (a modified version of rwalk), or 'slice'.
+        * ``first_update_min_ncall = INT``:
+            The minimum number of calls before updating the bounding region
+            for the first time.
+        * ``first_update_min_neff = FLOAT``:
+            Don't update the the bounding region untill the efficiency drops
+            below this value.
+        * ``bound = STR``:
+            The method of bounding of the prior volume.
+            Should be one of 'single', 'balls', 'cubes', 'multi' or 'none'.
+        * ``update_interval = INT``:
+            Number of iterations between updating the bounding regions
+        * ``enlarge = FLOAT``:
+            Factor to enlarge the bonding region.
+        * ``bootstrap = INT``:
+            The number of bootstrap iterations to determine the enlargement
+            factor.
+        * ``maxcall = INT``:
+            The maximum number of calls before checking if we should checkpoint
+        * ``checkpoint_time_interval`` :
+            Sets the time in seconds between checkpointing.
+        * ``loglikelihood-function`` :
+            The attribute of the model to use for the loglikelihood. If
+            not provided, will default to ``loglikelihood``.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser instance
+            Config file object to parse.
+        model : pycbc.inference.model.BaseModel instance
+            The model to use.
+        output_file : str, optional
+            The name of the output file to checkpoint and write results to.
+        nprocesses : int, optional
+            The number of parallel processes to use. Default is 1.
+        use_mpi : bool, optional
+            Use MPI for parallelization. Default is False.
+
+        Returns
+        -------
+        DynestySampler :
+            The sampler instance.
         """
         section = "sampler"
         # check name
@@ -223,13 +280,26 @@ class DynestySampler(BaseSampler):
                  'enlarge': float,
                  'update_interval': float,
                  'sample': str,
-                 'checkpoint_time_interval': float
+                 'checkpoint_time_interval': float,
+                 'first_update_min_ncall': int,
+                 'first_update_min_eff': float,
                  }
         extra = {}
         run_extra = {}
         for karg in cargs:
             if cp.has_option(section, karg):
                 extra[karg] = cargs[karg](cp.get(section, karg))
+
+        #This arg needs to be a dict
+        first_update = {}
+        if 'first_update_min_ncall' in extra:
+            first_update['min_ncall'] = extra.pop('first_update_min_ncall')
+            logging.info('First update: min_ncall:%s',
+                         first_update['min_ncall'])
+        if 'first_update_min_eff' in extra:
+            first_update['min_eff'] = extra.pop('first_update_min_eff')
+            logging.info('First update: min_eff:%s', first_update['min_eff'])
+        extra['first_update'] = first_update
 
         for karg in rargs:
             if cp.has_option(section, karg):
@@ -247,41 +317,32 @@ class DynestySampler(BaseSampler):
     def checkpoint(self):
         """Checkpoint function for dynesty sampler
         """
-        with loadfile(self.checkpoint_file, 'a') as fp:
-            fp.write_random_state()
+        # Dynesty has its own __getstate__ which deletes
+        # random state information and the pool
+        saved = {}
+        for key in self.no_pickle:
+            if hasattr(self._sampler, key):
+                saved[key] = getattr(self._sampler, key)
+                setattr(self._sampler, key, None)
+        for fn in [self.checkpoint_file, self.backup_file]:
+            with self.io(fn, "a") as fp:
+                # Write random state
+                fp.write_random_state()
 
-            # Dynesty has its own __getstate__ which deletes
-            # random state information and the pool
-            saved = {}
-            for key in self.no_pickle:
-                if hasattr(self._sampler, key):
-                    saved[key] = getattr(self._sampler, key)
-                    setattr(self._sampler, key, None)
+                # Write pickled data
+                fp.write_pickled_data_into_checkpoint_file(self._sampler)
 
-            # For the dynamic sampler, we must also handle the internal
-            # sampler object
-            #saved_internal = {}
-            #if self.nlive < 0:
-            #    for key in self.no_pickle:
-            #        if hasattr(self._sampler.sampler, key):
-            #            saved[key] = getattr(self._sampler.sampler, key)
-            #            setattr(self._sampler.sampler, key, None)
+                # Write nested samples
+                fp.write_raw_samples(self.samples)
 
-            #for key in self._sampler.__dict__:
-            #    print(key, type(self._sampler.__dict__[key]))
-
-            #for key in self._sampler.sampler.__dict__:
-            #    print(key, type(self._sampler.sampler.__dict__[key]))
-
-            fp.write_pickled_data_into_checkpoint_file(self._sampler)
+                # Write logz and dlogz
+                logz = self._sampler.results.logz[-1:][0]
+                dlogz = self._sampler.results.logzerr[-1:][0]
+                fp.write_logevidence(logz, dlogz)
 
         # Restore properties that couldn't be pickled if we are continuing
         for key in saved:
             setattr(self._sampler, key, saved[key])
-
-        # Restore for dynamic nested sampler's internal sampler
-        #for key in saved_internal:
-        #    setattr(self._sampler.sampler, key, saved_internal[key])
 
     def resume_from_checkpoint(self):
         try:
@@ -292,13 +353,6 @@ class DynestySampler(BaseSampler):
                     if key not in self.no_pickle:
                         value = getattr(sampler, key)
                         setattr(self._sampler, key, value)
-
-                # If dynamic sampling, also restore internal sampler
-                #if self.nlive < 0:
-                #    for key in sampler.__dict__:
-                #       if key not in self.no_pickle:
-                #           value = getattr(sampler.sampler, key)
-                #           setattr(self._sampler.sampler, key, value)
 
             self.set_state_from_file(self.checkpoint_file)
             logging.info("Found valid checkpoint file: %s",
@@ -326,7 +380,9 @@ class DynestySampler(BaseSampler):
                 fp.write_logevidence(logz, dlogz)
         logging.info("Writing samples to files")
         for fn in [self.checkpoint_file, self.backup_file]:
-            self.write_results(fn)
+            #self.write_results(fn)
+            with self.io(fn, "a") as fp:
+                fp.write_raw_samples(self.samples)
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
             self.checkpoint_file, self.backup_file, check_nsamples=False)
@@ -335,27 +391,16 @@ class DynestySampler(BaseSampler):
 
     @property
     def samples(self):
+        """Returns raw nested samples
+        """
         results = self._sampler.results
         samples = results.samples
-        weights = numpy.exp(results.logwt - results.logz[-1])
-        N = len(weights)
-        positions = (numpy.random.random() + numpy.arange(N)) / N
-
-        idx = numpy.zeros(N, dtype=numpy.int)
-        cumulative_sum = numpy.cumsum(weights)
-        i, j = 0, 0
-        while i < N:
-            if positions[i] < cumulative_sum[j]:
-                idx[i] = j
-                i += 1
-            else:
-                j += 1
-
-        numpy.random.shuffle(idx)
-        post = {'loglikelihood': self._sampler.results.logl[idx]}
+        nest_samp = {}
         for i, param in enumerate(self.variable_params):
-            post[param] = samples[:, i][idx]
-        return post
+            nest_samp[param] = samples[:, i]
+        nest_samp['logwt'] = results.logwt
+        nest_samp['loglikelihood'] = results.logl
+        return nest_samp
 
     def set_initial_conditions(self, initial_distribution=None,
                                samples_file=None):
@@ -377,7 +422,7 @@ class DynestySampler(BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples)
+            fp.write_raw_samples(self.samples)
 
             # write log evidence
             fp.write_logevidence(self._sampler.results.logz[-1:][0],

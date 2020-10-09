@@ -34,6 +34,13 @@ configurations which can analyze this simple problem.
 .. literalinclude:: ../../../examples/inference/samplers/emcee_pt_stub.ini
    :language: ini
    
+===================================================
+`PTEmcee <https://github.com/willvousden/ptemcee>`_
+===================================================
+   
+.. literalinclude:: ../../../examples/inference/samplers/ptemcee_stub.ini
+   :language: ini
+   
 ===============================================
 `Dynesty <https://dynesty.readthedocs.io/>`_
 ===============================================

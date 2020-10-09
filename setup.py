@@ -124,8 +124,8 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.16.dev10'
-        vinfo.release = 'False'
+        vinfo.version = '1.16.11'
+        vinfo.release = 'True'
 
     with open('pycbc/version.py', 'w') as f:
         f.write("# coding: utf-8\n")
@@ -212,15 +212,22 @@ cythonext = ['waveform.spa_tmplt',
 ext = []
 cython_compile_args = ['-O3', '-w', '-ffast-math',
                        '-ffinite-math-only']
+
 if platform.machine() == 'x86_64':
     cython_compile_args.append('-msse4.2')
 cython_link_args = []
+
 # Mac's clang compiler doesn't have openMP support by default. Therefore
 # disable openmp builds on MacOSX. Optimization should never really be a
 # concern on that OS, and this line can be commented out if needed anyway.
+# Mac's also alias gcc and can run into troubles getting libc correctly
 if not sys.platform == 'darwin':
     cython_compile_args += ['-fopenmp']
     cython_link_args += ['-fopenmp']
+else:
+    cython_compile_args += ["-stdlib=libc++"]
+    cython_link_args += ["-stdlib=libc++"]
+
 for name in cythonext:
     e = Extension("pycbc.%s_cpu" % name,
                   ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],

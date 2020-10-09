@@ -19,9 +19,6 @@ from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.io import DictArray
 from pycbc.events import ranking
 import argparse, logging, operator, os, sys, re, h5py
-import matplotlib
-matplotlib.use('agg')
-from matplotlib import pyplot as plt
 
 def inequality_string_to_function(inequ):
     if inequ == "==":
@@ -99,6 +96,8 @@ parser.add_argument("--output-directory", required=True,
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
+
+logging.info("Finding files")
 
 files = [f for f in os.listdir(os.path.join(args.top_directory, args.analysis_date))
          if args.file_identifier in f]
@@ -264,6 +263,7 @@ if cutting_newsnr:
             events[ifo] = events[ifo].select(idx_keep)
         else:
             logging.info("Too many cuts on the data - removed everything from " + ifo)
+            events[ifo] = events[ifo].select(idx_keep)
 
 logging.info("Number of events which meet all criteria:")
 for ifo in args.ifos:

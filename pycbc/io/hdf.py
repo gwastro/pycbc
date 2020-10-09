@@ -658,6 +658,11 @@ class SingleDetTriggers(object):
         return ranking.newsnr_sgveto_psdvar(self.snr, self.rchisq,
                                            self.sgchisq, self.psd_var_val)
 
+    @property
+    def newsnr_sgveto_psdvar_threshold(self):
+        return ranking.newsnr_sgveto_psdvar_threshold(self.snr, self.rchisq,
+                                           self.sgchisq, self.psd_var_val)
+
     def get_column(self, cname):
         # Fiducial value that seems to work, not extensively tuned.
         MFRAC = 0.3
@@ -798,6 +803,22 @@ class ForegroundTriggers(object):
         except KeyError:  # Else fall back on old two-det format
             ref_times = self.get_coincfile_array('time1')
         return ref_times
+
+    def get_ifos(self):
+        ifo_list = []
+        n_trigs = len(self.get_coincfile_array('template_id'))
+        try:  # First try new-style format
+            ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
+            for ifo in ifos:
+                ifo_trigs = np.where(self.get_coincfile_array(ifo+'/time') < 0,
+                                     '-', ifo)
+                ifo_list.append(ifo_trigs)
+            ifo_list = [list(trig[trig != '-']) \
+                        for trig in iter(np.array(ifo_list).T)]
+        except KeyError:  # Else fall back on old two-det format
+            # Currently assumes two-det is Hanford and Livingston
+            ifo_list = [['H1', 'L1'] for i in range(n_trigs)]
+        return ifo_list
 
     def to_coinc_xml_object(self, file_name):
         outdoc = ligolw.Document()
@@ -966,7 +987,8 @@ class ForegroundTriggers(object):
         ligolw_utils.write_filename(outdoc, file_name)
 
 class ReadByTemplate(object):
-    def __init__(self, filename, bank=None, segment_name=None, veto_files=None):
+    def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
+                 gating_veto_windows=None):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
         self.ifo = tuple(self.file.keys())[0]
@@ -986,6 +1008,19 @@ class ReadByTemplate(object):
             veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
                                                         segment_name=name)
             self.segs = (self.segs - veto_segs).coalesce()
+        if gating_veto_windows is not None:
+            gating_veto = gating_veto_windows[self.ifo].split(',')
+            gveto_before = float(gating_veto[0])
+            gveto_after = float(gating_veto[1])
+            if gveto_before > 0 or gveto_after < 0:
+                raise ValueError("Gating veto window values must be negative "
+                                 "before gates and positive after gates.")
+            if not (gveto_before == 0 and gveto_after == 0):
+                gate_times = np.unique(
+                    self.file[self.ifo + '/gating/auto/time'][:])
+                gating_veto_segs = veto.start_end_to_segments(gate_times + gveto_before,
+                                                              gate_times + gveto_after).coalesce()
+                self.segs = (self.segs - gating_veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
 
     def get_data(self, col, num):

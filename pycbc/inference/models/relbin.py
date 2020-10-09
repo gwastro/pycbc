@@ -38,7 +38,7 @@ from pycbc.types import Array
 from .gaussian_noise import BaseGaussianNoise
 
 
-def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
+def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     """Construct frequency bins for use in a relative likelihood
     model. For details, see [Barak, Dai & Venumadhav 2018].
 
@@ -57,6 +57,8 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     eps : float, optional
         Tunable parameter, see [Barak, Dai & Venumadhav 2018]. Lower values
         result in larger number of bins.
+    gammas : array, optional
+        Frequency powerlaw indices to be used in computing bins.
 
     Returns
     -------
@@ -69,7 +71,9 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     """
     f = numpy.linspace(f_lo, f_hi, 10000)
     # f^ga power law index
-    ga = numpy.array([-5./3, -2./3, 1., 5./3, 7./3])
+    ga = gammas if gammas is not None else \
+        numpy.array([-5./3, -2./3, 1., 5./3, 7./3])
+    logging.info("Using powerlaw indices: %s", ga)
     dalp = chi * 2.0 * numpy.pi / numpy.absolute((f_lo ** ga) - (f_hi ** ga))
     dphi = numpy.sum(numpy.array([numpy.sign(g) * d * (f ** g) for
                                   g, d in zip(ga, dalp)]), axis=0)
@@ -116,25 +120,13 @@ class Relative(BaseGaussianNoise):
         A dictionary of starting frequencies, in which the keys are the
         detector names and the values are the starting frequencies for the
         respective detectors to be used for computing inner products.
-    mass1_ref : float
-        The primary mass in solar masses used for generating the fiducial
-        waveform.
-    mass2_ref : float
-        The secondary mass in solar masses used for generating the fiducial
-        waveform.
-    spin1z_ref : float
-        The component of primary dimensionless spin along the orbital angular
-        momentum used for generating the fiducial waveform.
-    spin2z_ref : float
-        The component of secondary dimensionless spin along the orbital angular
-        momentum used for generating the fiducial waveform.
-    ra_ref : float
-        The right ascension in radians used for generating the fiducial
-        waveform.
-    dec_ref : float
-        The declination in radians used for generating the fiducial waveform.
-    tc_ref : float
-        The GPS time of coalescence used for generating the fiducial waveform.
+    figucial_params : dict
+        A dictionary of waveform parameters to be used for generating the
+        fiducial waveform. Keys must be parameter names in the form
+        'PARAM_ref' where PARAM is a recognized extrinsic parameter or
+        an intrinsic parameter compatible with the chosen approximant.
+    gammas : array of floats, optional
+        Frequency powerlaw indices to be used in computing frequency bins.
     epsilon : float, optional
         Tuning parameter used in calculating the frequency bins. Lower values
         will result in higher resolution and more bins.
@@ -145,7 +137,7 @@ class Relative(BaseGaussianNoise):
     name = "relative"
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
-                 fiducial_params=None, epsilon=0.5, **kwargs):
+                 fiducial_params=None, gammas=None, epsilon=0.5, **kwargs):
         super(Relative, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
         # check that all of the frequency cutoffs are the same
@@ -190,6 +182,17 @@ class Relative(BaseGaussianNoise):
         fid_hp, fid_hc = get_fd_waveform_sequence(approximant=approx,
                                                   sample_points=fpoints,
                                                   **self.fid_params)
+        # check for zeros at high frequencies
+        numzeros = list(fid_hp[::-1] != 0j).index(True)
+        n_above_fhi = (len(self.f) - 1) - kmaxs[0]
+        # make sure only nonzero samples are included in bins
+        if numzeros > n_above_fhi:
+            nremove = numzeros - n_above_fhi
+            new_kmax = kmaxs[0] - nremove
+            f_hi = new_kmax * self.df
+            logging.info("WARNING! Fiducial waveform terminates below "
+                         "high-frequency-cutoff, final bin frequency "
+                         "will be %s Hz", f_hi)
         self.h00 = {}
         for ifo in self.data:
             # make copy of fiducial wfs, adding back in low frequencies
@@ -203,9 +206,8 @@ class Relative(BaseGaussianNoise):
 
         # compute frequency bins
         logging.info("Computing frequency bins")
-        nbin, fbin, fbin_ind = setup_bins(f_full=self.f, f_lo=kmins[0]*self.df,
-                                          f_hi=kmaxs[0]*self.df,
-                                          eps=self.epsilon)
+        nbin, fbin, fbin_ind = setup_bins(f_full=self.f, f_lo=f_lo, f_hi=f_hi,
+                                          gammas=gammas, eps=self.epsilon)
         logging.info("Using %s bins for this model", nbin)
         # store bins and edges in sample and frequency space
         self.edges = fbin_ind
@@ -329,6 +331,13 @@ class Relative(BaseGaussianNoise):
         # add fiducial params to skip list
         skip_args += [option for option in cp.options(section) if
                       option.endswith('_ref')]
+        # get frequency power-law indices if specified
+        # NOTE these should be supplied in units of 1/3
+        gammas = None
+        if cp.has_option(section, 'gammas'):
+            skip_args.append('gammas')
+            gammas = numpy.array([float(g) / 3. for g in
+                                  cp.get(section, 'gammas').split()])
         args = super(Relative, Relative).extra_args_from_config(
             cp, section, skip_args=skip_args, dtypes=dtypes)
         # get fiducial params from config
@@ -339,5 +348,5 @@ class Relative(BaseGaussianNoise):
                       'polarization': numpy.pi}
         fid_params.update({p: opt_params[p] for p in opt_params if p
                            not in fid_params})
-        args.update({'fiducial_params': fid_params})
+        args.update({'fiducial_params': fid_params, 'gammas': gammas})
         return args

@@ -58,9 +58,10 @@ for f in files:
     if 'days_since_epoch' in fits_f.attrs:
         analysis_dates += [fits_f.attrs['days_since_epoch']]
     elif 'analysis_date' in fits_f.attrs:
-        analysis_year = int(fits_f.attrs['analysis_date'][:4])
-        analysis_month = int(fits_f.attrs['analysis_date'][5:7])
-        analysis_day = int(fits_f.attrs['analysis_date'][8:10])
+        date_array = fits_f.attrs['analysis_date'].split('_')
+        analysis_year = int(date_array[0])
+        analysis_month = int(date_array[1])
+        analysis_day = int(date_array[2])
         n_since_epoch = (datetime.date(analysis_year,
                                        analysis_month,
                                        analysis_day)
@@ -68,20 +69,21 @@ for f in files:
         analysis_dates += [n_since_epoch]
     else:
         # This is the regex string to match a date in format YYYY_MM_DD
+        # or if MM or DD only have one character
         # FutureWarning: this will become obsolete in the year 3000
-        re_string = '([12]\d{3}_(0[1-9]|1[0-2])_(0[1-9]|[12]\d|3[01]))'
+        re_string = '([12]\d{3})_(0?[1-9]|1[0-2])_(0?[1-9]|[12]\d|3[01])'
         m = re.search(re_string, f)
-        analysis_year = int(m.group(0)[:4])
-        analysis_month = int(m.group(0)[5:7])
-        analysis_day = int(m.group(0)[8:10])
+        analysis_year = int(m.group(1))
+        analysis_month = int(m.group(2))
+        analysis_day = int(m.group(3))
         n_since_epoch = (datetime.date(analysis_year, analysis_month,
                                        analysis_day)
                          - datetime.date(2000,1,1)).days
         analysis_dates += [n_since_epoch]
     for ifo in args.ifos:
         if ifo not in fits_f:
-            counts_all[ifo] += [-1 * np.ones_like(counts_all[ifo][-1])]
-            alphas_all[ifo] += [-1 * np.ones_like(alphas_all[ifo][-1])]
+            counts_all[ifo] += [-1 * np.ones(len(bl) - 1)]
+            alphas_all[ifo] += [-1 * np.ones(len(bl) - 1)]
             logging.info(f + " has no " + ifo + " triggers")
         else:
             live_times[ifo] += [fits_f[ifo].attrs['live_time']]
@@ -105,9 +107,9 @@ counts_bin = {ifo: [c for c in zip(*counts_all[ifo])] for ifo in args.ifos}
 alphas_bin = {ifo: [a for a in zip(*alphas_all[ifo])] for ifo in args.ifos}
 
 alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
-counts_out = {ifo : np.zeros(len(counts_bin[ifo])) for ifo in args.ifos}
+counts_out = {ifo : np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}
 q05_alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
-q95_counts_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
+q95_counts_out = {ifo : np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.ifos}
 
 fout = h5py.File(args.output_file, 'w')
 fout.attrs['start_date'] = ad[0]
@@ -140,7 +142,9 @@ for ifo in args.ifos:
     for a, c, u, l in zip(alphas_bin[ifo], counts_bin[ifo], bu, bl):
         a = np.array(a)
         c = np.array(c)
-        valid_alpha = np.nonzero(a > 0)
+        valid_alpha = np.logical_and(a > 0, np.isfinite(a))
+        if not any(valid_alpha):
+            continue
         a = a[valid_alpha]
         c = c[valid_alpha]
         invalphan = c / a
