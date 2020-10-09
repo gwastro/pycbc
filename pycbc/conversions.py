@@ -1119,19 +1119,14 @@ def freqlmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
         correspond to an unphysical Kerr black hole mass and/or spin,
         ``numpy.nan`` will be returned.
     """
-    mass = numpy.array(final_mass_from_f0_tau(f0, tau, l=current_l,
-                                              m=current_m))
-    spin = numpy.array(final_spin_from_f0_tau(f0, tau, l=current_l,
-                                              m=current_m))
+    mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    mass, spin, _ = ensurearray(mass, spin)
 
     mass[mass < 0] = numpy.nan
     spin[numpy.abs(spin) > 0.9996] = numpy.nan
 
-    if type(f0) is float and type(tau) is float:
-        mass, spin = float(mass), float(spin)
-
-    return freq_from_final_mass_spin(mass, spin,
-                                     l=new_l, m=new_m, nmodes=1)
+    return freq_from_final_mass_spin(mass, spin, l=new_l, m=new_m, nmodes=1)
 
 
 def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
@@ -1161,19 +1156,14 @@ def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
         correspond to an unphysical Kerr black hole mass and/or spin,
         ``numpy.nan`` will be returned.
     """
-    mass = numpy.array(final_mass_from_f0_tau(f0, tau, l=current_l,
-                                              m=current_m))
-    spin = numpy.array(final_spin_from_f0_tau(f0, tau, l=current_l,
-                                              m=current_m))
+    mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    mass, spin, _ = ensurearray(mass, spin)
 
     mass[mass < 0] = numpy.nan
     spin[numpy.abs(spin) > 0.9996] = numpy.nan
 
-    if type(f0) is float and type(tau) is float:
-        mass, spin = float(mass), float(spin)
-
-    return tau_from_final_mass_spin(mass, spin,
-                                    l=new_l, m=new_m, nmodes=1)
+    return tau_from_final_mass_spin(mass, spin, l=new_l, m=new_m, nmodes=1)
 
 def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                            spin2x=0., spin2y=0., spin2z=0.,
