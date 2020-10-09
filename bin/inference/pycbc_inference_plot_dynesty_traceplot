@@ -31,8 +31,6 @@ from pycbc import results
 import sys
 
 
-#parser = ResultsArgumentParser(defaultparams='all', autoparamlabels=False,
-#                               description=__doc__)
 parser = argparse.ArgumentParser(
             usage="pycbc_inference_plot_dynesty_traceplots [--options]",
             description="Plots various figures showing evolution of "
