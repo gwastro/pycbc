@@ -30,6 +30,7 @@ import logging
 from . import waveform
 from .waveform import (NoWaveformError, FailedWaveformError)
 from . import ringdown
+from . import supernovae
 from pycbc import filter
 from pycbc import transforms
 from pycbc.types import TimeSeries
@@ -631,6 +632,16 @@ class FDomainDetFrameTwoPolGenerator(object):
         return h
 
 
+class TDomainSupernovaeGenerator(BaseGenerator):
+    """Uses supernovae.py to create time domain core-collapse supernovae waveforms
+    using a set of Principal Components provided in a .hdf file.
+    """
+    def __init__(self, variable_args=(), **frozen_params):
+        super(TDomainSupernovaeGenerator,
+              self).__init__(supernovae.get_corecollapse_bounce,
+           variable_args=variable_args, **frozen_params)
+
+
 class FDomainDetFrameGenerator(object):
     """Generates frequency-domain waveform in a specific frame.
 
@@ -868,6 +879,11 @@ def select_waveform_generator(approximant):
             return TDomainMassSpinRingdownGenerator
         elif approximant == 'TdQNMfromFreqTau':
             return TDomainFreqTauRingdownGenerator
+
+    # check if supernovae waveform:
+    elif approximant in supernovae.supernovae_td_approximants:
+        if approximant == 'CoreCollapseBounce':
+            return TDomainSupernovaeGenerator
 
     # otherwise waveform approximant is not supported
     else:
