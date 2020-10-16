@@ -372,6 +372,11 @@ class DynestySampler(BaseSampler):
         #    self._sampler.sampler.rstate = numpy.random
 
     def finalize(self):
+        """Finalze and write it to the results file
+        """
+        logz = self._sampler.results.logz[-1:][0]
+        dlogz = self._sampler.results.logzerr[-1:][0]
+        logging.info("log Z, dlog Z: {}, {}".format(logz, dlogz))
         self.checkpoint()
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
