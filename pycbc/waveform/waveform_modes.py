@@ -181,8 +181,10 @@ def get_nrsur_modes(**params):
 get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 
 
-def get_imrphenomx_modes(return_posneg=False, **params):
+def _get_imrphenomx_modes(return_posneg=False, **params):
     """Generates ``IMRPhenomX[P]HM`` waveforms mode-by-mode.
+
+    Currently does not work; just raises a ``NotImplementedError``.
     """
     # FIXME: raising not implemented error because this currently does not
     # work. The issue is the OneMode function adds the +/- m modes together
