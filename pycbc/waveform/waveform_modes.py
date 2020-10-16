@@ -226,74 +226,6 @@ def get_imrphenomx_modes(return_posneg=False, **params):
     return hlms
 
 
-def phenom_l0frame_to_jframe(approximant, mass1, mass2, f_ref, phiref=0.,
-                             inclination=0.,
-                             spin1x=0., spin1y=0., spin1z=0.,
-                             spin2x=0., spin2y=0., spin2z=0.):
-    r"""Converts L0- to J-frame parameters used by IMRPhenomP waveforms.
-
-    Parameters
-    ----------
-    approximant : str
-        Name of the approximant. Must be one of the IMRPhenom approximants.
-    {mass1}
-    {mass2}
-    {f_ref}
-    phiref : float
-        Reference phase.
-    inclination : float
-        Angle between the orbital angular momentum at ``f_ref`` and the line
-        of sight.
-    {spin1x}
-    {spin1y}
-    {spin1z}
-    {spin2x}
-    {spin2y}
-    {spin2z}
-
-    Returns
-    -------
-    dict :
-        Dictionary of:
-        * thetajn : float
-            Angle between the line of sight and the total angular momentum.
-            This is the thing that goes into the polar angle part of the
-            spherical harmonics.
-        * alpha0 : float
-            Azimuthal angle in the J frame. This is the thing that goes into
-            the azimuthal part of the spherical harmonics.
-        * phi_aligned : float
-            Beats me.
-        * zeta_polarization : float
-            Another mystery.
-        * spin1_l : float
-            Component of the larger object's spin that is aligned with the
-            orbital angular momentum.
-        * spin2_l : float
-            Component of the smaller object's spin that is aligned with the
-            orbital angular momentum.
-        * {chi_p}
-    """
-    phenomv = approximant.replace('HM', '') + '_V'
-    spin1_l, spin2_l, chip, thetajn, alpha0, phi_aligned, zeta_pol = \
-        lalsimulation.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
-            mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref, phiref, inclination,
-            spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-            getattr(lalsimulation, phenomv))
-    out = {'thetajn': thetajn,
-           'alpha0': alpha0,
-           'phi_aligned': phi_aligned,
-           'zeta_polarization': zeta_pol,
-           'spin1_l': spin1_l,
-           'spin2_l': spin2_l,
-           'chi_p': chip}
-    return out
-
-
-phenom_l0frame_to_jframe.__doc__ = _formatdocstr(
-    phenom_l0frame_to_jframe.__doc__)
-
-
 def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
                       spin1x=0., spin1y=0., spin1z=0.,
                       spin2x=0., spin2y=0., spin2z=0.):
@@ -339,7 +271,7 @@ def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
             inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
             mass1, mass2, f_ref, phiref)
     out = {'thetajn': thetajn,
-           'phijl' : phijl,
+           'phijl': phijl,
            'spin1_polar': s1pol,
            'spin2_polar': s2pol,
            'spin12_deltaphi': s12_deltaphi,
