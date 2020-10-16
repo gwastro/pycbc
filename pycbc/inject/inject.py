@@ -336,6 +336,11 @@ class _HDFInjectionSet(object):
         parameters = list(group.keys())
         # get all injection parameter values
         injvals = {param: group[param][()] for param in parameters}
+        # make sure Numpy S strings are loaded as strings and not bytestrings
+        # (which could mess with approximant names, for example)
+        for k in injvals:
+            if injvals[k].dtype.kind == 'S':
+                injvals[k] = injvals[k].astype('U')
         # if there were no variable args, then we only have a single injection
         if len(parameters) == 0:
             numinj = 1
