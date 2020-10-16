@@ -443,9 +443,10 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
                                add_to_workflow=True)
     return node.output_files
 
+
 def make_inference_dynesty_run_plot(workflow, inference_file, output_dir,
-                                        name="plot_dynesty_run",
-                                        analysis_seg=None, tags=None):
+                                    name="plot_dynesty_run",
+                                    analysis_seg=None, tags=None):
     """Sets up a debugging plot for the dynesty run (for Dynesty sampler).
 
     Parameters
@@ -476,9 +477,10 @@ def make_inference_dynesty_run_plot(workflow, inference_file, output_dir,
                                add_to_workflow=True)
     return node.output_files
 
+
 def make_inference_dynesty_trace_plot(workflow, inference_file, output_dir,
-                                        name="plot_dynesty_traceplot",
-                                        analysis_seg=None, tags=None):
+                                      name="plot_dynesty_traceplot",
+                                      analysis_seg=None, tags=None):
     """Sets up a trace plot for the dynesty run (for Dynesty sampler).
 
     Parameters
@@ -508,6 +510,7 @@ def make_inference_dynesty_trace_plot(workflow, inference_file, output_dir,
                                name, analysis_seg=analysis_seg, tags=tags,
                                add_to_workflow=True)
     return node.output_files
+
 
 def make_inference_pp_table(workflow, posterior_files, output_dir,
                             parameters=None, injection_samples_map=None,
