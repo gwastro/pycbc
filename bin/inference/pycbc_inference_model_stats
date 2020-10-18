@@ -49,9 +49,8 @@ parser.add_argument("--nprocesses", type=int, default=1,
                     help="Number of processes to use. If not given then only "
                          "a single core will be used.")
 parser.add_argument("--config-file", nargs="+", type=str, default=None,
-                    help="Use the given config file for loading the model. "
-                         "If not provided, will use the config file stored "
-                         "in the input file.")
+                    help="Override the config file stored in the input file "
+                          "with the given file(s).")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Print logging messages.")
 
