@@ -29,6 +29,12 @@ from __future__ import absolute_import
 
 import sys
 import logging
+# python 2.7 needs to use StingIO from the StringIO module; this was
+# deprecated in python 3
+if sys.version_info.major == 2:
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
 from abc import (ABCMeta, abstractmethod)
 from six import (add_metaclass, string_types)
@@ -38,6 +44,8 @@ import h5py
 
 from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
+from pycbc.io import (dump_state, load_state)
+from pycbc.workflow import WorkflowConfigParser
 
 
 def format_attr(val):
@@ -92,6 +100,7 @@ class BaseInferenceFile(h5py.File):
     sampler_group = 'sampler_info'
     data_group = 'data'
     injections_group = 'injections'
+    config_group = 'config_file'
 
     def __init__(self, path, mode=None, **kwargs):
         super(BaseInferenceFile, self).__init__(path, mode, **kwargs)
@@ -836,3 +845,71 @@ class BaseInferenceFile(h5py.File):
             except KeyError:
                 # dataset doesn't exist yet
                 group[name] = data
+
+    def write_config_file(self, cp):
+        """Writes the given config file parser.
+
+        File is stored as a pickled buffer array to ``config_parser/{index}``,
+        where ``{index}`` is an integer corresponding to the number of config
+        files that have been saved. The first time a save is called, it is
+        stored to ``0``, and incremented from there.
+
+        Parameters
+        ----------
+        cp : ConfigParser
+            Config parser to save.
+        """
+        # get the index of the last saved file
+        try:
+            index = list(map(int, self[self.config_group].keys()))
+        except KeyError:
+            index = []
+        if index == []:
+            # hasn't been written yet
+            index = 0
+        else:
+            index = max(index) + 1
+        # we'll store the config file as a text file that is pickled
+        out = StringIO()
+        cp.write(out)
+        # now pickle it
+        dump_state(out, self, path=self.config_group, dsetname=str(index))
+
+    def read_config_file(self, return_cp=True, index=-1):
+        """Reads the config file that was used.
+
+        A ``ValueError`` is raised if no config files have been saved, or if
+        the requested index larger than the number of stored config files.
+
+        Parameters
+        ----------
+        return_cp : bool, optional
+            If true, returns the loaded config file as
+            :py:class:`pycbc.workflow.configuration.WorkflowConfigParser`
+            type. Otherwise will return as string buffer. Default is True.
+        index : int, optional
+            The config file to load. If ``write_config_file`` has been called
+            multiple times (as would happen if restarting from a checkpoint),
+            there will be config files stored. Default (-1) is to load the
+            last saved file.
+
+        Returns
+        -------
+        WorkflowConfigParser or StringIO :
+            The parsed config file.
+        """
+        # get the stored indices
+        try:
+            indices = sorted(map(int, self[self.config_group].keys()))
+            index = indices[index]
+        except KeyError:
+            raise ValueError("no config files saved in hdf")
+        except IndexError:
+            raise ValueError("no config file matches requested index")
+        cf = load_state(self, path=self.config_group, dsetname=str(index))
+        cf.seek(0)
+        if return_cp:
+            cp = WorkflowConfigParser()
+            cp.read_file(cf)
+            return cp
+        return cf
