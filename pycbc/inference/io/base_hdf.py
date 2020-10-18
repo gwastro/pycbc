@@ -29,7 +29,12 @@ from __future__ import absolute_import
 
 import sys
 import logging
-from io import StringIO
+# python 2.7 needs to use StingIO from the StringIO module; this was
+# deprecated in python 3
+if sys.version_info.major == 2:
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
 from abc import (ABCMeta, abstractmethod)
 from six import (add_metaclass, string_types)
