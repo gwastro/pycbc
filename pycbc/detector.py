@@ -182,29 +182,24 @@ class Detector(object):
             else:
                 fplus = (x * dx - y * dy).sum()
                 fcross = (x * dy + y * dx).sum()               
-
             return fplus, fcross
 
-       elif polarization_type == 'Vector':
+        elif polarization_type == 'Vector':
             if hasattr(dx, 'shape'):
                 fx = (z * dx + x * dz).sum(axis=0)
                 fy = (z * dy + y * dz).sum(axis=0)
-                    
-            else:
+           else:
                 fx = (z * dx + x * dz).sum()
                 fy = (z * dy + y * dz).sum()
-
             return fx, fy
-            
+
         elif polarization_type == 'Scalar':
             if hasattr(dx, 'shape'):
                 fb = (x * dx + y * dy).sum(axis=0)
                 fl = (z * dz).sum(axis=0)
-
             else:
                 fb = (x * dx + y * dy).sum()
                 fl = (z * dz).sum()
-
             return fb, fl
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
