@@ -188,7 +188,7 @@ class Detector(object):
             if hasattr(dx, 'shape'):
                 fx = (z * dx + x * dz).sum(axis=0)
                 fy = (z * dy + y * dz).sum(axis=0)
-           else:
+            else:
                 fx = (z * dx + x * dz).sum()
                 fy = (z * dy + y * dz).sum()
             return fx, fy
