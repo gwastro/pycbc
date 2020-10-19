@@ -5,6 +5,7 @@ from pycbc.events import veto, coinc, stat
 import pycbc.version
 from numpy.random import seed, shuffle
 from pycbc.io.hdf import ReadByTemplate
+from pycbc.types.optparse import MultiDetOptionAction
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
@@ -14,6 +15,11 @@ parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                          "contained in the file are ignored")
 parser.add_argument("--segment-name", nargs='*', action='append', default=[],
                     help="Optional, name of veto segment in veto file")
+parser.add_argument("--gating-veto-windows", nargs='+',
+                    action=MultiDetOptionAction,
+                    help="Seconds to be vetoed before and after the central time "
+                         "of each gate. Given as detector-values pairs, e.g. "
+                         "H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument("--trigger-files", nargs='*', action='append', default=[],
                     help="Files containing single-detector triggers")
 parser.add_argument("--template-bank", required=True,
@@ -103,7 +109,8 @@ for i in range(len(args.trigger_files)):
     reader = ReadByTemplate(args.trigger_files[i],
                             args.template_bank,
                             args.segment_name,
-                            args.veto_files)
+                            args.veto_files,
+                            args.gating_veto_windows)
     ifo = reader.ifo
     trigs.ifos.append(ifo)
     # time shift is subtracted from pivot ifo time

@@ -26,6 +26,7 @@ from pycbc import events, bin_utils, results
 from pycbc.events import triggers as trigs
 from pycbc.events import trigger_fits as trstats
 from pycbc.events.stat import sngl_statistic_dict
+from pycbc.types.optparse import MultiDetOptionAction
 import pycbc.version
 
 def get_stat(statchoice, trigs):
@@ -83,6 +84,11 @@ parser.add_argument("--veto-file",
 parser.add_argument("--veto-segment-name",
                     help="Name(s) of veto segments to apply. Optional, if not "
                          "given all triggers for the given ifo will be used")
+parser.add_argument("--gating-veto-windows", nargs='+',
+                    action=MultiDetOptionAction,
+                    help="Seconds to be vetoed before and after the central time "
+                         "of each gate. Given as detector-values pairs, e.g. "
+                         "H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument("--stat-fit-threshold", type=float, required=True,
                     help="Only fit triggers with statistic value above this "
                          "threshold. Required")
@@ -226,6 +232,24 @@ if args.veto_file:
     time[remove] = np.zeros_like(remove)
     logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
                       remove.size, stat.size, args.veto_segment_name, args.veto_file))
+
+if args.gating_veto_windows:
+    logging.info('applying veto to triggers near gates')
+    gating_veto = args.gating_veto_windows[args.ifo].split(',')
+    gveto_before = float(gating_veto[0])
+    gveto_after = float(gating_veto[1])
+    if gveto_before > 0 or gveto_after < 0:
+        raise ValueError("Gating veto window values must be negative before "
+                         "gates and positive after gates.")
+    if not (gveto_before == 0 and gveto_after == 0):
+        time = trigf[args.ifo + '/end_time'][:]
+        gate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
+        gveto_remove = events.veto.indices_within_times(time, gate_times + gveto_before,
+                                                        gate_times + gveto_after)
+        stat[gveto_remove] = np.zeros_like(gveto_remove)
+        time[gveto_remove] = np.zeros_like(gveto_remove)
+        logging.info('{} out of {} trigs removed after vetoing triggers near gates'.format(
+                          gveto_remove.size, stat.size))
 
 for x in range(args.split_one_nbins):
     if not args.prune_number:
