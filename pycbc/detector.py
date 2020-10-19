@@ -140,7 +140,7 @@ class Detector(object):
         -------
         fplus(default) or fx or fb : float or numpy.ndarray
             The plus or vector-x or breathing polarization factor for this sky location / orientation
-        fcross(default) or fy or fb : float or numpy.ndarray
+        fcross(default) or fy or fl : float or numpy.ndarray
             The cross or vector-y or longitudnal polarization factor for this sky location / orientation
         """
         if isinstance(t_gps, lal.LIGOTimeGPS):
