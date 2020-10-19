@@ -122,7 +122,7 @@ class Detector(object):
         d = self.location - det.location
         return float(d.dot(d)**0.5 / constants.c.value)
 
-    def antenna_pattern(self, right_ascension, declination, polarization, t_gps, pol_flag= 'Tensor'):
+    def antenna_pattern(self, right_ascension, declination, polarization, t_gps, polarization_type = 'Tensor'):
         """Return the detector response.
 
         Parameters
@@ -133,15 +133,15 @@ class Detector(object):
             The declination of the source
         polarization: float or numpy.ndarray
             The polarization angle of the source
-        pol_flag: string flag
-            The polarization modelto be used
+        polarization_type: string flag: Tensor, Vector or Scalar
+            The gravitational wave polarizations. Default: 'Tensor'
 
         Returns
         -------
-        fplus: float or numpy.ndarray
-            The plus polarization factor for this sky location / orientation
-        fcross: float or numpy.ndarray
-            The cross polarization factor for this sky location / orientation
+        fplus(default) or fx or fb : float or numpy.ndarray
+            The plus or vector-x or breathing polarization factor for this sky location / orientation
+        fcross(default) or fy or fb : float or numpy.ndarray
+            The cross or vector-y or longitudnal polarization factor for this sky location / orientation
         """
         if isinstance(t_gps, lal.LIGOTimeGPS):
             t_gps = float(t_gps)
@@ -165,38 +165,47 @@ class Detector(object):
         y1 =  sinpsi * cosgha + cospsi * singha * sindec
         y2 =  cospsi * cosdec
         y = np.array([y0, y1, y2])
+        
         dy = self.response.dot(y)
-
 
         z0 = -cosdec * cosgha
         z1 = cosdec * singha
-        z2= -sindec
+        z2 = -sindec
         z = np.array([z0, z1, z2])
 
         dz = self.response.dot(z)
 
-        if hasattr(dx, 'shape'):
-            fplus = (x * dx - y * dy).sum(axis=0)
-            fcross = (x * dy + y * dx).sum(axis=0)
-        else:
-            fplus = (x * dx - y * dy).sum()
-            fcross = (x * dy + y * dx).sum()
-
-        if pol_flag=='Tensor':
+        if polarization_type == 'Tensor':
+            if hasattr(dx, 'shape'):
+                fplus = (x * dx - y * dy).sum(axis=0)
+                fcross = (x * dy + y * dx).sum(axis=0)
+            else:
+                fplus = (x * dx - y * dy).sum()
+                fcross = (x * dy + y * dx).sum()               
+        
             return fplus, fcross
-        else:
+            
+        elif polarization_type == 'Vector' :
             if hasattr(dx, 'shape'):
                 fx = (z * dx + x * dz).sum(axis=0)
                 fy = (z * dy + y * dz).sum(axis=0)
-                fb = (x * dx + y * dy).sum(axis=0)
-                fi = (z * dz).sum(axis=0)
+                
             else:
                 fx = (z * dx + x * dz).sum()
                 fy = (z * dy + y * dz).sum()
+                
+            return fx, fy
+            
+        elif polarization_type == 'Scalar' :
+            if hasattr(dx, 'shape'):
+                fb = (x * dx + y * dy).sum(axis=0)
+                fl = (z * dz).sum(axis=0)
+                
+            else:
                 fb = (x * dx + y * dy).sum()
-                fi = (z * dz).sum()
+                fl = (z * dz).sum()
 
-            return fplus, fcross, fx, fy, fb, fi
+            return fb, fl
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         """Return the time delay from the earth center
