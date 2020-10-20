@@ -163,6 +163,7 @@ for num_event in range(num_events):
     time = f['injections/end_time'][injection_index]
     lon = f['injections/longitude'][injection_index]
     lat = f['injections/latitude'][injection_index]
+    
     ifo_times = ''
     inj_params = {}
     for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'end_time']:
