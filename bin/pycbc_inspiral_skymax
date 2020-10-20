@@ -20,7 +20,7 @@ import logging, argparse, sys, numpy
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc import DYN_RANGE_FAC
-from pycbc.filter import MatchedFilterSkyMaxControl, make_frequency_series, MatchedFilterSkyMaxControlNoPhase, qtransform
+from pycbc.filter import MatchedFilterSkyMaxControl, make_frequency_series, MatchedFilterSkyMaxControlNoPhase
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw
 import pycbc.opt
@@ -231,13 +231,6 @@ with ctx:
                 opt.psdvar_short_segment, opt.psdvar_long_segment,
                 opt.psdvar_psd_duration, opt.psdvar_psd_stride,
                 opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
-
-    if opt.enable_q_transform:
-        logging.info("Performing q-transform on analysis segments")
-        q_trans = qtransform.inspiral_qtransform_generator(segments)
-
-    else:
-        q_trans = {}
 
     if opt.sky_maximization_method == 'hom':
 
