@@ -161,19 +161,21 @@ for num_event in range(num_events):
 
     injection_index = missed[sorting][num_event]
     time = f['injections/end_time'][injection_index]
-
+    lon = f['injections/longitude'][injection_index]
+    lat = f['injections/latitude'][injection_index]
     ifo_times = ''
     inj_params = {}
     for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'end_time']:
         inj_params[val] = f['injections/%s' %(val,)][injection_index]
     for single in single_triggers:
         ifo = single.ifo
-        for seg in insp_data_seglists[single.ifo]:
-            if time in seg:
-                det = Detector(ifo)
-                lon = f['injections/longitude'][injection_index]
-                lat = f['injections/latitude'][injection_index]
-                ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
+        det = Detector(ifo)
+        for seg in insp_analysed_seglists[ifo]:
+            if ifo_time in seg:
+                #det = Detector(ifo)
+                #lon = f['injections/longitude'][injection_index]
+                #lat = f['injections/latitude'][injection_index]
+                #ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
                 break
         else:
             ifo_time = -1.0
