@@ -14,9 +14,7 @@ def sigma_from_p(p):
 
 def p_from_sigma(sig):
     return 1 - (1 - erf(sig / 2**0.5)) / 2
-    
-pylab.rc('text', usetex=True)
-pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+
 
 parser = argparse.ArgumentParser()
 # General required options
@@ -24,8 +22,8 @@ parser.add_argument('--version', action='version', version=pycbc.version.git_ver
 parser.add_argument('--trigger-file')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
-parser.add_argument('--bin-size', type=float, default=0.1)
-parser.add_argument('--x-min', type=float, default=8.0)
+parser.add_argument('--bin-size', type=float)
+parser.add_argument('--x-min', type=float)
 parser.add_argument('--trials-factor', type=int, default=1)
 parser.add_argument('--use-hierarchical-level', type=int, default=None,
                     help='Indicate which inclusive background to plot '
@@ -64,7 +62,7 @@ if h_inc_back_num > h_iterations:
     fig = pylab.figure()
     ax = fig.add_subplot(111)
 
-    ax.set_xlim(0, 1)    
+    ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
 
     output_message = "No more foreground events louder than all background\n" \
@@ -78,7 +76,7 @@ if h_inc_back_num > h_iterations:
     pycbc.results.save_fig_with_metadata(fig, args.output_file,
         title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank",
         caption=output_message,
-        cmd=' '.join(sys.argv))    
+        cmd=' '.join(sys.argv))
 
     # Exit the code successfully and bypass the rest of the plotting code.
     sys.exit(0)
@@ -101,7 +99,7 @@ else:
 if h_inc_back_num == 0:
     bstat = f['background/stat'][:]
     fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
-    dec = f['background/decimation_factor'][:]   
+    dec = f['background/decimation_factor'][:]
 else :
     bstat = f['background_h%s/stat' % h_inc_back_num][:]
     fap = 1 - numpy.exp(- f.attrs['foreground_time_h%s' % h_inc_back_num] / f['background_h%s/ifar' % h_inc_back_num][:] / lal.YRJUL_SI)
@@ -130,21 +128,26 @@ else:
     minimum = bstat.min()
     maximum = bstat.max()
 
-bins = numpy.arange(minimum, maximum + args.bin_size, args.bin_size)
+bin_size = args.bin_size if args.bin_size else (maximum - minimum) / 100.
+
+bins = numpy.arange(minimum, maximum + bin_size, bin_size)
 
 # plot background minus foreground
-pylab.hist(bstat_exc, bins=bins, histtype='step', 
-                      linewidth=2,
-                      color='grey', log=True,
-                      label= 'Background Uncorrelated with Foreground',
-                      weights=dec_exc / f.attrs['background_time_exc'] * lal.YRJUL_SI)
+exc_binweights = dec_exc / f.attrs['background_time_exc'] * lal.YRJUL_SI
+exc_binvals = pylab.hist(bstat_exc, bins=bins, histtype='step',
+                         linewidth=2,
+                         color='grey', log=True,
+                         label= 'Background Uncorrelated with Foreground',
+                         weights=exc_binweights)
+
+histpeak = bins[exc_binvals[0].argmax()]
 
 # plot full background
 if not args.closed_box:
     if h_inc_back_num == 0:
         pylab.hist(bstat, bins=bins, histtype='step',
                    linewidth=2,
-                   color='black', log=True, 
+                   color='black', log=True,
                    label='Full Background',
                    weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
     else :
@@ -184,13 +187,13 @@ if fstat is not None and not args.closed_box:
                          f.attrs['foreground_time'] * lal.YRJUL_SI
 
         # Or use the foreground time after h-removal
-        else : 
+        else:
             count_h_rm = (right_h_rm - left_h_rm) / \
                          f.attrs['foreground_time_h%s' % h_inc_back_num] * \
                          lal.YRJUL_SI
 
-        pylab.errorbar(bins[:-1] + args.bin_size / 2, count_h_rm, 
-                       xerr=args.bin_size/2,
+        pylab.errorbar(bins[:-1] + bin_size / 2, count_h_rm,
+                       xerr=bin_size/2,
                        label='Hierarchically Removed Foreground', mec='none',
                        fmt='s', ms=1, capthick=0, elinewidth=4,
                        color='#b66dff')
@@ -198,16 +201,19 @@ if fstat is not None and not args.closed_box:
     left = numpy.searchsorted(fstat, le)
     right = numpy.searchsorted(fstat, re)
     count = (right - left) / f.attrs['foreground_time'] * lal.YRJUL_SI
-    pylab.errorbar(bins[:-1] + args.bin_size / 2, count, xerr=args.bin_size/2,
+    pylab.errorbar(bins[:-1] + bin_size / 2, count, xerr=bin_size/2,
                    label='Foreground', mec='none', fmt='o', ms=1, capthick=0,
                    elinewidth=4,  color='#ff6600')
 
-pylab.xlabel('Weighted Network SNR, $\\rho_c$ (Bin Size = %.2f)' % args.bin_size)
+pylab.xlabel('Coincident ranking statistic (bin size = %.2f)' % bin_size)
 pylab.ylabel('Trigger Rate (yr$^{-1})$')
-pylab.xlim(xmin=args.x_min)
+if args.x_min is not None:
+    pylab.xlim(xmin=args.x_min)
+else:
+    pylab.xlim(xmin=numpy.floor(histpeak))
 pylab.ylim(ymin=0.5 / f.attrs['background_time_exc'] * lal.YRJUL_SI)
 pylab.grid()
-leg = pylab.legend(loc='upper center', fontsize=9)
+leg = pylab.legend(fontsize=9)
 
 end = sigma_from_p(fap.min() * args.trials_factor)
 
@@ -220,7 +226,7 @@ if not args.closed_box:
         p1 = 1 - p_from_sigma(sig) / args.trials_factor
 
         # Find the p-value of the next sigma curve
-        p2 = 1 - p_from_sigma(next_sig) / args.trials_factor        
+        p2 = 1 - p_from_sigma(next_sig) / args.trials_factor
 
         # Search the fap data for these p values
         x1 = numpy.searchsorted(fap[::-1], p1)
@@ -228,18 +234,21 @@ if not args.closed_box:
 
         if x1 == x2:
             continue
-        
+
         ymin, ymax = pylab.gca().get_ylim()
         try:
             x = [bstat[::-1][x1], bstat[::-1][x2]]
         except IndexError:
             break
-        pylab.fill_between(x, ymin, ymax, color=pylab.cm.Blues(next_sig / 8.0), zorder=-1)
-        
+        pylab.fill_between(x, ymin, ymax, zorder=-1,
+                           color=pylab.cm.Blues(next_sig / 8.0))
+
         if next_sig == end:
             next_sig = '%.1f' % next_sig
-            
-        pylab.text(bstat[::-1][x2] - .1, ymax, r"$%s \sigma$" % next_sig, fontsize=10)
+
+        pylab.text(bstat[::-1][x2] - .1, ymax, r"$%s \sigma$" % next_sig,
+                   fontsize=10, horizontalalignment='center',
+                   verticalalignment='bottom')
 
 ax1 =  pylab.gca()
 ax2 = ax1.twinx()
@@ -256,7 +265,16 @@ ax2.set_ylim(ymin=ymin, ymax=ymax)
 ax2.set_yscale('log')
 ax2.set_ylabel('Number per Experiment')
 
+if 'name' in f.attrs:
+    title = "%s bin, Count vs Rank" % f.attrs['name']
+    caption="Histogram of FAR vs the ranking statistic in the search."
+elif 'ifos' in f.attrs:
+    title = "%s coincidences, Count vs Rank" % f.attrs['ifos']
+    caption="Histogram of the FAR vs the ranking statistic " \
+            "for %s coincidences only" % f.attrs['ifos']
+else:
+    title = "Count vs Rank"
+    caption="Histogram of the FAR vs the ranking statistic in the search."
+
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
-     title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank", 
-     caption="Histogram of the FAR vs the ranking statistic in the search.",
-     cmd=' '.join(sys.argv))
+     title=title, caption=caption, cmd=' '.join(sys.argv))

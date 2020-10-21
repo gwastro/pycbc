@@ -19,11 +19,10 @@ from the command line.
 
 import h5py
 import numpy
-from pycbc import types
+from pycbc import conversions, pnutils
 from pycbc.events import coinc
-from pycbc.io import hdf
-from pycbc.events import trigger_fits as trstats
 import pycbc.detector
+
 
 def insert_bank_bins_option_group(parser):
     """ Add options to the optparser object for selecting templates in bins.
@@ -50,6 +49,7 @@ def insert_bank_bins_option_group(parser):
                             help="Low frequency cutoff in Hz.")
     return bins_group
 
+
 def bank_bins_from_cli(opts):
     """ Parses the CLI options related to binning templates in the bank.
 
@@ -73,167 +73,79 @@ def bank_bins_from_cli(opts):
     if opts.bank_bins:
         bins_idx = coinc.background_bin_from_string(opts.bank_bins, bank)
     else:
-        bins_idx = {"all" : numpy.arange(0, len(bank[fp.keys()[0]]))}
+        bins_idx = {"all" : numpy.arange(0, len(bank[tuple(fp.keys())[0]]))}
     fp.close()
     return bins_idx, bank
 
-def insert_loudest_triggers_option_group(parser, coinc_options=True):
-    """ Add options to the optparser object for selecting templates in bins.
 
-    Parameters
-    -----------
-    parser : object
-        OptionParser instance.
+def get_mass_spin(bank, tid):
     """
-    opt_group = insert_bank_bins_option_group(parser)
-    opt_group.title = "Options for finding loudest triggers."
-    if coinc_options:
-        opt_group.add_argument("--statmap-file", default=None,
-                               help="HDF format clustered coincident trigger "
-                                    "result file.")
-        opt_group.add_argument("--statmap-group", default="foreground",
-                               help="Name of group in statmap file to "
-                                    "get triggers.")
-    opt_group.add_argument("--sngl-trigger-files", nargs="+", default=None,
-                           action=types.MultiDetOptionAction,
-                           help="HDF format merged single detector "
-                                "trigger files.")
-    opt_group.add_argument("--veto-file", default=None,
-                           help="XML file with segment_definer and "
-                                "segment table.")
-    opt_group.add_argument("--veto-segment-name", default=None,
-                           help="Name of segment to use as veto in "
-                                 "XML file's segment_definer table.")
-    opt_group.add_argument("--search-n-loudest", type=int, default=None,
-                           help="Number of triggers to search over.")
-    opt_group.add_argument("--n-loudest", type=int, default=None,
-                           help="Number of triggers to return in results.")
-    return opt_group
-
-def loudest_triggers_from_cli(opts, coinc_parameters=None,
-                              sngl_parameters=None, bank_parameters=None):
-    """ Parses the CLI options related to find the loudest coincident or
-    single detector triggers.
+    Helper function
 
     Parameters
     ----------
-    opts : object
-        Result of parsing the CLI with OptionParser.
-    coinc_parameters : list
-        List of datasets in statmap file to retrieve.
-    sngl_parameters : list
-        List of datasets in single-detector trigger files to retrieve.
-    bank_parameters : list
-        List of datasets in template bank file to retrieve.
+    bank : h5py File object
+        Bank parameter file
+    tid : integer or array of int
+        Indices of the entries to be returned
 
-    Results
+    Returns
     -------
-    bin_names : dict
-        A list of bin names.
-    bin_results : dict
-        A list of dict holding trigger data data.
+    m1, m2, s1z, s2z : tuple of floats or arrays of floats
+        Parameter values of the bank entries
     """
+    m1 = bank['mass1'][:][tid]
+    m2 = bank['mass2'][:][tid]
+    s1z = bank['spin1z'][:][tid]
+    s2z = bank['spin2z'][:][tid]
+    return m1, m2, s1z, s2z
 
-    # list to hold trigger data
-    bin_results = []
 
-    # list of IFOs
-    ifos = opts.sngl_trigger_files.keys()
+def get_param(par, args, m1, m2, s1z, s2z):
+    """
+    Helper function
 
-    # get indices of bins in template bank
-    bins_idx, bank_data = bank_bins_from_cli(opts)
-    bin_names = bins_idx.keys()
+    Parameters
+    ----------
+    par : string
+        Name of parameter to calculate
+    args : Namespace object returned from ArgumentParser instance
+        Calling code command line options, used for f_lower value
+    m1 : float or array of floats
+        First binary component mass (etc.)
 
-    # if taking triggers from statmap file
-    if opts.statmap_file and opts.bank_file and opts.sngl_trigger_files:
-
-        # loop over each bin
-        for bin_name in bin_names:
-            data = {}
-
-            # get template has and detection statistic for coincident events
-            statmap = hdf.ForegroundTriggers(
-                                 opts.statmap_file, opts.bank_file,
-                                 sngl_files=opts.sngl_trigger_files.values(),
-                                 n_loudest=opts.search_n_loudest,
-                                 group=opts.statmap_group)
-            template_hash = statmap.get_bankfile_array("template_hash")
-            stat = statmap.get_coincfile_array("stat")
-
-            # get indices of triggers in bin
-            bin_idx = numpy.in1d(template_hash,
-                              bank_data["template_hash"][bins_idx[bin_name]])
-
-            # get indices for sorted detection statistic in bin
-            sorting = stat[bin_idx].argsort()[::-1]
-
-            # get variables for n-th loudest triggers
-            for p in coinc_parameters:
-                arr = statmap.get_coincfile_array(p)
-                data[p] = arr[bin_idx][sorting][:opts.n_loudest]
-            for p in sngl_parameters:
-                for ifo in ifos:
-                    key = "/".join([ifo, p])
-                    arr = statmap.get_snglfile_array_dict(p)[ifo]
-                    data[key] = arr[bin_idx][sorting][:opts.n_loudest]
-            for p in bank_parameters:
-                arr = statmap.get_bankfile_array(p)
-                data[p] = arr[bin_idx][sorting][:opts.n_loudest]
-
-            # append results
-            bin_results.append(data)
-
-    # if taking triggers from single detector file
-    elif opts.bank_file and opts.sngl_trigger_files:
-
-        # loop over each bin
-        for bin_name in bin_names:
-            data = {}
-
-            # only use one IFO
-            if len(opts.sngl_trigger_files.keys()) == 1:
-                ifo = opts.sngl_trigger_files.keys()[0]
-            else:
-                raise ValueError("Too many IFOs")
-
-            # get newSNR as statistic from single detector files
-            sngls =  hdf.SingleDetTriggers(opts.sngl_trigger_files[ifo],
-                                           opts.bank_file, opts.veto_file,
-                                           opts.veto_segment_name, None, ifo)
-
-            # cluster
-            n_loudest = opts.search_n_loudest \
-                           if opts.search_n_loudest else len(sngls.template_id)
-            sngls.mask_to_n_loudest_clustered_events(n_loudest=n_loudest)
-            template_hash = \
-                  sngls.bank["template_hash"][:][sngls.template_id]
-
-            # get indices of triggers in bin
-            bin_idx = numpy.in1d(template_hash,
-                              bank_data["template_hash"][bins_idx[bin_name]])
-
-            # sort by detection statistic
-            stats = sngls.stat
-            sorting = stats[bin_idx].argsort()[::-1]
-
-            # get indices for sorted detection statistic in bin
-            for p in sngl_parameters:
-                key = "/".join([ifo, p])
-                arr = sngls.get_column(p)
-                data[key] = arr[bin_idx][sorting][:opts.n_loudest]
-            for p in bank_parameters:
-                arr = sngls.bank[p][:]
-                data[p] = \
-                      arr[sngls.template_id][bin_idx][sorting][:opts.n_loudest]
-
-            # append results
-            bin_results.append(data)
-
-    # else did not supply enough command line options
+    Returns
+    -------
+    parvals : float or array of floats
+        Calculated parameter values
+    """
+    if par == 'mchirp':
+        parvals = conversions.mchirp_from_mass1_mass2(m1, m2)
+    elif par == 'mtotal':
+        parvals = m1 + m2
+    elif par == 'eta':
+        parvals = conversions.eta_from_mass1_mass2(m1, m2)
+    elif par in ['chi_eff', 'effective_spin']:
+        parvals = conversions.chi_eff(m1, m2, s1z, s2z)
+    elif par == 'template_duration':
+        # default to SEOBNRv4 duration function
+        if not hasattr(args, 'approximant') or args.approximant is None:
+            args.approximant = "SEOBNRv4"
+        parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower,
+                                           args.approximant)
+        if args.min_duration:
+            parvals += args.min_duration
+    elif par == 'tau0':
+        parvals = conversions.tau0_from_mass1_mass2(m1, m2, args.f_lower)
+    elif par == 'tau3':
+        parvals = conversions.tau3_from_mass1_mass2(m1, m2, args.f_lower)
+    elif par in pnutils.named_frequency_cutoffs.keys():
+        parvals = pnutils.frequency_cutoff_from_name(par, m1, m2, s1z, s2z)
     else:
-        raise ValueError("Must have --bank-file and --sngl-trigger-files")
+        # try asking for a LALSimulation frequency function
+        parvals = pnutils.get_freq(par, m1, m2, s1z, s2z)
+    return parvals
 
-    return bin_names, bin_results
 
 def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
     """
@@ -257,26 +169,35 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
 
     Returns
     -------
-    [return value]: NumPy array of floats
-        The calculated parameter values
+    [return value]: NumPy array of floats, array of boolean
+        The calculated parameter values and a Boolean mask indicating which
+        injections were found in the given ifo (if supplied)
     """
     foundtmp = injfile["found_after_vetoes/template_id"][:]
+    # will record whether inj was found in the given ifo
+    found_in_ifo = numpy.ones_like(foundtmp, dtype=bool)
     if trigfile is not None:
-        # get the name of the ifo in the injection file, eg "detector_1"
-        # and the integer from that name
-        ifolabel = [name for name, val in injfile.attrs.items() if \
-                    "detector" in name and val == ifo][0]
-        foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
+        try:  # old 2-ifo behaviour
+            # get the name of the ifo in the injection file, eg "detector_1"
+            # and the integer from that name
+            ifolabel = [name for name, val in injfile.attrs.items() if \
+                        "detector" in name and val == ifo][0]
+            foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
+        except IndexError:  # multi-ifo
+            foundtrg = injfile["found_after_vetoes/%s/trigger_id" % ifo]
+            # multi-ifo pipeline assigns -1 for inj not found in specific ifo
+            found_in_ifo = foundtrg[:] != -1
     if bankfile is not None and param in bankfile.keys():
-        return bankfile[param][:][foundtmp]
+        return bankfile[param][:][foundtmp], found_in_ifo
     elif trigfile is not None and param in trigfile[ifo].keys():
-        return trigfile[ifo][param][:][foundtrg]
+        return trigfile[ifo][param][:][foundtrg], found_in_ifo
     else:
+        assert bankfile
         b = bankfile
-        return trstats.get_param(param, args, b['mass1'][:],
-                                        b['mass2'][:],
-                                        b['spin1z'][:],
-                                        b['spin2z'][:])[foundtmp]
+        return get_param(param, args, b['mass1'][:], b['mass2'][:],
+                         b['spin1z'][:], b['spin2z'][:])[foundtmp],\
+               found_in_ifo
+
 
 def get_inj_param(injfile, param, ifo, args=None):
     """
@@ -311,7 +232,5 @@ def get_inj_param(injfile, param, ifo, args=None):
                                         inj['latitude'][:],
                                         inj['end_time'][:])
     else:
-        return trstats.get_param(param, args, inj['mass1'][:],
-                                        inj['mass2'][:],
-                                        inj['spin1z'][:],
-                                        inj['spin2z'][:])
+        return get_param(param, args, inj['mass1'][:], inj['mass2'][:],
+                                     inj['spin1z'][:], inj['spin2z'][:])

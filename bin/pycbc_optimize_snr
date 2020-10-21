@@ -1,0 +1,364 @@
+#! /usr/bin/env python
+
+"""Followup utility to optimize the SNR of a PyCBC Live trigger."""
+
+import os, shutil
+import argparse, numpy, h5py
+import time
+import types
+import logging
+import tempfile
+import pycbc
+from pycbc import version, waveform
+from pycbc.types import MultiDetOptionAction, zeros, load_frequencyseries
+from pycbc.filter import matched_filter_core
+import pycbc.waveform.bank
+from pycbc import DYN_RANGE_FAC
+from pycbc.conversions import (
+    mchirp_from_mass1_mass2, mtotal_from_mchirp_eta,
+    mass1_from_mtotal_eta, mass2_from_mtotal_eta
+)
+from scipy.optimize import differential_evolution
+from pycbc.io import live
+from pycbc.io.hdf import load_hdf5_to_dict
+from pycbc.detector import Detector
+from pycbc.psd import interpolate
+
+
+Nfeval = 0
+start_time = time.time()
+
+def callback_func(Xi, convergence=0):
+    global Nfeval
+    logging.info("Currently at %d %s", Nfeval, convergence)
+    if (time.time() - start_time) > 360:
+        return True
+    Nfeval += 1
+
+# Define the function for computing network snr
+def compute_network_snr_core(v, *argv):
+    data = argv[0]
+    coinc_times = argv[1]
+    ifos = argv[2]
+    flen = argv[3]
+    approximant = argv[4]
+    flow = argv[5]
+    f_end = argv[6]
+    delta_f = argv[7]
+    sample_rate = argv[8]
+    distance = 1.0 / DYN_RANGE_FAC
+    mtotal = mtotal_from_mchirp_eta(v[0], v[1])
+    mass1 = mass1_from_mtotal_eta(mtotal, v[1])
+    mass2 = mass2_from_mtotal_eta(mtotal, v[1])
+
+    # enforce broadly accepted search space boundaries
+    if mass1 < 1 or mass2 < 1 or mtotal > 500:
+        return -numpy.inf, {}
+
+    try:
+        htilde = waveform.get_waveform_filter(
+                zeros(flen, dtype=numpy.complex64),
+                approximant=approximant,
+                mass1=mass1, mass2=mass2, spin1z=v[2], spin2z=v[3],
+                f_lower=flow, f_final=f_end, delta_f=delta_f,
+                delta_t=1.0/sample_rate, distance=distance)
+    except RuntimeError:
+        # assume a failure in the waveform approximant
+        # due to the choice of parameters
+        return -numpy.inf, {}
+
+    if not hasattr(htilde, 'params'):
+        htilde.params = dict(mass1=mass1, mass2=mass2,
+                             spin1z=v[2], spin2z=v[3])
+    if not hasattr(htilde, 'end_idx'):
+        htilde.end_idx = int(f_end / htilde.delta_f)
+    htilde.approximant = approximant
+    htilde.sigmasq = types.MethodType(pycbc.waveform.bank.sigma_cached,
+                                      htilde)
+    htilde.min_f_lower = flow
+    htilde.end_frequency = f_end
+    htilde.f_lower = flow
+    network_snrsq = 0
+    snr_series_dict = {}
+    for ifo in ifos:
+        sigmasq = htilde.sigmasq(data[ifo].psd)
+        snr, _, norm = matched_filter_core(htilde, data[ifo],
+                                           h_norm=sigmasq)
+        duration = 0.095
+        half_dur_samples = int(snr.sample_rate * duration / 2)
+        onsource_idx = float(coinc_times[ifo] - snr.start_time) * snr.sample_rate
+        onsource_idx = int(round(onsource_idx))
+        onsource_slice = slice(onsource_idx - half_dur_samples,
+                               onsource_idx + half_dur_samples + 1)
+        snr_series = snr[onsource_slice] * norm
+        snr_series_dict[ifo] = snr * norm
+        snr_series_dict['sigmasq_' + ifo] = sigmasq
+        network_snrsq += max(abs(snr_series._data))**2
+    return (network_snrsq**0.5), snr_series_dict
+
+def compute_network_snr(v, *argv):
+    nsnr, _ = compute_network_snr_core(v, *argv)
+    return -nsnr
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version',
+                    version=version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--params-file', required=True,
+                    help='Location of the attributes file created by PyCBC '
+                         'Live')
+parser.add_argument("--data-files", type=str, nargs='+',
+                    action=MultiDetOptionAction,
+                    metavar='IFO:DATA_FILE',
+                    help="Locations of the overwhitened data files produced "
+                         "by PyCBC Live.")
+parser.add_argument("--psd-files", type=str, nargs='+',
+                    action=MultiDetOptionAction,
+                    metavar='IFO:PSD_FILE',
+                    help="Locations of the PSD files produced "
+                         "by PyCBC Live.")
+parser.add_argument("--approximant", required=True,
+                    help="Waveform approximant string.")
+parser.add_argument("--snr-threshold", default=4.0,
+                    help="If the SNR in ifo X is below this threshold do not "
+                         "consider it part of the coincidence.")
+parser.add_argument('--gracedb-server', metavar='URL',
+                    help='URL of GraceDB server API for uploading events. '
+                         'If not provided, the default URL is used.')
+parser.add_argument('--gracedb-search', type=str, default='AllSky',
+                    help='String going into the "search" field of the GraceDB '
+                         'events')
+parser.add_argument('--production', action='store_true',
+                    help='Upload a production event rather than a test event')
+parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
+                    help='Upload triggers to GraceDB')
+parser.add_argument('--output-path', required=True,
+                    help='Path to a directory to store results in')
+parser.add_argument('--cores', type=int,
+                    help='Restrict calculation to given number of CPU cores')
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+logging.info('Starting optimize SNR')
+
+data = {}
+for ifo in args.data_files.keys():
+    data[ifo] = load_frequencyseries(args.data_files[ifo])
+    data[ifo].psd = load_frequencyseries(args.psd_files[ifo])
+
+fp = h5py.File(args.params_file, 'r')
+ifos = list(data.keys())
+original_gid = fp['gid'][()]
+
+coinc_times = {}
+for ifo in ifos:
+    try:
+        coinc_times[ifo] = fp['coinc_times'][ifo][()]
+    except KeyError:
+        pass
+
+coinc_ifos = list(coinc_times.keys())
+
+logging.info('Following up GID %s', original_gid)
+flen = fp['flen'][()]
+approximant = args.approximant
+flow = float(fp['flow'][()])
+f_end = float(fp['f_end'][()])
+delta_f = fp['delta_f'][()]
+sample_rate = fp['sample_rate'][()]
+
+extra_args = [data, coinc_times, coinc_ifos, flen,
+              approximant, flow, f_end, delta_f, sample_rate]
+
+mass1 = fp['mass1'][()]
+mass2 = fp['mass2'][()]
+spin1z = fp['spin1z'][()]
+spin2z = fp['spin2z'][()]
+mchirp = mchirp_from_mass1_mass2(mass1, mass2)
+minchirp = mchirp * (1 - mchirp / 50.0)
+maxchirp = mchirp * (1 + mchirp / 50.0)
+minchirp = 1 if minchirp < 1 else minchirp
+maxchirp = 80 if maxchirp > 80 else maxchirp
+
+bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
+
+logging.info('Starting optimization')
+
+results = differential_evolution(compute_network_snr, bounds,
+                                 maxiter=100, workers=(args.cores or -1),
+                                 popsize=200, mutation=(0.5,1),
+                                 recombination=0.7, callback=callback_func,
+                                 args=extra_args)
+
+logging.info('Optimization complete')
+
+mtotal = mtotal_from_mchirp_eta(results.x[0], results.x[1])
+mass1 = mass1_from_mtotal_eta(mtotal, results.x[1])
+mass2 = mass2_from_mtotal_eta(mtotal, results.x[1])
+spin1z = results.x[2]
+spin2z = results.x[3]
+
+fup_ifos = set(ifos) - set(coinc_ifos)
+
+for ifo in fup_ifos:
+    coinc_times[ifo] = coinc_times[coinc_ifos[0]]
+
+extra_args[2] = ifos
+
+_, snr_series_dict = compute_network_snr_core(results.x, *extra_args)
+
+# Prepare for GraceDB upload
+coinc_results = {}
+followup_data = {}
+
+loudest_ifo = None
+loudest_snr_allifos = 0
+loudest_snr_time_allifos = None
+loudest_snrs = {}
+loudest_snr_times = {}
+loudest_snr_idxs = {}
+
+# Determine which ifo has the loudest SNR peak ... We'll use this to determine
+# the time window for other ifos (e.g. if one ifo has a loud SNR peak, and the
+# other has SNR < 4, we would need to determine the loudest SNR for the quieter
+# instrument within light-travel time of the loud SNR peak)
+for ifo in ifos:
+    duration = 0.095
+    half_dur_samples = int(sample_rate * duration / 2)
+    onsource_idx = float(coinc_times[ifo] - snr_series_dict[ifo].start_time) \
+        * snr_series_dict[ifo].sample_rate
+    onsource_idx = int(round(onsource_idx))
+    onsource_slice = slice(onsource_idx - half_dur_samples,
+                           onsource_idx + half_dur_samples + 1)
+    max_snr_idx = numpy.argmax(abs(snr_series_dict[ifo][onsource_slice]))
+    max_snr_idx = max_snr_idx + onsource_idx - half_dur_samples
+    max_snr = snr_series_dict[ifo][max_snr_idx]
+    max_snr_time = snr_series_dict[ifo].start_time \
+        + max_snr_idx*(1./sample_rate)
+    loudest_snr_idxs[ifo] = max_snr_idx
+    loudest_snr_times[ifo] = float(max_snr_time)
+    loudest_snrs[ifo] = max_snr
+    if abs(max_snr) > loudest_snr_allifos:
+        loudest_snr_allifos = abs(max_snr)
+        loudest_ifo = ifo
+        loudest_snr_time_allifos = loudest_snr_times[ifo]
+
+# Now we can create the snr_series_dict
+for ifo in ifos:
+    # Find loudest SNR within coincidence window of the largest peak
+    snr_peak = abs(loudest_snrs[ifo])
+    # And check light travel time
+    lttbd = Detector(ifo).light_travel_time_to_detector(Detector(loudest_ifo))
+    # Add small buffer
+    lttbd += 0.005
+
+    time_window = [loudest_snr_time_allifos-lttbd,
+                   loudest_snr_time_allifos+lttbd]
+
+    snr_slice = snr_series_dict[ifo].time_slice(time_window[0], time_window[1])
+    max_snr_idx = numpy.argmax(abs(snr_slice))
+    idx_offset = snr_slice.start_time - snr_series_dict[ifo].start_time
+    idx_offset = int(float(idx_offset) * sample_rate + 0.5)
+    max_snr_idx = max_snr_idx + idx_offset
+    new_snr_slice = slice(max_snr_idx - int(sample_rate/10),
+                          max_snr_idx + int(sample_rate/10)+1)
+    snr_series_dict[ifo] = snr_series_dict[ifo][new_snr_slice]
+
+netsnr = 0
+for idx, ifo in enumerate(ifos):
+    coinc_results['foreground/'+ifo+'/mass1'] = mass1
+    coinc_results['foreground/'+ifo+'/mass2'] = mass2
+    coinc_results['foreground/'+ifo+'/spin1z'] = spin1z
+    coinc_results['foreground/'+ifo+'/spin2z'] = spin2z
+    coinc_results['foreground/'+ifo+'/f_lower'] = flow
+    coinc_results['foreground/'+ifo+'/window'] = 0.1
+    coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
+    coinc_results['foreground/'+ifo+'/template_id'] = 0
+    # Apparently GraceDB gets upset if chi-squared is not set
+    coinc_results['foreground/'+ifo+'/chisq'] = 1.
+    coinc_results['foreground/'+ifo+'/chisq_dof'] = 1
+    coinc_results['foreground/'+ifo+'/template_duration'] = \
+        fp['template_duration'][()]
+    followup_data[ifo] = {}
+    followup_data[ifo]['psd'] = interpolate(data[ifo].psd, 0.25)
+    followup_data[ifo]['snr_series'] = snr_series_dict[ifo]
+
+    # Find loudest SNR within coincidence window of the largest peak
+    snr_peak = abs(loudest_snrs[ifo])
+    # And check light travel time
+    lttbd = Detector(ifo).light_travel_time_to_detector(Detector(loudest_ifo))
+    # Add small buffer
+    lttbd += 0.005
+
+    time_window = [loudest_snr_time_allifos-lttbd,
+                   loudest_snr_time_allifos+lttbd]
+
+    snr_slice = snr_series_dict[ifo].time_slice(time_window[0], time_window[1])
+    max_snr_idx = numpy.argmax(abs(snr_slice))
+    loudest_snr_time = snr_slice.sample_times[max_snr_idx]
+    loudest_snr = snr_slice[max_snr_idx]
+
+    coinc_results['foreground/'+ifo+'/end_time'] = loudest_snr_time
+    coinc_results['foreground/'+ifo+'/snr_series'] = snr_series_dict[ifo]
+    coinc_results['foreground/'+ifo+'/psd_series'] = data[ifo].psd
+    coinc_results['foreground/'+ifo+'/delta_f'] = delta_f
+    coinc_results['foreground/'+ifo+'/event_id'] = \
+        'sngl_inspiral:event_id:'+str(idx)
+    coinc_results['foreground/'+ifo+'/snr'] = abs(loudest_snr)
+    netsnr += abs(loudest_snr)**2
+    coinc_results['foreground/'+ifo+'/sigmasq'] \
+        = snr_series_dict['sigmasq_' + ifo]
+    coinc_results['foreground/'+ifo+'/coa_phase'] \
+        = numpy.angle(loudest_snr)
+
+coinc_results['foreground/stat'] = numpy.sqrt(netsnr)
+coinc_results['foreground/ifar'] = fp['ifar'][()]
+
+channel_names = {}
+for ifo in fp['channel_names'].keys():
+    channel_names[ifo] = fp['channel_names'][ifo][()]
+
+mc_area_args = load_hdf5_to_dict(fp, 'mc_area_args/')
+
+kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
+          'low_frequency_cutoff': flow,
+          'followup_data': followup_data,
+          'channel_names': channel_names,
+          'mc_area_args': mc_area_args}
+
+doc = live.SingleCoincForGraceDB(ifos, coinc_results,
+                                 upload_snr_series=True, **kwargs)
+
+if args.enable_gracedb_upload:
+    comment = ('Automatic PyCBC followup of trigger '
+               '<a href="/events/{0}/view">{0}</a> to find the template '
+               'parameters that maximize the SNR. The FAR of this trigger is '
+               'copied from {0} and does not reflect this triggers\' template '
+               'parameters.')
+    comment = comment.format(original_gid)
+
+    tmpdir = tempfile.mkdtemp()
+    xml_path = os.path.join(tmpdir,
+                            '{:.3f}.xml.gz'.format(loudest_snr_time_allifos))
+    gid = doc.upload(xml_path, gracedb_server=args.gracedb_server,
+                     testing=(not args.production), extra_strings=[comment],
+                     search=args.gracedb_search)
+    if gid is not None:
+        logging.info('Event uploaded as %s', gid)
+        shutil.rmtree(tmpdir)
+
+        # add a note to the original G event pointing to the optimized one
+        from ligo.gracedb.rest import GraceDb
+
+        gracedb = GraceDb(args.gracedb_server) \
+                if args.gracedb_server is not None else GraceDb()
+        comment = ('Result of SNR maximization uploaded as '
+                   '<a href="/events/{0}/view">{0}</a>').format(gid)
+        gracedb.writeLog(original_gid, comment, tag_name=['analyst_comments'])
+else:
+    fname = 'coinc-{:.3f}-{}.xml.gz'.format(loudest_snr_time_allifos,
+                                            pycbc.random_string(6))
+    fname = os.path.join(args.output_path, fname)
+    doc.save(fname)

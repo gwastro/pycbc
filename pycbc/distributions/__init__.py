@@ -30,14 +30,14 @@ from pycbc.distributions.power_law import UniformPowerLaw, UniformRadius
 from pycbc.distributions.sky_location import UniformSky
 from pycbc.distributions.uniform import Uniform
 from pycbc.distributions.uniform_log import UniformLog10
-from pycbc.distributions.masses import UniformComponentMasses
 from pycbc.distributions.spins import IndependentChiPChiEff
 from pycbc.distributions.qnm import UniformF0Tau
 from pycbc.distributions.joint import JointDistribution
+from pycbc.distributions.external import External
+from pycbc.distributions.fixedsamples import FixedSamples
 
 # a dict of all available distributions
 distribs = {
-    UniformComponentMasses.name : UniformComponentMasses,
     IndependentChiPChiEff.name : IndependentChiPChiEff,
     Arbitrary.name : Arbitrary,
     FromFile.name : FromFile,
@@ -52,6 +52,8 @@ distribs = {
     UniformSky.name : UniformSky,
     UniformLog10.name : UniformLog10,
     UniformF0Tau.name : UniformF0Tau,
+    External.name: External,
+    FixedSamples.name: FixedSamples
 }
 
 def read_distributions_from_config(cp, section="prior"):
@@ -132,12 +134,25 @@ def read_params_from_config(cp, prior_section='prior',
     if any(missing_prior):
         raise KeyError("You are missing a priors section in the config file "
                        "for parameter(s): {}".format(', '.join(missing_prior)))
+    # sanity check that each parameter with a priors section is in
+    # [variable_args]
+    missing_variable = tags - set(variable_args)
+    if any(missing_variable):
+        raise KeyError("Prior section found for parameter(s) {} but not "
+                       "listed as variable parameter(s)."
+                       .format(', '.join(missing_variable)))
     # get static args
     try:
         static_args = dict([(key, cp.get_opt_tags(sargs_section, key, []))
                            for key in cp.options(sargs_section)])
     except _ConfigParser.NoSectionError:
         static_args = {}
+    # sanity check that each parameter in [variable_args]
+    # is not repeated in [static_args]
+    for arg in variable_args:
+        if arg in static_args:
+            raise KeyError("Parameter {} found both in static_args and in "
+                           "variable_args sections.".format(arg))
     # try converting values to float
     for key in static_args:
         val = static_args[key]

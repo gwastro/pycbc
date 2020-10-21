@@ -1,0 +1,359 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2019 Francesco Pannarale
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+"""
+Workflow generator to run pygrb offline post-processing.
+"""
+
+from __future__ import division
+
+import logging
+import argparse
+import os
+import pycbc.version
+import pycbc.workflow as _workflow
+from pycbc.workflow.plotting import PlotExecutable, excludestr, requirestr
+from pycbc.results import create_versioning_page, layout, pygrb_plotting_utils
+from pycbc.results.versioning import save_fig_with_metadata
+
+__author__  = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__ = pycbc.version.date
+__program__ = "pycbc_pygrb_new_pp_workflow"
+
+
+logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
+                    level=logging.INFO)
+
+def file_from_workflow(workflow, trig_or_inj, tags=None):
+    """Function to create File object, here used for trigger/injeciton files"""
+
+    file_out = None
+    if trig_or_inj == 'trig':
+        file_out = wflow.cp.get('workflow', 'trig-file')
+    elif trig_or_inj == 'inj':
+        file_out = wflow.cp.get('workflow', 'inj-file')
+    file_out = _workflow.File.from_path(file_out)
+    if tags is None:
+        file_out.tags = []
+    else:
+        file_out.tags = tags
+    #trig_file.description='TRIGGER_FILE'
+    #trig_file.ifo_list=(['H1','L1','V1'])
+    #trig_file.segment = wflow.analysis_time
+    #inj_file.ifo_list=wflow.ifos
+
+    return file_out
+
+def make_pygrb_skygrid_plot(workflow, out_dir, exclude=None, require=None,
+                            tags=[]):
+    """Adds a PyGRB sky grid plot job to the workflow"""
+
+    # Exectuable
+    exec_name = 'pygrb_plot_skygrid'
+    logging.info("Executable name: %s" % exec_name)
+    # Initialize job node
+    grb_name = workflow.cp.get('workflow', 'trigger-name')
+    node = PlotExecutable(workflow.cp, exec_name,
+                          ifos=wflow.ifos, out_dir=out_dir,
+                          tags=tags+['GRB'+grb_name]).create_node()
+    # Trigger file
+    trig_file = file_from_workflow(workflow, 'trig')
+    node.add_input_opt('--trig-file', trig_file)
+    # Veto directory and segments directory options
+    veto_dir = workflow.cp.get('workflow', 'veto-directory')
+    node.add_opt('--veto-directory', veto_dir)
+    seg_dir = workflow.cp.get('workflow', 'segment-dir')
+    node.add_opt('--segment-dir', seg_dir)
+    # Output file
+    node.new_output_file_opt(wflow.analysis_time, '.png', '--output-file',
+                             tags=tags+['GRB'+grb_name])
+    # Add job node to the workflow
+    workflow += node
+
+    return node, node.output_files
+
+
+def make_pygrb_timeseries_or_signal_consistency_plot(workflow, exec_name,
+    out_dir, injs=True, ifo=None, exclude=None, require=None, tags=[]):
+    """Adds a PyGRB signal consistency plot to the workflow"""
+
+    logging.info("Executable name: %s" % exec_name)
+    # Initialize job node
+    grb_name = workflow.cp.get('workflow', 'trigger-name')
+    node = PlotExecutable(workflow.cp, exec_name, ifos=wflow.ifos,
+                          out_dir=out_dir,
+                          tags=tags+['GRB'+grb_name]).create_node()
+    # Trigger file
+    trig_file = file_from_workflow(workflow, 'trig')
+    node.add_input_opt('--trig-file', trig_file)
+    # Injection file: may or may not be passed
+    inj_tag = 'noinj'
+    if injs:
+        inj_file = file_from_workflow(workflow, 'inj')
+        node.add_input_opt('--inj-file', inj_file)
+        inj_tag = 'inj'
+    # Veto directory and segments directory
+    veto_dir = workflow.cp.get('workflow', 'veto-directory')
+    node.add_opt('--veto-directory', veto_dir)
+    seg_dir = workflow.cp.get('workflow', 'segment-dir')
+    node.add_opt('--segment-dir', seg_dir)
+    # Quantity to be displayed on the y-axis of the plot 
+    if len(tags) > 0:
+        node.add_opt('--variable', tags[0])
+    # IFO and veto type options
+    grb_name = workflow.cp.get('workflow', 'trigger-name')
+    extra_tags = ['GRB'+grb_name]
+    if ifo:
+        node.add_opt('--ifo', ifo)
+        extra_tags.append(ifo)
+    extra_tags.append(inj_tag)
+    # Output files
+    if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_coh_ifosnr',
+                     'pygrb_plot_null_stats']:
+        node.new_output_file_opt(wflow.analysis_time, '.png',
+                                 '--zoomed-output-file',
+                                 tags=tags+extra_tags+['zoom'])
+    node.new_output_file_opt(wflow.analysis_time, '.png',
+                             '--output-file', tags=tags+extra_tags)
+    # Add job node to workflow
+    workflow += node
+
+    return node, node.output_files
+
+
+# Use the standard workflow command-line parsing routines.
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc)
+parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("--workflow-name", type=str, default='pygrb_offline_pp',
+                    help="Descriptive name of the analysis.")
+parser.add_argument("-d", "--output-dir", default=None,
+                    required=True, help="Path to output directory.")
+_workflow.add_workflow_command_line_group(parser)
+args = parser.parse_args()
+
+# Create the workflow object
+logging.info("Generating %s workflow" % args.workflow_name)
+wflow = _workflow.Workflow(args, args.workflow_name)
+
+logging.info("Post-processing output will be generated in %s" % args.output_dir)
+if not os.path.exists(args.output_dir):
+    _workflow.makedir(args.output_dir)
+os.chdir(args.output_dir)
+args.output_dir = '.'
+
+# Setup results directory
+rdir = layout.SectionNumber('pp_results', ['offsource_triggers_vs_time',
+                                           'signal_consistency',
+                                           'found_missed_injections',
+                                           'loudest_offsource_events',
+                                           'results_for_offtrials',
+                                           'workflow'])
+_workflow.makedir(rdir.base)
+_workflow.makedir(rdir['workflow'])
+
+# Input trigger file
+trig_file = wflow.cp.get('workflow', 'trig-file')
+# IFOs actually used: determined by data availability
+ifos = pygrb_plotting_utils.extract_ifos(trig_file)
+
+plotting_nodes = []
+
+#
+# Plot sky grid
+#
+out_dir = rdir.base
+# TODO: Pick up inifile, segments plot, GRB time and location, report IFO responses
+# Read the configuration file
+# typecast str from command line to File instances
+#cp = configuration.WorkflowConfigParser(opts.pp_config_file)
+#cp_file_name = workflow_name + ".ini"
+#with open('inference.ini', 'w') as ff:
+#    cp.write(ff)
+#config_file = to_file('inference.ini')
+
+_workflow.makedir(out_dir)
+files = _workflow.FileList([])
+plot_node, output_files = make_pygrb_skygrid_plot(wflow, out_dir=out_dir, tags=[])
+plotting_nodes.append(plot_node)
+files.append(output_files)
+layout.single_layout(out_dir, output_files)
+
+#
+# Plot SNR timeseries
+#
+out_dir = rdir['offsource_triggers_vs_time']
+_workflow.makedir(out_dir)
+
+# Coherent/Reweighted/Single IFO/Null SNR vs time
+out_dirs_dict = {'coherent' : 'offsource_triggers_vs_time/coh_snr_timeseries',
+                 'reweighted': 'offsource_triggers_vs_time/reweighted_snr_timeseries',
+                 'single': 'offsource_triggers_vs_time/single_ifo_snr_timeseries',
+                 'null': 'offsource_triggers_vs_time/null_snr_timeseries'}
+
+# Timeseries request by the user
+timeseries = wflow.cp.get_subsections('pygrb_plot_snr_timeseries')
+
+for snr_type in timeseries:
+    out_dir = rdir[out_dirs_dict[snr_type]]
+    _workflow.makedir(out_dir)
+    files = _workflow.FileList([])
+    _workflow.makedir(out_dir)
+    # Only single SNR timeseries requires looping over IFOs
+    ifos_to_loop = [None]
+    if snr_type == 'single':
+        ifos_to_loop = ifos
+    inj_file = file_from_workflow(wflow, 'inj')
+    for ifo in ifos_to_loop:
+        timeseries_plots = _workflow.FileList([])
+        # Plots without and with injections
+        for injs in [False, True]:
+            plot_node, output_files = \
+                make_pygrb_timeseries_or_signal_consistency_plot(wflow,
+                    'pygrb_plot_snr_timeseries', out_dir, injs=injs, ifo=ifo,
+                    tags=[snr_type])
+            plotting_nodes.append(plot_node)
+            # pycbc_pygrb_plot_snr_timeseries produces only one plot: take [0]
+            timeseries_plots.append(output_files[0])
+        files.append(timeseries_plots)
+    layout.two_column_layout(out_dir, files)
+
+
+#
+# Signal consistency plots
+#
+out_dir = rdir['signal_consistency']
+_workflow.makedir(out_dir)
+# Bank/auto/chisq veto vs Coherent SNR plots: non-zoomed and zoomed
+out_dir = rdir['signal_consistency/chi_squared_tests']
+_workflow.makedir(out_dir)
+files = _workflow.FileList([])
+# Loop over vetoes request by the user
+vetoes = wflow.cp.get_subsections('pygrb_plot_chisq_veto')
+for veto in vetoes:
+    # Plots with and without injections
+    for injs in [True, False]:
+        plot_node, output_files = \
+            make_pygrb_timeseries_or_signal_consistency_plot(wflow,
+                'pygrb_plot_chisq_veto', out_dir, injs=injs, tags=[veto])
+        plotting_nodes.append(plot_node)
+        files.append(output_files)
+layout.two_column_layout(out_dir, files)
+
+# Single detector chi-square plots: non-zoomed and zoomed
+out_dir = rdir['signal_consistency/individual_detectors']
+_workflow.makedir(out_dir)
+files = _workflow.FileList([])
+# Single IFO SNR vs Coherent SNR plots: non-zoomed and zoomed
+# Requires looping over IFOs
+for ifo in ifos:
+    # Plots with and without injections
+    for injs in [True, False]:
+        # Single IFO SNR vs Coherent SNR
+        plot_node, output_files = \
+            make_pygrb_timeseries_or_signal_consistency_plot(wflow,
+                'pygrb_plot_coh_ifosnr', out_dir, injs=injs, ifo=ifo, tags=[])
+        plotting_nodes.append(plot_node)
+        files.append(output_files)
+layout.two_column_layout(out_dir, files)
+
+# Null SNR/Overwhitened null stat vs Coherent SNR plots: non-zoomed and zoomed
+null_snr_out_dir = rdir['signal_consistency/null_snrs']
+_workflow.makedir(null_snr_out_dir)
+null_snr_files = _workflow.FileList([])
+# Coincident SNR vs Coherent SNR plots: non-zoomed and zoomed
+coinc_out_dir = rdir['signal_consistency/coincident_snr']
+_workflow.makedir(coinc_out_dir)
+coinc_files = _workflow.FileList([])
+# Loop over null statistics request by the user (including coincident SNR)
+nstats = wflow.cp.get_subsections('pygrb_plot_null_stats')
+for nstat in nstats:
+    # Plots with and without injections
+    for injs in [True, False]:
+        if nstat == 'coincident':
+            out_dir = coinc_out_dir
+            files = coinc_files
+        else:
+            out_dir = null_snr_out_dir
+            files = null_snr_files
+        plot_node, output_files = \
+            make_pygrb_timeseries_or_signal_consistency_plot(wflow,
+                'pygrb_plot_null_stats', out_dir, injs=injs, tags=[nstat])
+        plotting_nodes.append(plot_node)
+        files.append(output_files)
+layout.two_column_layout(null_snr_out_dir, null_snr_files)
+layout.two_column_layout(coinc_out_dir, coinc_files)
+
+#layout.group_layout(rdir['coincident_triggers'], closed_box_ifars + all_snrifar + [bank_plot[0][0]])
+
+#
+# Found/missed injections plots
+#
+out_dir = rdir['found_missed_injections']
+_workflow.makedir(out_dir)
+files = _workflow.FileList([])
+
+#
+# FAP distributions
+#
+out_dir = rdir['loudest_offsource_events']
+_workflow.makedir(out_dir)
+files = _workflow.FileList([])
+
+#
+# Offtrials plots
+#
+out_dir = rdir['results_for_offtrials']
+_workflow.makedir(out_dir)
+files = _workflow.FileList([])
+
+# Create versioning information
+create_versioning_page(rdir['workflow/version'], wflow.cp)
+
+# Create the final log file
+log_file_html = _workflow.File(wflow.ifos, 'WORKFLOW-LOG', wflow.analysis_time,
+                              extension='.html', directory=rdir['workflow'])
+
+# Create a page to contain a dashboard link
+dashboard_file = _workflow.File(wflow.ifos, 'DASHBOARD', wflow.analysis_time,
+                                extension='.html', directory=rdir['workflow'])
+dashboard_str = """<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a></b></p></center>"""
+kwds = { 'title' : 'Pegasus Dashboard',
+         'caption' : "Link to Pegasus Dashboard",
+         'cmd' : "PYCBC_SUBMIT_DAX_ARGV", }
+save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
+
+# Create pages for the submission script to write data
+_workflow.makedir(rdir['workflow/dax'])
+_workflow.makedir(rdir['workflow/input_map'])
+_workflow.makedir(rdir['workflow/output_map'])
+_workflow.makedir(rdir['workflow/planning'])
+
+
+logging.info("Path for make_results_web_page: %s" % os.path.join(os.getcwd(), rdir.base))
+_workflow.make_results_web_page(wflow, os.path.join(os.getcwd(), rdir.base), explicit_dependencies=plotting_nodes)
+
+wflow.save()
+
+logging.info("Written dax.")
+logging.shutdown()

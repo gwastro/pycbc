@@ -27,13 +27,17 @@ This module is responsible for setting up the psd files used by CBC
 workflows.
 """
 
+# FIXME: Is this module still relevant for any code? Can it be removed?
+
 from __future__ import division
 
 import os
-import ConfigParser
-import urlparse, urllib
 import logging
-from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
+from six.moves import configparser as ConfigParser
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.parse import urljoin
+from pycbc.workflow.core import File, FileList
+from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
 
 def setup_psd_workflow(workflow, science_segs, datafind_outs,
                              output_dir=None, tags=None):
@@ -114,18 +118,14 @@ def setup_psd_pregenerated(workflow, tags=None):
 
     cp = workflow.cp
     global_seg = workflow.analysis_time
-    user_tag = "PREGEN_PSD"
+    file_attrs = {'segs': global_seg, 'tags': tags}
 
     # Check for one psd for all ifos
     try:
         pre_gen_file = cp.get_opt_tags('workflow-psd',
                         'psd-pregenerated-file', tags)
-        pre_gen_file = resolve_url(pre_gen_file)
-        file_url = urlparse.urljoin('file:',
-                                     urllib.pathname2url(pre_gen_file))
-        curr_file = File(workflow.ifos, user_tag, global_seg, file_url,
-                                                    tags=tags)
-        curr_file.PFN(file_url, site='local')
+        file_attrs['ifos'] = workflow.ifos
+        curr_file = resolve_url_to_file(pre_gen_file, attrs=file_attrs)
         psd_files.append(curr_file)
     except ConfigParser.Error:
         # Check for one psd per ifo
@@ -134,12 +134,8 @@ def setup_psd_pregenerated(workflow, tags=None):
                 pre_gen_file = cp.get_opt_tags('workflow-psd',
                                 'psd-pregenerated-file-%s' % ifo.lower(),
                                 tags)
-                pre_gen_file = resolve_url(pre_gen_file)
-                file_url = urlparse.urljoin('file:',
-                                             urllib.pathname2url(pre_gen_file))
-                curr_file = File(ifo, user_tag, global_seg, file_url,
-                                                            tags=tags)
-                curr_file.PFN(file_url, site='local')
+                file_attrs['ifos'] = [ifo]
+                curr_file = resolve_url_to_file(pre_gen_file, attrs=file_attrs)
                 psd_files.append(curr_file)
 
             except ConfigParser.Error:

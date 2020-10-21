@@ -311,12 +311,16 @@ class Bounds(object):
         # can be used with arrays
         if self._min.name == 'reflected' and self._max.name == 'reflected':
             self._reflect = numpy.vectorize(self._reflect_well)
+            self.reflected = 'well'
         elif self._min.name == 'reflected':
             self._reflect = numpy.vectorize(self._min.reflect_right)
+            self.reflected = 'min'
         elif self._max.name == 'reflected':
             self._reflect = numpy.vectorize(self._max.reflect_left)
+            self.reflected = 'max'
         else:
             self._reflect = _pass
+            self.reflected = False
 
     def __repr__(self):
         return str(self.__class__)[:-1] + " " + " ".join(
@@ -342,6 +346,9 @@ class Bounds(object):
             return self._max
         else:
             raise IndexError("index {} out of range".format(ii))
+
+    def __abs__(self):
+        return abs(self._max - self._min)
 
     def __contains__(self, value):
         return self._min.smaller(value) & self._max.larger(value)

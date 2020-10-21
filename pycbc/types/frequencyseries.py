@@ -72,8 +72,15 @@ class FrequencySeries(Array):
                 else:
                     epoch = _lal.LIGOTimeGPS(0)
             elif epoch is not None:
-                try: 
-                    epoch = _lal.LIGOTimeGPS(epoch)
+                try:
+                    if isinstance(epoch, _numpy.generic):
+                        # In python3 lal LIGOTimeGPS will not work on numpy
+                        # types as input. A quick google on how to generically
+                        # convert numpy floats/ints to the python equivalent
+                        # https://stackoverflow.com/questions/9452775/
+                        epoch = _lal.LIGOTimeGPS(epoch.item())
+                    else:
+                        epoch = _lal.LIGOTimeGPS(epoch)
                 except:
                     raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
@@ -163,7 +170,7 @@ class FrequencySeries(Array):
 
     @property
     def sample_rate(self):
-        """Return the sample rate this would have in the time domain. This 
+        """Return the sample rate this would have in the time domain. This
         assumes even length time series!
         """
         return (len(self) - 1) * self.delta_f * 2.0
@@ -375,8 +382,8 @@ class FrequencySeries(Array):
         ----------
         path: string
             Destination file path. Must end with either .hdf, .npy or .txt.
-            
-        group: string 
+
+        group: string
             Additional name for internal storage use. Ex. hdf storage uses
             this as the key value.
 
@@ -417,34 +424,39 @@ class FrequencySeries(Array):
             psddict = {ifo: output}
             utils.write_filename(make_psd_xmldoc(psddict), path,
                                  gz=path.endswith(".gz"))
-        elif ext =='.hdf':
+        elif ext == '.hdf':
             key = 'data' if group is None else group
-            f = h5py.File(path)
-            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
-                                  compression_opts=9, shuffle=True)
-            ds.attrs['epoch'] = float(self.epoch)
-            ds.attrs['delta_f'] = float(self.delta_f)
+            with h5py.File(path, 'a') as f:
+                ds = f.create_dataset(key, data=self.numpy(),
+                                      compression='gzip',
+                                      compression_opts=9, shuffle=True)
+                ds.attrs['epoch'] = float(self.epoch)
+                ds.attrs['delta_f'] = float(self.delta_f)
         else:
             raise ValueError('Path must end with .npy, .txt, .xml, .xml.gz '
                              'or .hdf')
+
+    def to_frequencyseries(self):
+        """ Return frequency series """
+        return self
 
     @_noreal
     def to_timeseries(self, delta_t=None):
         """ Return the Fourier transform of this time series.
 
         Note that this assumes even length time series!
-        
+
         Parameters
         ----------
         delta_t : {None, float}, optional
-            The time resolution of the returned series. By default the 
-        resolution is determined by length and delta_f of this frequency 
+            The time resolution of the returned series. By default the
+        resolution is determined by length and delta_f of this frequency
         series.
-        
+
         Returns
-        -------        
-        TimeSeries: 
-            The inverse fourier transform of this frequency series. 
+        -------
+        TimeSeries:
+            The inverse fourier transform of this frequency series.
         """
         from pycbc.fft import ifft
         from pycbc.types import TimeSeries, real_same_precision_as
@@ -455,7 +467,7 @@ class FrequencySeries(Array):
         # add 0.5 to round integer
         tlen  = int(1.0 / self.delta_f / delta_t + 0.5)
         flen = int(tlen / 2 + 1)
-        
+
         if flen < len(self):
             raise ValueError("The value of delta_t (%s) would be "
                              "undersampled. Maximum delta_t "
@@ -463,11 +475,11 @@ class FrequencySeries(Array):
         if not delta_t:
             tmp = self
         else:
-            tmp = FrequencySeries(zeros(flen, dtype=self.dtype), 
+            tmp = FrequencySeries(zeros(flen, dtype=self.dtype),
                              delta_f=self.delta_f, epoch=self.epoch)
             tmp[:len(self)] = self[:]
-        
-        f = TimeSeries(zeros(tlen, 
+
+        f = TimeSeries(zeros(tlen,
                            dtype=real_same_precision_as(self)),
                            delta_t=delta_t)
         ifft(tmp, f)
@@ -477,11 +489,11 @@ class FrequencySeries(Array):
     def cyclic_time_shift(self, dt):
         """Shift the data and timestamps by a given number of seconds
 
-        Shift the data and timestamps in the time domain a given number of 
-        seconds. To just change the time stamps, do ts.start_time += dt. 
+        Shift the data and timestamps in the time domain a given number of
+        seconds. To just change the time stamps, do ts.start_time += dt.
         The time shift may be smaller than the intrinsic sample rate of the data.
         Note that data will be cycliclly rotated, so if you shift by 2
-        seconds, the final 2 seconds of your data will now be at the 
+        seconds, the final 2 seconds of your data will now be at the
         beginning of the data set.
 
         Parameters
@@ -503,7 +515,7 @@ class FrequencySeries(Array):
               low_frequency_cutoff=None, high_frequency_cutoff=None):
         """ Return the match between the two TimeSeries or FrequencySeries.
 
-        Return the match between two waveforms. This is equivelant to the overlap
+        Return the match between two waveforms. This is equivalent to the overlap
         maximized over time and phase. By default, the other vector will be
         resized to match self. Beware, this may remove high frequency content or the
         end of the vector.
@@ -536,7 +548,7 @@ class FrequencySeries(Array):
                 other.resize(int(other.sample_rate * self.duration))
 
             other = other.to_frequencyseries()
-        
+
         if len(other) != len(self):
             other = other.copy()
             other.resize(len(self))
@@ -559,7 +571,7 @@ def load_frequencyseries(path, group=None):
     path: string
         source file path. Must end with either .npy or .txt.
 
-    group: string 
+    group: string
         Additional name for internal storage use. Ex. hdf storage uses
         this as the key value.
 
@@ -567,10 +579,10 @@ def load_frequencyseries(path, group=None):
     ------
     ValueError
         If path does not end in .npy or .txt.
-    """    
+    """
     ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = _numpy.load(path)    
+        data = _numpy.load(path)
     elif ext == '.txt':
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
@@ -578,12 +590,12 @@ def load_frequencyseries(path, group=None):
         f = h5py.File(path, 'r')
         data = f[key][:]
         series = FrequencySeries(data, delta_f=f[key].attrs['delta_f'],
-                                       epoch=f[key].attrs['epoch']) 
+                                       epoch=f[key].attrs['epoch'])
         f.close()
         return series
     else:
         raise ValueError('Path must end with .npy, .hdf, or .txt')
-        
+
     if data.ndim == 2:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
         epoch = _lal.LIGOTimeGPS(data[0][0])

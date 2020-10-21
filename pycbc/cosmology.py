@@ -35,7 +35,7 @@ from scipy import interpolate
 import astropy.cosmology
 from astropy import units
 from astropy.cosmology.core import CosmologyError
-from pycbc.conversions import ensurearray, formatreturn
+import pycbc.conversions
 
 DEFAULT_COSMOLOGY = 'Planck15'
 
@@ -130,7 +130,7 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
     float
         The redshift at the requested values.
     """
-    fval, input_is_array = ensurearray(fval)
+    fval, input_is_array = pycbc.conversions.ensurearray(fval)
     # make sure fval is atleast 1D
     if fval.size == 1 and fval.ndim == 0:
         fval = fval.reshape(1)
@@ -170,7 +170,7 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
                                 "have been set to inf. If you would like "
                                 "better precision, call God.".format(zmax))
                 break
-    return formatreturn(zs, input_is_array)
+    return pycbc.conversions.formatreturn(zs, input_is_array)
 
 
 def _redshift(distance, **kwargs):
@@ -254,7 +254,7 @@ class DistToZ(object):
     def get_redshift(self, dist):
         """Returns the redshift for the given distance.
         """
-        dist, input_is_array = ensurearray(dist)
+        dist, input_is_array = pycbc.conversions.ensurearray(dist)
         try:
             zs = self.nearby_d2z(dist)
         except TypeError:
@@ -275,7 +275,7 @@ class DistToZ(object):
                 raise ValueError("distance must be finite and > 0")
             zs[replacemask] = _redshift(dist[replacemask],
                                         cosmology=self.cosmology)
-        return formatreturn(zs, input_is_array)
+        return pycbc.conversions.formatreturn(zs, input_is_array)
 
     def __call__(self, dist):
         return self.get_redshift(dist)
@@ -317,13 +317,141 @@ def redshift(distance, **kwargs):
     return z
 
 
-def redshift_from_comoving_volume(vc, **kwargs):
+class ComovingVolInterpolator(object):
+    r"""Interpolates comoving volume to distance or redshift.
+
+    The :mod:`astropy.cosmology` module provides methods for converting any
+    cosmological parameter (like luminosity distance) to redshift. This can be
+    very slow when operating on a large array, as it involves numerically
+    inverting :math:`z(D)` (where :math:`D` is the luminosity distance). This
+    class speeds that up by pre-interpolating :math:`D(z)`. It works by setting
+    up a dense grid of redshifts, then using linear interpolation to find the
+    inverse function.  The interpolation uses a grid linear in z for z < 1, and
+    log in z for ``default_maxz`` > z > 1. This interpolater is setup the first
+    time `get_redshift` is called.  If a distance is requested that results in
+    a z > ``default_maxz``, the class falls back to calling astropy directly.
+
+    Instances of this class can be called like a function on luminosity
+    distances, which will return the corresponding redshifts.
+
+    Parameters
+    ----------
+    parameter : {'luminosity_distance', 'redshift'}
+        What parameter to interpolate.
+    default_maxz : float, optional
+        The maximum z to interpolate up to before falling back to calling
+        astropy directly. Default is 1000.
+    numpoints : int, optional
+        The number of points to use in the linear interpolation between 0 to 1
+        and 1 to ``default_maxz``. Default is 10000.
+    \**kwargs :
+        All other keyword args are passed to :py:func:`get_cosmology` to
+        select a cosmology. If none provided, will use
+        :py:attr:`DEFAULT_COSMOLOGY`.
+    """
+    def __init__(self, parameter, default_maxz=10., numpoints=1000, **kwargs):
+        self.parameter = parameter
+        self.numpoints = int(numpoints)
+        self.default_maxz = default_maxz
+        self.cosmology = get_cosmology(**kwargs)
+        # the interpolating functions; we'll set them to None for now, then set
+        # them up when get_redshift is first called
+        self.nearby_interp = None
+        self.faraway_interp = None
+        self.default_maxvol = None
+
+    def _create_interpolant(self, minz, maxz):
+        minlogv = numpy.log(self.cosmology.comoving_volume(minz).value)
+        maxlogv = numpy.log(self.cosmology.comoving_volume(maxz).value)
+        # for computing nearby (z < 1) redshifts
+        logvs = numpy.linspace(minlogv, maxlogv, num=self.numpoints)
+        zs = z_at_value(self.cosmology.comoving_volume, numpy.exp(logvs),
+                        units.Mpc**3)
+        if self.parameter != 'redshift':
+            ys = cosmological_quantity_from_redshift(zs, self.parameter)
+        else:
+            ys = zs
+        return interpolate.interp1d(logvs, ys, kind='linear',
+                                    bounds_error=False)
+
+    def setup_interpolant(self):
+        """Initializes the z(d) interpolation."""
+        # get VC bounds
+        # for computing nearby (z < 1) redshifts
+        minz = 0.001
+        maxz = 1.
+        self.nearby_interp = self._create_interpolant(minz, maxz)
+        # for computing far away (z > 1) redshifts
+        minz = 1.
+        maxz = self.default_maxz
+        self.faraway_interp = self._create_interpolant(minz, maxz)
+        # store the default maximum volume
+        self.default_maxvol = \
+            numpy.log(self.cosmology.comoving_volume(maxz).value)
+
+    def get_value_from_logv(self, logv):
+        """Returns the redshift for the given distance.
+        """
+        logv, input_is_array = pycbc.conversions.ensurearray(logv)
+        try:
+            vals = self.nearby_interp(logv)
+        except TypeError:
+            # interpolant hasn't been setup yet
+            self.setup_interpolant()
+            vals = self.nearby_interp(logv)
+        # if any points had red shifts beyond the nearby, will have nans;
+        # replace using the faraway interpolation
+        replacemask = numpy.isnan(vals)
+        if replacemask.any():
+            vals[replacemask] = self.faraway_interp(vals[replacemask])
+            replacemask = numpy.isnan(vals)
+        # if we still have nans, means that some distances are beyond our
+        # furthest default; fall back to using astropy
+        if replacemask.any():
+            # well... check that the logv is finite first
+            if not numpy.isfinite(logv).all():
+                raise ValueError("comoving volume must be finite and > 0")
+            zs = z_at_value(self.cosmology.comoving_volume,
+                            numpy.exp(logv[replacemask]), units.Mpc**3)
+            if self.parameter == 'redshift':
+                vals[replacemask] = zs
+            else:
+                vals[replacemask] = \
+                    getattr(self.cosmology, self.parameter)(zs).value
+        return pycbc.conversions.formatreturn(vals, input_is_array)
+
+    def get_value(self, volume):
+        return self.get_value_from_logv(numpy.log(volume))
+
+    def __call__(self, volume):
+        return self.get_value(volume)
+
+
+# set up D(z) interpolating classes for the standard cosmologies
+_v2ds = {_c: ComovingVolInterpolator('luminosity_distance', cosmology=_c)
+         for _c in astropy.cosmology.parameters.available}
+
+_v2zs = {_c: ComovingVolInterpolator('redshift', cosmology=_c)
+         for _c in astropy.cosmology.parameters.available}
+
+
+def redshift_from_comoving_volume(vc, interp=True, **kwargs):
     r"""Returns the redshift from the given comoving volume.
 
     Parameters
     ----------
     vc : float
         The comoving volume, in units of cubed Mpc.
+    interp : bool, optional
+        If true, this will setup an interpolator between redshift and comoving
+        volume the first time this function is called. This is useful when
+        making many successive calls to this function (and is necessary when
+        using this function in a transform when doing parameter estimation).
+        However, setting up the interpolator the first time takes O(10)s of
+        seconds. If you will only be making a single call to this function, or
+        will only run it on an array with < ~100000 elements, it is faster to
+        not use the interpolator (i.e., set ``interp=False``). Default is
+        ``True``.
     \**kwargs :
         All other keyword args are passed to :py:func:`get_cosmology` to
         select a cosmology. If none provided, will use
@@ -335,16 +463,32 @@ def redshift_from_comoving_volume(vc, **kwargs):
         The redshift at the given comoving volume.
     """
     cosmology = get_cosmology(**kwargs)
-    return z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
+    lookup = _v2zs if interp else {}
+    try:
+        z = lookup[cosmology.name](vc)
+    except KeyError:
+        # not using interp or not a standard cosmology,
+        # call the redshift function directly
+        z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
+    return z
 
 
-def distance_from_comoving_volume(vc, **kwargs):
+def distance_from_comoving_volume(vc, interp=True, **kwargs):
     r"""Returns the luminosity distance from the given comoving volume.
 
     Parameters
     ----------
     vc : float
         The comoving volume, in units of cubed Mpc.
+    interp : bool, optional
+        If true, this will setup an interpolator between distance and comoving
+        volume the first time this function is called. This is useful when
+        making many successive calls to this function (such as when using this
+        function in a transform for parameter estimation).  However, setting up
+        the interpolator the first time takes O(10)s of seconds. If you will
+        only be making a single call to this function, or will only run it on
+        an array with < ~100000 elements, it is faster to not use the
+        interpolator (i.e., set ``interp=False``). Default is ``True``.
     \**kwargs :
         All other keyword args are passed to :py:func:`get_cosmology` to
         select a cosmology. If none provided, will use
@@ -356,8 +500,15 @@ def distance_from_comoving_volume(vc, **kwargs):
         The luminosity distance at the given comoving volume.
     """
     cosmology = get_cosmology(**kwargs)
-    z = redshift_from_comoving_volume(vc, cosmology=cosmology)
-    return cosmology.luminosity_distance(z).value
+    lookup = _v2ds if interp else {}
+    try:
+        dist = lookup[cosmology.name](vc)
+    except KeyError:
+        # not using interp or not a standard cosmology,
+        # call the redshift function directly
+        z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
+        dist = cosmology.luminosity_distance(z).value
+    return dist
 
 
 def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,

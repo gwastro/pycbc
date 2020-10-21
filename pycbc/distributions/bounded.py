@@ -17,10 +17,7 @@ This modules provides classes for evaluating distributions with bounds.
 """
 
 import warnings
-try:
-    from ConfigParser import Error
-except ImportError:
-    from configparser import Error
+from six.moves.configparser import Error
 from pycbc import boundaries
 from pycbc import VARARGS_DELIM
 
@@ -304,6 +301,19 @@ class BoundedDist(object):
         raise NotImplementedError("pdf function not set")
 
     __call__ = logpdf
+
+    def _cdfinv_param(self, param, value):
+        """Return the cdfinv for a single given parameter """
+        raise NotImplementedError("inverse cdf not set")
+
+    def cdfinv(self, **kwds):
+        """Return the inverse cdf to map the unit interval to parameter bounds.
+        You must provide a keyword for every parameter.
+        """
+        updated = {}
+        for param in self.params:
+            updated[param] = self._cdfinv_param(param, kwds[param])
+        return updated
 
     @classmethod
     def from_config(cls, cp, section, variable_args, bounds_required=False):

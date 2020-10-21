@@ -8,6 +8,7 @@ import matplotlib; matplotlib.use('Agg')
 import pylab as pl
 from pycbc.results.color import ifo_color
 import pycbc.version
+from scipy.stats import hmean
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action="version",
@@ -17,13 +18,22 @@ parser.add_argument('--input-file', nargs='+', required=True,
                     'templates per core.')
 parser.add_argument('--output-file', required=True,
                     help='Destination file for the plot.')
+parser.add_argument('--duration-weighted', action="store_true")
 args = parser.parse_args()
 
 fig, (ax1, ax2, ax3) = pl.subplots(3,1,figsize=(10,10))
 
 for pa in args.input_file:
     f = h5py.File(pa, 'r')
-    ifo = f.keys()[0]
+    ifo = tuple(f.keys())[0]
+
+    dur = f['%s/search/end_time' % ifo][:] - f['%s/search/start_time' % ifo][:]
+    dur /= dur.mean()
+    if args.duration_weighted:
+        w = dur
+    else:
+        w = None
+
     if 'templates_per_core' in f['%s/search' % ifo].keys():
         tpc = f['%s/search/templates_per_core' % ifo][:]
     else:
@@ -36,23 +46,33 @@ for pa in args.input_file:
         stf = f['%s/search/setup_time_fraction' % ifo][:]
     else:
         stf = None
+
     if tpc is not None:
-        label = str(ifo) + ': Mean average - ' + str(tpc.mean())
-        ax1.hist(tpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label)
+        label = str(ifo) + ': Harmonic mean  - ' + str(hmean(tpc))
+        if args.duration_weighted:
+            avg_tpc = 1.0 / ( w / tpc).mean()
+        else:
+            avg_tpc = hmean(tpc)
+        label = str(ifo) + ': Harmonic mean  - ' + str(avg_tpc)
+        ax1.hist(tpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label, weights=w)
         #ax1.set_title('Templates per Core')
         ax1.set_xlabel('Templates per Core')
         ax1.legend(loc = 'upper right')
         ax1.grid(True)
     if fpc is not None:
+        if w is not None:
+            fpc *= w
         label = str(ifo) + ': Mean average - ' + str(fpc.mean())
-        ax2.hist(fpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label)
+        ax2.hist(fpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label, weights=w)
         #ax2.set_title('Filter rate per core')
         ax2.set_xlabel('Filter rate per core (# FFTs per second per core)')
         ax2.legend(loc = 'upper right')
         ax2.grid(True)
     if stf is not None:
+        if w is not None:
+            stf *= w
         label = str(ifo) + ': Mean average - ' + str(stf.mean())
-        ax3.hist(stf, 100, color=ifo_color(ifo), alpha = 0.65, label = label)
+        ax3.hist(stf, 100, color=ifo_color(ifo), alpha = 0.65, label = label, weights=w)
         #ax2.set_title('Filter rate per core')
         ax3.set_xlabel('Fraction of time doing setup operations')
         ax3.legend(loc = 'upper right')
@@ -60,4 +80,3 @@ for pa in args.input_file:
 
 fig.tight_layout()
 fig.savefig(str(args.output_file))
-

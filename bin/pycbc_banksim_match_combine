@@ -106,7 +106,8 @@ for val in trig_par_list:
 for idx, row in enumerate(res): 
     outstr = ""
     if row['bank'] not in btables:
-        temp_bank = TemplateBank(row['bank'])
+        bank_path = row['bank'].decode('ascii')
+        temp_bank = TemplateBank(bank_path)
         btables[row['bank']] = temp_bank.table
 
     if row['sim'] not in itables:

@@ -17,6 +17,8 @@
 """Provides reference PSDs from LALSimulation.
 """
 
+import warnings
+import numbers
 from pycbc.types import FrequencySeries, zeros
 import lal
 import lalsimulation
@@ -95,6 +97,11 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
     if psd_name not in get_psd_model_list():
         raise ValueError(psd_name + ' not found among analytical '
                          'PSD functions.')
+
+    # make sure length has the right type for CreateREAL8FrequencySeries
+    if not isinstance(length, numbers.Integral) or length <= 0:
+        raise TypeError('length must be a positive integer')
+    length = int(length)
 
     # if PSD model is in LALSimulation
     if psd_name in get_lalsim_psd_list():

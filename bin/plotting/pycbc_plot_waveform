@@ -92,7 +92,7 @@ opt = parser.parse_args()
 delta_f = 1. / opt.waveform_length
 delta_t = 1. / opt.sample_rate
 tlen = int(opt.waveform_length * opt.sample_rate)
-flen = tlen / 2 + 1
+flen = tlen // 2 + 1
 
 tmp_params = io.WaveformArray.from_kwargs(
                     mass1=opt.mass1,
@@ -164,14 +164,18 @@ plt.plot(template.sample_frequencies, abs(template))
 plt.xlabel('Frequency (Hz)')
 plt.xlim([0,f_length*1.1])
 plt.ylabel('abs( $\\tilde{h}(f)$ )')
-
+plt.tight_layout()
 
 if opt.plot_title is None:
     opt.plot_title = 'Waveform plot'
-if opt.plot_caption is None:
+if opt.plot_caption is None and tmplt_length > 1.:
     opt.plot_caption = ("The first plot represents the template waveform"
                         "in the time domain with the inset showing a"
                         "zoom-up at merger. The second plot represents"
+                        "the template waveform in the frequency domain.")
+if opt.plot_caption is None and tmplt_length <=1 : 
+    opt.plot_caption = ("The first plot represents the template waveform"
+                        "in the time domain. The second plot represents"
                         "the template waveform in the frequency domain.")
 
 results.save_fig_with_metadata(fig, opt.output_file,

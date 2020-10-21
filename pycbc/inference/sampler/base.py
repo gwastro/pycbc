@@ -28,11 +28,12 @@ Defines the base sampler class to be inherited by all samplers.
 from __future__ import absolute_import
 
 from abc import ABCMeta, abstractmethod, abstractproperty
-import os
 import shutil
-from pycbc import distributions
 import logging
 
+from six import add_metaclass
+
+from pycbc import distributions
 from pycbc.inference.io import validate_checkpoint_files
 
 #
@@ -44,6 +45,7 @@ from pycbc.inference.io import validate_checkpoint_files
 #
 
 
+@add_metaclass(ABCMeta)
 class BaseSampler(object):
     """Abstract base class for all inference samplers.
 
@@ -55,15 +57,19 @@ class BaseSampler(object):
     model : Model
         An instance of a model from ``pycbc.inference.models``.
     """
-    __metaclass__ = ABCMeta
     name = None
 
     def __init__(self, model):
         self.model = model
+        self.checkpoint_file = None
+        self.backup_file = None
+        self.checkpoint_valid = None
+        self.new_checkpoint = None
 
     # @classmethod <--uncomment when we move to python 3.3
     @abstractmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
         """This should initialize the sampler given a config file.
         """
         pass
@@ -123,15 +129,6 @@ class BaseSampler(object):
         pass
 
     @abstractmethod
-    def set_initial_conditions(self, initial_distribution=None,
-                               samples_file=None):
-        """Sets up the starting point for the sampler.
-
-        Should also set the sampler's random state.
-        """
-        pass
-
-    @abstractmethod
     def checkpoint(self):
         """The sampler must have a checkpoint method for dumping raw samples
         and stats to the file type defined by ``io``.
@@ -143,55 +140,11 @@ class BaseSampler(object):
         """Do any finalization to the samples file before exiting."""
         pass
 
-    def setup_output(self, output_file, force=False, injection_file=None):
-        """Sets up the sampler's checkpoint and output files.
-
-        The checkpoint file has the same name as the output file, but with
-        ``.checkpoint`` appended to the name. A backup file will also be
-        created.
-
-        If the output file already exists, an ``OSError`` will be raised.
-        This can be overridden by setting ``force`` to ``True``.
-
-        Parameters
-        ----------
-        sampler : sampler instance
-            Sampler
-        output_file : str
-            Name of the output file.
-        force : bool, optional
-            If the output file already exists, overwrite it.
-        injection_file : str, optional
-            If an injection was added to the data, write its information.
+    @abstractmethod
+    def resume_from_checkpoint(self):
+        """Resume the sampler from the output file.
         """
-        # check for backup file(s)
-        checkpoint_file = output_file + '.checkpoint'
-        backup_file = output_file + '.bkup'
-        # check if we have a good checkpoint and/or backup file
-        logging.info("Looking for checkpoint file")
-        checkpoint_valid = validate_checkpoint_files(checkpoint_file,
-                                                     backup_file)
-        # Create a new file if the checkpoint doesn't exist, or if it is
-        # corrupted
-        self.new_checkpoint = False  # keeps track if this is a new file or not
-        if not checkpoint_valid:
-            logging.info("Checkpoint not found or not valid")
-            create_new_output_file(self, checkpoint_file, force=force,
-                                   injection_file=injection_file)
-            # now the checkpoint is valid
-            self.new_checkpoint = True
-            # copy to backup
-            shutil.copy(checkpoint_file, backup_file)
-        # write the command line, startup
-        for fn in [checkpoint_file, backup_file]:
-            with self.io(fn, "a") as fp:
-                fp.write_command_line()
-                fp.write_resume_point()
-        # store
-        self.checkpoint_file = checkpoint_file
-        self.backup_file = backup_file
-        self.checkpoint_valid = checkpoint_valid
-
+        pass
 
 #
 # =============================================================================
@@ -201,12 +154,53 @@ class BaseSampler(object):
 # =============================================================================
 #
 
-def create_new_output_file(sampler, filename, force=False, injection_file=None,
-                           **kwargs):
-    """Creates a new output file.
 
-    If the output file already exists, an ``OSError`` will be raised. This can
-    be overridden by setting ``force`` to ``True``.
+def setup_output(sampler, output_file, check_nsamples=True):
+    r"""Sets up the sampler's checkpoint and output files.
+
+    The checkpoint file has the same name as the output file, but with
+    ``.checkpoint`` appended to the name. A backup file will also be
+    created.
+
+    Parameters
+    ----------
+    sampler : sampler instance
+        Sampler
+    output_file : str
+        Name of the output file.
+    """
+    # check for backup file(s)
+    checkpoint_file = output_file + '.checkpoint'
+    backup_file = output_file + '.bkup'
+    # check if we have a good checkpoint and/or backup file
+    logging.info("Looking for checkpoint file")
+    checkpoint_valid = validate_checkpoint_files(checkpoint_file,
+                                                 backup_file,
+                                                 check_nsamples)
+
+    # Create a new file if the checkpoint doesn't exist, or if it is
+    # corrupted
+    sampler.new_checkpoint = False  # keeps track if this is a new file or not
+    if not checkpoint_valid:
+        logging.info("Checkpoint not found or not valid")
+        create_new_output_file(sampler, checkpoint_file)
+        # now the checkpoint is valid
+        sampler.new_checkpoint = True
+        # copy to backup
+        shutil.copy(checkpoint_file, backup_file)
+    # write the command line, startup
+    for fn in [checkpoint_file, backup_file]:
+        with sampler.io(fn, "a") as fp:
+            fp.write_command_line()
+            fp.write_resume_point()
+            fp.write_run_start_time()
+    # store
+    sampler.checkpoint_file = checkpoint_file
+    sampler.backup_file = backup_file
+
+
+def create_new_output_file(sampler, filename, **kwargs):
+    r"""Creates a new output file.
 
     Parameters
     ----------
@@ -214,20 +208,10 @@ def create_new_output_file(sampler, filename, force=False, injection_file=None,
         Sampler
     filename : str
         Name of the file to create.
-    force : bool, optional
-        Create the file even if it already exists. Default is False.
-    injection_file : str, optional
-        If an injection was added to the data, write its information.
     \**kwargs :
         All other keyword arguments are passed through to the file's
         ``write_metadata`` function.
     """
-    if os.path.exists(filename):
-        if force:
-            os.remove(filename)
-        else:
-            raise OSError("output-file already exists; use force if you "
-                          "wish to overwrite it.")
     logging.info("Creating file {}".format(filename))
     with sampler.io(filename, "w") as fp:
         # create the samples group and sampler info group
@@ -235,11 +219,6 @@ def create_new_output_file(sampler, filename, force=False, injection_file=None,
         fp.create_group(fp.sampler_group)
         # save the sampler's metadata
         fp.write_sampler_metadata(sampler)
-        # save injection parameters
-        if injection_file is not None:
-            logging.info("Writing injection file to output")
-            # just use the first one
-            fp.write_injections(injection_file)
 
 
 def initial_dist_from_config(cp, variable_params):

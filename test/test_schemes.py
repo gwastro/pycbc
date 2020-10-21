@@ -48,9 +48,9 @@ if isinstance(_context,CUDAScheme):
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
 elif isinstance(_context,CPUScheme):
-    from pycbc.types.aligned import ArrayWithAligned as SchemeArray
+    from numpy import ndarray as SchemeArray
 
-from pycbc.types.aligned import ArrayWithAligned as CPUArray
+from numpy import ndarray as CPUArray
 
 
 class SchemeTestBase(unittest.TestCase):

@@ -55,7 +55,7 @@ delta_f = None
 for input_file in args.input_files:
     logging.info('Reading %s', input_file)
     f = h5py.File(input_file, 'r')
-    ifo = f.keys()[0]
+    ifo = tuple(f.keys())[0]
     df = f[ifo + '/psds/0'].attrs['delta_f']
     if delta_f is None:
         delta_f = df

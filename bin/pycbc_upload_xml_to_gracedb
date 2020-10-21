@@ -52,9 +52,15 @@ parser.add_argument('--testing', action="store_true", default=False,
                     help="Upload event to the TEST group of gracedb.")
 parser.add_argument('--min-ifar', type=float, metavar='YEARS',
                     help='Only upload events more significant than given IFAR')
+parser.add_argument('--production-server', action="store_true", default=False,
+                    help="Upload event to production graceDB. If not given "
+                         "events will be uploaded to playground server.")
 args = parser.parse_args()
 
-gracedb = GraceDb()
+if args.production_server:
+    gracedb = GraceDb()
+else:
+    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
 
 lsctables.use_in(LIGOLWContentHandler)
 
@@ -101,7 +107,7 @@ for event in coinc_table:
             coinc_inspiral_table_curr.append(coinc_insp)
 
     if args.min_ifar is not None and \
-            coinc_inspiral_table_curr[0].combined_far > 1./args.min_ifar/YRJUL_SI:
+            coinc_inspiral_table_curr[0].combined_far > 1./args.min_ifar/lal.YRJUL_SI:
         continue
 
     sngl_ids = []
@@ -149,10 +155,10 @@ for event in coinc_table:
     ligolw_utils.write_filename(psd_xmldoc, "tmp_psd.xml.gz", gz=True)
     if args.testing:
         r = gracedb.createEvent("Test", "pycbc", "tmp_coinc_xml_file.xml",
-                                "AllSky").json()
+                                search="AllSky", offline=True).json()
     else:
         r = gracedb.createEvent("CBC", "pycbc", "tmp_coinc_xml_file.xml",
-                                "AllSky").json()
+                                search="AllSky", offline=True).json()
     logging.info("Uploaded event %s.", r["graceid"])
     gracedb.writeLog(
         r["graceid"], "PyCBC PSD estimate from the time of event",

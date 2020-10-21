@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-""" Plots the recovered versus injected parameter values from a population
+"""Plots the recovered versus injected parameter values from a population
 of injections.
 """
 
+import sys
 import argparse
 import logging
 import matplotlib as mpl; mpl.use("Agg")
@@ -13,13 +14,12 @@ import pycbc
 import pycbc.version
 from matplotlib import cm
 from pycbc import inject
-from pycbc import transforms
 from pycbc import __version__
 from pycbc.inference import (option_utils, io)
+from pycbc.results import save_fig_with_metadata
 
 # parse command line
-parser = io.ResultsArgumentParser(description="Plots the recovered versus injected parameter values "
-                                               "from a population.")
+parser = io.ResultsArgumentParser(description=__doc__)
 
 parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
@@ -27,9 +27,10 @@ parser.add_argument("--output-file", required=True, type=str,
                     help="Path to save output plot.")
 parser.add_argument("--verbose", action="store_true",
                     help="Allows print statements.")
-parser.add_argument("--quantiles", nargs=2, type=float, default=[0.05, 0.95],
-                    help="Quantiles to use as limits.")
+parser.add_argument("--percentiles", nargs=2, type=float, default=[5, 95],
+                    help="Percentiles to use as limits.")
 option_utils.add_scatter_option_group(parser)
+option_utils.add_injsamples_map_opt(parser)
 opts = parser.parse_args()
 
 # set logging
@@ -44,19 +45,13 @@ parameter = parameters[0]
 label = labels[parameters[0]] 
 
 # create figure
-fig = plt.figure()
+fig = plt.figure(figsize=(6,6))
 ax = fig.add_subplot(111)
 
 # typecast to list for iteratation
 samples = [samples] if not isinstance(samples, list) else samples
 fp = [fp] if not isinstance(fp, list) else fp
 injs = io.injections_from_cli(opts)
-_, ts = transforms.get_common_cbc_transforms(opts.parameters,
-                                                 injs.fieldnames)
-
-# add parameters not included in injection file
-inj_parameters = transforms.apply_transforms(injs, ts)
-
 
 # if user wants a colorbar
 
@@ -86,15 +81,15 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
                                                               fp, samples)):
     # get paramter values
     sampled_vals = input_samples[parameter]
-    injected_vals = inj_parameters[parameter][i]
-    # compute quantiles of sampled results
-    quantiles = numpy.array([numpy.percentile(sampled_vals, 100 * q)
-                             for q in opts.quantiles])
+    injected_vals = injs[parameter][i]
+    # compute percentiles of sampled results
+    percentiles = numpy.array([numpy.percentile(sampled_vals, p)
+                             for p in opts.percentiles])
 
     # get median and lowest and highest quntiles for plotting
     med = numpy.median(sampled_vals)
-    high = quantiles.max()
-    low = quantiles.min()
+    high = percentiles.max()
+    low = percentiles.min()
 
     # get color
     if opts.z_arg:
@@ -125,7 +120,14 @@ ax.grid()
 ax.axhline(0, linestyle="dashed", color="gray", zorder=9)
 
 # save plot
-plt.savefig(opts.output_file)
+caption = ('Difference in recovered value vs injected value vs injected '
+           'value. The vertical lines show the width of the {} to {} '
+           'percentile credible interval.'
+           .format(opts.percentiles[0], opts.percentiles[1]))
+save_fig_with_metadata(fig, opts.output_file,
+                       caption=caption,
+                       cmd=' '.join(sys.argv),
+                       fig_kwds={'bbox_inches': 'tight'})
 
 # done
 logging.info("Done")

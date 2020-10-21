@@ -4,6 +4,8 @@
 Building Bundled Executables
 ############################
 
+**NOTE: Weave is now removed from PyCBC, so this documentation page may need removing. However, instructions for bundling may still be useful**
+
 For most applications, PyCBC executables can be built and run from a standard
 Python install following the instructions in :ref:`installing_pycbc`. The
 standard installation requires that the install directory is available at
@@ -57,7 +59,7 @@ Using the build script
 
 The command-line arguments for the ``pycbc_build_eah.sh`` build script are:
 
-.. command-output:: pycbc_build_eah.sh --force-debian4 --help
+.. command-output:: ../tools/einsteinathome/pycbc_build_eah.sh --force-debian4 --help
 
 .. note::
 

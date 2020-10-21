@@ -24,7 +24,7 @@ import matplotlib
 matplotlib.use('Agg')
 import pylab
 import pycbc.results
-import pycbc.events
+from pycbc.events import ranking
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -82,7 +82,7 @@ snr = abs(f['snr'][left:right][:])
 chisq = f['chisq'][left:right][:]
 
 rang = (numpy.arange(0, len(snr), 1) - (center - left)) * delta_t
-newsnr = pycbc.events.newsnr(snr, chisq)
+newsnr = ranking.newsnr(snr, chisq)
 
 fig, ax1 = pylab.subplots()
 ax1.plot(rang, snr, color='blue', label='SNR')
@@ -106,7 +106,7 @@ if args.plot_caption is None:
     args.plot_caption = ''
 
 if 'command_line' in f.attrs:
-    cmd = f.attrs['command_line'] + '\\n\\n' + ' '.join(sys.argv)
+    cmd = f.attrs['command_line'].decode() + '\\n\\n' + ' '.join(sys.argv)
 else:
     cmd = ' '.join(sys.argv)
 

@@ -23,9 +23,8 @@ from matplotlib import pyplot as plt
 
 import copy, numpy as np
 
-from scipy.stats import kstest
-
-from pycbc import io, events, bin_utils, results
+from pycbc import events, bin_utils, results
+from pycbc.events import triggers
 from pycbc.events import trigger_fits as trstats
 from pycbc.events.stat import sngl_statistic_dict
 import pycbc.version
@@ -97,11 +96,15 @@ parser.add_argument("--bin-param", required=True,
                     "Choose from mchirp, mtotal, template_duration or a named "
                     "frequency cutoff in pnutils or a frequency function in "
                     "LALSimulation")
-parser.add_argument("--bin-spacing", choices=["linear", "log"],
+parser.add_argument("--bin-spacing", choices=["linear", "log", "irregular"],
                     help="How to space parameter bin edges")
-parser.add_argument("--num-bins", type=int,
+binopt = parser.add_mutually_exclusive_group(required=True)
+binopt.add_argument("--num-bins", type=int,
                     help="Number of regularly spaced bins to use over the "
                     " parameter")
+binopt.add_argument("--irregular-bins",
+                    help="Comma-separated list of parameter bin edges. "
+                    "Required if --bin-spacing = irregular")
 parser.add_argument("--bin-param-units",
                     help="String to display units of the binning parameter")
 parser.add_argument("--approximant", default="SEOBNRv4",
@@ -154,6 +157,13 @@ if args.plot_dir:
         args.plot_dir += '/'
     plotbase = args.plot_dir + args.ifo + "-" + args.user_tag
 
+## Check option logic
+if args.bin_spacing == "irregular":
+    if args.irregular_bins is None:
+        raise RuntimeError("Must specify a list of irregular bin edges!")
+    else:
+        args.bin_edges = [float(b) for b in args.irregular_bins.split(',')]
+
 logging.info('Opening trigger file: %s' % args.trigger_file)
 trigf = h5py.File(args.trigger_file, 'r')
 logging.info('Opening template file: %s' % args.bank_file)
@@ -201,7 +211,7 @@ def get_pars(args, tag, m1, m2, s1z, s2z):
         logging.info('Getting %s values for %i triggers' % (paramarg, len(m1)))
     except:
         pass
-    return trstats.get_param(paramarg, args, m1, m2, s1z, s2z)
+    return triggers.get_param(paramarg, args, m1, m2, s1z, s2z)
 
 if args.prune_param:
     logging.info('Getting min and max param values')
@@ -241,7 +251,7 @@ if args.prune_param:
         lstat = statpruneall[loudest]
         ltid = tidpruneall[loudest]
         ltime = timepruneall[loudest]
-        m1, m2, s1z, s2z = trstats.get_masses(templatef, ltid)
+        m1, m2, s1z, s2z = triggers.get_mass_spin(templatef, ltid)
         lbin = trstats.which_bin(get_pars(args, 'prune', m1, m2, s1z, s2z),
                                  minprpar, maxprpar,
                                  args.prune_bins, log=args.log_prune_param)
@@ -284,10 +294,22 @@ if args.prune_param:
 if trig_dur:
     binpars = tdur + args.min_duration
 else:
-    m1, m2, s1z, s2z = trstats.get_masses(templatef, tid)
+    m1, m2, s1z, s2z = triggers.get_mass_spin(templatef, tid)
     binpars = get_pars(args, 'bin', m1, m2, s1z, s2z)
 logging.info("Parameter range of triggers: %f - %f" %
                                                   (min(binpars), max(binpars)))
+
+# remove triggers outside irregular bins
+if args.bin_spacing == "irregular":
+    logging.info("Removing triggers outside bin range %f - %f" %
+                                      (min(args.bin_edges), max(args.bin_edges)))
+    in_range = np.logical_and(binpars >= min(args.bin_edges),
+                                  binpars <= max(args.bin_edges))
+    binpars = binpars[in_range]
+    stat = stat[in_range]
+    tid = tid[in_range]
+    logging.info("%i remain" % len(binpars))
+
 # get the bins
 # we assume that parvals are all positive
 assert min(binpars) >= 0
@@ -297,6 +319,9 @@ if args.bin_spacing == "linear":
     pbins = bin_utils.LinearBins(pmin, pmax, args.num_bins)
 elif args.bin_spacing == "log":
     pbins = bin_utils.LogarithmicBins(pmin, pmax, args.num_bins)
+elif args.bin_spacing == "irregular":
+    pbins = bin_utils.IrregularBins(args.bin_edges)
+
 # list of bin indices
 binind = [pbins[c] for c in pbins.centres()]
 logging.info("Assigning trigger param values to bins")

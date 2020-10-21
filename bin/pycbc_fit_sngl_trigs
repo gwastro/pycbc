@@ -22,14 +22,15 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from pycbc import io, events, bin_utils
+from pycbc.events import ranking
 from pycbc.events import trigger_fits as trstats
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
 stat_dict = {
-    "new_snr"       : events.newsnr,
-    "effective_snr" : events.effsnr,
+    "new_snr"       : ranking.newsnr,
+    "effective_snr" : ranking.effsnr,
     "snr"           : lambda snr, rchisq : snr,
     "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5)
 }
@@ -110,7 +111,7 @@ cuts.add_argument("--trig-filter", default=None,
                   help="Filter function applied to trigger properties: only "
                   "implemented for hdf format.  May include names from math, "
                   "numpy as 'np', pycbc.events and pycbc.pnutils.  Ex. "
-                  "'events.newsnr(self.snr, self.bank_chisq/self.bank_chisq_"
+                  "'ranking.newsnr(self.snr, self.bank_chisq/self.bank_chisq_"
                   "dof) > 6.)'")
 parser.add_argument("--stat-threshold", nargs="+", type=float,
                     help="Only fit triggers with statistic value above this "
@@ -164,7 +165,7 @@ elif "hdf" in opt.inputs[0]:
     # columns for reading triggers without template file info
     cols = ["snr", "chisq", "template_duration", "template_id", "end_time"]
 else:
-    print 'inputs:', opt.inputs
+    print('inputs:', opt.inputs)
     raise RuntimeError("I didn't recognize the file format for the inputs!")
 
 if opt.trig_filter and trigformat != "hdf":
@@ -311,7 +312,7 @@ for ifo in opt.ifos:
             vals_inbin = statv[pind == i]
             counts[ifo][th][i] = sum(vals_inbin >= th)
             if len(vals_inbin) == 0:
-                print "No trigs in bin", lower, upper
+                print("No trigs in bin", lower, upper)
                 continue
             # FIXME: Also allow to use dynamically determined threshold
             # calculated via Nth loudest trig

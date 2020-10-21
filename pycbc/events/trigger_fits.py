@@ -48,8 +48,6 @@ ks_stat, ks_pval = KS_test('exponential', snrs, alpha, thresh)
 from __future__ import division
 import numpy
 from scipy.stats import kstest
-from pycbc import pnutils
-from pycbc import conversions
 
 fitalpha_dict = {
     'exponential' : lambda vals, thresh : 1. / (numpy.mean(vals) - thresh),
@@ -214,73 +212,6 @@ def KS_test(distr, vals, alpha, thresh=None):
     return kstest(vals, cdf_fn)
 
 
-def get_masses(bank, tid):
-    """
-    Helper function
-
-    Parameters
-    ----------
-    bank : h5py File object
-        Bank parameter file
-    tid : integer or array of int
-        Indices of the entries to be returned
-
-    Returns
-    -------
-    m1, m2, s1z, s2z : tuple of floats or arrays of floats
-        Parameter values of the bank entries
-    """
-    m1 = bank['mass1'][:][tid]
-    m2 = bank['mass2'][:][tid]
-    s1z = bank['spin1z'][:][tid]
-    s2z = bank['spin2z'][:][tid]
-    return m1, m2, s1z, s2z
-
-
-def get_param(par, args, m1, m2, s1z, s2z):
-    """
-    Helper function
-
-    Parameters
-    ----------
-    par : string
-        Name of parameter to calculate
-    args : Namespace object returned from ArgumentParser instance
-        Calling code command line options, used for f_lower value
-    m1 : float or array of floats
-        First binary component mass (etc.)
-
-    Returns
-    -------
-    parvals : float or array of floats
-        Calculated parameter values
-    """
-    if par == 'mchirp':
-        parvals, _ = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-    elif par == 'mtotal':
-        parvals = m1 + m2
-    elif par =='eta':
-        parvals = conversions.eta_from_mass1_mass2(m1, m2)
-    elif par in ['chi_eff', 'effective_spin']:
-        parvals = conversions.chi_eff(m1, m2, s1z, s2z)
-    elif par == 'template_duration':
-        # default to SEOBNRv4 duration function
-        parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower,
-                                           args.approximant or "SEOBNRv4")
-        if args.min_duration:
-            parvals += args.min_duration
-    elif par == 'tau0':
-        parvals = conversions.tau0_from_mass1_mass2(m1, m2, args.f_lower)
-    elif par == 'tau3':
-        parvals = conversions.tau3_from_mass1_mass2(m1, m2, args.f_lower)
-    elif par in pnutils.named_frequency_cutoffs.keys():
-        parvals = pnutils.frequency_cutoff_from_name(par, m1, m2, s1z, s2z)
-    else:
-        # try asking for a LALSimulation frequency function
-        parvals = pnutils.get_freq(par, m1, m2, s1z, s2z)
-    return parvals
-
-
 def which_bin(par, minpar, maxpar, nbins, log=False):
     """
     Helper function
@@ -310,7 +241,12 @@ def which_bin(par, minpar, maxpar, nbins, log=False):
     if log:
         par, minpar, maxpar = numpy.log(par), numpy.log(minpar), numpy.log(maxpar)
     # par lies some fraction of the way between min and max
-    frac = float(par - minpar) / float(maxpar - minpar)
+    if minpar != maxpar:
+        frac = float(par - minpar) / float(maxpar - minpar)
+    else:
+        # if they are equal there is only one size 0 bin
+        # must be in that bin
+        frac = 0
     # binind then lies between 0 and nbins - 1
     binind = int(frac * nbins)
     # corner case

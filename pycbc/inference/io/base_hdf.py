@@ -29,14 +29,58 @@ from __future__ import absolute_import
 
 import sys
 import logging
-from abc import (ABCMeta, abstractmethod)
-import numpy
+# python 2.7 needs to use StingIO from the StringIO module; this was
+# deprecated in python 3
+if sys.version_info.major == 2:
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
+from abc import (ABCMeta, abstractmethod)
+from six import (add_metaclass, string_types)
+
+import numpy
 import h5py
 
 from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
+from pycbc.io import (dump_state, load_state)
+from pycbc.workflow import WorkflowConfigParser
 
+
+def format_attr(val):
+    """Formats an attr so that it can be read in either python 2 or 3.
+
+    In python 2, strings that are saved as an attribute in an hdf file default
+    to unicode. Since unicode was removed in python 3, if you load that file
+    in a python 3 environment, the strings will be read as bytes instead, which
+    causes a number of issues. This attempts to fix that. If the value is
+    a bytes string, then it will be decoded into a string. If the value is
+    a numpy array of byte strings, it will convert the array to a list of
+    strings.
+
+    Parameters
+    ----------
+    val : obj
+        The value to format. This will try to apply decoding to the value
+
+    Returns
+    -------
+    obj
+        If ``val`` was a byte string, the value as a ``str``. If the value
+        was a numpy array of ``bytes_``, the value as a list of ``str``.
+        Otherwise, just returns the value.
+    """
+    try:
+        val = str(val.decode())
+    except AttributeError:
+        pass
+    if isinstance(val, numpy.ndarray) and val.dtype.type == numpy.bytes_:
+        val = val.astype(numpy.unicode_).tolist()
+    return val
+
+
+@add_metaclass(ABCMeta)
 class BaseInferenceFile(h5py.File):
     """Base class for all inference hdf files.
 
@@ -50,13 +94,13 @@ class BaseInferenceFile(h5py.File):
     mode : {None, str}
         The mode to open the file, eg. "w" for write and "r" for read.
     """
-    __metaclass__ = ABCMeta
 
     name = None
     samples_group = 'samples'
     sampler_group = 'sampler_info'
     data_group = 'data'
     injections_group = 'injections'
+    config_group = 'config_file'
 
     def __init__(self, path, mode=None, **kwargs):
         super(BaseInferenceFile, self).__init__(path, mode, **kwargs)
@@ -70,6 +114,10 @@ class BaseInferenceFile(h5py.File):
                 self.attrs['filetype'] = filetype
             else:
                 filetype = None
+        try:
+            filetype = str(filetype.decode())
+        except AttributeError:
+            pass
         if filetype != self.name:
             raise ValueError("This file has filetype {}, whereas this class "
                              "is named {}. This indicates that the file was "
@@ -93,20 +141,10 @@ class BaseInferenceFile(h5py.File):
 
         Parameters
         ----------
-        fp : open hdf file
-            The file to write to.
         samples : dict
             Samples should be provided as a dictionary of numpy arrays.
         \**kwargs :
             Any other keyword args the sampler needs to write data.
-        """
-        pass
-
-    @abstractmethod
-    def write_sampler_metadata(self, sampler):
-        """This should write the given sampler's metadata to the file.
-
-        This should also include the model's metadata.
         """
         pass
 
@@ -155,8 +193,6 @@ class BaseInferenceFile(h5py.File):
 
         Parameters
         -----------
-        fp : InferenceFile
-            An open file handler to read the samples from.
         parameters : (list of) strings
             The parameter(s) to retrieve.
         array_class : FieldArray-like class, optional
@@ -181,10 +217,10 @@ class BaseInferenceFile(h5py.File):
         # convert to FieldArray
         samples = array_class.from_kwargs(**samples)
         # add the static params and attributes
-        addatrs = (self.static_params.items() +
-                   self[self.samples_group].attrs.items())
+        addatrs = (list(self.static_params.items()) +
+                   list(self[self.samples_group].attrs.items()))
         for (p, val) in addatrs:
-            setattr(samples, p, val)
+            setattr(samples, format_attr(p), format_attr(val))
         return samples
 
     @abstractmethod
@@ -192,20 +228,6 @@ class BaseInferenceFile(h5py.File):
         """Low level function for reading datasets in the samples group.
 
         This should return a dictionary of numpy arrays.
-        """
-        pass
-
-    @abstractmethod
-    def write_posterior(self, filename, **kwargs):
-        """This should write a posterior plus any other metadata to the given
-        file.
-
-        Parameters
-        ----------
-        posterior_file : str
-            Name of the file to write to.
-        \**kwargs :
-            Any other keyword args the sampler needs to write the posterior.
         """
         pass
 
@@ -301,7 +323,7 @@ class BaseInferenceFile(h5py.File):
             Array of the loaded samples.
         """
         if parameters is None and opts.parameters is None:
-            parameters = self.variable_args
+            parameters = self.variable_params
         elif parameters is None:
             parameters = opts.parameters
         # parse optional arguments
@@ -334,69 +356,25 @@ class BaseInferenceFile(h5py.File):
     def thin_start(self):
         """The default start index to use when reading samples.
 
-        This tries to read from ``thin_start`` in the ``attrs``. If it isn't
-        there, just returns 0."""
-        try:
-            return self.attrs['thin_start']
-        except KeyError:
-            return 0
-
-    @thin_start.setter
-    def thin_start(self, thin_start):
-        """Sets the thin start attribute.
-
-        Parameters
-        ----------
-        thin_start : int or None
-            Value to set the thin start to.
+        Unless overridden by sub-class attribute, just returns 0.
         """
-        self.attrs['thin_start'] = thin_start
+        return 0
 
     @property
     def thin_interval(self):
         """The default interval to use when reading samples.
 
-        This tries to read from ``thin_interval`` in the ``attrs``. If it
-        isn't there, just returns 1.
+        Unless overridden by sub-class attribute, just returns 1.
         """
-        try:
-            return self.attrs['thin_interval']
-        except KeyError:
-            return 1
-
-    @thin_interval.setter
-    def thin_interval(self, thin_interval):
-        """Sets the thin start attribute.
-
-        Parameters
-        ----------
-        thin_interval : int or None
-            Value to set the thin interval to.
-        """
-        self.attrs['thin_interval'] = thin_interval
+        return 1
 
     @property
     def thin_end(self):
         """The defaut end index to use when reading samples.
 
-        This tries to read from ``thin_end`` in the ``attrs``. If it isn't
-        there, just returns None.
+        Unless overriden by sub-class attribute, just return ``None``.
         """
-        try:
-            return self.attrs['thin_end']
-        except KeyError:
-            return None
-
-    @thin_end.setter
-    def thin_end(self, thin_end):
-        """Sets the thin end attribute.
-
-        Parameters
-        ----------
-        thin_end : int or None
-            Value to set the thin end to.
-        """
-        self.attrs['thin_end'] = thin_end
+        return None
 
     @property
     def cmd(self):
@@ -561,6 +539,7 @@ class BaseInferenceFile(h5py.File):
         injection_file : str
             Path to HDF injection file.
         """
+        logging.info("Writing injection file to output")
         try:
             with h5py.File(injection_file, "r") as fp:
                 super(BaseInferenceFile, self).copy(fp, self.injections_group)
@@ -601,47 +580,29 @@ class BaseInferenceFile(h5py.File):
             previous = []
         self.attrs["cmd"] = cmd + previous
 
-    @abstractmethod
-    def write_resume_point(self):
-        """Should write the point that a sampler starts up.
-
-        How the resume point is indexed is up to the sampler. For example,
-        MCMC samplers use the number of iterations that are stored in the
-        checkpoint file.
-        """
-        pass
-
-    def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
-        """Formats a slice using the given arguments that can be used to
-        retrieve a thinned array from an InferenceFile.
+    @staticmethod
+    def get_slice(thin_start=None, thin_interval=None, thin_end=None):
+        """Formats a slice to retrieve a thinned array from an HDF file.
 
         Parameters
         ----------
-        thin_start : int, optional
-            The starting index to use. If None, will use the ``thin_start``
-            attribute.
-        thin_interval : int, optional
-            The interval to use. If None, will use the ``thin_interval``
-            attribute.
-        thin_end : int, optional
-            The end index to use. If None, will use the ``thin_end`` attribute.
+        thin_start : float or int, optional
+            The starting index to use. If provided, the ``int`` will be taken.
+        thin_interval : float or int, optional
+            The interval to use. If provided the ceiling of it will be taken.
+        thin_end : float or int, optional
+            The end index to use. If provided, the ``int`` will be taken.
 
         Returns
         -------
         slice :
             The slice needed.
         """
-        if thin_start is None:
-            thin_start = int(self.thin_start)
-        else:
+        if thin_start is not None:
             thin_start = int(thin_start)
-        if thin_interval is None:
-            thin_interval = self.thin_interval
-        else:
+        if thin_interval is not None:
             thin_interval = int(numpy.ceil(thin_interval))
-        if thin_end is None:
-            thin_end = self.thin_end
-        else:
+        if thin_end is not None:
             thin_end = int(thin_end)
         return slice(thin_start, thin_end, thin_interval)
 
@@ -676,7 +637,7 @@ class BaseInferenceFile(h5py.File):
         # copy non-samples/stats data
         if ignore is None:
             ignore = []
-        if isinstance(ignore, (str, unicode)):
+        if isinstance(ignore, string_types):
             ignore = [ignore]
         ignore = set(ignore + [self.samples_group])
         copy_groups = set(self.keys()) - ignore
@@ -709,6 +670,8 @@ class BaseInferenceFile(h5py.File):
         # if list of desired parameters is different, rename
         if set(parameters) != set(self.variable_params):
             other.attrs['variable_params'] = parameters
+        if read_args is None:
+            read_args = {}
         samples = self.read_samples(parameters, **read_args)
         logging.info("Copying {} samples".format(samples.size))
         # if different parameter names are desired, get them from the samples
@@ -719,7 +682,10 @@ class BaseInferenceFile(h5py.File):
             samples = FieldArray.from_kwargs(**arrs)
             other.attrs['variable_params'] = samples.fieldnames
         logging.info("Writing samples")
-        other.write_samples(other, samples, **write_args)
+        if write_args is None:
+            write_args = {}
+        other.write_samples({p: samples[p] for p in samples.fieldnames},
+                            **write_args)
 
     def copy(self, other, ignore=None, parameters=None, parameter_names=None,
              read_args=None, write_args=None):
@@ -762,7 +728,7 @@ class BaseInferenceFile(h5py.File):
         # info
         if ignore is None:
             ignore = []
-        if isinstance(ignore, (str, unicode)):
+        if isinstance(ignore, string_types):
             ignore = [ignore]
         self.copy_info(other, ignore=ignore)
         # samples
@@ -773,9 +739,9 @@ class BaseInferenceFile(h5py.File):
                               write_args=write_args)
             # if any down selection was done, re-set the default
             # thin-start/interval/end
-            p = self[self.samples_group].keys()[0]
+            p = tuple(self[self.samples_group].keys())[0]
             my_shape = self[self.samples_group][p].shape
-            p = other[other.samples_group].keys()[0]
+            p = tuple(other[other.samples_group].keys())[0]
             other_shape = other[other.samples_group][p].shape
             if my_shape != other_shape:
                 other.attrs['thin_start'] = 0
@@ -802,8 +768,148 @@ class BaseInferenceFile(h5py.File):
             if val is None:
                 val = str(None)
             if isinstance(val, dict):
-                attrs[arg] = val.keys()
+                attrs[arg] = list(val.keys())
                 # just call self again with the dict as kwargs
                 cls.write_kwargs_to_attrs(attrs, **val)
             else:
                 attrs[arg] = val
+
+    def write_data(self, name, data, path=None, append=False):
+        """Convenience function to write data.
+
+        Given ``data`` is written as a dataset with ``name`` in ``path``.
+        If the dataset or path do not exist yet, the dataset and path will
+        be created.
+
+        Parameters
+        ----------
+        name : str
+            The name to associate with the data. This will be the dataset
+            name (if data is array-like) or the key in the attrs.
+        data : array, dict, or atomic
+            The data to write. If a dictionary, a subgroup will be created
+            for each key, and the values written there. This will be done
+            recursively until an array or atomic (e.g., float, int, str), is
+            found. Otherwise, the data is written to the given name.
+        path : str, optional
+            Write to the given path. Default (None) will write to the top
+            level. If the path does not exist in the file, it will be
+            created.
+        append : bool, optional
+            Append the data to what is currently in the file if ``path/name``
+            already exists in the file, and if it does not, create the dataset
+            so that its last dimension can be resized. The data can only
+            be appended along the last dimension, and if it already exists in
+            the data, it must be resizable along this dimension. If ``False``
+            (the default) what is in the file will be overwritten, and the
+            given data must have the same shape.
+        """
+        if path is None:
+            path = '/'
+        try:
+            group = self[path]
+        except KeyError:
+            # create the group
+            self.create_group(path)
+            group = self[path]
+        if isinstance(data, dict):
+            # call myself for each key, value pair in the dictionary
+            for key, val in data.items():
+                self.write_data(key, val, path='/'.join([path, name]),
+                                append=append)
+        # if appending, we need to resize the data on disk, or, if it doesn't
+        # exist yet, create a dataset that is resizable along the last
+        # dimension
+        elif append:
+            # cast the data to an array if it isn't already one
+            if isinstance(data, (list, tuple)):
+                data = numpy.array(data)
+            if not isinstance(data, numpy.ndarray):
+                data = numpy.array([data])
+            dshape = data.shape
+            ndata = dshape[-1]
+            try:
+                startidx = group[name].shape[-1]
+                group[name].resize(dshape[-1]+group[name].shape[-1],
+                                   axis=len(group[name].shape)-1)
+            except KeyError:
+                # dataset doesn't exist yet
+                group.create_dataset(name, dshape,
+                                     maxshape=tuple(list(dshape)[:-1]+[None]),
+                                     dtype=data.dtype, fletcher32=True)
+                startidx = 0
+            group[name][..., startidx:startidx+ndata] = data[..., :]
+        else:
+            try:
+                group[name][()] = data
+            except KeyError:
+                # dataset doesn't exist yet
+                group[name] = data
+
+    def write_config_file(self, cp):
+        """Writes the given config file parser.
+
+        File is stored as a pickled buffer array to ``config_parser/{index}``,
+        where ``{index}`` is an integer corresponding to the number of config
+        files that have been saved. The first time a save is called, it is
+        stored to ``0``, and incremented from there.
+
+        Parameters
+        ----------
+        cp : ConfigParser
+            Config parser to save.
+        """
+        # get the index of the last saved file
+        try:
+            index = list(map(int, self[self.config_group].keys()))
+        except KeyError:
+            index = []
+        if index == []:
+            # hasn't been written yet
+            index = 0
+        else:
+            index = max(index) + 1
+        # we'll store the config file as a text file that is pickled
+        out = StringIO()
+        cp.write(out)
+        # now pickle it
+        dump_state(out, self, path=self.config_group, dsetname=str(index))
+
+    def read_config_file(self, return_cp=True, index=-1):
+        """Reads the config file that was used.
+
+        A ``ValueError`` is raised if no config files have been saved, or if
+        the requested index larger than the number of stored config files.
+
+        Parameters
+        ----------
+        return_cp : bool, optional
+            If true, returns the loaded config file as
+            :py:class:`pycbc.workflow.configuration.WorkflowConfigParser`
+            type. Otherwise will return as string buffer. Default is True.
+        index : int, optional
+            The config file to load. If ``write_config_file`` has been called
+            multiple times (as would happen if restarting from a checkpoint),
+            there will be config files stored. Default (-1) is to load the
+            last saved file.
+
+        Returns
+        -------
+        WorkflowConfigParser or StringIO :
+            The parsed config file.
+        """
+        # get the stored indices
+        try:
+            indices = sorted(map(int, self[self.config_group].keys()))
+            index = indices[index]
+        except KeyError:
+            raise ValueError("no config files saved in hdf")
+        except IndexError:
+            raise ValueError("no config file matches requested index")
+        cf = load_state(self, path=self.config_group, dsetname=str(index))
+        cf.seek(0)
+        if return_cp:
+            cp = WorkflowConfigParser()
+            cp.read_file(cf)
+            return cp
+        return cf

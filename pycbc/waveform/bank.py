@@ -38,6 +38,8 @@ import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
+import six
+import hashlib
 
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
@@ -83,9 +85,9 @@ def sigma_cached(self, psd):
                 self.sigma_view = self[self.sslice].squared_norm() * 4.0 * self.delta_f
 
             if not hasattr(psd, 'invsqrt'):
-                psd.invsqrt = 1.0 / psd[self.sslice]
+                psd.invsqrt = 1.0 / psd
 
-            self._sigmasq[key] = self.sigma_view.inner(psd.invsqrt)
+            self._sigmasq[key] = self.sigma_view.inner(psd.invsqrt[self.sslice])
     return self._sigmasq[key]
 
 # dummy class needed for loading LIGOLW files
@@ -178,6 +180,26 @@ def parse_approximant_arg(approximant_arg, warray):
     """
     return warray.parse_boolargs(boolargs_from_apprxstr(approximant_arg))[0]
 
+def tuple_to_hash(tuple_to_be_hashed):
+    """
+    Return a hash for a numpy array, avoids native (unsafe) python3 hash function
+
+    Parameters
+    ----------
+    tuple_to_be_hashed: tuple
+        The tuple which is being hashed
+        Must be convertible to a numpy array
+
+    Returns
+    -------
+    int
+        an integer representation of the hashed array
+    """
+    if six.PY2:
+        return hash(tuple_to_be_hashed)
+    h = hashlib.blake2b(np.array(tuple_to_be_hashed).tobytes('C'),
+                        digest_size=8)
+    return np.fromstring(h.digest(), dtype=int)[0]
 
 class TemplateBank(object):
     """Class to provide some basic helper functions and information
@@ -262,13 +284,23 @@ class TemplateBank(object):
             f = h5py.File(filename, 'r')
             self.filehandler = f
             try:
-                fileparams = map(str, f.attrs['parameters'])
+                fileparams = list(f.attrs['parameters'])
             except KeyError:
                 # just assume all of the top-level groups are the parameters
-                fileparams = map(str, f.keys())
+                fileparams = list(f.keys())
                 logging.info("WARNING: no parameters attribute found. "
                     "Assuming that %s " %(', '.join(fileparams)) +
                     "are the parameters.")
+            tmp_params = []
+            # At this point fileparams might be bytes. Fix if it is
+            for param in fileparams:
+                try:
+                    param = param.decode()
+                    tmp_params.append(param)
+                except AttributeError:
+                    tmp_params.append(param)
+            fileparams = tmp_params
+
             # use WaveformArray's syntax parser to figure out what fields
             # need to be loaded
             if parameters is None:
@@ -281,8 +313,8 @@ class TemplateBank(object):
             dtype = []
             data = {}
             for key in common_fields+add_fields:
-                data[str(key)] = f[key][:]
-                dtype.append((str(key), data[key].dtype))
+                data[key] = f[key][:]
+                dtype.append((key, data[key].dtype))
             num = f[fileparams[0]].size
             self.table = pycbc.io.WaveformArray(num, dtype=dtype)
             for key in data:
@@ -325,8 +357,11 @@ class TemplateBank(object):
                        'spin2x', 'spin2y', 'spin2z',]
 
         fields = [f for f in hash_fields if f in fields]
-        template_hash = np.array([hash(v) for v in zip(*[self.table[p]
+        template_hash = np.array([tuple_to_hash(v) for v in zip(*[self.table[p]
                                   for p in fields])])
+        if not np.unique(template_hash).size == template_hash.size:
+            raise RuntimeError("Some template hashes clash. This should not "
+                               "happen.")
         self.table = self.table.add_fields(template_hash, 'template_hash')
 
     def write_to_hdf(self, filename, start_index=None, stop_index=None,
@@ -388,6 +423,8 @@ class TemplateBank(object):
         """ Return the end frequency of the waveform at the given index value
         """
         from pycbc.waveform.waveform import props
+        if hasattr(self.table[index], 'f_final'):
+            return self.table[index].f_final
 
         return pycbc.waveform.get_waveform_end_frequency(
                                 self.table[index],
@@ -480,10 +517,11 @@ class LiveFilterBank(TemplateBank):
         super(LiveFilterBank, self).__init__(filename, approximant=approximant,
                 parameters=parameters, **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
-        self.hash_lookup = {}
+        self.param_lookup = {}
         for i, p in enumerate(self.table):
-            hash_value =  hash((p.mass1, p.mass2, p.spin1z, p.spin2z))
-            self.hash_lookup[hash_value] = i
+            key =  (p.mass1, p.mass2, p.spin1z, p.spin2z)
+            assert(key not in self.param_lookup) # Uh, oh, template confusion!
+            self.param_lookup[key] = i
 
     def round_up(self, num):
         """Determine the length to use for this waveform by rounding.
@@ -509,20 +547,20 @@ class LiveFilterBank(TemplateBank):
         instance.table = self.table[sindex]
         return instance
 
-    def id_from_hash(self, hash_value):
-        """Get the index of this template based on its hash value
+    def id_from_param(self, param_tuple):
+        """Get the index of this template based on its param tuple
 
         Parameters
         ----------
-        hash : int
-            Value of the template hash
+        param_tuple : tuple
+            Tuple of the parameters which uniquely identify this template
 
         Returns
         --------
         index : int
             The ordered index that this template has in the template bank.
         """
-        return self.hash_lookup[hash_value]
+        return self.param_lookup[param_tuple]
 
     def __getitem__(self, index):
         if isinstance(index, slice):
@@ -570,10 +608,13 @@ class LiveFilterBank(TemplateBank):
         # include ringdown) and the duration up to merger since they will be
         # erased by the type conversion below.
         ttotal = template_duration = -1
+        time_offset = None
         if hasattr(htilde, 'length_in_time'):
             ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
             template_duration = htilde.chirp_length
+        if hasattr(htilde, 'time_offset'):
+            time_offset = htilde.time_offset
 
         self.table[index].template_duration = template_duration
 
@@ -587,13 +628,16 @@ class LiveFilterBank(TemplateBank):
         htilde.approximant = approximant
         htilde.end_frequency = f_end
 
+        if time_offset:
+            htilde.time_offset = time_offset
+
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
 
-        htilde.id = self.id_from_hash(hash((htilde.params.mass1,
-                                      htilde.params.mass2,
-                                      htilde.params.spin1z,
-                                      htilde.params.spin2z)))
+        htilde.id = self.id_from_param((htilde.params.mass1,
+                                        htilde.params.mass2,
+                                        htilde.params.spin1z,
+                                        htilde.params.spin2z))
         return htilde
 
 
@@ -710,15 +754,10 @@ class FilterBank(TemplateBank):
             f_end = (self.filter_length-1) * self.delta_f
 
         # Find the start frequency, if variable
-        if self.f_lower is None:
-            f_low = self.table[index].f_lower
-        elif self.max_template_length is not None:
-            f_low = find_variable_start_frequency(approximant,
-                                                  self.table[index],
-                                                  self.f_lower,
-                                                  self.max_template_length)
-        else:
-            f_low = self.f_lower
+        f_low = find_variable_start_frequency(approximant,
+                                              self.table[index],
+                                              self.f_lower,
+                                              self.max_template_length)
         logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
 
         # Clear the storage memory
@@ -768,12 +807,17 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
     """ Find a frequency value above the starting frequency that results in a
     waveform shorter than max_length.
     """
-    l = max_length + 1
-    f = f_start - delta_f
-    while l > max_length:
-        f += delta_f
-        l = pycbc.waveform.get_waveform_filter_length_in_time(approximant,
-                                                      parameters, f_lower=f)
+    if (f_start is None):
+        f = parameters.f_lower
+    elif (max_length is not None):
+        l = max_length + 1
+        f = f_start - delta_f
+        while l > max_length:
+            f += delta_f
+            l = pycbc.waveform.get_waveform_filter_length_in_time(approximant,
+                                                          parameters, f_lower=f)
+    else :
+        f = f_start
     return f
 
 
@@ -817,14 +861,10 @@ class FilterBankSkyMax(TemplateBank):
             f_end = (self.filter_length-1) * self.delta_f
 
         # Find the start frequency, if variable
-        if self.max_template_length is not None:
-            f_low = find_variable_start_frequency(approximant,
-                                                  self.table[index],
-                                                  self.f_lower,
-                                                  self.max_template_length)
-        else:
-            f_low = self.f_lower
-
+        f_low = find_variable_start_frequency(approximant,
+                                              self.table[index],
+                                              self.f_lower,
+                                              self.max_template_length)
         logging.info('%s: generating %s from %s Hz', index, approximant, f_low)
 
         # What does this do???

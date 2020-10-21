@@ -29,6 +29,7 @@ This module retrives a timeseries and then calculates
 the q-transform of that time series
 """
 
+from six.moves import range
 import numpy
 from numpy import ceil, log, exp
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
@@ -144,9 +145,9 @@ def _iter_qs(qrange, deltam):
     cumum = log(float(qrange[1]) / qrange[0]) / 2**(1/2.)
     nplanes = int(max(ceil(cumum / deltam), 1))
     dq = cumum / nplanes
-    for i in xrange(nplanes):
+    for i in range(nplanes):
         yield qrange[0] * exp(2**(1/2.) * dq * (i + .5))
-    raise StopIteration()
+    return
 
 def _iter_frequencies(q, frange, mismatch, dur):
     """Iterate over the frequencies of this 'QPlane'
@@ -174,11 +175,11 @@ def _iter_frequencies(q, frange, mismatch, dur):
     fstep = fcum_mismatch / nfreq
     fstepmin = 1. / dur
     # for each frequency, yield a QTile
-    for i in xrange(nfreq):
+    for i in range(nfreq):
         yield (float(minf) *
                exp(2 / (2 + q**2)**(1/2.) * (i + .5) * fstep) //
                fstepmin * fstepmin)
-    raise StopIteration()
+    return
 
 def qseries(fseries, Q, f0, return_complex=False):
     """Calculate the energy 'TimeSeries' for the given fseries
@@ -208,7 +209,7 @@ def qseries(fseries, Q, f0, return_complex=False):
 
     start = int((f0 - (f0 / qprime)) * fseries.duration)
     end = int(start + window_size)
-    center = (start + end) / 2
+    center = (start + end) // 2
 
     windowed = fseries[start:end] * (1 - xfrequencies ** 2) ** 2 * norm
 

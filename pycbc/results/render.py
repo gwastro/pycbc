@@ -19,7 +19,7 @@
 import os.path, types
 import codecs
 
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import unescape
 
@@ -57,6 +57,11 @@ def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
     # save as html page
     kwds = {'render-function' : 'render_tmplt',
             'filenames' : ','.join(filenames)}
+    kwds.update(kwargs)
+
+    for key in kwds:
+        kwds[key] = str(kwds[key])
+
     save_html_with_metadata(str(output), filename, None, kwds)
 
 def get_embedded_config(filename):
@@ -220,7 +225,7 @@ def render_tmplt(path, cp):
     content = None
 
     # read file as a string
-    with open(path, 'rb') as fp:
+    with open(path, 'r') as fp:
         content = fp.read()
 
     # replace all the escaped characters

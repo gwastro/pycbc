@@ -2,5 +2,6 @@ include test/*test*py
 include bin/*
 recursive-include examples *py *sh *xml
 recursive-include tools *py
+recursive-include pycbc *cpp
 include descr.rst
 include LICENSE

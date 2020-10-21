@@ -17,6 +17,7 @@ This modules provides classes for evaluating Gaussian distributions.
 """
 
 import numpy
+from scipy.special import erf, erfinv
 import scipy.stats
 from pycbc.distributions import bounded
 
@@ -137,6 +138,46 @@ class Gaussian(bounded.BoundedDist):
     def var(self):
         return self._var
 
+    def _normalcdf(self, param, value):
+        """The CDF of the normal distribution, without bounds."""
+        mu = self._mean[param]
+        var = self._var[param]
+        return 0.5*(1. + erf((value - mu)/(2*var)**0.5))
+
+    def cdf(self, param, value):
+        """Returns the CDF of the given parameter value."""
+        a, b = self._bounds[param]
+        if a != -numpy.inf:
+            phi_a = self._normalcdf(param, a)
+        else:
+            phi_a = 0.
+        if b != numpy.inf:
+            phi_b = self._normalcdf(param, b)
+        else:
+            phi_b = 1.
+        phi_x = self._normalcdf(param, value)
+        return (phi_x - phi_a)/(phi_b - phi_a)
+
+    def _normalcdfinv(self, param, p):
+        """The inverse CDF of the normal distribution, without bounds."""
+        mu = self._mean[param]
+        var = self._var[param]
+        return mu + (2*var)**0.5 * erfinv(2*p - 1.)
+
+    def _cdfinv_param(self, param, p):
+        """Return inverse of the CDF.
+        """
+        a, b = self._bounds[param]
+        if a != -numpy.inf:
+            phi_a = self._normalcdf(param, a)
+        else:
+            phi_a = 0.
+        if b != numpy.inf:
+            phi_b = self._normalcdf(param, b)
+        else:
+            phi_b = 1.
+        adjusted_p = phi_a + p * (phi_b - phi_a)
+        return self._normalcdfinv(param, adjusted_p)
 
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must

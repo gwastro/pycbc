@@ -1,0 +1,42 @@
+#!/usr/bin/python
+
+# Copyright (C) 2019 Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import sys
+import argparse
+import pycbc.version
+import pycbc.results
+
+# parse command line
+parser = argparse.ArgumentParser()
+parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
+parser.add_argument('--output-file', type=str,
+                        help='Path of the output HTML file.')
+parser.add_argument('--html-text', type=str,
+                    help="Contents of output HTML file.")
+parser.add_argument('--title', type=str, default="Title",
+                    help="Title of figure for results webpage.")
+opts = parser.parse_args()
+
+# set caption beginning
+caption = opts.html_text
+
+# save the plot as an interactive HTML
+pycbc.results.save_fig_with_metadata(opts.html_text, opts.output_file,
+                                     title=opts.title,
+                                     cmd=' '.join(sys.argv),
+                                     caption=caption)

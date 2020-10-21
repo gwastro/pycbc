@@ -18,14 +18,18 @@
 """
 
 from __future__ import absolute_import
-import h5py, numpy
-from .base_hdf import BaseInferenceFile
-from .base_multitemper import (MultiTemperedMetadataIO, MultiTemperedMCMCIO)
-from .posterior import PosteriorFile
+
+import numpy
+
+from .base_sampler import BaseSamplerFile
+from .base_mcmc import EnsembleMCMCMetadataIO
+from .base_multitemper import (CommonMultiTemperedMetadataIO,
+                               write_samples,
+                               ensemble_read_raw_samples)
 
 
-class EmceePTFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
-                  BaseInferenceFile):
+class EmceePTFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
+                  BaseSamplerFile):
     """Class to handle file IO for the ``emcee`` sampler."""
 
     name = 'emcee_pt_file'
@@ -34,6 +38,44 @@ class EmceePTFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
     def betas(self):
         """The betas that were used."""
         return self[self.sampler_group].attrs["betas"]
+
+    def write_samples(self, samples, **kwargs):
+        r"""Writes samples to the given file.
+
+        Calls :py:func:`base_multitemper.write_samples`. See that function for
+        details.
+
+        Parameters
+        ----------
+        samples : dict
+            The samples to write. Each array in the dictionary should have
+            shape ntemps x nwalkers x niterations.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.write_samples`.
+        """
+        write_samples(self, samples, **kwargs)
+
+    def read_raw_samples(self, fields, **kwargs):
+        r"""Base function for reading samples.
+
+        Calls :py:func:`base_multitemper.ensemble_read_raw_samples`. See that
+        function for details.
+
+        Parameters
+        -----------
+        fields : list
+            The list of field names to retrieve.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.ensemble_read_raw_samples`.
+
+        Returns
+        -------
+        dict
+            A dictionary of field name -> numpy array pairs.
+        """
+        return ensemble_read_raw_samples(self, fields, **kwargs)
 
     def write_sampler_metadata(self, sampler):
         """Adds writing betas to MultiTemperedMCMCIO.
@@ -93,27 +135,3 @@ class EmceePTFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         except KeyError:
             # dataset doesn't exist yet, create it
             self[group] = acceptance_fraction
-
-    def write_posterior(self, filename, **kwargs):
-        """Write posterior only file
-
-        Parameters
-        ----------
-        filename : str
-            Name of output file to store posterior
-        """
-        f = h5py.File(filename, 'w')
-
-        # Preserve top-level metadata
-        for key in self.attrs:
-            f.attrs[key] = self.attrs[key]
-
-        f.attrs['filetype'] = PosteriorFile.name
-        s = f.create_group('samples')
-        fields = self[self.samples_group].keys()
-
-        # Copy and squash fields into one dimensional arrays
-        for field_name in fields:
-            fvalue = self[self.samples_group][field_name][:]
-            thin = fvalue[0,:,self.thin_start:self.thin_end:self.thin_interval]
-            s[field_name] = thin.flatten()

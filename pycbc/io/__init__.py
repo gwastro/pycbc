@@ -1,2 +1,2 @@
-from pycbc.io.hdf import *
-from pycbc.io.record import *
+from .hdf import *
+from .record import *

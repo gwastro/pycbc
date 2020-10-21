@@ -1,0 +1,140 @@
+#!/bin/bash
+
+INPUT_FILE=""
+OUTPUT_FILE=""
+KEEP_ALL=1
+FILE_REGEX=()
+CHECK_FILES=0
+
+CMD_OPTS=$(getopt \
+    -o hi:o:Imc \
+    -l help,input-file:,output-file:,inspirals,merged-triggers,check-files \
+    -n pycbc_copy_output_map \
+    -- "$@")
+
+eval set -- "$CMD_OPTS"
+
+while true
+do
+    case "$1" in
+	-h|--help)
+	    echo "usage: pycbc_copy_output_map [-h] input_map output_map [optional arguments]"
+	    echo
+	    echo "required arguments:"
+	    echo "  -i, --input-file        the .map file that will be copied from"
+	    echo "  -o, --output-file       the name of the output file to be created"
+	    echo
+	    echo "optional arguments:"
+	    echo "  -h, --help              show this help message and exit"
+	    echo "  -I, --inspirals         if given all entries will no longer be copied,"
+	    echo "                            only inspirals and any other specified file types."
+	    echo "  -m, --merged-triggers   if given all entries will no longer be copied,"
+	    echo "                            only merged-triggers and any other specified file types."
+	    echo "  -c, --check-files       check if the files exist with non-zero size before copying."
+	    echo
+	    exit 0 ;;
+	-i|--input-file)
+	    INPUT_FILE=$(readlink -f "$2")
+	    shift 2 ;;
+	-o|--output-file)
+	    OUTPUT_FILE=$(readlink -f "$2")
+	    shift 2 ;;
+	-I|--inspirals)
+	    KEEP_ALL=0
+	    FILE_REGEX+=("1-INSPIRAL")
+	    shift 1 ;;
+	-m|--merged-triggers)
+	    KEEP_ALL=0
+	    FILE_REGEX+=("1-HDF_TRIGGER_MERGE")
+	    shift 1 ;;
+	-c|--check-files)
+	    CHECK_FILES=1
+	    shift 1 ;;
+	--)
+	    break ;;
+    esac
+done
+
+if [ "x$INPUT_FILE" == "x" ]
+then
+    echo "-i, --input-file must be specified, see -h, --help for options"
+    exit 1
+fi
+
+if [ "x$OUTPUT_FILE" == "x" ]
+then
+    echo "-o, --output-file must be specified, see -h, --help for options"
+    exit 1
+fi
+
+if [ ! -s "$INPUT_FILE" ]
+then
+    echo "$INPUT_FILE does not exist or is empty."
+    exit 1
+elif [[ "$INPUT_FILE" != *.map ]]
+then
+    echo "$INPUT_FILE is not a .map file."
+    exit 1
+fi
+
+if [ -f "$OUTPUT_FILE" ]
+then
+    echo "$OUTPUT_FILE already exists."
+    exit 1
+fi
+
+touch "$OUTPUT_FILE"
+ERROR=""
+MESSAGE=""
+
+while read -r LINE
+do
+    KEEP_FILE=0
+    ARRAY=($LINE)
+    if (( ${#ARRAY[@]} != 3 ))
+    then
+	ERROR="${ERROR}A line contained ${#ARRAY[@]} space seperated entries.\n" 
+	ERROR="${ERROR}A map file should contain 3 per line.\n"
+	break
+    elif [[ "${ARRAY[1]}" =~ \.dax$ ]] || [[ "${ARRAY[1]}" =~ \.dax\.map$ ]] || [[ "${ARRAY[1]}" =~ \.tc\.txt$ ]]
+    then
+	MESSAGE="${MESSAGE}Skipping subdax file: ${ARRAY[1]}\n"
+	continue
+    elif (( KEEP_ALL == 1 ))
+    then
+	KEEP_FILE=1
+    fi
+
+    for REGEX in ${FILE_REGEX[@]}
+    do
+	if [[ "${ARRAY[0]}" =~ $REGEX ]]
+	then
+	    KEEP_FILE=1
+	    break
+	fi
+    done
+
+    if (( KEEP_FILE != 1 ))
+    then
+	continue
+    elif (( CHECK_FILES == 0 ))
+    then
+	echo "$LINE"
+	continue
+    elif [ -s "${ARRAY[1]}" ]
+    then
+	echo "$LINE"
+    fi
+
+done < "$INPUT_FILE" >> $OUTPUT_FILE
+
+if [ "x${MESSAGE}" != "x" ]
+then
+    printf "$MESSAGE"
+fi
+
+if [ "x${ERROR}" != "x" ]
+then
+    printf "$ERROR"
+    exit 1
+fi

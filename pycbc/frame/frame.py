@@ -20,8 +20,10 @@ This modules contains functions for reading in data from frame files or caches
 import lalframe, logging
 import lal
 import numpy
+import math
 import os.path, glob, time
-import glue.datafind
+import gwdatafind
+from six.moves.urllib.parse import urlparse
 from pycbc.types import TimeSeries, zeros
 
 
@@ -140,7 +142,7 @@ def locations_to_cache(locations, latest=False):
     return cum_cache
 
 def read_frame(location, channels, start_time=None,
-               end_time=None, duration=None, check_integrity=True,
+               end_time=None, duration=None, check_integrity=False,
                sieve=None):
     """Read time series from frame data.
 
@@ -190,6 +192,12 @@ def read_frame(location, channels, start_time=None,
     if sieve:
         logging.info("Using frames that match regexp: %s", sieve)
         lal.CacheSieve(cum_cache, 0, 0, None, None, sieve)
+    if start_time is not None and end_time is not None:
+        # Before sieving, check if this is sane. Otherwise it will fail later.
+        if (int(math.ceil(end_time)) - int(start_time)) <= 0:
+            raise ValueError("Negative or null duration")
+        lal.CacheSieve(cum_cache, int(start_time), int(math.ceil(end_time)),
+                       None, None, None)
 
     stream = lalframe.FrStreamCacheOpen(cum_cache)
     stream.mode = lalframe.FR_STREAM_VERBOSE_MODE
@@ -259,38 +267,7 @@ def datafind_connection(server=None):
     connection
         The open connection to the datafind server.
     """
-
-    if server:
-        datafind_server = server
-    else:
-        # Get the server name from the environment
-        if 'LIGO_DATAFIND_SERVER' in os.environ:
-            datafind_server = os.environ["LIGO_DATAFIND_SERVER"]
-        else:
-            err = "Trying to obtain the ligo datafind server url from "
-            err += "the environment, ${LIGO_DATAFIND_SERVER}, but that "
-            err += "variable is not populated."
-            raise ValueError(err)
-
-    # verify authentication options
-    if not datafind_server.endswith("80"):
-        cert_file, key_file = glue.datafind.find_credential()
-    else:
-        cert_file, key_file = None, None
-
-    # Is a port specified in the server URL
-    dfs_fields = datafind_server.split(':', 1)
-    server = dfs_fields[0]
-    port = int(dfs_fields[1]) if len(dfs_fields) == 2 else None
-
-    # Open connection to the datafind server
-    if cert_file and key_file:
-        connection = glue.datafind.GWDataFindHTTPSConnection(
-                host=server, port=port, cert_file=cert_file, key_file=key_file)
-    else:
-        connection = glue.datafind.GWDataFindHTTPConnection(
-                host=server, port=port)
-    return connection
+    return gwdatafind.connect(host=server)
 
 def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     """Return the paths to a span of frame files
@@ -324,8 +301,7 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     connection.find_times(site, frame_type,
                           gpsstart=start_time, gpsend=end_time)
     cache = connection.find_frame_urls(site, frame_type, start_time, end_time,urltype=url_type)
-    paths = [entry.path for entry in cache]
-    return paths
+    return [urlparse(entry).path for entry in cache]
 
 def query_and_read_frame(frame_type, channels, start_time, end_time,
                          sieve=None, check_integrity=False):
@@ -365,6 +341,13 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     """
     # Allows compatibility with our standard tools
     # We may want to place this into a higher level frame getting tool
+    if frame_type == 'LOSC_STRAIN':
+        from pycbc.frame.losc import read_strain_losc
+        if not isinstance(channels, list):
+            channels = [channels]
+        data = [read_strain_losc(c[:2], start_time, end_time)
+                for c in channels]
+        return data if len(data) > 1 else data[0]
     if frame_type == 'LOSC':
         from pycbc.frame.losc import read_frame_losc
         return read_frame_losc(channels, start_time, end_time)
@@ -617,7 +600,6 @@ class DataBuffer(object):
             name = '%s/%s-%s-%s.gwf' % (pattern, self.beg, s, self.dur)
             # check that file actually exists, else abort now
             if not os.path.exists(name):
-                logging.info("%s does not seem to exist yet" % name)
                 raise RuntimeError
 
             keys.append(name)
@@ -660,12 +642,12 @@ class DataBuffer(object):
                 return None
             else:
                 # I am too early to give up on this frame, so we should try again
-                time.sleep(1)
+                time.sleep(0.1)
                 return self.attempt_advance(blocksize, timeout=timeout)
 
 class StatusBuffer(DataBuffer):
 
-    """ Read state vector information from a frame file """
+    """ Read state vector or DQ information from a frame file """
 
     def __init__(self, frame_src,
                        channel_name,
@@ -673,14 +655,15 @@ class StatusBuffer(DataBuffer):
                        max_buffer=2048,
                        valid_mask=3,
                        force_update_cache=False,
-                       increment_update_cache=None):
+                       increment_update_cache=None,
+                       valid_on_zero=False):
         """ Create a rolling buffer of status data from a frame
 
         Parameters
         ---------
         frame_src: str of list of strings
             Strings that indicate where to read from files from. This can be a
-        list of frame files, a glob, etc.
+            list of frame files, a glob, etc.
         channel_name: str
             Name of the channel to read from the frame files
         start_time:
@@ -689,6 +672,9 @@ class StatusBuffer(DataBuffer):
             Length of the buffer in seconds
         valid_mask: {int, HOFT_OK | SCIENCE_INTENT}, Optional
             Set of flags that must be on to indicate valid frame data.
+        valid_on_zero: bool
+            If True, `valid_mask` is ignored and the status is considered
+            "good" simply when the channel is zero.
         """
         DataBuffer.__init__(self, frame_src, channel_name, start_time,
                             max_buffer=max_buffer,
@@ -696,6 +682,7 @@ class StatusBuffer(DataBuffer):
                             increment_update_cache=increment_update_cache,
                             dtype=numpy.int32)
         self.valid_mask = valid_mask
+        self.valid_on_zero = valid_on_zero
 
     def check_valid(self, values, flag=None):
         """Check if the data contains any non-valid status information
@@ -713,13 +700,13 @@ class StatusBuffer(DataBuffer):
             Returns True if all of the status information if valid,
              False if any is not.
         """
-        if flag is None:
-            flag = self.valid_mask
-
-        if numpy.any(numpy.bitwise_and(values.numpy(), flag) != flag):
-            return False
+        if self.valid_on_zero:
+            valid = values.numpy() == 0
         else:
-            return True
+            if flag is None:
+                flag = self.valid_mask
+            valid = numpy.bitwise_and(values.numpy(), flag) == flag
+        return bool(numpy.all(valid))
 
     def is_extent_valid(self, start_time, duration, flag=None):
         """Check if the duration contains any non-valid frames
@@ -770,7 +757,12 @@ class StatusBuffer(DataBuffer):
         e = s + int((duration + padding) * sr) + 1
         data = self.raw_buffer[s:e]
         stamps = data.sample_times.numpy()
-        invalid = numpy.bitwise_and(data.numpy(), self.valid_mask) != self.valid_mask
+
+        if self.valid_on_zero:
+            invalid = data.numpy() != 0
+        else:
+            invalid = numpy.bitwise_and(data.numpy(), self.valid_mask) \
+                    != self.valid_mask
 
         starts = stamps[invalid] - padding
         ends = starts + 1.0 / sr + padding * 2.0

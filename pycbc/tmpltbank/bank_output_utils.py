@@ -1,4 +1,5 @@
 from __future__ import division
+from six.moves import range
 import numpy
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from glue.ligolw import ligolw, lsctables, ilwd, utils as ligolw_utils
@@ -202,7 +203,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     # frequency for which moments were calculated
     fMax_theor = pnutils.frequency_cutoff_from_name(
         ethincaParams.cutoff, mass1, mass2, spin1z, spin2z)
-    fMaxes = metricParams.moments['J4'].keys()
+    fMaxes = list(metricParams.moments['J4'].keys())
     fMaxIdx = abs(numpy.array(fMaxes,dtype=float) - fMax_theor).argmin()
     fMax = fMaxes[fMaxIdx]
 
@@ -353,7 +354,7 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
                     spin2z=sngl.spin2z, full_ethinca=ethincaParams.full_ethinca)
                 # assign the upper frequency cutoff and Gamma0-5 values
                 sngl.f_final = fMax_theor
-                for i in xrange(len(GammaVals)):
+                for i in range(len(GammaVals)):
                     setattr(sngl, "Gamma"+str(i), GammaVals[i])
         # If Gamma metric components are not wanted, assign f_final from an
         # upper frequency cutoff specified in ethincaParams

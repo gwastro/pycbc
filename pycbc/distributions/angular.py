@@ -16,11 +16,8 @@
 This modules provides classes for evaluating angular distributions.
 """
 
+from six.moves.configparser import Error
 import numpy
-try:
-    from ConfigParser import Error
-except ImportError:
-    from configparser import Error
 from pycbc import VARARGS_DELIM
 from pycbc import boundaries
 from pycbc.distributions import bounded
@@ -35,8 +32,7 @@ class UniformAngle(uniform.Uniform):
     `cyclic_domain` parameter.
 
     Bounds may be provided to limit the range for which the pdf has support.
-    If provided, the parameter bounds are initialized as multiples of pi,
-    while the stored bounds are in radians.
+    If provided, the parameter bounds are in radians.
 
     Parameters
     ----------
@@ -48,7 +44,7 @@ class UniformAngle(uniform.Uniform):
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
         `boundaries.Bounds` instances or tuples. The bounds must be
-        in [0,2). These are converted to radians for storage. None may also
+        in [0,2PI). These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
     Attributes
@@ -82,18 +78,18 @@ class UniformAngle(uniform.Uniform):
                 bnds = self._domain
             elif isinstance(bnds, boundaries.Bounds):
                 # convert to radians
-                bnds._min = bnds._min.__class__(bnds._min * numpy.pi)
-                bnds._max = bnds._max.__class__(bnds._max * numpy.pi)
+                bnds._min = bnds._min.__class__(bnds._min)
+                bnds._max = bnds._max.__class__(bnds._max)
             else:
                 # create a Bounds instance from the given tuple
-                bnds = boundaries.Bounds(
-                    bnds[0]*numpy.pi, bnds[1]*numpy.pi)
+                bnds = boundaries.Bounds(bnds[0], bnds[1])
             # check that the bounds are in the domain
             if bnds.min < self._domain.min or bnds.max > self._domain.max:
                 raise ValueError("bounds must be in [{x},{y}); "
-                    "got [{a},{b})".format(x=self._domain.min/numpy.pi,
-                    y=self._domain.max/numpy.pi, a=bnds.min/numpy.pi,
-                    b=bnds.max/numpy.pi))
+                    "got [{a},{b})".format(x=self._domain.min,
+                    y=self._domain.max, a=bnds.min,
+                    b=bnds.max))
+
             # update
             params[p] = bnds
         super(UniformAngle, self).__init__(**params)
@@ -121,7 +117,7 @@ class UniformAngle(uniform.Uniform):
         """
         # map values to be within the domain
         kwargs = dict([[p, self._domain.apply_conditions(val)]
-                      for p,val in kwargs.items()])
+                      for p,val in kwargs.items() if p in self._bounds])
         # now apply additional conditions
         return super(UniformAngle, self).apply_boundary_conditions(**kwargs)
 
@@ -190,8 +186,7 @@ class SinAngle(UniformAngle):
     The domain of this distribution is `[0, pi]`. This is accomplished by
     putting hard boundaries at `[0, pi]`. Bounds may be provided to further
     limit the range for which the pdf has support.  As with `UniformAngle`,
-    these are initizliaed as multiples of pi, while the stored bounds are in
-    radians.
+    these are initialized in radians.
 
     Parameters
     ----------
@@ -199,7 +194,7 @@ class SinAngle(UniformAngle):
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
         `boundaries.Bounds` instances or tuples. The bounds must be
-        in [0,1]. These are converted to radians for storage. None may also
+        in [0,PI]. These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
     Attributes
@@ -227,6 +222,15 @@ class SinAngle(UniformAngle):
             abs(self._func(bnd[1]) - self._func(bnd[0]))) \
             for bnd in self._bounds.values()])
         self._norm = numpy.exp(self._lognorm)
+
+    def _cdfinv_param(self, arg, value):
+        """Return inverse of cdf for mapping unit interval to parameter bounds.
+        """
+        scale = (numpy.cos(self._bounds[arg][0])
+                 - numpy.cos(self._bounds[arg][1]))
+        offset = 1. + numpy.cos(self._bounds[arg][1]) / scale
+        new_value = numpy.arccos(-scale * (value - offset))
+        return new_value
 
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
@@ -294,8 +298,7 @@ class CosAngle(SinAngle):
         The keyword arguments should provide the names of parameters and
         (optionally) their corresponding bounds, as either
         `boundaries.Bounds` instances or tuples. The bounds must be
-        in [-0.5, 0.5]. These are converted to radians for storage.
-        None may also be passed; in that case, the domain bounds will be used.
+        in [-PI/2, PI/2].
 
     Attributes
     ----------------
@@ -311,6 +314,14 @@ class CosAngle(SinAngle):
     _dfunc = numpy.cos
     _arcfunc = numpy.arcsin
     _domainbounds = (-numpy.pi/2, numpy.pi/2)
+
+    def _cdfinv_param(self, param, value):
+        a = self._bounds[param][0]
+        b = self._bounds[param][1]
+        scale = numpy.sin(b) - numpy.sin(a)
+        offset = 1. - numpy.sin(b)/(numpy.sin(b) - numpy.sin(a))
+        new_value = numpy.arcsin((value - offset) * scale)
+        return new_value
 
 
 class UniformSolidAngle(bounded.BoundedDist):
@@ -391,6 +402,12 @@ class UniformSolidAngle(bounded.BoundedDist):
     def azimuthal_angle(self):
         return self._azimuthal_angle
 
+    def _cdfinv_param(self, param, value):
+        """ Return the cdfinv for a single given parameter """
+        if param == self.polar_angle:
+            return self._polardist._cdfinv_param(param, value)
+        elif param == self.azimuthal_angle:
+            return self._azimuthaldist._cdfinv_param(param, value)
 
     def apply_boundary_conditions(self, **kwargs):
         """Maps the given values to be within the domain of the azimuthal and

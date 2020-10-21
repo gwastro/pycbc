@@ -31,6 +31,7 @@ REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
 NO_GRID=""
 SUBMIT_DAX="--submit"
+HTML_ENTITIES="{\"\'\": '&#39;', '(': '&#40;', ')': '&#41;', '+': '&#43;', '\"': '&quot;'}"
 
 # These will be changed by the bundle builder
 DATA_INLINE=False
@@ -73,9 +74,18 @@ while true ; do
                  cat ${FILE_URL} >> _reuse.cache
                  FOUND_URL=0
               else
-                 # otherwise try and get the file using curl
-                 curl --fail ${URL} >> _reuse.cache
+                 # otherwise try and get the file using resolve_url
+                 DOWNLOADED_FILE=`python - <<EOF
+from pycbc.workflow import resolve_url
+import os
+filename = resolve_url("${FILE_URL}")
+print(filename)
+EOF`
                  FOUND_URL=${?}
+                 if [ ${FOUND_URL} -eq 0 ] ; then
+                   cat $DOWNLOADED_FILE >> _reuse.cache
+                   rm -f $DOWNLOADED_FILE
+                 fi
               fi
               if [ ${FOUND_URL} -ne 0 ] ; then
                  echo "$URL not found!"
@@ -131,7 +141,7 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) SITE_PROFILE=${2}
-           APPEND_SITE_PROFILE_ARRAY=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${SITE_PROFILE}`
+           APPEND_SITE_PROFILE_ARRAY=$(python -c "import sys; from xml.sax.saxutils import (escape, unescape); print(escape(unescape(sys.stdin.read()), entities=${HTML_ENTITIES}))" <<< ${SITE_PROFILE})
            OIFS=${IFS}; IFS=":"
            read -ra APPEND_SITE_PROFILE_ARRAY <<< "${APPEND_SITE_PROFILE_ARRAY}"
            IFS=${OIFS}
@@ -298,7 +308,7 @@ if [ $DATA_INLINE == "True" ] ; then
   expand_pegasus_files
   PEGASUS_FILE_DIRECTORY=${PWD}/pegasus_files
 elif [ -z $PEGASUS_FILE_DIRECTORY ] ; then
-  PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+  PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print(PEGASUS_FILE_DIRECTORY)'`
 fi
 
 # Create the site catalog
@@ -434,9 +444,9 @@ fi
 
 
 if [ $CACHE_FILE == 0 ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID
 else
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID
 fi
 
 echo
@@ -444,13 +454,13 @@ echo
 rm -f submitdir
 ln -sf $SUBMIT_DIR submitdir
 
-echo pegasus-status --verbose --long $SUBMIT_DIR/work > status
+echo "pegasus-status --verbose --long $SUBMIT_DIR/work \$@" > status
 chmod 755 status
 
-echo pegasus-analyzer -r -v $SUBMIT_DIR/work > debug
+echo "pegasus-analyzer -r -v $SUBMIT_DIR/work \$@" > debug
 chmod 755 debug
 
-echo pegasus-remove $SUBMIT_DIR/work > stop
+echo "pegasus-remove $SUBMIT_DIR/work \$@" > stop
 chmod 755 stop
 
 if [ -z "${NO_GRID}" ] ; then
@@ -489,7 +499,7 @@ fi
 EOF
 fi
 
-echo pegasus-run $SUBMIT_DIR/work > start
+echo "pegasus-run $SUBMIT_DIR/work \$@" > start
 
 chmod 755 start
 
@@ -610,9 +620,9 @@ if [ -e ${DASHBOARD_PATH} ] ; then
     cp ${DASHBOARD_PATH} ${DASHBOARD_COPY}
   fi
 
-  COMMAND_LINE=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${COMMAND_LINE}`
-  perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
-  perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
+  COMMAND_LINE=$(python -c "import sys; from xml.sax.saxutils import (escape, unescape); print(escape(unescape(sys.stdin.read()), entities=${HTML_ENTITIES}))" <<< ${SITE_PROFILE})
+  sed -i.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
+  sed -i.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
 fi
 shopt -u nullglob
 

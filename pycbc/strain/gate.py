@@ -16,7 +16,9 @@
 """ Functions for applying gates to data.
 """
 
+from scipy import linalg
 from . import strain
+
 
 def _gates_from_cli(opts, gate_opt):
     """Parses the given `gate_opt` into something understandable by
@@ -119,7 +121,7 @@ def add_gate_option_group(parser):
     parser : object
         ArgumentParser instance.
     """
-    gate_group = parser.add_argument_group("Options for gating data.")
+    gate_group = parser.add_argument_group("Options for gating data")
 
     gate_group.add_argument("--gate", nargs="+", type=str,
                             metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
@@ -137,3 +139,43 @@ def add_gate_option_group(parser):
                                  "prior to FFT-ing the data for PSD "
                                  "estimation.")
     return gate_group
+
+
+def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
+    """Gates and in-paints data.
+
+    Parameters
+    ----------
+    data : TimeSeries
+        The data to gate.
+    lindex : int
+        The start index of the gate.
+    rindex : int
+        The end index of the gate.
+    invpsd : FrequencySeries
+        The inverse of the PSD.
+    copy : bool, optional
+        Copy the data before applying the gate. Otherwise, the gate will
+        be applied in-place. Default is True.
+
+    Returns
+    -------
+    TimeSeries :
+        The gated and in-painted time series.
+    """
+    # Uses the hole-filling method of
+    # https://arxiv.org/pdf/1908.05644.pdf
+    # Copy the data and zero inside the hole
+    if copy:
+        data = data.copy()
+    data[lindex:rindex] = 0
+
+    # get the over-whitened gated data
+    tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
+    owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
+
+    # remove the projection into the null space
+    proj = linalg.solve_toeplitz(tdfilter[:(rindex - lindex)],
+                                 owhgated_data[lindex:rindex])
+    data[lindex:rindex] -= proj
+    return data

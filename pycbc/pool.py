@@ -7,6 +7,7 @@ from multiprocessing import TimeoutError
 import types
 import signal
 import atexit
+import logging
 
 def is_main_process():
     """ Check if this is the main control process and may handle one time tasks
@@ -73,6 +74,21 @@ class BroadcastPool(multiprocessing.pool.Pool):
         _numdone.value = 0
         return results
 
+    def allmap(self, fcn, args):
+        """ Do a function call on every worker with different arguments
+
+        Parameters
+        ----------
+        fcn: funtion
+            Function to call.
+        args: tuple
+            The arguments for Pool.map
+        """
+        results = self.map(_lockstep_fcn,
+                           [(len(self), fcn, arg) for arg in args])
+        _numdone.value = 0
+        return results
+
     def map(self, func, items, chunksize=None):
         """ Catch keyboard interuppts to allow the pool to exit cleanly.
 
@@ -106,21 +122,56 @@ class SinglePool(object):
     def map(self, f, items):
         return [f(a) for a in items]
 
+def use_mpi(require_mpi=False, log=True):
+    """ Get whether MPI is enabled and if so the current size and rank
+    """
+    use_mpi = False
+    size = rank = 0
+    try:
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        size = comm.Get_size()
+        rank = comm.Get_rank()
+        if size > 1:
+            use_mpi = True
+            if log:
+                logging.info('Running under mpi with size: %s, rank: %s',
+                             size, rank)
+    except ImportError as e:
+        if require_mpi:
+            print(e)
+            raise ValueError("Failed to load mpi, ensure mpi4py is installed")
+    return use_mpi, size, rank
+
 def choose_pool(processes, mpi=False):
-    if mpi:
+    """ Get processing pool
+    """
+    do_mpi, size, rank = use_mpi(require_mpi=mpi)
+    if do_mpi:
         try:
             import schwimmbad
-            pool = schwimmbad.choose_pool(mpi=mpi,
-                                          processes=processes)
+            pool = schwimmbad.choose_pool(mpi=do_mpi,
+                                          processes=(size - 1))
             pool.broadcast = types.MethodType(_dummy_broadcast, pool)
             atexit.register(pool.close)
+
+            if processes:
+                logging.info('NOTE: that for MPI process size determined by '
+                             'MPI launch size, not the processes argument')
+
+            if do_mpi and not mpi:
+                logging.info('NOTE: using MPI as this process was launched'
+                             'under MPI')
         except ImportError:
             raise ValueError("Failed to start up an MPI pool, "
-                             "install mpi4py / schwimmbadd")
+                             "install mpi4py / schwimmbad")
     elif processes == 1:
         pool = SinglePool()
     else:
         pool = BroadcastPool(processes)
-    return pool
 
+    pool.size = processes
+    if size:
+        pool.size = size
+    return pool
 

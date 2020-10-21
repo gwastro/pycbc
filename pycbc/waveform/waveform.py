@@ -26,6 +26,7 @@
 waveforms.
 """
 
+import os
 import lal, lalsimulation, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
@@ -42,9 +43,16 @@ from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_length_in_time
 from six.moves import range as xrange
 
+
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
     zeros being returned, e.g., if a requested `f_final` is <= `f_lower`.
+    """
+    pass
+
+
+class FailedWaveformError(Exception):
+    """This should be raised if a waveform fails to generate.
     """
     pass
 
@@ -59,9 +67,6 @@ default_args = \
      parameters.td_waveform_params).default_dict()
 
 default_sgburst_args = {'eccentricity':0, 'polarization':0}
-
-td_required_args = parameters.cbc_td_required
-fd_required_args = parameters.cbc_fd_required
 sgburst_required_args = ['q','frequency','hrss']
 
 # td, fd, filter waveforms generated on the CPU
@@ -129,11 +134,46 @@ def _check_lal_pars(p):
         for l,m in p['mode_array']:
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
         lalsimulation.SimInspiralWaveformParamsInsertModeArray(lal_pars, ma)
-
+    #TestingGR parameters:
+    if p['dchi0'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi0(lal_pars,p['dchi0'])
+    if p['dchi1'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi1(lal_pars,p['dchi1'])
+    if p['dchi2'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi2(lal_pars,p['dchi2'])
+    if p['dchi3'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi3(lal_pars,p['dchi3'])
+    if p['dchi4'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi4(lal_pars,p['dchi4'])
+    if p['dchi5'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi5(lal_pars,p['dchi5'])
+    if p['dchi5l'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi5L(lal_pars,p['dchi5l'])
+    if p['dchi6'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi6(lal_pars,p['dchi6'])
+    if p['dchi6l'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi6L(lal_pars,p['dchi6l'])
+    if p['dchi7'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDChi7(lal_pars,p['dchi7'])
+    if p['dalpha1'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha1(lal_pars,p['dalpha1'])
+    if p['dalpha2'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha2(lal_pars,p['dalpha2'])
+    if p['dalpha3'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha3(lal_pars,p['dalpha3'])
+    if p['dalpha4'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha4(lal_pars,p['dalpha4'])
+    if p['dalpha5'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDAlpha5(lal_pars,p['dalpha5'])
+    if p['dbeta1'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDBeta1(lal_pars,p['dbeta1'])
+    if p['dbeta2'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDBeta2(lal_pars,p['dbeta2'])
+    if p['dbeta3'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertNonGRDBeta3(lal_pars,p['dbeta3'])
     return lal_pars
 
 def _lalsim_td_waveform(**p):
-    fail_tolerant_waveform_generation
     lal_pars = _check_lal_pars(p)
     #nonGRparams can be straightforwardly added if needed, however they have to
     # be invoked one by one
@@ -176,6 +216,8 @@ def _lalsim_td_waveform(**p):
 
     return hp, hc
 
+_lalsim_td_waveform.required = parameters.cbc_td_required
+
 def _spintaylor_aligned_prec_swapper(**p):
     """
     SpinTaylorF2 is only single spin, it also struggles with anti-aligned spin
@@ -216,6 +258,8 @@ def _lalsim_fd_waveform(**p):
                             epoch=hc1.epoch)
     #lal.DestroyDict(lal_pars)
     return hp, hc
+
+_lalsim_fd_waveform.required = parameters.cbc_fd_required
 
 def _lalsim_sgburst_waveform(**p):
     hp, hc = lalsimulation.SimBurstSineGaussian(float(p['q']),
@@ -295,25 +339,25 @@ def td_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain approximants for
        the given processing scheme.
     """
-    return td_wav[type(scheme)].keys()
+    return list(td_wav[type(scheme)].keys())
 
 def fd_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available fourier domain approximants for
        the given processing scheme.
     """
-    return fd_wav[type(scheme)].keys()
+    return list(fd_wav[type(scheme)].keys())
 
 def sgburst_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain sgbursts for
        the given processing scheme.
     """
-    return sgburst_wav[type(scheme)].keys()
+    return list(sgburst_wav[type(scheme)].keys())
 
 def filter_approximants(scheme=_scheme.mgr.state):
     """Return a list of fourier domain approximants including those
        written specifically as templates.
     """
-    return filter_wav[type(scheme)].keys()
+    return list(filter_wav[type(scheme)].keys())
 
 # Input parameter handling ###################################################
 
@@ -344,27 +388,28 @@ def get_obj_attrs(obj):
 
     return pr
 
-def props(obj, required_args=None, **kwargs):
+def props(obj, **kwargs):
     """ Return a dictionary built from the combination of defaults, kwargs,
     and the attributes of the given object.
     """
     pr = get_obj_attrs(obj)
     pr.update(kwargs)
 
-    if required_args is None:
-        required_args = []
-
-    # check that required args are given
-    missing = set(required_args) - set(pr.keys())
-    if any(missing):
-        raise ValueError("Please provide {}".format(', '.join(missing)))
-
     # Get the parameters to generate the waveform
     # Note that keyword arguments override values in the template object
     input_params = default_args.copy()
     input_params.update(pr)
-
     return input_params
+
+def check_args(args, required_args):
+    """ check that required args are given """
+    missing = []
+    for arg in required_args:
+        if (arg not in args) or (args[arg] is None):
+            missing.append(arg)
+
+    if len(missing) != 0:
+        raise ValueError("Please provide {}".format(', '.join(missing)))
 
 # Input parameter handling for bursts ########################################
 
@@ -410,7 +455,7 @@ def get_fd_waveform_sequence(template=None, **kwds):
     """
     kwds['delta_f'] = -1
     kwds['f_lower'] = -1
-    p = props(template, required_args=fd_required_args, **kwds)
+    p = props(template, required_args=parameters.cbc_fd_required, **kwds)
     lal_pars = _check_lal_pars(p)
 
     hp, hc = lalsimulation.SimInspiralChooseFDWaveformSequence(float(p['coa_phase']),
@@ -447,12 +492,18 @@ def get_td_waveform(template=None, **kwargs):
     hcross: TimeSeries
         The cross polarization of the waveform.
     """
-    input_params = props(template, required_args=td_required_args, **kwargs)
+    input_params = props(template, **kwargs)
     wav_gen = td_wav[type(_scheme.mgr.state)]
     if input_params['approximant'] not in wav_gen:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
-    return wav_gen[input_params['approximant']](**input_params)
+    wav_gen = wav_gen[input_params['approximant']]
+    if hasattr(wav_gen, 'required'):
+        required = wav_gen.required
+    else:
+        required = parameters.td_required
+    check_args(input_params, required)
+    return wav_gen(**input_params)
 
 get_td_waveform.__doc__ = get_td_waveform.__doc__.format(
     params=parameters.td_waveform_params.docstr(prefix="    ",
@@ -475,8 +526,7 @@ def get_fd_waveform(template=None, **kwargs):
     hcrosstilde: FrequencySeries
         The cross phase of the waveform in frequency domain.
     """
-
-    input_params = props(template, required_args=fd_required_args, **kwargs)
+    input_params = props(template, **kwargs)
     wav_gen = fd_wav[type(_scheme.mgr.state)]
     if input_params['approximant'] not in wav_gen:
         raise ValueError("Approximant %s not available" %
@@ -491,11 +541,18 @@ def get_fd_waveform(template=None, **kwargs):
             if 'f_final' in input_params and \
                     (input_params['f_lower']+input_params['delta_f'] >=
                      input_params['f_final']):
-                raise NoWaveformError("cannot generate waveform: f_lower >= f_final")
+                raise NoWaveformError("cannot generate waveform: f_lower >= "
+                                      "f_final")
     except KeyError:
         pass
+    wav_gen = wav_gen[input_params['approximant']]
+    if hasattr(wav_gen, 'required'):
+        required = wav_gen.required
+    else:
+        required = parameters.fd_required
+    check_args(input_params, required)
+    return wav_gen(**input_params)
 
-    return wav_gen[input_params['approximant']](**input_params)
 
 get_fd_waveform.__doc__ = get_fd_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
@@ -599,7 +656,7 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
         full_duration = get_waveform_filter_length_in_time(**nparams)
         nparams['f_lower'] -= 1
 
-    if 'f_fref' not in nparams:
+    if 'f_ref' not in nparams:
         nparams['f_ref'] = params['f_lower']
 
     # factor to ensure the vectors are all large enough. We don't need to
@@ -780,6 +837,22 @@ def imrphenomd_length_in_time(**kwds):
     """
     return get_imr_length("IMRPhenomD", **kwds)
 
+def imrphenomhm_length_in_time(**kwargs):
+    """Estimates the duration of IMRPhenom waveforms that include higher modes.
+    """
+    if 'mode_array' in kwargs and kwargs['mode_array'] is not None:
+        maxm = max(m for _, m in kwargs['mode_array'])
+    else:
+        # the highest m for all of these is 4 (from the 4,4 mode)
+        maxm = 4
+    # we'll use the PhenomD length, with the frequency scaled by 2/m
+    try:
+        flow = kwargs['f_lower']
+    except KeyError:
+        raise ValueError("must provide a f_lower")
+    kwargs['f_lower'] = flow * 2./maxm
+    return get_imr_length("IMRPhenomD", **kwargs)
+
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
@@ -811,8 +884,13 @@ _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD_NRTidal"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2_NRTidal"] = imrphenomd_length_in_time
+_filter_time_lengths["IMRPhenomHM"] = imrphenomhm_length_in_time
+_filter_time_lengths["IMRPhenomPv3HM"] = imrphenomhm_length_in_time
+_filter_time_lengths["IMRPhenomXHM"] = imrphenomhm_length_in_time
+_filter_time_lengths["IMRPhenomXPHM"] = imrphenomhm_length_in_time
 _filter_time_lengths["SpinTaylorF2"] = spa_length_in_time
 _filter_time_lengths["TaylorF2NL"] = spa_length_in_time
+_filter_time_lengths["PreTaylorF2"] = spa_length_in_time
 
 # Also add generators for switching between approximants
 apx_name = "SpinTaylorF2_SWAPPER"
@@ -822,9 +900,24 @@ _filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
 from . nltides import nonlinear_tidal_spa
 cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
 
+from .premerger import premerger_taylorf2
+cpu_fd['PreTaylorF2'] = premerger_taylorf2
+
+from .multiband import multiband_fd_waveform
+cpu_fd['multiband'] = multiband_fd_waveform
+
+# Load external waveforms #####################################################
+if 'PYCBC_WAVEFORM' in os.environ:
+    mods = os.environ['PYCBC_WAVEFORM'].split(':')
+    for mod in mods:
+        mhandle = __import__(mod, fromlist=[''])
+        mhandle.add_me(cpu_fd=cpu_fd,
+                       cpu_td=cpu_td,
+                       filter_time_lengths=_filter_time_lengths)
+
 for apx in copy.copy(_filter_time_lengths):
-    fd_apx = cpu_fd.keys()
-    td_apx = cpu_td.keys()
+    fd_apx = list(cpu_fd.keys())
+    td_apx = list(cpu_td.keys())
 
     if (apx in td_apx) and (apx not in fd_apx):
         # We can make a fd version of td approximants
@@ -872,7 +965,7 @@ def get_waveform_filter(out, template=None, **kwargs):
 
         hp.resize(n)
         out[0:len(hp)] = hp[:]
-        hp = FrequencySeries(out, delta_f=hp.delta_f, copy=False)
+        hp.data = out
 
         hp.length_in_time = hp.chirp_length = duration
         return hp
@@ -1080,4 +1173,5 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
-           "NoWaveformError", "get_td_waveform_from_fd"]
+           "NoWaveformError", "FailedWaveformError", "get_td_waveform_from_fd",
+           'cpu_fd', 'cpu_td', '_filter_time_lengths']

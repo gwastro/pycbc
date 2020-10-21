@@ -28,9 +28,12 @@
 import numpy
 from abc import (ABCMeta, abstractmethod)
 
+from six import add_metaclass
+
 from .base import BaseModel
 
 
+@add_metaclass(ABCMeta)
 class BaseDataModel(BaseModel):
     r"""Base class for models that require data and a waveform generator.
 
@@ -54,6 +57,10 @@ class BaseDataModel(BaseModel):
     gates : dict of tuples, optional
         Dictionary of detectors -> tuples of specifying gate times. The
         sort of thing returned by `pycbc.gate.gates_from_cli`.
+    injection_file : str, optional
+        If an injection was added to the data, the name of the injection file
+        used. If provided, the injection parameters will be written to
+        file when ``write_metadata`` is called.
 
     \**kwargs :
         All other keyword arguments are passed to ``BaseModel``.
@@ -62,6 +69,8 @@ class BaseDataModel(BaseModel):
     ----------
     data : dict
         The data that the class was initialized with.
+    detectors : list
+        List of detector names used.
     lognl :
         Returns the log likelihood of the noise.
     loglr :
@@ -71,14 +80,13 @@ class BaseDataModel(BaseModel):
 
     See ``BaseModel`` for additional attributes and properties.
     """
-    __metaclass__ = ABCMeta
-
     def __init__(self, variable_params, data, recalibration=None, gates=None,
-                 **kwargs):
+                 injection_file=None, **kwargs):
         self._data = None
         self.data = data
         self.recalibration = recalibration
         self.gates = gates
+        self.injection_file = injection_file
         super(BaseDataModel, self).__init__(variable_params, **kwargs)
 
     @property
@@ -119,7 +127,7 @@ class BaseDataModel(BaseModel):
         If that raises an ``AttributeError``, will call `_loglr`` to
         calculate it and store it to ``current_stats``.
         """
-        return self._trytoget('loglr', self._loglr)
+        return self._trytoget('loglr', self._loglr, apply_transforms=True)
 
     @abstractmethod
     def _loglr(self):
@@ -144,7 +152,7 @@ class BaseDataModel(BaseModel):
     @property
     def detectors(self):
         """Returns the detectors used."""
-        return self._data.keys()
+        return list(self._data.keys())
 
     def write_metadata(self, fp):
         """Adds data to the metadata that's written.
@@ -156,3 +164,6 @@ class BaseDataModel(BaseModel):
         """
         super(BaseDataModel, self).write_metadata(fp)
         fp.write_stilde(self.data)
+        # save injection parameters
+        if self.injection_file is not None:
+            fp.write_injections(self.injection_file)

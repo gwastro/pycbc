@@ -20,18 +20,18 @@
 
 Config file syntax
 ------------------
-The configuration file should have a [variable_args], a [static_args],
+The configuration file should have a [variable_params], a [static_params],
 and one or more [distribution] sections. Multiple [constraint] sections and
 one or more [waveform_transforms] sections may also be provided. An example:
 
-    [variable_args]
+    [variable_params]
     mass1 =
     mass2 =
     spin1_a =
     spin1_azimuthal =
     spin1_polar =
 
-    [static_args]
+    [static_params]
     approximant = IMRPhenomPv2
     f_lower = 19
 
@@ -69,13 +69,13 @@ spin1_azimuthal). Because the waveform module expects spins to be provided in
 cartesian coordinates, the spherical spin coordinates are transformed prior to
 being written out to file.
 
-The [variable_args] section gives the list of waveform parameters to
-randomize.  The [static_args] section gives parameters that are fixed for all
+The [variable_params] section gives the list of waveform parameters to
+randomize.  The [static_params] section gives parameters that are fixed for all
 of the injections.
 
 The [distribution-{tag}] sections provide the arguments needed to initialize
 the distribution for each parameter. Every parameter specified in
-[variable_args] must have a distribution section; the name of the parameter(s)
+[variable_params] must have a distribution section; the name of the parameter(s)
 used by that distribution must be in the 'tag' part of the section header (the
 bit after the dash). If a distribution covers multiple parameters, the
 parameters should be separated by a '+'.  Any distribution in the distributions
@@ -83,9 +83,9 @@ module may be used.  The rest of the options should provide the necessary
 arguments to initialize that distribution; see the distributions module for
 details.
 
-The variable_args need not be parameters understood by the waveform module.  In
+The variable_params need not be parameters understood by the waveform module.  In
 that case, a [waveform_transforms] sections must be provided that map
-variable_args not understood by the waveform module to parameters that are
+variable_params not understood by the waveform module to parameters that are
 understood. In the above example, spin1_a, spin1_azimuthal, and spin1_polar are
 converted to spin1x, spin1y, and spin1z before being written out. Any transform
 in the transforms module may be used to do this; see that module for details.
@@ -101,7 +101,7 @@ provided, the union of all constraints are applied. Alternatively, multiple
 constraints may be joined in a single argument using numpy's logical operators.
 
 The parameter that constraints are applied to may be any parameter in
-variable_args or any output parameter of the transforms. Functions may be
+variable_params or any output parameter of the transforms. Functions may be
 applied on these parameters to obtain constraints on derived parameters. Any
 function in the conversions, coordinates, or cosmology module may be used,
 along with any numpy ufunc. So, in the above example, mass ratio (q) is
@@ -114,84 +114,19 @@ import logging
 import numpy
 import pycbc
 import pycbc.version
+from pycbc.inject import InjectionSet
 from pycbc import distributions
 from pycbc import transforms
 from pycbc.distributions import JointDistribution
 from pycbc.io import record
 from pycbc.waveform import parameters
+from pycbc.workflow import configuration
 from pycbc.workflow import WorkflowConfigParser
 import h5py
 
-# stuff for writing xml files... remove this when we drop xml
-from glue.ligolw import ligolw, lsctables, table, utils as ligolw_utils
-
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-
-# Map parameter names used in pycbc to names used in the sim_inspiral
-# table, if they are different
-sim_inspiral_map = {
-    'ra': 'longitude',
-    'dec': 'latitude',
-    'approximant': 'waveform',
-    }
-
-def set_sim_data(sim, field, data):
-    """Sets data of a SimInspiral instance."""
-    try:
-        sim_field = sim_inspiral_map[field]
-    except KeyError:
-        sim_field = field
-    # for tc, map to geocentric times
-    if sim_field == 'tc':
-        sim.geocent_end_time = int(data)
-        sim.geocent_end_time_ns = int(1e9*(data % 1))
-    else:
-        setattr(sim, sim_field, data)
-
-def write_to_xml(filename, samples, write_args, static_args=None):
-    """Writes the injection samples to the given xml.
-    """
-    xmldoc = ligolw.Document()
-    xmldoc.appendChild(ligolw.LIGO_LW())
-    simtable = lsctables.New(lsctables.SimInspiralTable)
-    xmldoc.childNodes[0].appendChild(simtable)
-    if static_args is None:
-        static_args = {}
-    for ii in range(samples.size):
-        sim = lsctables.SimInspiral()
-        # initialize all elements to None
-        [setattr(sim, col, None) for col in sim.__slots__]
-        for field in write_args:
-            data = samples[ii][field]
-            set_sim_data(sim, field, data)
-        # set any static args
-        [set_sim_data(sim, field, value)
-         for field,value in static_args.items()]
-        simtable.append(sim)
-    ligolw_utils.write_filename(xmldoc, filename,
-                                           gz=filename.endswith('gz'))
-
-
-def write_to_hdf(filename, samples, write_args, static_args=None):
-    """Writes the injection samples to the given hdf file.
-    """
-    fp = h5py.File(filename, 'w')
-    # write metadata
-    if static_args is None:
-        static_args = {}
-    fp.attrs["cmd"] = " ".join(sys.argv)
-    fp.attrs["static_args"] = static_args.keys()
-    for arg, val in static_args.items():
-        fp.attrs[arg] = val
-    for field in write_args:
-        fp[field] = samples[field]
-    return fp
-
-
 parser = argparse.ArgumentParser(description=__doc__,
             formatter_class=argparse.RawDescriptionHelpFormatter)
-WorkflowConfigParser.add_config_opts_to_parser(parser)
+configuration.add_workflow_command_line_group(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg,
                     help='Prints version information.')
@@ -205,15 +140,15 @@ parser.add_argument('--output-file', required=True,
                          'injections will be written to a sim_inspiral table '
                          'in an xml file. Otherwise, results will be written '
                          'to an hdf file.')
-parser.add_argument('--dist-section', default='distribution',
+parser.add_argument('--dist-section', default='prior',
                     help='What section in the config file to load '
-                          'distributions from. Default is distribution.')
-parser.add_argument('--variable-params-section', default='variable_args',
+                          'distributions from. Default is prior.')
+parser.add_argument('--variable-params-section', default='variable_params',
                     help='What section in the config file to load the '
-                         'parameters to vary. Default is variable_args.')
-parser.add_argument('--static-args-section', default="static_args",
-                    help='What section to load the static args from. Default '
-                         'is static_args.')
+                         'parameters to vary. Default is variable_params.')
+parser.add_argument('--static-params-section', default="static_params",
+                    help='What section to load the static params from. Default '
+                         'is static_params.')
 parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an OSError is raised.")
@@ -233,10 +168,10 @@ logging.info("Loading config file")
 cp = WorkflowConfigParser.from_cli(opts)
 
 # get the vairable and static arguments from the config file
-variable_args, static_args = distributions.read_params_from_config(cp,
+variable_params, static_params = distributions.read_params_from_config(cp,
     prior_section=opts.dist_section,
     vargs_section=opts.variable_params_section,
-    sargs_section=opts.static_args_section)
+    sargs_section=opts.static_params_section)
 constraints = distributions.read_constraints_from_config(cp)
 
 if any(cp.get_subsections('waveform_transforms')):
@@ -244,14 +179,14 @@ if any(cp.get_subsections('waveform_transforms')):
         'waveform_transforms')
 else:
     waveform_transforms = None
-    write_args = variable_args
+    write_args = variable_params
 
 # get prior distribution for each variable parameter
 logging.info("Reading distributions")
 dists = distributions.read_distributions_from_config(cp, opts.dist_section)
 
 # construct class that will draw the samples
-randomsampler = JointDistribution(variable_args, *dists,
+randomsampler = JointDistribution(variable_params, *dists,
                                **{"constraints" : constraints})
 
 logging.info("Drawing samples")
@@ -260,18 +195,17 @@ samples = randomsampler.rvs(size=opts.ninjections)
 if waveform_transforms is not None:
     logging.info("Transforming to waveform transform parameters")
     for t in waveform_transforms:
-        if not set(t.inputs).isdisjoint(set(static_args.keys())):
-            for item in list(set(t.inputs) & set(static_args.keys())):
-                samples = samples.add_fields([numpy.repeat(static_args[item],
+        if not set(t.inputs).isdisjoint(set(static_params.keys())):
+            for item in list((set(t.inputs) & set(static_params.keys())
+                             - set(samples.fieldnames))):
+                samples = samples.add_fields([numpy.repeat(static_params[item],
                                              opts.ninjections).astype(float)],
                                              [item])
     samples = transforms.apply_transforms(samples, waveform_transforms)
     write_args = [arg for arg in samples.fieldnames
-                  if arg not in static_args.keys()]
+                  if arg not in static_params.keys()]
 
 # write results
 logging.info("Writing results")
-if opts.output_file.endswith('.xml') or opts.output_file.endswith('.xml.gz'):
-    write_to_xml(opts.output_file, samples, write_args, static_args)
-else:
-    write_to_hdf(opts.output_file, samples, write_args, static_args)
+InjectionSet.write(opts.output_file, samples, write_args, static_params,
+                   cmd=" ".join(sys.argv))

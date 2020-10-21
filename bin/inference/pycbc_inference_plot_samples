@@ -23,18 +23,26 @@ import logging
 from matplotlib import use
 use('agg')
 from matplotlib import pyplot as plt
+from matplotlib import rc
+import numpy
 import pycbc
-from pycbc import (results, transforms)
+from pycbc import results
 from pycbc import __version__
 from pycbc.inference import (option_utils, io)
 import sys
 
 # command line usage
-parser = argparse.parser = io.ResultsArgumentParser()
+parser = argparse.parser = io.ResultsArgumentParser(
+    skip_args=['chains', 'iteration'])
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Print logging info.")
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
+parser.add_argument("--chains", nargs='+', default=None,
+                    help="Chain/walker indices to plot. Options are 'all' or "
+                         "one or more chain indices. Default is to plot the "
+                         "average of all chains for the input "
+                         "`--parameters`.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Path to output plot.")
 
@@ -45,43 +53,89 @@ opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
 # load the results
-fp, parameters, labels, _ = io.results_from_cli(opts,
-                                                load_samples=False)
+fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 
 # get number of dimensions
 ndim = len(parameters)
 
+# get chain indices
+if opts.chains == ['all'] or opts.chains == None:
+    chains = range(fp.nchains)
+else:
+    chains = list(map(int, opts.chains))
+
 # plot samples
 # plot each parameter as a different subplot
 logging.info("Plotting samples")
-fig, axs = plt.subplots(ndim, sharex=True)
+fig, axs = plt.subplots(ndim, figsize=(10,8), sharex=True)
 plt.xlabel("Iteration")
 
 # loop over parameters
 axs = [axs] if not hasattr(axs, "__iter__") else axs
-for i, arg in enumerate(parameters):
-    # plot each walker as a different line on the subplot
-    for j in range(fp.nwalkers):
-        # plot each walker as a different line on the subplot
-        file_parameters, cs = transforms.get_common_cbc_transforms(
-                                                 parameters, fp.variable_params)
-        y = fp.read_samples(file_parameters, walkers=j,
-                            thin_start=opts.thin_start,
-                            thin_interval=opts.thin_interval,
-                            thin_end=opts.thin_end)
-        y = transforms.apply_transforms(y, cs)
 
-        axs[i].plot(y[arg], alpha=0.25)
-        # Set y labels
-        axs[i].set_ylabel(labels[arg])
+if opts.thin_start is not None:
+    xmin = opts.thin_start
+else:
+    try:
+        xmin = fp.attrs['thin_start']
+    except KeyError:
+        xmin = 0
+
+if opts.thin_interval is not None:
+    xint = opts.thin_interval
+else:
+    try:
+        xint = fp.attrs['thin_interval']
+    except KeyError:
+        xint = 1
+
+thinned_by = fp.thinned_by*xint
+xmin = xmin*fp.thinned_by
+
+# create the kwargs to load samples
+kwargs = {'thin_start': opts.thin_start,
+          'thin_interval': opts.thin_interval,
+          'thin_end': opts.thin_end}
+# add the temperature args if it exists
+try:
+    kwargs['temps'] = opts.temps
+except AttributeError:
+    pass
+
+for i, arg in enumerate(parameters):
+    chains_arg = []
+    for cidx in chains:
+        kwargs['chains'] = cidx
+        try:
+            chain = fp.read_samples(parameters, **kwargs)
+        except TypeError:
+            # will get this if ensemble sampler; change "chains" to "walkers"
+            kwargs['walkers'] = kwargs.pop('chains')
+            chain = fp.read_samples(parameters, **kwargs)
+        chains_arg.append(chain[arg])
+    if opts.chains is not None:
+        for chain in chains_arg:
+            # plot each chain as a different line on the subplot
+            axs[i].plot((numpy.arange(len(chain)))*thinned_by + xmin, chain,
+                        alpha=0.6)
+    else:
+        # plot the average of all chains for the parameter on the subplot
+        chains_arg = numpy.array(chains_arg)
+        avg_chain = [chains_arg[:, j].sum()/fp.nchains
+                     for j in range(len(chains_arg[0]))]
+        axs[i].plot((numpy.arange(len(avg_chain)))*thinned_by + xmin, avg_chain)
+    # Set y labels
+    axs[i].set_ylabel(labels[arg])
 fp.close()
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join(labels),
+    "parameters" : ", ".join(sorted(list(labels.values()))),
 }
-caption = r"""All samples from all the walker chains for the parameters. Each
-line is a different chain of walker samples."""
+caption = r"""Parameter samples from the chains whose indices were
+provided as inputs. Each line is a different chain of samples in that
+case. If no chain indices were provided, the plot shows the variation of the
+parameter sample values averaged over all chains."""
 title = "Samples for {parameters}".format(**caption_kwargs)
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),

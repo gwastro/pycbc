@@ -135,3 +135,11 @@ def times_to_links(times, window, tag, base=None):
         urls.append(base % (tag, start, end))
     return urls
 
+def get_gracedb_search_link(time):
+    # Set up a search string for a 3s window around the coincidence
+    gdb_search_query = '%.0f+..+%.0f' % (numpy.floor(time) - 1,
+                                         numpy.ceil(time) + 1)
+    gdb_search_url = ('https://gracedb.ligo.org/search/?query='
+                      '{}&query_type=S'.format(gdb_search_query))
+    gdb_search_link = '<a href="' + gdb_search_url + '">Search</a>'
+    return gdb_search_link

@@ -2,7 +2,7 @@
 import logging
 import os
 import shutil
-import ConfigParser
+from six.moves import configparser as ConfigParser
 import subprocess
 import glob
 import tempfile
@@ -180,7 +180,7 @@ mkdir('plots')
 
 logging.info("Copying scripts")
 shutil.copy(banksim_prog, 'scripts/pycbc_banksim')
-os.chmod('scripts/pycbc_banksim', 0777)
+os.chmod('scripts/pycbc_banksim', 0o0777)
 
 logging.info("Creating injection file")
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
@@ -285,7 +285,7 @@ for i, j in enumerate(indices):
 maxmatch=array(maxmatch, dtype =dtypef)
 savetxt(options.output_file, maxmatch,fmt=('%5.5f', '%s', '%i', '%s', '%i', '%5.5f'), delimiter=' ')
 """)
-os.chmod('scripts/pycbc_banksim_match_combine', 0777)
+os.chmod('scripts/pycbc_banksim_match_combine', 0o0777)
 
 f = open("scripts/pycbc_banksim_collect_results", "w")
 f.write("""#!/usr/bin/env python
@@ -360,7 +360,7 @@ for row in res:
     
     f.write(outstr)
 """)
-os.chmod('scripts/pycbc_banksim_collect_results', 0777)
+os.chmod('scripts/pycbc_banksim_collect_results', 0o0777)
 
 if gpu:
     f = open("cconfig", "w")
@@ -418,7 +418,7 @@ if gpu:
 
     exit 0
     """)
-    os.chmod('scripts/diff_match.sh', 0777)
+    os.chmod('scripts/diff_match.sh', 0o0777)
     
 logging.info("Creating submit script")
 f = open("submit.sh","w")
@@ -430,13 +430,13 @@ else:
     f.write("""#!/bin/bash
     condor_submit_dag banksim.dag
     """)
-os.chmod('submit.sh', 0777)
+os.chmod('submit.sh', 0o0777)
 
 f = open("partial_results.sh", "w")
 f.write("""#!/bin/bash
 scripts/pycbc_banksim_collect_results
 """)
-os.chmod('partial_results.sh', 0777)
+os.chmod('partial_results.sh', 0o0777)
 
 dag.write_sub_files()
 dag.write_script()
@@ -467,7 +467,6 @@ goldenratio = 2 / (1 + 5**.5)
 #	"subplots.top": 0.75,
 #        "savefig.dpi": 600,
 #        "text.verticalalignment": "center",
-#        "text.usetex": True     # render all text with TeX
 #})
 
 res = numpy.loadtxt("results.dat")
@@ -560,6 +559,6 @@ mplot(q, ispin1z, (imchirp-tmchirp)/imchirp, "plots/q-s1z-mchirpreldiff.png")
 mplot(q, ispin2z, (imchirp-tmchirp)/imchirp, "plots/q-s2z-mchirpreldiff.png")
 
 """)
-os.chmod("scripts/pycbc_banksim_plots", 0777)
+os.chmod("scripts/pycbc_banksim_plots", 0o0777)
 
 logging.info("Done")

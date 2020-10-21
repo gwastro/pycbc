@@ -2,7 +2,8 @@
 """Generate a bank of templates using a brute force stochastic method.
 """
 import numpy, h5py, logging, argparse, numpy.random, sys
-import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.pnutils
+import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.conversions
+from scipy.stats import gaussian_kde
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--verbose', action='store_true')
@@ -31,10 +32,24 @@ parser.add_argument('--permissive', action='store_true',
 parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('--tolerance', type=float)
 parser.add_argument('--max-mtotal', type=float)
+parser.add_argument('--min-mchirp', type=float)
+parser.add_argument('--max-mchirp', type=float)
+parser.add_argument('--fixed-params', type=str, nargs='*')
+parser.add_argument('--fixed-values', type=float, nargs='*')
+parser.add_argument('--max-q', type=float)
+parser.add_argument('--tau0-crawl', type=float)
+parser.add_argument('--tau0-start', type=float)
+parser.add_argument('--tau0-end', type=float)
 pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 numpy.random.seed(args.seed)
+
+
+fdict = {}
+if args.fixed_params:
+    for p, v in zip(args.fixed_params, args.fixed_values):
+        fdict[p] = v
 
 class Shrinker(object):
     def __init__(self, data):
@@ -53,16 +68,33 @@ class TriangleBank(object):
     """
     def __init__(self, p=None):
         self.waveforms = p if p is not None else []
+        self.tbins = {}
 
     def __len__(self):
         return len(self.waveforms)
+       
+    def activelen(self):
+        i = 0
+        for w in self.waveforms:
+            if isinstance(w, pycbc.types.FrequencySeries):
+                i += 1
+        return i
 
     def insert(self, hp):
         self.waveforms.append(hp)
 
+        for b in [hp.tbin - 1, hp.tbin, hp.tbin + 1]:
+            if b in self.tbins:
+                self.tbins[b].append(len(self)-1)
+            else:
+                self.tbins[b] = [len(self)-1]
+
     def __getitem__(self, index):
         return self.waveforms[index]
-        
+
+    def keys(self):
+        return self.waveforms[0].params.keys()
+
     def key(self, k):
         return numpy.array([p.params[k] for p in self.waveforms])
         
@@ -79,6 +111,19 @@ class TriangleBank(object):
         if self.r is None or len(self.r) != len(self):
             self.r = numpy.arange(0, len(self))
         return self.r
+        
+    def culltau0(self, threshold):
+        cull = numpy.where(self.tau0() < threshold)[0]
+    
+        class dumb(object):
+            pass
+        for c in cull:
+            d = dumb()
+            d.tau0 = self.waveforms[c].tau0
+            d.params = self.waveforms[c].params
+            d.s = self.waveforms[c].s
+            self.waveforms[c] = d
+            
 
     def tau0(self):
         if not hasattr(self, 't0'):
@@ -102,10 +147,16 @@ class TriangleBank(object):
 
         #Apply tua0 threshold
         if args.tau0_threshold:
-            hp.tau0, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(
+            hp.tau0 = pycbc.conversions.tau0_from_mass1_mass2(
                                             hp.params['mass1'], 
                                             hp.params['mass2'], 15.0)
-            r = r[abs(self.tau0()[r] - hp.tau0) < args.tau0_threshold]
+            hp.tbin = int(hp.tau0 / args.tau0_threshold)
+
+            if hp.tbin in self.tbins:
+                r = numpy.array(self.tbins[hp.tbin])
+            else:
+                r = r[:0]
+
         mtau = len(r)
 
         # Try to do some actual matches
@@ -115,7 +166,7 @@ class TriangleBank(object):
             if j is None:
                 hp.matches = matches[r]
                 hp.indices = r
-                logging.info("Template is Added MaxMatch:%0.3f BankSize:%i "
+                logging.info("TADD MaxMatch:%0.3f Size:%i "
                              "AfterSigma:%i AfterTau0:%i Matches:%i"
                               % (mmax, len(self), msig, mtau, mnum))
                 return False
@@ -142,7 +193,7 @@ class TriangleBank(object):
     def check_params(self, gen, params, threshold):
         num_tried = 0
         num_added = 0
-        for i in range(len(params.values()[0])):
+        for i in range(len(tuple(params.values())[0])):
             num_tried += 1.0
 
             try:
@@ -176,6 +227,7 @@ class GenUniformWaveform(object):
         self.md2 = q._data[0:100]
 
     def generate(self, **kwds):
+        kwds.update(fdict)
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
             hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f, 
                                                 f_lower=self.f_lower, **kwds)
@@ -209,7 +261,7 @@ if not args.tolerance:
     tolerance = (1 - args.minimal_match) / 10
 else:
     tolerance = args.tolerance
-conv = 1
+
 size = int(1.0 / tolerance)
 
 gen = GenUniformWaveform(args.buffer_length, 
@@ -221,24 +273,137 @@ if args.input_file:
     params = {k: f[k][:] for k in f}
     bank, _ = bank.check_params(gen, params, args.minimal_match)
 
-while conv > tolerance:
-    r += 1
+
+def draw(rtype):
     params = {}
-    for name, pmin, pmax in zip(args.params, args.min, args.max):
-        params[name] = numpy.random.uniform(pmin, pmax, size=size)
-    params['approximant'] = numpy.array([args.approximant]*len(params[name]))
+    
+    if rtype == 'uniform':
+        for name, pmin, pmax in zip(args.params, args.min, args.max):
+            params[name] = numpy.random.uniform(pmin, pmax, size=size)
+    elif rtype == 'kde':
+        trail = 300
+        if trail > len(bank):
+            trail = len(bank)
+        p = bank.keys()
+        p = [k for k in p if k not in fdict]
+        p.remove('approximant')
+        bdata = numpy.array([bank.key(k)[-trail:] for k in p])
 
+        kde = gaussian_kde(bdata)
+        points = kde.resample(size=size)
+        for k, v in zip(p, points):
+            params[k] = v
+        
+    params['approximant'] = numpy.array([args.approximant]*size)
+        
     # Filter out stuff
-    if args.max_mtotal:
-        l = params['mass1'] + params['mass2'] < args.max_mtotal
-        for k in params:
-            params[k] = params[k][l]
+    l = None
+    for name, pmin, pmax in zip(args.params, args.min, args.max):
+        nl = (params[name] < pmax) & (params[name] > pmin)
+        l = (nl & l) if l is not None else nl
 
-    blen = len(bank)
-    bank, conv = bank.check_params(gen, params, args.minimal_match)
-    logging.info("Round: %s Size: %s conv: %s added: %s",
-                 r, len(bank), conv, len(bank) - blen)
+    if args.max_q:
+        q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
+        l &= q < args.max_q
+
+    if args.max_mtotal:
+        l &= params['mass1'] + params['mass2'] < args.max_mtotal
+
+    if args.max_mchirp:
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
+        l &= mc < args.max_mchirp
+
+    if args.min_mchirp:
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
+        l &= mc > args.min_mchirp
+            
+    for k in params:
+        params[k] = params[k][l]
+            
+    return params
+
+def cdraw(rtype, ts, te):
+    from pycbc.conversions import tau0_from_mass1_mass2
+
+    p = draw(rtype)    
+    if  len(p[p.keys()[0]]) > 0:
+        t = tau0_from_mass1_mass2(p['mass1'], p['mass2'], 15.0)
+        l = (t < te) & (t > ts)
+        for k in p:
+            p[k] = p[k][l]
+        
+    i = 0
+    while len(p[p.keys()[0]]) < size:
+        tp = draw(rtype)
+        for k in p:
+            p[k] = numpy.concatenate([p[k], tp[k]])
+            
+        if  len(p[p.keys()[0]]) > 0:
+            t = tau0_from_mass1_mass2(p['mass1'], p['mass2'], 15.0)
+            l = (t < te) & (t > ts)
+            for k in p:
+                p[k] = p[k][l] 
+           
+        i += 1
+        if i > 1000:
+            break
+            
+            
+    if len(p[p.keys()[0]]) == 0:
+        return None
+            
+    return p
+
+tau0s = args.tau0_start
+tau0e = tau0s + args.tau0_crawl
+go = True
+
+region = 0
+while tau0s < args.tau0_end:
+    conv = 1
+    r = 0
+    while conv > tolerance:
+        # Standard Round
+        r += 1
+        params = cdraw('uniform', tau0s, tau0e)
+        if params is None:
+            if len(bank) > 0:
+                go = False
+            break
+        
+        blen = len(bank)
+        bank, uconv = bank.check_params(gen, params, args.minimal_match)
+        logging.info("%s: Round (U): %s Size: %s conv: %s added: %s",
+                     region, r, len(bank), uconv, len(bank) - blen)
+        if r > 10:
+            conv = uconv
+        kloop = 0
+        while ((kloop == 0) or (kconv / okconv) > .5) and len(bank) > 10:
+            r += 1
+            kloop += 1
+            params = cdraw('kde', tau0s, tau0e)
+            blen = len(bank)
+            bank, kconv = bank.check_params(gen, params, args.minimal_match)
+            logging.info("%s: Round (K) (%s): %s Size: %s conv: %s added: %s",
+                         region, kloop, r, len(bank), kconv, len(bank) - blen)
+            if uconv:
+                logging.info('Ratio of convergences: %2.3f' % (kconv / (uconv)))
+
+            if kloop == 1:
+                okconv = kconv
+            
+            if kconv <= tolerance:
+                conv = kconv
+                break
+    
+    bank.culltau0(tau0s - args.tau0_threshold * 2.0)
+    logging.info("Region Done %3.1f-%3.1f, %s stored", tau0s, tau0e, bank.activelen())
+    region += 1          
+    tau0s += args.tau0_crawl / 2
+    tau0e += args.tau0_crawl / 2
 
 o = h5py.File(args.output_file, 'w')
-for k in params:
+for k in bank.keys():
     o[k] = bank.key(k)

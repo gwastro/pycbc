@@ -45,9 +45,9 @@ if _scheme == 'cuda':
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
 elif _scheme == 'cpu':
-    from pycbc.types.aligned import ArrayWithAligned as SchemeArray
+    from numpy import ndarray as SchemeArray
 
-from pycbc.types.aligned import ArrayWithAligned as CPUArray
+from numpy import ndarray as CPUArray
 
 class TestTimeSeriesBase(array_base,unittest.TestCase):
     def setUp(self):
@@ -103,7 +103,7 @@ class TestTimeSeriesBase(array_base,unittest.TestCase):
 
         # These are timeseries that have problems specific to timeseries
         self.bad3 = TimeSeries([1,1,1], 0.2, epoch=self.epoch, dtype = self.dtype)
-        if self.epoch is None:
+        if self.epoch == 0:
             self.bad4 = TimeSeries([1,1,1], self.delta_t, epoch = lal.LIGOTimeGPS(1000, 1000), dtype = self.dtype)
         else:
             self.bad4 = TimeSeries([1,1,1], self.delta_t, epoch=None, dtype = self.dtype)
@@ -418,8 +418,8 @@ class TestTimeSeriesBase(array_base,unittest.TestCase):
 
     def test_add(self):
         super(TestTimeSeriesBase,self).test_add()
-        self.assertRaises(ValueError, self.a.__add__,self.bad3)
-        self.assertRaises(ValueError, self.a.__add__,self.bad4)
+        self.assertRaises(ValueError, self.a.__add__, self.bad3)
+        self.assertRaises(ValueError, self.a.__add__, self.bad4)
 
     def test_radd(self):
         super(TestTimeSeriesBase,self).test_radd()
@@ -476,6 +476,25 @@ class TestTimeSeriesBase(array_base,unittest.TestCase):
             self.assertAlmostEqual(self.b.duration, 0.3)
             self.assertAlmostEqual(self.bad3.duration, 0.6)
 
+    def test_inject(self):
+        a = TimeSeries(numpy.zeros(2**20, dtype=numpy.float32),
+                                   delta_t=1.0)
+        a[2**19] = 1
+
+        # Check that the obvious case reduces to an add operation
+        r = a.inject(a)
+        self.assertAlmostEqual(r.max(), 2.0, places=7)
+
+        # Check adding an offset vector
+        b = a.cyclic_time_shift(-0.21)
+        r = a.inject(b)
+        self.assertAlmostEqual(r.max(), 2.0, places=5)
+
+        # check adding shoter offset vector
+        c = a.time_slice(2**19-5000, 2**19+5000).cyclic_time_shift(32.12)
+        r = a.inject(c)
+        self.assertAlmostEqual(r.max(), 2.0, places=4)
+
     def test_sample_times(self):
         with self.context:
             # Moving these to the current scheme
@@ -522,7 +541,7 @@ def test_maker(dtype, odtype, epoch):
         def __init__(self, *args):
             self.dtype = dtype
             self.odtype = odtype
-            self.epoch = epoch
+            self.epoch = epoch if epoch is not None else lal.LIGOTimeGPS(0, 0)
             unittest.TestCase.__init__(self, *args)
     TestTimeSeries.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
     return TestTimeSeries
@@ -533,7 +552,7 @@ types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
 suite = unittest.TestSuite()
 
 # Unlike the regular array tests, we will need to test with an epoch, and with none
-epochs = [lal.LIGOTimeGPS(1000, 1000),None]
+epochs = [lal.LIGOTimeGPS(1000, 1000), None]
 
 i = 0
 for t,otypes in types:

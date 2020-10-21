@@ -28,20 +28,22 @@ parser.add_argument('--bins', nargs='+',
 parser.add_argument('--sig-type', choices=['ifar', 'fap', 'stat'],
                     default='ifar',
                     help="x-axis significance measure. Default 'ifar'")
+parser.add_argument('--exclusive-sig', action='store_true',
+                    help="Plot only exclusive injection FAR, not inclusive")
 parser.add_argument('--sig-bins', nargs='*',
                    help="Boundaries of x-axis significance bins. If not given"
                         ", hard-coded defaults will be used"),
 parser.add_argument('--dist-type', choices=['distance', 'volume', 'vt'],
                     default='distance',
                     help="y-axis sensitivity measure. Default 'distance'")
-parser.add_argument('--log-dist', action='store_true', 
+parser.add_argument('--log-dist', action='store_true',
                     help='Plot the sensitivity axis in log scale')
 parser.add_argument('--min-dist', type=float,
                     help="Lower y-axis limit for sensitive distance")
 parser.add_argument('--max-dist', type=float,
                     help="Upper y-axis limit for sensitive distance")
-parser.add_argument('--integration-method', choices=['pylal', 'shell', 'mc'],
-                    default='pylal',
+parser.add_argument('--integration-method', default='pylal',
+                    choices=['pylal', 'shell', 'mc', 'vchirp_mc'],
                     help="Sensitive volume estimation method. Default 'pylal'")
 parser.add_argument('--dist-bins', type=int, default=100,
                     help="Number of distance bins for 'pylal' volume "
@@ -154,14 +156,20 @@ for fi in args.injection_file:
             raise RuntimeError('Unrecognized --bin-type value!')
 
         if args.sig_type == 'stat':
-            sig = f['found_after_vetoes/stat'][:]
-            sig_exc = None
+            sig_exc = f['found_after_vetoes/stat'][:]
+            sig = None
         elif args.sig_type == 'ifar':
-            sig = f['found_after_vetoes/ifar'][:]
             sig_exc = f['found_after_vetoes/ifar_exc'][:]
+            try:
+                sig = f['found_after_vetoes/ifar'][:]
+            except KeyError:  # multiifo inj files may not have inclusive FAR
+                sig = numpy.array([])
         elif args.sig_type == 'fap':
-            sig = f['found_after_vetoes/fap'][:]
             sig_exc = f['found_after_vetoes/fap_exc'][:]
+            try:
+                sig = f['found_after_vetoes/fap'][:]
+            except KeyError:  # multiifo inj files may not have inclusive FAP
+                sig = numpy.array([])
         else:
             raise RuntimeError('Unrecognized --sig-type value!')
 
@@ -169,14 +177,15 @@ for fi in args.injection_file:
         missed['dist']  = numpy.append(missed['dist'], dist[missedi])
         missed['param'] = numpy.append(missed['param'], pvals[missedi])
         missed['mchirp']= numpy.append(missed['mchirp'], mchirp[missedi])
-        found['dist']   = numpy.append(found['dist'], dist[foundi])       
+        found['dist']   = numpy.append(found['dist'], dist[foundi])
         found['param']  = numpy.append(found['param'], pvals[foundi])
         found['mchirp'] = numpy.append(found['mchirp'], mchirp[foundi])
         found['sig']    = numpy.append(found['sig'], sig)
         found['sig_exc']= numpy.append(found['sig_exc'], sig_exc)
 
         # Time in years
-        t += f.attrs['foreground_time_exc'] / lal_YRJUL_SI
+        if args.dist_type == 'vt':
+            t += f.attrs['foreground_time_exc'] / lal_YRJUL_SI
 
 # Parameter bin legend labels
 labels = {
@@ -214,18 +223,23 @@ if args.hdf_out:
     plotdict = {}
     plotdict['xvals'] = x_values
 
-# Switches for plotting both inclusive/exclusive significance
-color=iter(cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
-fvalues = [found['sig'], found['sig_exc']]
-do_labels = [True, False]
-alphas = [.8, .3]
+# Switches for plotting inclusive/exclusive significance
+color = iter(cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
+if not args.exclusive_sig:
+    fvalues = [found['sig'], found['sig_exc']]
+    do_labels = [True, False]
+    alphas = [.8, .3]
+else:
+    fvalues = [found['sig_exc']]
+    do_labels = [True]
+    alphas = [.6]
 
 fig = pylab.figure()
 # Cycle over parameter bins plotting each in turn
 for j in range(len(args.bins)-1):
     c = next(color)
 
-    # Plot both the inclusive and exclusive significance
+    # cycle over inclusive / exclusive significance if available
     for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas):
         if sig_val[0] is None:
             logging.info('Skipping exclusive significance')
@@ -278,15 +292,21 @@ for j in range(len(args.bins)-1):
             elif args.integration_method == 'pylal':
                 vol, vol_err = sensitivity.volume_binned_pylal(f_dist,
                                              m_dist_full, bins=args.dist_bins)
-            elif args.integration_method == 'mc':
+            elif args.integration_method in ['mc', 'vchirp_mc']:
                 found_mchirp = found['mchirp'][binf][loud]
                 missed_mchirp = numpy.append(missed['mchirp'][binm],
                                              found['mchirp'][binf][quiet])
 
-                vol, vol_err = sensitivity.volume_montecarlo(f_dist, m_dist_full,
-                      found_mchirp, missed_mchirp, args.distance_param,
-                      args.distribution, args.limits_param,
-                      args.min_param, args.max_param)
+                if args.integration_method == 'mc':
+                    vol, vol_err = sensitivity.volume_montecarlo(f_dist,
+                      m_dist_full, found_mchirp, missed_mchirp,
+                      args.distance_param, args.distribution,
+                      args.limits_param, args.min_param, args.max_param)
+                else: # vchirp_mc
+                    vol, vol_err = sensitivity.chirp_volume_montecarlo(
+                      f_dist, m_dist_full, found_mchirp, missed_mchirp,
+                      args.distance_param, args.distribution,
+                      args.limits_param, args.min_param, args.max_param)
 
             vols.append(vol)
             vol_errors.append(vol_err)
@@ -345,14 +365,14 @@ pylab.legend(loc='lower left')
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
      title="Sensitive %s vs %s: binned by %s using %s method"
-            % (args.dist_type.title(), args.sig_type.upper(), 
+            % (args.dist_type.title(), args.sig_type.upper(),
                args.bin_type, args.integration_method),
      caption="Sensitive %s as a function of Significance:"
              "Lighter lines represent the significance without"
              " including injections in their own background,"
              " while darker lines include each injection"
              " individually in the background. The integration"
-             " method used is based on %s." 
+             " method used is based on %s."
              % (args.dist_type.title(), args.integration_method),
      cmd=' '.join(sys.argv))
 

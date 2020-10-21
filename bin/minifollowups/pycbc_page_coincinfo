@@ -15,16 +15,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Make tables describing a coincident foreground event"""
+
 import h5py, argparse, logging, sys
 import matplotlib; matplotlib.use('Agg')
 import numpy, lal, datetime
-import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
+import pycbc.version, pycbc.results, pycbc.pnutils
+from pycbc.events import ranking
+from pycbc.results import followup
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--single-trigger-files', nargs='+', 
+parser.add_argument('--single-trigger-files', nargs='+',
     help="HDF format single detector trigger files for the full data run")
 parser.add_argument('--bank-file',
     help="HDF format template bank file")
@@ -32,15 +35,29 @@ parser.add_argument('--output-file')
 parser.add_argument('--statmap-file', required=True,
     help="HDF format clustered coincident statmap file containing the result "
          "triggers. Required")
-parser.add_argument('--statmap-file-subspace-name', default='foreground',
+parser.add_argument('--statmap-file-subspace-name', default='background_exc',
     help="If given look in this 'sub-directory' of the HDF file for triggers, "
-         "takes a default value of 'foreground'.")
+         "takes a default value of 'background_exc'.")
 trig_input = parser.add_mutually_exclusive_group(required=True)
 trig_input.add_argument('--n-loudest', type=int,
     help="Examine the n'th loudest trigger, use with statmap file")
+parser.add_argument('--sort-variable', default='ifar',
+                    help='Which subgroup of --analysis-category to use for '
+                         'sorting. Default=ifar')
+parser.add_argument('--sort-order', default='descending',
+                    choices=['ascending','descending'],
+                    help='Which direction to use when sorting on '
+                         '--sort-variable. Default=descending')
 trig_input.add_argument('--trigger-id', type=int,
     help="Examine the trigger with specified ID, use with statmap file. An "
          "alternative to --n-loudest. Cannot be used together")
+parser.add_argument('--include-summary-page-link', action='store_true',
+    help="If given, will include a link to the DQ summary page on the "
+         "single detector trigger tables.")
+parser.add_argument('--include-gracedb-link', action='store_true',
+    help="If given, will provide a link to search GraceDB for events "
+         "within a 3s window around the coincidence time.")
+
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -48,82 +65,165 @@ pycbc.init_logging(args.verbose)
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
 f = h5py.File(args.statmap_file, 'r')
 d = f[args.statmap_file_subspace_name]
+
 if args.n_loudest is not None:
-    n = d['stat'][:].argsort()[::-1][args.n_loudest]
+    sorting = d[args.sort_variable][:].argsort()
+    if args.sort_order == 'descending':
+        sorting = sorting[::-1]
+    n = sorting[args.n_loudest]
     title = 'Parameters of coincident event ranked %s' % (args.n_loudest + 1)
-    caption = 'Parameters of event ranked %s by the search. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1)
+    caption = ('Parameters of event ranked %s by %s %s in the search. The figures below'
+               ' show the mini-followup data for this event.' % 
+               (args.n_loudest + 1, args.sort_order, args.sort_variable))
 elif args.trigger_id is not None:
     n = args.trigger_id
     title = 'Details of coincident trigger'
-    caption = 'Parameters of coincident event. The figures below show the mini-followup data for this event.'
+    caption = ('Parameters of coincident event. The figures below show the '
+               'mini-followup data for this event.')
 else:
     # It shouldn't be possible to get here!
     raise ValueError()
 
-# make a table for the coincident information #################################
-headers = ["Coincident ranking statistic",
-           "Inclusive IFAR (yr)",
-           "Inclusive FAP", 
-           "Exclusive IFAR (yr)",
-           "Exclusive FAP",
-           "Time delay (s)"
-          ]
+# Make a table for the coincident information #################################
 
-table = numpy.array([['%5.2f' % d['stat'][n], 
-                      '%5.2f' % d['ifar'][n], 
-                      '%5.2e' % d['fap'][n],
-                      '%5.2f' % d['ifar_exc'][n], 
-                      '%5.2e' % d['fap_exc'][n],
-                      '%5.4f' % (d['time2'][n] - d['time1'][n])
-                    ]], dtype=str)
+hdrs = ["Coincident ranking statistic",
+           "Inclusive IFAR (yr)",
+           "Inclusive FAP",
+           "Exclusive IFAR (yr)",
+           "Exclusive FAP"
+        ]
+
+dsets = ['stat', 'ifar', 'fap', 'ifar_exc', 'fap_exc']
+formats = ['%5.2f', '%5.2f', '%5.2e', '%5.2f', '%5.2e']
+tbl = [[h, fmt % d[dst][n]] for fmt, dst, h in zip(formats, dsets, hdrs) if dst in d]
+headers, table = zip(*tbl)
+headers = list(headers)
+table = list(table)
+if args.include_gracedb_link:
+    # Get the time from the single detectors
+    if 'detector_1' in f.attrs:
+        time = (d['time2'][n] + d['time1'][n]) / 2.0
+    else:
+        times = [d['%s/time' % ifo][n] for ifo in f.attrs['ifos'].split(' ')]
+        times = numpy.array(times)
+        time = numpy.mean(times[times > 0])
+    gdb_search_link = followup.get_gracedb_search_link(time)
+    headers.append("GraceDB Search Link")
+    table.append(gdb_search_link)
+
+table = numpy.array([table], dtype=str)
+
+if 'detector_1' in f.attrs:
+    headers.append("Time delay (s)")
+    tdelay = '%5.4f' % (d['time2'][n] - d['time1'][n])
+    table = numpy.array([list(table[0]) + [tdelay]])
+
 
 html = pycbc.results.dq.redirect_javascript + \
                                 str(pycbc.results.static_table(table, headers))
 
-# make a table for the single detector information ############################
-ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
-idx = {ifo1:d['trigger_id1'][n], ifo2:d['trigger_id2'][n]}
+# Make a table for the single detector information ############################
+
+idx = {}
+# Check if using input files from old (2-ifo) coinc code
+if 'detector_1' in f.attrs:
+    # 2 detector version
+    ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
+    idx = {ifo1:d['trigger_id1'][n], ifo2:d['trigger_id2'][n]}
+else:
+    # Version used for multi-ifo coinc code
+    ifo_list = f.attrs['ifos'].split(' ')
+    for ifo in ifo_list:
+        idx[ifo] = d['%s/trigger_id' % ifo][n]
 
 # Store the single detector trigger files keyed by ifo in a dictionary
-table = []
 files = {}
 for fname in args.single_trigger_files:
-    f = h5py.File(fname, 'r')
-    ifos = f.keys()
+    f2 = h5py.File(fname, 'r')
+    ifos = f2.keys()
     for ifo in ifos:
-        files[ifo] = f[ifo]
+        files[ifo] = f2[ifo]
 
 bank = h5py.File(args.bank_file, 'r')
-
+statmapfile = d
+# Data will store the values that will appear in the resulting single-detector
+# table. Each entry in data corresponds to each row in the final table and
+# should be a list of values. So data is will be a list of lists.
+data = []
 for ifo in files.keys():
+
+    # ignore ifo if coinc didn't participate (only for multi-ifo workflow)
+    if ('detector_1' not in f.attrs) and \
+       (statmapfile['%s/time' % ifo][n] == -1.0):
+            continue
+
     d = files[ifo]
     i = idx[ifo]
     tid = d['template_id'][i]
     rchisq =  d['chisq'][i] / (d['chisq_dof'][i] * 2 - 2)
-    mchirp = (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][tid], 
-                                                      bank['mass2'][tid]))[0]  
-                                                      
+    mchirp = (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][tid],
+                                                      bank['mass2'][tid]))[0]
+
     time = d['end_time'][:][i]
     utc = lal.GPSToUTC(int(time))[0:6]
-                                                                            
-    data = [pycbc.results.dq.get_summary_page_link(ifo, utc),
-            str(datetime.datetime(*utc)),
-            '%.3f'  % time,
-            '%5.2f' % d['snr'][i],
-            '%5.2f' % pycbc.events.newsnr(d['snr'][i], rchisq),
-            '%5.2f' % rchisq,            
-            '%i'    % d['chisq_dof'][i],
-            '%5.2f' % d['coa_phase'][i],
-            '%5.2f' % bank['mass1'][tid],
-            '%5.2f' % bank['mass2'][tid],
-            '%5.2f' % mchirp,
-            '%5.2f' % bank['spin1z'][tid],
-            '%5.2f' % bank['spin2z'][tid],
-            '%5.2f' % d['template_duration'][i]
-           ]
-    table.append(data)    
 
-html += str(pycbc.results.static_table(table, pycbc.results.sngl_table_headers))
+    # Headers will store the headers that will appear in the table.
+    headers = []
+    data.append([])
+
+    # DQ summary link
+    if args.include_summary_page_link:
+        data[-1].append(pycbc.results.dq.get_summary_page_link(ifo, utc))
+        headers.append("Detector&nbsp;status")
+    else:
+        data[-1].append(ifo)
+        headers.append("Ifo")
+
+    # End times
+    data[-1].append(str(datetime.datetime(*utc)))
+    data[-1].append('%.3f' % time)
+    headers.append("UTC&nbsp;End&nbsp;Time")
+    headers.append("GPS&nbsp;End&nbsp;time")
+
+    # SNR and phase (not showing any single-det stat here)
+    data[-1].append('%5.2f' % d['snr'][i])
+    data[-1].append('%5.2f' % d['coa_phase'][i])
+    #data[-1].append('%5.2f' % ranking.newsnr(d['snr'][i], rchisq))
+    headers.append("&rho;")
+    headers.append("Phase")
+    #headers.append("Stat")
+
+    # Signal-glitch discrimators
+    data[-1].append('%5.2f' % rchisq)
+    data[-1].append('%i' % d['chisq_dof'][i])
+    headers.append("&chi;<sup>2</sup><sub>r</sub>")
+    headers.append("&chi;<sup>2</sup>&nbsp;bins")
+    try:
+        data[-1].append('%5.2f' % d['sg_chisq'][i])
+        headers.append("sg&nbsp;&chi;<sup>2</sup>")
+    except:
+        pass
+    try:
+        data[-1].append('%5.2f' % d['psd_var_val'][i])
+        headers.append("PSD var")
+    except:
+        pass
+
+    # Template parameters
+    data[-1].append('%5.2f' % bank['mass1'][tid])
+    data[-1].append('%5.2f' % bank['mass2'][tid])
+    data[-1].append('%5.2f' % mchirp)
+    data[-1].append('%5.2f' % bank['spin1z'][tid])
+    data[-1].append('%5.2f' % bank['spin2z'][tid])
+    data[-1].append('%5.2f' % d['template_duration'][i])
+    headers.append("m<sub>1</sub>")
+    headers.append("m<sub>2</sub>")
+    headers.append("M<sub>c</sub>")
+    headers.append("s<sub>1z</sub>")
+    headers.append("s<sub>2z</sub>")
+    headers.append("Duration")
+
+html += str(pycbc.results.static_table(data, headers))
 ###############################################################################
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},

@@ -3,6 +3,7 @@ import os
 import pycbc
 import numpy
 import lal
+import json
 from six import u as unicode
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
@@ -12,7 +13,9 @@ from glue.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
-
+from pycbc.results import ifo_color
+from pycbc.results import source_color
+from pycbc.mchirp_area import calc_probabilities
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
@@ -85,7 +88,7 @@ class SingleCoincForGraceDB(object):
         Parameters
         ----------
         ifos: list of strs
-            A list of the ifos pariticipating in this trigger
+            A list of the ifos participating in this trigger.
         coinc_results: dict of values
             A dictionary of values. The format is defined in
             pycbc/events/coinc.py and matches the on disk representation
@@ -94,6 +97,8 @@ class SingleCoincForGraceDB(object):
             Dictionary providing PSD estimates for all involved detectors.
         low_frequency_cutoff: float
             Minimum valid frequency for the PSD estimates.
+        high_frequency_cutoff: float, optional
+            Maximum frequency considered for the PSD estimates. Default None.
         followup_data: dict of dicts, optional
             Dictionary providing SNR time series for each detector,
             to be used in sky localization with BAYESTAR. The format should
@@ -103,18 +108,34 @@ class SingleCoincForGraceDB(object):
         channel_names: dict of strings, optional
             Strain channel names for each detector.
             Will be recorded in the sngl_inspiral table.
+        mc_area_args: dict of dicts, optional
+            Dictionary providing arguments to be used in source probability
+            estimation with pycbc/mchirp_area.py
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
+        self.coinc_results = coinc_results
+        self.ifos = ifos
 
         # remember if this should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results
                                       and coinc_results['HWINJ'])
 
+        # Check if we need to apply a time offset (this may be permerger)
+        self.time_offset = 0
+        rtoff = 'foreground/{}/time_offset'.format(ifos[0])
+        if rtoff in coinc_results:
+            self.time_offset = coinc_results[rtoff]
+
         if 'followup_data' in kwargs:
             fud = kwargs['followup_data']
+            assert len({fud[ifo]['snr_series'].delta_t for ifo in fud}) == 1, \
+                    "delta_t for all ifos do not match"
             self.snr_series = {ifo: fud[ifo]['snr_series'] for ifo in fud}
             usable_ifos = fud.keys()
             followup_ifos = list(set(usable_ifos) - set(ifos))
+
+            for ifo in self.snr_series:
+                self.snr_series[ifo].start_time += self.time_offset
         else:
             self.snr_series = None
             usable_ifos = ifos
@@ -126,7 +147,7 @@ class SingleCoincForGraceDB(object):
 
         proc_id = ligolw_process.register_to_xmldoc(
             outdoc, 'pycbc', {}, ifos=usable_ifos, comment='',
-            version=pycbc_version.git_hash,
+            version=pycbc_version.version,
             cvs_repository='pycbc/'+pycbc_version.git_branch,
             cvs_entry_time=pycbc_version.date).process_id
 
@@ -171,6 +192,7 @@ class SingleCoincForGraceDB(object):
             for name in names:
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
                 if name == 'end_time':
+                    val += self.time_offset
                     sngl.set_end(lal.LIGOTimeGPS(val))
                 else:
                     try:
@@ -200,17 +222,19 @@ class SingleCoincForGraceDB(object):
             if self.snr_series is not None:
                 snr_series_to_xml(self.snr_series[ifo], outdoc, sngl.event_id)
 
+        # set merger time to the average of the ifo peaks
+        self.merger_time = numpy.mean(
+                    [coinc_results['foreground/{}/end_time'.format(ifo)]
+                     for ifo in ifos]) + self.time_offset
+
         # for subthreshold detectors, respect BAYESTAR's assumptions and checks
         bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
                                  'spin1y spin1z spin2x spin2y spin2z').split()
-        subthreshold_sngl_time = numpy.mean(
-                    [coinc_results['foreground/{}/end_time'.format(ifo)]
-                     for ifo in ifos])
         for sngl in sngl_inspiral_table:
             if sngl.ifo in followup_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
-                sngl.set_end(lal.LIGOTimeGPS(subthreshold_sngl_time))
+                sngl.set_end(lal.LIGOTimeGPS(self.merger_time))
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
@@ -246,6 +270,17 @@ class SingleCoincForGraceDB(object):
             psds_lal[ifo] = fseries
         make_psd_xmldoc(psds_lal, outdoc)
 
+        # source probabilities estimation
+        if 'mc_area_args' in kwargs:
+            eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
+            probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
+                                               coinc_inspiral_row.snr,
+                                               min(eff_distances),
+                                               kwargs['mc_area_args'])
+            self.probabilities = probabilities
+        else:
+            self.probabilities = None
+
         self.outdoc = outdoc
         self.time = sngl_populated.get_end()
 
@@ -260,8 +295,15 @@ class SingleCoincForGraceDB(object):
         gz = filename.endswith('.gz')
         ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
 
+        # save source probabilities in a json file
+        if self.probabilities is not None:
+            prob_fname = filename.replace('.xml.gz', '_probs.json')
+            with open(prob_fname, 'w') as prob_outfile:
+                json.dump(self.probabilities, prob_outfile)
+            logging.info('Source probabilities file saved as %s', prob_fname)
+
     def upload(self, fname, gracedb_server=None, testing=True,
-               extra_strings=None):
+               extra_strings=None, search='AllSky'):
         """Upload this trigger to gracedb
 
         Parameters
@@ -274,8 +316,13 @@ class SingleCoincForGraceDB(object):
         testing: bool
             Switch to determine if the upload should be sent to gracedb as a
             test trigger (True) or a production trigger (False).
+        search: str
+            String going into the "search" field of the GraceDB event.
         """
         from ligo.gracedb.rest import GraceDb
+        import matplotlib
+        matplotlib.use('Agg')
+        import pylab as pl
 
         # first of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
@@ -286,11 +333,62 @@ class SingleCoincForGraceDB(object):
                 snr_series_fname = fname.replace('.xml.gz', '.hdf')
             else:
                 snr_series_fname = fname.replace('.xml', '.hdf')
-            for ifo in self.snr_series:
-                self.snr_series[ifo].save(snr_series_fname,
-                                          group='%s/snr' % ifo)
-                self.psds[ifo].save(snr_series_fname,
-                                    group='%s/psd' % ifo)
+            snr_series_plot_fname = snr_series_fname.replace('.hdf',
+                                                             '_snr.png')
+            psd_series_plot_fname = snr_series_fname.replace('.hdf',
+                                                             '_psd.png')
+            pl.figure()
+            ref_time = int(self.merger_time)
+            for ifo in sorted(self.snr_series):
+                curr_snrs = self.snr_series[ifo]
+                curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
+                pl.plot(curr_snrs.sample_times - ref_time, abs(curr_snrs),
+                        c=ifo_color(ifo), label=ifo)
+                if ifo in self.ifos:
+                    base = 'foreground/{}/'.format(ifo)
+                    snr = self.coinc_results[base + 'snr']
+                    mt = (self.coinc_results[base + 'end_time']
+                          + self.time_offset)
+                    pl.plot([mt - ref_time], [snr], c=ifo_color(ifo),
+                            marker='x')
+
+            pl.legend()
+            pl.xlabel('GPS time from {:d} (s)'.format(ref_time))
+            pl.ylabel('SNR')
+            pl.savefig(snr_series_plot_fname)
+            pl.close()
+
+            pl.figure()
+            for ifo in sorted(self.snr_series):
+                # Undo dynamic range factor
+                curr_psd = self.psds[ifo].astype(numpy.float64)
+                curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
+                curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
+                # Can't plot log(0) so start from point 1
+                pl.loglog(curr_psd.sample_frequencies[1:],
+                          curr_psd[1:]**0.5, c=ifo_color(ifo), label=ifo)
+            pl.legend()
+            pl.xlim([10, 1300])
+            pl.ylim([3E-24, 1E-20])
+            pl.xlabel('Frequency (Hz)')
+            pl.ylabel('ASD')
+            pl.savefig(psd_series_plot_fname)
+            pl.close()
+
+        if self.probabilities is not None:
+            prob_fname = fname.replace('.xml.gz', '_probs.json')
+            prob_plot_fname = prob_fname.replace('.json', '.png')
+
+            prob_plot = {k: v for (k, v) in self.probabilities.items()
+                         if v != 0.0}
+            labels, sizes = zip(*prob_plot.items())
+            colors = [source_color(label) for label in labels]
+            fig, ax = pl.subplots()
+            ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
+                   textprops={'fontsize': 15})
+            ax.axis('equal')
+            fig.savefig(prob_plot_fname)
+            pl.close()
 
         gid = None
         try:
@@ -300,7 +398,7 @@ class SingleCoincForGraceDB(object):
 
             # create GraceDB event
             group = 'Test' if testing else 'CBC'
-            r = gracedb.createEvent(group, "pycbc", fname, "AllSky").json()
+            r = gracedb.createEvent(group, "pycbc", fname, search).json()
             gid = r["graceid"]
             logging.info("Uploaded event %s", gid)
 
@@ -317,17 +415,41 @@ class SingleCoincForGraceDB(object):
                              psd_fname, open(fname, "rb").read(), "psd")
             logging.info("Uploaded PSDs for event %s", gid)
 
-            # add other tags and comments
-            gracedb.writeLog(
-                    gid, "Using PyCBC code hash %s" % pycbc_version.git_hash)
+            # add info for tracking code version
+            version_str = 'Using PyCBC version {}{} at {}'
+            version_str = version_str.format(
+                    pycbc_version.version,
+                    ' (release)' if pycbc_version.release else '',
+                    os.path.dirname(pycbc.__file__))
+            gracedb.writeLog(gid, version_str)
 
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
-                gracedb.writeLog(gid, text)
+                gracedb.writeLog(gid, text, tag_name=['analyst_comments'])
 
-            # upload SNR series in HDF format
+            # upload SNR series in HDF format and plots
             if self.snr_series is not None:
-                gracedb.writeFile(gid, snr_series_fname)
+                gracedb.writeLog(gid, 'SNR timeseries HDF file upload',
+                                 filename=snr_series_fname)
+                gracedb.writeLog(gid, 'SNR timeseries plot upload',
+                                 filename=snr_series_plot_fname,
+                                 tag_name=['background'],
+                                 displayName=['SNR timeseries'])
+                gracedb.writeLog(gid, 'PSD plot upload',
+                                 filename=psd_series_plot_fname,
+                                 tag_name=['psd'], displayName=['PSDs'])
+
+            # upload source probabilities in json format and plot
+            if self.probabilities is not None:
+                gracedb.writeLog(gid, 'source probabilities JSON file upload',
+                                 filename=prob_fname, tag_name=['em_follow'])
+                logging.info('Uploaded source probabilities for event %s', gid)
+                gracedb.writeLog(gid, 'source probabilities plot upload',
+                                 filename=prob_plot_fname,
+                                 tag_name=['em_follow'])
+                logging.info('Uploaded source probabilities pie chart for '
+                             'event %s', gid)
+
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
                           'event %s on GraceDB. The event may not have been '

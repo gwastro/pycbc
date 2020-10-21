@@ -99,7 +99,7 @@ vals = [numpy.array(val, dtype=type(val[0])) for _,val in columns]
 # write HTML table
 logging.info('Writing HTML table')
 fig_kwds = {}
-html_table = pycbc.results.table(vals, keys, page_size=25)
+html_table = pycbc.results.html_table(vals, keys, page_size=25)
 save_fig_with_metadata(str(html_table), opts.output_file,
                      fig_kwds=fig_kwds,
                      title='Veto Definer Table',

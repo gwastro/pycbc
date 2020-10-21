@@ -21,6 +21,7 @@
 #
 # =============================================================================
 #
+from six.moves import range
 import numpy, pycbc.psd
 from pycbc.types import TimeSeries, FrequencySeries, complex_same_precision_as
 from numpy.random import RandomState
@@ -105,13 +106,13 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """
     psd = psd.copy()
 
-    flen = int(SAMPLE_RATE / psd.delta_f) / 2 + 1
+    flen = int(SAMPLE_RATE / psd.delta_f) // 2 + 1
     oldlen = len(psd)
     psd.resize(flen)
 
     # Want to avoid zeroes in PSD.
     max_val = psd.max()
-    for i in xrange(len(psd)):
+    for i in range(len(psd)):
         if i >= (oldlen-1):
             psd.data[i] = psd[oldlen - 2]
         if psd[i] == 0:
@@ -186,7 +187,7 @@ def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cuto
         A TimeSeries containing gaussian noise colored by the given psd.
     """
     delta_f = 1.0 / FILTER_LENGTH
-    flen = int(SAMPLE_RATE / delta_f) / 2 + 1
+    flen = int(SAMPLE_RATE / delta_f) // 2 + 1
     psd = pycbc.psd.from_string(psd_name, flen, delta_f, low_frequency_cutoff)
     return colored_noise(psd, start_time, end_time,
                          seed=seed,

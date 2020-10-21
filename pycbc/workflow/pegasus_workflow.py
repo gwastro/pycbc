@@ -27,7 +27,8 @@
 provides additional abstraction and argument handling.
 """
 import os
-import urlparse, urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.parse import urljoin, urlsplit
 from Pegasus.catalogs.transformation_catalog import TransformationCatalog
 import Pegasus.DAX3 as dax
 
@@ -111,6 +112,30 @@ class Executable(ProfileShortcuts):
                 self._dax_executable.removeProfile(entry)
                 self._dax_executable.addProfile(entry)
 
+    def is_same_as(self, other):
+        test_vals = ['namespace', 'version', 'arch', 'os', 'osrelease',
+                     'osversion', 'glibc', 'installed', 'container']
+        # Check for logical name first
+        if not self.pegasus_name == other.pegasus_name:
+            return False
+
+        # Check the properties of the executable
+        for val in test_vals:
+            sattr = getattr(self._dax_executable, val)
+            oattr = getattr(other._dax_executable, val)
+            if not sattr == oattr:
+                return False
+        # Also check the "profile". This is things like Universe, RAM/disk/CPU
+        # requests, execution site, getenv=True, etc.
+        for profile in self._dax_executable.profiles:
+            if profile not in other._dax_executable.profiles:
+                return False
+        for profile in other._dax_executable.profiles:
+            if profile not in self._dax_executable.profiles:
+                return False
+
+        return True
+
 
 class Node(ProfileShortcuts):
     def __init__(self, executable):
@@ -157,6 +182,11 @@ class Node(ProfileShortcuts):
             self._options += [opt, value]
         else:
             self._options += [opt]
+
+    def add_input(self, inp):
+        """Declares an input file without adding it as a command-line option.
+        """
+        self._add_input(inp)
 
     #private functions to add input and output data sources/sinks
     def _add_input(self, inp):
@@ -266,22 +296,20 @@ class Workflow(object):
 
     def _make_root_dependency(self, inp):
         def root_path(v):
-            path = []
+            path = [v]
             while v.in_workflow:
                 path += [v.in_workflow]
                 v = v.in_workflow
             return path
-
         workflow_root = root_path(self)
         input_root = root_path(inp)
-
         for step in workflow_root:
             if step in input_root:
                 common = step
                 break
-
-        dep = dax.Dependency(child=workflow_root[workflow_root.index(common)-1],
-                             parent=input_root[input_root.index(common)-1])
+        dep = dax.Dependency(
+            parent=input_root[input_root.index(common)-1].as_job,
+            child=workflow_root[workflow_root.index(common)-1].as_job)
         common._adag.addDependency(dep)
 
     def add_workflow(self, workflow):
@@ -304,7 +332,7 @@ class Workflow(object):
         node.file.PFN(os.path.join(os.getcwd(), node.file.name), site='local')
         self._adag.addFile(node.file)
 
-        for inp in self._external_workflow_inputs:
+        for inp in workflow._external_workflow_inputs:
             workflow._make_root_dependency(inp.node)
 
         return self
@@ -323,6 +351,20 @@ class Workflow(object):
         """
         node._finalize()
         node.in_workflow = self
+
+        # Record the executable that this node uses
+        if not node.executable.in_workflow:
+            for exe in self._executables:
+                if node.executable.is_same_as(exe):
+                    node.executable.in_workflow = True
+                    node._dax_node.name = exe.logical_name
+                    node.executable.logical_name = exe.logical_name
+                    break
+            else:
+                node.executable.in_workflow = True
+                self._executables += [node.executable]
+
+        # Add the node itself
         self._adag.addJob(node._dax_node)
 
         # Determine the parent child relationships based on the inputs that
@@ -349,14 +391,8 @@ class Workflow(object):
                 self._inputs += [inp]
                 self._external_workflow_inputs += [inp]
 
-
         # Record the outputs that this node generates
         self._outputs += node._outputs
-
-        # Record the executable that this node uses
-        if not node.executable.in_workflow:
-            node.executable.in_workflow = True
-            self._executables += [node.executable]
 
         return self
 
@@ -482,13 +518,12 @@ class File(DataStorage, dax.File):
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
-        urlparts = urlparse.urlsplit(path)
+        urlparts = urlsplit(path)
         site = 'nonlocal'
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
             if os.path.isfile(urlparts.path):
                 path = os.path.abspath(urlparts.path)
-                path = urlparse.urljoin('file:',
-                                        urllib.pathname2url(path)) 
+                path = urljoin('file:', pathname2url(path)) 
                 site = 'local'
 
         fil = File(os.path.basename(path))

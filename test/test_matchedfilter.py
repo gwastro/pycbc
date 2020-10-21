@@ -48,13 +48,13 @@ class TestMatchedFilter(unittest.TestCase):
         data = numpy.sin(numpy.arange(0,100,100/(4096.0*64)))
         self.filt = TimeSeries(data,dtype=float32,delta_t=1.0/4096)
         self.filt2 = (self.filt*1)
-        self.filt2[0:len(self.filt2)/2].fill(0)
+        self.filt2[0:int(len(self.filt2)/2)].fill(0)
         self.filt_offset = TimeSeries(numpy.roll(data,4096*32), dtype=float32,
                                       delta_t=1.0/4096)
 
         self.filtD = TimeSeries(data,dtype=float64,delta_t=1.0/4096)
         self.filt2D = (self.filtD*1)
-        self.filt2D[0:len(self.filt2D)/2].fill(0)
+        self.filt2D[0:int(len(self.filt2D)/2)].fill(0)
         self.filt_offsetD = TimeSeries(numpy.roll(data,4096*32), dtype=float64,
                                       delta_t=1.0/4096)
 
@@ -133,8 +133,8 @@ class TestMatchedFilter(unittest.TestCase):
 
             #Check that an incompatible psd produces an error
             self.assertRaises(TypeError,match,self.filt,self.filt,psd=self.filt)
-            psd = FrequencySeries(zeros(len(self.filt)/2+1),delta_f=100000)
-            self.assertRaises(TypeError,match,self.filt,self.filt,psd=psd)
+            psd = FrequencySeries(zeros(len(self.filt) // 2 + 1), delta_f=100000)
+            self.assertRaises(ValueError,match,self.filt,self.filt,psd=psd)
 
             #Check that only TimeSeries or FrequencySeries are accepted
             self.assertRaises(TypeError,match,zeros(10),zeros(10))

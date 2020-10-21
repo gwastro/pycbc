@@ -27,21 +27,37 @@ import textwrap
 import numpy
 import logging
 import h5py as _h5py
-from pycbc.io.record import FieldArray, _numpy_function_lib
-from pycbc import transforms as _transforms
+from pycbc.io.record import (FieldArray, _numpy_function_lib)
 from pycbc import waveform as _waveform
+from pycbc.io.hdf import (dump_state, load_state)
 
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
+from .ptemcee import PTEmceeFile
+from .cpnest import CPNestFile
+from .multinest import MultinestFile
+from .dynesty import DynestyFile
+from .ultranest import UltranestFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
 
 filetypes = {
     EmceeFile.name: EmceeFile,
     EmceePTFile.name: EmceePTFile,
-    PosteriorFile.name: PosteriorFile
+    PTEmceeFile.name: PTEmceeFile,
+    CPNestFile.name: CPNestFile,
+    MultinestFile.name: MultinestFile,
+    DynestyFile.name: DynestyFile,
+    PosteriorFile.name: PosteriorFile,
+    UltranestFile.name: UltranestFile,
 }
+
+try:
+    from .epsie import EpsieFile
+    filetypes[EpsieFile.name] = EpsieFile
+except ImportError:
+    pass
 
 
 def get_file_type(filename):
@@ -63,6 +79,10 @@ def get_file_type(filename):
         if filename.endswith(ext):
             with _h5py.File(filename, 'r') as fp:
                 filetype = fp.attrs['filetype']
+                try:
+                    filetype = str(filetype.decode())
+                except AttributeError:
+                    pass
             return filetypes[filetype]
     for ext in txt_extensions:
         if filename.endswith(ext):
@@ -150,7 +170,7 @@ def check_integrity(filename):
     # will raise an IOError
     with loadfile(filename, 'r') as fp:
         # check that all datasets in samples have the same shape
-        parameters = fp[fp.samples_group].keys()
+        parameters = list(fp[fp.samples_group].keys())
         # but only do the check if parameters have been written
         if len(parameters) > 0:
             group = fp.samples_group + '/{}'
@@ -158,17 +178,18 @@ def check_integrity(filename):
             ref_shape = fp[group.format(parameters[0])].shape
             if not all(fp[group.format(param)].shape == ref_shape
                        for param in parameters):
-                raise IOError("not all datasets in the samples group have the "
-                              "same shape")
+                raise IOError("not all datasets in the samples group have "
+                              "the same shape")
             # check that we can read the first/last sample
             firstidx = tuple([0]*len(ref_shape))
             lastidx = tuple([-1]*len(ref_shape))
-            for param in parameters:
-                _ = fp[group.format(param)][firstidx]
-                _ = fp[group.format(param)][lastidx]
+        for param in parameters:
+            _ = fp[group.format(param)][firstidx]
+            _ = fp[group.format(param)][lastidx]
 
 
-def validate_checkpoint_files(checkpoint_file, backup_file):
+def validate_checkpoint_files(checkpoint_file, backup_file,
+                              check_nsamples=True):
     """Checks if the given checkpoint and/or backup files are valid.
 
     The checkpoint file is considered valid if:
@@ -205,36 +226,34 @@ def validate_checkpoint_files(checkpoint_file, backup_file):
         checkpoint_valid = True
     except (ValueError, KeyError, IOError):
         checkpoint_valid = False
+
     # backup file
     try:
         check_integrity(backup_file)
         backup_valid = True
     except (ValueError, KeyError, IOError):
         backup_valid = False
-    # check if there are any samples in the file; if not, we'll just start from
-    # scratch
+
+    # since we can open the file, run self diagnostics
     if checkpoint_valid:
         with loadfile(checkpoint_file, 'r') as fp:
-            try:
-                group = '{}/{}'.format(fp.samples_group, fp.variable_params[0])
-                nsamples = fp[group].size
-                checkpoint_valid = nsamples != 0
-            except KeyError:
-                checkpoint_valid = False
-    # check if there are any samples in the backup file
+            checkpoint_valid = fp.validate()
     if backup_valid:
         with loadfile(backup_file, 'r') as fp:
-            try:
-                group = '{}/{}'.format(fp.samples_group, fp.variable_params[0])
-                backup_nsamples = fp[group].size
-                backup_valid = backup_nsamples != 0
-            except KeyError:
-                backup_valid = False
-    # check that the checkpoint and backup have the same number of samples;
-    # if not, assume the checkpoint has the correct number
-    if checkpoint_valid and backup_valid:
-        backup_valid = nsamples == backup_nsamples
-    # decide what to do based on the files' statuses
+            backup_valid = fp.validate()
+    if check_nsamples:
+        # This check is not required by nested samplers
+        # check that the checkpoint and backup have the same number of samples;
+        # if not, assume the checkpoint has the correct number
+        if checkpoint_valid and backup_valid:
+            with loadfile(checkpoint_file, 'r') as fp:
+                group = list(fp[fp.samples_group].keys())[0]
+                nsamples = fp[fp.samples_group][group].size
+            with loadfile(backup_file, 'r') as fp:
+                group = list(fp[fp.samples_group].keys())[0]
+                backup_nsamples = fp[fp.samples_group][group].size
+            backup_valid = nsamples == backup_nsamples
+        # decide what to do based on the files' statuses
     if checkpoint_valid and not backup_valid:
         # copy the checkpoint to the backup
         logging.info("Backup invalid; copying checkpoint file")
@@ -290,6 +309,12 @@ def get_common_parameters(input_files, collection=None):
     if parameters == []:
         raise ValueError("no common parameters found for collection {} in "
                          "files {}".format(collection, ', '.join(input_files)))
+    # if using python 3 to read a file created in python 2, need to convert
+    # parameters to strs
+    try:
+        parameters = [p.decode() for p in parameters]
+    except AttributeError:
+        pass
     return parameters
 
 
@@ -419,10 +444,18 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         to not be included. May also specify sampler-specific arguments. Note
         that ``input-file``, ``file-help``, and ``parameters`` are always
         added.
+    defaultparams : {'variable_params', 'all'}, optional
+        If no ``--parameters`` provided, which collection of parameters to
+        load. If 'all' will load all parameters in the file's
+        ``samples_group``. If 'variable_params' or None (the default) will load
+        the variable parameters.
+    autoparamlabels : bool, optional
+        Passed to ``add_results_option_group``; see that function for details.
     \**kwargs :
         All other keyword arguments are passed to ``argparse.ArgumentParser``.
     """
-    def __init__(self, skip_args=None, **kwargs):
+    def __init__(self, skip_args=None, defaultparams=None,
+                 autoparamlabels=True, **kwargs):
         super(ResultsArgumentParser, self).__init__(**kwargs)
         # add attribute to communicate to arguments what to do when there is
         # no input files
@@ -430,8 +463,11 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         if skip_args is None:
             skip_args = []
         self.skip_args = skip_args
+        if defaultparams is None:
+            defaultparams = 'variable_params'
+        self.defaultparams = defaultparams
         # add the results option grup
-        self.add_results_option_group()
+        self.add_results_option_group(autoparamlabels=autoparamlabels)
 
     @property
     def actions(self):
@@ -469,11 +505,28 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         opts, extra_opts = super(ResultsArgumentParser, self).parse_known_args(
             args, opts)
         # populate the parameters option if it wasn't specified
-        if opts.parameters is None:
+        if opts.parameters is None or opts.parameters == ['*']:
             parameters = get_common_parameters(opts.input_file,
-                                               collection='variable_params')
-            # now call parse parameters action to populate the namespace
+                                               collection=self.defaultparams)
+            # now call parse parameters action to re-populate the namespace
             self.actions['parameters'](self, opts, parameters)
+        # check if we're being greedy or not
+        elif '*' in opts.parameters:
+            # remove the * from the parameters and the labels
+            opts.parameters = [p for p in opts.parameters if p != '*']
+            opts.parameters_labels.pop('*', None)
+            # add the rest of the parameters not used
+            all_params = get_common_parameters(opts.input_file,
+                                               collection=self.defaultparams)
+            # extract the used parameters from the parameters option
+            used_params = FieldArray.parse_parameters(opts.parameters,
+                                                      all_params)
+            add_params = set(all_params) - set(used_params)
+            # repopulate the name space with the additional parameters
+            if add_params:
+                opts.parameters += list(add_params)
+                # update the labels
+                opts.parameters_labels.update({p: p for p in add_params})
         # parse the sampler-specific options and check for any unknowns
         unknown = []
         for fn in opts.input_file:
@@ -489,7 +542,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
             unknown = set.intersection(*unknown)
         return opts, list(unknown)
 
-    def add_results_option_group(self):
+    def add_results_option_group(self, autoparamlabels=True):
         """Adds the options used to call pycbc.inference.io.results_from_cli
         function to the parser.
 
@@ -498,6 +551,14 @@ class ResultsArgumentParser(argparse.ArgumentParser):
 
         Any argument strings included in the ``skip_args`` attribute will not
         be added.
+
+        Parameters
+        ----------
+        autoparamlabels : bool, optional
+            If True, the ``--parameters`` option will use labels from
+            ``waveform.parameters`` if a parameter name is the same as a
+            parameter there. Otherwise, will just use whatever label is
+            provided. Default is True.
         """
         results_reading_group = self.add_argument_group(
             title="Arguments for loading results",
@@ -520,11 +581,21 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                  "arguments that may be passed. This option is like an "
                  "advanced --help: if run, the program will just print the "
                  "information to screen, then exit.")
+        if autoparamlabels:
+            paramparser = ParseParametersArg
+            lblhelp = (
+                "If LABEL is the same as a parameter in "
+                "pycbc.waveform.parameters, the label "
+                "property of that parameter will be used (e.g., if LABEL "
+                "were 'mchirp' then {} would be used). "
+                .format(_waveform.parameters.mchirp.label))
+        else:
+            paramparser = ParseLabelArg
+            lblhelp = ''
         results_reading_group.add_argument(
             "--parameters", type=str, nargs="+", metavar="PARAM[:LABEL]",
-            action=ParseParametersArg,
-            help="Name of parameters to load. If none provided will load all "
-                 "of the model params in the input-file. If provided, the "
+            action=paramparser,
+            help="Name of parameters to load; default is to load all. The "
                  "parameters can be any of the model params or posterior "
                  "stats (loglikelihood, logprior, etc.) in the input file(s), "
                  "derived parameters from them, or any function of them. If "
@@ -532,14 +603,37 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                  "files may be used. Syntax for functions is python; any math "
                  "functions in the numpy libary may be used. Can optionally "
                  "also specify a LABEL for each parameter. If no LABEL is "
-                 "provided, PARAM will used as the LABEL. If LABEL is the "
-                 "same as a parameter in pycbc.waveform.parameters, the label "
-                 "property of that parameter will be used (e.g., if LABEL "
-                 "were 'mchirp' then {} would be used). To see all possible "
-                 "parameters that may be used with the given input file(s), "
-                 "as well as all avaiable functions, run --file-help, along "
-                 "with one or more input files.".format(
-                    _waveform.parameters.mchirp.label))
+                 "provided, PARAM will used as the LABEL. {}"
+                 "To see all possible parameters that may be used with the "
+                 "given input file(s), as well as all avaiable functions, "
+                 "run --file-help, along with one or more input files. "
+                 "If '*' is provided in addition to other parameters names, "
+                 "then parameters will be loaded in a greedy fashion; i.e., "
+                 "all other parameters that exist in the file(s) that are not "
+                 "explicitly mentioned will also be loaded. For example, "
+                 "if the input-file(s) contains 'srcmass1', "
+                 "'srcmass2', and 'distance', and  "
+                 "\"'primary_mass(srcmass1, srcmass2):mass1' '*'\", is given "
+                 "then 'mass1' and 'distance' will be loaded. Otherwise, "
+                 "without the '*', only 'mass1' would be loaded. "
+                 "Note that any parameter that is used in a function "
+                 "will not automatically be added. Tip: enclose "
+                 "arguments in single quotes, or else special characters will "
+                 "be interpreted as shell commands. For example, the "
+                 "wildcard should be given as either '*' or \\*, otherwise "
+                 "bash will expand the * into the names of all the files in "
+                 "the current directory."
+                 .format(lblhelp))
+        results_reading_group.add_argument(
+            "--constraint", type=str, nargs="+", metavar="CONSTRAINT[:FILE]",
+            help="Apply a constraint to the samples. If a file is provided "
+                 "after the constraint, it will only be applied to the given "
+                 "file. Otherwise, the constraint will be applied to all "
+                 "files. Only one constraint may be applied to a file. "
+                 "Samples that violate the constraint will be removed. Syntax "
+                 "is python; any parameter or function of parameter can be "
+                 "used, similar to the parameters argument. Multiple "
+                 "constraints may be combined by using '&' and '|'.")
         return results_reading_group
 
 
@@ -579,6 +673,22 @@ def results_from_cli(opts, load_samples=True, **kwargs):
     if isinstance(input_files, str):
         input_files = [input_files]
 
+    # load constraints
+    constraints = {}
+    if opts.constraint is not None:
+        for constraint in opts.constraint:
+            if len(constraint.split(':')) == 2:
+                constraint, fn = constraint.split(':')
+                constraints[fn] = constraint
+            # no file provided, make sure there's only one constraint
+            elif len(opts.constraint) > 1:
+                raise ValueError("must provide a file to apply constraints "
+                                 "to if providing more than one constraint")
+            else:
+                # this means no file, only one constraint, apply to all
+                # files
+                constraints = {fn: constraint for fn in input_files}
+
     # loop over all input files
     for input_file in input_files:
         logging.info("Reading input file %s", input_file)
@@ -590,17 +700,21 @@ def results_from_cli(opts, load_samples=True, **kwargs):
         if load_samples:
             logging.info("Loading samples")
 
-            # check if need extra parameters for a non-sampling parameter
-            file_parameters, ts = _transforms.get_common_cbc_transforms(
-                opts.parameters, fp.variable_params)
-
             # read samples from file
-            samples = fp.samples_from_cli(opts, parameters=file_parameters, **kwargs)
+            samples = fp.samples_from_cli(opts, parameters=opts.parameters,
+                                          **kwargs)
 
-            logging.info("Using {} samples".format(samples.size))
+            logging.info("Loaded {} samples".format(samples.size))
 
-            # add parameters not included in file
-            samples = _transforms.apply_transforms(samples, ts)
+            if input_file in constraints:
+                logging.info("Applying constraints")
+                mask = samples[constraints[input_file]]
+                samples = samples[mask]
+                if samples.size == 0:
+                    raise ValueError("No samples remain after constraint {} "
+                                     "applied".format(constraints[input_file]))
+                logging.info("{} samples remain".format(samples.size))
+
 
         # else do not read samples
         else:
@@ -622,6 +736,11 @@ def results_from_cli(opts, load_samples=True, **kwargs):
 def injections_from_cli(opts):
     """Gets injection parameters from the inference file(s).
 
+    If the opts have a ``injection_samples_map`` option, the injection
+    parameters will be remapped accordingly. See
+    :py:func:`pycbc.inference.option_utils.add_injsamples_map_opt` for
+    details.
+
     Parameters
     ----------
     opts : argparser
@@ -633,6 +752,11 @@ def injections_from_cli(opts):
         Array of the injection parameters from all of the input files given
         by ``opts.input_file``.
     """
+    # see if a mapping was provided
+    if hasattr(opts, 'injection_samples_map') and opts.injection_samples_map:
+        param_map = [opt.split(':') for opt in opts.injection_samples_map]
+    else:
+        param_map = []
     input_files = opts.input_file
     if isinstance(input_files, str):
         input_files = [input_files]
@@ -641,6 +765,18 @@ def injections_from_cli(opts):
     for input_file in input_files:
         fp = loadfile(input_file, 'r')
         these_injs = fp.read_injections()
+        # apply mapping if it was provided
+        if param_map:
+            mapvals = {sp: these_injs[ip] for ip, sp in param_map}
+            # if any of the new parameters are the same as the old, just
+            # overwrite the values
+            common_params = set(these_injs.fieldnames) & set(mapvals.keys())
+            for param in common_params:
+                these_injs[param] = mapvals.pop(param)
+            # add the rest as new fields
+            ps = list(mapvals.keys())
+            these_injs = these_injs.add_fields([mapvals[p] for p in ps],
+                                               names=ps)
         if injections is None:
             injections = these_injs
         else:

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright 2016 Thomas Dent
 #
@@ -20,17 +20,37 @@ import argparse, logging
 import copy, numpy as np
 
 from pycbc import io, events
-from pycbc.events import trigger_fits as trstats
+from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events.stat import sngl_statistic_dict
+from pycbc.types.optparse import MultiDetOptionAction
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
-def get_stat(statchoice, trigs):
+def get_stat(statchoice, trigs, threshold):
     # Initialize statclass with an empty file list. In general could feed it
     # files here for statistics which need that.
     stat_instance = sngl_statistic_dict[statchoice]([])
-    return stat_instance.single(trigs)
+    chunk_size = 2**23
+    stat = []
+    select = []
+    size = len(trigs['end_time'])
+    s = 0
+    while s < size:
+        e = s + chunk_size if (s + chunk_size) <= size else size
+
+        # read and format chunk of data so it can be read by key
+        # as the stat classes expect.
+        chunk = {k: trigs[k][s:e] for k in trigs if len(trigs[k]) == size}
+        chunk_stat = stat_instance.single(chunk)
+        above = chunk_stat >= threshold
+        stat.append(chunk_stat[above])
+        select.append(above)
+        s += chunk_size
+
+    # Return boolean area that selects the triggers above threshold
+    # along with the stat values above threshold
+    return np.concatenate(select), np.concatenate(stat)
 
 #### MAIN ####
 
@@ -55,6 +75,11 @@ parser.add_argument("--veto-file", nargs='*', default=[], action='append',
 parser.add_argument("--veto-segment-name", nargs='*', default=[], action='append',
                     help="Name(s) of veto segments to apply. Optional, if not "
                     "given all segments for a given ifo will be used")
+parser.add_argument("--gating-veto-windows", nargs='+',
+                    action=MultiDetOptionAction,
+                    help="Seconds to be vetoed before and after the central time "
+                         "of each gate. Given as detector-values pairs, e.g. "
+                         "H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument("--output", required=True,
                     help="Location for output file containing fit coefficients"
                     ". Required")
@@ -133,10 +158,10 @@ tb_hashorder = tb[hash_sort]
 # reorder template IDs in parallel to the boundary values
 tid_hashorder = tid[hash_sort]
 
-# Calculate the differences between the boundary indices to get the 
+# Calculate the differences between the boundary indices to get the
 # number in each template
 # adding on total number at the end to get number in the last template
-total_number = len(trigf[args.ifo + '/template_id'][:])
+total_number = len(trigf[args.ifo + '/template_id'])
 count_in_template_hashorder = np.diff(np.append(tb_hashorder, total_number))
 # re-reorder values from hash order to tid order
 tid_sort = np.argsort(tid_hashorder)
@@ -144,15 +169,12 @@ count_in_template = count_in_template_hashorder[tid_sort]
 
 # get the stat values
 logging.info('Calculating stat values')
-stat = get_stat(args.sngl_stat, trigf[args.ifo])
-
-# do first thresholding operation to reduce trigger numbers
-abovethresh = stat >= args.stat_threshold
-stat = stat[abovethresh]
-tid = trigf[args.ifo + '/template_id'][:][abovethresh]
-time = trigf[args.ifo + '/end_time'][:][abovethresh]
+abovethresh, stat = get_stat(args.sngl_stat, trigf[args.ifo],
+                                 args.stat_threshold)
+tid = trigf[args.ifo + '/template_id'][abovethresh]
+time = trigf[args.ifo + '/end_time'][abovethresh]
 if args.save_trig_param:
-    tparam = trigf[args.ifo + '/' + args.save_trig_param][:][abovethresh]
+    tparam = trigf[args.ifo + '/' + args.save_trig_param][abovethresh]
 logging.info('%i trigs left after thresholding' % len(stat))
 
 # Calculate total time being analysed from segments
@@ -175,12 +197,35 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
         tparam = tparam[retain]
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
+#now include gating veto
+if args.gating_veto_windows:
+    gating_veto = args.gating_veto_windows[args.ifo].split(',')
+    gveto_before = float(gating_veto[0])
+    gveto_after = float(gating_veto[1])
+    if gveto_before > 0 or gveto_after < 0:
+        raise ValueError("Gating veto window values must be negative before "
+                         "gates and positive after gates.")
+    if not (gveto_before == 0 and gveto_after == 0):
+        gate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
+        gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
+                                                       gate_times + gveto_after).coalesce()
+        all_segments -= gveto_segs
+        gveto_retain_idx = events.veto.indices_outside_times(time,
+                                                             gate_times + gveto_before,
+                                                             gate_times + gveto_after)
+        stat = stat[gveto_retain_idx]
+        tid = tid[gveto_retain_idx]
+        time = time[gveto_retain_idx]
+        if args.save_trig_param:
+            tparam = tparam[gveto_retain_idx]
+        logging.info('%i trigs left after vetoing triggers near gates' % len(stat))
+
 total_time = abs(all_segments)
 
 # do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
     logging.info('Getting min and max param values')
-    pars = trstats.get_param(args.prune_param, args,
+    pars = triggers.get_param(args.prune_param, args,
                      templatef['mass1'][:], templatef['mass2'][:],
                      templatef['spin1z'][:], templatef['spin2z'][:])
     minpar = min(pars)
@@ -216,9 +261,9 @@ if args.prune_param:
         lstat = statpruneall[loudest]
         ltid = tidpruneall[loudest]
         ltime = timepruneall[loudest]
-        m1, m2, s1z, s2z = trstats.get_masses(templatef, ltid)
-        lbin = trstats.which_bin(trstats.get_param(args.prune_param, args,
-                                           m1, m2, s1z, s2z),
+        m1, m2, s1z, s2z = triggers.get_mass_spin(templatef, ltid)
+        lbin = trstats.which_bin(triggers.get_param(args.prune_param, args,
+                                                    m1, m2, s1z, s2z),
                                  minpar, maxpar, args.prune_bins,
                                                       log=args.log_prune_param)
         # is the bin where the loudest trigger lives full already?
@@ -273,12 +318,21 @@ counts_above = []
 fits = []
 tpars = []
 
-for tnum in trange:
-    stat_in_template = stat[tid == tnum]
+tsort = tid.argsort()
+tid = tid[tsort]
+stat = stat[tsort]
+
+# Get range of tid values which are the same
+left = np.searchsorted(tid, trange, side='left')
+right = np.searchsorted(tid, trange, side='right')
+
+logging.info("Fitting ...")
+for j, tnum in enumerate(trange):
+    stat_in_template = stat[left[j]:right[j]]
     count_above = len(stat_in_template)
     count_total = count_in_template[tnum]
     if count_above == 0:
-        # 'stupid' value to indicate no data, shouldn't hurt if 1/alpha is averaged
+        # default/sentinel value to indicate no data, shouldn't hurt if 1/alpha is averaged
         alpha = -100.
     else:
         alpha, sig_alpha = trstats.fit_above_thresh(
@@ -294,20 +348,27 @@ for tnum in trange:
     if (tnum % 1000 == 0): logging.info('Fitted template %i / %i' %
                                                     (tnum - tmin, tmax - tmin))
 
+logging.info("Calculating median sigma for each template")
+sigma_regions = trigf[args.ifo + '/sigmasq_template'][:]
+median_sigma = []
+for reg in sigma_regions:
+    strigs = trigf[args.ifo + '/sigmasq'][reg]
+    median_sigma.append(np.median(strigs) ** 0.5)
+
 outfile = h5py.File(args.output, 'w')
-# store template-dependent fit output
 outfile.create_dataset("template_id", data=trange)
 outfile.create_dataset("count_above_thresh", data=counts_above)
 outfile.create_dataset("fit_coeff", data=fits)
 if args.save_trig_param:
     outfile.create_dataset("template_param", data=tpars)
 outfile.create_dataset("count_in_template", data=counts_total)
+outfile.create_dataset("median_sigma", data=median_sigma)
 # add some metadata
-outfile.attrs.create("ifo", data=args.ifo)
-outfile.attrs.create("fit_function", data=args.fit_function)
-outfile.attrs.create("sngl_stat", data=args.sngl_stat)
+outfile.attrs.create("ifo", data=args.ifo.encode())
+outfile.attrs.create("fit_function", data=args.fit_function.encode())
+outfile.attrs.create("sngl_stat", data=args.sngl_stat.encode())
 if args.save_trig_param:
-    outfile.attrs.create("save_trig_param", data=args.save_trig_param)
+    outfile.attrs.create("save_trig_param", data=args.save_trig_param.encode())
 outfile.attrs.create("stat_threshold", data=args.stat_threshold)
 outfile.attrs.create("analysis_time", data=total_time)
 

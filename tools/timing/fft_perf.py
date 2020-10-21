@@ -50,25 +50,25 @@ if _options['scheme'] == 'opencl':
 niter = options.iterations
 
 if type(ctx) is CUDAScheme:
-    print "RUNNING ON ", ctx.device.name()
+    print("RUNNING ON ", ctx.device.name())
 else:
-    print "RUNNING ON CPU"
-print type(ctx)
+    print("RUNNING ON CPU")
+print(type(ctx))
 
 N = 2**options.size
 
 vecin = zeros(N, dtype=complex64)
 vecout = zeros(N, dtype=complex64)
-print "ALIGNMENT:", vecin.data.isaligned
+print("ALIGNMENT:", check_aligned(vecin.data))
 
 if options.import_float_wisdom:
-    print "Loading a wisdom file"
+    print("Loading a wisdom file")
     fftw.import_single_wisdom_from_filename(options.import_float_wisdom)
 
-print "Making the plan"
+print("Making the plan")
 with ctx:
     ifft(vecin, vecout, backend=options.backend)
-print "Planning done"
+print("Planning done")
 
 if options.export_float_wisdom:
     assert(_options['scheme'] == 'cpu' and options.backend == 'fftw')
@@ -83,4 +83,4 @@ def tifft():
 import timeit
 gt = timeit.Timer(tifft)
 t = (1000 * gt.timeit(number=1)/niter)
-print "C2C iFFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
+print("C2C iFFT %.2f msec" % t, " %5.1f /min " % (1000 *60 /t))

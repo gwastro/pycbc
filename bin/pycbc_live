@@ -14,30 +14,53 @@ import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
 from time import time
 import os.path
 import itertools
+import platform
+import distutils
+import subprocess
 from mpi4py import MPI as mpi
-from pycbc import fft, version, waveform, scheme, frame, makedir
+from pycbc.pool import BroadcastPool
+from pycbc import fft, version, waveform, scheme, makedir
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
-from pycbc.events import newsnr
+from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
-from pycbc.events.single import LiveSingleFarThreshold
+from pycbc.events.single import LiveSingle
 from pycbc.io.live import SingleCoincForGraceDB
+from pycbc.io.hdf import recursively_save_dict_contents_to_group
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
+from pycbc.waveform.waveform import props
+from pycbc import mchirp_area
+try:
+    from setproctitle import setproctitle
+except ImportError:
+    def setproctitle(title):
+        pass
 
+
+def ppdets(ifos, separator=', '):
+    """Pretty-print a list (or set) of detectors: return a string listing
+    the given detectors alphabetically and separated by commas.
+    """
+    if ifos:
+        return separator.join(sorted(ifos))
+    return 'no detectors'
 
 def ptof(p, ft):
-    # convert p-value to FAR via foreground time 'ft'
-    return numpy.log(1.0 - p) / -ft
+    """Convert p-value to FAR via foreground time `ft`.
+    """
+    return numpy.log1p(-p) / -ft
 
 def ftop(f, ft):
-    # convert FAR to p-value via foreground time 'ft'
+    """Convert FAR to p-value via foreground time `ft`.
+    """
     return 1 - numpy.exp(-ft * f)
 
 def combine_ifar_pvalue(ifar, pvalue, livetime):
-    # convert original IFAR to p-value and combine with followup p-value
+    """Convert original IFAR to p-value and combine with followup p-value.
+    """
     from scipy.stats import combine_pvalues
     # NB units of ifar and livetime must be the same
     _, pnew = combine_pvalues([ftop(1. / ifar, livetime), pvalue])
@@ -45,15 +68,17 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
     # take max of original IFAR and combined IFAR & apply trials factor
     return numpy.maximum(ifar, nifar) / 2.
 
+
 class LiveEventManager(object):
-    def __init__(self, output_path,
-                       use_date_prefix=False,
-                       ifar_upload_threshold=None,
-                       pval_livetime=None,
-                       enable_gracedb_upload=False,
-                       gracedb_testing=True,
-                 ):
+    def __init__(self, output_path, mc_area_args,
+                 use_date_prefix=False,
+                 ifar_upload_threshold=None,
+                 pval_livetime=None,
+                 enable_gracedb_upload=False,
+                 gracedb_testing=True,
+                 run_snr_optimization=False):
         self.path = output_path
+        self.mc_area_args = mc_area_args
 
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
@@ -65,6 +90,22 @@ class LiveEventManager(object):
         self.pvalue_livetime = pval_livetime
         self.gracedb_testing = gracedb_testing
         self.enable_gracedb_upload = enable_gracedb_upload
+
+        self.run_snr_optimization = run_snr_optimization
+
+        if self.run_snr_optimization and self.rank == 0:
+            # preestimate the number of CPU cores that we can afford giving to
+            # followup processes without slowing down the main search
+            available_cores = len(os.sched_getaffinity(0))
+            bg_cores = len(tuple(itertools.combinations(ifos, 2)))
+            analysis_cores = 1 + bg_cores
+            self.fu_cores = available_cores - analysis_cores
+            if self.fu_cores <= 0:
+                logging.warning('Insufficient number of CPU cores (%d) to '
+                                'run search and trigger followups. Uploaded '
+                                'triggers will momentarily increase the lag',
+                                available_cores)
+                self.fu_cores = 1
 
     def commit_results(self, results):
         self.comm.gather(results, root=0)
@@ -101,10 +142,10 @@ class LiveEventManager(object):
 
             return combined, data_ends[0]
         else:
-            raise TypeError("Not root process")
+            raise RuntimeError("Not root process")
 
     def compute_followup_data(self, ifos, triggers, data_readers, bank,
-                              followup_ifos=None):
+                              followup_ifos=None, recalculate_ifar=False):
         """Figure out which of the followup detectors are usable, and compute
         SNR time series for all the available detectors.
         """
@@ -130,41 +171,62 @@ class LiveEventManager(object):
 
         # Determine if the other ifos can contribute to the coincident event
         for ifo in followup_ifos:
-            snr_series, ptime, pvalue = followup_event_significance(ifo,
-                            data_readers[ifo], bank, template_id, coinc_times)
-
+            snr_series, ptime, pvalue, sigma2 = followup_event_significance(
+                    ifo, data_readers[ifo], bank, template_id, coinc_times)
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
+                self.get_followup_info(ifos[0], ifo, triggers, snr_series,
+                                       ptime, pvalue, sigma2,
+                                       recalculate_ifar=recalculate_ifar)
 
-            self.combine_far_with_followup(ifos[0], ifo, triggers,
-                                           snr_series, ptime, pvalue)
+        # the SNR time series sample rate can vary slightly due to
+        # rounding errors, so force all of them to be identical
+        fix_delta_t = None
+        for ifo in out:
+            if 'snr_series' not in out[ifo]:
+                continue
+            if fix_delta_t is None:
+                fix_delta_t = out[ifo]['snr_series']._delta_t
+            else:
+                out[ifo]['snr_series']._delta_t = fix_delta_t
 
         return out
 
-    def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series, ptime, pvalue):
-        # Calculate new ifar
-        triggers['foreground/ifar'] = combine_ifar_pvalue(triggers['foreground/ifar'],
-                                                          pvalue, self.pvalue_livetime)
-
-        # Copy the triggers
-        for key in triggers.copy():
+    def get_followup_info(self, coinc_ifo, ifo, triggers, snr_series, ptime,
+                          pvalue, sigma2, recalculate_ifar=False):
+        # Copy the common fields from the other detector
+        # ignore fields that contain detector-specific data
+        fields_to_ignore = set(['end_time', 'snr', 'stat', 'coa_phase',
+                                'chisq', 'chisq_dof', 'sg_chisq', 'sigmasq'])
+        for key in set(triggers):
             if 'foreground/{}/'.format(coinc_ifo) in key:
                 _, _, name = key.split('/')
+                if name in fields_to_ignore:
+                    continue
                 triggers['foreground/{}/{}'.format(ifo, name)] = triggers[key]
 
-        # Set the critical stats manually
+        # Set the detector-specific fields for which we have data
         snr_series_peak = snr_series.at_time(ptime, nearest_sample=True)
-        triggers['foreground/{}/end_time'.format(ifo)] = float(ptime)
-        triggers['foreground/{}/snr'.format(ifo)] = abs(snr_series_peak)
-        triggers['foreground/{}/stat'.format(ifo)] = triggers['foreground/{}/snr'.format(ifo)]
-        triggers['foreground/{}/coa_phase'.format(ifo)] = numpy.angle(snr_series_peak)
-        triggers['foreground/{}/chisq'.format(ifo)] = 0
-        triggers['foreground/{}/chisq_dof'.format(ifo)] = 0
+        base = 'foreground/{}/'.format(ifo)
+        triggers[base + 'end_time'] = float(ptime)
+        triggers[base + 'snr'] = triggers[base + 'stat'] = abs(snr_series_peak)
+        triggers[base + 'coa_phase'] = numpy.angle(snr_series_peak)
+        triggers[base + 'sigmasq'] = sigma2
+        if recalculate_ifar:
+            # Calculate new ifar
+            triggers['foreground/ifar'] = combine_ifar_pvalue(
+                    triggers['foreground/ifar'], pvalue, self.pvalue_livetime)
+            triggers['foreground/pvalue_{}'.format(ifo)] = pvalue
 
     def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank):
         """ Perform any followup and save zerolag triggers to a coinc xml file
         """
+        #check for hardware injection
+        for ifo in ifos:
+            if data_readers[ifo].near_hwinj():
+                coinc_results['HWINJ'] = True
+                break
 
         if 'foreground/ifar' in coinc_results:
             logging.info('computing followup data for coinc')
@@ -178,58 +240,178 @@ class LiveEventManager(object):
                 return
 
             fud = self.compute_followup_data(coinc_ifos, coinc_results,
-                                             data_readers, bank, followup_ifos)
+                                             data_readers, bank,
+                                             followup_ifos=followup_ifos,
+                                             recalculate_ifar=True)
 
-            live_ifos = [ifo for ifo in ifos if 'snr_series' in fud[ifo]]
-            assert len({fud[ifo]['snr_series'].delta_t for ifo in live_ifos}) == 1
+            live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
             event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
-                                          channel_names=args.channel_name)
+                                          channel_names=args.channel_name,
+                                          mc_area_args=self.mc_area_args,
+                                          )
 
-            end_time = int(coinc_results['foreground/%s/end_time' % coinc_ifos[0]])
-            fname = os.path.join(self.path, 'coinc-%s.xml.gz' % end_time)
+            fname = 'coinc-{}-{}.xml.gz'.format(event.merger_time,
+                                                pycbc.random_string(6))
+            fname = os.path.join(self.path, fname)
             logging.info('Coincident candidate! Saving as %s', fname)
-            comments = ['using ranking statistic: %s' % args.background_statistic]
+
+            # verbally explain some details not obvious from the other info
+            comment = ('Trigger produced as a {} coincidence. '
+                       'FAR is based on all listed detectors.<br />'
+                       'Two-detector ranking statistic: {}<br />'
+                       'Followup detectors: {}')
+            comment = comment.format(ppdets(coinc_ifos),
+                                     args.background_statistic,
+                                     ppdets(followup_ifos))
 
             ifar = coinc_results['foreground/ifar']
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
-                event.upload(fname, gracedb_server=args.gracedb_server,
-                             testing=self.gracedb_testing,
-                             extra_strings=comments)
+                gid = event.upload(fname, gracedb_server=args.gracedb_server,
+                                   testing=self.gracedb_testing,
+                                   extra_strings=[comment],
+                                   search=args.gracedb_search)
             else:
+                gid = None
                 event.save(fname)
+
+            if self.run_snr_optimization and self.ifar_upload_threshold < ifar:
+                template_id = \
+                    coinc_results['foreground/{}/template_id'.format(live_ifos[0])]
+                p = props(bank.table[template_id])
+                apr = p.pop('approximant')
+                min_buffer = bank.minimum_buffer + 0.5
+                buff_size = \
+                    pycbc.waveform.get_waveform_filter_length_in_time(apr, **p)
+
+                tlen = bank.round_up((buff_size + min_buffer) \
+                    * bank.sample_rate)
+                flen = int(tlen / 2 + 1)
+                delta_f = bank.sample_rate / float(tlen)
+                cmd = 'timeout {} '.format(args.snr_opt_timeout)
+                exepath = distutils.spawn.find_executable('pycbc_optimize_snr')
+                cmd += exepath + ' '
+                data_fils_str = '--data-files '
+                psd_fils_str = '--psd-files '
+                for ifo in ifos:
+                    curr_fname = \
+                        fname.replace('.xml.gz',
+                                      '_{}_data_overwhitened.hdf'.format(ifo))
+                    curr_data = data_readers[ifo].overwhitened_data(delta_f)
+                    curr_data.save(curr_fname)
+                    data_fils_str += '{}:{} ' .format(ifo, curr_fname)
+                    curr_fname = fname.replace('.xml.gz',
+                                               '_{}_psd.hdf'.format(ifo))
+                    curr_psd = curr_data.psd
+                    curr_psd.save(curr_fname)
+                    psd_fils_str += '{}:{} ' .format(ifo, curr_fname)
+                cmd += data_fils_str
+                cmd += psd_fils_str
+
+                curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
+                with h5py.File(curr_fname, 'w') as hdfp:
+                    for ifo in coinc_ifos:
+                        curr_time = \
+                            coinc_results['foreground/{}/end_time'.format(ifo)]
+                        hdfp['coinc_times/{}'.format(ifo)] = curr_time
+                    f_end = bank.end_frequency(template_id)
+                    if f_end is None or f_end >= (flen * delta_f):
+                        f_end = (flen-1) * delta_f
+                    hdfp['flen'] = flen
+                    hdfp['delta_f'] = delta_f
+                    hdfp['f_end'] = f_end
+                    hdfp['sample_rate'] = bank.sample_rate
+                    hdfp['flow'] = bank.table[template_id].f_lower
+                    hdfp['mass1'] = bank.table[template_id].mass1
+                    hdfp['mass2'] = bank.table[template_id].mass2
+                    hdfp['spin1z'] = bank.table[template_id].spin1z
+                    hdfp['spin2z'] = bank.table[template_id].spin2z
+                    hdfp['template_duration'] = \
+                        bank.table[template_id].template_duration
+                    hdfp['ifar'] = ifar
+                    if gid is not None:
+                        hdfp['gid'] = gid
+
+                    for ifo in args.channel_name:
+                        hdfp['channel_names/{}'.format(ifo)] = \
+                            args.channel_name[ifo]
+
+                    recursively_save_dict_contents_to_group(hdfp,
+                                                            'mc_area_args/',
+                                                            self.mc_area_args)
+
+                cmd += '--params-file {} '.format(curr_fname)
+                cmd += '--approximant {} '.format(apr)
+                cmd += '--gracedb-server {} '.format(args.gracedb_server)
+                cmd += '--gracedb-search {} '.format(args.gracedb_search)
+                if not self.gracedb_testing:
+                    cmd += '--production '
+                cmd += '--verbose '
+                cmd += '--output-path {} '.format(self.path)
+                if self.enable_gracedb_upload:
+                    cmd += '--enable-gracedb-upload '
+
+                cmd += '--cores {}'.format(self.fu_cores)
+
+                log_fname = \
+                        fname.replace('.xml.gz', '_optimize_snr_log.dat')
+
+                cmd += '&> {} '.format(log_fname)
+                logging.info('Running %s', cmd)
+                subprocess.Popen(cmd, shell=True)
+
 
     def check_singles(self, results, data_reader, psds, f_low):
         active = [k for k in results if results[k] != None]
-        if len(active) == 1:
-            ifo = active[0]
+        for ifo in active:
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
 
-            if single is not None:
-                fud = self.compute_followup_data([ifo], single, data_reader,
-                                                 bank, [])
-                event = SingleCoincForGraceDB([ifo], single, bank=bank,
-                                              psds=psds, followup_data=fud,
-                                              low_frequency_cutoff=f_low,
-                                              channel_names=args.channel_name)
+            if single is None:
+                continue
 
-                end_time = int(single['foreground/%s/end_time' % ifo])
-                fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
-                fname = os.path.join(self.path, fname)
-                logging.info('Single-detector candidate! Saving as %s', fname)
-                if args.enable_single_detector_upload:
-                    event.upload(fname, gracedb_server=args.gracedb_server,
-                                 testing=self.gracedb_testing)
-                else:
-                    event.save(fname)
+            followup_ifos = [i for i in active if i is not ifo]
+            fud = self.compute_followup_data([ifo], single, data_reader,
+                                             bank, followup_ifos=followup_ifos,
+                                             recalculate_ifar=False)
+            ifar = single['foreground/ifar']
+            # apply a trials factor of the number of active detectors
+            ifar /= len(active)
+            single['foreground/ifar'] = ifar
+
+            live_ifos = [i for i in fud if 'snr_series' in fud[i]]
+
+            event = SingleCoincForGraceDB(live_ifos, single, bank=bank,
+                                          psds=psds, followup_data=fud,
+                                          low_frequency_cutoff=f_low,
+                                          channel_names=args.channel_name,
+                                          mc_area_args=self.mc_area_args,
+                                          )
+
+            fname = 'single-%s-%s.xml.gz' % (ifo, event.merger_time)
+            fname = os.path.join(self.path, fname)
+            logging.info('Single-detector candidate! Saving as %s', fname)
+
+            # verbally explain some details not obvious from the other info
+            comment = ('Trigger produced as a {0} single. '
+                       'FAR is based on {0} only.<br />'
+                       'Followup detectors: {1}')
+            comment = comment.format(ifo, ppdets(followup_ifos))
+
+            if args.enable_single_detector_upload \
+                    and self.ifar_upload_threshold < ifar:
+                event.upload(fname, gracedb_server=args.gracedb_server,
+                             testing=self.gracedb_testing,
+                             extra_strings=[comment],
+                             search=args.gracedb_search)
+            else:
+                event.save(fname)
 
     def dump(self, results, name, store_psd=False, time_index=None,
-                  store_loudest_index=False,
-                  raw_results=None,
-                  gracedb_results=None):
-        """ Save the results from this time block to an hdf output file """
+             store_loudest_index=False, raw_results=None, gates=None):
+        """Save the results from this time block to an hdf output file.
+        """
         if self.use_date_prefix:
             tm = lal.GPSToUTC(int(time_index))
             subdir = '{:04d}_{:02d}_{:02d}'.format(tm[0], tm[1], tm[2])
@@ -242,14 +424,22 @@ class LiveEventManager(object):
         with h5py.File(fname, 'w') as f:
             f.attrs['pycbc_version'] = version.git_verbose_msg
             f.attrs['command_line'] = sys.argv
-            f.attrs['num_live_detectors'] = self.num_live_detectors
+            f.attrs['num_live_detectors'] = len(self.live_detectors)
+
+            def h5py_unicode_workaround(stuff):
+                # workaround for the fact that h5py cannot handle Unicode
+                # numpy arrays that show up with Python 3
+                if hasattr(stuff, 'dtype') and stuff.dtype.kind == 'U':
+                    return [s.encode() for s in stuff]
+                return stuff
 
             for ifo in results:
                 for k in results[ifo]:
-                    f['%s/%s' % (ifo, k)] = results[ifo][k]
+                    f['%s/%s' % (ifo, k)] = \
+                            h5py_unicode_workaround(results[ifo][k])
 
             for key in raw_results:
-                f[key] = raw_results[key]
+                f[key] = h5py_unicode_workaround(raw_results[key])
 
             if store_loudest_index:
                 for ifo in results:
@@ -265,10 +455,16 @@ class LiveEventManager(object):
                         sloudest = numpy.argsort(s)[::-1][0:store_loudest_index]
                         f[ifo]['loudest'] = numpy.union1d(nloudest, sloudest)
 
-        if store_psd:
-            for ifo in store_psd:
-                if store_psd[ifo] is not None:
-                    store_psd[ifo].save(fname, group='%s/psd' % ifo)
+            for ifo in (gates or {}):
+                gate_dtype = [('center_time', float),
+                              ('zero_half_width', float),
+                              ('taper_width', float)]
+                f['{}/gates'.format(ifo)] = \
+                        numpy.array(gates[ifo], dtype=gate_dtype)
+
+        for ifo in (store_psd or {}):
+            if store_psd[ifo] is not None:
+                store_psd[ifo].save(fname, group='%s/psd' % ifo)
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -293,7 +489,7 @@ parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+',
                     help="Channel containing frame status information. Used "
                          "to determine when to analyze the hoft data. This somewhat "
                          "corresponds to CAT1 information")
-parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'],
+parser.add_argument('--analyze-flags', action=MultiDetOptionAction, nargs='+',
                     help='The flags that must be in the "good" state to analyze data')
 parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+',
                     help="Channel containing data quality information. Used "
@@ -327,10 +523,28 @@ parser.add_argument('--trim-padding', type=float, default=0.25,
 parser.add_argument("--enable-bank-start-frequency", action='store_true',
                     help="Read the starting frequency of template waveforms"
                          " from the template bank")
-parser.add_argument('--autogating-threshold', type=float, default=100)
-parser.add_argument('--autogating-pad', type=float, default=.25)
-parser.add_argument('--autogating-window', type=float, default=0.5)
-parser.add_argument('--autogating-cluster', type=float, default=.25)
+
+parser.add_argument('--autogating-threshold', type=float, metavar='SIGMA',
+                    help='If given, find and gate glitches '
+                         'producing a deviation larger than '
+                         'SIGMA in the whitened strain time '
+                         'series.')
+parser.add_argument('--autogating-pad', type=float, default=0.5,
+                    metavar='SECONDS',
+                    help='Ignore the given length of whitened '
+                         'strain at the ends of a segment, to '
+                         'avoid filters ringing.')
+parser.add_argument('--autogating-cluster', type=float, default=1,
+                    metavar='SECONDS',
+                    help='Length of clustering window for '
+                         'detecting glitches for autogating.')
+parser.add_argument('--autogating-width', type=float, default=0.25,
+                    metavar='SECONDS', help='Half-width of the gating window.')
+parser.add_argument('--autogating-taper', type=float, metavar='SECONDS',
+                    default=0.25,
+                    help='Taper the strain before and after '
+                         'each gating window over a duration '
+                         'of SECONDS.')
 
 parser.add_argument('--sync', action='store_true')
 parser.add_argument('--increment-update-cache', action=MultiDetOptionAction, nargs='+')
@@ -350,6 +564,12 @@ parser.add_argument('--output-status', type=str, metavar='PATH',
                          'monitored via Nagios')
 parser.add_argument('--day-hour-output-prefix', action='store_true')
 parser.add_argument('--store-psd', action='store_true')
+parser.add_argument('--output-background', type=str, nargs='+',
+                    help='Takes a period in seconds and a file path and dumps '
+                         'the coinc backgrounds to that path with that period')
+parser.add_argument('--output-background-n-loudest', type=int, default=10000,
+                    help="If given an integer (assumed positive), it stores loudest n triggers"
+                    "(not sorted) for each of the coinc background. If 0, all bkg will be dumped.")
 
 parser.add_argument('--newsnr-threshold', type=float, default=0)
 parser.add_argument('--max-batch-size', type=int, default=2**27)
@@ -390,38 +610,55 @@ parser.add_argument('--round-start-time', type=int, metavar='X',
 parser.add_argument('--gracedb-server', metavar='URL',
                     help='URL of GraceDB server API for uploading events. '
                          'If not provided, the default URL is used.')
+parser.add_argument('--gracedb-search', type=str, default='AllSky',
+                    help='String going into the "search" field of the GraceDB '
+                         'events')
 parser.add_argument('--size-override', type=int, metavar='N',
                     help="Override the internal MPI size layout. "
                          " Useful for debugging and running a portion of a bank")
 parser.add_argument('--fftw-planning-limit', type=float,
                     help="Time in seconds to allow for a plan to be created")
+parser.add_argument('--run-snr-optimization', action='store_true',
+                    default=False,
+                    help='Run spawned followup processes to maximize SNR for '
+                         'any trigger uploaded to GraceDB')
+parser.add_argument('--snr-opt-timeout', type=int, default=400, metavar='SECONDS',
+                    help='Maximum allowed duration of followup process to maximize SNR')
+
 
 scheme.insert_processing_option_group(parser)
-LiveSingleFarThreshold.insert_args(parser)
+LiveSingle.insert_args(parser)
 fft.insert_fft_option_group(parser)
 Coincer.insert_args(parser)
 SingleDetSGChisq.insert_option_group(parser)
+mchirp_area.insert_args(parser)
 args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
 
-import platform
+if args.output_background is not None and len(args.output_background) != 2:
+    parser.error('--output-background takes two parameters: period and path')
+
 log_format = "%(asctime)s {0} %(message)s".format(platform.node())
 pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
 
-sr = args.sample_rate
-flow = args.low_frequency_cutoff
-
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
 total_pad = args.trim_padding * 2 + valid_pad
-bank = waveform.LiveFilterBank(args.bank_file, sr, total_pad,
-                       low_frequency_cutoff=None if args.enable_bank_start_frequency else flow,
-                       approximant=args.approximant,
-                       increment=args.increment)
+lfc = None if args.enable_bank_start_frequency else args.low_frequency_cutoff
+bank = waveform.LiveFilterBank(
+        args.bank_file, args.sample_rate, total_pad, low_frequency_cutoff=lfc,
+        approximant=args.approximant, increment=args.increment)
+if bank.min_f_lower < args.low_frequency_cutoff:
+    parser.error('--low-frequency-cutoff ({} Hz) must not be larger than the '
+                 'minimum f_lower across all templates '
+                 '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
+
+ifos = set(args.channel_name.keys())
+logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
 evnt = LiveEventManager(args.output_path,
                         use_date_prefix=args.day_hour_output_prefix,
@@ -429,23 +666,26 @@ evnt = LiveEventManager(args.output_path,
                         pval_livetime=args.pvalue_combination_livetime,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
-                       )
+                        run_snr_optimization=args.run_snr_optimization,
+                        mc_area_args=mchirp_area.from_cli(args))
+
+# include MPI rank and functional description into proctitle
+task_name = 'root' if evnt.rank == 0 else 'filtering'
+setproctitle('PyCBC Live rank {:d} [{}]'.format(evnt.rank, task_name))
 
 sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
 if args.size_override:
-    evnt.size=args.size_override
-
-# ifos used for primary analysis (only two at the moment)
-ifos = set(args.channel_name.keys())
-logging.info('Running with %s', ', '.join(sorted(ifos)))
+    evnt.size = args.size_override
 
 # make sure we can talk to GraceDB
 if evnt.rank == 0 and args.enable_gracedb_upload:
     logging.info('Testing access to GraceDB')
     from ligo.gracedb.rest import GraceDb
     gdb_client = GraceDb(args.gracedb_server) if args.gracedb_server else GraceDb()
-    gdb_client.ping()
+    response = gdb_client.ping()
+    logging.info('GraceDB ping response: %s %s',
+                 response.status, response.reason)
     del gdb_client
 
 # I'm not the root, so do some actual filtering.
@@ -468,12 +708,12 @@ with ctx:
         print(e)
         exit()
 
-    maxlen = args.psd_segment_length * (args.psd_samples / 2 + 1)
+    maxlen = args.psd_segment_length * (args.psd_samples // 2 + 1)
     if evnt.rank > 0:
         bank.table.sort(order='mchirp')
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
-        lengths = numpy.array([1.0 / waveform.delta_f for waveform in waveforms])
-        psd_len = args.psd_segment_length * (args.psd_samples / 2 + 1)
+        lengths = numpy.array([1.0 / wf.delta_f for wf in waveforms])
+        psd_len = args.psd_segment_length * (args.psd_samples // 2 + 1)
         maxlen = max(lengths.max(), psd_len)
         mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold,
                                     args.chisq_bins, sg_chisq,
@@ -485,64 +725,24 @@ with ctx:
     # Synchronize start time if not provided on the command line
     if not args.start_time:
         evnt.barrier()
-        if evnt.rank == 0:
-            tnow = lal.GPSTimeNow()
-        else:
-            tnow = None
+        tnow = lal.GPSTimeNow() if evnt.rank == 0 else None
         args.start_time = evnt.comm.bcast(tnow, root=0)
 
     if args.round_start_time:
         args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
         logging.info('Starting from: %s', args.start_time)
 
+    # initialize the data readers for all detectors
     if args.max_length is not None:
         maxlen = args.max_length
-
     maxlen = int(maxlen)
-    data_reader = {}
-    sngl_estimator = {}
-    for ifo in ifos:
-        state = dq = dqf = None
-        if args.state_channel and ifo in args.state_channel:
-            state = '%s:%s' % (ifo, args.state_channel[ifo])
-        if args.data_quality_channel and ifo in args.data_quality_channel \
-                and args.data_quality_flags and ifo in args.data_quality_flags:
-            dq ='%s:%s' % (ifo, args.data_quality_channel[ifo])
-            dqf = args.data_quality_flags[ifo].split(',')
+    data_reader = {ifo: StrainBuffer.from_cli(ifo, args, maxlen)
+                   for ifo in ifos}
 
-        if args.frame_type:
-            frame_src = frame.frame_paths(args.frame_type[ifo], args.start_time, args.end_time)
-        else:
-            frame_src = [args.frame_src[ifo]]
-
-        if args.enable_single_detector_background and evnt.rank == 0:
-            sngl_estimator[ifo] = LiveSingleFarThreshold.from_cli(args, ifo)
-
-        data_reader[ifo] = StrainBuffer(frame_src,
-                            '%s:%s' % (ifo, args.channel_name[ifo]),
-                            args.start_time, max_buffer=maxlen * 2,
-                            state_channel=state,
-                            data_quality_channel=dq,
-                            sample_rate=args.sample_rate,
-                            low_frequency_cutoff=args.low_frequency_cutoff,
-                            highpass_frequency=args.highpass_frequency,
-                            highpass_reduction=args.highpass_reduction,
-                            highpass_bandwidth=args.highpass_bandwidth,
-                            psd_samples=args.psd_samples,
-                            trim_padding=args.trim_padding,
-                            psd_segment_length=args.psd_segment_length,
-                            psd_inverse_length=args.psd_inverse_length,
-                            autogating_threshold=args.autogating_threshold,
-                            autogating_cluster=args.autogating_cluster,
-                            autogating_window=args.autogating_window,
-                            autogating_pad=args.autogating_pad,
-                            psd_abort_difference=args.psd_abort_difference,
-                            psd_recalculate_difference=args.psd_recalculate_difference,
-                            force_update_cache=args.force_update_cache,
-                            increment_update_cache=args.increment_update_cache[ifo],
-                            analyze_flags=args.analyze_flags,
-                            data_quality_flags=dqf,
-                            dq_padding=args.data_quality_padding)
+    # create single-detector background "estimators"
+    if args.enable_single_detector_background and evnt.rank == 0:
+        sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
+                          for ifo in ifos}
 
     # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
@@ -553,6 +753,28 @@ with ctx:
             estimators.append(Coincer.from_cli(args,
                               len(bank), args.analysis_chunk, list(combo)))
 
+        my_coinc_id = 999999
+        def set_coinc_id(i):
+            global my_coinc_id
+            my_coinc_id = i
+            c = estimators[my_coinc_id]
+            setproctitle('PyCBC Live {} bg estimator'.format(
+                    ppdets(c.ifos, '-')))
+
+        def get_coinc(results):
+            c = estimators[my_coinc_id]
+            r = c.add_singles(results)
+            logging.info('Coincs %i: %s-%s: %s in cbuffer', my_coinc_id,
+                         c.ifos[0], c.ifos[1], c.coincs.index)
+            return r
+
+        def output_background(_):
+            estim = estimators[my_coinc_id]
+            bg_time = estim.background_time / lal.YRJUL_SI
+            return estim.ifos, estim.coincs.data, bg_time
+
+        coinc_pool = BroadcastPool(len(estimators))
+        coinc_pool.allmap(set_coinc_id, range(len(estimators)))
 
     logging.info('%s: Starting...', evnt.rank)
 
@@ -560,13 +782,15 @@ with ctx:
         pr = cProfile.Profile()
         pr.enable()
 
-    # get more data
-    data_end = lambda: data_reader[data_reader.keys()[0]].end_time
+    # main analysis loop
+    data_end = lambda: data_reader[tuple(data_reader.keys())[0]].end_time
+    last_bg_dump_time = int(data_end())
     while data_end() < args.end_time:
         t1 = time()
         logging.info('%s: Analyzing from %s', evnt.rank, data_end())
+
         results = {}
-        evnt.num_live_detectors = 0
+        evnt.live_detectors = set()
 
         for ifo in ifos:
             results[ifo] = False
@@ -584,7 +808,7 @@ with ctx:
                     status = False
 
             if status is True:
-                evnt.num_live_detectors += 1
+                evnt.live_detectors.add(ifo)
                 if evnt.rank > 0:
                     logging.info('%s: Filtering %s', evnt.rank, ifo)
                     results[ifo] = mf.process_data(data_reader[ifo])
@@ -600,40 +824,46 @@ with ctx:
             if evnt.size > 1:
                 results, valid_end = evnt.gather_results()
 
-            # Veto single detector triggers if they fail the DQ vector
-            if args.data_quality_channel:
-                logging.info('checking the dq vector')
-                for ifo in results:
-                    start = data_reader[ifo].start_time
-                    end = data_reader[ifo].end_time
-                    times = results[ifo]['end_time']
-                    idx = data_reader[ifo].dq.indices_of_flag(
-                            start, valid_pad, times,
-                            padding=data_reader[ifo].dq_padding)
-                    logging.info('Keeping %d/%d %s triggers', len(idx), len(times), ifo)
-                    for key in results[ifo]:
-                        if len(results[ifo][key]) > 0:
-                            results[ifo][key] = results[ifo][key][idx]
+            # veto detectors with different state between the root
+            # and worker nodes (e.g. late frame files on one node only)
+            detectors_with_results = set(results.keys())
+            evnt.live_detectors.intersection_update(detectors_with_results)
+            for ifo in detectors_with_results - evnt.live_detectors:
+                results.pop(ifo)
+
+            # Veto single detector triggers that fail the DQ vector
+            for ifo in results:
+                if data_reader[ifo].dq is None:
+                    continue
+                logging.info("Checking %s's DQ vector", ifo)
+                start = data_reader[ifo].start_time
+                times = results[ifo]['end_time']
+                idx = data_reader[ifo].dq.indices_of_flag(
+                        start, valid_pad, times,
+                        padding=data_reader[ifo].dq_padding)
+                logging.info('Keeping %d/%d %s triggers',
+                             len(idx), len(times), ifo)
+                for key in results[ifo]:
+                    if len(results[ifo][key]):
+                        results[ifo][key] = results[ifo][key][idx]
 
             # Look for coincident triggers and do background estimation
-            coinc_results = []
             if args.enable_background_estimation:
-                for c in estimators:
-                    coinc_results.append(c.add_singles(results, data_reader))
-                    logging.info('Coincs: %s-%s: %s in cbuffer',
-                                 c.ifos[0], c.ifos[1], c.coincs.index)
+                coinc_results = coinc_pool.broadcast(get_coinc, results)
 
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
 
-                evnt.check_coincs(results.keys(), best_coinc,
+                evnt.check_coincs(list(results.keys()), best_coinc,
                                   psds, args.low_frequency_cutoff,
                                   data_reader, bank)
 
-            # Check for singles if we don't have coinc time
+            # Check for singles
             if args.enable_single_detector_background:
                 evnt.check_singles(results, data_reader, psds,
                                    args.low_frequency_cutoff)
+
+            gates = {ifo: data_reader[ifo].gate_params for ifo in data_reader}
 
             # map the results file to an hdf file
             prefix = '{}-{}-{}-{}'.format(''.join(sorted(ifos)),
@@ -642,9 +872,30 @@ with ctx:
                                           valid_pad)
 
             evnt.dump(results, prefix, time_index=data_end(),
-                      store_psd=False if args.store_psd is False else psds,
+                      store_psd=(psds if args.store_psd else False),
                       store_loudest_index=args.store_loudest_index,
-                      raw_results=best_coinc)
+                      raw_results=best_coinc, gates=gates)
+
+            # dump the background if needed
+            if args.output_background and \
+                    data_end() - last_bg_dump_time > float(args.output_background[0]):
+                last_bg_dump_time = int(data_end())
+                bg_dists = coinc_pool.broadcast(output_background, None)
+                bg_fn = '{}-LIVE_BACKGROUND-{}.hdf'.format(''.join(sorted(ifos)),
+                                                           last_bg_dump_time)
+                bg_fn = os.path.join(args.output_background[1], bg_fn)
+                with h5py.File(bg_fn, 'w') as bgf:
+                    for bg_ifos, bg_data, bg_time in bg_dists:
+                        if args.output_background_n_loudest and (args.output_background_n_loudest < len(bg_data)-1):
+                            n_loudest = args.output_background_n_loudest
+                            assert (n_loudest > 0), "We can only store positive int loudest triggers."
+                            ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
+                                    data=-numpy.partition(-bg_data, n_loudest)[:n_loudest], compression='gzip')
+                        else:
+                            ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
+                                                    data=bg_data, compression='gzip')
+                        ds.attrs['background_time'] = bg_time
+                    bgf.attrs['gps_time'] = last_bg_dump_time
 
             logging.info('Finished Analyzing up to %s', data_end())
 
@@ -655,22 +906,22 @@ with ctx:
         logging.info('%s: Took %1.2f, duty factor of %.2f, '
                      'lag %.2f s, %d live detectors',
                      evnt.rank, tdiff, tdiff / valid_pad, lag,
-                     evnt.num_live_detectors)
+                     len(evnt.live_detectors))
 
         if args.output_status is not None and evnt.rank == 0:
             if lag > 120:
                 status_intervals = [{'num_status': 2,
-                                     'txt_status': 'CRITICAL: lag >2 minutes',
+                                     'txt_status': 'CRITICAL: lag greater than 2 min',
                                      'start_sec': 0}]
             else:
                 status_intervals = [{'num_status': 0,
                                      'txt_status': 'OK: No reported problems',
                                      'start_sec': 0},
                                     {'num_status': 1,
-                                     'txt_status': 'WARNING: last report >2 min ago',
+                                     'txt_status': 'WARNING: last report between 2 and 4 min ago',
                                      'start_sec': 120}]
             status_intervals.append({'num_status': 2,
-                                     'txt_status': 'CRITICAL: last report >4 min ago',
+                                     'txt_status': 'CRITICAL: last report more than 4 min ago',
                                      'start_sec': 240})
             status = {'author': 'Tito Dal Canton',
                       'email': 'tito.canton@ligo.org',

@@ -32,7 +32,6 @@ from pycbc.filter import autocorrelation
 
 from pycbc import __version__
 from pycbc.inference import io
-from pycbc.inference.sampler import samplers
 
 # command line usage
 # turn off thin-interval and temps since they won't be used
@@ -61,49 +60,39 @@ fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 
 # calculate autocorrelation length for each walker
 logging.info("Calculating autocorrelation length")
-acls = []
+fig = plt.figure()
 for param_name in parameters:
     # loop over walkers and save an autocorrelation length
     # for each walker
+    acls = []
     for i in range(fp.nwalkers):
         y = fp.read_samples(param_name, walkers=i, thin_start=opts.thin_start,
-                            thin_end=opts.thin_end)
+                            thin_end=opts.thin_end, thin_interval=1)
         acl = autocorrelation.calculate_acl(y[param_name], dtype=int)
         if acl == numpy.inf:
             acl = fp.niterations
+        acl *= fp.thinned_by
         acls.append(acl)
 
-# get the file's acl
-fpacl = fp[fp.sampler_group].attrs['acl']
+    # plot autocorrelation length
+    logging.info("Plotting autocorrelation times")
+    plt.hist(acls, opts.bins, histtype="step", label=labels[param_name])
 
-# plot autocorrelation length
-logging.info("Plotting autocorrelation lengths")
-fig = plt.figure()
-range_max = max(fpacl, max(acls))
-y,x,patches = plt.hist(acls, opts.bins, range=(0,range_max),
-                       histtype="step")
+plt.xlabel("Autocorrelation time")
+plt.ylabel(r'Number of walkers')
 
-# get histogram bin width
-poly_xy = patches[0].get_xy()
-step = poly_xy[2][0] - poly_xy[0][0]
-
-plt.xlabel("Iteration")
-plt.ylabel(r'Autocorrelation Length for %s'%', '.join(labels))
-plt.ylim(0, int(1.1*y.max()))
-x_min = max(0, x.min()-2*step)
-plt.xlim(x_min, x.max()+2*step)
-
-# plot autocorrelation length saved in hdf file
-plt.vlines(fpacl, 0, int(1.1*y.max()))
+# plot autocorrelation time saved in hdf file
+plt.axvline(fp.act, linestyle='--')
+plt.legend()
 
 # save figure with meta-data
 caption_kwargs = {
     "parameters" : ", ".join(labels),
 }
-caption = """ The histogram (blue) is the autocorrelation length (ACL) from all
- the walker chains for the parameters. The vertical black line is the ACL
+caption = """ Histograms of the autocorrelation time (ACT) from all
+ the walker chains for the parameters. The vertical dashed line is the ACT
 read from the input file."""
-title = "Autocorrelation Length for {parameters}".format(**caption_kwargs)
+title = "Autocorrelation time for {parameters}".format(**caption_kwargs)
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
                                title=title,

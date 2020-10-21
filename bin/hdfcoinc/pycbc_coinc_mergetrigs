@@ -34,6 +34,9 @@ parser.add_argument('--version', action='version', version=pycbc.version.git_ver
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--output-file')
 parser.add_argument('--bank-file')
+parser.add_argument('--compression-level', type=int, default=6,
+                    help='Set HDF compression level in the output file '
+                         '(default 6)')
 parser.add_argument('--verbose', '-v', action='count')
 args = parser.parse_args()
 
@@ -46,13 +49,13 @@ trigger_columns = []
 for fname in args.trigger_files:
     try:
         f2 = h5py.File(fname, 'r')
-    except IOError:
+    except IOError as e:
         logging.error("Cannot open %s" % fname)
-        raise IOError
-    ifo = f2.keys()[0]
+        raise e
+    ifo = tuple(f2.keys())[0]
     if len(f2[ifo].keys()) > 0:
         k = f2[ifo].keys()
-        trigger_columns = f2[ifo].keys()
+        trigger_columns = list(f2[ifo].keys())
         if not 'template_hash' in trigger_columns:
             f2.close()
             continue
@@ -78,9 +81,9 @@ gating = {}
 for filename in args.trigger_files:
     try:
         data = h5py.File(filename, 'r')
-    except IOError:
+    except IOError as e:
         logging.error('Cannot open %s' % filename)
-        raise IOError
+        raise e
     ifo_data = data[ifo]
     s, e = ifo_data['search/start_time'][:], ifo_data['search/end_time'][:]
     start, end = numpy.append(start, s), numpy.append(end, e)
@@ -138,8 +141,10 @@ full_boundaries = numpy.concatenate([full_boundaries, [len(trigger_hashes)]])
 del trigger_hashes
 
 idlen = (template_boundaries[1:] - template_boundaries[:-1])
-f.create_dataset('%s/template_id' % ifo, data=numpy.repeat(template_ids, idlen), 
-                 compression='gzip', shuffle=True, compression_opts=9)
+f.create_dataset('%s/template_id' % ifo,
+                 data=numpy.repeat(template_ids, idlen),
+                 compression='gzip', shuffle=True,
+                 compression_opts=args.compression_level)
 f['%s/template_boundaries' % ifo] = full_boundaries[unsort]
 
 logging.info('reading the trigger columns from the input files')
@@ -149,7 +154,8 @@ for col in trigger_columns:
     data = collect(key, args.trigger_files)[trigger_sort]
     logging.info('writing %s to file' % col)
     dset = f.create_dataset(key, data=data, compression='gzip',
-                                 compression_opts=9, shuffle=True)
+                            compression_opts=args.compression_level,
+                            shuffle=True)
     del data
     region(f, key, full_boundaries, unsort) 
 f.close()

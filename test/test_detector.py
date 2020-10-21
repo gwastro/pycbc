@@ -55,7 +55,7 @@ class TestDetector(unittest.TestCase):
                 self.assertAlmostEqual(t1, t2, 7)
 
     def test_antenna_pattern(self):
-        vals = zip(self.ra, self.dec, self.pol, self.time)
+        vals = list(zip(self.ra, self.dec, self.pol, self.time))
         for ifo in self.d:
             fp = []
             fc = []

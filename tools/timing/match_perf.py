@@ -48,12 +48,12 @@ niter = options.iterations
 
 
 if type(ctx) is CUDAScheme:
-    print "RUNNING ON ", ctx.device.name()
+    print("RUNNING ON ", ctx.device.name())
 else:
-    print "RUNNING ON CPU"
+    print("RUNNING ON CPU")
 
 N = 2**size
-print "         SIZE    ",  int(log(N,2))
+print("         SIZE    ",  int(log(N,2)))
 n = N/2 +1
 a = numpy.zeros(N) + 1000
 noise = numpy.random.normal(a).astype(numpy.float32)
@@ -92,21 +92,21 @@ def filter_fast():
 import timeit
 gt = timeit.Timer(ovlp)
 t = (1000 * gt.timeit(number=1)/niter)
-print "Foverlap %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t)
+print("Foverlap %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t))
 
 gt = timeit.Timer(matcht)
 t = (1000 * gt.timeit(number=1)/niter)
-print "MATCH %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t)
+print("MATCH %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t))
 
 
 gt = timeit.Timer(match_fast)
 t = (1000 * gt.timeit(number=1)/niter)
-print "MATCH FAST %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t)
+print("MATCH FAST %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t))
 
 
 gt = timeit.Timer(filter_fast)
 t = (1000 * gt.timeit(number=1)/niter)
-print "FILTER FAST %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t)
+print("FILTER FAST %.2f msec" % t, " %5.1f op/min " % (1000 *60 /t))
 
 
 

@@ -23,22 +23,21 @@ from __future__ import absolute_import
 
 import numpy
 import emcee
-import h5py
 import logging
 from pycbc.pool import choose_pool
 
-from .base import BaseSampler
-from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
+from .base import (BaseSampler, setup_output)
+from .base_mcmc import (BaseMCMC, EnsembleSupport, raw_samples_to_dict,
                         get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,
-                               MultiTemperedAutocorrSupport)
-from ..burn_in import MultiTemperedMCMCBurnInTests
+                               ensemble_compute_acf, ensemble_compute_acl)
+from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.io import EmceePTFile
 from .. import models
 
 
-class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
-                     BaseMCMC, BaseSampler):
+class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
+                     BaseSampler):
     """This class is used to construct a parallel-tempered MCMC sampler from
     the emcee package's PTSampler.
 
@@ -52,20 +51,26 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         Number of walkers to use in sampler.
     betas : array
         An array of inverse temperature values to be used in emcee_pt's
-        temperature ladder. If not provided, emcee_pt will use the number of
-        temperatures and the number of dimensions of the parameter space to
+        temperature ladder. If not provided, ``emcee_pt`` will use the number
+        of temperatures and the number of dimensions of the parameter space to
         construct the ladder with geometrically spaced temperatures.
-    pool : function with map, Optional
-        A provider of a map function that allows a function call to be run
-        over multiple sets of arguments and possibly maps them to
-        cores/nodes/etc.
+    loglikelihood_function : str, optional
+        Set the function to call from the model for the ``loglikelihood``.
+        Default is ``loglikelihood``.
+    nprocesses : int, optional
+        The number of parallel processes to use. Default is 1
+        (no paralleliztion).
+    use_mpi : bool, optional
+        Use MPI for parallelization. Default (False) will use python's
+        multiprocessing.
     """
     name = "emcee_pt"
     _io = EmceePTFile
-    burn_in_class = MultiTemperedMCMCBurnInTests
+    burn_in_class = EnsembleMultiTemperedMCMCBurnInTests
 
     def __init__(self, model, ntemps, nwalkers, betas=None,
-                 checkpoint_interval=None, loglikelihood_function=None,
+                 checkpoint_interval=None, checkpoint_signal=None,
+                 loglikelihood_function=None,
                  nprocesses=1, use_mpi=False):
 
         self.model = model
@@ -78,28 +83,22 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         model_call = models.CallModel(model, loglikelihood_function,
                                       return_all_stats=False)
 
-        # Set up the pool
-        if nprocesses > 1:
-            # these are used to help paralleize over multiple cores / MPI
-            models._global_instance = model_call
-            model_call = models._call_global_model
-            prior_call = models._call_global_model_logprior
-        else:
-            prior_call = models.CallModel(model, 'logprior',
-                                          return_all_stats=False)
-        pool = choose_pool(mpi=use_mpi, processes=nprocesses)
-        if pool is not None:
-            pool.count = nprocesses
+        # these are used to help paralleize over multiple cores / MPI
+        models._global_instance = model_call
+        model_call = models._call_global_model
+        prior_call = models._call_global_model_logprior
+        self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
 
         # construct the sampler: PTSampler needs the likelihood and prior
         # functions separately
         ndim = len(model.variable_params)
         self._sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                        model_call, prior_call, pool=pool,
+                                        model_call, prior_call, pool=self.pool,
                                         betas=betas)
-        self._nwalkers = nwalkers
+        self.nwalkers = nwalkers
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
+        self._checkpoint_signal = checkpoint_signal
 
     @property
     def io(self):
@@ -113,19 +112,121 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     def betas(self):
         return self._sampler.betas
 
-    @classmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
-        """
-        Loads the sampler from the given config file.
+    @staticmethod
+    def compute_acf(filename, **kwargs):
+        r"""Computes the autocorrelation function.
 
-        For generating the temperature ladder to be used by emcee_pt, either
-        the number of temperatures (provided by the option 'ntemps'),
-        or the path to a file storing inverse temperature values (provided
-        under a subsection inverse-temperatures-file) can be loaded from the
-        config file. If the latter, the file should be of hdf format, having
-        an attribute named 'betas' storing the list of inverse temperature
-        values to be provided to emcee_pt. If the former, emcee_pt will
-        construct the ladder with "ntemps" geometrically spaced temperatures.
+        Calls :py:func:`base_multitemper.ensemble_compute_acf`; see that
+        function for details.
+
+        Parameters
+        ----------
+        filename : str
+            Name of a samples file to compute ACFs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.ensemble_compute_acf`.
+
+        Returns
+        -------
+        dict :
+            Dictionary of arrays giving the ACFs for each parameter. If
+            ``per-walker=True`` is passed as a keyword argument, the arrays
+            will have shape ``ntemps x nwalkers x niterations``. Otherwise, the
+            returned array will have shape ``ntemps x niterations``.
+        """
+        return ensemble_compute_acf(filename, **kwargs)
+
+    @staticmethod
+    def compute_acl(filename, **kwargs):
+        r"""Computes the autocorrelation length.
+
+        Calls :py:func:`base_multitemper.ensemble_compute_acl`; see that
+        function for details.
+
+        Parameters
+        -----------
+        filename : str
+            Name of a samples file to compute ACLs for.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_multitemper.ensemble_compute_acl`.
+
+        Returns
+        -------
+        dict
+            A dictionary of ntemps-long arrays of the ACLs of each parameter.
+        """
+        return ensemble_compute_acl(filename, **kwargs)
+
+    @classmethod
+    def from_config(cls, cp, model, output_file=None, nprocesses=1,
+                    use_mpi=False):
+        """Loads the sampler from the given config file.
+
+        The following options are retrieved in the ``[sampler]`` section:
+
+        * ``name`` :
+            Required. This must match the samlper's name.
+        * ``nwalkers`` :
+            Required. The number of walkers to use.
+        * ``ntemps`` :
+            The number of temperatures to use. Either this, or
+            ``inverse-temperatures-file`` must be provided (but not both).
+        * ``inverse-temperatures-file`` :
+            Path to an hdf file containing the inverse temperatures ("betas")
+            to use. The betas will be retrieved from the file's
+            ``.attrs['betas']``. Either this or ``ntemps`` must be provided
+            (but not both).
+        * ``niterations`` :
+            The number of iterations to run the sampler for. Either this or
+            ``effective-nsamples`` must be provided (but not both).
+        * ``effective-nsamples`` :
+            Run the sampler until the given number of effective samples are
+            obtained. A ``checkpoint-interval`` must also be provided in this
+            case. Either this or ``niterations`` must be provided (but not
+            both).
+        * ``thin-interval`` :
+            Thin the samples by the given value before saving to disk. May
+            provide this, or ``max-samples-per-chain``, but not both. If
+            neither options are provided, will save all samples.
+        * ``max-samples-per-chain`` :
+            Thin the samples such that the number of samples per chain per
+            temperature that are saved to disk never exceeds the given value.
+            May provide this, or ``thin-interval``, but not both. If neither
+            options are provided, will save all samples.
+        * ``checkpoint-interval`` :
+            Sets the checkpoint interval to use. Must be provided if using
+            ``effective-nsamples``.
+        * ``checkpoint-signal`` :
+            Set the checkpoint signal, e.g., "USR2". Optional.
+        * ``logl-function`` :
+            The attribute of the model to use for the loglikelihood. If
+            not provided, will default to ``loglikelihood``.
+
+        Settings for burn-in tests are read from ``[sampler-burn_in]``. In
+        particular, the ``burn-in-test`` option is used to set the burn in
+        tests to perform. See
+        :py:func:`MultiTemperedMCMCBurnInTests.from_config` for details. If no
+        ``burn-in-test`` is provided, no burn in tests will be carried out.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser instance
+            Config file object to parse.
+        model : pycbc.inference.model.BaseModel instance
+            The model to use.
+        output_file : str, optional
+            The name of the output file to checkpoint and write results to.
+        nprocesses : int, optional
+            The number of parallel processes to use. Default is 1.
+        use_mpi : bool, optional
+            Use MPI for parallelization. Default is False.
+
+        Returns
+        -------
+        EmceePTSampler :
+            The sampler instance.
         """
         section = "sampler"
         # check name
@@ -133,30 +234,16 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             "name in section [sampler] must match mine")
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
-        if cp.has_option(section, "ntemps") and \
-                cp.has_option(section, "inverse-temperatures-file"):
-            raise ValueError("Must specify either ntemps or "
-                             "inverse-temperatures-file, not both.")
-        if cp.has_option(section, "inverse-temperatures-file"):
-            # get the path of the file containing inverse temperatures values.
-            inverse_temperatures_file = cp.get(section,
-                                               "inverse-temperatures-file")
-            with h5py.File(inverse_temperatures_file, "r") as fp:
-                try:
-                    betas = numpy.array(fp.attrs['betas'])
-                    ntemps = betas.shape[0]
-                except KeyError:
-                    raise AttributeError("No attribute called betas")
-        else:
-            # get the number of temperatures
-            betas = None
-            ntemps = int(cp.get(section, "ntemps"))
+        # get the temps/betas
+        ntemps, betas = cls.betas_from_config(cp, section)
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
+        checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
         obj = cls(model, ntemps, nwalkers, betas=betas,
                   checkpoint_interval=checkpoint_interval,
+                  checkpoint_signal=checkpoint_signal,
                   loglikelihood_function=logl, nprocesses=nprocesses,
                   use_mpi=use_mpi)
         # set target
@@ -165,6 +252,12 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         obj.set_burn_in_from_config(cp)
         # set prethin options
         obj.set_thin_interval_from_config(cp, section)
+        # Set up the output file
+        setup_output(obj, output_file)
+        if not obj.new_checkpoint:
+            obj.resume_from_checkpoint()
+        else:
+            obj.set_start_from_config(cp)
         return obj
 
     @property
@@ -251,7 +344,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params,
+            fp.write_samples(self.samples,
+                             parameters=self.model.variable_params,
                              last_iteration=self.niterations)
             # write stats
             fp.write_samples(self.model_stats, last_iteration=self.niterations)
@@ -309,12 +403,51 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         return dummy_sampler.thermodynamic_integration_log_evidence(
             logls=logls, fburnin=0.)
 
+    def _correctjacobian(self, samples):
+        """Corrects the log jacobian values stored on disk.
+
+        Parameters
+        ----------
+        samples : dict
+            Dictionary of the samples.
+        """
+        # flatten samples for evaluating
+        orig_shape = list(samples.values())[0].shape
+        flattened_samples = {p: arr.ravel()
+                             for p, arr in list(samples.items())}
+        # convert to a list of tuples so we can use map function
+        params = list(flattened_samples.keys())
+        size = flattened_samples[params[0]].size
+        logj = numpy.zeros(size)
+        for ii in range(size):
+            these_samples = {p: flattened_samples[p][ii] for p in params}
+            these_samples = self.model.sampling_transforms.apply(these_samples)
+            self.model.update(**these_samples)
+            logj[ii] = self.model.logjacobian
+        return logj.reshape(orig_shape)
+
     def finalize(self):
         """Calculates the log evidence and writes to the checkpoint file.
+
+        If sampling transforms were used, this also corrects the jacobian
+        stored on disk.
 
         The thin start/interval/end for calculating the log evidence are
         retrieved from the checkpoint file's thinning attributes.
         """
+        if self.model.sampling_transforms is not None:
+            # fix the lobjacobian values stored on disk
+            logging.info("Correcting logjacobian values on disk")
+            with self.io(self.checkpoint_file, 'r') as fp:
+                samples = fp.read_raw_samples(self.variable_params,
+                                              thin_start=0,
+                                              thin_interval=1, thin_end=None,
+                                              temps='all', flatten=False)
+            logjacobian = self._correctjacobian(samples)
+            # write them back out
+            for fn in [self.checkpoint_file, self.backup_file]:
+                with self.io(fn, "a") as fp:
+                    fp[fp.samples_group]['logjacobian'][()] = logjacobian
         logging.info("Calculating log evidence")
         # get the thinning settings
         with self.io(self.checkpoint_file, 'r') as fp:

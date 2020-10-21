@@ -15,7 +15,6 @@ tmplt = """.. _inheritance-{name}:
 
 """
 fp = open(fname, 'w')
-
 for sampler, cls in sorted(samplers.items()):
     out = tmplt.format(name=sampler, clsname=cls.__name__,
                        module=cls.__module__)

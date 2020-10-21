@@ -32,9 +32,6 @@ def _far_from_p(p, livetime, max_far):
 
 far_from_p = numpy.vectorize(_far_from_p)
 
-pylab.rc('text', usetex=True)
-pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-
 parser = argparse.ArgumentParser()
 # General required options
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -50,7 +47,7 @@ parser.add_argument('--use-hierarchical-level', type=int, default=None,
                     help='Indicate which inclusive background and FARs of '
                          'foreground triggers to plot if there were any '
                          'hierarchical removals done. Choosing None plots '
-                         'the inclusive backgrounds prior to any '
+                         'the inclusive backgrounds after all '
                          'hierarchical removals with the updated FARs for '
                          'foreground triggers after hierarchical removal(s). '
                          'Choosing 0 means plotting inclusive background '
@@ -116,8 +113,11 @@ if h_inc_back_num > h_iterations:
     ax.text(0.5, 0.5, output_message, horizontalalignment='center',
             verticalalignment='center')
 
+    figure_title = "%s: " % f.attrs['ifos'] if 'ifos' in f.attrs else ""
+    figure_title += "%s bin, Cumulative Rate vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank"
+
     pycbc.results.save_fig_with_metadata(fig, args.output_file,
-      title="%s bin, Cumulative Rate vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank",
+      title=figure_title,
       caption=output_message,
       cmd=' '.join(sys.argv))
 
@@ -135,30 +135,30 @@ try:
         cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * lal.YRJUL_SI
         fap_end = f['foreground/fap'][:].min() * args.trials_factor
     else:
-         cstat_fore = f['foreground/stat'][:]
-         ssort = cstat_fore.argsort()
-         cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
+        cstat_fore = f['foreground/stat'][:]
+        ssort = cstat_fore.argsort()
+        cstat_rate = 1.0 / f['foreground/ifar'][:] * args.trials_factor
          # Correct the foreground ifars depending on the values calculated
          # under a particular inclusive background distribution.
 
-         try:
-             ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
-         except KeyError:
-             ifar_h_inc = []
+        try:
+            ifar_h_inc = f['foreground_h%s/ifar' % h_inc_back_num][:]
+        except KeyError:
+            ifar_h_inc = []
 
-         try:
-             stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
-         except KeyError:
-             stat_h_inc = []
+        try:
+            stat_h_inc = f['foreground_h%s/stat' % h_inc_back_num][:]
+        except KeyError:
+            stat_h_inc = []
 
-         for i in range(len(ifar_h_inc)):
-             orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
-             if orig_idx is not None:
-                 cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] * args.trials_factor
+        for i in range(len(ifar_h_inc)):
+            orig_idx = numpy.where(cstat_fore == stat_h_inc[i])[0][0]
+            if orig_idx is not None:
+                cstat_rate[orig_idx] = 1.0 / ifar_h_inc[i] * args.trials_factor
 
-         cstat_rate = cstat_rate[ssort]
-         cstat_fore = cstat_fore[ssort]
-         cstat_fap = p_from_far(cstat_rate, foreground_livetime)
+        cstat_rate = cstat_rate[ssort]
+        cstat_fore = cstat_fore[ssort]
+        cstat_fap = p_from_far(cstat_rate, foreground_livetime)
     
     logging.info('Found %s foreground triggers' % len(cstat_fore))
 except:
@@ -284,19 +284,19 @@ if not args.closed_box:
                               edgecolors='white', lw=0.5, s=40, zorder=98) 
 
             if h_inc_back_num > 0:
-               louder_pts = numpy.where(cstat_fore_h_rm > cstat_back.max())[0]
-               for ii in louder_pts:
-                   r = cstat_fore_h_rm[ii]
-                   arr_start = cstat_rate_h_rm[ii]
-                   if arr_start > far_back_exc.min():
-                       continue
-                   # make the arrow length 1/15 the height of the plot
-                   arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
-                   pylab.plot([r, r], [arr_start, arr_end], lw=2,
+                louder_pts = numpy.where(cstat_fore_h_rm > cstat_back.max())[0]
+                for ii in louder_pts:
+                    r = cstat_fore_h_rm[ii]
+                    arr_start = cstat_rate_h_rm[ii]
+                    if arr_start > far_back_exc.min():
+                        continue
+                    # make the arrow length 1/15 the height of the plot
+                    arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
+                    pylab.plot([r, r], [arr_start, arr_end], lw=2,
                               color='black', zorder=99)
-                   pylab.plot([r, r], [arr_start, arr_end], lw=2.6,
+                    pylab.plot([r, r], [arr_start, arr_end], lw=2.6,
                               color='white', zorder=97)
-                   pylab.scatter([r], [arr_end], marker='v', c='black',
+                    pylab.scatter([r], [arr_end], marker='v', c='black',
                                  edgecolors='white', lw=0.5, s=40, zorder=98)
 
 if not args.cumulative:
@@ -325,7 +325,15 @@ if not args.cumulative:
         pylab.annotate('%1.0f$\sigma$' % sigmas[ii],
                        (anntx, far_from_p(p, foreground_livetime,
                        far_back.max())), zorder=100)
+        ax2.plot([],[])
     pylab.sca(ax1)
+
+pylab.xlabel(r'Coincident Ranking Statistic')
+pylab.yscale('log')
+pylab.ylim(plot_ymin, plot_ymax * 10.0)
+pylab.xlim(plot_xmin, plot_xmax)
+pylab.legend(loc="upper right", fontsize=9)
+pylab.grid()
     
 if args.cumulative:
     pylab.ylabel('Cumulative Rate (yr$^{-1}$)')   
@@ -335,23 +343,14 @@ else:
     elif args.trials_factor >= 1:
         pylab.ylabel('Combined False Alarm Rate (yr$^{-1}$)')
     ax2.set_ylabel('p-value')
-
-pylab.xlabel(r'Coincident Ranking Statistic')
-pylab.yscale('log')
-pylab.ylim(plot_ymin, plot_ymax * 10.0)
-pylab.xlim(plot_xmin, plot_xmax)
-pylab.legend(loc="upper right", fontsize=9)
-
+    ax2.set_yscale('log')
+    ymin, ymax = ax1.get_ylim()
+    ax2.set_ylim(ymin, ymax)
+    
 if args.cumulative:
-    pylab.grid()
     figure_caption = "Cumulative histogram of foreground and background triggers."
 else:
     figure_caption = "Mapping between the ranking statistic and false alarm rate."
-    pylab.grid()
-    ax2.set_yscale('log')
-    ymin, ymax = ax1.get_ylim()
-    
-    ax2.set_ylim(ymin, ymax)
     # Put ticks at FAPs of 10^{-x}, where x is an integer get the ymin, ymax
     # in terms of probability.
     pymin = p_from_far(ymin, foreground_livetime)
@@ -364,26 +363,21 @@ else:
     pticks = numpy.arange(tick_min, tick_max+1)
     # Convert back to FAR
     fticks = far_from_p(10**pticks, foreground_livetime, far_back.max())
+    ax2.yaxis.set_major_locator(pylab.NullLocator())
     ax2.set_yticks(fticks)
     # Set the labels
     ax2.set_yticklabels(['$10^{%i}$' %(val) for val in pticks.astype(int)])
-    # add minor ticks
-    N_minor_per_decade = 10
-    pminorticks = numpy.zeros(N_minor_per_decade * (pticks.size-1))
-    for ii,p in enumerate(10**pticks[:-1]):
-        idx = ii*N_minor_per_decade
-        pminorticks[idx:idx+N_minor_per_decade] = \
-            p * numpy.arange(1,N_minor_per_decade+1).astype(float)
-    fminorticks = far_from_p(pminorticks, foreground_livetime, far_back.max())
-    ax2.set_yticks(fminorticks, minor=True)
+pylab.tight_layout()
+figure_title = "%s: " % f.attrs['ifos'] if 'ifos' in f.attrs else ""
+figure_title += "%s bin, Cumulative Rate vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank"
 
-figure_caption = figure_caption + "Orange diamonds (if present) represent triggers from the " \
+figure_caption = figure_caption + "Orange triangle (if present) represent triggers from the " \
 "zero-lag (foreground) analysis. Solid crosses show " \
 "the background inclusive of zerolag events, and grey crosses show the " \
 "background constructed without triggers that are " \
 "coincident in the zero-lag data.",
 
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
-     title="%s bin, Cumulative Rate vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank", 
+     title=figure_title,
      caption=figure_caption,
      cmd=' '.join(sys.argv))

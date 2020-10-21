@@ -29,11 +29,13 @@ inspinj jobs). Full documentation for this module can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
-import logging, urllib, urlparse
-from pycbc.workflow.core import File, FileList, make_analysis_dir, Executable, resolve_url
+import logging
+from six.moves import configparser as ConfigParser
+from pycbc.workflow.core import FileList, make_analysis_dir, Node
+from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
-        PycbcDarkVsBrightInjectionsExecutable)
+        PycbcDarkVsBrightInjectionsExecutable, LigolwAddExecutable)
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -49,19 +51,66 @@ def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None
     workflow += node
     return node.output_files[0]
 
+
+class PyCBCOptimalSNRExecutable(Executable):
+    """Compute optimal SNR for injections"""
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def create_node(self, workflow, inj_file, precalc_psd_files, group_str):
+        node = Node(self)
+        node.add_input_opt('--input-file', inj_file)
+        node.add_opt('--injection-fraction-range', group_str)
+        node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
+        node.new_output_file_opt(workflow.analysis_time, '.xml',
+                                 '--output-file')
+        return node
+
+
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
     "Set up a job for computing optimal SNRs of a sim_inspiral file."
     if tags is None:
         tags = []
 
-    node = Executable(workflow.cp, 'optimal_snr', ifos=workflow.ifos,
-                      out_dir=out_dir, tags=tags).create_node()
-    node.add_input_opt('--input-file', inj_file)
-    node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
-    node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
-    workflow += node
-    return node.output_files[0]
+    try:
+        factor = int(workflow.cp.get_opt_tags('workflow-optimal-snr',
+                                              'parallelization-factor',
+                                              tags))
+    except ConfigParser.Error:
+        factor = 1
+
+    if factor == 1:
+        # parallelization factor not given - default to single optimal snr job
+        opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
+                                                ifos=workflow.ifos,
+                                                out_dir=out_dir, tags=tags)
+        node = opt_snr_exe.create_node(workflow, inj_file,
+                                       precalc_psd_files, '0/1')
+        workflow += node
+
+        return node.output_files[0]
+
+    opt_snr_split_files = []
+    for i in range(factor):
+        group_str = '%s/%s' % (i, factor)
+        opt_snr_exe = PyCBCOptimalSNRExecutable(workflow.cp, 'optimal_snr',
+                                                ifos=workflow.ifos,
+                                                out_dir=out_dir,
+                                                tags=tags + [str(i)])
+        node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files,
+                                       group_str)
+        opt_snr_split_files += [node.output_files[0]]
+        workflow += node
+
+    llwadd_exe = LigolwAddExecutable(workflow.cp, 'optimal_snr_merge',
+                                     ifos=workflow.ifos, out_dir=out_dir,
+                                     tags=tags)
+    merge_node = llwadd_exe.create_node(workflow.analysis_time,
+                                        opt_snr_split_files,
+                                        use_tmp_subdirs=False)
+    workflow += merge_node
+
+    return merge_node.output_files[0]
 
 def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     "Set up a job for removing injections that are too distant to be seen"
@@ -127,14 +176,6 @@ def setup_injection_workflow(workflow, output_dir=None,
         inj_tag = section.upper()
         curr_tags = tags + [inj_tag]
 
-        # FIXME: Remove once fixed in pipedown
-        # TEMPORARILY we require inj tags to end in "INJ"
-        if not inj_tag.endswith("INJ"):
-            err_msg = "Currently workflow requires injection names to end with "
-            err_msg += "a inj suffix. Ie. bnslininj or bbhinj. "
-            err_msg += "%s is not good." %(inj_tag.lower())
-            raise ValueError(err_msg)
-
         # Parse for options in ini file
         injection_method = workflow.cp.get_opt_tags("workflow-injections",
                                                     "injections-method",
@@ -153,15 +194,18 @@ def setup_injection_workflow(workflow, output_dir=None,
             inj_file = node.output_files[0]
             inj_files.append(inj_file)
         elif injection_method == "PREGENERATED":
-            injectionFilePath = workflow.cp.get_opt_tags("workflow-injections",
-                                      "injections-pregenerated-file", curr_tags)
-            injectionFilePath = resolve_url(injectionFilePath)
-            file_url = urlparse.urljoin('file:',
-                                        urllib.pathname2url(injectionFilePath))
-            inj_file = File('HL', 'PREGEN_inj_file', full_segment, file_url,
-                            tags=curr_tags)
-            inj_file.PFN(injectionFilePath, site='local')
-            inj_files.append(inj_file)
+            file_attrs = {
+                'ifos': ['HL'],
+                'segs': full_segment,
+                'tags': curr_tags
+            }
+            injection_path = workflow.cp.get_opt_tags(
+                "workflow-injections",
+                "injections-pregenerated-file",
+                curr_tags
+            )
+            curr_file = resolve_url_to_file(injection_path, attrs=file_attrs)
+            inj_files.append(curr_file)
         elif injection_method in ["IN_COH_PTF_WORKFLOW", "AT_COH_PTF_RUNTIME"]:
             inj_job = LalappsInspinjExecutable(workflow.cp, inj_section_name,
                                                out_dir=output_dir, ifos=ifos,

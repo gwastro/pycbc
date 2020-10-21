@@ -1,160 +1,158 @@
-############################################################################
-``pycbc_make_inference_workflow``: A parameter estimation workflow generator
-############################################################################
+###############################################################################################
+``pycbc_make_inference_inj_workflow``: A parameter estimation workflow generator for injections
+###############################################################################################
 
 ===============
 Introduction
 ===============
 
-The executable ``pycbc_make_inference_inj_workflow`` is a workflow generator to setup a parameter estimation analysis.
+The executable ``pycbc_make_inference_inj_workflow`` is a workflow generator to
+setup a parameter estimation analysis on one or more simulated signals.
+Optionally, it can also run a percentile-percentile on the injections it
+analyzed.
 
-===========================
-Workflow configuration file
-===========================
+The workflow is very similar to the standard inference workflow created by
+`pycbc_make_inference_workflow <pycbc_make_inference_workflow>`_. The main
+differences are:
 
-A simple workflow configuration file::
+ * Rather than providing one or more ``[event-{label}]`` sections in the
+   workflow config file, you provide a single ``[workflow-inference]`` section.
+   The syntax for this section is very similar to the ``[event]`` section(s) in
+   the standard workflow, as it sets the configuration files that are used
+   by ``pycbc_inference``. The difference is that the same settings are used
+   for all injections.
+ * When you create the workflow, you either pass it a ``--num-injections``
+   or a ``--injection-file``. If the former, the workflow will draw the
+   specified number of injections from the prior given to ``pycbc_inference``
+   and analyze them. If the latter, the workflow will analyze the injections
+   specified in the given injection file. The file must be an HDF file;
+   see ``pycbc_create_injections`` for details. In either case, each injection
+   is treated as an independent event, with its own summary section in the
+   results page.
+ * You may optionally have the workflow do a percentile-percentile test on
+   the injections. You do this by adding the necessary executables and
+   corresponding sections to the ``workflow_config.ini`` file. See the example
+   below for details. If a percentile-percentile test is done, the results
+   page will have an additional tab that gives a summary of the PP test on
+   all of the parameters, as well as PP plots and plots of injected versus
+   recoverd values.
+ * It is recommend (though not required) that you add
+   ``plot-injection-parameters`` to the ``[plot_posterior]`` and
+   ``[plot_posterior_summary]`` sections. Doing so will cause redlines to
+   be plotted at the injected parameter values on the posterior plots, so
+   that you may visually inspect how well the injected values are recovered.
+   This may also require providing an ``injection-samples-map`` argument.
+   See the example file below for details.
 
-    [workflow]
-    ; basic information used by the workflow generator
-    file-retention-level = all_triggers
-    h1-channel-name = H1:DCS-CALIB_STRAIN_C02
-    l1-channel-name = L1:DCS-CALIB_STRAIN_C02
+In the `standard workflow <pycbc_make_inference_workflow>`_ we used two
+workflow configuration files, a ``workflow_config.ini`` and an ``events.ini``.
+For the injection workflow, we can use the same ``workflow_config.ini``; we
+just need to setup an ``injections_config.ini`` to add the needed sections
+and arguments for the injections workflow.
 
-    [workflow-ifos]
-    ; the IFOs to analyze
-    h1 =
-    l1 =
+In the example below, we demonstrate how to use the injections workflow
+using the same prior and sampler settings as given in the
+`standard workflow <pycbc_make_inference_workflow>`_ example.
 
-    [workflow-inference]
-    ; how the workflow generator should setup inference nodes
-    num-injections = 3
-    plot-group-mass = mass1 mass2 mchirp q
-    plot-group-orientation =  inclination polarization ra dec
-    plot-group-distance = distance redshift
-    plot-group-time = tc coa_phase
 
-    [executables]
-    ; paths to executables to use in workflow
-    create_injections = ${which:pycbc_create_injections}
-    inference = ${which:pycbc_inference}
-    inference_intervals = ${which:pycbc_inference_plot_inj_intervals}
-    inference_posterior = ${which:pycbc_inference_plot_posterior}
-    inference_rate = ${which:pycbc_inference_plot_acceptance_rate}
-    inference_recovery = ${which:pycbc_inference_plot_inj_recovery}
-    inference_samples = ${which:pycbc_inference_plot_samples}
-    inference_table = ${which:pycbc_inference_table_summary}
-    results_page = ${which:pycbc_make_html_page}
+========================================
+Example: BBH injections with ``dynesty``
+========================================
 
-    [create_injections]
-    ; command line options use --help for more information
-    ninjections = 1
-    dist-section = prior
+In this example we use the same prior and sampler settings as the example
+of analyzing GW150914 and GW170814 in the
+`pycbc_make_inference_workflow <pycbc_make_inference_workflow>`_
+documentation. We will analyze 10 injections, and do a percentile-percentile
+test on them. (This is only as an example. To do a full PP test, we recommend
+using at least 100 injections.)
 
-    [inference]
-    ; command line options use --help for more information
-    processing-scheme = mkl
-    sampler = kombine
-    likelihood-evaluator = gaussian
-    nwalkers = 100
-    n-independent-samples = 10
-    checkpoint-interval = 10
-    nprocesses = 24
-    fake-strain = aLIGOZeroDetHighPower
-    psd-model = aLIGOZeroDetHighPower
-    pad-data = 8
-    strain-high-pass = 20
-    sample-rate = 1024
-    low-frequency-cutoff = 30
-    update-interval = 5
-    config-overrides = static_args:approximant:TaylorF2
+-------------------------------------
+Get the inference configuration files
+-------------------------------------
 
-    [pegasus_profile-inference]
-    ; pegasus profile for inference nodes
-    condor|request_memory = 20G
-    condor|request_cpus = 24
+We can use the same
+:download:`prior <../../examples/inference/priors/bbh-uniform_comoving_volume.ini>`,
+:download:`model <../../examples/inference/models/marginalized_phase.ini>`,
+and :download:`sampler <../../examples/inference/samplers/dynesty.ini>`
+configuration files as used in the  
+`pycbc_make_inference_workflow <pycbc_make_inference_workflow>`_ example.
+However, instead of analyzing O1 or O2 data, we will create fake Gaussian
+noise. To do that, we will use the
+:download:`data.ini <../../examples/inference/bbh-injection/data.ini>` file
+used for the `BBH simulation example <../inference/examples/bbh>`_.
 
-    [inference_intervals]
-    ; command line options use --help for more information
+-------------------------------------
+Setup the workflow configuration file
+-------------------------------------
 
-    [inference_posterior]
-    ; command line options use --help for more information
-    plot-scatter =
-    plot-contours =
-    plot-marginal =
-    z-arg = logposterior
+As discussed above, we can use the same :download:`workflow configuration file <../../examples/workflow/inference/gw150914_gw170814-dynesty/workflow_config.ini>` as used in
+the ``dynesty`` example in the standard workflow. We need to create
+an ``injections_config.ini`` file to go along with the ``workflow_config.ini``:
 
-    [inference_rate]
-    ; command line options use --help for more information
+.. literalinclude:: ../../examples/workflow/inference/bbh_inj-dynesty/injections_config.ini
+   :language: ini
 
-    [inference_recovery]
-    ; command line options use --help for more information
+:download:`Download <../../examples/workflow/inference/bbh_inj-dynesty/injections_config.ini>`
 
-    [inference_samples]
-    ; command line options use --help for more information
-
-    [inference_table]
-    ; command line options use --help for more information
-
-    [results_page]
-    ; command line options use --help for more information
-    analysis-title = "PyCBC Inference Test"
-
-Use the ``ninjections`` option in the ``[workflow-inference]`` section to set the number of injections in the analysis.
-
-=====================
+---------------------
 Generate the workflow
-=====================
+---------------------
 
-To generate a workflow you will need your configuration files. We set the following enviroment variables for this example::
+Assuming that you have downloaded all of the configuration files to the
+same directory, you can generate the workflow by running the following script:
 
-    # name of the workflow
-    WORKFLOW_NAME="r1"
+.. literalinclude:: ../../examples/workflow/inference/bbh_inj-dynesty/create_inj_workflow.sh
+   :language: bash
 
-    # path to output dir
-    OUTPUT_DIR=output
+:download:`Download <../../examples/workflow/inference/bbh_inj-dynesty/create_inj_workflow.sh>`
 
-    # input configuration files
-    CONFIG_PATH=workflow.ini
-    INFERENCE_CONFIG_PATH=inference.ini
+Note that you need to set the ``HTML_DIR`` before running. This tells the
+workflow where to save the results page when done. You can also change
+``WORKFLOW_NAME`` if you like.
 
-Specify a directory to save the HTML pages::
+You should also change the ``SEED`` everytime you create a different workflow.
+This sets the seed that is passed to ``pycbc_inference`` (you set it here
+because it will be incremented for every ``pycbc_inference`` job that will be
+run in the workflow).
 
-    # directory that will be populated with HTML pages
-    HTML_DIR=${HOME}/public_html/inference_test
+After the workflow has finished it will have created a directory named
+``${WORKFLOW_NAME}-output``. This contains the ``dax`` and all necessary files
+to run the workflow.
 
-If you want to run with a test likelihood function use::
-
-    # option for using test likelihood functions
-    DATA_TYPE=analytical
-
-Otherwise if you want to run with simulated data use::
-
-    # option for using simulated data
-    DATA_TYPE=simulated_data
-
-If you want to run on the loudest triggers from a PyCBC coincident search workflow then run::
-
-    # run workflow generator on simulated data
-    pycbc_make_inference_inj_workflow \
-        --workflow-name ${WORKFLOW_NAME} \
-        --data-type ${DATA_TYPE} \
-        --output-dir output \
-        --output-file ${WORKFLOW_NAME}.dax \
-        --inference-config-file ${INFERENCE_CONFIG_PATH} \
-        --config-files ${CONFIG_PATH} \
-        --config-overrides results_page:output-path:${HTML_DIR} \
-                           workflow:start-time:${GPS_START_TIME} \
-                           workflow:end-time:${GPS_END_TIME}
-
-Where ``${GPS_START_TIME}`` and ``${GPS_END_TIME}`` are the GPS times of data to read.
-
-=============================
+-----------------------------
 Plan and execute the workflow
-=============================
+-----------------------------
 
-Finally plan and submit the workflow with::
+Change directory into the ``${WORKFLOW_NAME}-output`` directory::
+
+    cd ${WORKFLOW_NAME}-output
+
+If you are on the ATLAS cluster (at AEI Hannover) or on an LDG cluster, you
+need to define an accounting group tag (talk to your cluster admins if you do
+not know what this is). Once you know what accounting-group tag to use, plan
+and submit the workflow with::
 
     # submit workflow
     pycbc_submit_dax --dax ${WORKFLOW_NAME}.dax \
-        --accounting-group ligo.dev.o2.cbc.explore.test
+        --no-grid \
+        --no-create-proxy \
+        --enable-shared-filesystem \
+        --accounting-group ${ACCOUNTING_GROUP}
 
+Here, ``${ACCOUNTING_GROUP}`` is the appropriate tag for your workflow.
+
+Once it is running, you can monitor the status of the workflow by running
+``./status`` from within the ``${WORKFLOW_NAME}-output`` directory. If your
+workflow fails for any reason, you can see what caused the failure by running
+``./debug``. If you need to stop the workflow at any point, run ``./stop``.
+To resume a workflow, run ``./start``. If the ``pycbc_inference`` jobs were
+still running, and they had checkpointed, they will resume from their last
+checkpoint upon restart.
+
+------------
+Results page
+------------
+
+When the workflow has completed successfully it will write out the results
+page to the directory you specified in the ``create_inj_workflow.sh`` script.
+You can see what the result page will look like `here <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/bbh_injections-dynesty/>`_.

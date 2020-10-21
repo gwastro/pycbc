@@ -44,7 +44,7 @@ pycbc.init_logging(args.verbose)
 
 # read trigger file to determine IFO
 f = h5py.File(args.trigger_file, 'r')
-ifo = f.keys()[0]
+ifo = tuple(f.keys())[0]
 
 # read single-detector triggers
 trigs = pycbc.io.SingleDetTriggers(args.trigger_file, args.bank_file,
@@ -87,7 +87,7 @@ elif args.background_bins:
 
     # assign a color for each bin
     color_cycle = cycle(['red', 'green', 'blue', 'black', 'magenta', 'cyan'])
-    loc_bin_colors = [color_cycle.next() for key in loc_bin_keys]
+    loc_bin_colors = [next(color_cycle) for key in loc_bin_keys]
 
     # get number of overflows for each background bin
     loc_bin_overflows = [len(vals[vals>=x_max]) for vals in loc_bin_vals]

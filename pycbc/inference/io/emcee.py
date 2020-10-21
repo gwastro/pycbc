@@ -23,15 +23,55 @@
 #
 """Provides IO for the emcee sampler.
 """
-import h5py, numpy
-from .base_hdf import BaseInferenceFile
-from .base_mcmc import (MCMCMetadataIO, SingleTempMCMCIO)
-from .posterior import PosteriorFile
+import numpy
 
-class EmceeFile(SingleTempMCMCIO, MCMCMetadataIO, BaseInferenceFile):
+from .base_sampler import BaseSamplerFile
+from .base_mcmc import (EnsembleMCMCMetadataIO, CommonMCMCMetadataIO,
+                        write_samples, ensemble_read_raw_samples)
+
+
+class EmceeFile(EnsembleMCMCMetadataIO, CommonMCMCMetadataIO, BaseSamplerFile):
     """Class to handle file IO for the ``emcee`` sampler."""
 
     name = 'emcee_file'
+
+    def write_samples(self, samples, **kwargs):
+        r"""Writes samples to the given file.
+
+        Calls :py:func:`base_mcmc.write_samples`. See that function for
+        details.
+
+        Parameters
+        ----------
+        samples : dict
+            The samples to write. Each array in the dictionary should have
+            shape nwalkers x niterations.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_mcmc.write_samples`.
+        """
+        write_samples(self, samples, **kwargs)
+
+    def read_raw_samples(self, fields, **kwargs):
+        r"""Base function for reading samples.
+
+        Calls :py:func:`base_mcmc.ensemble_read_raw_samples`. See that function
+        for details.
+
+        Parameters
+        -----------
+        fields : list
+            The list of field names to retrieve.
+        \**kwargs :
+            All other keyword arguments are passed to
+            :py:func:`base_mcmc.ensemble_read_raw_samples`.
+
+        Returns
+        -------
+        dict
+            A dictionary of field name -> numpy array pairs.
+        """
+        return ensemble_read_raw_samples(self, fields, **kwargs)
 
     def read_acceptance_fraction(self, walkers=None):
         """Reads the acceptance fraction.
@@ -70,27 +110,3 @@ class EmceeFile(SingleTempMCMCIO, MCMCMetadataIO, BaseInferenceFile):
         except KeyError:
             # dataset doesn't exist yet, create it
             self[group] = acceptance_fraction
-
-    def write_posterior(self, filename, **kwargs):
-        """Write posterior only file
-
-        Parameters
-        ----------
-        filename : str
-            Name of output file to store posterior
-        """
-        f = h5py.File(filename, 'w')
-
-        # Preserve top-level metadata
-        for key in self.attrs:
-            f.attrs[key] = self.attrs[key]
-
-        f.attrs['filetype'] = PosteriorFile.name
-        s = f.create_group('samples')
-        fields = self[self.samples_group].keys()
-
-        # Copy and squash fields into one dimensional arrays
-        for field_name in fields:
-            fvalue = self[self.samples_group][field_name][:]
-            thin = fvalue[:,self.thin_start:self.thin_end:self.thin_interval]
-            s[field_name] = thin.flatten()

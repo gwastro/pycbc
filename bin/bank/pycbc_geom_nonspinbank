@@ -26,6 +26,7 @@ import math
 import copy
 import numpy
 import logging
+from six.moves import range
 import pycbc
 import pycbc.version
 import pycbc.psd
@@ -299,10 +300,10 @@ numv2bins = int(math.ceil(v2sdiff / 1.))
 
 sortedBins = {}
 
-#for i in xrange(numv1bins):
+#for i in range(numv1bins):
 #    print i
 #    sortedBins[i] = {}
-#    for j in xrange(numv2bins):
+#    for j in range(numv2bins):
 #        sortedBins[i][j] = []
 
 logging.info("Sorting guide points")
@@ -314,9 +315,9 @@ for iter, currXi in enumerate(xis):
     xi2 = currXi[1]
     x1bin = int((xi1 - v1smin)/bin_size)
     x2bin = int((xi2 - v2smin)/bin_size)
-    if not sortedBins.has_key(x1bin):
+    if x1bin not in sortedBins:
         sortedBins[x1bin] = {}
-    if not sortedBins[x1bin].has_key(x2bin):
+    if x2bin not in sortedBins[x1bin]:
         sortedBins[x1bin][x2bin] = []
     if len(sortedBins[x1bin][x2bin]) < 100:
         sortedBins[x1bin][x2bin].append( (iter, xi1, xi2) )
@@ -339,10 +340,10 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     v2bin = int((v2 - v2smin)/bin_size)
     physBin = None
     for i in [v1bin, v1bin+1, v1bin-1]:
-        if not sortedBins.has_key(i):
+        if i not in sortedBins:
             continue
         for j in [v2bin, v2bin+1, v2bin-1]:
-            if not sortedBins[i].has_key(j):
+            if j not in sortedBins[i]:
                 continue
             physBin = [i,j]
             points = numpy.array(sortedBins[physBin[0]][physBin[1]])

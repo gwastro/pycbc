@@ -22,6 +22,8 @@
 #
 # =============================================================================
 #
+
+from __future__ import print_function
 import sys
 import logging
 from numpy import loadtxt,complex64,float32
@@ -45,9 +47,9 @@ class ContentHandler(ligolw.LIGOLWContentHandler):
 lsctables.use_in(ContentHandler)
 
 def update_progress(progress):
-    print '\r\r[{0}] {1}%'.format('#'*(progress/2)+' '*(50-progress/2), progress),
+    print('\r\r[{0}] {1}%'.format('#'*(progress/2)+' '*(50-progress/2), progress), end=' ')
     if progress == 100:
-        print "Done"
+        print("Done")
     sys.stdout.flush()
 
 

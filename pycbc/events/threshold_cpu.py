@@ -23,11 +23,15 @@
 #
 from __future__ import absolute_import
 import numpy
-from pycbc import WEAVE_FLAGS
-from pycbc.weave import inline
-from .simd_threshold import thresh_cluster_support, default_segsize
-from .events import _BaseThresholdCluster
-from pycbc.opt import omp_libs, omp_flags
+from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
+from .eventmgr import _BaseThresholdCluster
+from .. import opt
+
+if opt.HAVE_GETCONF:
+    default_segsize = opt.LEVEL2_CACHE_SIZE / numpy.dtype('complex64').itemsize
+else:
+    # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
+    default_segsize = 32768
 
 def threshold_numpy(series, value):
     arr = series.data
@@ -35,95 +39,53 @@ def threshold_numpy(series, value):
     vals = arr[locs]
     return locs, vals
 
-threshold_only = threshold_numpy
 
 outl = None
 outv = None
 count = None
 def threshold_inline(series, value):
-    arr = numpy.array(series.data.view(dtype=numpy.float32), copy=False) # pylint:disable=unused-variable
+    arr = numpy.array(series.data, copy=False, dtype=numpy.complex64)
     global outl, outv, count
     if outl is None or len(outl) < len(series):
         outl = numpy.zeros(len(series), dtype=numpy.uint32)
         outv = numpy.zeros(len(series), dtype=numpy.complex64)
         count = numpy.zeros(1, dtype=numpy.uint32)
 
-    N = len(series) # pylint:disable=unused-variable
-    threshold = value**2.0 # pylint:disable=unused-variable
-    code = """
-        float v = threshold;
-        unsigned int num_parallel_regions = 16;
-        unsigned int t=0;
-
-        #pragma omp parallel for ordered shared(t)
-        for (unsigned int p=0; p<num_parallel_regions; p++){
-            unsigned int start  = (N * p) / num_parallel_regions;
-            unsigned int end    = (N * (p+1)) / num_parallel_regions;
-            unsigned int c = 0;
-
-            for (unsigned int i=start; i<end; i++){
-                float r = arr[i*2];
-                float im = arr[i*2+1];
-                if ((r * r + im * im) > v){
-                    outl[c+start] = i;
-                    outv[c+start] = std::complex<float>(r, im);
-                    c++;
-                }
-            }
-
-            #pragma omp ordered
-            {
-                t+=c;
-            }
-            memmove(outl+t-c, outl+start, sizeof(unsigned int)*c);
-            memmove(outv+t-c, outv+start, sizeof(std::complex<float>)*c);
-
-        }
-
-        count[0] = t;
-    """
-    inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'],
-                    extra_compile_args=[WEAVE_FLAGS] + omp_flags,
-                    libraries=omp_libs
-          )
+    N = len(series)
+    threshold = value**2.0
+    parallel_threshold(N, arr, outv, outl, count, threshold)
     num = count[0]
     if num > 0:
         return outl[0:num], outv[0:num]
     else:
         return numpy.array([], numpy.uint32), numpy.array([], numpy.float32)
 
-threshold=threshold_inline
+# threshold_numpy can also be used here, but for now we use the inline code
+# in all instances. Not sure why we're defining threshold *and* threshold_only
+# but we are, and I'm not going to change this at this point.
+threshold = threshold_inline
+threshold_only = threshold_inline
 
 class CPUThresholdCluster(_BaseThresholdCluster):
     def __init__(self, series):
-        self.series = numpy.array(series.data, copy=False)
-
-        self.slen = len(series)
+        self.series = numpy.array(series.data, copy=False,
+                                  dtype=numpy.complex64)
+        self.slen = numpy.uint32(len(series))
         self.outv = numpy.zeros(self.slen, numpy.complex64)
         self.outl = numpy.zeros(self.slen, numpy.uint32)
-        self.segsize = default_segsize
-        self.code = """
-             return_val = parallel_thresh_cluster(series, (uint32_t) slen, values, locs,
-                                         (float) threshold, (uint32_t) window, (uint32_t) segsize);
-              """
-        self.support = thresh_cluster_support
+        self.segsize = numpy.uint32(default_segsize)
 
     def threshold_and_cluster(self, threshold, window):
-        series = self.series # pylint:disable=unused-variable
-        slen = self.slen # pylint:disable=unused-variable
-        values = self.outv
-        locs = self.outl
-        segsize = self.segsize # pylint:disable=unused-variable
-        self.count = inline(self.code, ['series', 'slen', 'values', 'locs', 'threshold', 'window', 'segsize'],
-                            extra_compile_args = [WEAVE_FLAGS] + omp_flags,
-                            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'] + omp_flags,
-                            #extra_compile_args = ['-msse3 -O3 -w'] + omp_flags,
-                            support_code = self.support, libraries = omp_libs,
-                            auto_downcast = 1)
+        self.count = parallel_thresh_cluster(self.series, self.slen,
+                                             self.outv, self.outl,
+                                             numpy.float32(threshold),
+                                             numpy.uint32(window),
+                                             self.segsize)
         if self.count > 0:
-            return values[0:self.count], locs[0:self.count]
+            return self.outv[0:self.count], self.outl[0:self.count]
         else:
             return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
+
 
 def _threshold_cluster_factory(series):
     return CPUThresholdCluster

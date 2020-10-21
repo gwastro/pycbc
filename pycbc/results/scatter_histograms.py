@@ -385,39 +385,37 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             values_med, negerror, plus_error=poserror))
         if rotated:
             ax.yaxis.set_label_position("right")
-
             # sets colored title for marginal histogram
             set_marginal_histogram_title(ax, fmt, color,
                                          label=label, rotated=rotated)
-
-            # Remove x-ticks
-            ax.set_xticks([])
-            # turn off x-labels
-            ax.set_xlabel('')
-            # set limits
-            ymin, ymax = ax.get_ylim()
-            if plot_min is not None:
-                ymin = plot_min
-            if plot_max is not None:
-                ymax = plot_max
-            ax.set_ylim(ymin, ymax)
-
         else:
-
             # sets colored title for marginal histogram
             set_marginal_histogram_title(ax, fmt, color, label=label)
-
-            # Remove y-ticks
-            ax.set_yticks([])
-            # turn off y-label
-            ax.set_ylabel('')
-            # set limits
-            xmin, xmax = ax.get_xlim()
-            if plot_min is not None:
-                xmin = plot_min
-            if plot_max is not None:
-                xmax = plot_max
-            ax.set_xlim(xmin, xmax)
+    # remove ticks and set limits
+    if rotated:
+        # Remove x-ticks
+        ax.set_xticks([])
+        # turn off x-labels
+        ax.set_xlabel('')
+        # set limits
+        ymin, ymax = ax.get_ylim()
+        if plot_min is not None:
+            ymin = plot_min
+        if plot_max is not None:
+            ymax = plot_max
+        ax.set_ylim(ymin, ymax)
+    else:
+        # Remove y-ticks
+        ax.set_yticks([])
+        # turn off y-label
+        ax.set_ylabel('')
+        # set limits
+        xmin, xmax = ax.get_xlim()
+        if plot_min is not None:
+            xmin = plot_min
+        if plot_max is not None:
+            xmax = plot_max
+        ax.set_xlim(xmin, xmax)
 
 
 def set_marginal_histogram_title(ax, fmt, color, label=None, rotated=False):
@@ -636,22 +634,6 @@ def create_multidim_plot(parameters, samples, labels=None,
     else:
         # copy the dict
         maxs = {p: val for p, val in maxs.items()}
-
-    # remove common offsets
-    for pi, param in enumerate(parameters):
-        values, offset = remove_common_offset(samples[param])
-        if offset != 0:
-            # we'll add the offset removed to the label
-            labels[param] = '{} - {:d}'.format(labels[param], offset)
-            samples[param] = values
-            mins[param] = mins[param] - float(offset)
-            maxs[param] = maxs[param] - float(offset)
-        # also remove from expected parameters, if they were provided
-        if expected_parameters is not None:
-            try:
-                expected_parameters[param] -= offset
-            except KeyError:
-                pass
 
     # create the axis grid
     if fig is None and axis_dict is None:

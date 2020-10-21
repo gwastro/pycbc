@@ -15,11 +15,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Plot the single detector trigger timeseries """
-import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
+import argparse, logging, pycbc.version, pycbc.results, sys
 from pycbc.types import MultiDetOptionAction
+from pycbc.events import ranking
+from pycbc.io import HFile
 import matplotlib; matplotlib.use('Agg'); import pylab
 import numpy
-    
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
@@ -27,14 +29,14 @@ parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--single-trigger-files', nargs='+',
     action=MultiDetOptionAction, metavar="IFO:FILE",
     help="The HDF format single detector merged trigger files, in "
-         "multi-ifo argument format, H1:file1.hdf L1:fil2.hdf, etc")
+         "multi-ifo argument format, H1:file1.hdf L1:file2.hdf, etc")
 parser.add_argument('--window', type=float, default=10,
     help="Time in seconds around the coincident trigger to plot")
 parser.add_argument('--times', nargs='+', type=float,
     action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
     help="The gps times to plot around in multi-ifo argument format, "
          "H1:132341323 L1:132423422")
-parser.add_argument('--special-trigger-ids', nargs='+', type=int, 
+parser.add_argument('--special-trigger-ids', nargs='+', type=int,
     action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
     help="The set of special trigger ids to plot a star at")
 parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr',
@@ -51,35 +53,40 @@ any_data = False
 fig = pylab.figure()
 for ifo in args.single_trigger_files.keys():
     t = args.times[ifo]
-    
+
     if args.special_trigger_ids:
         id_loud = args.special_trigger_ids[ifo]
-    
-    data = h5py.File(args.single_trigger_files[ifo], 'r')[ifo]
-    times = data['end_time'][:]
-    idx = numpy.logical_and(times < t + args.window, times > t - args.window)
-                                              
+
+    data = HFile(args.single_trigger_files[ifo], 'r')
+
+    # Identify trigger indices within window
+    select_func = lambda *inputs: ((inputs[0] < (t + args.window)) & 
+                                   (inputs[0] > (t - args.window)))
+    times, snr, chisq, chisq_dof = data.select(select_func, ifo + '/end_time',
+                                               ifo + '/snr', ifo + '/chisq',
+                                               ifo + '/chisq_dof')
+                                 
     # center times on the trigger/chosen time
-    times = times[idx] - t
-    
+    times = times - t
+
     if args.plot_type == 'snr':
-        val = data['snr'][idx]
+        val = snr
 
         if args.special_trigger_ids:
-            top = data['snr'][id_loud]
+            top = data[ifo]['snr'][id_loud]
 
     if args.plot_type == 'newsnr':
-        rchisq = data['chisq'][idx] / (2 * data['chisq_dof'][idx] - 2)
+        rchisq = chisq / (2 * chisq_dof - 2)
         if len(rchisq) > 0:
-            val = pycbc.events.newsnr(data['snr'][idx], rchisq)
+            val = ranking.newsnr(snr, rchisq)
         else:
             val = numpy.array([])
-        del rchisq
 
         # Get the newnsr of the loudest trigger so we can plot a star there
         if args.special_trigger_ids:
-            rchisq = data['chisq'][id_loud] / (data['chisq_dof'][id_loud] * 2 - 2)
-            top = pycbc.events.newsnr(data['snr'][id_loud], rchisq)
+            rchisq = data[ifo]['chisq'][id_loud] / \
+                (data[ifo]['chisq_dof'][id_loud] * 2 - 2)
+            top = ranking.newsnr(data[ifo]['snr'][id_loud], rchisq)
 
     if type(val) in [numpy.float32, numpy.float64] or len(val) > 0:
         any_data = True
@@ -110,5 +117,5 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
             cmd = ' '.join(sys.argv),
             title = 'Single Detector Trigger Timeseries (%s)' % args.plot_type,
             caption = 'Time series showing the single detector triggers'
-                      ' centered around the time of the trigger of interest.',           
+                      ' centered around the time of the trigger of interest.',
          )

@@ -1,6 +1,14 @@
 # other tools which may be useful
 gwpy>=0.8.1
+
 # HEALPix is very useful for some analysis.
 healpy
+
 # Needed for gracedb uploads
 ligo-gracedb
+
+# auxiliary samplers
+cpnest
+pymultinest
+ultranest
+https://github.com/willvousden/ptemcee/archive/master.tar.gz

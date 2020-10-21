@@ -41,7 +41,6 @@ from numpy.linalg import norm
 
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
-from pycbc.types.aligned import ArrayWithAligned
 from pycbc.opt import LimitedSizeDict
 
 #! FIXME: the uint32 datatype has not been fully tested,
@@ -149,11 +148,6 @@ class Array(object):
         if not copy:
             if not _scheme_matches_base_array(initial_array):
                 raise TypeError("Cannot avoid a copy of this array")
-            elif issubclass(type(self._scheme), _scheme.CPUScheme):
-                # ArrayWithAligned does not copy its memory; all 
-                # the following does is add the 'isaligned' flag
-                # in case initial_array was a true numpy array
-                self._data = ArrayWithAligned(initial_array)
             else:
                 self._data = initial_array
 
@@ -192,10 +186,9 @@ class Array(object):
             #Create new instance with initial_array as initialization.
             if issubclass(type(self._scheme), _scheme.CPUScheme):
                 if hasattr(initial_array, 'get'):
-                    self._data = ArrayWithAligned(_numpy.array(initial_array.get()))
+                    self._data = _numpy.array(initial_array.get())
                 else:
-                    self._data = ArrayWithAligned(_numpy.array(initial_array, 
-                                                               dtype=dtype, ndmin=1))
+                    self._data = _numpy.array(initial_array, dtype=dtype, ndmin=1)
             elif _scheme_matches_base_array(initial_array):
                 self._data = _copy_base_array(initial_array) # pylint:disable=assignment-from-no-return
             else:
@@ -208,6 +201,12 @@ class Array(object):
         if hasattr(ret, 'shape') and ret.shape == self.shape:
             ret = self._return(ret)
         return ret
+
+    def __array__(self, dtype=None):
+        arr = self.numpy()
+        if dtype is not None:
+            arr = arr.astype(dtype)
+        return arr
 
     @property
     def shape(self):
@@ -385,6 +384,12 @@ class Array(object):
     __div__ = __truediv__
     __idiv__ = __itruediv__
     __rdiv__ = __rtruediv__
+
+    @_returntype
+    @_convert
+    def __neg__(self):
+        """ Return negation of self """
+        return - self._data
 
     @_returntype
     @_convert
@@ -820,7 +825,6 @@ class Array(object):
     def roll(self, shift):
         """shift vector
         """
-        self._saved = LimitedSizeDict(size_limit=2**5)
         new_arr = zeros(len(self), dtype=self.dtype)
 
         if shift < 0:
@@ -831,7 +835,9 @@ class Array(object):
         
         new_arr[0:shift] = self[len(self)-shift: len(self)]
         new_arr[shift:len(self)] = self[0:len(self)-shift]
-            
+        
+        self._saved = LimitedSizeDict(size_limit=2**5)
+        
         self._data = new_arr._data
 
     @_returntype
@@ -996,9 +1002,9 @@ class Array(object):
                 _numpy.savetxt(path, output)
         elif ext == '.hdf':
             key = 'data' if group is None else group
-            f = h5py.File(path)
-            f.create_dataset(key, data=self.numpy(), compression='gzip',
-                             compression_opts=9, shuffle=True)
+            with h5py.File(path, 'a') as f:
+                f.create_dataset(key, data=self.numpy(), compression='gzip',
+                                 compression_opts=9, shuffle=True)
         else:
             raise ValueError('Path must end with .npy, .txt, or .hdf')
            
@@ -1066,6 +1072,15 @@ def _return_array(fn, *args, **kwds):
 @schemed(BACKEND_PREFIX)
 def zeros(length, dtype=float64):
     """ Return an Array filled with zeros.
+    """
+    err_msg = "This function is a stub that should be overridden using "
+    err_msg += "the scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
+
+@_return_array
+@schemed(BACKEND_PREFIX)
+def empty(length, dtype=float64):
+    """ Return an empty Array (no initialization)
     """
     err_msg = "This function is a stub that should be overridden using "
     err_msg += "the scheme. You shouldn't be seeing this error!"

@@ -27,13 +27,14 @@ import numpy
 
 import pycbc
 from pycbc import (distributions, transforms, fft,
-                   opt, psd, scheme, strain, weave)
+                   opt, scheme, pool)
 from pycbc.waveform import generator
 
 from pycbc import __version__
 from pycbc import inference
 from pycbc.inference import (models, burn_in, option_utils)
-from pycbc.strain.calibration import Recalibrate
+from pycbc.inference.io import loadfile
+from pycbc.workflow import configuration
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -65,48 +66,36 @@ parser.add_argument("--samples-file", default=None,
                          "section in the configuration file should be used. "
                          "The priors must allow encompass the initial "
                          "positions from the InferenceFile being read.")
-# add data options
-parser.add_argument("--instruments", type=str, nargs="+",
-                    help="IFOs, eg. H1 L1.")
-option_utils.add_low_frequency_cutoff_opt(parser)
-parser.add_argument("--psd-start-time", type=float, default=None,
-                    help="Start time to use for PSD estimation if different "
-                         "from analysis.")
-parser.add_argument("--psd-end-time", type=float, default=None,
-                    help="End time to use for PSD estimation if different "
-                         "from analysis.")
 parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for the random number generator that "
                          "initially distributes the walkers. Default is 0.")
 # add config options
-option_utils.add_config_opts_to_parser(parser)
+configuration.add_workflow_command_line_group(parser)
 # add module pre-defined options
 fft.insert_fft_option_group(parser)
 opt.insert_optimization_option_group(parser)
-psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
-strain.insert_strain_option_group_multi_ifo(parser)
-weave.insert_weave_option_group(parser)
-strain.add_gate_option_group(parser)
 
 # parse command line
 opts = parser.parse_args()
 
 # setup log
 # If we're running in MPI mode, only allow the parent to print
-if opts.use_mpi:
-    from mpi4py import MPI
-    rank = MPI.COMM_WORLD.Get_rank()
+use_mpi, size, rank = pycbc.pool.use_mpi(opts.use_mpi, log=False)
+if use_mpi:
     opts.verbose &= rank == 0
 pycbc.init_logging(opts.verbose)
 
 # verify options are sane
 fft.verify_fft_options(opts, parser)
 opt.verify_optimization_options(opts, parser)
-#psd.verify_psd_options(opts, parser)
 scheme.verify_processing_options(opts, parser)
-#strain.verify_strain_options(opts, parser)
-weave.verify_weave_options(opts, parser)
+
+# check that the output file doesn't already exist
+if os.path.exists(opts.output_file) and not opts.force:
+    raise OSError("output-file already exists; use force if you "
+                  "wish to overwrite it.")
+
 
 # set seed
 numpy.random.seed(opts.seed)
@@ -120,37 +109,24 @@ numpy.seterr(divide='ignore', invalid='ignore')
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
-# Set up model arguments
-model_args = {}
-
-# get the data and psd
-strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
-if stilde_dict:
-    model_args['data'] = stilde_dict
-    model_args['psds'] = psd_dict
-
 with ctx:
 
     # read configuration file
-    cp = option_utils.config_parser_from_cli(opts)
+    cp = configuration.WorkflowConfigParser.from_cli(opts)
 
-    # get ifo-specific instances of calibration model
-    if cp.has_section('calibration'):
-        logging.info("Initializing calibration model")
-        recalibration = {ifo: Recalibrate.from_config(cp, ifo,
-                                                      section='calibration')
-                         for ifo in opts.instruments}
-        model_args['recalibration'] = recalibration
-
-    # get gates for templates
-    gates = strain.gates_from_cli(opts)
-    if gates:
-        model_args['gates'] = gates
+    # create an empty checkpoint file, if needed
+    condor_ckpt = cp.has_option('sampler', 'checkpoint-signal')
+    if condor_ckpt:
+        logging.info(
+            "Sampler will exit with signal {} after checkpointing".format(
+                cp.get('sampler', 'checkpoint-signal')))
+        # create an empty output file to keep condor happy
+        open(opts.output_file, 'a').close()
 
     logging.info("Setting up model")
 
     # construct class that will return the natural logarithm of likelihood
-    model = models.read_from_config(cp, **model_args)
+    model = models.read_from_config(cp)
 
     logging.info("Setting up sampler")
 
@@ -159,44 +135,26 @@ with ctx:
     # unless you enjoy angering your cluster admins,
     # NO SAMPLES FILE IO SHOULD BE DONE PRIOR TO THIS POINT!!!
     sampler = inference.sampler.load_from_config(
-        cp, model, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
+        cp, model, output_file=opts.output_file, nprocesses=opts.nprocesses,
+        use_mpi=opts.use_mpi)
 
-    # set up output/checkpoint file
-    # Note: PyCBC's multi-ifo parser uses key:ifo for
-    # the injection file, even though we will use the same
-    # injection file all detectors. This
-    # should be fixed in a future version of PyCBC. Once it is,
-    # update this. Until then, just use the first file.
-    if opts.injection_file:
-        injection_file = opts.injection_file.values()[0]  # None if not set
-    else:
-        injection_file = None
-    sampler.setup_output(opts.output_file, force=opts.force,
-                         injection_file=injection_file)
-
-    # Figure out where to get the initial conditions from: a samples file,
-    # the checkpoint file, the prior, or an initial prior.
-    samples_file = opts.samples_file
-    # use the checkpoint file instead if resume from checkpoint
-    if not sampler.new_checkpoint:
-        samples_file = sampler.checkpoint_file
-    if samples_file is not None:
-        logging.info("Initial positions taken from last iteration in %s",
-                     samples_file)
-        init_prior = None
-    else:
-        # try to load an initial distribution from the config file
-        init_prior = inference.sampler.initial_dist_from_config(
-            cp, sampler.variable_params)
-
-    sampler.set_initial_conditions(initial_distribution=init_prior,
-                                   samples_file=samples_file)
+    # store the checkpoint file
+    for fn in [sampler.checkpoint_file, sampler.backup_file]:
+        with loadfile(fn, 'a') as fp:
+            fp.write_config_file(cp)
 
     # Run the sampler
     sampler.run()
 
-    # Finalize the output 
+    # Finalize the output
     sampler.finalize()
+
+if condor_ckpt:
+   # unlink the empty output file
+   try:
+       os.unlink(opts.output_file)
+   except:
+       pass
 
 # rename checkpoint to output and delete backup
 logging.info("Moving checkpoint to output")
@@ -204,6 +162,14 @@ os.rename(sampler.checkpoint_file, opts.output_file)
 if not opts.save_backup:
     logging.info("Deleting backup file")
     os.remove(sampler.backup_file)
+
+# write the end time
+with sampler.io(opts.output_file, 'a') as fp:
+    fp.write_run_end_time()
+
+if condor_ckpt:
+   # create an empty checkpoint file
+   open(sampler.checkpoint_file, 'a').close()
 
 # exit
 logging.info("Done")

@@ -193,7 +193,7 @@ eccentricity = Parameter("eccentricity",
                 dtype=float, default=0., label=r"$e$",
                 description="Eccentricity.")
 
-# derived parameters (these are not used for waveform generation) for masses
+# derived parameters (these are not used for waveform generation)
 mchirp = Parameter("mchirp",
                 dtype=float, label=r"$\mathcal{M}~(\mathrm{M}_\odot)$",
                 description="The chirp mass of the binary (in solar masses).")
@@ -204,8 +204,24 @@ mtotal = Parameter("mtotal",
                 dtype=float, label=r"$M~(\mathrm{M}_\odot)$",
                 description="The total mass of the binary (in solar masses).")
 q = Parameter("q",
-                dtype=float, label=r"$q$",
-                description="The mass ratio, m1/m2, where m1 >= m2.")
+              dtype=float, label=r"$q$",
+              description="The mass ratio, m1/m2, where m1 >= m2.")
+srcmass1 = Parameter("srcmass1", dtype=float,
+                     label=r"$m_1^{\rm{src}}~(\mathrm{M}_\odot)$",
+                     description="The mass of the first component object in "
+                                 "the source frame (in solar masses).")
+srcmass2 = Parameter("srcmass1", dtype=float,
+                     label=r"$m_2^{\rm{src}}~(\mathrm{M}_\odot)$",
+                     description="The mass of the second component object in "
+                                 "the source frame (in solar masses).")
+srcmchirp = Parameter("srcmchirp", dtype=float,
+                      label=r"$\mathcal{M}^{\rm{src}}~(\mathrm{M}_\odot)$",
+                      description="The chirp mass of the binary in the "
+                                  "source frame (in solar masses).")
+srcmtotal = Parameter("mtotal", dtype=float,
+                      label=r"$M^{\rm{src}}~(\mathrm{M}_\odot)$",
+                      description="The total mass of the binary in the "
+                                  "source frame (in solar masses).")
 primary_mass = Parameter("primary_mass",
                 dtype=float, label=r"$m_{1}$",
                 description="Mass of the primary object (in solar masses).")
@@ -392,6 +408,9 @@ mean_per_ano = Parameter("mean_per_ano",
 tc = Parameter("tc",
                 dtype=float, default=None, label=r"$t_c$ (s)",
                 description="Coalescence time (s).")
+delta_tc = Parameter("delta_tc", dtype=float,
+                     label=r"$\Delta t_c~(\rm{s})$",
+                     description="Coalesence time offset.")
 ra = Parameter("ra",
                 dtype=float, default=None, label=r"$\alpha$",
                 description="Right ascension (rad).")
@@ -404,6 +423,9 @@ polarization = Parameter("polarization",
 redshift = Parameter("redshift",
                 dtype=float, default=None, label=r"$z$",
                 description="Redshift.")
+comoving_volume = Parameter("comoving_volume", dtype=float,
+                            label=r"$V_C~(\rm{Mpc}^3)$",
+                            description="Comoving volume (in cubic Mpc).")
 
 #
 #   Calibration parameters
@@ -448,6 +470,64 @@ mode_array = Parameter("mode_array",
                             "By default pass None and let lalsimulation "
                             "use it's default behaviour."
                             "Example: mode_array = [ [2,2], [2,-2] ]")
+
+#
+#   Parametrized testing general relativity parameters
+#
+dchi0 = Parameter("dchi0",
+                dtype=float, default=0., label=r"$d\chi_0$",
+                description="0PN testingGR parameter.")
+dchi1 = Parameter("dchi1",
+                dtype=float, default=0., label=r"$d\chi_1$",
+                description="0.5PN testingGR parameter.")
+dchi2 = Parameter("dchi2",
+                dtype=float, default=0., label=r"$d\chi_2$",
+                description="1PN testingGR parameter.")
+dchi3 = Parameter("dchi3",
+                dtype=float, default=0., label=r"$d\chi_3$",
+                description="1.5PN testingGR parameter.")
+dchi4 = Parameter("dchi4",
+                dtype=float, default=0., label=r"$d\chi_4$",
+                description="2PN testingGR parameter.")
+dchi5 = Parameter("dchi5",
+                dtype=float, default=0., label=r"$d\chi_5$",
+                description="2.5PN testingGR parameter.")
+dchi5l = Parameter("dchi5l",
+                dtype=float, default=0., label=r"$d\chi_5{l}$",
+                description="2.5PN logrithm testingGR parameter.")
+dchi6 = Parameter("dchi6",
+                dtype=float, default=0., label=r"$d\chi_6$",
+                description="3PN testingGR parameter.")
+dchi6l = Parameter("dchi6l",
+                dtype=float, default=0., label=r"$d\chi_{6l}$",
+                description="3PN logrithm testingGR parameter.")
+dchi7 = Parameter("dchi7",
+                dtype=float, default=0., label=r"$d\chi_7$",
+                description="3.5PN testingGR parameter.")
+dalpha1 = Parameter("dalpha1",
+                dtype=float, default=0., label=r"$d\alpha_1$",
+                description="Merger-ringdown testingGR parameter.")
+dalpha2 = Parameter("dalpha2",
+                dtype=float, default=0., label=r"$d\alpha_2$",
+                description="Merger-ringdown testingGR parameter.")
+dalpha3 = Parameter("dalpha3",
+                dtype=float, default=0., label=r"$d\alpha_3$",
+                description="Merger-ringdown testingGR parameter.")
+dalpha4 = Parameter("dalpha4",
+                dtype=float, default=0., label=r"$d\alpha_4$",
+                description="Merger-ringdown testingGR parameter.")
+dalpha5 = Parameter("dalpha5",
+                dtype=float, default=0., label=r"$d\alpha_5$",
+                description="Merger-ringdown testingGR parameter.")
+dbeta1 = Parameter("dbeta1",
+                dtype=float, default=0., label=r"$d\beta_1$",
+                description="Intermediate testingGR parameter.")
+dbeta2 = Parameter("dbeta2",
+                dtype=float, default=0., label=r"$d\beta_2$",
+                description="Intermediate testingGR parameter.")
+dbeta3 = Parameter("dbeta3",
+                dtype=float, default=0., label=r"$d\beta_3$",
+                description="Intermediate testingGR parameter.")
 #
 # =============================================================================
 #
@@ -472,12 +552,20 @@ orientation_params = ParameterList\
 # the extrinsic parameters of a waveform
 extrinsic_params = orientation_params + location_params
 
+
+# testing GR parameters
+testingGR_params = ParameterList\
+    ([dchi0, dchi1, dchi2, dchi3, dchi4, dchi5, dchi5l, dchi6, dchi6l,
+      dchi7, dalpha1, dalpha2, dalpha3, dalpha4, dalpha5,
+      dbeta1, dbeta2, dbeta3])
+
 # intrinsic parameters of a CBC waveform. Some of these are not recognized
 # by every waveform model
 cbc_intrinsic_params = ParameterList\
     ([mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
       eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2, lambda_octu1,
-      lambda_octu2, quadfmode1, quadfmode2, octufmode1, octufmode2])
+      lambda_octu2, quadfmode1, quadfmode2, octufmode1, octufmode2]) + \
+    testingGR_params
 
 # the parameters of a cbc in the radiation frame
 cbc_rframe_params = cbc_intrinsic_params + orientation_params
@@ -515,6 +603,10 @@ td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
 # defined above. Defaults of None simply mean that the value is not passed into
 # the lal_dict structure and the waveform generator will take whatever default
 # behaviour
+td_required = ParameterList([f_lower, delta_t, approximant])
+fd_required = ParameterList([f_lower, delta_f, approximant])
+
+####
 cbc_td_required = ParameterList([mass1, mass2, f_lower, delta_t, approximant])
 cbc_fd_required = ParameterList([mass1, mass2, f_lower, delta_f, approximant])
 

@@ -39,6 +39,8 @@ parser.add_argument('--segment-names', type=str, nargs="+", required=False,
                         help='Names of segments in the segment definer table.')
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
+parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'],
+                        help='Space-separated list of IFOs to plot, default H1 L1.')
 opts = parser.parse_args()
 
 def timestr(s):
@@ -62,8 +64,12 @@ def timestr(s):
 
 # FIXME set colors
 color_cycle = {}
-color_cycle['H1'] = cycle(['red', 'Crimson', 'DarkRed', 'Brown'])
-color_cycle['L1'] = cycle(['green', 'ForestGreen', 'DarkGreen', 'DarkOliveGreen'])
+color_cycle['H1'] = cycle(['#ee0000', '#8c000f', '#840000', '#653700'])
+color_cycle['L1'] = cycle(['#4ba6ff', '#d0fefe', '#0165fc', '#001146'])
+color_cycle['V1'] = cycle(['#9b59b6', '#c20078', '#9a0eea', '#7e1e9c'])
+color_cycle['K1'] = cycle(['#ffb200', '#fdde6c', '#fdb915', '#d8863b'])
+color_cycle['I1'] = cycle(['#b0dd8b', 'ForestGreen', 'DarkGreen', 'DarkOliveGreen'])
+color_cycle['G1'] = cycle(['#222222', '#d8dcd6', '#363737', '#000000'])
 
 # set default plugins
 mpld3.plugins.DEFAULT_PLUGINS = []
@@ -77,8 +83,7 @@ smin, smax = numpy.inf, -numpy.inf
 # set height of rectangles
 h = .7
 
-#FIXME: set IFO list
-ifos = ['H1', 'L1']
+ifos = opts.ifos
 
 # set caption beginning
 caption = "Visualization of the input and output segments for the search. Shown are: "
@@ -109,7 +114,7 @@ for segment_file in opts.segment_files:
         for ifo in ifos:
 
             # get new color for this segment name
-            color = color_cycle[ifo].next()
+            color = next(color_cycle[ifo])
 
             for key in seg_dict.keys():
                 seg_key = ifo+':'+segment_name
