@@ -224,7 +224,9 @@ if plot_chirp:
     track_t, track_f = get_inspiral_tf(opts.center_time, opts.mass1,
                                        opts.mass2, opts.spin1z, opts.spin2z,
                                        f_low, approximant=approximant)
-    ax.plot(track_t - opts.center_time, track_f, 'r-', lw=1.5)
+    for curr_idx in range(len(wins)):
+        ax = axes[curr_idx] if len(wins) > 1 else axes
+        ax.plot(track_t - opts.center_time, track_f, 'r-', lw=1.5)
 
 if opts.channel_name is not None:
     plt.suptitle(opts.channel_name)
