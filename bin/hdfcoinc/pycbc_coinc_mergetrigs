@@ -1,23 +1,23 @@
 #!/usr/bin/env python
-#previous path was usr/bin/python
+
 """ This program adds single detector hdf trigger files together.
 """
+
 import numpy, argparse, h5py, logging
 import pycbc.version
-from numpy import unique
+
 
 def changes(arr):
     l = numpy.where(arr[:-1] != arr[1:])[0]
     l = numpy.concatenate(([0], l+1, [len(arr)]))
-    return unique(l)
+    return numpy.unique(l)
 
 def collect(key, files):
     data = []
     for fname in files:
-        fin = h5py.File(fname)
-        if key in fin:
-            data += [fin[key][:]]
-        fin.close()
+        with h5py.File(fname, 'r') as fin:
+            if key in fin:
+                data += [fin[key][:]]
     return numpy.concatenate(data)
 
 def region(f, key, boundaries, ids):
@@ -30,17 +30,18 @@ def region(f, key, boundaries, ids):
                      dtype=h5py.special_dtype(ref=h5py.RegionReference))
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-files', nargs='+')
-parser.add_argument('--output-file')
-parser.add_argument('--bank-file')
+parser.add_argument('--output-file', required=True)
+parser.add_argument('--bank-file', required=True)
 parser.add_argument('--compression-level', type=int, default=6,
                     help='Set HDF compression level in the output file '
                          '(default 6)')
 parser.add_argument('--verbose', '-v', action='count')
 args = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.INFO) 
+logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.INFO)
 
 f = h5py.File(args.output_file, 'w')
 
@@ -68,7 +69,7 @@ for fname in args.trigger_files:
     f2.close()
 
 for col in trigger_columns:
-    logging.info("trigger column: %s" % col)
+    logging.info("trigger column: %s", col)
 
 logging.info('reading the metadata from the files')
 start = numpy.array([], dtype=numpy.float64)
@@ -82,7 +83,7 @@ for filename in args.trigger_files:
     try:
         data = h5py.File(filename, 'r')
     except IOError as e:
-        logging.error('Cannot open %s' % filename)
+        logging.error('Cannot open %s', filename)
         raise e
     ifo_data = data[ifo]
     s, e = ifo_data['search/start_time'][:], ifo_data['search/end_time'][:]
@@ -150,9 +151,9 @@ f['%s/template_boundaries' % ifo] = full_boundaries[unsort]
 logging.info('reading the trigger columns from the input files')
 for col in trigger_columns:
     key = '%s/%s' % (ifo, col)
-    logging.info('reading %s' % col)
+    logging.info('reading %s', col)
     data = collect(key, args.trigger_files)[trigger_sort]
-    logging.info('writing %s to file' % col)
+    logging.info('writing %s to file', col)
     dset = f.create_dataset(key, data=data, compression='gzip',
                             compression_opts=args.compression_level,
                             shuffle=True)
