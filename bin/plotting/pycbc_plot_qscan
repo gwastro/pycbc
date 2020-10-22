@@ -135,6 +135,7 @@ if center_time == -1.0:
             fig_kwds={'dpi': 150}, title=title, caption=opts.plot_caption)
     sys.exit(0)
 
+plot_chirp = False
 if opts.mass1 is not None or opts.mass2 is not None:
     if None in [opts.mass1, opts.mass2]:
         parser.error('Must provide either both --mass1 and --mass2 or neither')
