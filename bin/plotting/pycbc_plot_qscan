@@ -65,16 +65,16 @@ parser.add_argument("--low-frequency-cutoff", type=float,
 
 parser.add_argument('--qtransform-delta-t', default=0.001, type=float,
                     help='The time resolution to interpolate to (optional)')
-parser.add_argument('--qtransform-delta-f', default=None, type=float,
+parser.add_argument('--qtransform-delta-f', type=float,
                     help='Frequency resolution to interpolate to (optional)')
 parser.add_argument('--qtransform-logfsteps', type=int, default=200,
                     help='Do a log interpolation (incompatible with '
                          '--qtransform-delta-f option) and set the number '
                          'of steps to take')
-parser.add_argument('--qtransform-frange-lower', default=None, type=float,
+parser.add_argument('--qtransform-frange-lower', type=float,
                     help='Lower frequency (in Hz) at which to compute '
                          'qtransform. Optional, default=20 Hz')
-parser.add_argument('--qtransform-frange-upper', default=None, type=float,
+parser.add_argument('--qtransform-frange-upper', type=float,
                     help='Upper frequency (in Hz) at which to compute '
                          'qtransform. Optional, default=Half of Nyquist')
 parser.add_argument('--qtransform-qrange-lower', default=4, type=float,
@@ -129,13 +129,17 @@ if center_time == -1.0:
     plt.grid(False)
     plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
     plt.ylabel('Frequency (Hz)')
-    title = 'No data for this IFO'
-    pycbc.results.save_fig_with_metadata\
-    (fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
-     title=title, caption=opts.plot_caption)
+    title = 'No data for this detector'
+    pycbc.results.save_fig_with_metadata(
+            fig, opts.output_file, cmd=' '.join(sys.argv),
+            fig_kwds={'dpi': 150}, title=title, caption=opts.plot_caption)
     sys.exit(0)
 
-#opts.low_frequency_cutoff = opts.f_low
+if opts.mass1 is not None or opts.mass2 is not None:
+    if None in [opts.mass1, opts.mass2]:
+        parser.error('Must provide either both --mass1 and --mass2 or neither')
+    plot_chirp = True
+
 strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
 if opts.qtransform_frange_upper is None and \
@@ -160,6 +164,8 @@ times_all = []
 freqs_all = []
 qvals_all = []
 
+qrange = (opts.qtransform_qrange_lower, opts.qtransform_qrange_upper)
+
 for curr_idx in range(len(wins)):
     curr_win = wins[curr_idx]
     # Catch the case that not enough data is available.
@@ -170,11 +176,10 @@ for curr_idx in range(len(wins)):
     strain_zoom = strain.time_slice(opts.center_time - curr_win[0],
                                     opts.center_time + curr_win[1])
 
-    times, freqs, qvals = strain_zoom.qtransform\
-        (delta_t=opts.qtransform_delta_t, delta_f = opts.qtransform_delta_f,
-         logfsteps=opts.qtransform_logfsteps, frange=curr_frange,
-         qrange=(opts.qtransform_qrange_lower, opts.qtransform_qrange_upper),
-         mismatch=opts.qtransform_mismatch)
+    times, freqs, qvals = strain_zoom.qtransform(
+            delta_t=opts.qtransform_delta_t, delta_f=opts.qtransform_delta_f,
+            logfsteps=opts.qtransform_logfsteps, frange=curr_frange,
+            qrange=qrange, mismatch=opts.qtransform_mismatch)
     times_all.append(times)
     freqs_all.append(freqs)
     qvals_all.append(qvals)
@@ -188,9 +193,9 @@ for curr_idx in range(len(wins)):
     qvals = qvals_all[curr_idx]
     curr_win = wins[curr_idx]
 
-    norm=None
+    norm = None
     if opts.log_colorbar:
-        norm=LogNorm(vmin=1, vmax=max_qval)
+        norm = LogNorm(vmin=1, vmax=max_qval)
 
     im = ax.pcolormesh(times - opts.center_time, freqs, qvals, norm=norm,
                        cmap=opts.colormap)
@@ -211,9 +216,7 @@ plt.ylabel('Frequency (Hz)')
 cb = fig.colorbar(im, ax=(axes.ravel().tolist() if len(wins) > 1 else axes))
 cb.set_label('Normalized power')
 
-if opts.mass1:
-    if not opts.mass2:
-        raise ValueError('mass1 provided but mass2 missing')
+if plot_chirp:
     from pycbc.pnutils import get_inspiral_tf
     f_low = 20.
     approximant = 'SPAtmplt' if opts.mass1+opts.mass2<4 else 'SEOBNRv4_ROM'
@@ -222,6 +225,9 @@ if opts.mass1:
                                        f_low, approximant=approximant)
     ax.plot(track_t - opts.center_time, track_f, 'r-', lw=1.5)
 
+if opts.channel_name is not None:
+    plt.suptitle(opts.channel_name)
+
 if opts.plot_title is None:
     opts.plot_title = 'Q-transform plot around {:.3f}'.format(opts.center_time)
 if opts.plot_caption is None:
@@ -229,6 +235,6 @@ if opts.plot_caption is None:
     opts.plot_caption = ("This shows the Q-transform as a function of time and "
                          "frequency")
 
-pycbc.results.save_fig_with_metadata\
-    (fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
-     title=opts.plot_title, caption=opts.plot_caption)
+pycbc.results.save_fig_with_metadata(
+        fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
+        title=opts.plot_title, caption=opts.plot_caption)
