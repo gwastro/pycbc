@@ -160,7 +160,7 @@ if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
 strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
 
 wins = opts.time_windows
-fig, axes = plt.subplots(len(wins),1)
+fig, axes = plt.subplots(len(wins), 1)
 times_all = []
 freqs_all = []
 qvals_all = []
