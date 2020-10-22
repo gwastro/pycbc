@@ -124,8 +124,8 @@ else:
 if center_time == -1.0:
     fig, axes = plt.subplots(1,1)
     fig.add_subplot(111, frameon=False)
-    plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
-                    right='off')
+    plt.tick_params(labelcolor='none', top=False, bottom=False, left=False,
+                    right=False)
     plt.grid(False)
     plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
     plt.ylabel('Frequency (Hz)')
@@ -207,8 +207,8 @@ for curr_idx in range(len(wins)):
 
 # https://stackoverflow.com/questions/6963035/pyplot-axes-labels-for-subplots
 fig.add_subplot(111, frameon=False)
-plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
-                right='off')
+plt.tick_params(labelcolor='none', top=False, bottom=False, left=False,
+                right=False)
 plt.grid(False)
 plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
 plt.ylabel('Frequency (Hz)')
