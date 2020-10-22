@@ -46,7 +46,7 @@ We can then make a fresh clone of the repository.
 
 .. code-block:: bash
 
-    git clone git@github.com/gwastro/pycbc.git
+    git clone git@github.com:gwastro/pycbc.git
 
 Finally, install the most common pycbc develeopment environment packages
 as follows.
