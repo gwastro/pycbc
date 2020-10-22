@@ -987,7 +987,7 @@ class ForegroundTriggers(object):
         ligolw_utils.write_filename(outdoc, file_name)
 
 class ReadByTemplate(object):
-    # default assignment to empty dict is OK for a variable used only in __init__
+    # default assignment to {} is OK for a variable used only in __init__
     def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
                  gating_veto_windows={}):
         self.filename = filename
