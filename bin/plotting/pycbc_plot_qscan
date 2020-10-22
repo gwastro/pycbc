@@ -236,7 +236,14 @@ if opts.plot_title is None:
 if opts.plot_caption is None:
     # FIXME: Someone please improve!
     opts.plot_caption = ("This shows the Q-transform as a function of time and "
-                         "frequency")
+                         "frequency.")
+    if plot_chirp:
+        chirp_caption = (' The red curve is the time-frequency curve of a'
+                         ' quadrupole-order quasicircular aligned-spin'
+                         ' inspiral with mass1={:.3f}, mass2={:.3f},'
+                         ' spin1z={:.3f}, spin1z={:.3f}.')
+        opts.plot_caption += chirp_caption.format(opts.mass1, opts.mass2,
+                                                  opts.spin1z, opts.spin2z)
 
 pycbc.results.save_fig_with_metadata(
         fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
