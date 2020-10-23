@@ -340,7 +340,7 @@ class SingleDetPowerChisq(object):
                     (template.approximant, kmin) in psd.sigmasq_vec:
                 kmax = template.end_idx
                 bins = power_chisq_bins_from_sigmasq_series(
-                    psd.sigmasq_vec[(template.approximant,kmin)],
+                    psd.sigmasq_vec[(template.approximant, kmin)],
                     num_bins,
                     kmin,
                     kmax
