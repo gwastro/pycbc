@@ -33,6 +33,7 @@ from pycbc.waveform import generator
 from pycbc import __version__
 from pycbc import inference
 from pycbc.inference import (models, burn_in, option_utils)
+from pycbc.inference.io import loadfile
 from pycbc.workflow import configuration
 
 # command line usage
@@ -136,6 +137,11 @@ with ctx:
     sampler = inference.sampler.load_from_config(
         cp, model, output_file=opts.output_file, nprocesses=opts.nprocesses,
         use_mpi=opts.use_mpi)
+
+    # store the checkpoint file
+    for fn in [sampler.checkpoint_file, sampler.backup_file]:
+        with loadfile(fn, 'a') as fp:
+            fp.write_config_file(cp)
 
     # Run the sampler
     sampler.run()

@@ -453,9 +453,10 @@ while True:
                     combined_fg_data.data[key][:]
 
     max_each_combo = {combo: sep_fg_data[combo].data['ifar'][:].argmax()
-                      for combo in all_ifo_combos}
-    max_ifars = {combo: sep_fg_data[combo].data['ifar'][:][max_each_combo[combo]]
-                    for combo in all_ifo_combos}
+                      for combo in all_ifo_combos
+                      if len(sep_fg_data[combo].data['ifar'][:]) > 0}
+    max_ifars = {combo: sep_fg_data[combo].data['ifar'][:][hidx]
+                 for combo, hidx in max_each_combo.items()}
 
     logging.info('Maximum IFAR values per combination:')
     for k in max_ifars:
