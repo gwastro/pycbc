@@ -80,7 +80,7 @@ def sigma_cached(self, psd):
 
             kmin = int(self.f_lower / psd.delta_f)
             self._sigmasq[key] = self.sigma_scale * \
-                (curr_sigmasq[self.end_idx-1]- curr_sigmasq[kmin])
+                (curr_sigmasq[self.end_idx-1] - curr_sigmasq[kmin])
 
         else:
             if not hasattr(self, 'sigma_view'):
