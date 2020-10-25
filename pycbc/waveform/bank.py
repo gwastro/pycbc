@@ -59,15 +59,14 @@ def sigma_cached(self, psd):
             if not hasattr(psd, 'sigmasq_vec'):
                 psd.sigmasq_vec = {}
 
-            k_min = int(self.f_lower / psd.delta_f)
-            if (self.approximant, k_min) not in psd.sigmasq_vec:
-                psd.sigmasq_vec[(self.approximant, k_min)] = \
+            if self.approximant not in psd.sigmasq_vec:
+                psd.sigmasq_vec[self.approximant] = \
                     pycbc.waveform.get_waveform_filter_norm(
                         self.approximant,
                         psd,
                         len(psd),
                         psd.delta_f,
-                        self.f_lower
+                        self.min_f_lower
                     )
 
             if not hasattr(self, 'sigma_scale'):
@@ -77,8 +76,11 @@ def sigma_cached(self, psd):
                 amp_norm = 1 if amp_norm is None else amp_norm
                 self.sigma_scale = (DYN_RANGE_FAC * amp_norm) ** 2.0
 
+            curr_sigmasq = psd.sigmasq_vec[self.approximant]
+
+            kmin = int(template.f_lower / psd.delta_f)
             self._sigmasq[key] = self.sigma_scale * \
-                psd.sigmasq_vec[(self.approximant, k_min)][self.end_idx-1]
+                (curr_sigmasq[self.end_idx-1]- curr_sigmasq[kmin])
 
         else:
             if not hasattr(self, 'sigma_view'):

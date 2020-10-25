@@ -335,9 +335,9 @@ class SingleDetPowerChisq(object):
             psd._chisq_cached_key[id(template.params)] = True
             num_bins = int(self.parse_option(template, self.num_bins))
 
-            kmin = int(template.f_lower / psd.delta_f)
             if hasattr(psd, 'sigmasq_vec') and \
-                    (template.approximant, kmin) in psd.sigmasq_vec:
+                    template.approximant in psd.sigmasq_vec:
+                kmin = int(template.f_lower / psd.delta_f)
                 kmax = template.end_idx
                 bins = power_chisq_bins_from_sigmasq_series(
                     psd.sigmasq_vec[(template.approximant, kmin)],
