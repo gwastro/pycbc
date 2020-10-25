@@ -78,7 +78,7 @@ def sigma_cached(self, psd):
 
             curr_sigmasq = psd.sigmasq_vec[self.approximant]
 
-            kmin = int(template.f_lower / psd.delta_f)
+            kmin = int(self.f_lower / psd.delta_f)
             self._sigmasq[key] = self.sigma_scale * \
                 (curr_sigmasq[self.end_idx-1]- curr_sigmasq[kmin])
 
