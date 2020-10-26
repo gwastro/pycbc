@@ -65,16 +65,16 @@ parser.add_argument("--low-frequency-cutoff", type=float,
 
 parser.add_argument('--qtransform-delta-t', default=0.001, type=float,
                     help='The time resolution to interpolate to (optional)')
-parser.add_argument('--qtransform-delta-f', default=None, type=float,
+parser.add_argument('--qtransform-delta-f', type=float,
                     help='Frequency resolution to interpolate to (optional)')
 parser.add_argument('--qtransform-logfsteps', type=int, default=200,
                     help='Do a log interpolation (incompatible with '
                          '--qtransform-delta-f option) and set the number '
                          'of steps to take')
-parser.add_argument('--qtransform-frange-lower', default=None, type=float,
+parser.add_argument('--qtransform-frange-lower', type=float,
                     help='Lower frequency (in Hz) at which to compute '
                          'qtransform. Optional, default=20 Hz')
-parser.add_argument('--qtransform-frange-upper', default=None, type=float,
+parser.add_argument('--qtransform-frange-upper', type=float,
                     help='Upper frequency (in Hz) at which to compute '
                          'qtransform. Optional, default=Half of Nyquist')
 parser.add_argument('--qtransform-qrange-lower', default=4, type=float,
@@ -124,18 +124,23 @@ else:
 if center_time == -1.0:
     fig, axes = plt.subplots(1,1)
     fig.add_subplot(111, frameon=False)
-    plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
-                    right='off')
+    plt.tick_params(labelcolor='none', top=False, bottom=False, left=False,
+                    right=False)
     plt.grid(False)
     plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
     plt.ylabel('Frequency (Hz)')
-    title = 'No data for this IFO'
-    pycbc.results.save_fig_with_metadata\
-    (fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
-     title=title, caption=opts.plot_caption)
+    title = 'No data for this detector'
+    pycbc.results.save_fig_with_metadata(
+            fig, opts.output_file, cmd=' '.join(sys.argv),
+            fig_kwds={'dpi': 150}, title=title, caption=opts.plot_caption)
     sys.exit(0)
 
-#opts.low_frequency_cutoff = opts.f_low
+plot_chirp = False
+if opts.mass1 is not None or opts.mass2 is not None:
+    if None in [opts.mass1, opts.mass2]:
+        parser.error('Must provide either both --mass1 and --mass2 or neither')
+    plot_chirp = True
+
 strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
 if opts.qtransform_frange_upper is None and \
@@ -155,10 +160,12 @@ if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
 strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
 
 wins = opts.time_windows
-fig, axes = plt.subplots(len(wins),1)
+fig, axes = plt.subplots(len(wins), 1)
 times_all = []
 freqs_all = []
 qvals_all = []
+
+qrange = (opts.qtransform_qrange_lower, opts.qtransform_qrange_upper)
 
 for curr_idx in range(len(wins)):
     curr_win = wins[curr_idx]
@@ -170,11 +177,10 @@ for curr_idx in range(len(wins)):
     strain_zoom = strain.time_slice(opts.center_time - curr_win[0],
                                     opts.center_time + curr_win[1])
 
-    times, freqs, qvals = strain_zoom.qtransform\
-        (delta_t=opts.qtransform_delta_t, delta_f = opts.qtransform_delta_f,
-         logfsteps=opts.qtransform_logfsteps, frange=curr_frange,
-         qrange=(opts.qtransform_qrange_lower, opts.qtransform_qrange_upper),
-         mismatch=opts.qtransform_mismatch)
+    times, freqs, qvals = strain_zoom.qtransform(
+            delta_t=opts.qtransform_delta_t, delta_f=opts.qtransform_delta_f,
+            logfsteps=opts.qtransform_logfsteps, frange=curr_frange,
+            qrange=qrange, mismatch=opts.qtransform_mismatch)
     times_all.append(times)
     freqs_all.append(freqs)
     qvals_all.append(qvals)
@@ -188,9 +194,9 @@ for curr_idx in range(len(wins)):
     qvals = qvals_all[curr_idx]
     curr_win = wins[curr_idx]
 
-    norm=None
+    norm = None
     if opts.log_colorbar:
-        norm=LogNorm(vmin=1, vmax=max_qval)
+        norm = LogNorm(vmin=1, vmax=max_qval)
 
     im = ax.pcolormesh(times - opts.center_time, freqs, qvals, norm=norm,
                        cmap=opts.colormap)
@@ -201,8 +207,8 @@ for curr_idx in range(len(wins)):
 
 # https://stackoverflow.com/questions/6963035/pyplot-axes-labels-for-subplots
 fig.add_subplot(111, frameon=False)
-plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
-                right='off')
+plt.tick_params(labelcolor='none', top=False, bottom=False, left=False,
+                right=False)
 plt.grid(False)
 plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
 plt.ylabel('Frequency (Hz)')
@@ -211,24 +217,36 @@ plt.ylabel('Frequency (Hz)')
 cb = fig.colorbar(im, ax=(axes.ravel().tolist() if len(wins) > 1 else axes))
 cb.set_label('Normalized power')
 
-if opts.mass1:
-    if not opts.mass2:
-        raise ValueError('mass1 provided but mass2 missing')
+if plot_chirp:
     from pycbc.pnutils import get_inspiral_tf
     f_low = 20.
     approximant = 'SPAtmplt' if opts.mass1+opts.mass2<4 else 'SEOBNRv4_ROM'
     track_t, track_f = get_inspiral_tf(opts.center_time, opts.mass1,
                                        opts.mass2, opts.spin1z, opts.spin2z,
                                        f_low, approximant=approximant)
-    ax.plot(track_t - opts.center_time, track_f, 'r-', lw=1.5)
+    for curr_idx in range(len(wins)):
+        ax = axes[curr_idx] if len(wins) > 1 else axes
+        ax.plot(track_t - opts.center_time, track_f, 'r-', lw=1.5)
+
+if opts.channel_name is not None:
+    plt.suptitle(opts.channel_name)
 
 if opts.plot_title is None:
     opts.plot_title = 'Q-transform plot around {:.3f}'.format(opts.center_time)
 if opts.plot_caption is None:
-    # FIXME: Someone please improve!
     opts.plot_caption = ("This shows the Q-transform as a function of time and "
-                         "frequency")
+                         "frequency.")
+    if opts.channel_name is not None:
+        opts.plot_caption += (' The strain channel is ' + opts.channel_name
+                              + '.')
+    if plot_chirp:
+        chirp_caption = (' The red curve is the time-frequency curve of a'
+                         ' quadrupole-order quasicircular aligned-spin'
+                         ' inspiral with mass1={:.3f}, mass2={:.3f},'
+                         ' spin1z={:.3f}, spin1z={:.3f}.')
+        opts.plot_caption += chirp_caption.format(opts.mass1, opts.mass2,
+                                                  opts.spin1z, opts.spin2z)
 
-pycbc.results.save_fig_with_metadata\
-    (fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
-     title=opts.plot_title, caption=opts.plot_caption)
+pycbc.results.save_fig_with_metadata(
+        fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
+        title=opts.plot_title, caption=opts.plot_caption)
