@@ -85,8 +85,8 @@ for filename in args.trigger_files:
         logging.error('Cannot open %s', filename)
         raise e
     ifo_data = data[ifo]
-    segments.add((ifo_data['search/start_time'][:],
-                  ifo_data['search/end_time'][:]))
+    segments.add((float(ifo_data['search/start_time'][:]),
+                  float(ifo_data['search/end_time'][:])))
 
     if 'templates_per_core' in ifo_data['search'].keys():
         tpc = numpy.append(tpc, ifo_data['search/templates_per_core'][:])
@@ -108,7 +108,7 @@ for filename in args.trigger_files:
                 gating[gk] = numpy.append(gating[gk], gk_data[:])
     data.close()
 
-segments = np.array(sorted(segments), dtype=np.float64)
+segments = numpy.array(sorted(segments), dtype=numpy.float64)
 f['%s/search/start_time' % ifo] = segments[:,0]
 f['%s/search/end_time' % ifo] = segments[:,1]
 
