@@ -72,8 +72,7 @@ for col in trigger_columns:
     logging.info("trigger column: %s", col)
 
 logging.info('reading the metadata from the files')
-start = numpy.array([], dtype=numpy.float64)
-end = numpy.array([], dtype=numpy.float64)
+segments = set()
 tpc = numpy.array([], dtype=numpy.float64)
 frpc = numpy.array([], dtype=numpy.float64)
 stf = numpy.array([], dtype=numpy.float64)
@@ -86,8 +85,11 @@ for filename in args.trigger_files:
         logging.error('Cannot open %s', filename)
         raise e
     ifo_data = data[ifo]
-    s, e = ifo_data['search/start_time'][:], ifo_data['search/end_time'][:]
-    start, end = numpy.append(start, s), numpy.append(end, e)
+
+    # duplicate segments (due, for example, to bank splitting)
+    # will be deduplicated by the set here
+    segments.add((float(ifo_data['search/start_time'][:]),
+                  float(ifo_data['search/end_time'][:])))
 
     if 'templates_per_core' in ifo_data['search'].keys():
         tpc = numpy.append(tpc, ifo_data['search/templates_per_core'][:])
@@ -107,8 +109,12 @@ for filename in args.trigger_files:
                 if not gk in gating:
                     gating[gk] = numpy.array([], dtype=numpy.float64)
                 gating[gk] = numpy.append(gating[gk], gk_data[:])
-    data.close()    
-f['%s/search/start_time' % ifo], f['%s/search/end_time' % ifo] = start, end
+    data.close()
+
+# store segments sorted by start time
+segments = numpy.array(sorted(segments), dtype=numpy.float64)
+f['%s/search/start_time' % ifo] = segments[:,0]
+f['%s/search/end_time' % ifo] = segments[:,1]
 
 if len(tpc) > 0:
     f['%s/search/templates_per_core' % ifo] = tpc
