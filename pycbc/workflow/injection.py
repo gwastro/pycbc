@@ -97,6 +97,8 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                                                 ifos=workflow.ifos,
                                                 out_dir=out_dir,
                                                 tags=tags + [str(i)])
+        opt_snr_exe.update_current_retention_level(
+            Executable.INTERMEDIATE_PRODUCT)
         node = opt_snr_exe.create_node(workflow, inj_file, precalc_psd_files,
                                        group_str)
         opt_snr_split_files += [node.output_files[0]]
@@ -105,6 +107,7 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
     llwadd_exe = LigolwAddExecutable(workflow.cp, 'optimal_snr_merge',
                                      ifos=workflow.ifos, out_dir=out_dir,
                                      tags=tags)
+    llwadd_exe.update_current_retention_level(Executable.MERGED_TRIGGERS)
     merge_node = llwadd_exe.create_node(workflow.analysis_time,
                                         opt_snr_split_files,
                                         use_tmp_subdirs=False)
