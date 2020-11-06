@@ -122,7 +122,7 @@ class Detector(object):
         d = self.location - det.location
         return float(d.dot(d)**0.5 / constants.c.value)
 
-    def antenna_pattern(self, right_ascension, declination, polarization, t_gps, polarization_type='Tensor'):
+    def antenna_pattern(self, right_ascension, declination, polarization, t_gps, polarization_type='tensor'):
         """Return the detector response.
 
         Parameters
@@ -175,7 +175,7 @@ class Detector(object):
 
         dz = self.response.dot(z)
 
-        if polarization_type == 'Tensor':
+        if polarization_type == 'tensor':
             if hasattr(dx, 'shape'):
                 fplus = (x * dx - y * dy).sum(axis=0)
                 fcross = (x * dy + y * dx).sum(axis=0)
@@ -184,7 +184,7 @@ class Detector(object):
                 fcross = (x * dy + y * dx).sum()               
             return fplus, fcross
 
-        elif polarization_type == 'Vector':
+        elif polarization_type == 'vector':
             if hasattr(dx, 'shape'):
                 fx = (z * dx + x * dz).sum(axis=0)
                 fy = (z * dy + y * dz).sum(axis=0)
@@ -193,7 +193,7 @@ class Detector(object):
                 fy = (z * dy + y * dz).sum()
             return fx, fy
 
-        elif polarization_type == 'Scalar':
+        elif polarization_type == 'scalar':
             if hasattr(dx, 'shape'):
                 fb = (x * dx + y * dy).sum(axis=0)
                 fl = (z * dz).sum(axis=0)
