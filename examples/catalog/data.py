@@ -1,6 +1,6 @@
 import pycbc.catalog, pylab
 
-m = pycbc.catalog.Merger("GW170817")
+m = pycbc.catalog.Merger("GW170817", source='gwtc-1')
 
 fig, axs = pylab.subplots(2, 1, sharex=True, sharey=True)
 for ifo, ax in zip(["L1", "H1"], axs):

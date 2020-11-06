@@ -1,6 +1,6 @@
 import pycbc.catalog, pylab
 
-c = pycbc.catalog.Catalog()
+c = pycbc.catalog.Catalog(source='gwtc-2')
 mchirp, elow, ehigh = c.median1d('mchirp', return_errors=True)
 spin = c.median1d('chi_eff')
 
