@@ -103,8 +103,6 @@ class BaseGenerator(object):
         self.current_params = frozen_params.copy()
         # keep a list of functions to call before waveform generation
         self._pregenerate_functions = []
-        # we'll cache the last generated waveform here
-        self._cache = {}
 
         # If we are under mpi, then failed waveform will be stored by
         # mpi rank to avoid file writing conflicts. We'll check for this
@@ -152,15 +150,8 @@ class BaseGenerator(object):
     def _generate_from_current(self):
         """Generates a waveform from the current parameters.
         """
-        values_hash = frozenset(self.current_params[p]
-                                for p in self.variable_args)
-        try:
-            return self._cache[values_hash]
-        except KeyError:
             try:
                 new_waveform = self.generator(**self.current_params)
-                self._cache.clear()
-                self._cache[values_hash] = new_waveform
                 return new_waveform
             except RuntimeError as e:
                 if self.record_failures:
