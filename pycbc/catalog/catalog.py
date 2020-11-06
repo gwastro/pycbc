@@ -38,7 +38,7 @@ _catalogs = {'GWTC-1-confident': 'LVC',
              'Initial_LIGO_Virgo': 'LVC',
              'O1_O2-Preliminary': 'LVC',
              'O3_Discovery_Papers': 'LVC',
-             'GWTC-2':'LVC'}
+             'GWTC-2': 'LVC'}
 
 # add some aliases
 _aliases = {}
