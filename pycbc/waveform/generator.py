@@ -150,36 +150,36 @@ class BaseGenerator(object):
     def _generate_from_current(self):
         """Generates a waveform from the current parameters.
         """
-            try:
-                new_waveform = self.generator(**self.current_params)
-                return new_waveform
-            except RuntimeError as e:
-                if self.record_failures:
-                    import h5py
-                    from pycbc.io.hdf import dump_state
+        try:
+            new_waveform = self.generator(**self.current_params)
+            return new_waveform
+        except RuntimeError as e:
+            if self.record_failures:
+                import h5py
+                from pycbc.io.hdf import dump_state
 
-                    global failed_counter
+                global failed_counter
 
-                    if self.mpi_enabled:
-                        outname = 'failed/params_%s.hdf' % self.mpi_rank
-                    else:
-                        outname = 'failed/params.hdf'
+                if self.mpi_enabled:
+                    outname = 'failed/params_%s.hdf' % self.mpi_rank
+                else:
+                    outname = 'failed/params.hdf'
 
-                    if not os.path.exists('failed'):
-                        os.makedirs('failed')
+                if not os.path.exists('failed'):
+                    os.makedirs('failed')
 
-                    with h5py.File(outname) as f:
-                        dump_state(self.current_params, f,
-                                   dsetname=str(failed_counter))
-                        failed_counter += 1
+                with h5py.File(outname) as f:
+                    dump_state(self.current_params, f,
+                               dsetname=str(failed_counter))
+                    failed_counter += 1
 
-                # we'll get a RuntimeError if lalsimulation failed to generate
-                # the waveform for whatever reason
-                strparams = ' | '.join(['{}: {}'.format(
-                    p, str(val)) for p, val in self.current_params.items()])
-                raise FailedWaveformError("Failed to generate waveform with "
-                                          "parameters:\n{}\nError was: {}"
-                                          .format(strparams, e))
+            # we'll get a RuntimeError if lalsimulation failed to generate
+            # the waveform for whatever reason
+            strparams = ' | '.join(['{}: {}'.format(
+                p, str(val)) for p, val in self.current_params.items()])
+            raise FailedWaveformError("Failed to generate waveform with "
+                                      "parameters:\n{}\nError was: {}"
+                                      .format(strparams, e))
 
 
 class BaseCBCGenerator(BaseGenerator):
