@@ -31,6 +31,19 @@ from astropy.utils.data import download_file
 from ligo.segments import segmentlist, segment
 from pycbc.frame.losc import get_run
 
+def get_file(url, retry=5, **args):
+    i = 0
+    while 1:
+        i += 1
+        try:
+            return download_file(url, **args)
+        except Exception as e:
+            print("Failed on attempt {} to download {}".format(i, url))
+            if i >= retry:
+                print("Giving up on {}".format(url))
+                raise e
+            else:
+                pass
 
 def parse_veto_definer(veto_def_filename, ifos):
     """ Parse a veto definer file from the filename and return a dictionary
@@ -158,7 +171,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
                                    ifo, segment_name,
                                    int(start_time), int(duration))
 
-            fname = download_file(url, cache=cache, timeout=10)
+            fname = get_file(url, cache=cache, timeout=10)
             data = json.load(open(fname, 'r'))
             if 'segments' in data:
                 flag_segments = data['segments']
