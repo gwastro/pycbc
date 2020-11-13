@@ -158,7 +158,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
                                    ifo, segment_name,
                                    int(start_time), int(duration))
 
-            fname = download_file(url, cache=cache)
+            fname = download_file(url, cache=cache, timeout=5)
             data = json.load(open(fname, 'r'))
             if 'segments' in data:
                 flag_segments = data['segments']
