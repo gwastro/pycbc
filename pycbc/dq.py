@@ -164,8 +164,8 @@ def query_flag(ifo, segment_name, start_time, end_time,
                 flag_segments = data['segments']
 
         except Exception as e:
+            print(e)
             if source != 'any':
-                print(e)
                 raise ValueError("Unable to find {} segments in GWOSC, check "
                                  "flag name or times".format(segment_name))
             else:
