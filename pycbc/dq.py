@@ -31,6 +31,7 @@ from ligo.segments import segmentlist, segment
 from pycbc.frame.losc import get_run
 from pycbc.io import get_file
 
+
 def parse_veto_definer(veto_def_filename, ifos):
     """ Parse a veto definer file from the filename and return a dictionary
     indexed by ifo and veto definer category level.

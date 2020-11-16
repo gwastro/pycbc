@@ -1,11 +1,12 @@
+from astropy.utils.data import download_file
 from .hdf import *
 from .record import *
-from astropy.utils.data import download_file
+
 
 def get_file(url, retry=5, **args):
     """ Retrieve file with retry upon failure
-    
-    Uses the astropy download_file but adds a retry feature for flaky 
+
+    Uses the astropy download_file but adds a retry feature for flaky
     connections. See astropy for full options
     """
     i = 0
@@ -18,5 +19,3 @@ def get_file(url, retry=5, **args):
             if i >= retry:
                 print("Giving up on {}".format(url))
                 raise e
-            else:
-                pass
