@@ -16,7 +16,7 @@
 """
 This modules contains functions for getting data from the LOSC
 """
-from astropy.utils.data import download_file
+from pycbc.io import get_file
 
 _losc_url = "https://www.gw-openscience.org/archive/links/%s/%s/%s/%s/json/"
 
@@ -129,7 +129,7 @@ def read_frame_losc(channels, start_time, end_time):
     fnames = {ifo:[] for ifo in ifos}
     for ifo in ifos:
         for url in urls[ifo]:
-            fname = download_file(url, cache=True)
+            fname = get_file(url, cache=True)
             fnames[ifo].append(fname)
 
     ts = [read_frame(fnames[channel[0:2]], channel,

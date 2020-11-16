@@ -27,23 +27,9 @@ gravitational-wave detectors from public sources and/or dqsegdb.
 
 import json
 import numpy
-from astropy.utils.data import download_file
 from ligo.segments import segmentlist, segment
 from pycbc.frame.losc import get_run
-
-def get_file(url, retry=5, **args):
-    i = 0
-    while 1:
-        i += 1
-        try:
-            return download_file(url, **args)
-        except Exception as e:
-            print("Failed on attempt {} to download {}".format(i, url))
-            if i >= retry:
-                print("Giving up on {}".format(url))
-                raise e
-            else:
-                pass
+from pycbc.io import get_file
 
 def parse_veto_definer(veto_def_filename, ifos):
     """ Parse a veto definer file from the filename and return a dictionary
