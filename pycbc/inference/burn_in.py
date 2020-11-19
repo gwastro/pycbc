@@ -236,6 +236,33 @@ def evaluate_tests(burn_in_test, test_is_burned_in, test_burn_in_iter):
         ii = NOT_BURNED_IN_ITER
     return is_burned_in, ii
 
+def estimate_sigma(sampler,estimate_len,sliding_len=10):
+    """Estimates the evolution of the standard deviation (=sigma) for each 
+    parameter during the run. The standard deviation is estimated by flattening
+    the portion of chain.
+    
+    Parameters                                                                   
+    ---------- 
+    sampler: Class
+        Current state of the sampler class.
+    estimate_len: int
+        The length of the chain for estimation of standard deviation.
+    sliding_len: int
+        The length of sliding window for estimation of next sigma value.
+    
+    Returns                                                                      
+    ------- 
+    sigma_all_params: An array of sigma values of each of the parameter
+    """
+    sigma_all_params = []
+    for p in sampler.model.sampling_params:
+        nw,nc = numoy.shape(sampler.samples[p])
+        sigma=[]
+        for item in range(int((nc-estimate_len)/sliding_len)):
+            effsamp = sampler.samples[p][:,item:(item+1)*estimate_len].flatten()
+            sigma.append(numpy.std(effsamp))
+        sigma_all_params.append(sigma)
+    return numpy.array(sigma_all_params)
 
 #
 # =============================================================================
@@ -545,6 +572,10 @@ class MCMCBurnInTests(BaseBurnInTests):
                                                            nsamples//2)
         # add the status for each parameter as additional information
         self.test_aux_info[test] = is_burned_in
+
+    def estimate_sigma(self,filename):
+        """Applies estimate_sigma test"""
+        
 
     def evaluate(self, filename):
         """Runs all of the burn-in tests."""
