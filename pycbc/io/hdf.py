@@ -907,17 +907,16 @@ class ForegroundTriggers(object):
 
             # Set up sngls
             # FIXME: As two-ifo is hardcoded loop over all ifos
-            sngl_mean_mchirp = 0
-            sngl_mean_mtot = 0
+            sngl_mchirps = []
+            sngl_mtots = []
             net_snrsq = 0
-            # Keep track of number of involved IFOs for doing averages
-            n_involved_ifos = 0
+            involved_ifos = []
             for ifo in ifos:
                 # If this ifo is not participating in this coincidence then
                 # ignore it and move on.
                 if not sngl_col_vals['snr'][ifo][1][idx]:
                     continue
-                n_involved_ifos += 1
+                involved_ifos += [ifo]
                 event_id = lsctables.SnglInspiralID(sngl_event_count)
                 sngl_event_count += 1
                 sngl = return_empty_sngl()
@@ -940,8 +939,8 @@ class ForegroundTriggers(object):
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
                 # If we ever decide to not do exact match, then mchirp
                 # needs combined from the different singles
-                sngl_mean_mchirp += sngl.mchirp
-                sngl_mean_mtot += sngl.mtotal
+                sngl_mchirps += [sngl.mchirp]
+                sngl_mtots += [sngl.mtotal]
 
                 sngl_inspiral_table.append(sngl)
 
@@ -952,22 +951,22 @@ class ForegroundTriggers(object):
                 coinc_map_row.event_id = event_id
                 coinc_event_map_table.append(coinc_map_row)
 
-            sngl_mean_mchirp = sngl_mean_mchirp / n_involved_ifos
-            sngl_mean_mtot = sngl_mean_mtot / n_involved_ifos
+            sngl_combined_mchirp = np.array(sngl_mchirps).mean()
+            sngl_combined_mtot = np.array(sngl_mtots).mean()
 
             # Set up coinc inspiral and coinc event tables
             coinc_event_row = lsctables.Coinc()
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
-            coinc_event_row.nevents = len(ifos)
-            coinc_event_row.instruments = ','.join(ifos)
-            coinc_inspiral_row.set_ifos(ifos)
+            coinc_event_row.nevents = len(involved_ifos)
+            coinc_event_row.instruments = ','.join(involved_ifos)
+            coinc_inspiral_row.set_ifos(involved_ifos)
             coinc_event_row.time_slide_id = time_slide_id
             coinc_event_row.process_id = proc_id
             coinc_event_row.coinc_event_id = coinc_id
             coinc_inspiral_row.coinc_event_id = coinc_id
-            coinc_inspiral_row.mchirp = sngl_mean_mchirp
-            coinc_inspiral_row.mass = sngl_mean_mtot
+            coinc_inspiral_row.mchirp = sngl_combined_mchirp
+            coinc_inspiral_row.mass = sngl_combined_mtot
             coinc_inspiral_row.set_end(
                 LIGOTimeGPS(coinc_event_vals['time'][idx])
             )
