@@ -52,7 +52,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum clean all
   yum makecache
   yum -y install openssl-devel openssl-static
-  yum -y install pegasus
+  yum -y install pegasus-4.9.3
   yum -y install ligo-proxy-utils
   yum -y install ecp-cookie-init
   yum -y install python-virtualenv

@@ -122,7 +122,7 @@ class Merger(object):
         strain: pycbc.types.TimeSeries
             Strain around the event.
         """
-        from astropy.utils.data import download_file
+        from pycbc.io import get_file
         from pycbc.frame import read_frame
 
         if sample_rate == 4096:
@@ -140,7 +140,7 @@ class Merger(object):
         ver = url.split('/')[-1].split('-')[1].split('_')[-1]
         channel = "{}:GWOSC-{}_{}_STRAIN".format(ifo, sampling.upper(), ver)
 
-        filename = download_file(url, cache=True)
+        filename = get_file(url, cache=True)
         return read_frame(str(filename), str(channel))
 
 
