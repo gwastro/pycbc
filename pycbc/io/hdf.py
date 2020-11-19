@@ -907,14 +907,17 @@ class ForegroundTriggers(object):
 
             # Set up sngls
             # FIXME: As two-ifo is hardcoded loop over all ifos
-            sngl_combined_mchirp = 0
-            sngl_combined_mtot = 0
+            sngl_mean_mchirp = 0
+            sngl_mean_mtot = 0
             net_snrsq = 0
+            # Keep track of number of involved IFOs for doing averages
+            n_involved_ifos = 0
             for ifo in ifos:
                 # If this ifo is not participating in this coincidence then
                 # ignore it and move on.
                 if not sngl_col_vals['snr'][ifo][1][idx]:
                     continue
+                n_involved_ifos += 1
                 event_id = lsctables.SnglInspiralID(sngl_event_count)
                 sngl_event_count += 1
                 sngl = return_empty_sngl()
@@ -935,8 +938,10 @@ class ForegroundTriggers(object):
                 sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
                         sngl.mass1, sngl.mass2)
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
-                sngl_combined_mchirp += sngl.mchirp
-                sngl_combined_mtot += sngl.mtotal
+                # If we ever decide to not do exact match, then mchirp
+                # needs combined from the different singles
+                sngl_mean_mchirp += sngl.mchirp
+                sngl_mean_mtot += sngl.mtotal
 
                 sngl_inspiral_table.append(sngl)
 
@@ -947,8 +952,8 @@ class ForegroundTriggers(object):
                 coinc_map_row.event_id = event_id
                 coinc_event_map_table.append(coinc_map_row)
 
-            sngl_combined_mchirp = sngl_combined_mchirp / len(ifos)
-            sngl_combined_mtot = sngl_combined_mtot / len(ifos)
+            sngl_mean_mchirp = sngl_mean_mchirp / n_involved_ifos
+            sngl_mean_mtot = sngl_mean_mtot / n_involved_ifos
 
             # Set up coinc inspiral and coinc event tables
             coinc_event_row = lsctables.Coinc()
@@ -961,8 +966,8 @@ class ForegroundTriggers(object):
             coinc_event_row.process_id = proc_id
             coinc_event_row.coinc_event_id = coinc_id
             coinc_inspiral_row.coinc_event_id = coinc_id
-            coinc_inspiral_row.mchirp = sngl_combined_mchirp
-            coinc_inspiral_row.mass = sngl_combined_mtot
+            coinc_inspiral_row.mchirp = sngl_mean_mchirp
+            coinc_inspiral_row.mass = sngl_mean_mtot
             coinc_inspiral_row.set_end(
                 LIGOTimeGPS(coinc_event_vals['time'][idx])
             )
