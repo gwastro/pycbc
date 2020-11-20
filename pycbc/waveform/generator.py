@@ -50,7 +50,7 @@ from pycbc import strain
 #
 # =============================================================================
 #
-#                        Radiation-frame generators
+#                     Radiation/inertial-frame generators
 #
 # =============================================================================
 #
@@ -286,9 +286,10 @@ class FDomainCBCModesGenerator(BaseCBCGenerator):
     """Generates frequency-domain CBC waveform modes in the radiation frame.
 
     Uses :py:func:`waveform_modes.get_fd_waveform_modes` as a generator
-    function to create frequency-domain CBC waveforms in the radiation frame;
-    i.e., with no detector response function applied. For more details, see
-    :py:class:`BaseGenerator`.
+    function to create frequency-domain CBC waveforms mode-by-mode, without
+    applying spherical harmonics.
+
+    For details, on methods and arguments, see :py:class:`BaseGenerator`.
     """
     def __init__(self, variable_args=(), **frozen_params):
         super(FDomainCBCModesGenerator, self).__init__(
@@ -352,9 +353,10 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
     """Generates time domain CBC waveform modes in the radiation frame.
 
     Uses :py:func:`waveform_modes.get_td_waveform_modes` as a generator
-    function to create time-domain CBC waveforms in the radiation frame; i.e.,
-    with no detector response function applied. For more details, see
-    :py:class:`BaseGenerator`.
+    function to create time-domain CBC waveforms mode-by-mode, without applying
+    spherical harmonics.
+
+    For details, on methods and arguments, see :py:class:`BaseGenerator`.
     """
     def __init__(self, variable_args=(), **frozen_params):
         super(TDomainCBCModesGenerator, self).__init__(
@@ -367,10 +369,10 @@ class TDomainCBCModesGenerator(BaseCBCGenerator):
         if 'taper' in self.current_params:
             tapermethod = self.current_params['taper']
             for mode in res:
-                hp, hc = res[mode]
-                hp = taper_timeseries(hp, tapermethod=tapermethod)
-                hc = taper_timeseries(hc, tapermethod=tapermethod)
-                res[mode] = (hp, hc)
+                ulm, vlm = res[mode]
+                ulm = taper_timeseries(ulm, tapermethod=tapermethod)
+                vlm = taper_timeseries(vlm, tapermethod=tapermethod)
+                res[mode] = (ulm, vlm)
         return res
 
 
