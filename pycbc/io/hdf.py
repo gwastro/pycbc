@@ -906,15 +906,16 @@ class ForegroundTriggers(object):
             coinc_id = lsctables.CoincID(idx)
 
             # Set up sngls
-            # FIXME: As two-ifo is hardcoded loop over all ifos
-            sngl_combined_mchirp = 0
-            sngl_combined_mtot = 0
+            sngl_mchirps = []
+            sngl_mtots = []
             net_snrsq = 0
+            triggered_ifos = []
             for ifo in ifos:
                 # If this ifo is not participating in this coincidence then
                 # ignore it and move on.
                 if not sngl_col_vals['snr'][ifo][1][idx]:
                     continue
+                triggered_ifos += [ifo]
                 event_id = lsctables.SnglInspiralID(sngl_event_count)
                 sngl_event_count += 1
                 sngl = return_empty_sngl()
@@ -935,8 +936,10 @@ class ForegroundTriggers(object):
                 sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
                         sngl.mass1, sngl.mass2)
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
-                sngl_combined_mchirp += sngl.mchirp
-                sngl_combined_mtot += sngl.mtotal
+                # If exact match is not used, then take mean
+                # masses from the single triggers
+                sngl_mchirps += [sngl.mchirp]
+                sngl_mtots += [sngl.mtotal]
 
                 sngl_inspiral_table.append(sngl)
 
@@ -947,16 +950,16 @@ class ForegroundTriggers(object):
                 coinc_map_row.event_id = event_id
                 coinc_event_map_table.append(coinc_map_row)
 
-            sngl_combined_mchirp = sngl_combined_mchirp / len(ifos)
-            sngl_combined_mtot = sngl_combined_mtot / len(ifos)
+            sngl_combined_mchirp = np.mean(sngl_mchirps)
+            sngl_combined_mtot = np.mean(sngl_mtots)
 
             # Set up coinc inspiral and coinc event tables
             coinc_event_row = lsctables.Coinc()
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
-            coinc_event_row.nevents = len(ifos)
-            coinc_event_row.instruments = ','.join(ifos)
-            coinc_inspiral_row.set_ifos(ifos)
+            coinc_event_row.nevents = len(triggered_ifos)
+            coinc_event_row.instruments = ','.join(triggered_ifos)
+            coinc_inspiral_row.set_ifos(triggered_ifos)
             coinc_event_row.time_slide_id = time_slide_id
             coinc_event_row.process_id = proc_id
             coinc_event_row.coinc_event_id = coinc_id
