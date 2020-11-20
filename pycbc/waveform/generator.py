@@ -47,14 +47,6 @@ import lal as _lal
 from pycbc import strain
 
 
-#
-# =============================================================================
-#
-#                     Radiation/inertial-frame generators
-#
-# =============================================================================
-#
-
 # utility functions/class
 failed_counter = 0
 
