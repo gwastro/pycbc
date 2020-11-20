@@ -103,8 +103,6 @@ class BaseGenerator(object):
         self.current_params = frozen_params.copy()
         # keep a list of functions to call before waveform generation
         self._pregenerate_functions = []
-        # we'll cache the last generated waveform here
-        self._cache = {}
 
         # If we are under mpi, then failed waveform will be stored by
         # mpi rank to avoid file writing conflicts. We'll check for this
@@ -152,43 +150,36 @@ class BaseGenerator(object):
     def _generate_from_current(self):
         """Generates a waveform from the current parameters.
         """
-        values_hash = frozenset(self.current_params[p]
-                                for p in self.variable_args)
         try:
-            return self._cache[values_hash]
-        except KeyError:
-            try:
-                new_waveform = self.generator(**self.current_params)
-                self._cache.clear()
-                self._cache[values_hash] = new_waveform
-                return new_waveform
-            except RuntimeError as e:
-                if self.record_failures:
-                    import h5py
-                    from pycbc.io.hdf import dump_state
+            new_waveform = self.generator(**self.current_params)
+            return new_waveform
+        except RuntimeError as e:
+            if self.record_failures:
+                import h5py
+                from pycbc.io.hdf import dump_state
 
-                    global failed_counter
+                global failed_counter
 
-                    if self.mpi_enabled:
-                        outname = 'failed/params_%s.hdf' % self.mpi_rank
-                    else:
-                        outname = 'failed/params.hdf'
+                if self.mpi_enabled:
+                    outname = 'failed/params_%s.hdf' % self.mpi_rank
+                else:
+                    outname = 'failed/params.hdf'
 
-                    if not os.path.exists('failed'):
-                        os.makedirs('failed')
+                if not os.path.exists('failed'):
+                    os.makedirs('failed')
 
-                    with h5py.File(outname) as f:
-                        dump_state(self.current_params, f,
-                                   dsetname=str(failed_counter))
-                        failed_counter += 1
+                with h5py.File(outname) as f:
+                    dump_state(self.current_params, f,
+                               dsetname=str(failed_counter))
+                    failed_counter += 1
 
-                # we'll get a RuntimeError if lalsimulation failed to generate
-                # the waveform for whatever reason
-                strparams = ' | '.join(['{}: {}'.format(
-                    p, str(val)) for p, val in self.current_params.items()])
-                raise FailedWaveformError("Failed to generate waveform with "
-                                          "parameters:\n{}\nError was: {}"
-                                          .format(strparams, e))
+            # we'll get a RuntimeError if lalsimulation failed to generate
+            # the waveform for whatever reason
+            strparams = ' | '.join(['{}: {}'.format(
+                p, str(val)) for p, val in self.current_params.items()])
+            raise FailedWaveformError("Failed to generate waveform with "
+                                      "parameters:\n{}\nError was: {}"
+                                      .format(strparams, e))
 
 
 class BaseCBCGenerator(BaseGenerator):
