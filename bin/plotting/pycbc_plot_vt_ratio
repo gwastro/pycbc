@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 """
-This script compares the sensitivities (VTs) of two searches having a common
-set of injections. It reads two HDF files produced by pycbc_page_sensitivity's
+This script compares the sensitivities (VTs) of two searches having consistent
+sets of injections. It reads two HDF files produced by pycbc_page_sensitivity's
 --hdf-out option, and plots the ratios of their VTs at various IFARs.
 """
 
@@ -137,11 +137,11 @@ ax_mi.set_ylabel(r'$\frac{VT(\mathrm{' + args.desc_one +'})}{VT(\mathrm{' +
                  args.desc_two +'})}$')
 plt.tight_layout()
 
-caption = 'Sensitivity comparison between {} and {}.'.format(
+title = 'VT sensitivity comparison between {} and {}'.format(
         args.vt_file_one, args.vt_file_two)
 
 # write out to file
 save_fig_with_metadata(fig_mi, args.outfile, cmd=' '.join(sys.argv),
-                       caption=caption)
+                       title=title)
 
 plt.close()

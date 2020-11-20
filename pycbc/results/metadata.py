@@ -90,7 +90,11 @@ def save_pdf_with_metadata(fig, filename, fig_kwds, kwds):
         fig.savefig(pdfp, format='pdf', **fig_kwds)
         metadata = pdfp.infodict()
         for key in kwds:
-            metadata[str(key)] = str(kwds[key])
+            if str(key).lower() == 'title':
+                # map the title to the official PDF keyword (capitalized)
+                metadata['Title'] = str(kwds[key])
+            else:
+                metadata[str(key)] = str(kwds[key])
 
 def load_png_metadata(filename):
     from PIL import Image, PngImagePlugin
