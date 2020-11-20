@@ -1,44 +1,58 @@
 #!/usr/bin/python
 
+"""
+This script compares the sensitivities (VTs) of two searches having consistent
+sets of injections. It reads two HDF files produced by pycbc_page_sensitivity's
+--hdf-out option, and plots the ratios of their VTs at various IFARs.
+"""
+
+import sys
+import argparse
 import h5py
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-import argparse
+from pycbc.results import save_fig_with_metadata
 
-parser = argparse.ArgumentParser()
-parser = argparse.ArgumentParser(usage="",
-    description="Plot ratios of VTs calculated at various IFARs using pycbc_page_sensitivity for two analyses")
+
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--vt-file-one', required=True,
-                    help='HDF file containing VT curves, first set of data for comparison')
+                    help='HDF file containing VT curves, '
+                         'first set of data for comparison')
 parser.add_argument('--vt-file-two', required=True,
-                    help='HDF file containing VT curves, second set of data for comparison')
+                    help='HDF file containing VT curves, '
+                         'second set of data for comparison')
 parser.add_argument('--desc-one',  required=True,
-                    help='descriptor tag for first set of data (short, for use in subscript)')
+                    help='Descriptor tag for first set of data '
+                         '(short, for use in subscript)')
 parser.add_argument('--desc-two', type=str, required=True,
-                    help='descriptor tag for second set of data (short, for use in subscript)')
+                    help='Descriptor tag for second set of data '
+                         '(short, for use in subscript)')
 parser.add_argument('--outfile', type=str, required=True,
                     help='Output file to save to')
 parser.add_argument('--ifars', type=float, required=True, nargs='+',
-                    help='IFAR values to plot VT ratio for. Note that the plotted values '
-                         'will be the closest values available from the VT files')
-parser.add_argument('--log-x', action='store_true', default=False,
+                    help='IFAR values to plot VT ratio for. Note that the '
+                         'plotted values will be the closest values available '
+                         'from the VT files')
+parser.add_argument('--log-x', action='store_true',
                     help='Use logarithmic x-axis')
-parser.add_argument('--log-y', action='store_true', default=False,
+parser.add_argument('--log-y', action='store_true',
                     help='Use logarithmic y-axis')
 args = parser.parse_args()
 
 # Load in the two datasets
-ffirst_set = h5py.File(args.vt_file_one)
-fsecond_set = h5py.File(args.vt_file_two)
+ffirst_set = h5py.File(args.vt_file_one, 'r')
+fsecond_set = h5py.File(args.vt_file_two, 'r')
 
 # Find the index closest to the given IFAR value
 idxs = [np.argmin(np.abs(ffirst_set['xvals'][:] - ifv)) for ifv in args.ifars]
 
 keys = ffirst_set['data'].keys()
 # sanitise the input so that the files have the same binning parameter and bins
-assert keys == fsecond_set['data'].keys(), "keys do not match for the two files"
+if keys != fsecond_set['data'].keys():
+    parser.error('keys do not match for the given input files - '
+                 '{} vs {}'.format(keys, fsecond_set['data'].keys()))
 
 # make the plot pretty
 plt.rc('axes.formatter', limits=[-3, 4])
@@ -73,10 +87,9 @@ except IndexError:
 plt.xticks(xpos, labels, rotation='horizontal')
 
 colors = ['#7b85d4', '#f37738', '#83c995', '#d7369e', '#c4c9d8', '#859795']
-count = 0
 
 # loop through each IFAR and plot the VT ratio with error bars
-for idv in idxs:
+for count, idv in enumerate(idxs):
     data1 = np.array([ffirst_set['data'][key][idv] for key in keys])
     data2 = np.array([fsecond_set['data'][key][idv] for key in keys])
 
@@ -102,14 +115,11 @@ for idv in idxs:
         yerr=[yerr_errlow, yerr_errhigh], fmt='o', markersize=7, linewidth=5,
         label='IFAR = %d yr' % ffirst_set['xvals'][idv], capsize=5,
         capthick=2, mec='k', color=colors[count % len(colors)])
-    count += 1
 
-if args.log_x and args.log_y:
-    plt.loglog()
-elif args.log_x and not args.log_y:
-    plt.semilogx()
-elif args.log_y and not args.log_x:
-    plt.semilogy()
+if args.log_x:
+    plt.xscale('log')
+if args.log_y:
+    plt.yscale('log')
 plt.xticks(xpos, labels, rotation='horizontal')
 
 # get the limit of the x axes, and draw a black line in order to highlight
@@ -127,10 +137,11 @@ ax_mi.set_ylabel(r'$\frac{VT(\mathrm{' + args.desc_one +'})}{VT(\mathrm{' +
                  args.desc_two +'})}$')
 plt.tight_layout()
 
-# write out to file, save as pdf if requested
-if args.outfile.split('.')[-1] == 'pdf':
-    fig_mi.savefig(args.outfile, format='PDF')
-else:
-    fig_mi.savefig(args.outfile)
+title = 'VT sensitivity comparison between {} and {}'.format(
+        args.vt_file_one, args.vt_file_two)
+
+# write out to file
+save_fig_with_metadata(fig_mi, args.outfile, cmd=' '.join(sys.argv),
+                       title=title)
 
 plt.close()
