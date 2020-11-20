@@ -275,7 +275,7 @@ class FDomainCBCGenerator(BaseCBCGenerator):
 
 
 class FDomainCBCModesGenerator(BaseCBCGenerator):
-    """Generates frequency-domain CBC waveform modes in the radiation frame.
+    """Generates frequency-domain CBC waveform modes.
 
     Uses :py:func:`waveform_modes.get_fd_waveform_modes` as a generator
     function to create frequency-domain CBC waveforms mode-by-mode, without
@@ -342,11 +342,12 @@ class TDomainCBCGenerator(BaseCBCGenerator):
 
 
 class TDomainCBCModesGenerator(BaseCBCGenerator):
-    """Generates time domain CBC waveform modes in the radiation frame.
+    """Generates time domain CBC waveform modes.
 
     Uses :py:func:`waveform_modes.get_td_waveform_modes` as a generator
     function to create time-domain CBC waveforms mode-by-mode, without applying
-    spherical harmonics.
+    spherical harmonics. The ``generate`` function returns a dictionary of
+    modes -> (real, imag) part of the complex time series.
 
     For details, on methods and arguments, see :py:class:`BaseGenerator`.
     """
