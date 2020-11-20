@@ -236,7 +236,7 @@ def evaluate_tests(burn_in_test, test_is_burned_in, test_burn_in_iter):
         ii = NOT_BURNED_IN_ITER
     return is_burned_in, ii
 
-def estimate_sigma(sampler,estimate_len,sliding_len=10):
+def chain_moments(sampler,estimate_len=200,sliding_len=10):
     """Estimates the evolution of the standard deviation (=sigma) for each 
     parameter during the run. The standard deviation is estimated by flattening
     the portion of chain.
@@ -252,17 +252,37 @@ def estimate_sigma(sampler,estimate_len,sliding_len=10):
     
     Returns                                                                      
     ------- 
-    sigma_all_params: An array of sigma values of each of the parameter
+    sigma_all_params: dict
+        An array of sigma values of each of the parameter.
+    burn_in_index: int
+        Index in the samples for burn in. If it is None, it means that it is 
+        still not burned in.
+    is_burned_in: bool
+        It tells if the chain has burned in or not
     """
-    sigma_all_params = []
+    sigma_all_params = {}
+    burnin=[]
     for p in sampler.model.sampling_params:
         nw,nc = numoy.shape(sampler.samples[p])
         sigma=[]
         for item in range(int((nc-estimate_len)/sliding_len)):
             effsamp = sampler.samples[p][:,item:(item+1)*estimate_len].flatten()
             sigma.append(numpy.std(effsamp))
-        sigma_all_params.append(sigma)
-    return numpy.array(sigma_all_params)
+        sigma_all_params[p] = np.array(sigma)
+        sigma_rev=np.array(sigma[::-1]) # reverse the sigma array
+
+        # Percentage deviation from last reported value
+        sigma_diff = 100*(sigma_rev-sigma_rev[0])/sigma_rev[0]
+        overrun_indices = np.where(sigma_diff>percent_deviation)[0]
+        if len(overrun_indices) != 0:
+            burnin.append(sliding_len*(len(sigma_rev)-overrun_indices.min()))
+        else:
+            is_burned_in=False
+    if len(burnin) != 0 and is_burned_in:
+        burn_in_iteration = max(burnin)+estimate_len
+    else:
+        burn_in_index = None
+    return sigma_all_params,burn_in_iteration,is_burned_in
 
 #
 # =============================================================================
@@ -573,9 +593,11 @@ class MCMCBurnInTests(BaseBurnInTests):
         # add the status for each parameter as additional information
         self.test_aux_info[test] = is_burned_in
 
-    def estimate_sigma(self,filename):
+    def chain_moments(self,filename):
         """Applies estimate_sigma test"""
-        
+        test = 'chain_moments'
+        sigmas,burn_in_iter,is_burned_in = chain_moments(self.sampler)
+        self.test_aux_info[test] = is_burned_in
 
     def evaluate(self, filename):
         """Runs all of the burn-in tests."""
