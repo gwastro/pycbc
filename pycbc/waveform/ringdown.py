@@ -79,6 +79,10 @@ def format_lmns(lmns):
     given, raise an error.
     """
 
+    # Catch case of lmns given as float (as int injection values are cast
+    # to float by pycbc_create_injections), cast to int, then string
+    if isinstance(lmns, float):
+        lmns = str(int(lmns))
     # Case 1: the lmns are given as a string, e.g. '221 331'
     if isinstance(lmns, str):
         lmns = lmns.split(' ')
