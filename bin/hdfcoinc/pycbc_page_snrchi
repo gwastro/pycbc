@@ -75,7 +75,7 @@ pylab.xlabel('Signal-to-Noise Ratio')
 pylab.ylabel('Reduced $\\chi^2$')
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
      title="%s :SNR vs Reduced %s &chi;<sup>2</sup>" % (ifo, args.chisq_choice),
-     caption="Distribution of SNR and %s &chi; squared for single detector triggers: "
+     caption="Distribution of SNR and %s &chi;&sup2; for single detector triggers: "
              "Black lines show contours of constant NewSNR." \
               %(args.chisq_choice,),
      cmd=' '.join(sys.argv),
