@@ -19,7 +19,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }} 
     - run: sudo apt-get install *fftw3* mpi intel-mkl*
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-20.0.4'
     - run: brew install fftw
       if: matrix.os == 'macos-latest'
     - name: Install dependencies
