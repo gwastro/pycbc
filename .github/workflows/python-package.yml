@@ -18,7 +18,7 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }} 
-    - run: sudo apt-get install *fftw3*
+    - run: sudo apt-get install *fftw3* mpi intel-mkl*
       if: matrix.os == 'ubuntu-latest'
     - run: brew install fftw
       if: matrix.os == 'macos-latest'
@@ -27,7 +27,7 @@ jobs:
         python -m pip install --upgrade pip setuptools
         pip install -r requirements.txt
         pip install -r companion.txt
-        pip install mkl
+        pip install mpi4py
         pip install .
     - name: run pycbc test suite
       run: |
