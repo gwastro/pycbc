@@ -518,7 +518,7 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
         # NB for no clear reason this function has f_low as first argument
         time_length = lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
                            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
-    elif approximant == "SPAtmplt":
+    elif approximant=='SPAtmplt' or approximant=='TaylorF2':
         chi=lalsimulation.SimInspiralTaylorF2ReducedSpinComputeChi(m1,m2,s1z,s2z)
         time_length=lalsimulation.SimInspiralTaylorF2ReducedSpinChirpTime(
                            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, -1)
