@@ -18,14 +18,12 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }} 
-    - run: sudo apt-get install *fftw3* mpi intel-mkl*
+    - run: sudo apt-get install *fftw3* mpi intel-mkl* git-lfs
       if: matrix.os == 'ubuntu-20.04'
     - run: brew install fftw
       if: matrix.os == 'macos-latest'
     - name: Install dependencies
       run: |
-        # LAL extra data files
-        # FIXME, should be a way to make reduced package (with subset of data files)
         GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
         cd lalsuite-extra
         git lfs pull -I "data/lalsimulation/SEOBNRv2ROM_*.dat"
