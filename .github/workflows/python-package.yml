@@ -1,0 +1,32 @@
+name: Python package
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 8
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [2.7, 3.6, 3.7, 3.8]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }} 
+    - run: sudo apt-get install *fftw3*
+      if: matrix.os == 'ubuntu-latest'
+    - run: brew install fftw
+      if: matrix.os == 'macos-latest'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip setuptools
+        pip install -r requirements.txt
+        pip install .
+    - name: run pycbc test suite
+      run: |
+        bash tools/pycbc_test_suite.sh
