@@ -31,9 +31,6 @@ jobs:
         git lfs pull -I "data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5"
         mv data/lalsimulation/* ../
         cd ../
-        export LAL_DATA_PATH=$PWD
-        echo $LAL_DATA_PATH
-        ls
         python -m pip install --upgrade pip setuptools
         pip install -r requirements.txt
         pip install -r companion.txt
@@ -41,4 +38,5 @@ jobs:
         pip install .
     - name: run pycbc test suite
       run: |
+        export LAL_DATA_PATH=$PWD
         bash tools/pycbc_test_suite.sh
