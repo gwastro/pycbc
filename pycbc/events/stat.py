@@ -42,13 +42,11 @@ class Stat(object):
         ----------
         sngl_ranking: str
             The name of the ranking to use for the single-detector triggers.
-
         files: list of strs, needed for some statistics
             A list containing the filenames of hdf format files used to help
             construct the coincident statistics. The files must have a 'stat'
             attribute which is used to associate them with the appropriate
             statistic class.
-
         ifos: list of strs, needed for some statistics
             The list of detector names
         """
@@ -102,6 +100,7 @@ class Stat(object):
         raise ValueError(err_msg)
 
     # FIXME: Why does this function not just call straight into single?
+    # FIXME: Should this be renamed for clarity if multiifo is being removed?
     def single_multiifo(self, single_info):
         """
         Calculate the statistic for a single detector candidate
@@ -186,6 +185,24 @@ class QuadratureSumStatistic(Stat):
         """
         return self.sngl_ranking(trigs)
 
+    def single_multiifo(self, single_info):
+        """
+        Calculate the statistic for a single detector candidate
+
+        Parameters
+        ----------
+        single_info: tuple
+            Tuple containing two values. The first is the ifo (str) and the
+            second is the output from self.single()
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector statistics
+        """
+        return single_info[1]
+
+
     def coinc(self, sngls_list, slide, step, to_shift,
               **kwargs): # pylint:disable=unused-argument
         """
@@ -236,6 +253,15 @@ class QuadratureSumStatistic(Stat):
             Array of limits on the limifo single statistic to
             exceed thresh.
         """
+        # Safety against subclassing and not rethinking this
+        allowed_names = ['QuadratureSumStatistic']
+        if type(self).__name__ not in ['QuadratureSumStatistic']:
+            err_msg = "This is being called from a subclass which has not "
+            err_msg += "been checked for validity with this method. If it is "
+            err_msg += "valid for the subclass to come here, include in the "
+            err_msg += "list of allowed_names above."
+            raise ValueError(err_msg)
+
         s0 = thresh ** 2. - sum(sngl[1] ** 2. for sngl in s)
         s0[s0 < 0] = 0
         return s0 ** 0.5
