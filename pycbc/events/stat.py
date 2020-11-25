@@ -35,17 +35,22 @@ class Stat(object):
     """Base class which should be extended to provide a coincident statistic"""
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
-        """Create a statistic class instance
+        """
+        Create a statistic class instance
 
         Parameters
         ----------
-        files: list of strs
-            A list containing the filenames of hdf format files used to help
-        construct the coincident statistics. The files must have a 'stat'
-        attribute which is used to associate them with the appropriate
-        statistic class.
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
 
-        ifos: list of detector names, optional
+        files: list of strs, needed for some statistics
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+
+        ifos: list of strs, needed for some statistics
+            The list of detector names
         """
         import h5py
 
@@ -78,6 +83,25 @@ class Stat(object):
             if key.startswith('sngl_ranking_'):
                 self.sngl_ranking_kwargs[key[13:]] = value            
 
+    def single(self, trigs): # pylint:disable=unused-argument
+        """
+        Calculate the single detector statistic, here equal to newsnr
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        err_msg = "This function is a stub that should be overridden by the "
+        err_msg += "sub-classes. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
+
+
     def sngl_ranking(self, trigs):
         """
         Returns the ranking for the single detector triggers.
@@ -99,13 +123,24 @@ class Stat(object):
         )
 
     def coinc(self, s, slide, step, to_shift,
-              **kwargs): # pylint:disable=unused-argument)
+              **kwargs): # pylint:disable=unused-argument
+        """
+        Calculate the coincident detection statistic.
+        """
         err_msg = "This function is a stub that should be overridden by the "
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise ValueError(err_msg)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
+        """
+        Optimization function to identify coincs too quiet to be of interest
+
+        Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
+        """
+
+
         err_msg = "This function is a stub that should be overridden by the "
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise ValueError(err_msg)
@@ -153,7 +188,6 @@ class QuadratureSumStatistic(Stat):
         for idx in range(len(sngls_list)):
             cstat[sngls_list[idx] == -1] = 0
         return cstat
-
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
