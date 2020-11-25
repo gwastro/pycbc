@@ -81,6 +81,26 @@ class Stat(object):
             if key.startswith('sngl_ranking_'):
                 self.sngl_ranking_kwargs[key[13:]] = value            
 
+    def sngl_ranking(self, trigs):
+        """
+        Returns the ranking for the single detector triggers.
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return ranking.get_sngls_ranking_from_trigs(
+            trigs,
+            self.sngl_ranking,
+            **self.sngl_ranking_kwargs
+        )
+
     def single(self, trigs): # pylint:disable=unused-argument
         """
         Calculate the necessary single detector information
@@ -119,26 +139,6 @@ class Stat(object):
         err_msg = "This function is a stub that should be overridden by the "
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise ValueError(err_msg)
-
-    def sngl_ranking(self, trigs):
-        """
-        Returns the ranking for the single detector triggers.
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector values
-        """
-        return ranking.get_sngls_ranking_from_trigs(
-            trigs,
-            self.sngl_ranking,
-            **self.sngl_ranking_kwargs
-        )
 
     def coinc(self, s, slide, step, to_shift,
               **kwargs): # pylint:disable=unused-argument
@@ -447,33 +447,6 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
 
         self.has_hist = True
 
-    def single(self, trigs):
-        """
-        Calculate the necessary single detector information
-
-        Here the ranking as well as phase, endtime and sigma-squared values.
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information. 'snr', 'chisq',
-            'chisq_dof', 'coa_phase', 'end_time', and 'sigmasq' are required
-            keys.
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of single detector parameter values
-        """
-        sngl_stat = self.sngl_ranking(trigs)
-        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
-        singles['snglstat'] = sngl_stat
-        singles['coa_phase'] = trigs['coa_phase'][:]
-        singles['end_time'] = trigs['end_time'][:]
-        singles['sigmasq'] = trigs['sigmasq'][:]
-        singles['snr'] = trigs['snr'][:]
-        return numpy.array(singles, ndmin=1)
-
     def logsignalrate(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup
@@ -586,6 +559,67 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
             rate[rtype] *= (sref / self.ref_snr) ** -4.0
 
         return numpy.log(rate)
+
+    def single(self, trigs):
+        """
+        Calculate the necessary single detector information
+
+        Here the ranking as well as phase, endtime and sigma-squared values.
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information. 'snr', 'chisq',
+            'chisq_dof', 'coa_phase', 'end_time', and 'sigmasq' are required
+            keys.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of single detector parameter values
+        """
+        sngl_stat = self.sngl_ranking(trigs)
+        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
+        singles['snglstat'] = sngl_stat
+        singles['coa_phase'] = trigs['coa_phase'][:]
+        singles['end_time'] = trigs['end_time'][:]
+        singles['sigmasq'] = trigs['sigmasq'][:]
+        singles['snr'] = trigs['snr'][:]
+        return numpy.array(singles, ndmin=1)
+
+    def single_multiifo(self, single_info):
+        """
+        Calculate the statistic for a single detector candidate
+        Parameters
+        ----------
+        single_info: tuple
+            Tuple containing two values. The first is the ifo (str) and the
+            second is the output from self.single()
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector statistics
+        """
+        err_msg = "Sorry! No-one has implemented this method yet! "
+        raise ValueError(err_msg)
+
+    def coinc(self, s, slide, step, to_shift,
+              **kwargs): # pylint:disable=unused-argument
+        """
+        Calculate the coincident detection statistic.
+        """
+        err_msg = "Sorry! No-one has implemented this method yet! "
+        raise ValueError(err_msg)
+
+    def coinc_lim_for_thresh(self, s, thresh, limifo,
+                             **kwargs): # pylint:disable=unused-argument
+        """
+        Optimization function to identify coincs too quiet to be of interest
+        Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
+        """
+        err_msg = "Sorry! No-one has implemented this method yet! "
+        raise ValueError(err_msg)
 
 
 class ExpFitStatistic(NewSNRStatistic):
@@ -760,7 +794,7 @@ class ExpFitStatistic(NewSNRStatistic):
 
         return self.lognoiserate(trigs)
 
-    # FIXME: Needs porting to the new-style class (or can be ignored?)
+    # Keeping this here to help write the new coinc method.
     def coinc_OLD(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
 
@@ -774,8 +808,8 @@ class ExpFitStatistic(NewSNRStatistic):
         # via log likelihood ratio \propto rho_c^2 / 2
         return (2. * loglr) ** 0.5
 
-    # FIXME: Needs porting to the new-style class (or can be ignored?)
-    def coinc_lim_for_thresh(self, s0, thresh):
+    # Keeping this here to help write the new coinc_lim method
+    def coinc_lim_for_thresh_OLD(self, s0, thresh):
         """Calculate the required single detector statistic to exceed
         the threshold for each of the input triggers.
 
