@@ -147,7 +147,7 @@ class Stat(object):
 
 
 class QuadratureSumStatistic(Stat):
-    """Calculate the NewSNR coincident detection statistic"""
+    """Calculate the quadrature sum coincident detection statistic"""
 
     def single(self, trigs):
         """
@@ -223,13 +223,32 @@ class QuadratureSumStatistic(Stat):
 
 
 class PhaseTDNewStatistic(QuadratureSumStatistic):
-    """Statistic that re-weights combined newsnr using coinc parameters.
+    """
+    Statistic that re-weights combined newsnr using coinc parameters.
 
     The weighting is based on the PDF of time delays, phase differences and
     amplitude ratios between triggers in different ifos.
     """
 
-    def __init__(self, files=None, ifos=None, **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
+        """
+        Create a statistic class instance
+
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+
+        files: list of strs, needed for some statistics
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+
+        ifos: list of strs, needed for some statistics
+            The list of detector names
+        """
+
         NewSNRStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
 
         self.single_dtype = [('snglstat', numpy.float32),
@@ -237,7 +256,7 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
                              ('end_time', numpy.float64),
                              ('sigmasq', numpy.float32),
                              ('snr', numpy.float32)
-                             ]
+                            ]
 
         # Assign attribute so that it can be replaced with other functions
         self.has_hist = False
@@ -254,7 +273,16 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
         self.two_det_weights = {}
 
     def get_hist(self, ifos=None):
-        """Read in a signal density file for the ifo combination"""
+        """
+        Read in a signal density file for the ifo combination
+
+
+        Parameters
+        ----------
+        ifos: list
+            The list of ifos. Needed if not given when initializing the class
+            instance.
+        """
 
         ifos = ifos or self.ifos
 
@@ -375,13 +403,17 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
         self.has_hist = True
 
     def single(self, trigs):
-        """Calculate the single detector statistic & assemble other parameters
+        """
+        Calculate the necessary single detector information
+
+        Here the ranking as well as phase, endtime and sigma-squared values.
 
         Parameters
         ----------
         trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
             Object holding single detector trigger information. 'snr', 'chisq',
-        'chisq_dof', 'coa_phase', 'end_time', and 'sigmasq' are required keys.
+            'chisq_dof', 'coa_phase', 'end_time', and 'sigmasq' are required
+            keys.
 
         Returns
         -------
@@ -398,7 +430,8 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
         return numpy.array(singles, ndmin=1)
 
     def logsignalrate(self, stats, shift, to_shift):
-        """Calculate the normalized log rate density of signals via lookup
+        """
+        Calculate the normalized log rate density of signals via lookup
 
         Parameters
         ----------
@@ -511,7 +544,8 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
 
 
 class ExpFitStatistic(NewSNRStatistic):
-    """Detection statistic using an exponential falloff noise model.
+    """
+    Detection statistic using an exponential falloff noise model.
 
     Statistic approximates the negative log noise coinc rate density per
     template over single-ifo newsnr values.
