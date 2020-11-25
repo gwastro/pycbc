@@ -1456,7 +1456,24 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
         self.curr_mchirp = None
 
     def single(self, trigs):
+        """
+        Calculate the necessary single detector information
 
+        In this case the ranking rescaled (see the lognoiserate method here)
+        with the phase, end time, sigma, SNR, template_id and the
+        benchmark_logvol values added in. This also stored the current chirp
+        mass for use when computing the coinc statistic values.
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
         from pycbc.conversions import mchirp_from_mass1_mass2
         self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
                                                    trigs.param['mass2'])
@@ -1466,6 +1483,27 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
         return ExpFitSGFgBgNormNewStatistic.single(self, trigs)
 
     def logsignalrate(self, stats, shift, to_shift):
+        """
+        Calculate the normalized log rate density of signals via lookup
+
+        This calls back to the Parent class and then applies the chirp mass
+        weighting factor.
+
+        Parameters
+        ----------
+        stats: list of dicts giving single-ifo quantities, ordered as
+            self.ifos
+        shift: numpy array of float, size of the time shift vector for each
+            coinc to be ranked
+        to_shift: list of int, multiple of the time shift to apply ordered
+            as self.ifos
+
+        Returns
+        -------
+        value: log of coinc signal rate density for the given single-ifo
+            triggers and time shifts
+        """
+
         # model signal rate as uniform over chirp mass, background rate is
         # proportional to mchirp^(-11/3) due to density of templates
         logr_s = ExpFitSGFgBgNormNewStatistic.logsignalrate(
@@ -1479,6 +1517,29 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
+        """
+        Optimization function to identify coincs too quiet to be of interest
+
+        Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
+
+        Parameters
+        ----------
+        s: list
+            List of (ifo, single detector statistic) tuples for all detectors
+            except limifo.
+        thresh: float
+            The threshold on the coincident statistic.
+        limifo: string
+            The ifo for which the limit is to be found.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of limits on the limifo single statistic to
+            exceed thresh.
+        """
+
         loglr = ExpFitSGFgBgNormNewStatistic.coinc_multiifo_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
         loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
@@ -1486,53 +1547,35 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
 
 
 statistic_dict = {
-    'newsnr': NewSNRStatistic,
-    'network_snr': NetworkSNRStatistic,
-    'newsnr_cut': NewSNRCutStatistic,
-    'phasetd_newsnr': PhaseTDStatistic,
-    'phasetd_newsnr_sgveto': PhaseTDSGStatistic,
+    'quadsum': QuadratureSumStatistic,
+    'phasetd_newsnr': PhaseTDNewStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
-    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR,
-    'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
-    'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
-    'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
-    'phasetd_new_exp_fit_stat_sgveto': PhaseTDNewExpFitSGStatistic,
-    'newsnr_sgveto': NewSNRSGStatistic,
-    'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
-    'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
-    'phasetd_exp_fit_stat_sgveto_psdvar_scaled':
-        PhaseTDExpFitSGPSDScaledStatistic,
+    'phasetd_exp_fit_stat': PhaseTDNewExpFitStatistic,
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
     'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic,
-    'exp_fit_sg_fgbg_norm_new': ExpFitSGFgBgNormNewStatistic,
-    '2ogc': ExpFitSGPSDScaledFgBgNormStatistic, # backwards compatible
-    '2ogcbbh': ExpFitSGPSDSTFgBgNormBBHStatistic, # backwards compatible
-    'exp_fit_sg_fgbg_norm_psdvar': ExpFitSGPSDFgBgNormStatistic,
-    'exp_fit_sg_fgbg_norm_psdvar_thresh': ExpFitSGPSDFgBgNormThreshStatistic,
-    'exp_fit_sg_fgbg_norm_psdvar_bbh': ExpFitSGPSDFgBgNormBBHStatistic,
-    'exp_fit_sg_fgbg_norm_psdvar_bbh_thresh':
-        ExpFitSGPSDFgBgNormBBHThreshStatistic
+    'phasetd_exp_fit_sg_fgbg_norm': ExpFitSGFgBgNormNewStatistic,
 }
 
-sngl_statistic_dict = {
-    'newsnr': NewSNRStatistic,
-    'new_snr': NewSNRStatistic, # For backwards compatibility
-    'snr': NetworkSNRStatistic,
-    'newsnr_cut': NewSNRCutStatistic,
-    'exp_fit_csnr': ExpFitCombinedSNR,
-    'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
-    'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
-    'newsnr_sgveto': NewSNRSGStatistic,
-    'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
-    'newsnr_sgveto_psdvar_threshold': NewSNRSGPSDThresholdStatistic,
-    'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
-    'newsnr_sgveto_psdvar_scaled_threshold':
-        NewSNRSGPSDScaledThresholdStatistic,
-    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
-}
-
+# FIXME: Likely I would remove this. The ranking function, and the
+#        single_multiifo method, would fulfill needs here. (Possibly!)
+#sngl_statistic_dict = {
+#    'newsnr': NewSNRStatistic,
+#    'new_snr': NewSNRStatistic, # For backwards compatibility
+#    'snr': NetworkSNRStatistic,
+#    'newsnr_cut': NewSNRCutStatistic,
+#    'exp_fit_csnr': ExpFitCombinedSNR,
+#    'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
+#    'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
+#    'newsnr_sgveto': NewSNRSGStatistic,
+#    'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
+#    'newsnr_sgveto_psdvar_threshold': NewSNRSGPSDThresholdStatistic,
+#    'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
+#    'newsnr_sgveto_psdvar_scaled_threshold':
+#        NewSNRSGPSDScaledThresholdStatistic,
+#    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
+#}
 
 def get_statistic(stat):
     """
@@ -1559,26 +1602,26 @@ def get_statistic(stat):
         raise RuntimeError('%s is not an available detection statistic' % stat)
 
 
-def get_sngl_statistic(stat):
-    """
-    Error-handling sugar around dict lookup for single-detector statistics
-
-    Parameters
-    ----------
-    stat : string
-        Name of the single-detector statistic
-
-    Returns
-    -------
-    class
-        Subclass of Stat base class
-
-    Raises
-    ------
-    RuntimeError
-        If the string is not recognized as corresponding to a Stat subclass
-    """
-    try:
-        return sngl_statistic_dict[stat]
-    except KeyError:
-        raise RuntimeError('%s is not an available detection statistic' % stat)
+#def get_sngl_statistic(stat):
+#    """
+#    Error-handling sugar around dict lookup for single-detector statistics
+#
+#    Parameters
+#    ----------
+#    stat : string
+#        Name of the single-detector statistic
+#
+#    Returns
+#    -------
+#    class
+#        Subclass of Stat base class
+#
+#    Raises
+#    ------
+#    RuntimeError
+#        If the string is not recognized as corresponding to a Stat subclass
+#    """
+#    try:
+#        return sngl_statistic_dict[stat]
+#    except KeyError:
+#        raise RuntimeError('%s is not an available detection statistic' % stat)
