@@ -296,8 +296,7 @@ _sngls_ranking_function_dict = {
     'newsnr_sgveto_psdvar': get_newsnr_sgveto_psdvar,
     'newsnr_sgveto_psdvar_threshold': get_newsnr_sgveto_psdvar_threshold,
     'newsnr_sgveto_psdvar_scaled': get_newsnr_sgveto_psdvar_scaled,
-    'newsnr_sgveto_psdvar_scaled_threshold':\
-        get_newsnr_sgveto_psdvar_scaled_threshold,
+    'newsnr_sgveto_psdvar_scaled_threshold': get_newsnr_sgveto_psdvar_scaled_threshold,
 }
 
 
@@ -331,34 +330,34 @@ def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
     return sngl_func(trigs, **kwargs)
 
 
-def get_sngls_ranking_from_trigs_A(trigs, statname, **kwargs):
-    """
-    Return ranking for all trigs given a statname.
-
-    Compute the single-detector ranking for a list of input triggers for a
-    specific statname.
-
-    Parameters
-    -----------
-    trigs: dict of numpy.ndarrays
-        Dictionary holding single detector trigger information.
-    statname:
-        The statistic to use. This is constructed from a basename and then
-        additional options. e.g. newsnr_sg_psdvar would compute newsnr with
-        the sgveto and psd variation applied to it.
-        Valid basenames here are:
-        * snr (or network_snr): Just take the SNR
-        * newsnr (or new_snr): The SNR and chisq combination defined in  
-          http://arxiv.org/abs/1208.3491.
-        * effsnr: The SNR and chisq combination defined in   
-          http://arxiv.org/abs/0901.0302
-        * max_cont_trad_newsnr: As NewSNR but the chisq used is the largest  
-          of the traditional and cont chisquared values.
-        Valid options here are:
-        * _sg (or _sgveto): Apply the SGVeto to downweight the ranking, as  
-          described in http://arxiv.org/abs/1709.08974. 
-        * _psdvarA
-        * _psdvarB
-    DESCRIBE THE VALID KWARGS AS WELL.
-    """
-    pass
+# def get_sngls_ranking_from_trigs_A(trigs, statname, **kwargs):
+#     """
+#     Return ranking for all trigs given a statname.
+# 
+#     Compute the single-detector ranking for a list of input triggers for a
+#     specific statname.
+# 
+#     Parameters
+#     -----------
+#     trigs: dict of numpy.ndarrays
+#         Dictionary holding single detector trigger information.
+#     statname:
+#         The statistic to use. This is constructed from a basename and then
+#         additional options. e.g. newsnr_sg_psdvar would compute newsnr with
+#         the sgveto and psd variation applied to it.
+#         Valid basenames here are:
+#         * snr (or network_snr): Just take the SNR
+#         * newsnr (or new_snr): The SNR and chisq combination defined in
+#           http://arxiv.org/abs/1208.3491.
+#         * effsnr: The SNR and chisq combination defined in
+#           http://arxiv.org/abs/0901.0302
+#         * max_cont_trad_newsnr: As NewSNR but the chisq used is the largest
+#           of the traditional and cont chisquared values.
+#         Valid options here are:
+#         * _sg (or _sgveto): Apply the SGVeto to downweight the ranking, as
+#           described in http://arxiv.org/abs/1709.08974.
+#         * _psdvarA
+#         * _psdvarB
+#     DESCRIBE THE VALID KWARGS AS WELL.
+#     """
+#     pass

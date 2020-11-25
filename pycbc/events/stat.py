@@ -1692,7 +1692,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
             exceed thresh.
         """
 
-        loglr = ExpFitSGFgBgNormNewStatistic.coinc_multiifo_lim_for_thresh(
+        loglr = ExpFitSGFgBgNormNewStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
         loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
         return loglr
@@ -1705,7 +1705,6 @@ statistic_dict = {
     'exp_fit_csnr': ExpFitCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDNewExpFitStatistic,
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
-    'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic,
     'phasetd_exp_fit_sg_fgbg_norm': ExpFitSGFgBgNormNewStatistic,
     'phasetd_exp_fit_sg_fgbg_bbh_norm' : ExpFitSGPSDFgBgNormBBHStatistic,
 }
