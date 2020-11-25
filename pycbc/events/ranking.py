@@ -127,6 +127,7 @@ def newsnr_sgveto_psdvar_scaled_threshold(snr, bchisq, sgchisq, psd_var_val,
     else:
         return nsnr[0]
 
+
 def get_snr(trigs):
     """
     Return SNR from a trigs/dictionary object
@@ -286,33 +287,36 @@ def get_newsnr_sgveto_psdvar_scaled_threshold(trigs):
                      trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psdt, ndmin=1, dtype=numpy.float32)
 
+
 _sngls_ranking_function_dict = {
     'snr': get_snr,
     'newsnr': get_newsnr,
     'new_snr': get_newsnr,
     'newsnr_sgveto': get_newsnr_sgveto,
-    'newsnr_sgveto_psdvar', get_newsnr_sgveto_psdvar,
-    'newsnr_sgveto_psdvar_threshold', get_newsnr_sgveto_psdvar_threshold,
-    'newsnr_sgveto_psdvar_scaled', get_newsnr_sgveto_psdvar_scaled,
-    'newsnr_sgveto_psdvar_scaled_threshold', get_newsnr_sgveto_psdvar_scaled_threshold,
-} 
+    'newsnr_sgveto_psdvar': get_newsnr_sgveto_psdvar,
+    'newsnr_sgveto_psdvar_threshold': get_newsnr_sgveto_psdvar_threshold,
+    'newsnr_sgveto_psdvar_scaled': get_newsnr_sgveto_psdvar_scaled,
+    'newsnr_sgveto_psdvar_scaled_threshold':\
+        get_newsnr_sgveto_psdvar_scaled_threshold,
+}
+
 
 # FIXME: I have not implemented the `NewSNRCutStatistic` here. That is a single
-#        ranking where if NEWSNR < 10 and rchisq > 2 triggers are cut. This is the
-#        kind of thing that would be better in the function underneath. Or perhaps
-#        as kwargs in here?
+#        ranking where if NEWSNR < 10 and rchisq > 2 triggers are cut. This is
+#        the kind of thing that would be better in the function underneath. Or
+#        perhaps as kwargs in here?
 def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
     """
     Return ranking for all trigs given a statname.
 
     Compute the single-detector ranking for a list of input triggers for a
-    specific statname. 
+    specific statname.
 
     Parameters
     -----------
     trigs: dict of numpy.ndarrays
         Dictionary holding single detector trigger information.
-    statname: 
+    statname:
         The statistic to use.
     """
     # Identify correct function
@@ -322,23 +326,23 @@ def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
         err_msg = 'Single-detector ranking {} not recognized'.format(statname)
         raise ValueError(err_msg)
 
-    # NOTE: In the sngl_funcs all the kwargs are explicitly stated, so any kwargs
-    #       sent here must be known to the function.
+    # NOTE: In the sngl_funcs all the kwargs are explicitly stated, so any
+    #       kwargs sent here must be known to the function.
     return sngl_func(trigs, **kwargs)
-    
+
 
 def get_sngls_ranking_from_trigs_A(trigs, statname, **kwargs):
     """
     Return ranking for all trigs given a statname.
 
     Compute the single-detector ranking for a list of input triggers for a
-    specific statname. 
+    specific statname.
 
     Parameters
     -----------
     trigs: dict of numpy.ndarrays
         Dictionary holding single detector trigger information.
-    statname: 
+    statname:
         The statistic to use. This is constructed from a basename and then
         additional options. e.g. newsnr_sg_psdvar would compute newsnr with
         the sgveto and psd variation applied to it.
@@ -358,5 +362,3 @@ def get_sngls_ranking_from_trigs_A(trigs, statname, **kwargs):
     DESCRIBE THE VALID KWARGS AS WELL.
     """
     pass
-
-

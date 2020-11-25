@@ -79,9 +79,9 @@ class Stat(object):
         self.sngl_ranking_kwargs = {}
         for key, value in kwargs.items():
             if key.startswith('sngl_ranking_'):
-                self.sngl_ranking_kwargs[key[13:]] = value            
+                self.sngl_ranking_kwargs[key[13:]] = value
 
-    def sngl_ranking(self, trigs):
+    def get_sngl_ranking(self, trigs):
         """
         Returns the ranking for the single detector triggers.
 
@@ -158,7 +158,6 @@ class Stat(object):
         the threshold for each of the input triggers.
         """
 
-
         err_msg = "This function is a stub that should be overridden by the "
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise ValueError(err_msg)
@@ -183,7 +182,7 @@ class QuadratureSumStatistic(Stat):
         numpy.ndarray
             The array of single detector values
         """
-        return self.sngl_ranking(trigs)
+        return self.get_sngl_ranking(trigs)
 
     def single_multiifo(self, single_info):
         """
@@ -201,7 +200,6 @@ class QuadratureSumStatistic(Stat):
             The array of single detector statistics
         """
         return single_info[1]
-
 
     def coinc(self, sngls_list, slide, step, to_shift,
               **kwargs): # pylint:disable=unused-argument
@@ -225,8 +223,8 @@ class QuadratureSumStatistic(Stat):
         """
         cstat = sum(sngl[1] ** 2. for sngl in sngls_list) ** 0.5
         # For single-detector "cuts" the single ranking is set to -1
-        for idx in range(len(sngls_list)):
-            cstat[sngls_list[idx] == -1] = 0
+        for sngls in sngls_list:
+            cstat[sngls == -1] = 0
         return cstat
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
@@ -294,14 +292,15 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
             The list of detector names
         """
 
-        NewSNRStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
+        QuadratureSumStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
 
-        self.single_dtype = [('snglstat', numpy.float32),
-                             ('coa_phase', numpy.float32),
-                             ('end_time', numpy.float64),
-                             ('sigmasq', numpy.float32),
-                             ('snr', numpy.float32)
-                            ]
+        self.single_dtype = [
+            ('snglstat', numpy.float32),
+            ('coa_phase', numpy.float32),
+            ('end_time', numpy.float64),
+            ('sigmasq', numpy.float32),
+            ('snr', numpy.float32)
+        ]
 
         # Assign attribute so that it can be replaced with other functions
         self.has_hist = False
@@ -434,11 +433,11 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
                 self.two_det_weights[ifo] = \
                     numpy.zeros(array_size, dtype=dtypec) + self.max_penalty
                 id0 = self.param_bin[ifo]['c0'].astype(numpy.int32) \
-                        + self.c0_size[ifo] // 2
+                    + self.c0_size[ifo] // 2
                 id1 = self.param_bin[ifo]['c1'].astype(numpy.int32) \
-                        + self.c1_size[ifo] // 2
+                    + self.c1_size[ifo] // 2
                 id2 = self.param_bin[ifo]['c2'].astype(numpy.int32) \
-                        + self.c2_size[ifo] // 2
+                    + self.c2_size[ifo] // 2
                 self.two_det_weights[ifo][id0, id1, id2] = self.weights[ifo]
 
         relfac = histfile.attrs['sensitivity_ratios']
@@ -528,11 +527,11 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
                 rate[rtype] = numpy.zeros(len(nbinned)) + self.max_penalty
 
                 id0 = nbinned['c0'].astype(numpy.int32) \
-                        + self.c0_size[ref_ifo] // 2
+                    + self.c0_size[ref_ifo] // 2
                 id1 = nbinned['c1'].astype(numpy.int32) \
-                        + self.c1_size[ref_ifo] // 2
+                    + self.c1_size[ref_ifo] // 2
                 id2 = nbinned['c2'].astype(numpy.int32) \
-                        + self.c2_size[ref_ifo] // 2
+                    + self.c2_size[ref_ifo] // 2
 
                 # look up keys which are within boundaries
                 within = (id0 > 0) & (id0 < self.c0_size[ref_ifo])
@@ -578,7 +577,7 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
         numpy.ndarray
             Array of single detector parameter values
         """
-        sngl_stat = self.sngl_ranking(trigs)
+        sngl_stat = self.get_sngl_ranking(trigs)
         singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
         singles['snglstat'] = sngl_stat
         singles['coa_phase'] = trigs['coa_phase'][:]
@@ -622,7 +621,7 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
         raise ValueError(err_msg)
 
 
-class ExpFitStatistic(NewSNRStatistic):
+class ExpFitStatistic(QuadratureSumStatistic):
     """
     Detection statistic using an exponential falloff noise model.
 
@@ -651,7 +650,7 @@ class ExpFitStatistic(NewSNRStatistic):
 
         if not len(files):
             raise RuntimeError("Can't find any statistic files !")
-        NewSNRStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
+        QuadratureSumStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
 
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
@@ -729,7 +728,7 @@ class ExpFitStatistic(NewSNRStatistic):
         ratei: float or numpy array
             The rate fit value(s)
         thresh: float or numpy array
-            The thresh fit value(s) 
+            The thresh fit value(s)
         """
 
         try:
@@ -766,7 +765,7 @@ class ExpFitStatistic(NewSNRStatistic):
 
         """
         alphai, ratei, thresh = self.find_fits(trigs)
-        sngl_stat = self.sngl_ranking(trigs)
+        sngl_stat = self.get_sngl_ranking(trigs)
         # alphai is constant of proportionality between single-ifo newsnr and
         #   negative log noise likelihood in given template
         # ratei is rate of trigs in given template compared to average
@@ -905,7 +904,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         Use the harmonic mean of the maximum individual ifo slopes as the
         reference value of alpha.
         """
-        
+
         inv_alphas = [1. / self.alphamax[i] for i in self.bg_ifos]
         self.alpharef = 1. / (sum(inv_alphas) / len(inv_alphas))
 
@@ -1518,7 +1517,6 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
             err_msg += "list of allowed_names above."
             raise ValueError(err_msg)
 
-
         if not self.has_hist:
             self.get_hist()
         # if the threshold is below this value all triggers will
@@ -1570,7 +1568,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
 class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
     """
     The ExpFitSGFgBgNormNewStatistic with a mass weighting factor.
-    
+
     This is the same as the ExpFitSGFgBgNormNewStatistic except the likelihood
     is multiplied by a signal rate prior modelled as uniform over chirp mass.
     As templates are distributed roughly according to mchirp^(-11/3) we
@@ -1705,31 +1703,32 @@ statistic_dict = {
     'phasetd_newsnr': PhaseTDNewStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
-    'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDNewExpFitStatistic,
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
     'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic,
     'phasetd_exp_fit_sg_fgbg_norm': ExpFitSGFgBgNormNewStatistic,
+    'phasetd_exp_fit_sg_fgbg_bbh_norm' : ExpFitSGPSDFgBgNormBBHStatistic,
 }
 
 # FIXME: Likely I would remove this. The ranking function, and the
 #        single_multiifo method, would fulfill needs here. (Possibly!)
-#sngl_statistic_dict = {
-#    'newsnr': NewSNRStatistic,
-#    'new_snr': NewSNRStatistic, # For backwards compatibility
-#    'snr': NetworkSNRStatistic,
-#    'newsnr_cut': NewSNRCutStatistic,
-#    'exp_fit_csnr': ExpFitCombinedSNR,
-#    'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
-#    'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
-#    'newsnr_sgveto': NewSNRSGStatistic,
-#    'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
-#    'newsnr_sgveto_psdvar_threshold': NewSNRSGPSDThresholdStatistic,
-#    'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
-#    'newsnr_sgveto_psdvar_scaled_threshold':
-#        NewSNRSGPSDScaledThresholdStatistic,
-#    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
-#}
+# sngl_statistic_dict = {
+#     'newsnr': NewSNRStatistic,
+#     'new_snr': NewSNRStatistic, # For backwards compatibility
+#     'snr': NetworkSNRStatistic,
+#     'newsnr_cut': NewSNRCutStatistic,
+#     'exp_fit_csnr': ExpFitCombinedSNR,
+#     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
+#     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
+#     'newsnr_sgveto': NewSNRSGStatistic,
+#     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
+#     'newsnr_sgveto_psdvar_threshold': NewSNRSGPSDThresholdStatistic,
+#     'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
+#     'newsnr_sgveto_psdvar_scaled_threshold':
+#         NewSNRSGPSDScaledThresholdStatistic,
+#     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
+# }
+
 
 def get_statistic(stat):
     """
@@ -1756,7 +1755,7 @@ def get_statistic(stat):
         raise RuntimeError('%s is not an available detection statistic' % stat)
 
 
-#def get_sngl_statistic(stat):
+# def get_sngl_statistic(stat):
 #    """
 #    Error-handling sugar around dict lookup for single-detector statistics
 #
@@ -1778,4 +1777,4 @@ def get_statistic(stat):
 #    try:
 #        return sngl_statistic_dict[stat]
 #    except KeyError:
-#        raise RuntimeError('%s is not an available detection statistic' % stat)
+#       raise RuntimeError('%s is not an available detection statistic' % stat)
