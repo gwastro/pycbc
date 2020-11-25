@@ -689,13 +689,21 @@ class ExpFitStatistic(NewSNRStatistic):
 
     def lognoiserate(self, trigs):
         """
-        Calculate the log noise rate density over single-ifo newsnr
+        Calculate the log noise rate density over single-ifo ranking
 
         Read in single trigger information, compute the ranking
         and rescale by the fitted coefficients alpha and rate
 
+        Parameters
+        -----------
         trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
             Dictionary-like object holding single detector trigger information.
+
+        Returns
+        ---------
+        lognoisel: numpy.array
+            Array of log noise rate density for each input trigger.
+
         """
         alphai, ratei, thresh = self.find_fits(trigs)
         sngl_stat = self.sngl_ranking(trigs)
@@ -1111,6 +1119,22 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
     """
 
     def __init__(self, files=None, ifos=None, **kwargs):
+        """
+        Create a statistic class instance
+
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+        ifos: list of strs, not used here
+            The list of detector names
+        """
+
         # read in background fit info and store it
         ExpFitSGBgRateStatistic.__init__(self, files=files, ifos=ifos,
                                          **kwargs)
@@ -1132,6 +1156,15 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         self.single_increasing = False
 
     def assign_median_sigma(self, ifo):
+        """
+        Read and sort the median_sigma values from input files.
+
+        Parameters
+        ----------
+        ifo: str
+            The ifo to consider.
+        """
+
         coeff_file = self.files[ifo + '-fit_coeffs']
         template_id = coeff_file['template_id'][:]
         tid_sort = numpy.argsort(template_id)
@@ -1139,10 +1172,24 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
             coeff_file['median_sigma'][:][tid_sort]
 
     def lognoiserate(self, trigs, alphabelow=6):
-        """Calculate the log noise rate density over single-ifo newsnr
+        """
+        Calculate the log noise rate density over single-ifo ranking
 
         Read in single trigger information, make the newsnr statistic
         and rescale by the fitted coefficients alpha and rate
+
+        Parameters
+        -----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+        alphabelow: float, default=6
+            Use this slope to fit the noise triggers below the point at which
+            fits are present in the input files.
+
+        Returns
+        ---------
+        lognoisel: numpy.array
+            Array of log noise rate density for each input trigger.
         """
         alphai, ratei, thresh = self.find_fits(trigs)
         newsnr = self.get_newsnr(trigs)
@@ -1157,6 +1204,23 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def single(self, trigs):
+        """
+        Calculate the necessary single detector information
+
+        In this case the ranking rescaled (see the lognoiserate method here)
+        with the phase, end time, sigma, SNR, template_id and the
+        benchmark_logvol values added in.
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+
         # single-ifo stat = log of noise rate
         sngl_stat = self.lognoiserate(trigs)
         # populate other fields to calculate phase/time/amp consistency
@@ -1208,6 +1272,25 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
 
     def coinc(self, s, slide, step, to_shift,
               **kwargs): # pylint:disable=unused-argument
+        """
+        Calculate the coincident detection statistic.
+
+        Parameters
+        ----------
+        sngls_list: list
+            List of (ifo, single detector statistic) tuples
+        slide: (unused in this statistic)
+        step: (unused in this statistic)
+        to_shift: list
+            List of integers indicating what multiples of the time shift will
+            be applied (unused in this statistic)
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of coincident ranking statistic values
+        """
+
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
@@ -1259,6 +1342,29 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
+        """
+        Optimization function to identify coincs too quiet to be of interest
+
+        Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
+
+        Parameters
+        ----------
+        s: list
+            List of (ifo, single detector statistic) tuples for all detectors
+            except limifo.
+        thresh: float
+            The threshold on the coincident statistic.
+        limifo: string
+            The ifo for which the limit is to be found.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of limits on the limifo single statistic to
+            exceed thresh.
+        """
+
         if not self.has_hist:
             self.get_hist()
         # if the threshold is below this value all triggers will
@@ -1308,7 +1414,41 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
 
 
 class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
-    def __init__(self, files=None, ifos=None, max_chirp_mass=None, **kwargs):
+    """
+    The ExpFitSGFgBgNormNewStatistic with a mass weighting factor.
+    
+    This is the same as the ExpFitSGFgBgNormNewStatistic except the likelihood
+    is multiplied by a signal rate prior modelled as uniform over chirp mass.
+    As templates are distributed roughly according to mchirp^(-11/3) we
+    weight by the inverse of this. This ensures that loud events at high mass
+    where template density is sparse are not swamped by events at lower masses
+    where template density is high.
+    """
+
+    def __init__(self, sngl_ranking, files=None, ifos=None,
+                 max_chirp_mass=None, **kwargs):
+        """
+        Create a statistic class instance
+
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+        ifos: list of strs, not used here
+            The list of detector names
+        max_chirp_mass: float, default=None
+            If given, if a template's chirp mass is above this value it will
+            be reweighted as if it had this chirp mass. This is to avoid the
+            problem where the distribution fails to be accurate at high mass
+            and we can have a case where a single highest-mass template might
+            produce *all* the loudest background (and foreground) events.
+        """
+
         ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
                                               **kwargs)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
@@ -1316,6 +1456,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
         self.curr_mchirp = None
 
     def single(self, trigs):
+
         from pycbc.conversions import mchirp_from_mass1_mass2
         self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
                                                    trigs.param['mass2'])
