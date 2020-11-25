@@ -255,7 +255,7 @@ class QuadratureSumStatistic(Stat):
         """
         # Safety against subclassing and not rethinking this
         allowed_names = ['QuadratureSumStatistic']
-        if type(self).__name__ not in ['QuadratureSumStatistic']:
+        if type(self).__name__ not in allowed_names:
             err_msg = "This is being called from a subclass which has not "
             err_msg += "been checked for validity with this method. If it is "
             err_msg += "valid for the subclass to come here, include in the "
@@ -630,7 +630,7 @@ class ExpFitStatistic(NewSNRStatistic):
     template over single-ifo newsnr values.
     """
 
-    def __init__(self, files=None, ifos=None, **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
         Create a statistic class instance
 
@@ -794,6 +794,40 @@ class ExpFitStatistic(NewSNRStatistic):
 
         return self.lognoiserate(trigs)
 
+    def single_multiifo(self, single_info):
+        """
+        Calculate the statistic for a single detector candidate
+        Parameters
+        ----------
+        single_info: tuple
+            Tuple containing two values. The first is the ifo (str) and the
+            second is the output from self.single()
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector statistics
+        """
+        err_msg = "Sorry! No-one has implemented this method yet! "
+        raise ValueError(err_msg)
+
+    def coinc(self, s, slide, step, to_shift,
+              **kwargs): # pylint:disable=unused-argument
+        """
+        Calculate the coincident detection statistic.
+        """
+        err_msg = "Sorry! No-one has implemented this method yet! "
+        raise ValueError(err_msg)
+
+    def coinc_lim_for_thresh(self, s, thresh, limifo,
+                             **kwargs): # pylint:disable=unused-argument
+        """
+        Optimization function to identify coincs too quiet to be of interest
+        Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
+        """
+        err_msg = "Sorry! No-one has implemented this method yet! "
+        raise ValueError(err_msg)
+
     # Keeping this here to help write the new coinc method.
     def coinc_OLD(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
@@ -840,7 +874,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
     approximates combined (new)snr for coincs with similar newsnr in each ifo
     """
 
-    def __init__(self, files=None, ifos=None, **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
         Create a statistic class instance
 
@@ -967,6 +1001,14 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             Array of limits on the limifo single statistic to
             exceed thresh.
         """
+        # Safety against subclassing and not rethinking this
+        allowed_names = ['ExpFitCombinedSNR']
+        if type(self).__name__ not in allowed_names:
+            err_msg = "This is being called from a subclass which has not "
+            err_msg += "been checked for validity with this method. If it is "
+            err_msg += "valid for the subclass to come here, include in the "
+            err_msg += "list of allowed_names above."
+            raise ValueError(err_msg)
 
         return thresh * ((len(s) + 1) ** 0.5) - sum(sngl[1] for sngl in s)
 
@@ -977,7 +1019,7 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
     """
 
     # default is 2-ifo operation with exactly 1 'phasetd' file
-    def __init__(self, files=None, ifos=None, **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
         Create a statistic class instance
 
@@ -1027,8 +1069,41 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    # FIXME: Add new-style coinc functions here. I think currently this would
-    #        use parent classes and ignore the PhaseTD bit.
+    def single_multiifo(self, single_info):
+        """
+        Calculate the statistic for a single detector candidate
+        Parameters
+        ----------
+        single_info: tuple
+            Tuple containing two values. The first is the ifo (str) and the
+            second is the output from self.single()
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector statistics
+        """
+        err_msg = "Sorry! No-one has implemented this method yet! "
+        raise ValueError(err_msg)
+
+    def coinc(self, s, slide, step, to_shift,
+              **kwargs): # pylint:disable=unused-argument
+        """
+        Calculate the coincident detection statistic.
+        """
+        err_msg = "Sorry! No-one has implemented this method yet! "
+        raise ValueError(err_msg)
+
+    def coinc_lim_for_thresh(self, s, thresh, limifo,
+                             **kwargs): # pylint:disable=unused-argument
+        """
+        Optimization function to identify coincs too quiet to be of interest
+        Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers.
+        """
+        err_msg = "Sorry! No-one has implemented this method yet! "
+        raise ValueError(err_msg)
+
+    # Keeping the old statistic code here for now to help with reimplementing
     def coinc_OLD(self, s0, s1, slide, step):
         # logsignalrate function inherited from PhaseTDStatistic
         logr_s = self.logsignalrate(s0, s1, slide * step)
@@ -1060,9 +1135,8 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
     template over single-ifo newsnr values.
     """
 
-    # FIXME: benchmark lograte is not used here, but time_addition is required
-    def __init__(self, files=None, ifos=None, benchmark_lograte=-14.6,
-                 **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None,
+                 benchmark_lograte=-14.6, **kwargs):
         """
         Create a statistic class instance
 
@@ -1077,10 +1151,11 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
             statistic class.
         ifos: list of strs, not used here
             The list of detector names
+        benchmark_lograte: float, default=-14.6
+            benchmark_lograte is log of a representative noise trigger rate.
+            The default comes from H1L1 (O2) and is 4.5e-7 Hz.
         """
 
-        # benchmark_lograte is log of a representative noise trigger rate
-        # This comes from H1L1 (O2) and is 4.5e-7 Hz
         super(ExpFitSGBgRateStatistic, self).__init__(files=files, ifos=ifos,
                                                       **kwargs)
         self.benchmark_lograte = benchmark_lograte
@@ -1163,6 +1238,15 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
             Array of limits on the limifo single statistic to
             exceed thresh.
         """
+
+        # Safety against subclassing and not rethinking this
+        allowed_names = ['ExpFitSGBgRateStatistic']
+        if type(self).__name__ not in allowed_names:
+            err_msg = "This is being called from a subclass which has not "
+            err_msg += "been checked for validity with this method. If it is "
+            err_msg += "valid for the subclass to come here, include in the "
+            err_msg += "list of allowed_names above."
+            raise ValueError(err_msg)
 
         sngl_dict = {sngl[0]: sngl[1] for sngl in s}
         sngl_dict[limifo] = numpy.zeros(len(s[0][1]))
@@ -1425,6 +1509,16 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
             exceed thresh.
         """
 
+        # Safety against subclassing and not rethinking this
+        allowed_names = ['ExpFitSGFgBgNormNewStatistic']
+        if type(self).__name__ not in allowed_names:
+            err_msg = "This is being called from a subclass which has not "
+            err_msg += "been checked for validity with this method. If it is "
+            err_msg += "valid for the subclass to come here, include in the "
+            err_msg += "list of allowed_names above."
+            raise ValueError(err_msg)
+
+
         if not self.has_hist:
             self.get_hist()
         # if the threshold is below this value all triggers will
@@ -1515,33 +1609,6 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
         self.mcm = max_chirp_mass
         self.curr_mchirp = None
 
-    def single(self, trigs):
-        """
-        Calculate the necessary single detector information
-
-        In this case the ranking rescaled (see the lognoiserate method here)
-        with the phase, end time, sigma, SNR, template_id and the
-        benchmark_logvol values added in. This also stored the current chirp
-        mass for use when computing the coinc statistic values.
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector values
-        """
-        from pycbc.conversions import mchirp_from_mass1_mass2
-        self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
-                                                   trigs.param['mass2'])
-        if self.mcm is not None:
-            # Careful - input might be a str, so cast to float
-            self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
-        return ExpFitSGFgBgNormNewStatistic.single(self, trigs)
-
     def logsignalrate(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup
@@ -1574,6 +1641,33 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
                     )
         logr_s += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
         return logr_s
+
+    def single(self, trigs):
+        """
+        Calculate the necessary single detector information
+
+        In this case the ranking rescaled (see the lognoiserate method here)
+        with the phase, end time, sigma, SNR, template_id and the
+        benchmark_logvol values added in. This also stored the current chirp
+        mass for use when computing the coinc statistic values.
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
+                                                   trigs.param['mass2'])
+        if self.mcm is not None:
+            # Careful - input might be a str, so cast to float
+            self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
+        return ExpFitSGFgBgNormNewStatistic.single(self, trigs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
