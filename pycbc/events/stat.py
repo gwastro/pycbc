@@ -239,13 +239,13 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
         sngl_ranking: str
             The name of the ranking to use for the single-detector triggers.
 
-        files: list of strs, needed for some statistics
+        files: list of strs, unused here
             A list containing the filenames of hdf format files used to help
             construct the coincident statistics. The files must have a 'stat'
             attribute which is used to associate them with the appropriate
             statistic class.
 
-        ifos: list of strs, needed for some statistics
+        ifos: list of strs, needed here
             The list of detector names
         """
 
@@ -552,6 +552,24 @@ class ExpFitStatistic(NewSNRStatistic):
     """
 
     def __init__(self, files=None, ifos=None, **kwargs):
+        """
+        Create a statistic class instance
+
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+
+        ifos: list of strs, not used here
+            The list of detector names
+        """
+
         if not len(files):
             raise RuntimeError("Can't find any statistic files !")
         NewSNRStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
@@ -572,6 +590,21 @@ class ExpFitStatistic(NewSNRStatistic):
         self.single_increasing = False
 
     def assign_fits(self, ifo):
+        """
+        Extract fits from fit files
+
+        Parameters
+        -----------
+        ifo: str
+            The detector to get fits for.
+
+        Returns
+        -------
+        rate_dict: dict
+            A dictionary containing the fit information in the `alpha`, `rate`
+            and `thresh` keys/.
+        """
+        # FIXME: Is this called lots of times? If so should it be cached?
         coeff_file = self.files[ifo+'-fit_coeffs']
         template_id = coeff_file['template_id'][:]
         alphas = coeff_file['fit_coeff'][:]
@@ -585,10 +618,40 @@ class ExpFitStatistic(NewSNRStatistic):
                 }
 
     def get_ref_vals(self, ifo):
+        """
+        Get the largest `alpha` value over all templates for given ifo.
+
+        This is stored in `self.alphamax[ifo]` in the class instance.
+
+        Parameters
+        -----------
+        ifo: str
+            The detector to get fits for.
+        """
         self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
 
     def find_fits(self, trigs):
-        """Get fit coeffs for a specific ifo and template id(s)"""
+        """
+        Get fit coeffs for a specific ifo and template id(s)
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+            The coincidence executable will always call this using a bunch of
+            trigs from a single template, there template_num is stored as an
+            attribute and we just return the single value for all templates.
+            If multiple templates are in play we must return arrays.
+
+        Returns
+        --------
+        alphai: float or numpy array
+            The alpha fit value(s)
+        ratei: float or numpy array
+            The rate fit value(s)
+        thresh: float or numpy array
+            The thresh fit value(s) 
+        """
 
         try:
             tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
@@ -606,10 +669,14 @@ class ExpFitStatistic(NewSNRStatistic):
         return alphai, ratei, thresh
 
     def lognoiserate(self, trigs):
-        """Calculate the log noise rate density over single-ifo newsnr
+        """
+        Calculate the log noise rate density over single-ifo newsnr
 
-        Read in single trigger information, make the newsnr statistic
+        Read in single trigger information, compute the ranking
         and rescale by the fitted coefficients alpha and rate
+
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
         """
         alphai, ratei, thresh = self.find_fits(trigs)
         sngl_stat = self.sngl_ranking(trigs)
@@ -622,7 +689,21 @@ class ExpFitStatistic(NewSNRStatistic):
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def single(self, trigs):
-        """Single-detector statistic, here just equal to the log noise rate"""
+        """
+        Calculate the necessary single detector information
+
+        In this case the ranking rescaled (see the lognoiserate method here).
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
 
         return self.lognoiserate(trigs)
 
