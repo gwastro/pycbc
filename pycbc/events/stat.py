@@ -1706,7 +1706,7 @@ statistic_dict = {
     'phasetd_exp_fit_stat': PhaseTDNewExpFitStatistic,
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
     'phasetd_exp_fit_sg_fgbg_norm': ExpFitSGFgBgNormNewStatistic,
-    'phasetd_exp_fit_sg_fgbg_bbh_norm' : ExpFitSGPSDFgBgNormBBHStatistic,
+    'phasetd_exp_fit_sg_fgbg_bbh_norm': ExpFitSGPSDFgBgNormBBHStatistic,
 }
 
 # FIXME: Likely I would remove this. The ranking function, and the

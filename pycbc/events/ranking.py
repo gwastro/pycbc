@@ -333,10 +333,10 @@ def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
 # def get_sngls_ranking_from_trigs_A(trigs, statname, **kwargs):
 #     """
 #     Return ranking for all trigs given a statname.
-# 
+#
 #     Compute the single-detector ranking for a list of input triggers for a
 #     specific statname.
-# 
+#
 #     Parameters
 #     -----------
 #     trigs: dict of numpy.ndarrays
