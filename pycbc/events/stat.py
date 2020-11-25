@@ -101,6 +101,24 @@ class Stat(object):
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise ValueError(err_msg)
 
+    def single_multiifo(self, single_info):
+        """
+        Calculate the statistic for a single detector candidate
+
+        Parameters
+        ----------
+        single_info: tuple
+            Tuple containing two values. The first is the ifo (str) and the
+            second is the output from self.single()
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector statistics
+        """
+        err_msg = "This function is a stub that should be overridden by the "
+        err_msg += "sub-classes. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     def sngl_ranking(self, trigs):
         """
@@ -746,13 +764,32 @@ class ExpFitStatistic(NewSNRStatistic):
 
 
 class ExpFitCombinedSNR(ExpFitStatistic):
-    """Reworking of ExpFitStatistic designed to resemble network SNR
+    """
+    Reworking of ExpFitStatistic designed to resemble network SNR
 
     Use a monotonic function of the negative log noise rate density which
     approximates combined (new)snr for coincs with similar newsnr in each ifo
     """
 
     def __init__(self, files=None, ifos=None, **kwargs):
+        """
+        Create a statistic class instance
+
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+
+        ifos: list of strs, not used here
+            The list of detector names
+        """
+
         ExpFitStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
