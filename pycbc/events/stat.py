@@ -85,7 +85,7 @@ class Stat(object):
 
     def single(self, trigs): # pylint:disable=unused-argument
         """
-        Calculate the single detector statistic, here equal to newsnr
+        Calculate the necessary single detector information
 
         Parameters
         ----------
@@ -150,7 +150,10 @@ class QuadratureSumStatistic(Stat):
     """Calculate the NewSNR coincident detection statistic"""
 
     def single(self, trigs):
-        """Calculate the single detector statistic, here equal to newsnr
+        """
+        Calculate the necessary single detector information
+
+        Here just the ranking is computed and returned.
 
         Parameters
         ----------
@@ -166,7 +169,8 @@ class QuadratureSumStatistic(Stat):
 
     def coinc(self, sngls_list, slide, step, to_shift,
               **kwargs): # pylint:disable=unused-argument
-        """Calculate the coincident detection statistic.
+        """
+        Calculate the coincident detection statistic.
 
         Parameters
         ----------
@@ -191,7 +195,10 @@ class QuadratureSumStatistic(Stat):
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
-        """Calculate the required single detector statistic to exceed
+        """
+        Optimization function to identify coincs too quiet to be of interest
+
+        Calculate the required single detector statistic to exceed
         the threshold for each of the input triggers.
 
         Parameters
