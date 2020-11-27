@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import h5py, argparse, logging, numpy, numpy.random
 from ligo.segments import infinity
-from pycbc.events import veto, coinc, stat
+from pycbc.events import veto, coinc, stat, ranking
 import pycbc.version
 from numpy.random import seed, shuffle
 from pycbc.io.hdf import ReadByTemplate
@@ -34,8 +34,12 @@ parser.add_argument("--fixed-ifo", required=True,
 parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
                     help="Files containing ranking statistic info")
 parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
-                    default='newsnr',
+                    required=True,
                     help="The coinc ranking statistic to calculate")
+parser.add_argument("--sngl-ranking",
+                    choices=ranking._sngls_ranking_function_dict.keys(),
+                    required=True,
+                    help="The single-detector trigger ranking to use.")
 parser.add_argument("--statistic-keywords", nargs='*',
                     default=[],
                     help="Provide additional key-word arguments to be sent to "
@@ -134,7 +138,8 @@ for inputstr in args.statistic_keywords:
                   "Received {}".format(args.statistic_keywords)
         raise ValueError(err_txt)
 
-rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files,
+rank_method = stat.get_statistic(args.ranking_statistic)(args.sngl_ranking,
+                                                         args.statistic_files,
                                                          ifos=trigs.ifos,
                                                          **extra_kwargs)
 
@@ -274,12 +279,13 @@ for tnum in template_ids:
         for kidx in range(1, len(threshes)):
             # For each trigger in the fixed network calculate the limit int
             # the pivot detector to pass the current decimation threshold
-            pivot_lims[kidx] = rank_method.coinc_multiifo_lim_for_thresh(
+            pivot_lims[kidx] = rank_method.coinc_lim_for_thresh(
                 fixed_single_info, threshes[kidx],
                 args.pivot_ifo,
                 time_addition=args.coinc_threshold,
                 min_snr=min_snr,
-                max_sigmasq=max_sigmasq)
+                max_sigmasq=max_sigmasq
+            )
             if not rank_method.single_increasing:
                 pivot_lims[kidx] *= -1.
             # subtract small amount to account for errors due to rounding
@@ -310,10 +316,11 @@ for tnum in template_ids:
             slide *= total_factors[-1]
 
             single_info = [(i, sds[i][ids[i]]) for i in trigs.ifos]
-            cstat = rank_method.coinc_multiifo(
+            cstat = rank_method.coinc(
                 single_info, slide, args.timeslide_interval,
                 to_shift=trigs.to_shift,
-                time_addition=args.coinc_threshold)
+                time_addition=args.coinc_threshold
+            )
 
             #index values of the zerolag triggers
             fi = numpy.where(slide == 0)[0]
