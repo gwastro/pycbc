@@ -204,7 +204,7 @@ for ifocomb in ifo_combos(ifo_ids.keys()):
     coinctag = '{}det'.format(len(ifocomb))
     ctagcomb = ['full_data', coinctag]
 
-    bg_file = wf.setup_multiifo_interval_coinc(
+    bg_file = wf.setup_interval_coinc(
         workflow, hdfbank, inspcomb, statfiles, final_veto_file,
         final_veto_name, output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
 
@@ -228,7 +228,7 @@ else:
         other_ifo_keys.remove(ordered_ifo_list)
         other_bg_files = {ctype: no_fg_exc_files[ctype]
                           for ctype in other_ifo_keys}
-        final_bg_files[ordered_ifo_list] = wf.setup_multiifo_exclude_zerolag(
+        final_bg_files[ordered_ifo_list] = wf.setup_exclude_zerolag(
             workflow,
             no_fg_exc_files[ordered_ifo_list],
             wf.FileList(other_bg_files.values()),
@@ -236,7 +236,7 @@ else:
             tags=ctagcomb
         )
 
-combined_bg_file = wf.setup_multiifo_combine_statmap(
+combined_bg_file = wf.setup_combine_statmap(
                                 workflow,
                                 wf.FileList(final_bg_files.values()),
                                 wf.FileList([]),
@@ -549,7 +549,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
                                                insps, output_dir, tags=ctags)
-    # multiifo coincidence for injections
+    # coincidence for injections
     inj_coinc = {}
     for ifocomb in ifo_combos(ifo_ids.keys()):
         inspcomb = wf.select_files_by_ifo_combination(ifocomb, insps)
@@ -559,7 +559,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
         # Create coinc tag, and set up the coinc job for the combination
         coinctag = '{}det'.format(len(ifocomb))
         ctagcomb = [tag, 'injections', coinctag]
-        curr_out = wf.setup_multiifo_interval_coinc_inj(
+        curr_out = wf.setup_interval_coinc_inj(
             workflow,
             hdfbank,
             full_insps,
@@ -589,7 +589,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     combctags = [tag, 'injections']
     final_inj_bg_file_list = wf.FileList(inj_coinc.values())
-    combined_inj_bg_file = wf.setup_multiifo_combine_statmap(
+    combined_inj_bg_file = wf.setup_combine_statmap(
         workflow,
         final_inj_bg_file_list,
         wf.FileList(final_bg_files.values()),
