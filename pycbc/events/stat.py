@@ -1700,6 +1700,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
 
 statistic_dict = {
     'quadsum': QuadratureSumStatistic,
+    'single_ranking_only': QuadratureSumStatistic,
     'phasetd_newsnr': PhaseTDNewStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
@@ -1708,25 +1709,6 @@ statistic_dict = {
     'phasetd_exp_fit_sg_fgbg_norm': ExpFitSGFgBgNormNewStatistic,
     'phasetd_exp_fit_sg_fgbg_bbh_norm': ExpFitSGPSDFgBgNormBBHStatistic,
 }
-
-# FIXME: Likely I would remove this. The ranking function, and the
-#        single_multiifo method, would fulfill needs here. (Possibly!)
-# sngl_statistic_dict = {
-#     'newsnr': NewSNRStatistic,
-#     'new_snr': NewSNRStatistic, # For backwards compatibility
-#     'snr': NetworkSNRStatistic,
-#     'newsnr_cut': NewSNRCutStatistic,
-#     'exp_fit_csnr': ExpFitCombinedSNR,
-#     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
-#     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
-#     'newsnr_sgveto': NewSNRSGStatistic,
-#     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
-#     'newsnr_sgveto_psdvar_threshold': NewSNRSGPSDThresholdStatistic,
-#     'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
-#     'newsnr_sgveto_psdvar_scaled_threshold':
-#         NewSNRSGPSDScaledThresholdStatistic,
-#     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
-# }
 
 
 def get_statistic(stat):
@@ -1752,28 +1734,3 @@ def get_statistic(stat):
         return statistic_dict[stat]
     except KeyError:
         raise RuntimeError('%s is not an available detection statistic' % stat)
-
-
-# def get_sngl_statistic(stat):
-#    """
-#    Error-handling sugar around dict lookup for single-detector statistics
-#
-#    Parameters
-#    ----------
-#    stat : string
-#        Name of the single-detector statistic
-#
-#    Returns
-#    -------
-#    class
-#        Subclass of Stat base class
-#
-#    Raises
-#    ------
-#    RuntimeError
-#        If the string is not recognized as corresponding to a Stat subclass
-#    """
-#    try:
-#        return sngl_statistic_dict[stat]
-#    except KeyError:
-#       raise RuntimeError('%s is not an available detection statistic' % stat)
