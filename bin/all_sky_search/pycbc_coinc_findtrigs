@@ -37,7 +37,7 @@ parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
                     required=True,
                     help="The coinc ranking statistic to calculate")
 parser.add_argument("--sngl-ranking",
-                    choices=ranking._sngls_ranking_function_dict.keys(),
+                    choices=ranking.sngls_ranking_function_dict.keys(),
                     required=True,
                     help="The single-detector trigger ranking to use.")
 parser.add_argument("--statistic-keywords", nargs='*',
