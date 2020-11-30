@@ -24,7 +24,7 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
-from pycbc.events.stat import sngl_statistic_dict
+from pycbc.events.stat import statistic_dict
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -480,8 +480,9 @@ class SingleDetTriggers(object):
         else:
             self.mask = list(np.array(self.mask)[logic_mask])
 
-    def mask_to_n_loudest_clustered_events(self, n_loudest=10,
-                                           ranking_statistic="newsnr",
+    def mask_to_n_loudest_clustered_events(self, ranking_statistic,
+                                           sngl_ranking,
+                                           n_loudest=10,
                                            cluster_window=10,
                                            statistic_files=None):
         """Edits the mask property of the class to point to the N loudest
@@ -491,20 +492,28 @@ class SingleDetTriggers(object):
         if statistic_files is None:
             statistic_files = []
         # If this becomes memory intensive we can optimize
-        stat_instance = sngl_statistic_dict[ranking_statistic](statistic_files)
-        stat = stat_instance.single(self.trig_dict())
+        stat_instance = statistic_dict[ranking_statistic](
+            sngl_ranking
+            statistic_files
+        )
+        stat = stat_instance.single_multiifo(self.trig_dict())
 
         # Used for naming in plots ... Seems an odd place for this to live!
-        if ranking_statistic == "newsnr":
-            self.stat_name = "Reweighted SNR"
-        elif ranking_statistic == "newsnr_sgveto":
-            self.stat_name = "Reweighted SNR (+sgveto)"
-        elif ranking_statistic == "newsnr_sgveto_psdvar":
-            self.stat_name = "Reweighted SNR (+sgveto+psdvar)"
-        elif ranking_statistic == "snr":
-            self.stat_name = "SNR"
+        if sngl_ranking == "newsnr":
+            sngl_stat_name = "Reweighted SNR"
+        elif sngl_ranking == "newsnr_sgveto":
+            sngl_stat_name = "Reweighted SNR (+sgveto)"
+        elif sngl_ranking == "newsnr_sgveto_psdvar":
+            sngl_stat_name = "Reweighted SNR (+sgveto+psdvar)"
+        elif sngl_ranking == "snr":
+            sngl_stat_name = "SNR"
         else:
-            self.stat_name = ranking_statistic
+            sngl_stat_name = ranking_statistic
+
+        if ranking_statistic in ["quadsum", "single_ranking_only"]:
+            self.stat_name = sngl_stat_name
+        else:
+            self.stat_name = '_with_'.join(ranking_statistic, sngl_ranking)
 
         times = self.end_time
         index = stat.argsort()[::-1]
