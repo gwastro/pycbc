@@ -316,7 +316,7 @@ def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
     """
     # Identify correct function
     try:
-        sngl_func = _sngls_ranking_function_dict[statname]
+        sngl_func = sngls_ranking_function_dict[statname]
     except KeyError:
         err_msg = 'Single-detector ranking {} not recognized'.format(statname)
         raise ValueError(err_msg)
