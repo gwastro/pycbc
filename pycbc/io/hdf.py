@@ -493,7 +493,7 @@ class SingleDetTriggers(object):
             statistic_files = []
         # If this becomes memory intensive we can optimize
         stat_instance = statistic_dict[ranking_statistic](
-            sngl_ranking
+            sngl_ranking,
             statistic_files
         )
         stat = stat_instance.single_multiifo(self.trig_dict())
