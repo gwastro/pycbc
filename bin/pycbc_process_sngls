@@ -4,7 +4,7 @@
 
 import h5py, numpy, argparse, logging
 from pycbc.io import hdf
-from pycbc.events import stat, coinc
+from pycbc.events import stat, coinc, ranking
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -27,7 +27,11 @@ parser.add_argument('--filter-string', default=None,
 parser.add_argument('--min-snr', default=0., type=float,
                     help='Only keep triggers above the given SNR')
 parser.add_argument('--statistic-name', dest='statname',
-                    choices=stat.sngl_statistic_dict.keys(),
+                    choices=stat.statistic_dict.keys(),
+                    help='Name of statistic to evaluate and cluster on. '
+                    'If not supplied, SNR will be used')
+parser.add_argument('--sngl-ranking',
+                    choices=ranking.sngls_ranking_function_dict.keys(),
                     help='Name of statistic to evaluate and cluster on. '
                     'If not supplied, SNR will be used')
 parser.add_argument('--statistic-files', nargs='*', default=[],
@@ -65,11 +69,12 @@ sngls = hdf.SingleDetTriggers(args.single_trig_file, args.bank_file,
 
 if args.statname is not None:
     logging.info('Calculating stat')
-    statengine = stat.sngl_statistic_dict[args.statname](args.statistic_files)
+    statengine = stat.statistic_dict[args.statname](args.sngl_ranking,
+                                                    args.statistic_files)
     #  FIXME: inefficient, as we are calculating the stat on all
     #  triggers. Might need to do something complicated to fix this.
     #  Or just use files with fewer triggers :P
-    stat = statengine.single(sngls.trigs)[sngls.mask]
+    stat = statengine.single_multiifo(sngls.trigs)[sngls.mask]
 else:
     logging.info('Using SNR for clustering, if requested')
     stat = sngls.snr
@@ -126,6 +131,7 @@ outgroup.attrs['cluster_window'] = args.cluster_window or 'None'
 if args.statname is not None:
     outgroup['stat'] = stat[out_idx]
     outgroup.attrs['statname'] = args.statname
+    outgroup.arrgs['sngl_ranking'] = args.sngl_ranking
     outgroup.attrs['statistic_files'] = args.statistic_files
 
 outfile.close()

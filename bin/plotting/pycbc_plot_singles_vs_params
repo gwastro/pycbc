@@ -35,7 +35,7 @@ import pycbc.results
 import pycbc.io
 import sys
 import pycbc.version
-from pycbc.events.stat import sngl_statistic_dict
+from pycbc.events import ranking
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action="version",
@@ -62,8 +62,9 @@ parser.add_argument('--x-var', required=True,
 parser.add_argument('--y-var', required=True,
                     choices=pycbc.io.SingleDetTriggers.get_param_names(),
                     help='Parameter to plot on the y-axis. Required')
+ranking_keys = list(ranking.sngls_ranking_function_dict.keys())
 parser.add_argument('--z-var', required=True,
-                    choices=['density'] + list(sngl_statistic_dict.keys()),
+                    choices=['density'] + ranking_keys,
                     help='Quantity to plot on the color scale. Required')
 parser.add_argument('--detector', required=True,
                     help='Detector. Required')
@@ -128,8 +129,10 @@ if opts.z_var == 'density':
     norm = LogNorm()
     hb = ax.hexbin(x, y, norm=norm, vmin=1, **hexbin_style)
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
-elif opts.z_var in sngl_statistic_dict:
+elif opts.z_var in sngls_ranking_function_dict:
     cb_style = {}
+    # FIXME: This seems wrong, we probably want the SingleDetTriggers class
+    #        to autocall into the ranking. Might try to fix.
     z = getattr(trigs, opts.z_var) 
 
     z = z[mask]

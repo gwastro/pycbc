@@ -26,16 +26,16 @@ from scipy import stats as scistats
 
 from pycbc import io, events, bin_utils, results
 from pycbc.events import triggers
-from pycbc.events.stat import sngl_statistic_dict
+from pycbc.events import ranking
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
 def get_stat(statchoice, trigs):
-    # Initialize statclass with an empty file list. In general could feed it
-    # files here for statistics which need that.
-    stat_instance = sngl_statistic_dict[statchoice]([])
-    return stat_instance.single(trigs)
+    # For now this is using the single detector ranking. If we want, this
+    # could use the Stat classes in stat.py using similar code as in hdf/io.py
+    # This requires additional options, so only change this if it's useful!
+    return ranking.get_sngls_ranking_from_trigs(trigs, statname)
 
 #### MAIN ####
 
@@ -62,7 +62,7 @@ parser.add_argument("--gps-start-time", type=float,
 parser.add_argument("--gps-end-time", type=float,
                     help="End time up to which to load/plot triggers")
 parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=sngl_statistic_dict.keys(),
+                    choices=ranking.sngls_ranking_function_dict.keys(),
                     help="Function of SNR and chisq to threshold on")
 parser.add_argument("--stat-factor", type=float,
                     help="Adjustable magic number used in some sngl "
