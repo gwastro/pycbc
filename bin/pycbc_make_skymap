@@ -14,6 +14,7 @@ from pycbc.types import TimeSeries, FrequencySeries, MultiDetOptionAppendAction
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc import frame
+from pycbc.psd import interpolate
 from ligo.gracedb.rest import GraceDb
 
 
@@ -35,7 +36,7 @@ def default_frame_type(time, ifo):
         if ifo == 'V1':
             return 'V1Online'
         elif ifo in ['H1', 'L1']:
-            return ifo + '_HOFT_C00'
+            return ifo + '_HOFT_CLEAN_SUB60HZ_C01'
     raise ValueError('Detector {} not supported at time {}'.format(ifo, time))
 
 def default_channel_name(time, ifo):
@@ -56,7 +57,7 @@ def default_channel_name(time, ifo):
         if ifo == 'V1':
             return ifo + ':Hrec_hoft_16384Hz'
         elif ifo in ['H1', 'L1']:
-            return ifo + ':GDS-CALIB_STRAIN'
+            return ifo + ':DCS-CALIB_STRAIN_CLEAN_SUB60HZ_C01'
     raise ValueError('Detector {} not supported at time {}'.format(ifo, time))
 
 def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
@@ -276,15 +277,11 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
         time = coinc_results['foreground/'+ifo+'/end_time']
 
-        name='psd'
         fseries = FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'], delta_f=df)
-        from pycbc.psd import interpolate
         fseries = interpolate(fseries, 0.25)
 
         followup_data[ifo]['psd'] = fseries
 
-        name='snr'
-        units=''
         peak_bin = int(sample_rate * (time - start_time))
         max_bin = peak_bin + window_bins + 1
         if max_bin > coinc_results['foreground/'+ifo+'/snr_series'].size:
