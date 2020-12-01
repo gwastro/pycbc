@@ -4,12 +4,13 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
-      max-parallel: 32
+      max-parallel: 8
       matrix:
+        os: [ubuntu-20.04]
         python-version: [2.7, 3.6, 3.7, 3.8]
-        test-type: [help, unittest, search, inference, docs]
+
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
@@ -17,6 +18,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }} 
     - run: sudo apt-get install *fftw3* mpi intel-mkl* git-lfs
+      if: matrix.os == 'ubuntu-20.04'
+    - run: brew install fftw
+      if: matrix.os == 'macos-latest'
     - name: Install dependencies
       run: |
         GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
