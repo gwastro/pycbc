@@ -10,6 +10,8 @@ jobs:
       matrix:
         os: [ubuntu-20.04]
         python-version: [2.7, 3.6, 3.7, 3.8]
+        test-type: [help, unittest, scripts, docs]
+
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
@@ -36,7 +38,7 @@ jobs:
         pip install .
     - name: run pycbc test suite
       env:
-        PYCBC_TEST_TYPE: ${{matric.test-type}}
+        PYCBC_TEST_TYPE: ${{matrix.test-type}}
       run: |
         export LAL_DATA_PATH=$PWD
         bash tools/pycbc_test_suite.sh
