@@ -4,13 +4,13 @@ on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 8
       matrix:
         os: [ubuntu-20.04]
         python-version: [2.7, 3.6, 3.7, 3.8]
+        test-type: [help, unittest, search, inference, docs]
 
     steps:
     - uses: actions/checkout@v1
@@ -37,6 +37,8 @@ jobs:
         pip install mpi4py
         pip install .
     - name: run pycbc test suite
+      env:
+        PYCBC_TEST_TYPE: ${{matric.test-type}}
       run: |
         export LAL_DATA_PATH=$PWD
         bash tools/pycbc_test_suite.sh
