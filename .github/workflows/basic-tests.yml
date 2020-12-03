@@ -52,24 +52,21 @@ jobs:
     needs: build
     if:  github.event_name == 'push'
     steps:
-    - uses: actions/checkout@v1
     - name: retrieve built documentation
       uses: actions/download-artifact@v2
       with:
         name: documentation-page
     - name: debug
       run: |
-        ls
-        ls latest
+        mkdir _gh-pages
+        mv latest _gh-pages
     - name: deploying to gh-pages
       uses: JamesIves/github-pages-deploy-action@3.7.1
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages 
-        FOLDER: latest
-        TARGET_FOLDER: latest
+        FOLDER: _gh-pages
         SINGLE_COMMIT: true
-        CLEAN: true
   deploy_pypi:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
     needs: build
