@@ -51,10 +51,3 @@ jobs:
     runs-on: ubuntu-20.04
     needs: build_and_test
     if: github.ref == 'refs/heads/master'
-    steps:
-    - name: deploy documentation
-      uses: actions/download-artifact@v2
-      with:
-        name: documentation-page
-      run: |
-        ls
