@@ -65,11 +65,7 @@ bank = h5py.File(args.bank_file, "r") if args.bank_file else None
 trig = h5py.File(args.trigger_file, "r") if args.trigger_file else None
 
 # Check the detector
-if "detector_1" in injs.attrs.keys():  # old 2-ifo case
-    # key / value pairs are eg 'detector_1' / 'L1'
-    dets = [det for (label, det) in injs.attrs.items() if "detector" in label]
-else:  # multi-ifo
-    dets = injs.attrs["ifos"].split(" ")
+dets = injs.attrs["ifos"].split(" ")
 if args.ifo not in dets:
     raise RuntimeError("Can't find detector %s in injection file!" % args.ifo)
 site = args.ifo[0].lower()
