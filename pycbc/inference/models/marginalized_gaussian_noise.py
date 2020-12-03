@@ -229,7 +229,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
         """Adds ``loglr``, ``maxl_polarization``, and the ``optimal_snrsq`` in
         each detector.
         """
-        return ['loglr', 'maxl_polarization'] + \
+        return ['loglr', 'maxl_polarization', 'maxl_loglr'] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data]
 
     def _nowaveform_loglr(self):
@@ -316,6 +316,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
         # store the maxl polarization
         idx = lr.argmax()
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
+        setattr(self._current_stats, 'maxl_loglr', lr[idx])
 
         # just store the maxl optimal snrsq
         for det in wfs:
