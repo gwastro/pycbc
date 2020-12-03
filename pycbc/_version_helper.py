@@ -124,7 +124,7 @@ def get_git_tag(hash_, git_path='git'):
         return tag
     else:
         return None
-        
+
 def get_num_commits():
     return call(('git', 'rev-list', '--count', 'HEAD'))
 
