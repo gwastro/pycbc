@@ -66,7 +66,7 @@ jobs:
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages 
-        FOLDER: documentation-page
+        FOLDER: latest
         CLEAN: true
   deploy_pypi:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
@@ -77,7 +77,5 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
-    - name: Install pypa/build
-      run: pip install build
-    - name: Build a binary wheel and a source tarball
-      run: python -m build --sdist --outdir dist/ .
+    - name: build pycbc for pypi
+      run: python setup.py sdist
