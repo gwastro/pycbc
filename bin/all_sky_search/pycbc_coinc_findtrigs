@@ -397,7 +397,7 @@ for tnum in template_ids:
                 set_slide = set_slide[above]
                 test_single_info = [(i, sds[i][test_ids[i]]) for i in trigs.ifos]
 
-                test_cstat = rank_method.coinc_multiifo(
+                test_cstat = rank_method.coinc(
                     test_single_info, set_slide, args.timeslide_interval,
                     to_shift=trigs.to_shift,
                     time_addition=args.coinc_threshold)
