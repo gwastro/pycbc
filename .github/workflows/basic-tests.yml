@@ -56,3 +56,10 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: documentation-page
+    - name: deploying to gh-pages
+      uses: JamesIves/github-pages-deploy-action@3.7.1
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages 
+        FOLDER: documentation-page
+        CLEAN: true
