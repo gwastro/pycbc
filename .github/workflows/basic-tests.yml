@@ -42,7 +42,7 @@ jobs:
         export LAL_DATA_PATH=$PWD
         bash tools/pycbc_test_suite.sh
     - name: store documentation page
-      if: matrix.test-type == 'docs' && python-version == '3.8'
+      if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
       uses: actions/upload-artifact@v2
       with:
         name: documentation-page
