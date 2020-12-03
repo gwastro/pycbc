@@ -3,7 +3,7 @@ name: basic tests
 on: [push, pull_request]
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 60
@@ -47,3 +47,11 @@ jobs:
       with:
         name: documentation-page
         path: _gh-pages
+  deploy_documentation:
+    runs-on: ubuntu-20.04
+    needs: build_and_test
+    steps:
+      name: deploy documentation
+      if: github.ref == 'refs/heads/master'
+      run: |
+        ls

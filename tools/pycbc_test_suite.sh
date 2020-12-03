@@ -60,7 +60,7 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
 
 
     # run PyCBC Live test if running in Python 3
-    if [ "$PYTHON3" = "3" ]
+    if [ "$PYTHON_VERSION" = "3" ]
     then
         pushd examples/live
         bash -e run.sh
