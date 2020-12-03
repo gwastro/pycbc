@@ -147,24 +147,11 @@ stat = stat[event_idx]
 
 times = {}
 tids = {}
-# Check if using input files from old (2-ifo) coinc code
-if 'detector_1' in f.attrs:
-    times = {f.attrs['detector_1']:
-               f['{}/time1'.format(file_val)][:][event_idx],
-             f.attrs['detector_2']:
-               f['{}/time2'.format(file_val)][:][event_idx],
-             }
-    tids = {f.attrs['detector_1']:
-          f['{}/trigger_id1'.format(file_val)][:][event_idx],
-            f.attrs['detector_2']:
-          f['{}/trigger_id2'.format(file_val)][:][event_idx],
-            }
-else:
-    # Version used for multi-ifo coinc code
-    ifo_list = f.attrs['ifos'].split(' ')
-    for ifo in ifo_list:
-        times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
-        tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
+# Version used for multi-ifo coinc code
+ifo_list = f.attrs['ifos'].split(' ')
+for ifo in ifo_list:
+    times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
+    tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
 
 bank_data = h5py.File(args.bank_file, 'r')
 
@@ -177,59 +164,34 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
     curr_idx += 1
     files = wf.FileList([])
 
-    # Check if using input files from old (2-ifo) coinc code
-    if 'detector_1' in f.attrs:
-        key0, key1 = tuple(times.keys())[:2]
-        ifo_times = '%s:%s %s:%s' % (key0, times[key0][curr_idx],
-                                     key1, times[key1][curr_idx])
-        key0, key1 = tuple(tids.keys())[:2]
-        ifo_tids = '%s:%s %s:%s' % (key0, tids[key0][curr_idx],
-                                    key1, tids[key1][curr_idx])
-        # For background do not want to follow up 10 background events caused
-        # by the same event in ifo 1 and different, quiet, events in ifo 2,
-        if key0 not in event_times:
-            event_times[key0] = []
-        if int(times[key0][curr_idx]) in event_times[key0]:
-            skipped_data.append((key0, int(times[key0][curr_idx])))
-            continue
-        if key1 not in event_times:
-            event_times[key1] = []
-        if int(times[key1][curr_idx]) in event_times[key1]:
-            skipped_data.append((key1, int(times[key1][curr_idx])))
-            continue
-        event_times[key0].append(int(times[key0][curr_idx]))
-        event_times[key1].append(int(times[key1][curr_idx]))
+    ifo_times_strings = []
+    ifo_tids_strings = []
+    duplicate = False
+    for ifo in times:
+        ifo_times_string = '%s:%s' % (ifo, times[ifo][curr_idx])
+        ifo_tids_string = '%s:%s' % (ifo, tids[ifo][curr_idx])
+        ifo_times_strings += [ifo_times_string]
+        ifo_tids_strings += [ifo_tids_string]
 
-    else:
-        # Version used for multi-ifo coinc code
-        ifo_times_strings = []
-        ifo_tids_strings = []
-        duplicate = False
-        for ifo in times:
-            ifo_times_string = '%s:%s' % (ifo, times[ifo][curr_idx])
-            ifo_tids_string = '%s:%s' % (ifo, tids[ifo][curr_idx])
-            ifo_times_strings += [ifo_times_string]
-            ifo_tids_strings += [ifo_tids_string]
+        # For background do not want to follow up 10 background coincs with
+        # the same event in ifo 1 and different events in ifo 2
+        if ifo not in event_times:
+            event_times[ifo] = []
+        # Don't skip coincs in zerolag or due to the sentinel time -1
+        if 'background' in args.analysis_category and \
+                times[ifo][curr_idx] != -1 and \
+                int(times[ifo][curr_idx]) in event_times[ifo]:
+            skipped_data.append((ifo, int(times[ifo][curr_idx])))
+            duplicate = True
+            break
 
-            # For background do not want to follow up 10 background coincs with
-            # the same event in ifo 1 and different events in ifo 2
-            if ifo not in event_times:
-                event_times[ifo] = []
-            # Don't skip coincs in zerolag or due to the sentinel time -1
-            if 'background' in args.analysis_category and \
-                    times[ifo][curr_idx] != -1 and \
-                    int(times[ifo][curr_idx]) in event_times[ifo]:
-                skipped_data.append((ifo, int(times[ifo][curr_idx])))
-                duplicate = True
-                break
+    if duplicate:
+        continue
+    for ifo in times:
+        event_times[ifo].append(int(times[ifo][curr_idx]))
 
-        if duplicate:
-            continue
-        for ifo in times:
-            event_times[ifo].append(int(times[ifo][curr_idx]))
-
-        ifo_times = ' '.join(ifo_times_strings)
-        ifo_tids = ' '.join(ifo_tids_strings)
+    ifo_times = ' '.join(ifo_times_strings)
+    ifo_tids = ' '.join(ifo_tids_strings)
 
     event_count += 1
     if skipped_data:
