@@ -41,3 +41,9 @@ jobs:
       run: |
         export LAL_DATA_PATH=$PWD
         bash tools/pycbc_test_suite.sh
+    - name: store documentation page
+      if: matrix.test-type == 'docs'
+      uses: actions/upload-artifact@v2
+      with:
+        name: documentation-page
+        path: _gh-pages
