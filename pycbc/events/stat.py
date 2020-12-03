@@ -292,7 +292,8 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
             The list of detector names
         """
 
-        QuadratureSumStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
+        QuadratureSumStatistic.__init__(self, sngl_ranking, files=files,
+                                        ifos=ifos, **kwargs)
 
         self.single_dtype = [
             ('snglstat', numpy.float32),
@@ -650,7 +651,8 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         if not len(files):
             raise RuntimeError("Can't find any statistic files !")
-        QuadratureSumStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
+        QuadratureSumStatistic.__init__(self, sngl_ranking, files=files,
+                                        ifos=ifos, **kwargs)
 
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
@@ -892,7 +894,8 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             The list of detector names
         """
 
-        ExpFitStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
+        ExpFitStatistic.__init__(self, sngl_ranking, files=files, ifos=ifos,
+                                 **kwargs)
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
         self.single_increasing = True
@@ -1036,9 +1039,11 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
         """
 
         # read in both foreground PDF and background fit info
-        ExpFitCombinedSNR.__init__(self, files=files, ifos=ifos, **kwargs)
+        ExpFitCombinedSNR.__init__(self, sngl_ranking, files=files, ifos=ifos,
+                                   **kwargs)
         # need the self.single_dtype value from PhaseTDStatistic
-        PhaseTDNewStatistic.__init__(self, files=files, ifos=ifos, **kwargs)
+        PhaseTDNewStatistic.__init__(self, sngl_ranking, files=files,
+                                     ifos=ifos, **kwargs)
 
     def single(self, trigs):
         """
@@ -1155,7 +1160,8 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
             The default comes from H1L1 (O2) and is 4.5e-7 Hz.
         """
 
-        super(ExpFitSGBgRateStatistic, self).__init__(files=files, ifos=ifos,
+        super(ExpFitSGBgRateStatistic, self).__init__(sngl_ranking,
+                                                      files=files, ifos=ifos,
                                                       **kwargs)
         self.benchmark_lograte = benchmark_lograte
         self.get_newsnr = ranking.get_newsnr_sgveto
@@ -1279,13 +1285,13 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         """
 
         # read in background fit info and store it
-        ExpFitSGBgRateStatistic.__init__(self, files=files, ifos=ifos,
-                                         **kwargs)
+        ExpFitSGBgRateStatistic.__init__(self, sngl_ranking, files=files,
+                                         ifos=ifos, **kwargs)
         # if ifos not already set, determine via background fit info
         self.ifos = self.ifos or self.bg_ifos
         # PhaseTD statistic single_dtype plus network sensitivity benchmark
-        PhaseTDNewStatistic.__init__(self, files=files, ifos=self.ifos,
-                                     **kwargs)
+        PhaseTDNewStatistic.__init__(self, sngl_ranking, files=files,
+                                     ifos=self.ifos, **kwargs)
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
 
         self.get_newsnr = ranking.get_newsnr_sgveto
@@ -1600,9 +1606,8 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
             and we can have a case where a single highest-mass template might
             produce *all* the loudest background (and foreground) events.
         """
-
-        ExpFitSGFgBgNormNewStatistic.__init__(self, files=files, ifos=ifos,
-                                              **kwargs)
+        ExpFitSGFgBgNormNewStatistic.__init__(self, sngl_ranking, files=files,
+                                              ifos=ifos, **kwargs)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
         self.mcm = max_chirp_mass
         self.curr_mchirp = None
