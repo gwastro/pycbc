@@ -47,14 +47,3 @@ jobs:
       with:
         name: documentation-page
         path: _gh-pages
-  deploy_documentation:
-    runs-on: ubuntu-20.04
-    needs: build_and_test
-    steps:
-      name: deploy documentation
-      if: github.ref == 'refs/heads/master'
-      uses: actions/download-artifact@v2
-      with:
-        name: documentation-page
-      run: |
-        ls
