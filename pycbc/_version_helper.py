@@ -190,7 +190,7 @@ def generate_git_version_info():
         info.version = info.tag.strip('v')
         info.release = not re.search('[a-z]', info.version.lower())
     else:
-        info.version = info.hash[:6]
+        info.version = '0.0.0-' + info.hash[:6]
         info.release = False
 
     # Determine *last* stable release
