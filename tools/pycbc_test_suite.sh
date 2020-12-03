@@ -2,6 +2,9 @@
 
 echo -e "\\n>> [`date`] Starting PyCBC test suite"
 
+PYTHON_VERSION=`python -c 'import sys; print(sys.version_info.major)'`
+echo -e "\\n>> [`date`] Python Major Version:" $PYTHON_VERSION
+
 LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
 
 RESULT=0
@@ -57,7 +60,7 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
 
 
     # run PyCBC Live test if running in Python 3
-    if [ "x$PYTHON3" = "xTRUE" ]
+    if [ "$PYTHON3" = "3" ]
     then
         pushd examples/live
         bash -e run.sh
