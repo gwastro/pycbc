@@ -1261,7 +1261,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
     Statistic combining PhaseTD, ExpFitSGBg and additional foreground info.
     """
 
-    def __init__(self, files=None, ifos=None, **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
         Create a statistic class instance
 
