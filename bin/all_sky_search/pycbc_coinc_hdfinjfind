@@ -84,17 +84,11 @@ for trigger_file, injection_file in zip(args.trigger_files,
     logging.info('Read in the coinc data: %s' % trigger_file)
     f = h5py.File(trigger_file, 'r')
 
-    # Detect whether trigger file is two-ifo or multi-ifo style
-    if 'foreground/time1' in f:
-        multi_ifo_style = False
-        ifo_list = ['H1', 'L1']
-    else:
-        multi_ifo_style = True
-        # Get list of groups which contain subgroup 'time'
-        # - these will be the IFOs
-        ifo_list = [key for key in f['foreground']
-                    if 'time' in f['foreground/%s/' % key]]
-        assert len(ifo_list) > 1
+    # Get list of groups which contain subgroup 'time'
+    # - these will be the IFOs
+    ifo_list = [key for key in f['foreground']
+                if 'time' in f['foreground/%s/' % key]]
+    assert len(ifo_list) > 1
     # Check required ifos option
     if len(ifo_list) < args.min_required_ifos:
         raise RuntimeError('min-required-ifos (%s) must be <= number of ifos'
@@ -113,38 +107,28 @@ for trigger_file, injection_file in zip(args.trigger_files,
         logging.info('No inclusive ifar/fap. Proceeding anyway')
         ifar = None
         fap = None
-    if multi_ifo_style:
-        # using multi-ifo-style trigger file input
-        ifo_times = ()
-        time_dict = {}
-        trig_dict = {}
-        for ifo in ifo_list:
-             ifo_times += (f['foreground/%s/time' % ifo][:],)
-             time_dict[ifo] = f['foreground/%s/time' % ifo][:]
-             trig_dict[ifo] = f['foreground/%s/trigger_id' % ifo][:]
-        time = numpy.array([events.mean_if_greater_than_zero(vals)[0]
-                                                   for vals in zip(*ifo_times)])
-        # We will discard injections which cannot be associated with a
-        # coincident event, thus combine segments over all combinations
-        # of coincident detectors to determine which times to keep
-        any_seg = segments.segmentlist([])
-        for key in f['segments']:
-            if key == 'foreground':
-                continue
-            else:
-                starts = f['/segments/%s/start' % key][:]
-                ends = f['/segments/%s/end' % key][:]
-                any_seg += events.start_end_to_segments(starts, ends)
-        ana_start, ana_end = events.segments_to_start_end(any_seg)
-    else:
-        # Using the old 2-ifo organisation
-        time1 = f['foreground/time1'][:]
-        time2 = f['foreground/time2'][:]
-        trig1 = f['foreground/trigger_id1'][:]
-        trig2 = f['foreground/trigger_id2'][:]
-        ana_start = f['segments/coinc/start'][:]
-        ana_end = f['segments/coinc/end'][:]
-        time = 0.5 * (time1 + time2)
+    # using multi-ifo-style trigger file input
+    ifo_times = ()
+    time_dict = {}
+    trig_dict = {}
+    for ifo in ifo_list:
+         ifo_times += (f['foreground/%s/time' % ifo][:],)
+         time_dict[ifo] = f['foreground/%s/time' % ifo][:]
+         trig_dict[ifo] = f['foreground/%s/trigger_id' % ifo][:]
+    time = numpy.array([events.mean_if_greater_than_zero(vals)[0]
+                                               for vals in zip(*ifo_times)])
+    # We will discard injections which cannot be associated with a
+    # coincident event, thus combine segments over all combinations
+    # of coincident detectors to determine which times to keep
+    any_seg = segments.segmentlist([])
+    for key in f['segments']:
+        if key == 'foreground':
+            continue
+        else:
+            starts = f['/segments/%s/start' % key][:]
+            ends = f['/segments/%s/end' % key][:]
+            any_seg += events.start_end_to_segments(starts, ends)
+    ana_start, ana_end = events.segments_to_start_end(any_seg)
 
     time_sorting = time.argsort()
 
@@ -220,23 +204,16 @@ for trigger_file, injection_file in zip(args.trigger_files,
     hdf_append(fo, 'injections/end_time', inj_time)
 
     # pick up optimal SNRs
-    if multi_ifo_style:
-        for ifo, column in args.optimal_snr_column.items():
-            optimal_snr_all = numpy.array(sim_table.get_column(column))
-            # As a single detector being vetoed won't veto all combinations,
-            # need to set optimal_snr of a vetoed ifo to zero in order
-            # to later calculate decisive optimal snr
-            iws, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
-                                             segment_name=args.segment_name)
-            optimal_snr_all[iws] = 0
-            hdf_append(fo, 'injections/optimal_snr_%s' % ifo,
-                       optimal_snr_all)
-    else:
-        ifo_map = {f.attrs['detector_1']: 1,
-                   f.attrs['detector_2']: 2}
-        for ifo, column in args.optimal_snr_column.items():
-            hdf_append(fo, 'injections/optimal_snr_%d' % ifo_map[ifo],
-                       sim_table.get_column(column))
+    for ifo, column in args.optimal_snr_column.items():
+        optimal_snr_all = numpy.array(sim_table.get_column(column))
+        # As a single detector being vetoed won't veto all combinations,
+        # need to set optimal_snr of a vetoed ifo to zero in order
+        # to later calculate decisive optimal snr
+        iws, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
+                                         segment_name=args.segment_name)
+        optimal_snr_all[iws] = 0
+        hdf_append(fo, 'injections/optimal_snr_%s' % ifo,
+                   optimal_snr_all)
 
     # pick up redshift
     if args.redshift_column:
@@ -249,23 +226,19 @@ for trigger_file, injection_file in zip(args.trigger_files,
     if 'foreground_time_exc' in f.attrs.keys():
         fo.attrs['foreground_time_exc'] = f.attrs['foreground_time_exc']
 
-    if multi_ifo_style:
-        for key in f['segments'].keys():
-            if 'foreground' in key or 'coinc' in key:
-                continue
-            if key not in fo:
-                fo.create_group(key)
-            if key in f:
-                fkey = f[key]
-            else:
-                fkey = f
-            fo[key].attrs['pivot'] = fkey.attrs['pivot']
-            fo[key].attrs['fixed'] = fkey.attrs['fixed']
-            fo[key].attrs['foreground_time'] = fkey.attrs['foreground_time']
-            fo[key].attrs['foreground_time_exc'] = fkey.attrs['foreground_time_exc']
-    else:
-        fo.attrs['detector_1'] = f.attrs['detector_1']
-        fo.attrs['detector_2'] = f.attrs['detector_2']
+    for key in f['segments'].keys():
+        if 'foreground' in key or 'coinc' in key:
+            continue
+        if key not in fo:
+            fo.create_group(key)
+        if key in f:
+            fkey = f[key]
+        else:
+            fkey = f
+        fo[key].attrs['pivot'] = fkey.attrs['pivot']
+        fo[key].attrs['fixed'] = fkey.attrs['fixed']
+        fo[key].attrs['foreground_time'] = fkey.attrs['foreground_time']
+        fo[key].attrs['foreground_time_exc'] = fkey.attrs['foreground_time_exc']
 
     hdf_append(fo, 'missed/all', missed + injection_index)
     hdf_append(fo, 'missed/within_analysis', missed_within_time + injection_index)
@@ -288,26 +261,14 @@ for trigger_file, injection_file in zip(args.trigger_files,
     if ifar is not None:
         hdf_append(fo, 'found_after_vetoes/ifar', ifar[time_sorting][found_fore_v])
         hdf_append(fo, 'found_after_vetoes/fap', fap[time_sorting][found_fore_v])
-    if multi_ifo_style:
-        for ifo in ifo_list:
-            hdf_append(fo, 'found/%s/time' % ifo,
-                       time_dict[ifo][time_sorting][found_fore])
-            hdf_append(fo, 'found/%s/trigger_id' % ifo,
-                       trig_dict[ifo][time_sorting][found_fore])
-            hdf_append(fo, 'found_after_vetoes/%s/time' % ifo,
-                       time_dict[ifo][time_sorting][found_fore_v])
-            hdf_append(fo, 'found_after_vetoes/%s/trigger_id' % ifo,
-                       trig_dict[ifo][time_sorting][found_fore_v])
-    else:
-        hdf_append(fo, 'found/time1', time1[time_sorting][found_fore])
-        hdf_append(fo, 'found/time2', time2[time_sorting][found_fore])
-        hdf_append(fo, 'found/trigger_id1', trig1[time_sorting][found_fore])
-        hdf_append(fo, 'found/trigger_id2', trig2[time_sorting][found_fore])
-        hdf_append(fo, 'found_after_vetoes/time1', time1[time_sorting][found_fore_v])
-        hdf_append(fo, 'found_after_vetoes/time2', time2[time_sorting][found_fore_v])
-        hdf_append(fo, 'found_after_vetoes/trigger_id1',
-                   trig1[time_sorting][found_fore_v])
-        hdf_append(fo, 'found_after_vetoes/trigger_id2',
-                   trig2[time_sorting][found_fore_v])
+    for ifo in ifo_list:
+        hdf_append(fo, 'found/%s/time' % ifo,
+                   time_dict[ifo][time_sorting][found_fore])
+        hdf_append(fo, 'found/%s/trigger_id' % ifo,
+                   trig_dict[ifo][time_sorting][found_fore])
+        hdf_append(fo, 'found_after_vetoes/%s/time' % ifo,
+                   time_dict[ifo][time_sorting][found_fore_v])
+        hdf_append(fo, 'found_after_vetoes/%s/trigger_id' % ifo,
+                   trig_dict[ifo][time_sorting][found_fore_v])
 
     injection_index += len(sim_table)
