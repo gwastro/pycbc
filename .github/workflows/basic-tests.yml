@@ -61,7 +61,9 @@ jobs:
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages 
-        FOLDER: .
+        FOLDER: latest
+        TARGET_FOLDER: latest
+        SINGLE_COMMIT: true
         CLEAN: true
   deploy_pypi:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
