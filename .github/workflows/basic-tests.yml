@@ -52,6 +52,7 @@ jobs:
     needs: build
     if:  github.event_name == 'push'
     steps:
+    - uses: actions/checkout@v1
     - name: retrieve built documentation
       uses: actions/download-artifact@v2
       with:
