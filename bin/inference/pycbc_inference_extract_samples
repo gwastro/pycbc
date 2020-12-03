@@ -51,14 +51,14 @@ def isthesame(current_val, val):
     """Checks that attrs values from two hdf files are the same (or nearly so).
     """
     if isinstance(current_val, float):
-        issame = numpy.isclose(current_val, val)
+        issame = numpy.isclose(current_val, val, equal_nan=True)
     elif isinstance(current_val, numpy.ndarray):
         # sort before comparing
         current_val = numpy.sort(current_val)
         val = numpy.sort(val)
         try:
             # in case of floats, just check that they're close
-            issame = numpy.isclose(current_val, val)
+            issame = numpy.isclose(current_val, val, equal_nan=True)
         except TypeError:
             # wasn't float, do direct comparison
             issame = current_val == val
