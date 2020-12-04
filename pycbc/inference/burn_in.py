@@ -299,13 +299,27 @@ class BaseBurnInTests(object):
     available_tests = ('halfchain', 'min_iterations', 'max_posterior',
                        'posterior_step', 'nacl',
                        )
+    available_sampler_test = ('chain_moments',
+                              )
 
     # pylint: disable=unnecessary-pass
 
     def __init__(self, sampler, burn_in_test, **kwargs):
         self.sampler = sampler
         # determine the burn-in tests that are going to be done
-        self.do_tests = get_vars_from_arg(burn_in_test)
+        self.do_all_test=get_vars_from_arg(burn_in_test)
+        self.do_test = [x for x in self.do_all_test if x in available_tests]
+        self.do_sampler_test = [x for x in self.do_all_test 
+                                if x in available_sampler_tests]
+        self.unrecognised_tests = [x for x in self.do_all_test 
+                                   if x not in available_tests and 
+                                   x not in available_sampler_tests]
+        #Raise an error of the burn in test is not listed
+        if self.unrecognised_tests:
+            raise ValueError("Following burn in test(s) not recognised: ",
+                             "%s"%self.unrecognised_tests,
+                             """Choose from the following tests: """,
+                             *available_tests,*available_sampler_test)
         self.burn_in_test = burn_in_test
         self.is_burned_in = False
         self.burn_in_iteration = NOT_BURNED_IN_ITER
@@ -455,11 +469,21 @@ class BaseBurnInTests(object):
         """Carries out the nacl test and stores the results."""
         pass
 
+    def chain_moments(self):
+        """Carries out the chain_moments test and stores the results. """
+        pass
+
     @abstractmethod
     def evaluate(self, filename):
-        """Performs all tests and evaluates the results to determine if and
-        when all tests pass.
+        """Performs all tests which are performed on checkpoint files and 
+        evaluates the results to determine if and when all tests pass.
         """
+        pass
+
+    def evaluate_sampler(self):                                                
+        """Performs all tests which are performed on sampler and evaluates 
+        the results to determine if and when all tests pass.                                                     
+        """                                                                      
         pass
 
     def write(self, fp, path=None):
@@ -593,11 +617,13 @@ class MCMCBurnInTests(BaseBurnInTests):
         # add the status for each parameter as additional information
         self.test_aux_info[test] = is_burned_in
 
-    def chain_moments(self,filename):
+    def chain_moments(self):
         """Applies estimate_sigma test"""
         test = 'chain_moments'
         sigmas,burn_in_iter,is_burned_in = chain_moments(self.sampler)
         self.test_aux_info[test] = is_burned_in
+        self.test_burn_in_iteration[test] = self._index2iter(filename,           
+                                                             burn_in_idx)
 
     def evaluate(self, filename):
         """Runs all of the burn-in tests."""
@@ -619,6 +645,13 @@ class MCMCBurnInTests(BaseBurnInTests):
             self.burn_in_iteration[ci] = burn_in_iter
         logging.info("Number of chains burned in: %i of %i",
                      self.is_burned_in.sum(), self.nchains)
+
+    def evaluate_sampler(self):
+        """Runs all of the burn-in tests based on sampler."""
+        for tst in self.do_sampler_tests:                                                
+            logging.info("Evaluating %s burn-in sampler test", tst)                      
+            getattr(self, tst)()  
+        
 
     def write(self, fp, path=None):
         """Writes burn-in info to an open HDF file.

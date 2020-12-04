@@ -556,6 +556,10 @@ class BaseMCMC(object):
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
+        #Perform the sampler burn in tests:
+        if self.burn_in is not None:
+            logging.info("Updating sampler burn in")
+            self.burn_in.evaluate_sampler()
         # thin and write new samples
         # get the updated thin interval to use
         thin_interval = self.get_thin_interval()
