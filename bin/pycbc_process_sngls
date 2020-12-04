@@ -26,16 +26,6 @@ parser.add_argument('--filter-string', default=None,
                          'e.g. "self.mchirp>5."')
 parser.add_argument('--min-snr', default=0., type=float,
                     help='Only keep triggers above the given SNR')
-parser.add_argument('--statistic-name', dest='statname',
-                    choices=stat.statistic_dict.keys(),
-                    help='Name of statistic to evaluate and cluster on. '
-                    'If not supplied, SNR will be used')
-parser.add_argument('--sngl-ranking',
-                    choices=ranking.sngls_ranking_function_dict.keys(),
-                    help='Name of statistic to evaluate and cluster on. '
-                    'If not supplied, SNR will be used')
-parser.add_argument('--statistic-files', nargs='*', default=[],
-                    help='Files containing ranking statistic info')
 parser.add_argument('--cluster-window', type=float,
                     help='If supplied, cluster singles by symmetrical time '
                          'window method, specify window extent from maximum'
@@ -44,6 +34,7 @@ parser.add_argument('--store-bank-values', default=False, action='store_true',
                     help='If given also add the template bank parameters into '
                          'the output file.')
 parser.add_argument('--output-file', required=True)
+stat.insert_statistic_option_group(parser)
 
 args = parser.parse_args()
 
@@ -69,12 +60,12 @@ sngls = hdf.SingleDetTriggers(args.single_trig_file, args.bank_file,
 
 if args.statname is not None:
     logging.info('Calculating stat')
-    statengine = stat.statistic_dict[args.statname](args.sngl_ranking,
-                                                    args.statistic_files)
-    #  FIXME: inefficient, as we are calculating the stat on all
+    statengine = = stat.get_statistic_from_opts(args, [args.instrument])
+    #  NOTE: inefficient, as we are calculating the stat on all
     #  triggers. Might need to do something complicated to fix this.
     #  Or just use files with fewer triggers :P
-    stat = statengine.single_multiifo(sngls.trigs)[sngls.mask]
+    sngl_info = ([args.instrument], sngls.trigs)
+    stat = statengine.single_multiifo(sngl_info)[sngls.mask]
 else:
     logging.info('Using SNR for clustering, if requested')
     stat = sngls.snr
@@ -130,7 +121,7 @@ outgroup.attrs['cluster_window'] = args.cluster_window or 'None'
 
 if args.statname is not None:
     outgroup['stat'] = stat[out_idx]
-    outgroup.attrs['statname'] = args.statname
+    outgroup.attrs['statname'] = args.ranking_statistic
     outgroup.arrgs['sngl_ranking'] = args.sngl_ranking
     outgroup.attrs['statistic_files'] = args.statistic_files
 

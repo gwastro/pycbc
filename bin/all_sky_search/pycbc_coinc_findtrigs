@@ -31,21 +31,6 @@ parser.add_argument("--fixed-ifo", required=True,
                     help="Add the ifo to use as the fixed ifo for "
                          "multi detector coincidence")
 # produces a list of lists to allow multiple invocations and multiple args
-parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
-                    help="Files containing ranking statistic info")
-parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
-                    required=True,
-                    help="The coinc ranking statistic to calculate")
-parser.add_argument("--sngl-ranking",
-                    choices=ranking.sngls_ranking_function_dict.keys(),
-                    required=True,
-                    help="The single-detector trigger ranking to use.")
-parser.add_argument("--statistic-keywords", nargs='*',
-                    default=[],
-                    help="Provide additional key-word arguments to be sent to "
-                         "the statistic class when it is initialized. Should "
-                         "be given in format --statistic-keywords "
-                         "KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ...")
 parser.add_argument("--use-maxalpha", action="store_true")
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
@@ -70,10 +55,10 @@ parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
 parser.add_argument("--batch-singles", default=5000, type=int,
                     help="Number of single triggers to process at once")
+stat.insert_statistic_option_group(parser)
 args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
-args.statistic_files = sum(args.statistic_files, [])
 args.segment_name = sum(args.segment_name, [])
 args.veto_files = sum(args.veto_files, [])
 args.trigger_files = sum(args.trigger_files, [])
@@ -127,21 +112,7 @@ for sngl in trigs.singles:
     sngl.valid = veto.segments_to_start_end(sngl.segs)
 
 # Stat class instance to calculate the coinc ranking statistic
-extra_kwargs = {}
-for inputstr in args.statistic_keywords:
-    try:
-        key, value = inputstr.split(':')
-        extra_kwargs[key] = value
-    except ValueError:
-        err_txt = "--statistic-keywords must take input in the " \
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                  "Received {}".format(args.statistic_keywords)
-        raise ValueError(err_txt)
-
-rank_method = stat.get_statistic(args.ranking_statistic)(args.sngl_ranking,
-                                                         args.statistic_files,
-                                                         ifos=trigs.ifos,
-                                                         **extra_kwargs)
+rank_method = stat.get_statistic_from_opts(args, trigs,ifos)
 
 # Sanity check, time slide interval should be larger than twice the
 # Earth crossing time, which is approximately 0.085 seconds.

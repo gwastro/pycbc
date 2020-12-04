@@ -24,7 +24,6 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
-from pycbc.events.stat import statistic_dict
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -480,40 +479,16 @@ class SingleDetTriggers(object):
         else:
             self.mask = list(np.array(self.mask)[logic_mask])
 
-    def mask_to_n_loudest_clustered_events(self, ranking_statistic,
-                                           sngl_ranking,
+    def mask_to_n_loudest_clustered_events(self, rank_method,
                                            n_loudest=10,
-                                           cluster_window=10,
-                                           statistic_files=None):
+                                           cluster_window=10):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic. Events are
         clustered so that no more than 1 event within +/- cluster-window will
         be considered."""
-        if statistic_files is None:
-            statistic_files = []
+
         # If this becomes memory intensive we can optimize
-        stat_instance = statistic_dict[ranking_statistic](
-            sngl_ranking,
-            statistic_files
-        )
-        stat = stat_instance.single_multiifo((self.ifo, self.trig_dict()))
-
-        # Used for naming in plots ... Seems an odd place for this to live!
-        if sngl_ranking == "newsnr":
-            sngl_stat_name = "Reweighted SNR"
-        elif sngl_ranking == "newsnr_sgveto":
-            sngl_stat_name = "Reweighted SNR (+sgveto)"
-        elif sngl_ranking == "newsnr_sgveto_psdvar":
-            sngl_stat_name = "Reweighted SNR (+sgveto+psdvar)"
-        elif sngl_ranking == "snr":
-            sngl_stat_name = "SNR"
-        else:
-            sngl_stat_name = ranking_statistic
-
-        if ranking_statistic in ["quadsum", "single_ranking_only"]:
-            self.stat_name = sngl_stat_name
-        else:
-            self.stat_name = '_with_'.join(ranking_statistic, sngl_ranking)
+        stat = rank_method.single_multiifo((self.ifo, self.trig_dict()))
 
         times = self.end_time
         index = stat.argsort()[::-1]

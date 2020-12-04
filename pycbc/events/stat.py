@@ -30,7 +30,6 @@ import numpy
 from . import ranking
 from . import coinc_rate
 
-
 class Stat(object):
     """Base class which should be extended to provide a coincident statistic"""
 
@@ -1746,3 +1745,104 @@ def get_statistic(stat):
         return statistic_dict[stat]
     except KeyError:
         raise RuntimeError('%s is not an available detection statistic' % stat)
+
+
+def insert_statistic_option_group(parser):
+    """
+    Add ranking statistic options to the optparser object.
+
+    Adds the options used to initialize a PyCBC Stat class.
+
+    Parameters
+    -----------
+    parser : object
+        OptionParser instance.
+
+    Returns
+    --------
+    strain_opt_group : optparser.argument_group
+        The argument group that is added to the parser.
+    """
+
+    statistic_opt_group = parser.add_argument_group(
+        "Options needed to initialize a PyCBC Stat class for computing the "
+        "ranking of events from a PyCBC search."
+    )
+
+    statistic_opt_group.add_argument(
+        "--ranking-statistic",
+        choices=statistic_dict.keys(),
+        required=True,
+        help="The coinc ranking statistic to calculate"
+    )
+
+    statistic_opt_group.add_argument(
+        "--sngl-ranking",
+        choices=ranking.sngls_ranking_function_dict.keys(),
+        required=True,
+        help="The single-detector trigger ranking to use."
+    )
+
+    statistic_opt_group.add_argument(
+        "--statistic-files",
+        nargs='*',
+        action='append',
+        default=[],
+        help="Files containing ranking statistic info"
+    )
+    
+    statistic_opt_group.add_argument(
+        "--statistic-keywords",
+        nargs='*',
+        default=[],
+        help="Provide additional key-word arguments to be sent to "
+             "the statistic class when it is initialized. Should "
+             "be given in format --statistic-keywords "
+             "KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ..."
+    )
+
+    return statistic_opt_group
+
+
+def get_statistic_from_opts(opts, ifos):
+    """
+    Return a Stat class from an optparser object.
+
+    This will assume that the options in the statistic_opt_group are present
+    and will use these options to call stat.get_statistic and initialize the
+    appropriate Stat subclass with appropriate kwargs.
+
+    Parameters
+    ----------
+    opts : optparse.OptParser instance
+        The command line options
+    ifos : list
+        The list of detector names
+
+    Returns
+    -------
+    class
+        Subclass of Stat base class
+    """
+    # flatten the list of lists of filenames to a single list (may be empty)
+    opts.statistic_files = sum(opts.statistic_files, [])
+
+    extra_kwargs = {}
+    for inputstr in opts.statistic_keywords:
+        try:
+            key, value = inputstr.split(':')
+            extra_kwargs[key] = value
+        except ValueError:
+            err_txt = "--statistic-keywords must take input in the " \
+                      "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                      "Received {}".format(opts.statistic_keywords)
+            raise ValueError(err_txt)
+
+    stat_class = get_statistic(opts.ranking_statistic)(
+        opts.sngl_ranking,
+        opts.statistic_files,
+        ifos=trigs.ifos,
+        **extra_kwargs
+    )
+
+    return stat_class

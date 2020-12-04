@@ -24,17 +24,6 @@ parser.add_argument("--trigger-file",type=str,
 parser.add_argument("--template-bank", required=True,
                     help="Template bank file in HDF format")
 # produces a list of lists to allow multiple invocations and multiple args
-parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
-                    help="Files containing ranking statistic info")
-parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
-                    default='newsnr',
-                    help="The single-detector ranking statistic to calculate")
-parser.add_argument("--statistic-keywords", nargs='*',
-                    default=[],
-                    help="Provide additional key-word arguments to be sent to "
-                         "the statistic class when it is initialized. Should "
-                         "be given in format --statistic-keywords "
-                         "KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ...")
 parser.add_argument('--trigger-snr-cut',  type=float,
                     help='Only consider triggers above the given SNR.')
 parser.add_argument('--cluster-window', type=float,
@@ -46,6 +35,7 @@ parser.add_argument('--reduced-chisq-cut', type=float,
                          'chisquared.')
 parser.add_argument("--output-file",
                     help="File to store the candidate triggers")
+stat.insert_statistic_option_group(parser)
 args = parser.parse_args()
 
 if (args.veto_files and not args.segment_names) or \
@@ -54,8 +44,6 @@ if (args.veto_files and not args.segment_names) or \
 
 if not len(args.veto_files) == len(args.segment_names):
     raise RuntimeError('--segment-names are required for each --veto-files')
-
-args.statistic_files = sum(args.statistic_files, [])
 
 init_logging(args.verbose)
 
@@ -138,9 +126,8 @@ for inputstr in args.statistic_keywords:
                   "Received {}".format(args.statistic_keywords)
         raise ValueError(err_txt)
 
-rank_stat_class = stat.get_statistic(args.ranking_statistic)
-rank_method = rank_stat_class(args.statistic_files, ifos=[ifo],
-                              **extra_kwargs)
+rank_method = stat.get_statistic_from_opts(args, [ifo])
+
 logging.info("Computing single-detector statistic")
 stat = rank_method.single_multiifo((ifo, trigs.data))
 
