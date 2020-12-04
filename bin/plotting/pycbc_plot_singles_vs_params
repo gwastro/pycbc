@@ -129,7 +129,7 @@ if opts.z_var == 'density':
     norm = LogNorm()
     hb = ax.hexbin(x, y, norm=norm, vmin=1, **hexbin_style)
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
-elif opts.z_var in sngls_ranking_function_dict:
+elif opts.z_var in ranking.sngls_ranking_function_dict:
     cb_style = {}
     # FIXME: This seems wrong, we probably want the SingleDetTriggers class
     #        to autocall into the ranking. Might try to fix.
