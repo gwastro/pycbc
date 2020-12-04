@@ -762,6 +762,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.num_templates = num_templates
         self.analysis_block = analysis_block
 
+        # FIXME: Need to discuss how to hook up Live correctly!
         stat_class = stat.get_statistic(background_statistic)
         self.stat_calculator = stat_class(stat_files, ifos)
 
