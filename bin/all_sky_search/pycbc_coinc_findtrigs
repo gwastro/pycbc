@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 import h5py, argparse, logging, numpy, numpy.random
-from pycbc import events, detector
+from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat
 import pycbc.version
 from numpy.random import seed, shuffle
+from pycbc.io.hdf import ReadByTemplate
+from pycbc.types.optparse import MultiDetOptionAction
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
@@ -13,25 +15,39 @@ parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                          "contained in the file are ignored")
 parser.add_argument("--segment-name", nargs='*', action='append', default=[],
                     help="Optional, name of veto segment in veto file")
-parser.add_argument("--strict-coinc-time", action='store_true',
-                    help="Optional, only allow coincidences between triggers "
-                         "that lie in coincident time after applying vetoes")
-parser.add_argument("--trigger-files", nargs=2,
+parser.add_argument("--gating-veto-windows", nargs='+',
+                    action=MultiDetOptionAction,
+                    help="Seconds to be vetoed before and after the central time "
+                         "of each gate. Given as detector-values pairs, e.g. "
+                         "H1:-1,2.5 L1:-1,2.5 V1:0,0")
+parser.add_argument("--trigger-files", nargs='*', action='append', default=[],
                     help="Files containing single-detector triggers")
 parser.add_argument("--template-bank", required=True,
                     help="Template bank file in HDF format")
+parser.add_argument("--pivot-ifo", required=True,
+                    help="Add the ifo to use as the pivot for multi "
+                         "detector coincidence")
+parser.add_argument("--fixed-ifo", required=True,
+                    help="Add the ifo to use as the fixed ifo for "
+                         "multi detector coincidence")
 # produces a list of lists to allow multiple invocations and multiple args
 parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
                     help="Files containing ranking statistic info")
 parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
                     default='newsnr',
                     help="The coinc ranking statistic to calculate")
+parser.add_argument("--statistic-keywords", nargs='*',
+                    default=[],
+                    help="Provide additional key-word arguments to be sent to "
+                         "the statistic class when it is initialized. Should "
+                         "be given in format --statistic-keywords "
+                         "KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ...")
 parser.add_argument("--use-maxalpha", action="store_true")
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
 parser.add_argument("--timeslide-interval", type=float,
-                    help="Interval between timeslides in seconds. Timeslides "
-                         "are disabled if the option is omitted.")
+                    help="Interval between timeslides in seconds. Timeslides are"
+                         " disabled if the option is omitted.")
 parser.add_argument("--loudest-keep-values", type=str, nargs='*',
                     default=['6:1'],
                     help="Apply successive multiplicative levels of decimation"
@@ -40,14 +56,14 @@ parser.add_argument("--loudest-keep-values", type=str, nargs='*',
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. Format"
                          " PART/NUM_PARTS")
+parser.add_argument("--randomize-template-order", action="store_true",
+                    help="Random shuffle templates with fixed seed "
+                         "before selecting range to analyze")
 parser.add_argument("--cluster-window", type=float,
                     help="Optional, window size in seconds to cluster "
                          "coincidences over the bank")
 parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
-parser.add_argument("--randomize-template-order", action="store_true",
-                    help="Random shuffle templates with fixed seed "
-                         "before selecting range to analyze")
 parser.add_argument("--batch-singles", default=5000, type=int,
                     help="Number of single triggers to process at once")
 args = parser.parse_args()
@@ -56,6 +72,7 @@ args = parser.parse_args()
 args.statistic_files = sum(args.statistic_files, [])
 args.segment_name = sum(args.segment_name, [])
 args.veto_files = sum(args.veto_files, [])
+args.trigger_files = sum(args.trigger_files, [])
 
 if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
@@ -64,107 +81,9 @@ if args.verbose:
 def parse_template_range(num_templates, rangestr):
     part = int(rangestr.split('/')[0])
     pieces = int(rangestr.split('/')[1])
-    tmin =  int(num_templates / float(pieces) * part)
-    tmax =  int(num_templates / float(pieces) * (part+1))
+    tmin = int(num_templates / float(pieces) * part)
+    tmax = int(num_templates / float(pieces) * (part+1))
     return tmin, tmax
-
-class ReadByTemplate(object):
-    def __init__(self, filename, bank=None, segment_name=[], veto_files=[]):
-        self.filename = filename
-        self.file = h5py.File(filename, 'r')
-        self.ifo = tuple(self.file.keys())[0]
-        self.valid = None
-        self.bank = h5py.File(bank, 'r') if bank else None
-
-        # Determine the segments which define the boundaries of valid times
-        # to use triggers
-        from ligo.segments import segmentlist, segment
-        key = '%s/search/' % self.ifo
-        s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
-        self.segs = veto.start_end_to_segments(s, e).coalesce()
-        for vfile, name in zip(veto_files, segment_name):
-            veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
-                                                        segment_name=name)
-            self.segs = (self.segs - veto_segs).coalesce()
-        self.valid = veto.segments_to_start_end(self.segs)
-
-    def get_data(self, col, num):
-        """ Get a column of data for template with id 'num'
-
-        Parameters
-        ----------
-        col: str
-            Name of column to read
-        num: int
-            The template id to read triggers for
-
-        Returns
-        -------
-        data: numpy.ndarray
-            The requested column of data
-        """
-        ref = self.file['%s/%s_template' % (self.ifo, col)][num]
-        return self.file['%s/%s' % (self.ifo, col)][ref]
-
-    def set_template(self, num):
-        """ Set the active template to read from
-
-        Parameters
-        ----------
-        num: int
-            The template id to read triggers for
-
-        Returns
-        -------
-        trigger_id: numpy.ndarray
-            The indices of this templates triggers
-        """
-        self.template_num = num
-        times = self.get_data('end_time', num)
-
-        # Determine which of these template's triggers are kept after
-        # applying vetoes
-        if self.valid:
-            self.keep = veto.indices_within_times(times, self.valid[0], self.valid[1])
-            logging.info('applying vetoes')
-        else:
-            self.keep = numpy.arange(0, len(times))
-
-        if self.bank is not None:
-            self.param = {}
-            if 'parameters' in self.bank.attrs :
-                for col in self.bank.attrs['parameters']:
-                    self.param[col] = self.bank[col][self.template_num]
-            else :
-                for col in self.bank:
-                    self.param[col] = self.bank[col][self.template_num]
-
-        # Calculate the trigger id by adding the relative offset in self.keep
-        # to the absolute beginning index of this templates triggers stored
-        # in 'template_boundaries'
-        trigger_id = self.keep + self.file['%s/template_boundaries' % self.ifo][num]
-        return trigger_id
-
-    def __getitem__(self, col):
-        """ Return the column of data for current active template after
-        applying vetoes
-
-        Parameters
-        ----------
-        col: str
-            Name of column to read
-
-        Returns
-        -------
-        data: numpy.ndarray
-            The requested column of data
-        """
-        if self.template_num == None:
-            raise ValueError('You must call set_template to first pick the '
-                             'template to read data from')
-        data = self.get_data(col, self.template_num)
-        data = data[self.keep] if self.valid else data
-        return data
 
 logging.info('Starting...')
 
@@ -172,30 +91,80 @@ num_templates = len(h5py.File(args.template_bank, "r")['template_hash'])
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 
-logging.info('Opening first trigger file: %s' % args.trigger_files[0])
-trigs0= ReadByTemplate(args.trigger_files[0],
-                       args.template_bank, args.segment_name, args.veto_files)
-logging.info('Opening second trigger file: %s' % args.trigger_files[1])
-trigs1 = ReadByTemplate(args.trigger_files[1],
-                        args.template_bank, args.segment_name, args.veto_files)
-coinc_segs = (trigs0.segs & trigs1.segs).coalesce()
+class MultiifoTrigs(object):
+    """store trigger info in parallel with ifo name and shift vector"""
+    def __init__(self):
+        self.ifos = []
+        self.to_shift = []
+        self.singles = []
 
-if args.strict_coinc_time:
-    trigs0.segs = coinc_segs
-    trigs1.segs = coinc_segs
-    trigs0.valid = veto.segments_to_start_end(trigs0.segs)
-    trigs1.valid = veto.segments_to_start_end(trigs1.segs)
+trigs = MultiifoTrigs()
+for i in range(len(args.trigger_files)):
+    logging.info('Opening trigger file %s: %s' % (i,args.trigger_files[i]))
+    reader = ReadByTemplate(args.trigger_files[i],
+                            args.template_bank,
+                            args.segment_name,
+                            args.veto_files,
+                            args.gating_veto_windows)
+    ifo = reader.ifo
+    trigs.ifos.append(ifo)
+    # time shift is subtracted from pivot ifo time
+    trigs.to_shift.append(-1 if ifo == args.pivot_ifo else 0)
+    logging.info('Applying time shift multiple %i to ifo %s' %
+                 (trigs.to_shift[-1], trigs.ifos[-1]))
+    trigs.singles.append(reader)
 
-# initialize a Stat class instance to calculate the coinc ranking statistic
-ifos = [trigs0.ifo, trigs1.ifo]
+# Coinc_segs contains only segments where all ifos are analyzed
+coinc_segs = veto.start_end_to_segments([-infinity()], [infinity()])
+for i, sngl in zip(trigs.ifos, trigs.singles):
+    coinc_segs = (coinc_segs & sngl.segs)
+for sngl in trigs.singles:
+    sngl.segs = coinc_segs
+    sngl.valid = veto.segments_to_start_end(sngl.segs)
+
+# Stat class instance to calculate the coinc ranking statistic
+extra_kwargs = {}
+for inputstr in args.statistic_keywords:
+    try:
+        key, value = inputstr.split(':')
+        extra_kwargs[key] = value
+    except ValueError:
+        err_txt = "--statistic-keywords must take input in the " \
+                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                  "Received {}".format(args.statistic_keywords)
+        raise ValueError(err_txt)
+
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files,
-                                                         ifos=ifos)
-if args.use_maxalpha:
-    rank_method.use_alphamax()
-det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
-time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
+                                                         ifos=trigs.ifos,
+                                                         **extra_kwargs)
 
-# Calculate the total decimation factors for each step
+# Sanity check, time slide interval should be larger than twice the
+# Earth crossing time, which is approximately 0.085 seconds.
+TWOEARTH = 0.085
+if args.timeslide_interval is not None and args.timeslide_interval <= TWOEARTH:
+    raise parser.error("The time slide interval should be larger "
+                       "than twice the Earth crossing time.")
+
+# slide = 0 means don't do timeslides
+if args.timeslide_interval is None:
+    args.timeslide_interval = 0
+
+if args.randomize_template_order:
+    seed(0)
+    template_ids = numpy.arange(0, num_templates)
+    shuffle(template_ids)
+    template_ids = template_ids[tmin:tmax]
+else:
+    template_ids = range(tmin, tmax)
+
+# 'data' will store output of coinc finding
+# in addition to these lists of coinc info, will also store trigger times and
+# ids in each ifo
+data = {'stat': [], 'decimation_factor': [], 'timeslide_id': [], 'template_id': []}
+for ifo in trigs.ifos:
+    data['%s/time' % ifo] = []
+    data['%s/trigger_id' % ifo] = []
+
 total_factors = [1]
 threshes = [numpy.inf]
 for decstr in args.loudest_keep_values:
@@ -207,211 +176,257 @@ for decstr in args.loudest_keep_values:
     # of an integer
     total_factors.append(total_factors[-1] * int(factor))
 
-if args.timeslide_interval is not None and \
-        time_window >= args.timeslide_interval:
-    raise parser.error("The maximum time delay between detectors should be "
-                       "smaller than the timeslide interval.")
-
-# slide = 0 means don't do timeslides
-if args.timeslide_interval is None:
-    args.timeslide_interval = 0
-
-logging.info('The coincidence window is %3.1f ms' % (time_window * 1000))
-
-data = {'stat': [],
-        'decimation_factor': [],
-        'time1': [],
-        'time2': [],
-        'trigger_id1': [],
-        'trigger_id2': [],
-        'timeslide_id': [],
-        'template_id':[]
-}
-
-if args.randomize_template_order:
-    seed(0)
-    template_ids = numpy.arange(0, num_templates)
-    shuffle(template_ids)
-    template_ids = template_ids[tmin:tmax]
-else:
-    template_ids = range(tmin, tmax)
-
 for tnum in template_ids:
-    tid0g = trigs0.set_template(tnum)
-    tid1g = trigs1.set_template(tnum)
+    times_full = {}
+    sds_full = {}
+    tids_full = {}
+    logging.info('Obtaining trigs for template %i ..' % (tnum))
+    for i, sngl in zip(trigs.ifos, trigs.singles):
+        tids_full[i] = sngl.set_template(tnum)
+        times_full[i] = sngl['end_time']
+        logging.info('%s:%s' % (i, len(tids_full[i])))
 
-    if (len(tid0g) == 0) or (len(tid1g) == 0):
+        # get single-detector statistic
+        sds_full[i] = rank_method.single(sngl)
+         
+    mintrigs = min([len(ti) for ti in tids_full.values()])
+    if mintrigs == 0:
+        logging.info('No triggers in at least one ifo for template %i, '
+                     'skipping' % tnum)
         continue
 
-    t0g = trigs0['end_time']
-    t1g = trigs1['end_time']
-    logging.info('Trigs for template %s, %s:%s %s:%s' % \
-                (tnum, trigs0.ifo, len(t0g), trigs1.ifo, len(t1g)))
+    if type(rank_method.single_dtype) == list:
+        entries = [e[0] for e in rank_method.single_dtype]
+        if 'snr' in entries:
+            min_snr = min([numpy.min(sds_full[i]['snr']) for i in trigs.ifos])
+        else:
+            min_snr = None
+        if 'sigmasq'in entries:
+            max_sigmasq = min([numpy.max(sds_full[i]['sigmasq']) for i in trigs.ifos])
+        else:
+            max_sigmasq = None
+    else:
+        min_snr = None
+        max_sigmasq = None
 
-    logging.info('Calculating Single Detector Statistic')
-    s0g, s1g = rank_method.single(trigs0), rank_method.single(trigs1)
-
-    # Test whether s0g and s1g are single arrays or record arrays
+    # Test whether sds_full contains single arrays or record arrays
     # this depends on the stat being used
     try:
-        s0gstat = s0g['snglstat'].copy()
-        s1gstat = s1g['snglstat'].copy()
+        pivot_stat = sds_full[args.pivot_ifo]['snglstat'].copy()
+        fixed_stat = sds_full[args.fixed_ifo]['snglstat'].copy()
     except IndexError:
-        s0gstat = s0g.copy()
-        s1gstat = s1g.copy()
+        pivot_stat = sds_full[args.pivot_ifo].copy()
+        fixed_stat = sds_full[args.fixed_ifo].copy()
 
-    s0gsort = numpy.argsort(s0gstat)
-    s1gsort = numpy.argsort(s1gstat)
+    pivot_sort = numpy.argsort(pivot_stat)
+    fixed_sort = numpy.argsort(fixed_stat)
 
     if not rank_method.single_increasing:
-        s0gsort = s0gsort[::-1]
-        s1gsort = s1gsort[::-1]
+        pivot_sort = pivot_sort[::-1]
+        fixed_sort = fixed_sort[::-1]
 
-    # Loop over the single triggers and calculate the coincs they can
-    # form
+    # Loop over the single triggers and calculate the coincs they can form
     start0 = 0
-    while start0 < len(s0g):
+    while start0 < len(sds_full[args.fixed_ifo]):
         start1 = 0
 
         end0 = start0 + args.batch_singles
-        if end0 > len(s0g):
-            end0 = len(s0g)
+        if end0 > len(sds_full[args.fixed_ifo]):
+            end0 = len(sds_full[args.fixed_ifo])
 
-        s0gid = s0gsort[start0:end0]
+        fixed_idxs = fixed_sort[start0:end0]
 
-        # Set the local parts of the single information we'll use
-        tid0 = tid0g[s0gid]
-        s0 = s0g[s0gid]
-        t0 = t0g[s0gid]
+        times = times_full.copy()
+        times[args.fixed_ifo] = times_full[args.fixed_ifo][fixed_idxs]
+        
+        sds = sds_full.copy()
+        sds[args.fixed_ifo] = sds_full[args.fixed_ifo][fixed_idxs]
 
-        s1lims = {}
-        s1lower = {}
+        tids = tids_full.copy()
+        tids[args.fixed_ifo] = tids_full[args.fixed_ifo][fixed_idxs]
+
+        # if decimation is being used precalculate the fixed network coincidences
+        if len(threshes) > 1:
+            fixed_ifos = [i for i in trigs.ifos if i != args.pivot_ifo]
+            fixed_times = {i: times[i] for i in fixed_ifos}
+
+            if len(fixed_ifos) > 1:
+                fixed_ids, fixed_slide = coinc.time_multi_coincidence(fixed_times, 0.,
+                                                                      args.coinc_threshold,
+                                                                      fixed_ifos[0],
+                                                                      fixed_ifos[1])
+                if len(fixed_slide) == 0:
+                    start0 += args.batch_singles
+                    continue
+
+                # list in ifo order of remaining trigger data
+                fixed_single_info = [(i, sds[i][fixed_ids[i]]) for i in fixed_ifos]
+                fixed_times = {i: fixed_times[i][fixed_ids[i]] for i in fixed_ifos}
+
+            else:
+                det = fixed_ifos[0]
+                fixed_ids = {det: numpy.arange(len(times[det]))}
+                fixed_single_info = [(i, sds[i]) for i in fixed_ifos]
+                fixed_times = {i: times[i] for i in fixed_ifos}
+
+        pivot_lims = {}
+        pivot_lower = {}
         for kidx in range(1, len(threshes)):
-            # For each trigger in detector 0 get the limit in detector 1 to pass
-            # the current decimation threshold
-            s1lims[kidx] = rank_method.coinc_lim_for_thresh(s0, threshes[kidx])
+            # For each trigger in the fixed network calculate the limit int
+            # the pivot detector to pass the current decimation threshold
+            pivot_lims[kidx] = rank_method.coinc_multiifo_lim_for_thresh(
+                fixed_single_info, threshes[kidx],
+                args.pivot_ifo,
+                time_addition=args.coinc_threshold,
+                min_snr=min_snr,
+                max_sigmasq=max_sigmasq)
             if not rank_method.single_increasing:
-                s1lims[kidx] *= -1.
+                pivot_lims[kidx] *= -1.
             # subtract small amount to account for errors due to rounding
-            s1lims[kidx] -= 1e-6
+            pivot_lims[kidx] -= 1e-6
             # Get the minimum statistic required for all triggers at the
             # current decimation threshold
-            s1lower[kidx] = s1lims[kidx].min()
+            pivot_lower[kidx] = pivot_lims[kidx].min()
 
-        while start1 < len(s1g):
-
+        while start1 < len(sds_full[args.pivot_ifo]):
             end1 = start1 + args.batch_singles
-            if end1 > len(s1g):
-                end1 = len(s1g)
+            if end1 > len(sds_full[args.pivot_ifo]):
+                end1 = len(sds_full[args.pivot_ifo])
 
-            s1gid = s1gsort[start1:end1]
+            pivot_idxs = pivot_sort[start1:end1]
 
-            # Set the local parts of the single information we'll use
-            tid1 = tid1g[s1gid]
-            s1 = s1g[s1gid]
-            t1 = t1g[s1gid]
+            times[args.pivot_ifo] = times_full[args.pivot_ifo][pivot_idxs]
 
-            # Do time coincidence for slides that will be kept after all decimation
-            curr_shift = args.timeslide_interval * total_factors[-1]
-            i0, i1, slide = coinc.time_coincidence(t0, t1, time_window, curr_shift)
+            sds[args.pivot_ifo] = sds_full[args.pivot_ifo][pivot_idxs]
+
+            tids[args.pivot_ifo] = tids_full[args.pivot_ifo][pivot_idxs]
+
+            # Do time coincidence for slides that will be kept after the last decimation
+            ids, slide = coinc.time_multi_coincidence(times,
+                                                      args.timeslide_interval*total_factors[-1],
+                                                      args.coinc_threshold,
+                                                      args.pivot_ifo,
+                                                      args.fixed_ifo)
             slide *= total_factors[-1]
 
-            c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
+            single_info = [(i, sds[i][ids[i]]) for i in trigs.ifos]
+            cstat = rank_method.coinc_multiifo(
+                single_info, slide, args.timeslide_interval,
+                to_shift=trigs.to_shift,
+                time_addition=args.coinc_threshold)
 
-            # index values of the zerolag triggers
+            #index values of the zerolag triggers
             fi = numpy.where(slide == 0)[0]
 
-            # index values of the background triggers
+            #index values of the background triggers
             bi = numpy.where(slide != 0)[0]
+            bl = bi[cstat[bi] < threshes[-1]]
 
-            # keep foreground triggers and background triggers below
-            # the lowest decimation threshold
-            bl = bi[c[bi] < threshes[-1]]
             ti = numpy.concatenate([fi, bl])
 
-            i0 = i0[ti]
-            i1 = i1[ti]
-            c = c[ti]
+            ids = {i: t[ti] for i, t in ids.items()}
+
+            cstat = cstat[ti]
             slide = slide[ti]
             dec = numpy.concatenate([numpy.ones(len(fi)), numpy.repeat(total_factors[-1], len(bl))])
 
             try:
-                s1stat = s1['snglstat'].copy()
+                pivot_stat = sds[args.pivot_ifo]['snglstat'].copy()
             except IndexError:
-                s1stat = s1.copy()
+                pivot_stat = sds[args.pivot_ifo].copy()
 
             if not rank_method.single_increasing:
-                s1stat *= -1.
+                pivot_stat *= -1.
 
             # Starting from the largest decimation threshold, find the first decimation step
-            # where the loudest single detector trigger in s1 can pass the decimation threshold
-            # with any trigger in s0
+            # where the loudest single detector trigger in pivot can pass the decimation threshold
+            # with any trigger in the fixed network
             tidx = len(threshes)
             for i in range(1, len(threshes)):
-                if s1stat[-1] >= s1lower[kidx]:
+                if pivot_stat[-1] >= pivot_lower[kidx]:
                     tidx = i
                     break
 
             # loop through decimation steps starting from the first step where passing
             # the threshold is possible
             for kidx in range(tidx, len(threshes)):
-                
-                # Remove triggers in detector 1 that cannot form coincidences above
+
+                # Remove triggers in pivot that cannot form coincidences above
                 # the current decimation threshold
-                s1cut = numpy.searchsorted(s1stat, s1lower[kidx])
+                pivot_cut = numpy.searchsorted(pivot_stat, pivot_lower[kidx])
 
-                s1s = s1stat[s1cut:]
-                test_t1 = t1[s1cut:]
-                test_t0 = t0.copy()
+                pivot_s = pivot_stat[pivot_cut:]
 
-                # Do time coincidence for current decimation
-                curr_shift = args.timeslide_interval * total_factors[kidx - 1]
-                i0tmp, i1tmp, slidetmp = coinc.time_coincidence(test_t0, test_t1,
-                                                                time_window, curr_shift)
-                slidetmp *= total_factors[kidx - 1]
+                test_times = fixed_times.copy()
+                test_times[args.pivot_ifo] = times[args.pivot_ifo][pivot_cut:]
+
+                # Do time coincidence for the current decimation factor
+                set_ids, set_slide = coinc.time_multi_coincidence(test_times,
+                                                                  args.timeslide_interval*total_factors[kidx - 1],
+                                                                  args.coinc_threshold,
+                                                                  args.pivot_ifo,
+                                                                  args.fixed_ifo)
+                set_slide *= total_factors[kidx - 1]
 
                 # Remove foreground triggers
-                bitmp = numpy.where(slidetmp != 0)[0]
+                sets = set_slide != 0
 
-                # remove coincidences where detector 0 has a single detector statistic
-                # below the limit calculated above
-                bitmp = bitmp[s1s[i1tmp[bitmp]] >= s1lims[kidx][i0tmp[bitmp]]]
-                i0tmp = i0tmp[bitmp]
-                i1tmp = i1tmp[bitmp] + s1cut
-                slidetmp = slidetmp[bitmp]
+                # Each precalculated coincidence from the fixed network should
+                # be treated like a single trigger, only keep coincidences
+                # where all triggers from the fixed network coincidence are still
+                # together
+                for i in range(1, len(fixed_ifos)):
+                    sets *= set_ids[fixed_ifos[i-1]] == set_ids[fixed_ifos[i]]
 
-                ctmp = rank_method.coinc(s0[i0tmp], s1[i1tmp],
-                                         slidetmp, args.timeslide_interval)
+                set_ids = {i: set_ids[i][sets] for i in trigs.ifos}
+                set_slide = set_slide[sets]
+
+                # Only keep coincidences where pivot has a single stat above the threshold
+                # calculated earlier
+                above = pivot_s[set_ids[args.pivot_ifo]] >= pivot_lims[kidx][set_ids[fixed_ifos[0]]]
+
+                test_ids = {i: fixed_ids[i][set_ids[i][above]] for i in fixed_ifos}
+                test_ids[args.pivot_ifo] = set_ids[args.pivot_ifo][above] + pivot_cut
+                set_slide = set_slide[above]
+                test_single_info = [(i, sds[i][test_ids[i]]) for i in trigs.ifos]
+
+                test_cstat = rank_method.coinc_multiifo(
+                    test_single_info, set_slide, args.timeslide_interval,
+                    to_shift=trigs.to_shift,
+                    time_addition=args.coinc_threshold)
 
                 # Keep triggers in the current decimation range
-                bitmp = numpy.where(ctmp >= threshes[kidx])[0]
-                bitmp = bitmp[ctmp[bitmp] < threshes[kidx - 1]]
+                test_bi = numpy.where(test_cstat >= threshes[kidx])[0]
+                test_bi = test_bi[test_cstat[test_bi] < threshes[kidx - 1]]
 
-                i0 = numpy.concatenate([i0, i0tmp[bitmp]])
-                i1 = numpy.concatenate([i1, i1tmp[bitmp]])
-                c = numpy.concatenate([c, ctmp[bitmp]])
-                slide = numpy.concatenate([slide, slidetmp[bitmp]])
-                dec = numpy.concatenate([dec, numpy.repeat(total_factors[kidx - 1], len(bitmp))])
+                for i in trigs.ifos:
+                    ids[i] = numpy.concatenate([ids[i], test_ids[i][test_bi]])
+                cstat = numpy.concatenate([cstat, test_cstat[test_bi]])
+                slide = numpy.concatenate([slide, set_slide[test_bi]])
+                dec = numpy.concatenate([dec, numpy.repeat(total_factors[kidx - 1], len(test_bi))])
 
-            data['stat'] += [c]
+            # temporary storage for decimated trigger ids
+            for ifo in trigs.ifos:
+                addtime = times[ifo][ids[ifo]]
+                addtriggerid = tids[ifo][ids[ifo]]
+                data['%s/time' % ifo] += [addtime]
+                data['%s/trigger_id' % ifo] += [addtriggerid]
+            data['stat'] += [cstat]
             data['decimation_factor'] += [dec]
-            data['time1'] += [t0[i0]]
-            data['time2'] += [t1[i1]]
-            data['trigger_id1'] += [tid0[i0]]
-            data['trigger_id2'] += [tid1[i1]]
             data['timeslide_id'] += [slide]
-            data['template_id'] += [numpy.repeat(tnum, len(i0))]
+            data['template_id'] += [numpy.repeat(tnum, len(slide))]
 
             start1 += args.batch_singles
         start0 += args.batch_singles
-
 
 if len(data['stat']) > 0:
     for key in data:
         data[key] = numpy.concatenate(data[key])
 
 if args.cluster_window and len(data['stat']) > 0:
-    cid = coinc.cluster_coincs(data['stat'], data['time1'], data['time2'],
+    timestring0 = '%s/time' % args.pivot_ifo
+    timestring1 = '%s/time' % args.fixed_ifo
+    cid = coinc.cluster_coincs(data['stat'], data[timestring0], data[timestring1],
                                data['timeslide_id'], args.timeslide_interval,
                                args.cluster_window)
 
@@ -421,26 +436,29 @@ if len(data['stat']) > 0:
     for key in data:
         var = data[key][cid] if args.cluster_window else data[key]
         f.create_dataset(key, data=var,
-                              compression='gzip',
-                              compression_opts=9,
-                              shuffle=True)
+                         compression='gzip',
+                         compression_opts=9,
+                         shuffle=True)
 
-f['segments/coinc/start'], f['segments/coinc/end'] = veto.segments_to_start_end(coinc_segs)
-
-for t in [trigs0, trigs1]:
-    f['segments/%s/start' % t.ifo], f['segments/%s/end' % t.ifo] = t.valid
+# Store coinc segments keyed by detector combination
+key = ''.join(sorted(trigs.ifos))
+f['segments/%s/start' % key], f['segments/%s/end' % key] = trigs.singles[0].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
-f.attrs['detector_1'] = det0.name
-f.attrs['detector_2'] = det1.name
-f.attrs['foreground_time1'] = abs(trigs0.segs)
-f.attrs['foreground_time2'] = abs(trigs1.segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
+f.attrs['num_of_ifos'] = len(args.trigger_files)
+f.attrs['pivot'] = args.pivot_ifo
+f.attrs['fixed'] = args.fixed_ifo
+for i, sngl in zip(trigs.ifos, trigs.singles):
+    f.attrs['%s_foreground_time' % i] = abs(sngl.segs)
+f.attrs['ifos'] = ' '.join(sorted(trigs.ifos))
 
+# What does this code actually calculate?
 if args.timeslide_interval:
-    nslides = int(max(abs(trigs0.segs), abs(trigs1.segs)) / args.timeslide_interval)
+    maxtrigs = max([abs(sngl.segs) for sngl in trigs.singles])
+    nslides = int(maxtrigs / args.timeslide_interval)
 else:
     nslides = 0
-
 f.attrs['num_slides'] = nslides
+
 logging.info('Done')
