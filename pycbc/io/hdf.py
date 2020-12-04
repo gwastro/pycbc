@@ -496,7 +496,7 @@ class SingleDetTriggers(object):
             sngl_ranking,
             statistic_files
         )
-        stat = stat_instance.single_multiifo(self.trig_dict())
+        stat = stat_instance.single_multiifo((self.ifo, self.trig_dict()))
 
         # Used for naming in plots ... Seems an odd place for this to live!
         if sngl_ranking == "newsnr":
