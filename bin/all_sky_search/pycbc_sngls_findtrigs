@@ -141,11 +141,8 @@ for inputstr in args.statistic_keywords:
 rank_stat_class = stat.get_statistic(args.ranking_statistic)
 rank_method = rank_stat_class(args.statistic_files, ifos=[ifo],
                               **extra_kwargs)
-logging.info("Single-detector initial statistic")
-sds_full = rank_method.single(trigs.data)
-logging.info("Applying changes to make statistic comparable with coincs")
-single_info = (ifo, sds_full)
-stat = rank_method.single_multiifo(single_info)
+logging.info("Computing single-detector statistic")
+stat = rank_method.single_multiifo((ifo, trigs.data))
 
 logging.info("Clustering")
 if args.cluster_window:
