@@ -119,7 +119,6 @@ class Stat(object):
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise ValueError(err_msg)
 
-    # FIXME: Why does this function not just call straight into single?
     # FIXME: Should this be renamed for clarity if multiifo is being removed?
     def single_multiifo(self, single_info):
         """
@@ -129,7 +128,7 @@ class Stat(object):
         ----------
         single_info: tuple
             Tuple containing two values. The first is the ifo (str) and the
-            second is the output from self.single()
+            second is the single detector triggers.
 
         Returns
         -------
@@ -192,14 +191,14 @@ class QuadratureSumStatistic(Stat):
         ----------
         single_info: tuple
             Tuple containing two values. The first is the ifo (str) and the
-            second is the output from self.single()
+            second is the single detector triggers.
 
         Returns
         -------
         numpy.ndarray
             The array of single detector statistics
         """
-        return single_info[1]
+        return self.single(single_info[1])
 
     def coinc(self, sngls_list, slide, step, to_shift,
               **kwargs): # pylint:disable=unused-argument
@@ -590,11 +589,13 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
     def single_multiifo(self, single_info):
         """
         Calculate the statistic for a single detector candidate
+
         Parameters
         ----------
         single_info: tuple
             Tuple containing two values. The first is the ifo (str) and the
-            second is the output from self.single()
+            second is the single detector triggers.
+
         Returns
         -------
         numpy.ndarray
@@ -798,11 +799,13 @@ class ExpFitStatistic(QuadratureSumStatistic):
     def single_multiifo(self, single_info):
         """
         Calculate the statistic for a single detector candidate
+
         Parameters
         ----------
         single_info: tuple
             Tuple containing two values. The first is the ifo (str) and the
-            second is the output from self.single()
+            second is the single detector triggers.
+
         Returns
         -------
         numpy.ndarray
@@ -934,7 +937,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
-    def single_multiifo(self, s):
+    def single_multiifo(self, single_info):
         """
         Calculate the statistic for single detector candidates
 
@@ -942,17 +945,18 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         ----------
         single_info: tuple
             Tuple containing two values. The first is the ifo (str) and the
-            second is the output from self.single()
+            second is the single detector triggers.
 
         Returns
         -------
         numpy.ndarray
             The array of single detector statistics
         """
+        sngl_rnk = self.single(single_info[1])
         if self.single_increasing:
-            sngl_multiifo = s[1]['snglstat']
+            sngl_multiifo = sngl_rnk['snglstat']
         else:
-            sngl_multiifo = -1.0 * s[1]['snglstat']
+            sngl_multiifo = -1.0 * sngl_rnk['snglstat']
         return sngl_multiifo
 
     def coinc(self, s, slide, step, to_shift,
@@ -1076,11 +1080,13 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
     def single_multiifo(self, single_info):
         """
         Calculate the statistic for a single detector candidate
+
         Parameters
         ----------
         single_info: tuple
             Tuple containing two values. The first is the ifo (str) and the
-            second is the output from self.single()
+            second is the single detector triggers.
+
         Returns
         -------
         numpy.ndarray
@@ -1391,7 +1397,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
         return numpy.array(singles, ndmin=1)
 
-    def single_multiifo(self, s):
+    def single_multiifo(self, single_info):
         """
         Calculate the statistic for single detector candidates
 
@@ -1399,21 +1405,22 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         ----------
         single_info: tuple
             Tuple containing two values. The first is the ifo (str) and the
-            second is the output from self.single()
+            second is the single detector triggers.
 
         Returns
         -------
         numpy.ndarray
             The array of single detector statistics
         """
+        sngls = self.single(single_info[1])
 
-        ln_noise_rate = s[1]['snglstat']
+        ln_noise_rate = sngls['snglstat']
         ln_noise_rate -= self.benchmark_lograte
-        network_sigmasq = s[1]['sigmasq']
+        network_sigmasq = sngls['sigmasq']
         network_logvol = 1.5 * numpy.log(network_sigmasq)
-        benchmark_logvol = s[1]['benchmark_logvol']
+        benchmark_logvol = sngls['benchmark_logvol']
         network_logvol -= benchmark_logvol
-        ln_s = -4 * numpy.log(s[1]['snr'] / self.ref_snr)
+        ln_s = -4 * numpy.log(sngls['snr'] / self.ref_snr)
         loglr = network_logvol - ln_noise_rate + ln_s
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
