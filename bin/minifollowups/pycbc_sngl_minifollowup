@@ -28,6 +28,7 @@ import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
 import pycbc.workflow as wf
 import pycbc.events
+from pycbc.events import ranking, stat
 from pycbc.io import hdf
 
 def to_file(path, ifo=None):
@@ -70,8 +71,13 @@ parser.add_argument('--inspiral-data-analyzed-name',
                          "analyzed by each analysis job.")
 parser.add_argument('--min-snr', type=float, default=6.5,
                     help="Minimum SNR to consider for loudest triggers")
-parser.add_argument('--ranking-statistic',
-                help="How to rank triggers when determining loudest triggers.")
+parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
+                    required=True,
+                    help="The ranking statistic to calculate")
+parser.add_argument("--sngl-ranking",
+                    choices=ranking.sngls_ranking_function_dict.keys(),
+                    required=True,
+                    help="The single-detector trigger ranking to use.")
 parser.add_argument('--statistic-files', nargs='+',
                     action='append', default=[],
                     help='Use this to supply supplementary files that are '
@@ -190,8 +196,8 @@ if len(trigs.snr) == 0:
 
 logging.info('finding loudest clustered events')
 trigs.mask_to_n_loudest_clustered_events\
-    (n_loudest=num_events, ranking_statistic=args.ranking_statistic,
-     statistic_files=args.statistic_files)
+    (args.ranking_statistic, args.sngl_ranking,
+     n_loudest=num_events, statistic_files=args.statistic_files)
 if len(trigs.stat) < num_events:
     num_events = len(trigs.stat)
 
