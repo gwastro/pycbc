@@ -123,7 +123,7 @@ class BaseGaussianNoise(BaseDataModel):
         self.ignore_failed_waveforms = ignore_failed_waveforms
         # check if low frequency cutoff has been provided for every IFO with
         # data
-        for ifo in self.data.keys():
+        for ifo in self.data:
             if low_frequency_cutoff[ifo] is None:
                 raise ValueError(
                     "A low-frequency-cutoff must be provided for every "
@@ -151,6 +151,8 @@ class BaseGaussianNoise(BaseDataModel):
         self.low_frequency_cutoff = self._f_lower = low_frequency_cutoff
 
         # set upper frequency cutoff
+        if high_frequency_cutoff is None:
+            high_frequency_cutoff = {ifo: None for ifo in self.data}
         self.high_frequency_cutoff = self._f_upper = high_frequency_cutoff
 
         # Set the cutoff indices
@@ -158,16 +160,13 @@ class BaseGaussianNoise(BaseDataModel):
         self._kmax = {}
 
         for (det, d) in self._data.items():
-            fmax = None
-            if self._f_upper is not None:
-                fmax = self._f_upper[det]
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
-                                                     fmax,
+                                                     self._f_upper[det],
                                                      d.delta_f, self._N)
             self._kmin[det] = kmin
             self._kmax[det] = kmax
 
-       # store the psd segments
+        # store the psd segments
         self._psd_segments = {}
         if psds is not None:
             self.set_psd_segments(psds)
@@ -184,37 +183,6 @@ class BaseGaussianNoise(BaseDataModel):
         self.normalize = normalize
         # store the psds and whiten the data
         self.psds = psds
-
-    @property
-    def high_frequency_cutoff(self):
-        """The high frequency cutoff of the inner product.
-
-        If a high frequency cutoff was not provided for a detector, it will
-        be ``None``.
-        """
-        return self._f_upper
-
-    @high_frequency_cutoff.setter
-    def high_frequency_cutoff(self, high_frequency_cutoff):
-        """Sets the high frequency cutoff.
-
-        Parameters
-        ----------
-        high_frequency_cutoff : dict
-            Dictionary mapping detector names to frequencies. If a high
-            frequency cutoff is not provided for one or more detectors, the
-            Nyquist frequency will be used for those detectors.
-        """
-        self._f_upper = {}
-        if high_frequency_cutoff is not None and bool(high_frequency_cutoff):
-            for det in self._data:
-                if det in high_frequency_cutoff:
-                    self._f_upper[det] = high_frequency_cutoff[det]
-                else:
-                    self._f_upper[det] = None
-        else:
-            for det in self._data.keys():
-                self._f_upper[det] = None
 
     @property
     def kmin(self):
