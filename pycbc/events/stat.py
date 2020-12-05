@@ -1841,7 +1841,7 @@ def get_statistic_from_opts(opts, ifos):
     stat_class = get_statistic(opts.ranking_statistic)(
         opts.sngl_ranking,
         opts.statistic_files,
-        ifos=trigs.ifos,
+        ifos=ifos,
         **extra_kwargs
     )
 
