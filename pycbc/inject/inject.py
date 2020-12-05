@@ -93,8 +93,12 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     hp /= distance_scale
     hc /= distance_scale
 
-    hp.start_time += inj.tc
-    hc.start_time += inj.tc
+    try:
+        hp.start_time += inj.tc
+        hc.start_time += inj.tc
+    except:
+        hp.start_time += inj.get_time_geocent()
+        hc.start_time += inj.get_time_geocent()
 
     # taper the polarizations
     try:
