@@ -217,7 +217,7 @@ class DynestySampler(BaseSampler):
             'rwalk', 'rwalk2' (a modified version of rwalk), or 'slice'.
         * ``walk = INT``:
             Used for some of the walk methods. Sets the minimum number of
-            steps to take when evolving a point. 
+            steps to take when evolving a point.
         * ``maxmcmc = INT``:
             Used for some of the walk methods. Sets the maximum number of steps
             to take when evolving a point.
