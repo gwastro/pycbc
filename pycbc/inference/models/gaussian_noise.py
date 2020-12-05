@@ -148,8 +148,7 @@ class BaseGaussianNoise(BaseDataModel):
         # Set low frequency cutoff
         self.low_frequency_cutoff = self._f_lower = low_frequency_cutoff
         # set upper frequency cutoff
-        self._f_upper = None
-        self.high_frequency_cutoff = high_frequency_cutoff
+        self.high_frequency_cutoff = self._f_upper = high_frequency_cutoff
         # Set the cutoff indices
         self._kmin = {}
         self._kmax = {}
@@ -160,7 +159,8 @@ class BaseGaussianNoise(BaseDataModel):
                                                      d.delta_f, self._N)
             self._kmin[det] = kmin
             self._kmax[det] = kmax
-        # store the psd segments
+
+       # store the psd segments
         self._psd_segments = {}
         if psds is not None:
             self.set_psd_segments(psds)
@@ -550,6 +550,7 @@ class BaseGaussianNoise(BaseDataModel):
                 args[name] = cp.get_cli_option('model', name,
                                                nargs='+', type=float,
                                                action=MultiDetOptionAction)
+
         if 'low_frequency_cutoff' not in args:
             raise ValueError("low-frequency-cutoff must be provided in the"
                              " model section, but is not found!")
