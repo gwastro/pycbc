@@ -186,7 +186,7 @@ class Relative(BaseGaussianNoise):
                      f_lo, f_hi)
 
         # prune low frequency samples to avoid waveform errors
-        nbelow = sum(self.f < 10)
+        nbelow = sum(self.f < f_lo)
         fpoints = Array(self.f.astype(numpy.float64))[nbelow:]
         approx = self.static_params['approximant']
         fid_hp, fid_hc = get_fd_waveform_sequence(approximant=approx,
