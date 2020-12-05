@@ -95,9 +95,13 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
 
     try:
         tc = inj.tc
+        ra = inj.ra
+        dec = inj.dec
     except:
-        tc = inj.get_time_geocent() 
-    
+        tc = inj.get_time_geocent()
+        ra = inj.longitude
+        dec = inj.latitude
+
     hp.start_time += tc
     hc.start_time += tc
 
@@ -117,7 +121,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
 
     # compute the detector response and add it to the strain
     signal = detector.project_wave(hp_tapered, hc_tapered,
-                                   inj.ra, inj.dec, inj.polarization,
+                                   ra, dec, inj.polarization,
                                    method=projection_method)
     return signal
 
