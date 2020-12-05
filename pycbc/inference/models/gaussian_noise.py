@@ -159,7 +159,7 @@ class BaseGaussianNoise(BaseDataModel):
 
         for (det, d) in self._data.items():
             fmax = None
-            if det in self._f_upper:
+            if self._f_upper is not None:
                 fmax = self._f_upper[det]
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
                                                      fmax,
