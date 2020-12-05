@@ -98,9 +98,14 @@ def projector(inj, hp, hc, distance_scale=1):
         hp_tapered = hp
         hc_tapered = hc
 
+    projection_method = 'lal'
+    if hasattr(inj, 'detector_projection_method'):
+        projection_method = inj.detector_projection_method
+
     # compute the detector response and add it to the strain
     signal = detector.project_wave(hp_tapered, hc_tapered,
-                         inj.ra, inj.dec, inj.polarization)
+                         inj.ra, inj.dec, inj.polarization,
+                         method=projection_method)
     return signal
 
 def legacy_approximant_name(apx):
