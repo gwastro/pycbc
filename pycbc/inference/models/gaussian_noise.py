@@ -143,19 +143,26 @@ class BaseGaussianNoise(BaseDataModel):
             raise ValueError("all data must have the same sample rate")
         if not all(dfs == dfs[0]):
             raise ValueError("all data must have the same segment length")
+
         # store the number of samples in the time domain
         self._N = int(1./(dts[0]*dfs[0]))
+
         # Set low frequency cutoff
         self.low_frequency_cutoff = self._f_lower = low_frequency_cutoff
+
         # set upper frequency cutoff
         self.high_frequency_cutoff = self._f_upper = high_frequency_cutoff
+
         # Set the cutoff indices
         self._kmin = {}
         self._kmax = {}
 
         for (det, d) in self._data.items():
+            fmax = None
+            if det in self._f_upper:
+                fmax = self._f_upper[det]
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
-                                                     self._f_upper[det],
+                                                     fmax,
                                                      d.delta_f, self._N)
             self._kmin[det] = kmin
             self._kmax[det] = kmax
@@ -164,12 +171,14 @@ class BaseGaussianNoise(BaseDataModel):
         self._psd_segments = {}
         if psds is not None:
             self.set_psd_segments(psds)
+
         # store the psds and calculate the inner product weight
         self._psds = {}
         self._weight = {}
         self._lognorm = {}
         self._det_lognls = {}
         self._whitened_data = {}
+
         # set the normalization state
         self._normalize = False
         self.normalize = normalize
