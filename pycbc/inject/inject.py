@@ -85,6 +85,9 @@ def set_sim_data(inj, field, data):
 
 
 def projector(detector_name, inj, hp, hc, distance_scale=1):
+    """ Use the injection row to project the polarizations into the
+    detector frame
+    """
     detector = Detector(detector_name)
 
     hp /= distance_scale
@@ -109,8 +112,8 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
 
     # compute the detector response and add it to the strain
     signal = detector.project_wave(hp_tapered, hc_tapered,
-                         inj.ra, inj.dec, inj.polarization,
-                         method=projection_method)
+                                   inj.ra, inj.dec, inj.polarization,
+                                   method=projection_method)
     return signal
 
 def legacy_approximant_name(apx):
