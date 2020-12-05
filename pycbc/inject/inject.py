@@ -94,11 +94,12 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     hc /= distance_scale
 
     try:
-        hp.start_time += inj.tc
-        hc.start_time += inj.tc
+        tc = inj.tc
     except:
-        hp.start_time += inj.get_time_geocent()
-        hc.start_time += inj.get_time_geocent()
+        tc = inj.get_time_geocent() 
+    
+    hp.start_time += tc
+    hc.start_time += tc
 
     # taper the polarizations
     try:
@@ -112,7 +113,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     if hasattr(inj, 'detector_projection_method'):
         projection_method = inj.detector_projection_method
 
-    logging.info('Injecting at %s, method is %s', inj.tc, projection_method)
+    logging.info('Injecting at %s, method is %s', tc, projection_method)
 
     # compute the detector response and add it to the strain
     signal = detector.project_wave(hp_tapered, hc_tapered,
