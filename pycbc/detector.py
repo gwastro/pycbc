@@ -181,7 +181,7 @@ class Detector(object):
                 fcross = (x * dy + y * dx).sum(axis=0)
             else:
                 fplus = (x * dx - y * dy).sum()
-                fcross = (x * dy + y * dx).sum()               
+                fcross = (x * dy + y * dx).sum()
             return fplus, fcross
 
         elif polarization_type == 'vector':
@@ -270,18 +270,61 @@ class Detector(object):
                                              declination,
                                              t_gps)
 
-    def project_wave(self, hp, hc, longitude, latitude, polarization):
+    def project_wave(self, hp, hc, ra, dec, polarization,
+                     method='lal',
+                     reference_time=None):
         """Return the strain of a waveform as measured by the detector.
         Apply the time shift for the given detector relative to the assumed
         geocentric frame and apply the antenna patterns to the plus and cross
         polarizations.
         """
-        h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
-                hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
-                longitude, latitude, polarization, self.frDetector)
-        return TimeSeries(
-                h_lal.data.data, delta_t=h_lal.deltaT, epoch=h_lal.epoch,
-                dtype=np.float64, copy=False)
+        # The robust and most fefature rich method which includes
+        # time changing antenna patterns and doppler shifts due to the
+        # earth rotation and orbit
+        if method == 'lal':
+            h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
+                    hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
+                    ra, dec, polarization, self.frDetector)
+            ts = TimeSeries(
+                    h_lal.data.data, delta_t=h_lal.deltaT, epoch=h_lal.epoch,
+                    dtype=np.float64, copy=False)
+
+        # 'constant' assume fixed orientation relative to source over the
+        # duration of the signal, accurate for short duration signals
+        # 'fixed_polarization' applies only time changing orientation
+        # but no doppler corrections
+        elif method in ['constant', 'vary_polarization']:
+            if reference_time is not None:
+                rtime = reference_time
+            else:
+                # In many cases, one should set the reference time if using
+                # this method as we don't know where the signal is within
+                # the given time series. If not provided, we'll choose
+                # the midpoint time.
+                rtime = float(hp.end_time + hp.start_time) / 2.0
+
+            if method == 'constant':
+                time = rtime
+            elif method == 'vary_polarization':
+                if not isinstance(hp, TimeSeries):
+                    raise TypeError('Polarizations must be given as time'
+                                    ' series for this method')
+
+                # this is more granular than needed, may be optimized later
+                # assume earth rotation in ~30 ms needed for earth ceneter
+                # to detector is completely negligible.
+                time = hp.sample_times.numpy()
+
+            fp, fc = self.antenna_pattern(ra, dec, polarization, time)
+            dt = self.time_delay_from_earth_center(ra, dec, rtime)
+            ts = fp * hp + fc * hc
+            ts.start_time = float(ts.start_time) + dt
+
+        # add in only the correction for the time variance in the polarization
+        # due to the earth's rotation, no doppler correction applied
+        else:
+            raise ValueError("Unkown projection method {}".format(method))
+        return ts
 
     def optimal_orientation(self, t_gps):
         """Return the optimal orientation in right ascension and declination
