@@ -277,6 +277,26 @@ class Detector(object):
         Apply the time shift for the given detector relative to the assumed
         geocentric frame and apply the antenna patterns to the plus and cross
         polarizations.
+
+        Parameters
+        ----------
+        hp: pycbc.types.TimeSeries
+            Plus polarization of the GW
+        hc: pycbc.types.TimeSeries
+            Cross polarization of the GW
+        ra: float
+            Right ascension of source location
+        dec: float
+            Declination of source location
+        polarization: float
+            Polarization angle of the source
+        method: str, Optional
+            The method to use for projecting the polarizations into the
+            detector frame. Default is 'lal'.
+        reference_time: float, Optional
+            The time to use as, a reference for some methods of projection.
+            Used by 'constant' and 'vary_polarization' methods. Uses average
+            time if not provided.
         """
         # The robust and most fefature rich method which includes
         # time changing antenna patterns and doppler shifts due to the
