@@ -29,6 +29,7 @@ import os
 import numpy as np
 import lal
 import copy
+import logging
 from abc import ABCMeta, abstractmethod
 import lalsimulation as sim
 import h5py
@@ -83,7 +84,9 @@ def set_sim_data(inj, field, data):
         setattr(inj, sim_field, data)
 
 
-def projector(inj, hp, hc, distance_scale=1):
+def projector(detector_name, inj, hp, hc, distance_scale=1):
+    detector = Detector(detector_name)
+
     hp /= distance_scale
     hc /= distance_scale
 
@@ -101,6 +104,8 @@ def projector(inj, hp, hc, distance_scale=1):
     projection_method = 'lal'
     if hasattr(inj, 'detector_projection_method'):
         projection_method = inj.detector_projection_method
+
+    logging.info('Injecting at %s, method is %s', inj.tc, projection_method)
 
     # compute the detector response and add it to the strain
     signal = detector.project_wave(hp_tapered, hc_tapered,
@@ -253,7 +258,6 @@ class _XMLInjectionSet(object):
         signal : float
             h(t) corresponding to the injection.
         """
-        detector = Detector(detector_name)
         f_l = inj.f_lower if f_lower is None else f_lower
 
         name, phase_order = legacy_approximant_name(inj.waveform)
@@ -264,7 +268,8 @@ class _XMLInjectionSet(object):
             phase_order=phase_order,
             f_lower=f_l, distance=inj.distance,
             **self.extra_args)
-        return projector(inj, hp, hc, distance_scale=distance_scale)
+        return projector(detector_name,
+                         inj, hp, hc, distance_scale=distance_scale)
 
     def end_times(self):
         """Return the end times of all injections"""
@@ -573,7 +578,6 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         signal : float
             h(t) corresponding to the injection.
         """
-        detector = Detector(detector_name)
         if f_lower is None:
             f_l = inj.f_lower
         else:
@@ -582,7 +586,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         # compute the waveform time series
         hp, hc = get_td_waveform(inj, delta_t=delta_t, f_lower=f_l,
                                  **self.extra_args)
-        return projector(inj, hp, hc, distance_scale=distance_scale)
+        return projector(detector_name,
+                         inj, hp, hc, distance_scale=distance_scale)
 
     def end_times(self):
         """Return the end times of all injections"""
@@ -681,12 +686,11 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         signal : float
             h(t) corresponding to the injection.
         """
-        detector = Detector(detector_name)
-
         # compute the waveform time series
         hp, hc = ringdown_td_approximants[inj['approximant']](
             inj, delta_t=delta_t, **self.extra_args)
-        return projector(inj, hp, hc, distance_scale=distance_scale)
+        return projector(detector_name,
+                         inj, hp, hc, distance_scale=distance_scale)
 
     def end_times(self):
         """Return the approximate end times of all injections.
