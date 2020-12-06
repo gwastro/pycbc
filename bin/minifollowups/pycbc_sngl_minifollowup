@@ -182,7 +182,7 @@ if len(trigs.snr) == 0:
     sys.exit(0)
 
 logging.info('finding loudest clustered events')
-rank_method = stat.get_statistic_from_opts(args, [ifo])
+rank_method = stat.get_statistic_from_opts(args, [args.instrument])
 trigs.mask_to_n_loudest_clustered_events(rank_method, n_loudest=num_events)
 
 if len(trigs.stat) < num_events:
