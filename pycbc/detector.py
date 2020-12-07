@@ -290,7 +290,7 @@ class Detector(object):
             Declination of source location
         polarization: float
             Polarization angle of the source
-        method: str, Optional
+        method: {'lal', 'constant', 'vary_polarization'}
             The method to use for projecting the polarizations into the
             detector frame. Default is 'lal'.
         reference_time: float, Optional
@@ -326,9 +326,10 @@ class Detector(object):
             if method == 'constant':
                 time = rtime
             elif method == 'vary_polarization':
-                if not isinstance(hp, TimeSeries):
-                    raise TypeError('Polarizations must be given as time'
-                                    ' series for this method')
+                if (not isinstance(hp, TimeSeries) or
+                    not isinstance(hc, TimeSeries)):
+                    raise TypeError('Waveform polarizations must be given'
+                                    ' as time series for this method')
 
                 # this is more granular than needed, may be optimized later
                 # assume earth rotation in ~30 ms needed for earth ceneter
