@@ -327,7 +327,7 @@ class Detector(object):
                 time = rtime
             elif method == 'vary_polarization':
                 if (not isinstance(hp, TimeSeries) or
-                    not isinstance(hc, TimeSeries)):
+                   not isinstance(hc, TimeSeries)):
                     raise TypeError('Waveform polarizations must be given'
                                     ' as time series for this method')
 
