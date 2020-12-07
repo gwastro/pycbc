@@ -130,6 +130,10 @@ class Relative(BaseGaussianNoise):
     epsilon : float, optional
         Tuning parameter used in calculating the frequency bins. Lower values
         will result in higher resolution and more bins.
+    vary_polarization: boolean, optional
+        Default is False. If True, then vary the fp/fc polarization values
+        as a function of frequency bin, using a predetermined PN approximation
+        for the time offsets.
     \**kwargs :
         All other keyword arguments are passed to
         :py:class:`BaseGaussianNoise`.
@@ -137,9 +141,11 @@ class Relative(BaseGaussianNoise):
     name = "relative"
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
-                 fiducial_params=None, gammas=None, epsilon=0.5, **kwargs):
+                 fiducial_params=None, gammas=None, epsilon=0.5,
+                 vary_polarization=False, **kwargs):
         super(Relative, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
+
         # check that all of the frequency cutoffs are the same
         # FIXME: this can probably be loosened at some point
         kmins = list(self.kmin.values())
@@ -148,6 +154,7 @@ class Relative(BaseGaussianNoise):
             raise ValueError("All lower frequency cutoffs must be the same")
         if any(kk != kmaxs[0] for kk in kmaxs):
             raise ValueError("All high frequency cutoffs must be the same")
+
         # store data and frequencies
         d0 = list(self.data.values())[0]
         self.f = numpy.array(d0.sample_frequencies)
@@ -155,9 +162,11 @@ class Relative(BaseGaussianNoise):
         self.end_time = float(d0.end_time)
         self.det = {ifo: Detector(ifo) for ifo in self.data}
         self.epsilon = float(epsilon)
+
         # store data and psds as arrays for faster computation
         self.comp_data = {ifo: d.numpy() for ifo, d in self.data.items()}
         self.comp_psds = {ifo: p.numpy() for ifo, p in self.psds.items()}
+
         # store fiducial waveform params
         self.fid_params = fiducial_params
 
@@ -175,8 +184,9 @@ class Relative(BaseGaussianNoise):
         f_hi = kmaxs[0] * self.df
         logging.info("Generating fiducial waveform from %s to %s Hz",
                      f_lo, f_hi)
+
         # prune low frequency samples to avoid waveform errors
-        nbelow = sum(self.f < 10)
+        nbelow = sum(self.f < f_lo)
         fpoints = Array(self.f.astype(numpy.float64))[nbelow:]
         approx = self.static_params['approximant']
         fid_hp, fid_hc = get_fd_waveform_sequence(approximant=approx,
@@ -209,6 +219,7 @@ class Relative(BaseGaussianNoise):
         nbin, fbin, fbin_ind = setup_bins(f_full=self.f, f_lo=f_lo, f_hi=f_hi,
                                           gammas=gammas, eps=self.epsilon)
         logging.info("Using %s bins for this model", nbin)
+
         # store bins and edges in sample and frequency space
         self.edges = fbin_ind
         self.fedges = numpy.array(fbin).astype(numpy.float64)
@@ -224,6 +235,18 @@ class Relative(BaseGaussianNoise):
         logging.info("Calculating summary data at frequency resolution %s Hz",
                      self.df)
         self.sdat = self.summary_data()
+
+        # Calculate the times to evaluate fp/fc
+        if vary_polarization is not False:
+            logging.info('Enabling frequency-dependent polarization')
+            from pycbc.waveform.spa_tmplt import spa_length_in_time
+            times = spa_length_in_time(phase_order=-1,
+                                       mass1=self.fid_params['mass1'],
+                                       mass2=self.fid_params['mass2'],
+                                       f_lower=self.fedges)
+            self.antenna_time = self.fid_params['tc'] - times
+        else:
+            self.antenna_time = self.fid_params['tc']
 
     def summary_data(self):
         """Compute summary data bin coefficients encoding linear
@@ -286,7 +309,7 @@ class Relative(BaseGaussianNoise):
             # get detector antenna pattern
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                    p['polarization'],
-                                                   p['tc'])
+                                                   self.antenna_time)
             # get timeshift relative to end of data
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
                                                             p['tc'])
@@ -331,6 +354,7 @@ class Relative(BaseGaussianNoise):
         # add fiducial params to skip list
         skip_args += [option for option in cp.options(section) if
                       option.endswith('_ref')]
+
         # get frequency power-law indices if specified
         # NOTE these should be supplied in units of 1/3
         gammas = None
@@ -340,9 +364,11 @@ class Relative(BaseGaussianNoise):
                                   cp.get(section, 'gammas').split()])
         args = super(Relative, Relative).extra_args_from_config(
             cp, section, skip_args=skip_args, dtypes=dtypes)
+
         # get fiducial params from config
         fid_params = {p.replace('_ref', ''): float(cp.get('model', p)) for p
                       in cp.options('model') if p.endswith('_ref')}
+
         # add optional params with default values if not specified
         opt_params = {'ra': numpy.pi, 'dec': 0.0, 'inclination': 0.0,
                       'polarization': numpy.pi}
