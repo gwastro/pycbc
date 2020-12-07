@@ -147,13 +147,11 @@ class BaseGaussianNoise(BaseDataModel):
         # store the number of samples in the time domain
         self._N = int(1./(dts[0]*dfs[0]))
 
-        # Set low frequency cutoff
-        self.low_frequency_cutoff = self._f_lower = low_frequency_cutoff
-
-        # set upper frequency cutoff
+        # set lower/upper frequency cutoff
         if high_frequency_cutoff is None:
             high_frequency_cutoff = {ifo: None for ifo in self.data}
-        self.high_frequency_cutoff = self._f_upper = high_frequency_cutoff
+        self._f_upper = high_frequency_cutoff
+        self._f_lower = low_frequency_cutoff
 
         # Set the cutoff indices
         self._kmin = {}
@@ -184,6 +182,16 @@ class BaseGaussianNoise(BaseDataModel):
         # store the psds and whiten the data
         self.psds = psds
 
+    @property 
+    def high_frequency_cutoff(self):
+        """The high frequency cutoff of the inner product."""
+        return self._f_upper
+        
+    @property 
+    def low_frequency_cutoff(self):
+        """The low frequency cutoff of the inner product."""
+        return self._f_lower
+        
     @property
     def kmin(self):
         """Dictionary of starting indices for the inner product.
