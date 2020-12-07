@@ -182,16 +182,16 @@ class BaseGaussianNoise(BaseDataModel):
         # store the psds and whiten the data
         self.psds = psds
 
-    @property 
+    @property
     def high_frequency_cutoff(self):
         """The high frequency cutoff of the inner product."""
         return self._f_upper
-        
-    @property 
+
+    @property
     def low_frequency_cutoff(self):
         """The low frequency cutoff of the inner product."""
         return self._f_lower
-        
+
     @property
     def kmin(self):
         """Dictionary of starting indices for the inner product.
