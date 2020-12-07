@@ -50,15 +50,9 @@ args = parser.parse_args()
 # Add the background triggers
 f = h5py.File(args.coinc_statistic_file, 'r')
 b_tids = {}
-old_style_format_flag = 'detector_1' in f.attrs
-if old_style_format_flag:
-    ifos = [f.attrs['detector_1'], f.attrs['detector_2']]
-    b_tids[f.attrs['detector_1']] = f['background_exc/trigger_id1']
-    b_tids[f.attrs['detector_2']] = f['background_exc/trigger_id2']
-else:
-    ifos = f.attrs['ifos'].split(' ')
-    for tmpifo in ifos:
-        b_tids[tmpifo] = f['background_exc/{}/trigger_id'.format(tmpifo)]
+ifos = f.attrs['ifos'].split(' ')
+for tmpifo in ifos:
+    b_tids[tmpifo] = f['background_exc/{}/trigger_id'.format(tmpifo)]
 
 f = h5py.File(args.single_trigger_file, 'r')
 ifo = tuple(f.keys())[0]
@@ -80,12 +74,8 @@ pylab.scatter(bkg_snr, bkg_chisq, marker='o', color='black',
 # Add the found injection points
 f = h5py.File(args.found_injection_file, 'r')
 inj_tids = {}
-if old_style_format_flag:
-    inj_tids[f.attrs['detector_1']] = f['found_after_vetoes/trigger_id1']
-    inj_tids[f.attrs['detector_2']] = f['found_after_vetoes/trigger_id2']
-else:
-    for tmpifo in ifos:
-        inj_tids[tmpifo] = f['found_after_vetoes/{}/trigger_id'.format(tmpifo)]
+for tmpifo in ifos:
+    inj_tids[tmpifo] = f['found_after_vetoes/{}/trigger_id'.format(tmpifo)]
 
 
 inj_idx = f['found_after_vetoes/injection_index'][:]
@@ -108,10 +98,9 @@ coloring = {'effective_distance': (eff_dist, "Effective Distance (Mpc)",
             'redshift': (redshift, "Redshift", None)
             }
 
-if 'optimal_snr_1' in f['injections']:  # FIXME allow multi-ifo opt SNRs
-    opt_snr_map = {f.attrs['detector_1']: 'injections/optimal_snr_1',
-                   f.attrs['detector_2']: 'injections/optimal_snr_2'}
-    opt_snr = f[opt_snr_map[ifo]][:][inj_idx]
+if 'optimal_snr_{}'.format(ifo) in f['injections']:
+    opt_snr_str = 'injections/optimal_snr_{}'.format(ifo)
+    opt_snr = f[opt_snr_str][:][inj_idx]
     coloring['optimal_snr'] = (opt_snr, 'Optimal SNR', colors.LogNorm())
 
 f = h5py.File(args.single_injection_file, 'r')[ifo]
