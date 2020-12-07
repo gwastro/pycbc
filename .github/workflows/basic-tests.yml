@@ -71,7 +71,7 @@ jobs:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
     needs: build
     runs-on: ubuntu-20.04
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.7
@@ -81,6 +81,7 @@ jobs:
     - name: build pycbc for pypi
       run: python setup.py sdist
     - name: Publish distribution 📦 to Test PyPI
+      if: github.ref == 'refs/heads/master'
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.test_pypi_password }}
