@@ -109,7 +109,11 @@ if args.store_bank_values:
             logging.warn("Bank's %s dataset or group is not supported "
                          "by SingleDetTriggers, ignoring it", n)
             continue
-        outgroup[n] = sngls.get_column(n)[out_idx]
+        # don't repeat things that already came from the trigger file
+        # (e.g. template_duration)
+        if n in cnames:
+            continue
+        outgroup[n] = getattr(sngls, n)[out_idx]
 
 # cannot store None in a h5py attr
 outgroup.attrs['filter'] = filter_func or 'None'
