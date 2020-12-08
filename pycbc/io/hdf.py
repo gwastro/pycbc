@@ -586,6 +586,11 @@ class SingleDetTriggers(object):
         return self.bank['f_lower'][:][self.template_id]
 
     @property
+    def approximant(self):
+        self.checkbank('approximant')
+        return self.bank['approximant'][:][self.template_id]
+
+    @property
     def mtotal(self):
         return self.mass1 + self.mass2
 
