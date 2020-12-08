@@ -147,6 +147,27 @@ class Stat(object):
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise ValueError(err_msg)
 
+    def _check_coinc_lim_subclass(self, allowed_names):
+        """
+        Check that we are not using coinc_lim_for_thresh when not valid.
+
+        coinc_lim_for_thresh is only defined for the statistic it is present in.
+        If we subclass, we must check explicitly that it is still valid and indicate
+        this in the code. If the code does not have this explicit check you will
+        see the failure message here.
+
+        Parameters
+        -----------
+        allowed_names : list
+            list of allowed classes for the specific sub-classed method.
+        """
+        if type(self).__name__ not in allowed_names:
+            err_msg = "This is being called from a subclass which has not "
+            err_msg += "been checked for validity with this method. If it is "
+            err_msg += "valid for the subclass to come here, include in the "
+            err_msg += "list of allowed_names above."
+            raise ValueError(err_msg)
+
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
         """
@@ -251,12 +272,7 @@ class QuadratureSumStatistic(Stat):
         """
         # Safety against subclassing and not rethinking this
         allowed_names = ['QuadratureSumStatistic']
-        if type(self).__name__ not in allowed_names:
-            err_msg = "This is being called from a subclass which has not "
-            err_msg += "been checked for validity with this method. If it is "
-            err_msg += "valid for the subclass to come here, include in the "
-            err_msg += "list of allowed_names above."
-            raise ValueError(err_msg)
+        self._check_coinc_lim_subclass(allowed_names)
 
         s0 = thresh ** 2. - sum(sngl[1] ** 2. for sngl in s)
         s0[s0 < 0] = 0
@@ -1008,12 +1024,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         """
         # Safety against subclassing and not rethinking this
         allowed_names = ['ExpFitCombinedSNR']
-        if type(self).__name__ not in allowed_names:
-            err_msg = "This is being called from a subclass which has not "
-            err_msg += "been checked for validity with this method. If it is "
-            err_msg += "valid for the subclass to come here, include in the "
-            err_msg += "list of allowed_names above."
-            raise ValueError(err_msg)
+        self._check_coinc_lim_subclass(allowed_names)
 
         return thresh * ((len(s) + 1) ** 0.5) - sum(sngl[1] for sngl in s)
 
@@ -1251,12 +1262,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
 
         # Safety against subclassing and not rethinking this
         allowed_names = ['ExpFitSGBgRateStatistic']
-        if type(self).__name__ not in allowed_names:
-            err_msg = "This is being called from a subclass which has not "
-            err_msg += "been checked for validity with this method. If it is "
-            err_msg += "valid for the subclass to come here, include in the "
-            err_msg += "list of allowed_names above."
-            raise ValueError(err_msg)
+        self._check_coinc_lim_subclass(allowed_names)
 
         sngl_dict = {sngl[0]: sngl[1] for sngl in s}
         sngl_dict[limifo] = numpy.zeros(len(s[0][1]))
@@ -1522,12 +1528,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
 
         # Safety against subclassing and not rethinking this
         allowed_names = ['ExpFitSGFgBgNormNewStatistic']
-        if type(self).__name__ not in allowed_names:
-            err_msg = "This is being called from a subclass which has not "
-            err_msg += "been checked for validity with this method. If it is "
-            err_msg += "valid for the subclass to come here, include in the "
-            err_msg += "list of allowed_names above."
-            raise ValueError(err_msg)
+        self._check_coinc_lim_subclass(allowed_names)
 
         if not self.has_hist:
             self.get_hist()
