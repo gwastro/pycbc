@@ -1804,6 +1804,35 @@ def insert_statistic_option_group(parser):
 
     return statistic_opt_group
 
+def parse_statistic_keywords_opt(stat_kwarg_list):
+    """
+    Parse the list of statistic keywords into an appropriate dictionary.
+
+    Take input from the input argument ["KWARG1:VALUE1", "KWARG2:VALUE2",
+    "KWARG3:VALUE3"] and convert into a dictionary.
+
+    Parameters
+    ----------
+    stat_kwarg_list : list
+        Statistic keywords in list format
+
+    Returns
+    -------
+    stat_kwarg_dict : dict
+        Statistic keywords in dict format
+    """
+    stat_kwarg_dict = {}
+    for inputstr in stat_kwarg_list:
+        try:
+            key, value = inputstr.split(':')
+            extra_kwargs[key] = value
+        except ValueError:
+            err_txt = "--statistic-keywords must take input in the " \
+                      "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                      "Received {}".format(opts.statistic_keywords)
+            raise ValueError(err_txt)
+
+    return stat_kwarg_dict
 
 def get_statistic_from_opts(opts, ifos):
     """
@@ -1825,19 +1854,16 @@ def get_statistic_from_opts(opts, ifos):
     class
         Subclass of Stat base class
     """
+    # Allow None inputs
+    if opts.statistic_files is None:
+        opts.statistic_files = []
+    if opts.statistic_keywords is None:
+        opts.statistic_keywords = []
+
     # flatten the list of lists of filenames to a single list (may be empty)
     opts.statistic_files = sum(opts.statistic_files, [])
 
-    extra_kwargs = {}
-    for inputstr in opts.statistic_keywords:
-        try:
-            key, value = inputstr.split(':')
-            extra_kwargs[key] = value
-        except ValueError:
-            err_txt = "--statistic-keywords must take input in the " \
-                      "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                      "Received {}".format(opts.statistic_keywords)
-            raise ValueError(err_txt)
+    extra_kwargs = parse_statistic_keywords_opt(opts.statistic_keywords)
 
     stat_class = get_statistic(opts.ranking_statistic)(
         opts.sngl_ranking,
