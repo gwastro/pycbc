@@ -116,7 +116,6 @@ if args.store_bank_values:
         outgroup[n] = getattr(sngls, n)[out_idx]
 
 # copy the live time segments to enable the calculation of trigger rates
-# FIXME should we change these when vetoes are applied?
 outgroup['search/start_time'] = sngls.trigs['search/start_time'][:]
 outgroup['search/end_time'] = sngls.trigs['search/end_time'][:]
 
