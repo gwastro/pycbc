@@ -362,7 +362,8 @@ while numpy.any(louder_foreground == 0):
     indices_to_rm = []
     for ifo in args.ifos:
         indices_to_rm = numpy.concatenate([indices_to_rm, ind_to_rm[ifo]])
-    all_trigs = all_trigs.remove(indices_to_rm)
+
+    all_trigs = all_trigs.remove(indices_to_rm.astype(int))
     logging.info("We have %s triggers after hierarchical removal." % len(all_trigs.stat))
 
     # Step 4: Re-cluster the triggers and calculate the inclusive ifar/fap

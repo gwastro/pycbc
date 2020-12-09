@@ -121,7 +121,6 @@ class PyCBCStatMapExecutable(Executable):
         seg = segments.segment(segs[0][0], segs[-1][1])
 
         node = Node(self)
-        node.set_memory(5000)
         node.add_input_list_opt('--coinc-files', coinc_files)
         node.add_opt('--ifos', ifos)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
@@ -140,7 +139,6 @@ class PyCBCStatMapInjExecutable(Executable):
         seg = segments.segment(segs[0][0], segs[-1][1])
 
         node = Node(self)
-        node.set_memory(5000)
         node.add_input_list_opt('--zero-lag-coincs', zerolag)
 
         if isinstance(full_data, list):

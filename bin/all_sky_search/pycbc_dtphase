@@ -220,15 +220,15 @@ for ifo0 in args.ifos:
     logging.info('smoothing done: %s', len(weights))
 
     logging.info('converting to numpy arrays and normalizing')
-    keys = np.array(weights.keys())
-    values = np.array(weights.values())
+    keys = np.array(list(weights.keys()))
+    values = np.array(list(weights.values()))
     values /= values.max()
 
     logging.info('Removing bins outside of SNR ratio limits')
     n_precut = len(keys)
     keep = None
     for i in range(len(args.ifos)-1):
-        srbin = np.array(zip(*keys)[i * 3 + 2])
+        srbin = np.array(list(zip(*keys))[i * 3 + 2])
         if keep is None:
             keep = (srbin <= srbmax) & (srbin >= srbmin)
         else:

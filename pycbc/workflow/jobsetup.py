@@ -770,7 +770,6 @@ class PyCBCInspiralExecutable(Executable):
             if end > start:
                 data_lengths += [data_length]
                 valid_regions += [segments.segment(start, end)]
-
         return data_lengths, valid_regions
 
     def zero_pad_data_extend(self, job_data_seg, curr_seg):

@@ -29,6 +29,7 @@ TRANSFORMATION_CATALOG=""
 LOCAL_STAGING_SERVER="file://"
 REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
+NO_QUERY_DB=0
 NO_GRID=""
 SUBMIT_DAX="--submit"
 HTML_ENTITIES="{\"\'\": '&#39;', '(': '&#40;', ')': '&#41;', '+': '&#43;', '\"': '&quot;'}"
@@ -49,7 +50,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -167,6 +168,7 @@ EOF`
       esac ;;
     -F|--force-no-accounting-group) NO_ACCOUNTING_GROUP=1 ; shift ;;
     -K|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
+    -Q|--no-query-db) NO_QUERY_DB=1 ; shift ;;
     -n|--no-submit) SUBMIT_DAX="" ; shift ;;
     -l|--local-dir)
       case "$2" in
@@ -560,48 +562,52 @@ set +e
 condor_reschedule &> /dev/null
 set -e
 
-/bin/echo "Querying Pegasus database for workflow stored in ${SUBMIT_DIR}/work"
-/bin/echo -n "This may take up to 120 seconds. Please wait..."
-rm -f pegasus_db.log
-touch pegasus_db.log
-# querying the database sometimes fails, so allow retries
-set +e
-until [ $DB_TRY -ge 15 ]
-do
-  /bin/echo -n "."
-  WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>> pegasus_db.log`
-  if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
-    /bin/echo " Done."
-    DB_QUERY_SUCCESS=0
-    break
-  else
-    DB_QUERY_SUCCESS=1
-  fi
-  DB_TRY=$(( $DB_TRY + 1 ))
-  for s in `seq ${DB_TRY}`
-  do
-    /bin/echo -n "."
-    sleep 1
-  done
-done
-set -e
+if [ $NO_QUERY_DB == 0 ]; then
 
-if [ ${DB_QUERY_SUCCESS} -eq 1 ] ; then
-  echo; echo
-  /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
-  cat pegasus_db.log
-else
-  rm -f pegasus_db.log
-fi
+    /bin/echo "Querying Pegasus database for workflow stored in ${SUBMIT_DIR}/work"
+    /bin/echo -n "This may take up to 120 seconds. Please wait..."
+    rm -f pegasus_db.log
+    touch pegasus_db.log
+    # querying the database sometimes fails, so allow retries
+    set +e
+    until [ $DB_TRY -ge 15 ]
+    do
+      /bin/echo -n "."
+      WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>> pegasus_db.log`
+      if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
+        /bin/echo " Done."
+        DB_QUERY_SUCCESS=0
+        break
+      else
+        DB_QUERY_SUCCESS=1
+      fi
+      DB_TRY=$(( $DB_TRY + 1 ))
+      for s in `seq ${DB_TRY}`
+      do
+        /bin/echo -n "."
+        sleep 1
+      done
+    done
+    set -e
 
-if [ -z $WORKFLOW_ID_STRING ] ; then
-  echo "WARNING: Could not find the workflow in the Pegasus dashboard database."
-  echo "         Workflow has been submitted but the results page will not contain"
-  echo "         a link to the dashboard page. If this is a production workflow,"
-  echo "         please remove the workflow, check for the origin of this error,"
-  echo "         and re-submit the workflow by re-running this script."
-  echo
-  exit 1
+    if [ ${DB_QUERY_SUCCESS} -eq 1 ] ; then
+      echo; echo
+      /bin/echo "Query failed: ${WORKFLOW_DB_CMD}"
+      cat pegasus_db.log
+    else
+      rm -f pegasus_db.log
+    fi
+
+    if [ -z $WORKFLOW_ID_STRING ] ; then
+      echo "WARNING: Could not find the workflow in the Pegasus dashboard database."
+      echo "         Workflow has been submitted but the results page will not contain"
+      echo "         a link to the dashboard page. If this is a production workflow,"
+      echo "         please remove the workflow, check for the origin of this error,"
+      echo "         and re-submit the workflow by re-running this script."
+      echo
+      exit 1
+    fi
+
 fi
 
 WORKFLOW_ID_ARRAY=(${WORKFLOW_ID_STRING//,/ })

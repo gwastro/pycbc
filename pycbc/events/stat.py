@@ -53,7 +53,9 @@ class Stat(object):
         files = files or []
         for filename in files:
             f = h5py.File(filename, 'r')
-            stat = (f.attrs['stat']).decode()
+            stat = f.attrs['stat']
+            if hasattr(stat, 'decode'):
+                stat = stat.decode()
             if stat in self.files:
                 raise RuntimeError("We already have one file with stat attr ="
                                    " %s. Can't provide more than one!" % stat)
