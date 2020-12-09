@@ -60,7 +60,7 @@ sngls = hdf.SingleDetTriggers(args.single_trig_file, args.bank_file,
 
 if args.statname is not None:
     logging.info('Calculating stat')
-    statengine = = stat.get_statistic_from_opts(args, [args.instrument])
+    statengine = stat.get_statistic_from_opts(args, [args.instrument])
     #  NOTE: inefficient, as we are calculating the stat on all
     #  triggers. Might need to do something complicated to fix this.
     #  Or just use files with fewer triggers :P
