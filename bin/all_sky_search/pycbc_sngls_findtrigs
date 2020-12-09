@@ -129,7 +129,7 @@ for inputstr in args.statistic_keywords:
 rank_method = stat.get_statistic_from_opts(args, [ifo])
 
 logging.info("Computing single-detector statistic")
-stat = rank_method.single_multiifo((ifo, trigs.data))
+stat = rank_method.rank_stat_single((ifo, trigs.data))
 
 logging.info("Clustering")
 if args.cluster_window:

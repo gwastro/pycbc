@@ -1034,8 +1034,12 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                                  self.time_window,
                                  self.timeslide_interval)
                 trig_stat = numpy.resize(trig_stat, len(i1))
-                c = self.stat_calculator.coinc(stats[i1], trig_stat,
-                                               slide, self.timeslide_interval)
+                c = self.stat_calculator.rank_stat_coinc(
+                    stats[i1],
+                    trig_stat,
+                    slide,
+                    self.timeslide_interval
+                )
                 offsets.append(slide)
                 cstat.append(c)
                 ctimes[oifo].append(times[i1])

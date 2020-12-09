@@ -488,7 +488,7 @@ class SingleDetTriggers(object):
         be considered."""
 
         # If this becomes memory intensive we can optimize
-        stat = rank_method.single_multiifo((self.ifo, self.trig_dict()))
+        stat = rank_method.rank_stat_single((self.ifo, self.trig_dict()))
 
         times = self.end_time
         index = stat.argsort()[::-1]

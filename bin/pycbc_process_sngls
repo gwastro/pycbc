@@ -65,7 +65,7 @@ if args.statname is not None:
     #  triggers. Might need to do something complicated to fix this.
     #  Or just use files with fewer triggers :P
     sngl_info = ([args.instrument], sngls.trigs)
-    stat = statengine.single_multiifo(sngl_info)[sngls.mask]
+    stat = statengine.rank_stat_single(sngl_info)[sngls.mask]
 else:
     logging.info('Using SNR for clustering, if requested')
     stat = sngls.snr

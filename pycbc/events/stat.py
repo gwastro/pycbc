@@ -119,8 +119,7 @@ class Stat(object):
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise ValueError(err_msg)
 
-    # FIXME: Should this be renamed for clarity if multiifo is being removed?
-    def single_multiifo(self, single_info):
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -139,8 +138,8 @@ class Stat(object):
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise ValueError(err_msg)
 
-    def coinc(self, s, slide, step, to_shift,
-              **kwargs): # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift,
+                        **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
@@ -204,7 +203,7 @@ class QuadratureSumStatistic(Stat):
         """
         return self.get_sngl_ranking(trigs)
 
-    def single_multiifo(self, single_info):
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -221,8 +220,8 @@ class QuadratureSumStatistic(Stat):
         """
         return self.single(single_info[1])
 
-    def coinc(self, sngls_list, slide, step, to_shift,
-              **kwargs): # pylint:disable=unused-argument
+    def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
+                        **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
 
@@ -602,7 +601,7 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def single_multiifo(self, single_info):
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -620,8 +619,8 @@ class PhaseTDNewStatistic(QuadratureSumStatistic):
         err_msg = "Sorry! No-one has implemented this method yet! "
         raise ValueError(err_msg)
 
-    def coinc(self, s, slide, step, to_shift,
-              **kwargs): # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift,
+                        **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
@@ -811,7 +810,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         return self.lognoiserate(trigs)
 
-    def single_multiifo(self, single_info):
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -829,8 +828,8 @@ class ExpFitStatistic(QuadratureSumStatistic):
         err_msg = "Sorry! No-one has implemented this method yet! "
         raise ValueError(err_msg)
 
-    def coinc(self, s, slide, step, to_shift,
-              **kwargs): # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift,
+                        **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
@@ -952,7 +951,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
-    def single_multiifo(self, single_info):
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for single detector candidates
 
@@ -974,8 +973,8 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             sngl_multiifo = -1.0 * sngl_rnk['snglstat']
         return sngl_multiifo
 
-    def coinc(self, s, slide, step, to_shift,
-              **kwargs): # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift,
+                        **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
 
@@ -1087,7 +1086,7 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def single_multiifo(self, single_info):
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -1105,8 +1104,8 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
         err_msg = "Sorry! No-one has implemented this method yet! "
         raise ValueError(err_msg)
 
-    def coinc(self, s, slide, step, to_shift,
-              **kwargs): # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift,
+                        **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
@@ -1207,8 +1206,8 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
             coeff_file['count_above_thresh'][:][tid_sort] / \
             float(coeff_file.attrs['analysis_time'])
 
-    def coinc(self, s, slide, step, to_shift,
-              **kwargs): # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift,
+                        **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
 
@@ -1402,7 +1401,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
         return numpy.array(singles, ndmin=1)
 
-    def single_multiifo(self, single_info):
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for single detector candidates
 
@@ -1431,8 +1430,8 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         loglr[loglr < -30.] = -30.
         return loglr
 
-    def coinc(self, s, slide, step, to_shift,
-              **kwargs): # pylint:disable=unused-argument
+    def rank_stat_coinc(self, s, slide, step, to_shift,
+                        **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
 
