@@ -1803,6 +1803,7 @@ def insert_statistic_option_group(parser):
 
     return statistic_opt_group
 
+
 def parse_statistic_keywords_opt(stat_kwarg_list):
     """
     Parse the list of statistic keywords into an appropriate dictionary.
@@ -1828,10 +1829,11 @@ def parse_statistic_keywords_opt(stat_kwarg_list):
         except ValueError:
             err_txt = "--statistic-keywords must take input in the " \
                       "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                      "Received {}".format(opts.statistic_keywords)
+                      "Received {}".format(' '.join(stat_kwarg_list))
             raise ValueError(err_txt)
 
     return stat_kwarg_dict
+
 
 def get_statistic_from_opts(opts, ifos):
     """
