@@ -30,6 +30,7 @@ import numpy
 from . import ranking
 from . import coinc_rate
 
+
 class Stat(object):
     """Base class which should be extended to provide a coincident statistic"""
 
@@ -151,10 +152,10 @@ class Stat(object):
         """
         Check that we are not using coinc_lim_for_thresh when not valid.
 
-        coinc_lim_for_thresh is only defined for the statistic it is present in.
-        If we subclass, we must check explicitly that it is still valid and indicate
-        this in the code. If the code does not have this explicit check you will
-        see the failure message here.
+        coinc_lim_for_thresh is only defined for the statistic it is present
+        in. If we subclass, we must check explicitly that it is still valid and
+        inidicate this in the code. If the code does not have this explicit
+        check you will see the failure message here.
 
         Parameters
         -----------
@@ -700,7 +701,6 @@ class ExpFitStatistic(QuadratureSumStatistic):
             A dictionary containing the fit information in the `alpha`, `rate`
             and `thresh` keys/.
         """
-        # FIXME: Is this called lots of times? If so should it be cached?
         coeff_file = self.files[ifo+'-fit_coeffs']
         template_id = coeff_file['template_id'][:]
         alphas = coeff_file['fit_coeff'][:]
@@ -1791,7 +1791,7 @@ def insert_statistic_option_group(parser):
         default=[],
         help="Files containing ranking statistic info"
     )
-    
+
     statistic_opt_group.add_argument(
         "--statistic-keywords",
         nargs='*',

@@ -1,6 +1,7 @@
 """ This module contains functions for calculating single-ifo ranking
 statistic values
 """
+from six import raise_from
 import numpy
 
 
@@ -317,9 +318,9 @@ def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
     # Identify correct function
     try:
         sngl_func = sngls_ranking_function_dict[statname]
-    except KeyError:
+    except KeyError as exc:
         err_msg = 'Single-detector ranking {} not recognized'.format(statname)
-        raise ValueError(err_msg)
+        raise_from(ValueError(err_msg), exc)
 
     # NOTE: In the sngl_funcs all the kwargs are explicitly stated, so any
     #       kwargs sent here must be known to the function.
