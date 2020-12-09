@@ -1824,7 +1824,7 @@ def parse_statistic_keywords_opt(stat_kwarg_list):
     for inputstr in stat_kwarg_list:
         try:
             key, value = inputstr.split(':')
-            extra_kwargs[key] = value
+            stat_kwarg_dict[key] = value
         except ValueError:
             err_txt = "--statistic-keywords must take input in the " \
                       "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \

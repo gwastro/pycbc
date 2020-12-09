@@ -1038,7 +1038,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                               [oifo, stats[i1]]]
                 # This can only use 2-det coincs at present
                 c = self.stat_calculator.rank_stat_coinc(
-                    sngls_list
+                    sngls_list,
                     slide,
                     self.timeslide_interval,
                     [0, -1]
