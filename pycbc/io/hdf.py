@@ -180,7 +180,7 @@ class DictArray(object):
         """
         data = {}
         for k in self.data:
-            data[k] = np.delete(self.data[k], idx)
+            data[k] = np.delete(self.data[k], np.array(idx, dtype=int))
         return self._return(data=data)
 
     def save(self, outname):

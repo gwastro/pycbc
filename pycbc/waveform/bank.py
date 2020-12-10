@@ -452,7 +452,10 @@ class TemplateBank(object):
         if 'approximant' not in self.table.fieldnames:
             raise ValueError("approximant not found in input file and no "
                 "approximant was specified on initialization")
-        return self.table["approximant"][index]
+        apx = self.table["approximant"][index]
+        if hasattr(apx, 'decode'):
+            apx = apx.decode()
+        return apx
 
     def __len__(self):
         return len(self.table)

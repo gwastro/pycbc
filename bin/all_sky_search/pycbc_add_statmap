@@ -96,12 +96,11 @@ for fi in files:
 
 logging.info('Combining foreground segments')
 
-# Convert segmentlistdict to a list ('seglists') of segmentlists
-# then np.sum(seglists, axis=0) does seglists[0] + seglists[1] + ...
-if len(indiv_segs) > 1:
-    foreground_segs = np.sum(list(indiv_segs.values()), axis=0)
-else:
-    foreground_segs = indiv_segs.values()[0]
+# combine the segment list from each ifo
+foreground_segs = segments.segmentlist([])
+for segs in indiv_segs.values():
+    foreground_segs += segs
+
 f.attrs['foreground_time'] = abs(foreground_segs)
 
 # Output the segments which are in *any* type of coincidence
