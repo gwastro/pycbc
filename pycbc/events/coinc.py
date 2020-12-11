@@ -850,6 +850,15 @@ class LiveCoincTimeslideBackgroundEstimator(object):
     @classmethod
     def from_cli(cls, args, num_templates, analysis_chunk, ifos):
         from . import stat
+        # Allow None inputs
+        if args.statistic_files is None:
+            args.statistic_files = []
+        if args.statistic_keywords is None:
+            args.statistic_keywords = []
+
+        # flatten the list of lists of filenames to a single list (may be empty)
+        args.statistic_files = sum(args.statistic_files, [])
+
         kwargs = stat.parse_statistic_keywords_opt(args.statistic_keywords)
 
         return cls(num_templates, analysis_chunk,
