@@ -117,7 +117,7 @@ class Stat(object):
         """
         err_msg = "This function is a stub that should be overridden by the "
         err_msg += "sub-classes. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     def rank_stat_single(self, single_info):
         """
@@ -136,7 +136,7 @@ class Stat(object):
         """
         err_msg = "This function is a stub that should be overridden by the "
         err_msg += "sub-classes. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
                         **kwargs): # pylint:disable=unused-argument
@@ -145,7 +145,7 @@ class Stat(object):
         """
         err_msg = "This function is a stub that should be overridden by the "
         err_msg += "sub-classes. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     def _check_coinc_lim_subclass(self, allowed_names):
         """
@@ -166,7 +166,7 @@ class Stat(object):
             err_msg += "been checked for validity with this method. If it is "
             err_msg += "valid for the subclass to come here, include in the "
             err_msg += "list of allowed_names above."
-            raise ValueError(err_msg)
+            raise NotImplementedError(err_msg)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
@@ -179,7 +179,7 @@ class Stat(object):
 
         err_msg = "This function is a stub that should be overridden by the "
         err_msg += "sub-classes. You shouldn't be seeing this error!"
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
 
 class QuadratureSumStatistic(Stat):
@@ -617,7 +617,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             The array of single detector statistics
         """
         err_msg = "Sorry! No-one has implemented this method yet! "
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
                         **kwargs): # pylint:disable=unused-argument
@@ -625,7 +625,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         Calculate the coincident detection statistic.
         """
         err_msg = "Sorry! No-one has implemented this method yet! "
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
@@ -635,7 +635,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         the threshold for each of the input triggers.
         """
         err_msg = "Sorry! No-one has implemented this method yet! "
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
 
 class ExpFitStatistic(QuadratureSumStatistic):
@@ -826,7 +826,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
             The array of single detector statistics
         """
         err_msg = "Sorry! No-one has implemented this method yet! "
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
                         **kwargs): # pylint:disable=unused-argument
@@ -834,7 +834,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         Calculate the coincident detection statistic.
         """
         err_msg = "Sorry! No-one has implemented this method yet! "
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
@@ -844,7 +844,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         the threshold for each of the input triggers.
         """
         err_msg = "Sorry! No-one has implemented this method yet! "
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     # Keeping this here to help write the new coinc method.
     def coinc_OLD(self, s0, s1, slide, step): # pylint:disable=unused-argument
@@ -1102,7 +1102,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
             The array of single detector statistics
         """
         err_msg = "Sorry! No-one has implemented this method yet! "
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
                         **kwargs): # pylint:disable=unused-argument
@@ -1110,7 +1110,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         Calculate the coincident detection statistic.
         """
         err_msg = "Sorry! No-one has implemented this method yet! "
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
@@ -1120,7 +1120,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         the threshold for each of the input triggers.
         """
         err_msg = "Sorry! No-one has implemented this method yet! "
-        raise ValueError(err_msg)
+        raise NotImplementedError(err_msg)
 
     # Keeping the old statistic code here for now to help with reimplementing
     def coinc_OLD(self, s0, s1, slide, step):
