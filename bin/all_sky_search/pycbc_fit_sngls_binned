@@ -35,7 +35,7 @@ def get_stat(statchoice, trigs):
     # For now this is using the single detector ranking. If we want, this
     # could use the Stat classes in stat.py using similar code as in hdf/io.py
     # This requires additional options, so only change this if it's useful!
-    return ranking.get_sngls_ranking_from_trigs(trigs, statname)
+    return ranking.get_sngls_ranking_from_trigs(trigs, statchoice)
 
 
 #### MAIN ####
