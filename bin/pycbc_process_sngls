@@ -59,12 +59,12 @@ sngls = hdf.SingleDetTriggers(args.single_trig_file, args.bank_file,
                               args.detector)
 
 logging.info('Calculating stat')
-statengine = stat.get_statistic_from_opts(args, [args.instrument])
+rank_method = stat.get_statistic_from_opts(args, [args.instrument])
 #  NOTE: inefficient, as we are calculating the stat on all
 #  triggers. Might need to do something complicated to fix this.
 #  Or just use files with fewer triggers :P
 sngl_info = ([args.instrument], sngls.trigs)
-stat = statengine.rank_stat_single(sngl_info)[sngls.mask]
+stat = rank_method.rank_stat_single(sngl_info)[sngls.mask]
 
 logging.info('%i stat values found', len(stat))
 
