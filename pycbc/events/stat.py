@@ -279,7 +279,7 @@ class QuadratureSumStatistic(Stat):
         return s0 ** 0.5
 
 
-class PhaseTDNewStatistic(QuadratureSumStatistic):
+class PhaseTDStatistic(QuadratureSumStatistic):
     """
     Statistic that re-weights combined newsnr using coinc parameters.
 
@@ -1028,7 +1028,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         return thresh * ((len(s) + 1) ** 0.5) - sum(sngl[1] for sngl in s)
 
 
-class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
+class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
     """
     Statistic combining exponential noise model with signal histogram PDF
     """
@@ -1055,7 +1055,7 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
         ExpFitCombinedSNR.__init__(self, sngl_ranking, files=files, ifos=ifos,
                                    **kwargs)
         # need the self.single_dtype value from PhaseTDStatistic
-        PhaseTDNewStatistic.__init__(self, sngl_ranking, files=files,
+        PhaseTDStatistic.__init__(self, sngl_ranking, files=files,
                                      ifos=ifos, **kwargs)
 
     def single(self, trigs):
@@ -1271,8 +1271,8 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         return loglr
 
 
-class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
-                                   ExpFitSGBgRateStatistic):
+class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
+                                ExpFitSGBgRateStatistic):
     """
     Statistic combining PhaseTD, ExpFitSGBg and additional foreground info.
     """
@@ -1300,8 +1300,8 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         # if ifos not already set, determine via background fit info
         self.ifos = self.ifos or self.bg_ifos
         # PhaseTD statistic single_dtype plus network sensitivity benchmark
-        PhaseTDNewStatistic.__init__(self, sngl_ranking, files=files,
-                                     ifos=self.ifos, **kwargs)
+        PhaseTDStatistic.__init__(self, sngl_ranking, files=files,
+                                  ifos=self.ifos, **kwargs)
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
 
         self.get_newsnr = ranking.get_newsnr_sgveto
@@ -1526,7 +1526,7 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         """
 
         # Safety against subclassing and not rethinking this
-        allowed_names = ['ExpFitSGFgBgNormNewStatistic']
+        allowed_names = ['ExpFitSGFgBgNormStatistic']
         self._check_coinc_lim_subclass(allowed_names)
 
         if not self.has_hist:
@@ -1577,11 +1577,11 @@ class ExpFitSGFgBgNormNewStatistic(PhaseTDNewStatistic,
         return loglr
 
 
-class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
+class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormStatistic):
     """
-    The ExpFitSGFgBgNormNewStatistic with a mass weighting factor.
+    The ExpFitSGFgBgNormStatistic with a mass weighting factor.
 
-    This is the same as the ExpFitSGFgBgNormNewStatistic except the likelihood
+    This is the same as the ExpFitSGFgBgNormStatistic except the likelihood
     is multiplied by a signal rate prior modelled as uniform over chirp mass.
     As templates are distributed roughly according to mchirp^(-11/3) we
     weight by the inverse of this. This ensures that loud events at high mass
@@ -1612,7 +1612,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
             and we can have a case where a single highest-mass template might
             produce *all* the loudest background (and foreground) events.
         """
-        ExpFitSGFgBgNormNewStatistic.__init__(self, sngl_ranking, files=files,
+        ExpFitSGFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                               ifos=ifos, **kwargs)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
         self.mcm = max_chirp_mass
@@ -1642,7 +1642,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
 
         # model signal rate as uniform over chirp mass, background rate is
         # proportional to mchirp^(-11/3) due to density of templates
-        logr_s = ExpFitSGFgBgNormNewStatistic.logsignalrate(
+        logr_s = ExpFitSGFgBgNormStatistic.logsignalrate(
                     self,
                     stats,
                     shift,
@@ -1676,7 +1676,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
         if self.mcm is not None:
             # Careful - input might be a str, so cast to float
             self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
-        return ExpFitSGFgBgNormNewStatistic.single(self, trigs)
+        return ExpFitSGFgBgNormStatistic.single(self, trigs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
@@ -1703,7 +1703,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
             exceed thresh.
         """
 
-        loglr = ExpFitSGFgBgNormNewStatistic.coinc_lim_for_thresh(
+        loglr = ExpFitSGFgBgNormStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
         loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
         return loglr
@@ -1712,12 +1712,12 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormNewStatistic):
 statistic_dict = {
     'quadsum': QuadratureSumStatistic,
     'single_ranking_only': QuadratureSumStatistic,
-    'phasetd_newsnr': PhaseTDNewStatistic,
+    'phasetd': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
-    'phasetd_exp_fit_stat': PhaseTDNewExpFitStatistic,
+    'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
-    'phasetd_exp_fit_sg_fgbg_norm': ExpFitSGFgBgNormNewStatistic,
+    'phasetd_exp_fit_sg_fgbg_norm': ExpFitSGFgBgNormStatistic,
     'phasetd_exp_fit_sg_fgbg_bbh_norm': ExpFitSGPSDFgBgNormBBHStatistic,
 }
 
