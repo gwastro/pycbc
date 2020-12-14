@@ -11,7 +11,6 @@ gps_start_time=1272790000
 gps_end_time=1272790500
 
 
-
 # test if there is a template bank. If not, make one
 
 if [[ ! -f template_bank.hdf ]]
@@ -38,7 +37,8 @@ then
 
     mv template_bank_0.hdf template_bank.hdf
     rm -f template_bank_*.hdf
-else echo -e "\\n\\n>> [`date`] Pre-existing template bank found"
+else
+    echo -e "\\n\\n>> [`date`] Pre-existing template bank found"
 fi
 
 
@@ -48,38 +48,30 @@ fi
 if [[ -f test_inj1.hdf && -f test_inj2.hdf ]]
 then
     echo -e "\\n\\n>> [`date`] Pre-existing Injection Found"
-else echo -e "\\n\\n>> [`date`] Generating injection"
+else
+    echo -e "\\n\\n>> [`date`] Generating injection"
 
-    if [[ -f test_inj1.hdf ]]
-    then rm test_inj1.hdf
-    fi
-    
-    if [[ -f test_inj2.hdf ]]
-    then rm test_inj2.hdf
-    fi
-    
-    if [[ -d ./strain ]]
-    then rm -r ./strain
-    fi
-    
-     ./generate_injections.py
+    rm -f test_inj1.hdf
+    rm -f test_inj2.hdf
+    rm -rf ./strain
+
+    ./generate_injections.py
 fi
-
 
 
 # test if strain files exist. If they dont, make them
 
 if [[ ! -d ./strain ]]
-then        
+then
     echo -e "\\n\\n>> [`date`] Generating simulated strain"
-    
+
     function simulate_strain { # detector PSD_model random_seed
         mkdir -p temp_strain/$1
         mkdir -p strain/$1
-        
+
         (( t1=$gps_start_time-10 ))
         (( t2=$gps_end_time+10 ))
-        
+
         pycbc_condition_strain \
             --fake-strain $2 \
             --fake-strain-seed $3 \
@@ -90,8 +82,8 @@ then
             --low-frequency-cutoff 10 \
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 32 \
-            --injection-file 'test_inj1.hdf'
-            
+            --injection-file test_inj1.hdf
+
         pycbc_condition_strain \
             --frame-files temp_strain/$1/* \
             --output-strain-file "strain/$1/$1-SIMULATED_STRAIN-{start}-{duration}.gwf" \
@@ -101,20 +93,18 @@ then
             --low-frequency-cutoff 10 \
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 32 \
-            --injection-file 'test_inj2.hdf'
-
+            --injection-file test_inj2.hdf
     }
     simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
     simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345
     simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456
-else echo -e "\\n\\n>> [`date`] Pre-existing strain data found"
+else
+    echo -e "\\n\\n>> [`date`] Pre-existing strain data found"
 fi
 
 
 # delete old outputs if they exist
-if [[ -d ./output ]]
-then rm -r ./output
-fi
+rm -rf ./output
 
 
 echo -e "\\n\\n>> [`date`] Running PyCBC Live"
