@@ -21,7 +21,7 @@ static_params = {'f_lower': 18.0, 'f_ref': 18.0, 'approximant': 'SEOBNRv4',
                  'taper': 'start', 'ra': 45.0, 'dec': 45.0,
                  'inclination': 0.0, 'coa_phase': 0.0, 'polarization': 0.0}
 
-samples = FieldArray(2, dtype=dtype)
+samples = FieldArray(1, dtype=dtype)
 
 # The following 'magic numbers' are intended to match the highest
 # mass injection in the template bank
@@ -30,7 +30,7 @@ samples['mass2'] = [3.6755455]
 samples['spin1z'] = [0.9934847]
 samples['spin2z'] = [0.92713535]
 samples['tc'] = [1272790100.1]
-samples['distance'] = [603.0]
+samples['distance'] = [301.5]
 
 InjectionSet.write('test_inj1.hdf', samples, static_args=static_params,
                    injtype='cbc', cmd=" ".join(sys.argv))
@@ -38,7 +38,7 @@ InjectionSet.write('test_inj1.hdf', samples, static_args=static_params,
 # injection 2
 static_params['approximant'] = 'SpinTaylorT4'
 
-samples = FieldArray(2, dtype=dtype)
+samples = FieldArray(1, dtype=dtype)
 
 # The following 'magic numbers' are intended to match the lowest
 # mass injection in the template bank
@@ -47,7 +47,7 @@ samples['mass2'] = [1.010624]
 samples['spin1z'] = [0.029544285]
 samples['spin2z'] = [0.020993788]
 samples['tc'] = [1272790260.1]
-samples['distance'] = [72.0]
+samples['distance'] = [36.0]
 
 InjectionSet.write('test_inj2.hdf', samples, static_args=static_params,
                    injtype='cbc', cmd=" ".join(sys.argv))
