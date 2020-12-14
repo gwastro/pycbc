@@ -452,8 +452,7 @@ class SingleDetTriggers(object):
     def __getitem__(self, key):
         # Is key in the TRIGGER_MERGE file?
         try:
-            vals = self.get_column(key)
-            return vals
+            return self.get_column(key)
         except KeyError:
             pass
 
@@ -461,7 +460,7 @@ class SingleDetTriggers(object):
         try:
             self.checkbank(key)
             return self.bank[key][:][self.template_id]
-        except RuntimeError as exc:
+        except (RuntimeError, KeyError) as exc:
             err_msg = "Cannot find {} in input files".format(key)
             raise_from(ValueError(err_msg), exc)
 
