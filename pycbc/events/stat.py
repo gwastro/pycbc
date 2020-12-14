@@ -1056,7 +1056,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
                                    **kwargs)
         # need the self.single_dtype value from PhaseTDStatistic
         PhaseTDStatistic.__init__(self, sngl_ranking, files=files,
-                                     ifos=ifos, **kwargs)
+                                  ifos=ifos, **kwargs)
 
     def single(self, trigs):
         """
@@ -1613,7 +1613,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormStatistic):
             produce *all* the loudest background (and foreground) events.
         """
         ExpFitSGFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                              ifos=ifos, **kwargs)
+                                           ifos=ifos, **kwargs)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
         self.mcm = max_chirp_mass
         self.curr_mchirp = None
