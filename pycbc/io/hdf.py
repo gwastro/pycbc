@@ -463,7 +463,7 @@ class SingleDetTriggers(object):
         except RuntimeError:
             err_msg = "Cannot find {} in input files".format(key)
             raise ValueError(err_msg)
-        
+
 
     def checkbank(self, param):
         if self.bank == {}:
