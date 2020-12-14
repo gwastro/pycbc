@@ -21,16 +21,16 @@ import copy, numpy as np
 
 from pycbc import io, events
 from pycbc.events import triggers, trigger_fits as trstats
-from pycbc.events.stat import sngl_statistic_dict
+from pycbc.events import ranking
 from pycbc.types.optparse import MultiDetOptionAction
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
-def get_stat(statchoice, trigs, threshold):
-    # Initialize statclass with an empty file list. In general could feed it
-    # files here for statistics which need that.
-    stat_instance = sngl_statistic_dict[statchoice]([])
+def get_stat(statname, trigs, threshold):
+    # For now this is using the single detector ranking. If we want, this
+    # could use the Stat classes in stat.py using similar code as in hdf/io.py
+    # This requires additional options, so only change this if it's useful!
     chunk_size = 2**23
     stat = []
     select = []
@@ -42,7 +42,7 @@ def get_stat(statchoice, trigs, threshold):
         # read and format chunk of data so it can be read by key
         # as the stat classes expect.
         chunk = {k: trigs[k][s:e] for k in trigs if len(trigs[k]) == size}
-        chunk_stat = stat_instance.single(chunk)
+        chunk_stat = ranking.get_sngls_ranking_from_trigs(chunk, statname)
         above = chunk_stat >= threshold
         stat.append(chunk_stat[above])
         select.append(above)
@@ -89,7 +89,7 @@ parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
 parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=sngl_statistic_dict.keys(),
+                    choices=ranking.sngls_ranking_function_dict.keys(),
                     help="Function of SNR and chisq to perform fits with")
 parser.add_argument("--stat-threshold", type=float,
                     help="Only fit triggers with statistic value above this "

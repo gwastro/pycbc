@@ -264,7 +264,7 @@ class LiveEventManager(object):
                        'Two-detector ranking statistic: {}<br />'
                        'Followup detectors: {}')
             comment = comment.format(ppdets(coinc_ifos),
-                                     args.background_statistic,
+                                     args.ranking_statistic,
                                      ppdets(followup_ifos))
 
             ifar = coinc_results['foreground/ifar']

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import h5py, argparse, logging, numpy, numpy.random
 from ligo.segments import infinity
-from pycbc.events import veto, coinc, stat
+from pycbc.events import veto, coinc, stat, ranking
 import pycbc.version
 from numpy.random import seed, shuffle
 from pycbc.io.hdf import ReadByTemplate
@@ -31,17 +31,6 @@ parser.add_argument("--fixed-ifo", required=True,
                     help="Add the ifo to use as the fixed ifo for "
                          "multi detector coincidence")
 # produces a list of lists to allow multiple invocations and multiple args
-parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
-                    help="Files containing ranking statistic info")
-parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
-                    default='newsnr',
-                    help="The coinc ranking statistic to calculate")
-parser.add_argument("--statistic-keywords", nargs='*',
-                    default=[],
-                    help="Provide additional key-word arguments to be sent to "
-                         "the statistic class when it is initialized. Should "
-                         "be given in format --statistic-keywords "
-                         "KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ...")
 parser.add_argument("--use-maxalpha", action="store_true")
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
@@ -66,10 +55,10 @@ parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
 parser.add_argument("--batch-singles", default=5000, type=int,
                     help="Number of single triggers to process at once")
+stat.insert_statistic_option_group(parser)
 args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
-args.statistic_files = sum(args.statistic_files, [])
 args.segment_name = sum(args.segment_name, [])
 args.veto_files = sum(args.veto_files, [])
 args.trigger_files = sum(args.trigger_files, [])
@@ -123,20 +112,7 @@ for sngl in trigs.singles:
     sngl.valid = veto.segments_to_start_end(sngl.segs)
 
 # Stat class instance to calculate the coinc ranking statistic
-extra_kwargs = {}
-for inputstr in args.statistic_keywords:
-    try:
-        key, value = inputstr.split(':')
-        extra_kwargs[key] = value
-    except ValueError:
-        err_txt = "--statistic-keywords must take input in the " \
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                  "Received {}".format(args.statistic_keywords)
-        raise ValueError(err_txt)
-
-rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files,
-                                                         ifos=trigs.ifos,
-                                                         **extra_kwargs)
+rank_method = stat.get_statistic_from_opts(args, trigs.ifos)
 
 # Sanity check, time slide interval should be larger than twice the
 # Earth crossing time, which is approximately 0.085 seconds.
@@ -274,12 +250,13 @@ for tnum in template_ids:
         for kidx in range(1, len(threshes)):
             # For each trigger in the fixed network calculate the limit int
             # the pivot detector to pass the current decimation threshold
-            pivot_lims[kidx] = rank_method.coinc_multiifo_lim_for_thresh(
+            pivot_lims[kidx] = rank_method.coinc_lim_for_thresh(
                 fixed_single_info, threshes[kidx],
                 args.pivot_ifo,
                 time_addition=args.coinc_threshold,
                 min_snr=min_snr,
-                max_sigmasq=max_sigmasq)
+                max_sigmasq=max_sigmasq
+            )
             if not rank_method.single_increasing:
                 pivot_lims[kidx] *= -1.
             # subtract small amount to account for errors due to rounding
@@ -310,10 +287,11 @@ for tnum in template_ids:
             slide *= total_factors[-1]
 
             single_info = [(i, sds[i][ids[i]]) for i in trigs.ifos]
-            cstat = rank_method.coinc_multiifo(
+            cstat = rank_method.rank_stat_coinc(
                 single_info, slide, args.timeslide_interval,
                 to_shift=trigs.to_shift,
-                time_addition=args.coinc_threshold)
+                time_addition=args.coinc_threshold
+            )
 
             #index values of the zerolag triggers
             fi = numpy.where(slide == 0)[0]
@@ -390,7 +368,7 @@ for tnum in template_ids:
                 set_slide = set_slide[above]
                 test_single_info = [(i, sds[i][test_ids[i]]) for i in trigs.ifos]
 
-                test_cstat = rank_method.coinc_multiifo(
+                test_cstat = rank_method.rank_stat_coinc(
                     test_single_info, set_slide, args.timeslide_interval,
                     to_shift=trigs.to_shift,
                     time_addition=args.coinc_threshold)

@@ -25,15 +25,16 @@ import numpy as np
 from pycbc import events, bin_utils, results
 from pycbc.events import triggers as trigs
 from pycbc.events import trigger_fits as trstats
-from pycbc.events.stat import sngl_statistic_dict
+from pycbc.events import ranking
 from pycbc.types.optparse import MultiDetOptionAction
 import pycbc.version
 
 def get_stat(statchoice, trigs):
-    # Initialize statclass with an empty file list. In general could feed it
-    # files here for statistics which need that.
-    stat_instance = sngl_statistic_dict[statchoice]([])
-    return stat_instance.single(trigs)
+    # For now this is using the single detector ranking. If we want, this
+    # could use the Stat classes in stat.py using similar code as in hdf/io.py
+    # This requires additional options, so only change this if it's useful!
+    return ranking.get_sngls_ranking_from_trigs(trigs, statchoice)
+
 
 parser = argparse.ArgumentParser(usage="",
     description="Plot histograms of triggers split over various parameters")
@@ -72,7 +73,7 @@ parser.add_argument('--split-two-spacing', choices=['linear', 'log'], default='l
                     help="How to space split-param-two bin edges. "
                          "Choices=[linear, log], default=linear")
 parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=sngl_statistic_dict.keys(),
+                    choices=ranking.sngls_ranking_function_dict.keys(),
                     help="Function of SNR and chisq to perform fits with")
 parser.add_argument('--ifo', help="Detector. Required")
 parser.add_argument('--plot-max-x', type=float, default=None,

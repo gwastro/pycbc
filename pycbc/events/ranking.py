@@ -1,6 +1,7 @@
 """ This module contains functions for calculating single-ifo ranking
 statistic values
 """
+from six import raise_from
 import numpy
 
 
@@ -126,6 +127,24 @@ def newsnr_sgveto_psdvar_scaled_threshold(snr, bchisq, sgchisq, psd_var_val,
         return nsnr
     else:
         return nsnr[0]
+
+
+def get_snr(trigs):
+    """
+    Return SNR from a trigs/dictionary object
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+        Dictionary-like object holding single detector trigger information.
+        'snr' is a required key
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of snr values
+    """
+    return numpy.array(trigs['snr'][:], ndmin=1, dtype=numpy.float32)
 
 
 def get_newsnr(trigs):
@@ -268,3 +287,41 @@ def get_newsnr_sgveto_psdvar_scaled_threshold(trigs):
                      trigs['sg_chisq'][:],
                      trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psdt, ndmin=1, dtype=numpy.float32)
+
+
+sngls_ranking_function_dict = {
+    'snr': get_snr,
+    'newsnr': get_newsnr,
+    'new_snr': get_newsnr,
+    'newsnr_sgveto': get_newsnr_sgveto,
+    'newsnr_sgveto_psdvar': get_newsnr_sgveto_psdvar,
+    'newsnr_sgveto_psdvar_threshold': get_newsnr_sgveto_psdvar_threshold,
+    'newsnr_sgveto_psdvar_scaled': get_newsnr_sgveto_psdvar_scaled,
+    'newsnr_sgveto_psdvar_scaled_threshold': get_newsnr_sgveto_psdvar_scaled_threshold,
+}
+
+
+def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
+    """
+    Return ranking for all trigs given a statname.
+
+    Compute the single-detector ranking for a list of input triggers for a
+    specific statname.
+
+    Parameters
+    -----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    statname:
+        The statistic to use.
+    """
+    # Identify correct function
+    try:
+        sngl_func = sngls_ranking_function_dict[statname]
+    except KeyError as exc:
+        err_msg = 'Single-detector ranking {} not recognized'.format(statname)
+        raise_from(ValueError(err_msg), exc)
+
+    # NOTE: In the sngl_funcs all the kwargs are explicitly stated, so any
+    #       kwargs sent here must be known to the function.
+    return sngl_func(trigs, **kwargs)
