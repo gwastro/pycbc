@@ -10,6 +10,7 @@ import inspect
 from itertools import chain
 from six.moves import range
 from six.moves import cPickle as pickle
+from six import raise_from
 
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI
@@ -460,10 +461,9 @@ class SingleDetTriggers(object):
         try:
             self.checkbank(key)
             return self.bank[key][:][self.template_id]
-        except RuntimeError:
+        except RuntimeError as exc:
             err_msg = "Cannot find {} in input files".format(key)
-            raise ValueError(err_msg)
-
+            raise_from(ValueError(err_msg), exc)
 
     def checkbank(self, param):
         if self.bank == {}:
