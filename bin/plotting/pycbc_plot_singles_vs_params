@@ -131,9 +131,7 @@ if opts.z_var == 'density':
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
 elif opts.z_var in ranking.sngls_ranking_function_dict:
     cb_style = {}
-    # FIXME: This seems wrong, we probably want the SingleDetTriggers class
-    #        to autocall into the ranking. Might try to fix.
-    z = getattr(trigs, opts.z_var) 
+    z = trigs.get_ranking(opts.z_var)
 
     z = z[mask]
     min_z = z.min() if opts.min_z is None else opts.min_z

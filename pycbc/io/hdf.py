@@ -10,6 +10,7 @@ import inspect
 from itertools import chain
 from six.moves import range
 from six.moves import cPickle as pickle
+from six import raise_from
 
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI
@@ -448,6 +449,21 @@ class SingleDetTriggers(object):
             logging.info('%i triggers remain after cut on %s',
                          sum(self.mask), filter_func)
 
+    def __getitem__(self, key):
+        # Is key in the TRIGGER_MERGE file?
+        try:
+            return self.get_column(key)
+        except KeyError:
+            pass
+
+        # Is key in the bank file?
+        try:
+            self.checkbank(key)
+            return self.bank[key][:][self.template_id]
+        except (RuntimeError, KeyError) as exc:
+            err_msg = "Cannot find {} in input files".format(key)
+            raise_from(ValueError(err_msg), exc)
+
     def checkbank(self, param):
         if self.bank == {}:
             return RuntimeError("Can't get %s values without a bank file"
@@ -652,6 +668,9 @@ class SingleDetTriggers(object):
         return ranking.newsnr_sgveto_psdvar_threshold(self.snr, self.rchisq,
                                            self.sgchisq, self.psd_var_val)
 
+    def get_ranking(self, rank_name, **kwargs):
+        return ranking.get_sngls_ranking_from_trigs(self, rank_name, **kwargs)
+
     def get_column(self, cname):
         # Fiducial value that seems to work, not extensively tuned.
         MFRAC = 0.3
@@ -669,6 +688,7 @@ class SingleDetTriggers(object):
             return self.trigs[cname][:][self.mask]
         else:
             return self.trigs[cname][:]
+
 
 class ForegroundTriggers(object):
     # FIXME: A lot of this is hardcoded to expect two ifos
@@ -977,6 +997,7 @@ class ForegroundTriggers(object):
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
         ligolw_utils.write_filename(outdoc, file_name)
+
 
 class ReadByTemplate(object):
     # default assignment to {} is OK for a variable used only in __init__
