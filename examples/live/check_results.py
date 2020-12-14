@@ -6,7 +6,7 @@ import logging as log
 import numpy as np
 import h5py
 import pycbc
-from pycbc.io import record
+from pycbc.io import FieldArray
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import ligolw, lsctables
 
@@ -143,7 +143,7 @@ def check_coinc_results():
     dtype = [('mass1', float), ('mass2', float),
              ('spin1z', float), ('spin2z', float),
              ('tc', float), ('net_snr', float)]
-    trig_props = record.FieldArray(n_coincs, dtype=dtype)
+    trig_props = FieldArray(n_coincs, dtype=dtype)
 
     # store properties of coincident triggers
     for x, ctrigfp in enumerate(coinc_trig_paths):
