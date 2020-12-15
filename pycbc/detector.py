@@ -28,7 +28,6 @@
 """This module provides utilities for calculating detector responses and timing
 between observatories.
 """
-import lalsimulation
 import numpy as np
 import lal
 from pycbc.types import TimeSeries
@@ -79,12 +78,16 @@ class Detector(object):
         calculate the time for each gps time requested explicitly
         using a slower but higher precision method.
         """
-        self.name = str(detector_name)
-        self.frDetector = lalsimulation.DetectorPrefixToLALDetector(self.name)
-        self.response = self.frDetector.response
-        self.location = self.frDetector.location
-        self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
-        self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
+        if detector_name in [pfx for pfx, name in get_available_detectors()]:
+            import lalsimulation
+            self.name = str(detector_name)
+            self.frDetector = lalsimulation.DetectorPrefixToLALDetector(self.name)
+            self.response = self.frDetector.response
+            self.location = self.frDetector.location
+            self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
+            self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
+        else:
+            raise ValueError("Unkown detector {}".format(detector_name))
 
         self.reference_time = reference_time
         self.sday = None
@@ -302,6 +305,7 @@ class Detector(object):
         # time changing antenna patterns and doppler shifts due to the
         # earth rotation and orbit
         if method == 'lal':
+            import lalsimulation
             h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
                     hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
                     ra, dec, polarization, self.frDetector)
