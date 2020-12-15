@@ -126,6 +126,7 @@ if args.veto_file is not None:
 
 outgroup['search/start_time'], outgroup['search/end_time'] = \
         veto.segments_to_start_end(live_segs)
+outgroup['search'].attrs['live_time'] = abs(live_segs)
 
 # cannot store None in a h5py attr
 outgroup.attrs['filter'] = filter_func or 'None'
