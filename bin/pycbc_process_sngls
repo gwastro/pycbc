@@ -2,9 +2,12 @@
 
 """Reads in and vetoes single ifo triggers, cuts, reranks and clusters them"""
 
-import h5py, numpy, argparse, logging
-from pycbc.io import hdf
-from pycbc.events import stat, coinc, ranking
+import argparse
+import logging
+import numpy
+import h5py
+from pycbc.io import SingleDetTriggers
+from pycbc.events import stat, coinc
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -54,9 +57,9 @@ else:
 if filter_func is not None:
     logging.info('Will filter trigs using %s', filter_func)
 # Filter will be stored as self.mask attribute of sngls instance
-sngls = hdf.SingleDetTriggers(args.single_trig_file, args.bank_file,
-                              args.veto_file, args.segment_name, filter_func,
-                              args.detector)
+sngls = SingleDetTriggers(args.single_trig_file, args.bank_file,
+                          args.veto_file, args.segment_name, filter_func,
+                          args.detector)
 
 logging.info('Calculating stat')
 rank_method = stat.get_statistic_from_opts(args, [args.instrument])
