@@ -7,7 +7,7 @@ import logging
 import numpy
 import h5py
 from pycbc.io import SingleDetTriggers
-from pycbc.events import stat, coinc
+from pycbc.events import stat, coinc, veto
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -110,9 +110,22 @@ if args.store_bank_values:
             continue
         outgroup[n] = getattr(sngls, n)[out_idx]
 
-# copy the live time segments to enable the calculation of trigger rates
-outgroup['search/start_time'] = sngls.trigs['search/start_time'][:]
-outgroup['search/end_time'] = sngls.trigs['search/end_time'][:]
+# copy the live time segments to enable the calculation of trigger rates.
+# If a veto file has been used, subtract the vetoed time from the live time
+
+live_segs = veto.start_end_to_segments(sngls.trigs['search/start_time'][:],
+                                       sngls.trigs['search/end_time'][:])
+live_segs.coalesce()
+
+if args.veto_file is not None:
+    veto_segs = veto.select_segments_by_definer(args.veto_file,
+                                                args.segment_name,
+                                                args.detector)
+    veto_segs.coalesce()
+    live_segs -= veto_segs
+
+outgroup['search/start_time'], outgroup['search/end_time'] = \
+        veto.segments_to_start_end(live_segs)
 
 # cannot store None in a h5py attr
 outgroup.attrs['filter'] = filter_func or 'None'
