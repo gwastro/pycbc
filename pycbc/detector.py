@@ -107,6 +107,7 @@ def add_detector_on_earth(name, longitude, latitude, orientation=0, height=0):
                                       'response': response,
                                       }
 
+
 class Detector(object):
     """A gravitational wave detector
     """
@@ -125,8 +126,8 @@ class Detector(object):
         self.name = str(detector_name)
 
         if detector_name in [pfx for pfx, name in get_available_detectors()]:
-            import lalsimulation
-            self.frDetector = lalsimulation.DetectorPrefixToLALDetector(self.name)
+            import lalsimulation as lalsim
+            self.frDetector = lalsim.DetectorPrefixToLALDetector(self.name)
             self.response = self.frDetector.response
             self.location = self.frDetector.location
         elif detector_name in _custom_ground_detectors:
