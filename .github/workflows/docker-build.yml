@@ -1,0 +1,34 @@
+name: docker build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v1
+    - name: Code versions
+        id: code_versions
+        run: |
+          echo ::set-output name=SOURCE_NAME::${GITHUB_REF#refs/*/}
+          echo ::set-output name=SOURCE_BRANCH::${GITHUB_REF#refs/heads/}
+          echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 2.7 
+    - name: Preparing a host container
+      run: bash -e docker build -t pycbc-docker-tmp .
+    - name: Installing PyCBC and dependencies
+      run: bash -e docker run --privileged --name pycbc_inst -v `pwd`:/scratch:ro pycbc-docker-tmp /bin/bash -c /scratch/docker/etc/docker-install.sh
+    - name: Running docker commit
+      run: bash -e docker/etc/docker_commit.sh
+    - name: Pushing docker image
+      env: 
+        DOCKER_USERNAME: ${{secrets.DOCKERHUB_USERNAME}}
+        DOCKER_PASSWORD: ${{secrets.DOCKERHUB_PASSWORD}}
+        SOURCE_NAME: ${{ steps.code_versions.outputs.SOURCE_NAME }}
+        SOURCE_BRANCH: ${{ steps.code_versions.outputs.SOURCE_BRANCH }}
+        SOURCE_TAG: ${{ steps.code_versions.outputs.SOURCE_TAG }}
+        DOCKER_IMG: pycbc/pycbc-el7
+      run: bash -e docker/etc/push_image.sh
