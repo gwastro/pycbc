@@ -18,20 +18,6 @@ RUN cd / && \
     mkdir -p /cvmfs/config-osg.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org /cvmfs/gwosc.osgstorage.org && echo "config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org cvmfs ro,noauto 0 0" >> /etc/fstab && echo "oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org cvmfs ro,noauto 0 0" >> /etc/fstab && echo "gwosc.osgstorage.org /cvmfs/gwosc.osgstorage.org cvmfs ro,noauto 0 0" >> /etc/fstab && mkdir -p /oasis /scratch /projects /usr/lib64/slurm /var/run/munge && \
     groupadd -g 1000 pycbc && useradd -u 1000 -g 1000 -d /opt/pycbc -k /etc/skel -m -s /bin/bash pycbc
 
-# Install MPI software needed for pycbc_inference
-RUN yum install -y libibverbs libibverbs-devel libibmad libibmad-devel libibumad libibumad-devel librdmacm librdmacm-devel libmlx5 libmlx4 && curl http://mvapich.cse.ohio-state.edu/download/mvapich/mv2/mvapich2-2.1.tar.gz | tar -C /tmp -zxf - && \
-    cd /tmp/mvapich2-2.1 && ./configure --prefix=/opt/mvapich2-2.1 && make install && \
-    cd / && rm -rf /tmp/mvapich2-2.1 && \
-    pip install schwimmbad && \
-    MPICC=/opt/mvapich2-2.1/bin CFLAGS='-I /opt/mvapich2-2.1/include -L /opt/mvapich2-2.1/lib -lmpi' pip install --no-cache-dir mpi4py
-RUN echo "/opt/mvapich2-2.1/lib" > /etc/ld.so.conf.d/mvapich2-2.1.conf
-
-# Now update all of our library installations
-RUN rm -f /etc/ld.so.cache && /sbin/ldconfig
-
-# Explicitly set the path so that it is not inherited from build the environment
-ENV PATH "/usr/local/bin:/usr/bin:/bin:/opt/mvapich2-2.1/bin"
-
 # Set the default LAL_DATA_PATH to point at CVMFS first, then the container.
 # Users wanting it to point elsewhere should start docker using:
 #   docker <cmd> -e LAL_DATA_PATH="/my/new/path"
