@@ -2,6 +2,7 @@ name: docker build
 
 on: [push, pull_request]
 
+jobs:
   build: 
     runs-on: ubuntu-20.04
     steps: 
