@@ -1,6 +1,6 @@
 name: docker build
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   build: 
@@ -8,13 +8,6 @@ jobs:
     steps: 
       - 
         uses: actions/checkout@v1
-      - 
-        id: code_versions
-        name: "Code versions"
-        run: |
-            echo ::set-output name=SOURCE_NAME::${GITHUB_REF#refs/*/}
-            echo ::set-output name=SOURCE_BRANCH::${GITHUB_REF#refs/heads/}
-            echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
       - 
         name: "Set up Python"
         uses: actions/setup-python@v1
@@ -34,9 +27,6 @@ jobs:
           DOCKER_IMG: pycbc/pycbc-el7
           DOCKER_PASSWORD: "${{secrets.DOCKERHUB_PASSWORD}}"
           DOCKER_USERNAME: "${{secrets.DOCKERHUB_USERNAME}}"
-          SOURCE_BRANCH: "${{ steps.code_versions.outputs.SOURCE_BRANCH }}"
-          SOURCE_NAME: "${{ steps.code_versions.outputs.SOURCE_NAME }}"
-          SOURCE_TAG: "${{ steps.code_versions.outputs.SOURCE_TAG }}"
         name: "Pushing docker image"
         run: "bash -e docker/etc/push_image.sh"
 
