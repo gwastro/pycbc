@@ -321,7 +321,7 @@ class Detector(object):
                 # this method as we don't know where the signal is within
                 # the given time series. If not provided, we'll choose
                 # the midpoint time.
-                rtime = float(hp.end_time + hp.start_time) / 2.0
+                rtime = (float(hp.end_time) + float(hp.start_time)) / 2.0
 
             if method == 'constant':
                 time = rtime
