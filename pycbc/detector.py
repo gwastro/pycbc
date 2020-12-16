@@ -65,7 +65,8 @@ def get_available_detectors():
 
 
 _custom_ground_detectors = {}
-def add_detector_on_earth(name, longitude, latitude, orientation=0, height=0):
+def add_detector_on_earth(name, longitude, latitude,
+                          yangle=0, xangle=None, height=0):
     """ Add a new detector on the earth
 
     Parameters
@@ -77,34 +78,43 @@ def add_detector_on_earth(name, longitude, latitude, orientation=0, height=0):
         Longitude in radians using geodetic coordinates of the detector
     latitude: float
         Latitude in radians using geodetic coordinates of the detector
-    orientation: float
+    yangle: float
         Azimuthal angle of the y-arm (angle drawn from pointing north)
+    xangle: float
+        Azimuthal angle of the x-arm (angle drawn from point north). If not set
+        we assume a right angle detector following the right-hand rule.
     height: float
         The height in meters of the detector above the standard
         reference ellipsoidal earth
     """
+    if xangle is None:
+        # assume right angle detector if no separate xarm direction given
+        xangle = yangle + np.pi / 2.0
+
     # Calculate response in earth centered coordinates
     # by rotation of response in coordinates aligned
     # with the detector arms
-    a = cos(2*orientation)
-    b = sin(2*orientation)
-    response = 0.5 * np.array([[-a, b, 0], [b, a, 0], [0, 0, 0]])
+    a, b = cos(2*xangle), sin(2*xangle)
+    xresp = np.array([[-a, b, 0], [b, a, 0], [0, 0, 0]])
+    a, b = cos(2*yangle), sin(2*yangle)
+    yresp = np.array([[-a, b, 0], [b, a, 0], [0, 0, 0]])
+    resp = (yresp - xresp) / 4.0
 
     rm1 = rotation_matrix(longitude * units.rad, 'z')
     rm2 = rotation_matrix((np.pi / 2.0 - latitude) * units.rad, 'y')
     rm = np.matmul(rm2, rm1)
 
-    response = np.matmul(response, rm)
-    response = np.matmul(rm.T, response)
+    resp = np.matmul(resp, rm)
+    resp = np.matmul(rm.T, resp)
 
-    location = coordinates.EarthLocation.from_geodetic(longitude * units.rad,
-                                                       latitude * units.rad,
-                                                       height=height*units.meter)
-    location = np.array([location.x.value,
-                         location.y.value,
-                         location.z.value])
-    _custom_ground_detectors[name] = {'location': location,
-                                      'response': response,
+    loc = coordinates.EarthLocation.from_geodetic(longitude * units.rad,
+                                                  latitude * units.rad,
+                                                  height=height*units.meter)
+    loc = np.array([loc.x.value,
+                    loc.y.value,
+                    loc.z.value])
+    _custom_ground_detectors[name] = {'location': loc,
+                                      'response': resp,
                                       }
 
 
