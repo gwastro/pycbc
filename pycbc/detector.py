@@ -151,8 +151,8 @@ class Detector(object):
                                         self.location[1],
                                         self.location[2],
                                         unit=meter)
-        self.latitude = loc.latitude.rad
-        self.longitude = loc.longitude.rad
+        self.latitude = loc.lat.rad
+        self.longitude = loc.lon.rad
 
         self.reference_time = reference_time
         self.sday = None
