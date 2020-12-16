@@ -1,6 +1,6 @@
 echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
 SOURCE_TAG=`git show-ref | grep ${GITHUB_SHA} | grep -E -o "refs/tags.{0,100}" | cut -c11-`
-MASTER_HASH=`git rev-parse master`
+MASTER_HASH=`git rev-parse origin/master`
 # REMOVE THIS LINE BEFORE MERGING
 MASTER_HASH=${GITHUB_SHA}
 if [ "x${SOURCE_TAG}"  == "x" ] ; then
