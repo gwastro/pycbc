@@ -16,8 +16,10 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.python-version }} 
-    - run: sudo apt-get install *fftw3* mpi intel-mkl* git-lfs
+        python-version: ${{ matrix.python-version }}
+    - run: |
+        sudo apt-get update
+        sudo apt-get install *fftw3* mpi intel-mkl* git-lfs
       if: matrix.os == 'ubuntu-20.04'
     - run: brew install fftw
       if: matrix.os == 'macos-latest'
@@ -64,7 +66,7 @@ jobs:
       uses: JamesIves/github-pages-deploy-action@3.7.1
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages 
+        BRANCH: gh-pages
         FOLDER: _gh-pages
         SINGLE_COMMIT: true
   deploy_pypi:
