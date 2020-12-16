@@ -42,17 +42,15 @@ else
 fi
 
 
-# test if there is a inj file. If not, make one.
-# if a new inj is made, delete old strain
+# test if there is a injection file.
+# If not, make one and delete any existing strain
 
-if [[ -f test_inj1.hdf && -f test_inj2.hdf ]]
+if [[ -f injections.hdf ]]
 then
-    echo -e "\\n\\n>> [`date`] Pre-existing Injection Found"
+    echo -e "\\n\\n>> [`date`] Pre-existing injections found"
 else
-    echo -e "\\n\\n>> [`date`] Generating injection"
+    echo -e "\\n\\n>> [`date`] Generating injections"
 
-    rm -f test_inj1.hdf
-    rm -f test_inj2.hdf
     rm -rf ./strain
 
     ./generate_injections.py
@@ -66,35 +64,23 @@ then
     echo -e "\\n\\n>> [`date`] Generating simulated strain"
 
     function simulate_strain { # detector PSD_model random_seed
-        mkdir -p temp_strain/$1
         mkdir -p strain/$1
 
-        (( t1=$gps_start_time-10 ))
-        (( t2=$gps_end_time+10 ))
+        out_path="strain/$1/$1-SIMULATED_STRAIN-{start}-{duration}.gwf"
 
         pycbc_condition_strain \
             --fake-strain $2 \
             --fake-strain-seed $3 \
-            --output-strain-file "temp_strain/$1/$1-TEMP-{start}-{duration}.gwf" \
-            --gps-start-time $t1 \
-            --gps-end-time $t2 \
-            --sample-rate 16384 \
-            --low-frequency-cutoff 10 \
-            --channel-name $1:SIMULATED_STRAIN \
-            --frame-duration 32 \
-            --injection-file test_inj1.hdf
-
-        pycbc_condition_strain \
-            --frame-files temp_strain/$1/* \
-            --output-strain-file "strain/$1/$1-SIMULATED_STRAIN-{start}-{duration}.gwf" \
-            --gps-start-time $gps_start_time  \
+            --output-strain-file $out_path \
+            --gps-start-time $gps_start_time \
             --gps-end-time $gps_end_time \
             --sample-rate 16384 \
             --low-frequency-cutoff 10 \
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 32 \
-            --injection-file test_inj2.hdf
+            --injection-file injections.hdf
     }
+
     simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
     simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345
     simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456
