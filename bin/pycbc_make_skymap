@@ -359,6 +359,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
     if ligolw_event_output:
         shutil.move(ligolw_file_path, ligolw_event_output)
+    shutil.rmtree(tmpdir)
 
 if __name__ == '__main__':
     pycbc.init_logging(True)
