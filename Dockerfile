@@ -11,7 +11,7 @@ RUN rpm -ivh http://software.ligo.org/lscsoft/scientific/7/x86_64/production/l/l
     yum -y groupinstall "Compatibility Libraries" \
                         "Development Tools" \
                         "Scientific Support" && \
-    rpm -e --nodeps git perl-Git && yum -y install python2-pip python-setuptools zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel openssl-devel git2u-all fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel libframe-utils libframe-devel libframe libmetaio libmetaio-devel libmetaio-utils hdf5 hdf5-devel python-devel which osg-wn-client osg-ca-certs && pip install --upgrade pip==19.3.1 setuptools==44.0.0 && pip install mkl ipython jupyter
+    rpm -e --nodeps git perl-Git && yum -y install python2-pip python-setuptools zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel openssl-devel git2u-all fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel libframe-utils libframe-devel libframe libmetaio libmetaio-devel libmetaio-utils hdf5 hdf5-devel python-devel which osg-wn-client osg-ca-certs && pip install --upgrade pip==19.3.1 setuptools==44.0.0 && pip install mkl==2019.0 ipython jupyter
 
 # set up environment
 RUN cd / && \
