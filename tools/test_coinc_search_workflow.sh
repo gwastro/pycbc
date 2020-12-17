@@ -32,6 +32,10 @@ pushd $WORKFLOW_NAME
 
 # Doesn't need to be a valid bank file, just needs to exist
 echo "DUMMY BANK FILE" > bank.hdf
+echo "DUMMY STAT FILE" > statHL.hdf
+echo "DUMMY STAT FILE" > statLV.hdf
+echo "DUMMY STAT FILE" > statHV.hdf
+echo "DUMMY STAT FILE" > statHLV.hdf
 
 echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 
