@@ -15,13 +15,11 @@ jobs:
           python-version: 2.7
       - 
         env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
           OSG_ACCESS: "${{secrets.OSG_ACCESS}}"
         name: "Preparing ssh stuff"
         run: "bash -e tools/docker_build_prepssh.sh"
       - 
         env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
           DOCKER_IMG: ligo/lalsuite-dev:el7
           PYCBC_CONTAINER: pycbc_rhel_virtualenv
           DOCKER_SECURE_ENV_VARS: true
