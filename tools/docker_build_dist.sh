@@ -32,7 +32,6 @@ if [ "x${DOCKER_SECURE_ENV_VARS}" == "xtrue" ] ; then
   mkdir -p ~/.ssh
   cp /pycbc/.ssh/* ~/.ssh
   chmod 600 ~/.ssh/id_rsa
-  cat ~/.ssh/id_rsa
 fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
