@@ -22,6 +22,7 @@ jobs:
         env:
           DOCKER_IMG: ligo/lalsuite-dev:el7
           PYCBC_CONTAINER: pycbc_rhel_virtualenv
+          DOCKER_SECURE_ENV_VARS: true
         name: "Creating the virtual environment"
         run: "bash -e tools/docker_build_and_test.sh"
 
