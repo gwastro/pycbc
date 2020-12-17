@@ -30,6 +30,9 @@ export LIGO_DATAFIND_SERVER='128.230.190.43:80'
 mkdir $WORKFLOW_NAME
 pushd $WORKFLOW_NAME
 
+# Doesn't need to be a valid bank file, just needs to exist
+echo "DUMMY BANK FILE" > ../bank.hdf
+
 echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 
 pycbc_make_coinc_search_workflow \
