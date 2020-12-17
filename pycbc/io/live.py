@@ -17,6 +17,7 @@ from pycbc.results import ifo_color
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
 
+
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
@@ -416,12 +417,7 @@ class SingleCoincForGraceDB(object):
             logging.info("Uploaded PSDs for event %s", gid)
 
             # add info for tracking code version
-            version_str = 'Using PyCBC version {}{} at {}'
-            version_str = version_str.format(
-                    pycbc_version.version,
-                    ' (release)' if pycbc_version.release else '',
-                    os.path.dirname(pycbc.__file__))
-            gracedb.writeLog(gid, version_str)
+            gracedb_tag_with_version(gracedb, gid)
 
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
@@ -458,4 +454,15 @@ class SingleCoincForGraceDB(object):
 
         return gid
 
-__all__ = ['SingleCoincForGraceDB', 'make_psd_xmldoc', 'snr_series_to_xml']
+def gracedb_tag_with_version(gracedb, event_id):
+    """Add a GraceDB log entry reporting PyCBC's version and install location.
+    """
+    version_str = 'Using PyCBC version {}{} at {}'
+    version_str = version_str.format(
+            pycbc_version.version,
+            ' (release)' if pycbc_version.release else '',
+            os.path.dirname(pycbc.__file__))
+    gracedb.writeLog(event_id, version_str)
+
+__all__ = ['SingleCoincForGraceDB', 'make_psd_xmldoc', 'snr_series_to_xml',
+           'gracedb_tag_with_version']
