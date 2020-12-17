@@ -1,6 +1,6 @@
 name: basic tests
 
-on: [release]
+on: [push, pull_request]
 
 jobs:
   build:
