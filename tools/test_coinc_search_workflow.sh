@@ -35,12 +35,10 @@ echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 pycbc_make_coinc_search_workflow \
 --workflow-name ${WORKFLOW_NAME} --output-dir output \
 --config-files \
-${CONFIG_PATH}/analysis.ini \
-${CONFIG_PATH}/data_O1.ini \
-${CONFIG_PATH}/plotting.ini \
-${CONFIG_PATH}/injections_minimal.ini \
-${CONFIG_PATH}/executables.ini \
-${CONFIG_PATH}/gps_times_O1_analysis_1.ini \
+../examples/search/analysis.ini \
+../examples/search/plotting.ini \
+../examples/search/injections_minimal.ini \
+../examples/search/executables.ini \
 --config-overrides \
 "results_page:output-path:../../../html"
 
