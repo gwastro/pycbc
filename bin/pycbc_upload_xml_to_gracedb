@@ -35,7 +35,7 @@ from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
-from pycbc import version as pycbc_version
+from pycbc.io.live import gracedb_tag_with_version
 
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
@@ -171,12 +171,7 @@ for event in coinc_table:
     logging.info("Uploaded file psd.xml.gz to event %s.", r["graceid"])
 
     # add info for tracking code version
-    version_str = 'Using PyCBC version {}{} at {}'
-    version_str = version_str.format(
-            pycbc_version.version,
-            ' (release)' if pycbc_version.release else '',
-            os.path.dirname(pycbc.__file__))
-    gracedb.writeLog(r['graceid'], version_str)
+    gracedb_tag_with_version(gracedb, r['graceid'])
 
     # document the absolute path to the input file
     input_file_str = 'Candidate uploaded from ' \
@@ -185,7 +180,8 @@ for event in coinc_table:
 
     # add the custom log message, if provided
     if args.log_message is not None:
-        gracedb.writeLog(r['graceid'], args.log_message)
+        gracedb.writeLog(r['graceid'], args.log_message,
+                         tag_name=['analyst_comments'])
 
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
