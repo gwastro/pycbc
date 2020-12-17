@@ -49,6 +49,8 @@ parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to upload')
 parser.add_argument('--input-file', required=True, type=str,
                     help='Input LIGOLW XML file of coincidences.')
+parser.add_argument('--log-message', type=str, metavar='MESSAGE',
+                    help='Add a log entry to each upload with the given message')
 parser.add_argument('--testing', action="store_true", default=False,
                     help="Upload event to the TEST group of gracedb.")
 parser.add_argument('--min-ifar', type=float, metavar='YEARS',
@@ -180,6 +182,10 @@ for event in coinc_table:
     input_file_str = 'Candidate uploaded from ' \
         + os.path.abspath(args.input_file)
     gracedb.writeLog(r['graceid'], input_file_str)
+
+    # add the custom log message, if provided
+    if args.log_message is not None:
+        gracedb.writeLog(r['graceid'], args.log_message)
 
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
