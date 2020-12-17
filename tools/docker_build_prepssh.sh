@@ -1,3 +1,4 @@
+mkdir -p ~/.ssh
 touch ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token
 chmod 600 ~/.ssh/id_rsa ~/.ssh/ldg_user ~/.ssh/ldg_token
 echo ${OSG_ACCESS} > ~/.ssh/id_rsa
