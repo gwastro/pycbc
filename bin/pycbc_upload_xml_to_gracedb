@@ -20,6 +20,7 @@
 Take a coinc xml file containing multiple events and upload to gracedb.
 """
 
+import os
 import argparse
 import logging
 from ligo.gracedb.rest import GraceDb
@@ -33,8 +34,9 @@ from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
 from ligo.segments import segment, segmentlist
+from pycbc import version as pycbc_version
+
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -45,8 +47,7 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to upload')
-parser.add_argument('--input-file', dest='input_file',
-                    required=True, type=str,
+parser.add_argument('--input-file', required=True, type=str,
                     help='Input LIGOLW XML file of coincidences.')
 parser.add_argument('--testing', action="store_true", default=False,
                     help="Upload event to the TEST group of gracedb.")
@@ -160,10 +161,26 @@ for event in coinc_table:
         r = gracedb.createEvent("CBC", "pycbc", "tmp_coinc_xml_file.xml",
                                 search="AllSky", offline=True).json()
     logging.info("Uploaded event %s.", r["graceid"])
+
+    # upload PSD
     gracedb.writeLog(
         r["graceid"], "PyCBC PSD estimate from the time of event",
         "psd.xml.gz", open("tmp_psd.xml.gz", "rb").read(), "psd").json()
     logging.info("Uploaded file psd.xml.gz to event %s.", r["graceid"])
+
+    # add info for tracking code version
+    version_str = 'Using PyCBC version {}{} at {}'
+    version_str = version_str.format(
+            pycbc_version.version,
+            ' (release)' if pycbc_version.release else '',
+            os.path.dirname(pycbc.__file__))
+    gracedb.writeLog(r['graceid'], version_str)
+
+    # document the absolute path to the input file
+    input_file_str = 'Candidate uploaded from ' \
+        + os.path.abspath(args.input_file)
+    gracedb.writeLog(r['graceid'], input_file_str)
+
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_event_map_table_curr)
