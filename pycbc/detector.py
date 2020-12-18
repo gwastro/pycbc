@@ -28,14 +28,14 @@
 """This module provides utilities for calculating detector responses and timing
 between observatories.
 """
-import lalsimulation
 import numpy as np
 import lal
 from pycbc.types import TimeSeries
 from astropy.time import Time
 from astropy import constants, coordinates, units
-from astropy.units.si import sday
-from numpy import cos, sin
+from astropy.coordinates.matrix_utilities import rotation_matrix
+from astropy.units.si import sday, meter
+from numpy import cos, sin, pi
 
 # Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
@@ -64,6 +64,60 @@ def get_available_detectors():
     return list(zip(known_prefixes, known_names))
 
 
+_custom_ground_detectors = {}
+def add_detector_on_earth(name, longitude, latitude,
+                          yangle=0, xangle=None, height=0):
+    """ Add a new detector on the earth
+
+    Parameters
+    ----------
+
+    name: str
+        two-letter name to identify the detector
+    longitude: float
+        Longitude in radians using geodetic coordinates of the detector
+    latitude: float
+        Latitude in radians using geodetic coordinates of the detector
+    yangle: float
+        Azimuthal angle of the y-arm (angle drawn from pointing north)
+    xangle: float
+        Azimuthal angle of the x-arm (angle drawn from point north). If not set
+        we assume a right angle detector following the right-hand rule.
+    height: float
+        The height in meters of the detector above the standard
+        reference ellipsoidal earth
+    """
+    if xangle is None:
+        # assume right angle detector if no separate xarm direction given
+        xangle = yangle + np.pi / 2.0
+
+    # Calculate response in earth centered coordinates
+    # by rotation of response in coordinates aligned
+    # with the detector arms
+    a, b = cos(2*xangle), sin(2*xangle)
+    xresp = np.array([[-a, b, 0], [b, a, 0], [0, 0, 0]])
+    a, b = cos(2*yangle), sin(2*yangle)
+    yresp = np.array([[-a, b, 0], [b, a, 0], [0, 0, 0]])
+    resp = (yresp - xresp) / 4.0
+
+    rm1 = rotation_matrix(longitude * units.rad, 'z')
+    rm2 = rotation_matrix((np.pi / 2.0 - latitude) * units.rad, 'y')
+    rm = np.matmul(rm2, rm1)
+
+    resp = np.matmul(resp, rm)
+    resp = np.matmul(rm.T, resp)
+
+    loc = coordinates.EarthLocation.from_geodetic(longitude * units.rad,
+                                                  latitude * units.rad,
+                                                  height=height*units.meter)
+    loc = np.array([loc.x.value,
+                    loc.y.value,
+                    loc.z.value])
+    _custom_ground_detectors[name] = {'location': loc,
+                                      'response': resp,
+                                      }
+
+
 class Detector(object):
     """A gravitational wave detector
     """
@@ -80,11 +134,25 @@ class Detector(object):
         using a slower but higher precision method.
         """
         self.name = str(detector_name)
-        self.frDetector = lalsimulation.DetectorPrefixToLALDetector(self.name)
-        self.response = self.frDetector.response
-        self.location = self.frDetector.location
-        self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
-        self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
+
+        if detector_name in [pfx for pfx, name in get_available_detectors()]:
+            import lalsimulation as lalsim
+            self.frDetector = lalsim.DetectorPrefixToLALDetector(self.name)
+            self.response = self.frDetector.response
+            self.location = self.frDetector.location
+        elif detector_name in _custom_ground_detectors:
+            dinfo = _custom_ground_detectors[detector_name]
+            self.response = dinfo['response']
+            self.location = dinfo['location']
+        else:
+            raise ValueError("Unkown detector {}".format(detector_name))
+
+        loc = coordinates.EarthLocation(self.location[0],
+                                        self.location[1],
+                                        self.location[2],
+                                        unit=meter)
+        self.latitude = loc.lat.rad
+        self.longitude = loc.lon.rad
 
         self.reference_time = reference_time
         self.sday = None
@@ -302,6 +370,7 @@ class Detector(object):
         # time changing antenna patterns and doppler shifts due to the
         # earth rotation and orbit
         if method == 'lal':
+            import lalsimulation
             h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
                     hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
                     ra, dec, polarization, self.frDetector)
