@@ -32,7 +32,7 @@ import pycbc.version
 import collections
 import operator
 import scipy
-from pycbc.results.pygrb_plotting_utils import *
+from pycbc.results.pygrb_postprocessing_utils import *
 plt.switch_backend('Agg')
 
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"

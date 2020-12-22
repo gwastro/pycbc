@@ -32,7 +32,7 @@ import os
 import pycbc.version
 import pycbc.workflow as _workflow
 from pycbc.workflow.plotting import PlotExecutable, excludestr, requirestr
-from pycbc.results import create_versioning_page, layout, pygrb_plotting_utils
+from pycbc.results import create_versioning_page, layout, pygrb_postprocessing_utils
 from pycbc.results.versioning import save_fig_with_metadata
 
 __author__  = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
@@ -175,7 +175,7 @@ _workflow.makedir(rdir['workflow'])
 # Input trigger file
 trig_file = wflow.cp.get('workflow', 'trig-file')
 # IFOs actually used: determined by data availability
-ifos = pygrb_plotting_utils.extract_ifos(trig_file)
+ifos = pygrb_postprocessing_utils.extract_ifos(trig_file)
 
 plotting_nodes = []
 
