@@ -623,15 +623,17 @@ def load_time_slides(xml_file):
     # Check time_slide_ids are ordered correctly. 
     ids = get_id_numbers(time_slide, "time_slide_id")[::len(time_slide_list[0].keys())]
     if not (np.all(ids[1:] == np.array(ids[:-1])+1) and ids[0]==0):
-        msg = "time_slide_ids list should start at zero and increase by " +
-              "one for every element"
-        logging.err(msg)
+        err_msg = "time_slide_ids list should start at zero and increase by "
+        err_msg += "one for every element"
+        logging.err(err_msg)
         sys.exit()
     # Check that the zero-lag slide has time_slide_id == 0.
     if not np.all(np.array(list(time_slide_list[0].values())) == 0):
-        msg = "The zero-lag slide should have time_slide_id == 0 " +
-              "but the first element of time_slide_list is %s \n" % 
-              time_slide_list[0]
+        err_msg = "The zero-lag slide should have time_slide_id == 0 "
+        err_msg += "but the first element of time_slide_list is "
+        err_msg += "%s \n" % time_slide_list[0]
+        logging.err(err_msg)
+        sys.exit()
 
     return time_slide_list
 
