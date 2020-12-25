@@ -81,11 +81,7 @@ def get_chisq(vec, eig, rot_mat, threshold=0.05):
     rot_vec = np.dot(vec, rot_mat)
     chi =(rot_vec[rel_eig]**2.0/eig[rel_eig]).sum()
 
-    # if chi / dof > 4:
-        # logging.info("eig for chi = {}".format(chi/dof))
-        # logging.info(eig[rel_eig])
-    logging.info('min, max, ratio')
-    logging.info(eig[rel_eig][0], eig[rel_eig][-1], eig[rel_eig][-1]/eig[rel_eig][0])
+    logging.info('Eigenvalues min, max, ratio: {}, {}, {}'.format(eig[rel_eig][0], eig[rel_eig][-1], eig[rel_eig][-1]/eig[rel_eig][0]))
 
     return chi, dof
 
@@ -220,12 +216,8 @@ class SingleDetAmbiguityChisq(object):
         filter_list.table = filter_list.table[idx]
         return list(filter_list)
 
-    def cache_seg_snrs(self, htilde, stilde, psd):  # It is assumed ``filters iff htilde''
-        # key = (id(htilde), id(stilde), id(psd))
+    def cache_seg_snrs(self, htilde, stilde, psd):
         key = (id(htilde), stilde.end_time, id(psd))
-        logging.info("key = (id(htilde), stilde.end_time, psd.end_time)")
-        logging.info(key)
-        logging.info("Above is the key")
         if key not in self._cache_seg_snrs:
             filters = self.get_filters(htilde)
             self._cache_seg_snrs[key] = segment_snrs(filters, stilde, psd, self.flow, self.fmax)  ## Assumed data is overwhitened
