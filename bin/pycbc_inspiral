@@ -284,7 +284,7 @@ with ctx:
     if opt.psdvar_segment is not None:
         logging.info("Calculating PSD variation")
         psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
-                opt.psdvar_short_segment, opt.psdvar_long_segment, 
+                opt.psdvar_short_segment, opt.psdvar_long_segment,
                 opt.psdvar_psd_duration, opt.psdvar_psd_stride,
                 opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
 
@@ -358,6 +358,22 @@ with ctx:
     logging.info("Overwhitening frequency-domain data segments")
     for seg in segments:
         seg /= seg.psd
+
+# Separate bank for ambiguity chisq due to out=template_mem. This gives
+# problems.
+    if opt.ambi_status:
+        logging.info("Read in template bank for ambiguity chisq")
+        ambi_bank = waveform.FilterBank(opt.ambi_veto_bank_file, flen, delta_f,
+            low_frequency_cutoff=None if opt.enable_bank_start_frequency else flow,
+            dtype=complex64, phase_order=opt.order,
+            taper=opt.taper_template, approximant=opt.approximant,
+            max_template_length=opt.max_template_length,
+            cache_filters=True, max_cache_filters=40,
+            enable_compressed_waveforms=True if opt.use_compressed_waveforms else False,
+            waveform_decompression_method=
+            opt.waveform_decompression_method if opt.use_compressed_waveforms else None)
+
+        ambiguity_chisq = vetoes.SingleDetAmbiguityChisq.from_cli(opt, ambi_bank) #, ambi_matched_filter)
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,
@@ -444,6 +460,14 @@ with ctx:
                                    stilde.psd, norm, stilde=stilde,
                                    low_frequency_cutoff=flow)
 
+            if opt.ambi_status:
+                out_vals['ambiguity_chisq'], out_vals['ambiguity_chisq_dof'] = \
+                        ambiguity_chisq.values(snrv * norm, idx+stilde.analyze.start,
+                                template, stilde, stilde.psd)
+            else:
+                out_vals['ambiguity_chisq'], out_vals['ambiguity_chisq_dof'] = \
+                        numpy.repeat(1.0, len(idx)), numpy.repeat(1, len(idx))
+
             idx += stilde.cumulative_index
 
             out_vals['time_index'] = idx
@@ -471,7 +495,7 @@ with ctx:
         if opt.checkpoint_exit_maxtime and \
             (time.time() - tstart > opt.checkpoint_exit_maxtime):
             event_mgr.save_state(t_num, opt.output + '.checkpoint')
-            sys.exit(opt.checkpoint_exit_code)           
+            sys.exit(opt.checkpoint_exit_code)
 
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()

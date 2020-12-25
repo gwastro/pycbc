@@ -501,6 +501,12 @@ class EventManager(object):
             if self.opt.psdvar_segment is not None:
                 f['psd_var_val'] = self.events['psd_var_val']
 
+            if 'ambiguity_chisq' in self.events.dtype.names:
+                f['ambiguity_chisq'] = self.events['ambiguity_chisq']
+
+            if 'ambiguity_chisq_dof' in self.events.dtype.names:
+                f['ambiguity_chisq_dof'] = self.events['ambiguity_chisq_dof']
+
         if self.opt.trig_start_time:
             f['search/start_time'] = numpy.array([self.opt.trig_start_time])
             search_start_time = float(self.opt.trig_start_time)
