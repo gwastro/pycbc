@@ -171,7 +171,7 @@ class SingleDetAmbiguityChisq(object):
     @staticmethod
     def insert_option_group(parser):
         group = parser.add_argument_group("ambiguity chi-square")
-        group.add_argument("--ambi-status", action="store_true", default=True)
+        group.add_argument("--ambi-status", action="store_true", default=False)
         group.add_argument("--ambi-snr-threshold", type=float,
             help="Minimum SNR threshold to use ambi chisq")
         group.add_argument("--ambi-condition-threshold", type=float, default=0.05,
