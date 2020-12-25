@@ -207,6 +207,7 @@ fft.insert_fft_option_group(parser)
 pycbc.opt.insert_optimization_option_group(parser)
 pycbc.inject.insert_injfilterrejector_option_group(parser)
 SingleDetSGChisq.insert_option_group(parser)
+vetoes.SingleDetAmbiguityChisq.insert_option_group(parser)
 opt = parser.parse_args()
 
 # Check that the values returned for the options make sense
@@ -267,6 +268,7 @@ with ctx:
         'psd_var_val'    : float32,
                 }
     out_types.update(SingleDetSGChisq.returns)
+    out_types.update(vetoes.SingleDetAmbiguityChisq.returns)
     out_vals = {key: None for key in out_types}
     names = sorted(out_vals.keys())
 
