@@ -177,7 +177,7 @@ class SingleDetAmbiguityChisq(object):
         group.add_argument("--ambi-condition-threshold", type=float, default=0.05,
             help="Minimum SNR threshold to use ambi chisq")
         group.add_argument("--ambi-veto-bank-file", type=str, help="bank file for ambiguity chisq")
-        group.add_argument("--ambi-veto-use-full-bank", action="store_true", default=True)
+        group.add_argument("--ambi-veto-use-full-bank", action="store_true", default=False)
         group.add_argument("--ambi-min-filters", type=int, default=10,
                 help="maximum filters to be used for ambiguity chisq from the veto bank")
         group.add_argument("--ambi-max-filters", type=int, default=30,
