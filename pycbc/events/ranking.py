@@ -37,6 +37,24 @@ def newsnr(snr, reduced_x2, q=6., n=2.):
     else:
         return nsnr[0]
 
+## FIXME: Find q and n values that optimize for ambiguity_chisq
+def newsnr_ambiveto(snr, reduced_x2, q=6., n=2.):
+    """Calculate the re-weighted SNR statistic ('newSNR') from given SNR and
+    reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
+    definition. Previous implementation in glue/ligolw/lsctables.py
+    """
+    nsnr = numpy.array(snr, ndmin=1, dtype=numpy.float64)
+    reduced_x2 = numpy.array(reduced_x2, ndmin=1, dtype=numpy.float64)
+
+    # newsnr is only different from snr if reduced chisq > 1
+    ind = numpy.where(reduced_x2 > 1.)[0]
+    nsnr[ind] *= (0.5 * (1. + reduced_x2[ind] ** (q/n))) ** (-1./q)
+
+    # If snr input is float, return a float. Otherwise return numpy array.
+    if hasattr(snr, '__len__'):
+        return nsnr
+    else:
+        return nsnr[0]
 
 def newsnr_sgveto(snr, brchisq, sgchisq):
     """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
@@ -289,6 +307,74 @@ def get_newsnr_sgveto_psdvar_scaled_threshold(trigs):
     return numpy.array(nsnr_sg_psdt, ndmin=1, dtype=numpy.float32)
 
 
+def get_newsnr_ambiveto(trigs):
+    """
+    Calculate newsnr ('reweighted SNR') for a trigs/dictionary object
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+        Dictionary-like object holding single detector trigger information.
+        'chisq_dof', 'snr', and 'chisq' are required keys
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr = newsnr(trigs['snr'][:], trigs['chisq'][:] / dof)
+    nsnr = newsnr_ambiveto(nsnr, trigs['ambiguity_chisq'][:])
+    return numpy.array(nsnr, ndmin=1, dtype=numpy.float32)
+
+
+def get_newsnr_sgambiveto(trigs):
+    """
+    Calculate newsnr re-weigthed by the sine-gaussian veto
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+        Dictionary-like object holding single detector trigger information.
+        'chisq_dof', 'snr', 'sg_chisq' and 'chisq' are required keys
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg = newsnr_sgveto(trigs['snr'][:],
+                            trigs['chisq'][:] / dof,
+                            trigs['sg_chisq'][:])
+    nsnr_sg = newsnr_ambiveto(nsnr_sg, trigs['ambiguity_chisq'][:])
+    return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
+
+
+def get_newsnr_sgambiveto_psdvar(trigs):
+    """
+    Calculate snr re-weighted by Allen chisq, sine-gaussian veto and
+    psd variation statistic
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    'chisq_dof', 'snr', 'chisq' and 'psd_var_val' are required keys
+
+    Returns
+    -------
+     numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg_psd = \
+                 newsnr_sgveto_psdvar(trigs['snr'][:], trigs['chisq'][:] / dof,
+                                      trigs['sg_chisq'][:],
+                                      trigs['psd_var_val'][:])
+    nsnr_sg_psd = newsnr_ambiveto(nsnr_sg_psd, trigs['ambiguity_chisq'][:])
+    return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
+
 sngls_ranking_function_dict = {
     'snr': get_snr,
     'newsnr': get_newsnr,
@@ -298,6 +384,9 @@ sngls_ranking_function_dict = {
     'newsnr_sgveto_psdvar_threshold': get_newsnr_sgveto_psdvar_threshold,
     'newsnr_sgveto_psdvar_scaled': get_newsnr_sgveto_psdvar_scaled,
     'newsnr_sgveto_psdvar_scaled_threshold': get_newsnr_sgveto_psdvar_scaled_threshold,
+    'newsnr_ambiveto': get_newsnr_ambiveto,
+    'newsnr_sgambiveto': get_newsnr_sgambiveto,
+    'newsnr_sgambiveto_psdvar': get_newsnr_sgambiveto_psdvar,
 }
 
 
