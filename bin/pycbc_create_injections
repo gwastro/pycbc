@@ -122,6 +122,7 @@ from pycbc.io import record
 from pycbc.waveform import parameters
 from pycbc.workflow import configuration
 from pycbc.workflow import WorkflowConfigParser
+from numpy.random import uniform
 import h5py
 
 parser = argparse.ArgumentParser(description=__doc__,
@@ -133,13 +134,15 @@ parser.add_argument('--version', action='version',
 parser.add_argument('--ninjections', type=int,
                     help='Number of injections to create.')
 parser.add_argument('--gps-start-time', type=int, help="Alternative to "
-                    "ninjections argument. Injections will be distributed "
-                    "in time by taking the cumulative sum of the tc values. "
+                    "ninjections argument. "
                     "The number will be chosen to fill the chosen time range. ")
 parser.add_argument('--gps-end-time', type=int, help="Alternative to "
-                    "ninjections argument. Injections will be distributed "
-                    "in time by taking the cumulative sum of the tc values. "
+                    "ninjections argument. "
                     "The number will be chosen to fill the chosen time range. ")
+parser.add_argument('--time-step', type=float,
+                    help="Minimum separation between injections")
+parser.add_argument('--time-window', type=float,
+                    help="Uniform window of time to place injection into")
 parser.add_argument('--seed', type=int, default=0,
                     help='Seed to use for the random number generator. '
                          'Default is 0.')
@@ -170,8 +173,12 @@ if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
                   "overwrite it.")
 
-if opts.ninjections and (opts.gps_start_time or opts.gps_end_time):
-    raise ValueError("Cannot provide both ninjections and start/end time.")
+if opts.ninjections and (opts.gps_start_time is not None or
+                         opts.gps_end_time is not None or
+                         opts.time_step is not None or
+                         opts.time_window is not none):
+    raise ValueError("Cannot provide both ninjections and "
+                     " start/end/step/window time options.")
 
 numpy.random.seed(opts.seed)
 
@@ -222,22 +229,26 @@ while True:
         samples = transforms.apply_transforms(samples, waveform_transforms)
 
     # We are drawing until we hit a time so check if we've reached it
-    if opts.gps_start_time:
-        if 'tc' in samples.fieldnames:
-            raise RuntimeError("A distribution was given for 'tc'. This is "
-                               "not compatible with providing start/end times.")
+    if opts.gps_start_time is not None:
+        if 'tc' in samples.fieldnames or 'tc' in static_params:
+            raise RuntimeError("A value or distribution was given for 'tc'. "
+                               "This is not compatible with providing "
+                               "start/end times.")
 
+        if old_samples is None:
+            tstart = opts.gps_start_time
+        else:
+            tstart = old_samples['tc'].max()
+
+        tc = numpy.arange(0, draw_size) * opts.time_step + tstart
+        tc += uniform(0, high=opts.time_window, size=draw_size).cumsum()
+        samples = samples.add_fields([tc], ['tc'])
+        
         if old_samples is not None:
-            samples = numpy.concatenate([old_samples, samples])
-
+            samples = old_samples.append(samples)
         old_samples = samples
 
-        # We have enough to cover out time span so we can fixup the times
-        # and stop here
-        if samples['time_delay'].sum() > opts.gps_end_time - opts.gps_start_time:
-            samples = numpy.sort(samples, order='time_delay')
-            tc = opts.gps_start_time + samples['time_delay'].cumsum()
-            samples = samples.add_fields([tc], ['tc'])
+        if tc.max() >= opts.gps_end_time:
             samples = samples[samples['tc'] < opts.gps_end_time]
             logging.info('Total Injections: %s', len(samples))
             break
@@ -250,6 +261,5 @@ while True:
 logging.info("Writing results")
 write_args = [arg for arg in samples.fieldnames
               if arg not in static_params.keys()]
-
 InjectionSet.write(opts.output_file, samples, write_args, static_params,
                    cmd=" ".join(sys.argv))
