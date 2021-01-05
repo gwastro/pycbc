@@ -41,6 +41,7 @@ else
     echo -e "\\n\\n>> [`date`] Pre-existing template bank found"
 fi
 
+
 # test if there is a injection file.
 # If not, make one and delete any existing strain
 
@@ -87,6 +88,7 @@ else
     echo -e "\\n\\n>> [`date`] Pre-existing strain data found"
 fi
 
+
 # delete old outputs if they exist
 rm -rf ./output
 
@@ -99,7 +101,6 @@ mpirun \
 -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
 python -m mpi4py `which pycbc_live` \
---verbose \
 --bank-file template_bank.hdf \
 --sample-rate 2048 \
 --enable-bank-start-frequency \
