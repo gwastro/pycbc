@@ -39,6 +39,7 @@ from pycbc.waveform import ringdown_td_approximants
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 from pycbc.conversions import tau0_from_mass1_mass2
+from pycbc.filter import resample_to_delta_t
 import pycbc.io
 
 from six import add_metaclass
@@ -164,7 +165,9 @@ class _XMLInjectionSet(object):
         self.extra_args = kwds
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None, inj_filter_rejector=None):
+              simulation_ids=None,
+              inj_filter_rejector=None,
+              injection_sample_rate=None,):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -185,6 +188,8 @@ class _XMLInjectionSet(object):
             If given send each injected waveform to the InjFilterRejector
             instance so that it can store a reduced representation of that
             injection if necessary.
+        injection_sample_rate: float, optional
+            The sample rate to generate the signal before injection
 
         Returns
         -------
@@ -207,6 +212,10 @@ class _XMLInjectionSet(object):
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
 
+        delta_t = strain.delta_t
+        if injection_sample_rate is not None:
+            delta_t = 1.0 / injection_sample_rate
+
         injections = self.table
         if simulation_ids:
             injections = [inj for inj in injections \
@@ -223,8 +232,9 @@ class _XMLInjectionSet(object):
             start_time = inj.get_time_geocent() - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
                 continue
-            signal = self.make_strain_from_inj_object(inj, strain.delta_t,
+            signal = self.make_strain_from_inj_object(inj, delta_t,
                     detector_name, f_lower=f_l, distance_scale=distance_scale)
+            signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
             if float(signal.start_time) > t1:
                 continue
 
@@ -488,7 +498,9 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
     injtype = 'cbc'
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None, inj_filter_rejector=None):
+              simulation_ids=None,
+              inj_filter_rejector=None,
+              injection_sample_rate=None,):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -509,6 +521,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             If given send each injected waveform to the InjFilterRejector
             instance so that it can store a reduced representation of that
             injection if necessary.
+        injection_sample_rate: float, optional
+            The sample rate to generate the signal before injection
 
         Returns
         -------
@@ -531,6 +545,10 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
 
+        delta_t = strain.delta_t
+        if injection_sample_rate is not None:
+            delta_t = 1.0 / injection_sample_rate
+
         injections = self.table
         if simulation_ids:
             injections = injections[list(simulation_ids)]
@@ -545,8 +563,10 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             start_time = inj.tc - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
                 continue
-            signal = self.make_strain_from_inj_object(inj, strain.delta_t,
-                     detector_name, f_lower=f_l, distance_scale=distance_scale)
+            signal = self.make_strain_from_inj_object(inj, delta_t,
+                     detector_name, f_lower=f_l,
+                     distance_scale=distance_scale)
+            signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
             if float(signal.start_time) > t1:
                 continue
 

@@ -305,6 +305,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         injections = \
             injector.apply(strain, opt.channel_name[0:2],
                            distance_scale=opt.injection_scale_factor,
+                           injection_sample_rate=opt.injection_sample_rate,
                            inj_filter_rejector=inj_filter_rejector)
 
     if opt.sgburst_injection_file:
@@ -511,6 +512,8 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                     default=1, help="Divide injections by this factor "
                     "before injecting into the data.")
+    data_reading_group.add_argument("--injection-sample-rate", type=float,
+                    help="Sample rate for injections")
     data_reading_group.add_argument('--injection-f-ref', type=float,
                                     help='Reference frequency in Hz for '
                                          'creating CBC injections from an XML '
@@ -697,6 +700,10 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                     metavar="IFO:VAL", default=1.,
                     help="Multiple injections by this factor "
                          "before injecting into the data.")
+    data_reading_group_multi.add_argument("--injection-sample-rate",
+                    type=float, nargs="+", action=MultiDetOptionAction,
+                    metavar="IFO:VAL",
+                    help="Sample rate to generate injection with")
 
     data_reading_group_multi.add_argument('--injection-f-ref', type=float,
                                action=MultiDetOptionAction, metavar='IFO:VALUE',

@@ -41,7 +41,6 @@ else
     echo -e "\\n\\n>> [`date`] Pre-existing template bank found"
 fi
 
-
 # test if there is a injection file.
 # If not, make one and delete any existing strain
 
@@ -87,7 +86,6 @@ then
 else
     echo -e "\\n\\n>> [`date`] Pre-existing strain data found"
 fi
-
 
 # delete old outputs if they exist
 rm -rf ./output
