@@ -4,6 +4,7 @@
 import numpy as np
 import itertools
 import copy
+import collections
 import logging
 
 import pycbc.pnutils as pnu
@@ -185,6 +186,7 @@ class SingleDetAmbiguityChisq(object):
         condition_threshold=1.0e-1,
         per_template=False,
         use_full_bank=True,
+        max_cache_size=50
     ):
         if status:
             self.do = True
@@ -197,6 +199,7 @@ class SingleDetAmbiguityChisq(object):
             self.max_filters = max_filters
             self.flow = flow
             self.fmax = fmax
+            self.max_cache_size = max_cache_size
 
             if ("mchirp" not in bank.table.fieldnames) or (
                 "eta" not in bank.table.fieldnames
@@ -243,17 +246,14 @@ class SingleDetAmbiguityChisq(object):
                     )
                     self.get_filters = self.choose_filters.get_relevant_filters
 
-            self.time_idices = np.array(
-                time_indices
-            )  # Currently only trigger time = 0 indices are supported
-            self._cache_seg_snrs = {}  # seg_snrs
-            self._cache_filter_matches = (
-                {}
-            )  # (g, g') matches between filters # Can be time series in future due to 'time_indices'
-            self._cache_template_filter_matches = (
-                {}
-            )  # (h, g) matches between template and filter # Can be time series in future 'time_indices'
-
+            # Currently only trigger time = 0 indices are supported
+            self.time_idices = np.array(time_indices)
+            # seg_snrs
+            self._cache_seg_snrs = collections.OrderedDict()
+            # (g, g') matches between filters # Can be time series in future due to 'time_indices'
+            self._cache_filter_matches = collections.OrderedDict()
+            # (h, g) matches between template and filter # Can be time series in future 'time_indices'
+            self._cache_template_filter_matches = collections.OrderedDict()
         else:
             self.do = False
 
@@ -306,6 +306,12 @@ class SingleDetAmbiguityChisq(object):
             help="chi eff bin boundaries: chi eff range (-1, 1)",
         )
         group.add_argument("--ambi-per-template", action="store_true", default=False)
+        group.add_argument(
+            "--ambi-max-cache-size",
+            type=int,
+            default=50,
+            help="maximum lenth for each of the cache dict"
+        )
 
     @classmethod
     def from_cli(cls, args, bank):  # , match_class):
@@ -331,6 +337,7 @@ class SingleDetAmbiguityChisq(object):
             per_template=args.ambi_per_template,
             use_full_bank=args.ambi_veto_use_full_bank,
             condition_threshold=args.ambi_condition_threshold,
+            max_cache_size=args.ambi_max_cache_size
         )
 
     def get_full_bank(self, htilde):
@@ -358,6 +365,8 @@ class SingleDetAmbiguityChisq(object):
         key = (id(htilde), stilde.end_time, id(psd))
         if key not in self._cache_seg_snrs:
             filters = self.get_filters(htilde)
+            if len(self._cache_seg_snrs) == self.max_cache_size:
+                self._cache_seg_snrs.popitem(last=False)
             self._cache_seg_snrs[key] = segment_snrs(
                 filters, stilde, psd, self.flow, self.fmax
             )  ## Assumed data is overwhitened
@@ -367,8 +376,10 @@ class SingleDetAmbiguityChisq(object):
     ### But we are using 'id', filters may not live long enough if memory problem. Need to check what happens
     def cache_filter_matches(self, htilde, psd):
         key = (id(htilde), id(psd))
-        if key not in self._cache_seg_snrs:
+        if key not in self._cache_filter_matches:
             filters = self.get_filters(htilde)
+            if len(self._cache_filter_matches) == self.max_cache_size:
+                self._cache_filter_matches .popitem(last=False)
             self._cache_filter_matches[key] = get_cov_gg(
                 filters, psd, self.flow, self.fmax
             )
@@ -379,6 +390,8 @@ class SingleDetAmbiguityChisq(object):
         key = (id(htilde), id(psd))
         if key not in self._cache_template_filter_matches:
             filters = self.get_filters(htilde)
+            if len(self._cache_template_filter_matches) == self.max_cache_size:
+                self._cache_template_filter_matches.popitem(last=False)
             self._cache_template_filter_matches[key] = get_cov_gh(
                 filters, htilde, psd, self.flow, self.fmax
             )
