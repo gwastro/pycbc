@@ -151,7 +151,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
         data = lal_data.data.data
 
     elif method == 'ldas':
-        factor = int(delta_t / timeseries.delta_t)
+        factor = int(round(delta_t / timeseries.delta_t))
         numtaps = factor * 20 + 1
 
         # The kaiser window has been testing using the LDAS implementation

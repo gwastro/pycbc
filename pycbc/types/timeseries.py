@@ -93,7 +93,7 @@ class TimeSeries(Array):
         if isinstance(other, TimeSeries):
             odelta_t = other.delta_t
         else:
-            odelta_t = other
+            odelta_t = 1.0/other
 
         if (odelta_t - self.delta_t) / self.delta_t > 1e-4:
             return False
