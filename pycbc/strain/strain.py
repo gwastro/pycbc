@@ -294,15 +294,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
-    if precision == 'single':
-        logging.info("Converting to float32")
-        strain = (strain * dyn_range_fac).astype(pycbc.types.float32)
-    elif precision == "double":
-        logging.info("Converting to float64")
-        strain = (strain * dyn_range_fac).astype(pycbc.types.float64)
-    else:
-        raise ValueError("Unrecognized precision {}".format(precision))
-
     if opt.sample_rate:
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain,
@@ -321,6 +312,15 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         injector = SGBurstInjectionSet(opt.sgburst_injection_file)
         injector.apply(strain, opt.channel_name[0:2],
                          distance_scale=opt.injection_scale_factor)
+
+    if precision == 'single':
+        logging.info("Converting to float32")
+        strain = (strain * dyn_range_fac).astype(pycbc.types.float32)
+    elif precision == "double":
+        logging.info("Converting to float64")
+        strain = (strain * dyn_range_fac).astype(pycbc.types.float64)
+    else:
+        raise ValueError("Unrecognized precision {}".format(precision))
 
     if opt.gating_file is not None:
         logging.info("Gating times contained in gating file")
