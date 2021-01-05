@@ -234,7 +234,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                             opt.gps_start_time - opt.pad_data,
                                             opt.gps_end_time + opt.pad_data)
 
-    if opt.fake_strain or opt.fake_strain_from_file:
+    elif opt.fake_strain or opt.fake_strain_from_file:
         logging.info("Generating Fake Strain")
         if not opt.low_frequency_cutoff:
             raise ValueError('Please provide low frequency cutoff to '
@@ -245,7 +245,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
-            strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file, plen, pdf,
+            strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file,
+                                            plen, pdf,
                                             opt.low_frequency_cutoff,
                                             is_asd_file=True)
         elif opt.fake_strain != 'zeroNoise':
@@ -360,10 +361,13 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         import h5py
         tf_file = h5py.File(opt.witness_tf_file)
         for key in tf_file:
-            witness = pycbc.frame.query_and_read_frame(opt.witness_frame_type, str(key),
-                   start_time=strain.start_time, end_time=strain.end_time)
+            witness = pycbc.frame.query_and_read_frame(opt.witness_frame_type,
+                   str(key),
+                   start_time=strain.start_time,
+                   end_time=strain.end_time)
             witness = (witness * dyn_range_fac).astype(strain.dtype)
-            tf = pycbc.types.load_frequencyseries(opt.witness_tf_file, group=key)
+            tf = pycbc.types.load_frequencyseries(opt.witness_tf_file,
+                                                  group=key)
             tf = tf.astype(stilde.dtype)
 
             flen = int(opt.witness_filter_length * strain.sample_rate)
