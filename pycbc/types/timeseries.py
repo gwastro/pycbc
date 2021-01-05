@@ -90,10 +90,15 @@ class TimeSeries(Array):
 
     def sample_rate_close(self, other):
         """ Check if the sample rate is close enough to allow operations """
-        if (other.delta_t - self.delta_t) / self.delta_t > 1e-4:
+        if isinstance(other, TimeSeries):
+            odelta_t = other.delta_t
+        else:
+            odelta_t = other
+
+        if (odelta_t - self.delta_t) / self.delta_t > 1e-4:
             return False
 
-        if abs(1 - other.delta_t / self.delta_t) * len(self) > 0.5:
+        if abs(1 - odelta_t / self.delta_t) * len(self) > 0.5:
             return False
 
         return True

@@ -142,7 +142,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     if timeseries.kind is not 'real':
         raise TypeError("Time series must be real")
 
-    if timeseries.delta_t == delta_t:
+    if timeseries.sample_rate_close(1.0 / delta_t):
         return timeseries * 1
 
     if method == 'butterworth':
