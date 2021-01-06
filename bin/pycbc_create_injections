@@ -176,7 +176,7 @@ if os.path.exists(opts.output_file) and not opts.force:
 if opts.ninjections and (opts.gps_start_time is not None or
                          opts.gps_end_time is not None or
                          opts.time_step is not None or
-                         opts.time_window is not none):
+                         opts.time_window is not None):
     raise ValueError("Cannot provide both ninjections and "
                      " start/end/step/window time options.")
 
