@@ -90,6 +90,9 @@ class TimeSeries(Array):
 
     def sample_rate_close(self, other):
         """ Check if the sample rate is close enough to allow operations """
+
+        # compare our delta_t either to a another time series' or
+        # to a given sample rate (float)
         if isinstance(other, TimeSeries):
             odelta_t = other.delta_t
         else:
