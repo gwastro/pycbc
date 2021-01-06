@@ -1038,7 +1038,7 @@ def create_waveform_generator(
                 recalibration=None, gates=None,
                 generator_class=generator.FDomainDetFrameGenerator,
                 **static_params):
-    """Creates a waveform generator for use with a model.
+    r"""Creates a waveform generator for use with a model.
 
     Parameters
     ----------
@@ -1058,6 +1058,12 @@ def create_waveform_generator(
     gates : dict of tuples, optional
         Dictionary of detectors -> tuples of specifying gate times. The
         sort of thing returned by :py:func:`pycbc.gate.gates_from_cli`.
+    generator_class : detector-frame fdomain generator, optional
+        Class to use for generating waveforms. Default is
+        :py:class:`waveform.generator.FDomainDetFrameGenerator`.
+    \**static_params :
+        All other keyword arguments are passed as static parameters to the
+        waveform generator.
 
     Returns
     -------
@@ -1079,7 +1085,7 @@ def create_waveform_generator(
     except KeyError:
         raise ValueError("no approximant provided in the static args")
 
-    generator_function = generator.select_waveform_generator(approximant)
+    generator_function = generator_class.select_rframe_generator(approximant)
     # get data parameters; we'll just use one of the data to get the
     # values, then check that all the others are the same
     delta_f = None
