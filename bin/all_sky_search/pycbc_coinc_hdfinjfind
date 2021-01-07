@@ -147,7 +147,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
                                dtype=numpy.float64)
     else:
         inj_file = h5py.File(injection_file)
-        inj-time = inj_file['tc'][:]
+        inj_time = inj_file['tc'][:]
 
     logging.info('Determined the found injections by time')
     left = numpy.searchsorted(time[time_sorting],
