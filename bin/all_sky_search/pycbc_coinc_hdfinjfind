@@ -233,7 +233,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
                        sim_table.get_column(args.redshift_column))
     else:
         # hdf injection format
-        ninj = len(inj_file[list(inj_file.keys())[0]))
+        ninj = len(inj_file[list(inj_file.keys())][0])
         for k in inj_file:
             data = inj_file[k][:]
             
