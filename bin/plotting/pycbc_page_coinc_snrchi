@@ -75,17 +75,11 @@ inj_tids = {}
 for tmpifo in ifos:
     inj_tids[tmpifo] = f['found_after_vetoes/{}/trigger_id'.format(tmpifo)]
 
-try:
-    time = f['injections/tc'][:]
-except KeyError:
-    # Remove this path if we completely drop xml injections
-    time = f['injection/geocent_end_time'][:]    
-    
 eff_dists = Detector(ifo).effective_distance(f['injections/distance'][:],
                                              f['injections/ra'][:],
                                              f['injections/dec'][:],
                                              f['injections/polarization'][:],
-                                             time)
+                                             f['injection/end_time'][:])
 
 inj_idx = f['found_after_vetoes/injection_index'][:]
 eff_dist = eff_dists[inj_idx]
