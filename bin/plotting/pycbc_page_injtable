@@ -90,7 +90,7 @@ for dist in eff_dist :
                  f['injections/ra'][:][idx],
                  f['injections/dec'][:][idx],
                  f['injections/polarization'][:][idx],
-                 f['injection/tc'][:][idx])
+                 f['injections/tc'][:][idx])
     eff_distance.append(edist)
     eff_dist_str.append(eff_dist[dist])
     eff_dist_format.append('##.##')
