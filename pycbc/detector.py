@@ -514,9 +514,6 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 
     return f_plus, f_cross
 
-def effective_distance(distance, inclination, f_plus, f_cross):
-    return distance / np.sqrt( ( 1 + np.cos( inclination )**2 )**2 / 4 * f_plus**2 + np.cos( inclination )**2 * f_cross**2 )
-
 
 """     LISA class      """
 
