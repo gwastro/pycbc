@@ -450,6 +450,40 @@ class Detector(object):
                         np.float32(loc.z)])*conv
         return loc
 
+    def effective_distance(self, distance, ra, dec, pol, time, inclination):
+        """ Distance scaled to account for amplitude factors
+
+        The effective distance of the source. This scales the distance so that
+        the amplitude is equal to a source which is optimally oriented with
+        respect to the detector. For fixed detector-frame intrinsic parameters
+        this is a measure of the expected signal strength.
+
+        Parameters
+        ----------
+        distance: float
+            Source luminosity distance in megaparsecs
+        ra: float
+            The right ascension in radians
+        dec: float
+            The declination in radians
+        pol: float
+            Polarization angle of the gravitational wave in radians
+        time: float
+            GPS time in seconds
+        inclination:
+            The inclination of the binary's orbital plane
+
+        Returns
+        -------
+        eff_dist: float
+            The effective distance of the source
+        """
+        fp, fc = self.antenna_pattern(ra, dec, pol, time)
+        ic = np.cos(inclination)
+        ip = 0.5 * (1. + ic * ic)
+        scale = ((fp * ip) ** 2.0 + (fc * ic) ** 2.0) ** 0.5
+        return distance / scale
+
 def overhead_antenna_pattern(right_ascension, declination, polarization):
     """Return the antenna pattern factors F+ and Fx as a function of sky
     location and polarization angle for a hypothetical interferometer located
