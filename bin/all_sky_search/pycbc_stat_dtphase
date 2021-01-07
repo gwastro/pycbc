@@ -1,5 +1,5 @@
 #!/bin/env python
-""" Create a file containing the phase and amplitude, 
+""" Create a file containing the phase and amplitude,
 correlations between two detectors by
 doing a simple monte-carlo
 """
@@ -9,9 +9,9 @@ from scipy.ndimage.filters import gaussian_filter
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--ifos', nargs=2, help="The two ifos to generate a histogram for")
-parser.add_argument('--sample-size', type=int, 
+parser.add_argument('--sample-size', type=int,
                     help="Approximant number of independent samples to draw for the distribution")
-parser.add_argument('--min-snr', type=float, 
+parser.add_argument('--min-snr', type=float,
                     help="SNR cutoff to apply to the drawn SNR values.")
 parser.add_argument('--max-snr', type=float, default=100,
                     help="Maximum snr to draw signals out to")
@@ -86,8 +86,8 @@ def generate_samples(val):
     dec = numpy.arccos(uniform(-1., 1., size=size)) - numpy.pi/2
     inc = numpy.arccos(uniform(-1., 1., size=size))
     pol = uniform(0, 2 * numpy.pi, size=size)
-    ip = numpy.cos(inc)
-    ic = 0.5 * (1.0 + ip * ip)
+    ic = numpy.cos(inc)
+    ip = 0.5 * (1.0 + ic * ic)
 
     # Calculate the expected time offset, and fp,fc for both detectors
     fp1, fc1, fp2, fc2, td = [], [], [], [], []
@@ -98,7 +98,7 @@ def generate_samples(val):
         r1, r2 = d2.antenna_pattern(r, d, p, 0)
         fp2.append(r1)
         fc2.append(r2)
-        
+
         t1 = d1.time_delay_from_earth_center(r, d, 0)
         t2 = d2.time_delay_from_earth_center(r, d, 0)
         td.append(t1 - t2)
@@ -108,12 +108,12 @@ def generate_samples(val):
     f = 1000
     fsize = f * size
     dist = power(3, fsize) / args.min_snr
-   
+
     r = uniform(args.min_detector_ratio, 1.0, size=len(dist))
     sp1 = numpy.resize(fp1 * ip, len(dist)) / dist * r
     sc1 = numpy.resize(fc1 * ic, len(dist)) / dist * r
     sp2 = numpy.resize(fp2 * ip, len(dist)) / dist
-    sc2 = numpy.resize(fc2 * ic, len(dist)) / dist 
+    sc2 = numpy.resize(fc2 * ic, len(dist)) / dist
     td = numpy.resize(td, fsize)
 
     # Remove points below the SNR threshold
@@ -131,7 +131,7 @@ def generate_samples(val):
 
     td = td[t]
     phase_diff = (numpy.arctan2(sc1, sp1) - numpy.arctan2(sc2, sp2)) % (numpy.pi * 2)
-    
+
     logging.info('keeping %s values' % len(s1))
     print(r)
     return td, phase_diff, s1, s2, r
@@ -156,7 +156,7 @@ f = h5py.File(args.output_file, 'w')
 
 # Convert the errors to units of number of histogram bins and apply using
 # a gaussian filter
-errors = (args.timing_error / twidth, 
+errors = (args.timing_error / twidth,
           phase_error / pwidth,
           snr_error / swidth,
           snr_error / swidth,

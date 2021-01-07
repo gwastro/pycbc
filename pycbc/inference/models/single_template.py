@@ -134,8 +134,8 @@ class SingleTemplate(BaseGaussianNoise):
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
                                                             p['dec'],
                                                             self.time)
-            ip = numpy.cos(p['inclination'])
-            ic = 0.5 * (1.0 + ip * ip)
+            ic = numpy.cos(p['inclination'])
+            ip = 0.5 * (1.0 + ic * ic)
             htf = (fp * ip + 1.0j * fc * ic) / p['distance']
 
             sh = self.sh[ifo].at_time(p['tc'] + dt) * htf
