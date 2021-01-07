@@ -342,7 +342,7 @@ class _XMLInjectionSet(object):
 
 
 @add_metaclass(ABCMeta)
-class HDFInjectionSet(object):
+class _HDFInjectionSet(object):
     """Manages sets of injections: reads injections from hdf files
     and injects them into time series.
 
@@ -491,7 +491,7 @@ class HDFInjectionSet(object):
                         raise e
 
 
-class CBCHDFInjectionSet(HDFInjectionSet):
+class CBCHDFInjectionSet(_HDFInjectionSet):
     """Manages CBC injections.
     """
     _tableclass = pycbc.io.WaveformArray
@@ -634,7 +634,7 @@ class CBCHDFInjectionSet(HDFInjectionSet):
         return list(set(all_apprxs))
 
 
-class RingdownHDFInjectionSet(HDFInjectionSet):
+class RingdownHDFInjectionSet(_HDFInjectionSet):
     """Manages a ringdown injection: reads injection from hdf file
     and injects it into time series.
     """
