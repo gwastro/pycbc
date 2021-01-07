@@ -17,6 +17,7 @@
 """ Make tables describing a missed injection"""
 import h5py, argparse, pycbc.version, pycbc.results, sys
 import numpy, pycbc.pnutils
+from pycbc.detector import Detector
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -42,15 +43,16 @@ data = []
 
 labels = {
     'end_time': 'End&nbsp;time',
-    'dec_chirp_dist': 'Dec.&nbsp;chirp dist',
+    'dec_chirp_dist': 'Dec.&nbsp;chirp dist (HL)',
     'eff_dist_h'    : 'D<sub>eff</sub>&nbsp;H',
     'eff_dist_l'    : 'D<sub>eff</sub>&nbsp;L',
+    'eff_dist_v'    : 'D<sub>eff</sub>&nbsp;V',
     'mass1'      : 'm<sub>1</sub>',
     'mass2'      : 'm<sub>2</sub>',
     'mchirp'     : 'M<sub>c</sub>',
     'eta'        : '&eta;',
-    'longitude'  : 'RA',
-    'latitude'   : 'Dec',
+    'ra'  : 'RA',
+    'dec'   : 'Dec',
     'inclination': '&iota;',
     'spin1x': 's<sub>1x</sub>',
     'spin1y': 's<sub>1y</sub>',
@@ -62,21 +64,27 @@ labels = {
 
 params += ['end_time']
 
-if 'optimal_snr_1' in f['injections'].keys():
-    labels['optimal_snr_1'] = 'Opt.&nbsp;SNR %s' % f.attrs['detector_1']
-    labels['optimal_snr_2'] = 'Opt.&nbsp;SNR %s' % f.attrs['detector_2']
-    params += ['optimal_snr_1', 'optimal_snr_2']
-elif 'ifos' in f.attrs:
+if 'optimal_snr' in ' '.join(list(f.keys())):
     ifolist = f.attrs['ifos'].split(' ')
     for ifo in ifolist:
         labels['optimal_snr_%s' % ifo] = 'Opt.&nbsp;SNR %s' % ifo
         params += ['optimal_snr_%s' % ifo]
 else:
-    params += ['dec_chirp_dist', 'eff_dist_h', 'eff_dist_l']
-    dec_dist = max(f['injections']['eff_dist_h'][iidx], f['injections']['eff_dist_l'][iidx])
+    eff_dist = {}
+    for ifo in ['H1', 'L1', 'V1']:
+        eff_dist[ifo] = Detector(ifo).effective_distance(
+                             f['injections/distance'][iidx],
+                             f['injections/ra'][iidx],
+                             f['injections/dec'][iidx],
+                             f['injections/polarization'][iidx],
+                             f['injection/tc'][iidx])
+
+    params += ['dec_chirp_dist', 'eff_dist_h', 'eff_dist_l', 'eff_dist_v']
+    dec_dist = max(f['injections']['eff_dist_h'][iidx],
+                   f['injections']['eff_dist_l'][iidx])
     dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-params += ['mass1', 'mass2', 'mchirp', 'eta', 'longitude', 'latitude',
+params += ['mass1', 'mass2', 'mchir', 'eta', 'ra', 'dec',
             'inclination', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
             'spin2z']
 
@@ -84,16 +92,23 @@ m1, m2 = f['injections']['mass1'][iidx], f['injections']['mass2'][iidx]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
 for p in params:
-    headers += [labels[p]]
 
     if p in f['injections']:
         data += ["%.2f" % f['injections'][p][iidx]]
+    elif 'eff_dist' in p:
+        ifo = '%s1' % p.split('_')[-1]
+        data += ["%.2f" % eff_dist[ifo.upper()]]
     elif p == 'mchirp':
         data += ["%.2f" % mchirp]
     elif p == 'eta':
         data += ["%.2f" % eta]
     elif p == 'dec chirp dist':
         data += ["%.2f" % dec_chirp_dist]
+    else:
+        print("No data for {}, so skipping".format(p))
+        continue
+
+    headers += [labels[p]]
 
 table = numpy.array([data], dtype=str)
 html = str(pycbc.results.static_table(table, headers))
