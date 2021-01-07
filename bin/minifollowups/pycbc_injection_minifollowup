@@ -125,7 +125,7 @@ try:
     # 2nd largest opt SNR
     dec_snr = [sorted(snrs)[-2] for snrs in zip(*optimal_snr)]
     dec_snr = numpy.array(dec_snr)
-    
+
     if args.maximum_decisive_snr is not None:
         # By setting to 0, these injections will not be considered
         dec_snr[dec_snr > args.maximum_decisive_snr] = 0
@@ -134,7 +134,7 @@ try:
 except KeyError:
     # Fall back to effective distance if optimal SNR not available
     eff_dist = {}
-    for trig in single_trigers:
+    for trig in single_triggers:
         ifo = trig.ifo
         eff_dist[ifo] = Detector(ifo).effective_distance(
                              f['injections/distance'][:][missed],
@@ -163,7 +163,7 @@ for num_event in range(num_events):
     time = f['injections/tc'][injection_index]
     lon = f['injections/ra'][injection_index]
     lat = f['injections/dec'][injection_index]
-    
+
     ifo_times = ''
     inj_params = {}
     for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'tc']:
@@ -171,7 +171,7 @@ for num_event in range(num_events):
     for single in single_triggers:
         ifo = single.ifo
         det = Detector(ifo)
-        ifo_time = time + det.time_delay_from_earth_center(lon, lat, time) 
+        ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
         for seg in insp_analysed_seglists[ifo]:
             if ifo_time in seg:
                 break

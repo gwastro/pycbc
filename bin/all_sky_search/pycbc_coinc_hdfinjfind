@@ -45,7 +45,11 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
     """ Save xml columns as hdf columns, only float32 supported atm.
     """
     for col in columns:
-        key = os.path.join(hdf_key, col)
+        if ':' in col:
+            col, new_col = col.split(':')
+        else:
+            new_col = col
+        key = os.path.join(hdf_key, new_col)
         hdf_append(hdf_file, key, numpy.array(table.get_column(col),
                                         dtype=numpy.float32))
 
@@ -133,12 +137,17 @@ for trigger_file, injection_file in zip(args.trigger_files,
     time_sorting = time.argsort()
 
     logging.info('Read in the injection file')
-    indoc = ligolw_utils.load_filename(injection_file, False,
-                                       contenthandler=LIGOLWContentHandler)
-    sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
-    inj_time = numpy.array(sim_table.get_column('geocent_end_time') +
-                           1e-9 * sim_table.get_column('geocent_end_time_ns'),
-                           dtype=numpy.float64)
+
+    if '.xml' or '.xml.gz' in injection_file:
+        indoc = ligolw_utils.load_filename(injection_file, False,
+                                           contenthandler=LIGOLWContentHandler)
+        sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+        inj_time = numpy.array(sim_table.get_column('geocent_end_time') +
+                               1e-9 * sim_table.get_column('geocent_end_time_ns'),
+                               dtype=numpy.float64)
+    else:
+        inj_file = h5py.File(injection_file)
+        inj-time = inj_file['tc'][:]
 
     logging.info('Determined the found injections by time')
     left = numpy.searchsorted(time[time_sorting],
@@ -170,11 +179,14 @@ for trigger_file, injection_file in zip(args.trigger_files,
     # Put individual detector vetoes into list of all vetoed indices, if an
     # injection is vetoed in N ifos then its index will appear N times
     vetoid = numpy.array([])
+    veto_dict = {}
     for ifo in ifo_list:
         vi, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
                                         segment_name=args.segment_name)
         vetoid = numpy.append(vetoid, vi)
+        veto_dict[ifo] = vi
         del vi
+    
 
     # Find out which of these indices are unique, and how many times each
     # vetoed index occurs - this is how many detectors it is vetoed in
@@ -194,30 +206,43 @@ for trigger_file, injection_file in zip(args.trigger_files,
 
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
+    
     logging.info('Saving injection information')
-    columns = ['mass1', 'mass2', 'spin1x', 'spin1y',
-               'spin1z', 'spin2x', 'spin2y', 'spin2z',
-               'inclination', 'polarization', 'coa_phase',
-               'latitude', 'longitude', 'distance']
-    xml_to_hdf(sim_table, fo, 'injections', columns)
-    hdf_append(fo, 'injections/tc', inj_time)
+    if '.xml' or '.xml.gz' in injection_file:
+        ninj = len(sim_table)
+        columns = ['mass1', 'mass2', 'spin1x', 'spin1y',
+                   'spin1z', 'spin2x', 'spin2y', 'spin2z',
+                   'inclination', 'polarization', 'coa_phase',
+                   'latitude:dec', 'longitude:ra', 'distance']
+        xml_to_hdf(sim_table, fo, 'injections', columns)
+        hdf_append(fo, 'injections/tc', inj_time)
 
-    # pick up optimal SNRs
-    for ifo, column in args.optimal_snr_column.items():
-        optimal_snr_all = numpy.array(sim_table.get_column(column))
-        # As a single detector being vetoed won't veto all combinations,
-        # need to set optimal_snr of a vetoed ifo to zero in order
-        # to later calculate decisive optimal snr
-        iws, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
-                                         segment_name=args.segment_name)
-        optimal_snr_all[iws] = 0
-        hdf_append(fo, 'injections/optimal_snr_%s' % ifo,
-                   optimal_snr_all)
+        # pick up optimal SNRs
+        for ifo, column in args.optimal_snr_column.items():
+            # As a single detector being vetoed won't veto all combinations,
+            # need to set optimal_snr of a vetoed ifo to zero in order
+            # to later calculate decisive optimal snr
+            optimal_snr_all = numpy.array(sim_table.get_column(column))
+            optimal_snr_all[veto_dict[ifo]] = 0
+            hdf_append(fo, 'injections/optimal_snr_%s' % ifo,
+                       optimal_snr_all)
 
-    # pick up redshift
-    if args.redshift_column:
-        hdf_append(fo, 'injections/redshift',
-                   sim_table.get_column(args.redshift_column))
+        # pick up redshift
+        if args.redshift_column:
+            hdf_append(fo, 'injections/redshift',
+                       sim_table.get_column(args.redshift_column))
+    else:
+        # hdf injection format
+        ninj = len(inj_file[list(inj_file.keys())[0]))
+        for k in inj_file:
+            data = inj_file[k][:]
+            
+            # set optimal snr to zero for detectors that were vetoed
+            if 'optimal_snr' in k:
+                ifo = k.split('_')[-1]
+                data[veto_dict[ifo]] = 0
+                
+            hdf_append(fo, 'injections/{}'.format(k), data)
 
     # copy over common search info
     if 'foreground_time' in f.attrs.keys():
@@ -270,4 +295,4 @@ for trigger_file, injection_file in zip(args.trigger_files,
         hdf_append(fo, 'found_after_vetoes/%s/trigger_id' % ifo,
                    trig_dict[ifo][time_sorting][found_fore_v])
 
-    injection_index += len(sim_table)
+    injection_index += ninj
