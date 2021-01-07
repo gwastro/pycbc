@@ -197,11 +197,10 @@ for trigger_file, injection_file in zip(args.trigger_files,
     logging.info('Saving injection information')
     columns = ['mass1', 'mass2', 'spin1x', 'spin1y',
                'spin1z', 'spin2x', 'spin2y', 'spin2z',
-               'eff_dist_l', 'eff_dist_h', 'eff_dist_v',
                'inclination', 'polarization', 'coa_phase',
                'latitude', 'longitude', 'distance']
     xml_to_hdf(sim_table, fo, 'injections', columns)
-    hdf_append(fo, 'injections/end_time', inj_time)
+    hdf_append(fo, 'injections/tc', inj_time)
 
     # pick up optimal SNRs
     for ifo, column in args.optimal_snr_column.items():
