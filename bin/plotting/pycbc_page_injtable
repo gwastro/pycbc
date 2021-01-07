@@ -52,7 +52,7 @@ else:
         tdiff_str.append(tdiff_head)
         tdiff_format.append('##.##')
     ids = {detector:found[detector+'/trigger_id'][:] for detector in detectors_used}
-    
+
     found_cols = [found['stat'], found['ifar_exc']] + tdiff
     found_names = ['Ranking Stat.', 'Exc. IFAR'] + tdiff_str
     found_formats =  ['##.##', '##.##'] + tdiff_format
@@ -71,7 +71,7 @@ else:
             snr = ['%.2f' % s if not np.isnan(s) else ' ' for s in snr_vals]
             chisq = ['%.2f' % c if not np.isnan(c) else ' ' for c in chisq_vals]
             newsnr = ['%.2f' % s if not np.isnan(s) else ' ' for s in newsnr_vals]
-            
+
             found_names += [ifo + " SNR", ifo + " CHISQ", ifo + " NewSNR"]
             found_cols += [snr, chisq, newsnr]
             found_formats += ['##.##', '##.##', '##.##']
@@ -83,36 +83,43 @@ eff_dist_str = []
 eff_distance = []
 eff_dist_format = []
 for dist in eff_dist :
-    if(dist in keys):
-        eff_distance.append(inj[dist][:][idx])
-        eff_dist_str.append(eff_dist[dist])
-        eff_dist_format.append('##.##')
-                
-dec_dist = np.max(eff_distance,0)
+    ifo = ('%s1' % dist.split('_')[-1]).upper()
+    d = pycbc.detector.Detector(ifo)
+    edist = d.effective_distance(
+                 f['injections/distance'][:][idx],
+                 f['injections/ra'][:][idx],
+                 f['injections/dec'][:][idx],
+                 f['injections/polarization'][:][idx],
+                 f['injection/tc'][:][idx])
+    eff_distance.append(edist)
+    eff_dist_str.append(eff_dist[dist])
+    eff_dist_format.append('##.##')
+
+dec_dist = np.max(eff_distance, 0)
 m1, m2 = inj['mass1'][:][idx], inj['mass2'][:][idx]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-columns = [dec_chirp_dist, inj['end_time'][:][idx], m1, m2, mchirp, eta,
+columns = [dec_chirp_dist, inj['tc'][:][idx], m1, m2, mchirp, eta,
            inj['spin1x'][:][idx], inj['spin1y'][:][idx], inj['spin1z'][:][idx],
            inj['spin2x'][:][idx], inj['spin2y'][:][idx], inj['spin2z'][:][idx],
            inj['distance'][:][idx]] + eff_distance + found_cols
-         
+
 names = ['DChirp Dist', 'Inj Time', 'Mass1', 'Mass2', 'Mchirp', 'Eta',
          's1x', 's1y', 's1z',
-         's2x', 's2y', 's2z', 
-         'Dist']  + eff_dist_str + found_names 
+         's2x', 's2y', 's2z',
+         'Dist']  + eff_dist_str + found_names
 
 format_strings = ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
-                  '##.##'] + eff_dist_format +  found_formats 
+                  '##.##'] + eff_dist_format +  found_formats
 columns = [np.array(col) for col in columns]
 html_table = pycbc.results.html_table(columns, names,
                                  format_strings=format_strings,
                                  page_size=20)
 
-kwds = { 'title' : title, 
+kwds = { 'title' : title,
         'caption' : "A table of %s and their coincident statistic information." % title.lower(),
         'cmd' :' '.join(sys.argv), }
 pycbc.results.save_fig_with_metadata(str(html_table), args.output_file, **kwds)
