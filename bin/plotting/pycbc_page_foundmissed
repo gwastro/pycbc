@@ -47,7 +47,7 @@ init_logging(args.verbose)
 
 logging.info('Read in the data')
 f = h5py.File(args.injection_file, 'r')
-time = f['injections/end_time'][:]
+time = f['injections/tc'][:]
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
 

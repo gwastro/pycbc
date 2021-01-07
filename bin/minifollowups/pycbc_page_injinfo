@@ -77,7 +77,7 @@ else:
                              f['injections/ra'][iidx],
                              f['injections/dec'][iidx],
                              f['injections/polarization'][iidx],
-                             f['injection/tc'][iidx])
+                             f['injections/tc'][iidx])
 
     params += ['dec_chirp_dist', 'eff_dist_h', 'eff_dist_l', 'eff_dist_v']
     dec_dist = max(f['injections']['eff_dist_h'][iidx],
