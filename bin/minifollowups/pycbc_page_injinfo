@@ -28,7 +28,7 @@ parser.add_argument('--injection-file', required=True,
     help="The HDF format injection file. Required")
 parser.add_argument('--injection-index', type=int, required=True,
     help="The index of the injection to print out. Required")
-parser.add_argument('--n-nearest', type=int, 
+parser.add_argument('--n-nearest', type=int,
     help="Optional, used in the title")
 
 args = parser.parse_args()
@@ -77,7 +77,8 @@ else:
                              f['injections/ra'][iidx],
                              f['injections/dec'][iidx],
                              f['injections/polarization'][iidx],
-                             f['injections/tc'][iidx])
+                             f['injections/tc'][iidx],
+                             f['injections/inclination'][iidx])
 
     params += ['dec_chirp_dist', 'eff_dist_h', 'eff_dist_l', 'eff_dist_v']
     dec_dist = max(f['injections']['eff_dist_h'][iidx],
@@ -121,4 +122,4 @@ pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
                         title = 'Parameters of missed injection' + tag,
                         caption = "Parameters of this injection")
-   
+
