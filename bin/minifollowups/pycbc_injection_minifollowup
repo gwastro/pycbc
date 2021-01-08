@@ -141,7 +141,8 @@ except KeyError:
                              f['injections/ra'][:][missed],
                              f['injections/dec'][:][missed],
                              f['injections/polarization'][:][missed],
-                             f['injections/tc'][:][missed])
+                             f['injections/tc'][:][missed],
+                             f['injections/inclination'][:][missed])
 
     dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo],
                              eff_dist[single_triggers[1].ifo])

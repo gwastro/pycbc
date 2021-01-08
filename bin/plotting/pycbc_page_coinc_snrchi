@@ -79,7 +79,8 @@ eff_dists = Detector(ifo).effective_distance(f['injections/distance'][:],
                                              f['injections/ra'][:],
                                              f['injections/dec'][:],
                                              f['injections/polarization'][:],
-                                             f['injection/tc'][:])
+                                             f['injections/tc'][:],
+                                             f['injections/inclination'][:])
 
 inj_idx = f['found_after_vetoes/injection_index'][:]
 eff_dist = eff_dists[inj_idx]
