@@ -86,12 +86,12 @@ for dist in eff_dist :
     ifo = ('%s1' % dist.split('_')[-1]).upper()
     d = pycbc.detector.Detector(ifo)
     edist = d.effective_distance(
-                 inj['injections/distance'][:][idx],
-                 inj['injections/ra'][:][idx],
-                 inj['injections/dec'][:][idx],
-                 inj['injections/polarization'][:][idx],
-                 inj['injections/tc'][:][idx],
-                 inj['injections/inclination'][:][idx])
+                 inj['distance'][:][idx],
+                 inj['ra'][:][idx],
+                 inj['dec'][:][idx],
+                 inj['polarization'][:][idx],
+                 inj['tc'][:][idx],
+                 inj['inclination'][:][idx])
     eff_distance.append(edist)
     eff_dist_str.append(eff_dist[dist])
     eff_dist_format.append('##.##')
