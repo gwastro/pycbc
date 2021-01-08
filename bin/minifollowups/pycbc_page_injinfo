@@ -122,4 +122,3 @@ pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
                         title = 'Parameters of missed injection' + tag,
                         caption = "Parameters of this injection")
-

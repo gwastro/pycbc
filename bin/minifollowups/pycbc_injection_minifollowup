@@ -253,7 +253,7 @@ for num_event in range(num_events):
         end_times = hd_sngl.end_time
         # Use SNR here or NewSNR??
         snr = hd_sngl.snr
-        lgc_mask = abs(end_times - inj_params['end_time']) < args.inj_window
+        lgc_mask = abs(end_times - inj_params['tc']) < args.inj_window
 
         if len(snr[lgc_mask]) == 0:
             continue
