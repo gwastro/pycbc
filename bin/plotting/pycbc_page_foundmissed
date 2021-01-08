@@ -84,7 +84,7 @@ else:
 # NOTE: Effective distance is hardcoded to these values. It's also normally
 #       meaningless for precessing injections.
 try:
-    eff_dist = []
+    eff_dists = []
     for ifo in ['H1', 'L1', 'V1']:
         eff_dist.append(Detector(ifo).effective_distance(
                              f['injections/distance'][:],
@@ -93,7 +93,7 @@ try:
                              f['injections/polarization'][:],
                              f['injections/tc'][:],
                              f['injections/inclination'][:]))
-    eff_dist = numpy.array(eff_dist).T
+    eff_dists = numpy.array(eff_dist).T
 
     # "Decisive" distance is the second smallest effective distance
     dvals['decisive_distance'] = numpy.sort(eff_dists)[:,1]
