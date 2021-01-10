@@ -42,7 +42,7 @@ headers = []
 data = []
 
 labels = {
-    'end_time': 'End&nbsp;time',
+    'tc': 'End&nbsp;time',
     'dec_chirp_dist': 'Dec.&nbsp;chirp dist (HL)',
     'eff_dist_h'    : 'D<sub>eff</sub>&nbsp;H',
     'eff_dist_l'    : 'D<sub>eff</sub>&nbsp;L',
@@ -62,9 +62,12 @@ labels = {
     'spin2z': 's<sub>2z</sub>'
 }
 
-params += ['end_time']
+params += ['tc']
 
-if 'optimal_snr' in ' '.join(list(f.keys())):
+m1, m2 = f['injections']['mass1'][iidx], f['injections']['mass2'][iidx]
+mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+
+if 'optimal_snr' in ' '.join(list(f['injections'].keys())):
     ifolist = f.attrs['ifos'].split(' ')
     for ifo in ifolist:
         labels['optimal_snr_%s' % ifo] = 'Opt.&nbsp;SNR %s' % ifo
@@ -81,16 +84,12 @@ else:
                              f['injections/inclination'][iidx])
 
     params += ['dec_chirp_dist', 'eff_dist_h', 'eff_dist_l', 'eff_dist_v']
-    dec_dist = max(f['injections']['eff_dist_h'][iidx],
-                   f['injections']['eff_dist_l'][iidx])
+    dec_dist = max(eff_dist['H1'], eff_dist['L1'])
     dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 
-params += ['mass1', 'mass2', 'mchir', 'eta', 'ra', 'dec',
+params += ['mass1', 'mass2', 'mchirp', 'eta', 'ra', 'dec',
             'inclination', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
             'spin2z']
-
-m1, m2 = f['injections']['mass1'][iidx], f['injections']['mass2'][iidx]
-mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
 for p in params:
 
@@ -103,7 +102,7 @@ for p in params:
         data += ["%.2f" % mchirp]
     elif p == 'eta':
         data += ["%.2f" % eta]
-    elif p == 'dec chirp dist':
+    elif p == 'dec_chirp_dist':
         data += ["%.2f" % dec_chirp_dist]
     else:
         print("No data for {}, so skipping".format(p))
