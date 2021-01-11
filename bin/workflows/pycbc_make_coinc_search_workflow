@@ -505,9 +505,9 @@ splitbank_files_inj = wf.setup_splittable_workflow(workflow, [hdfbank],
 # setup the injection files
 inj_files_base, inj_tags = wf.setup_injection_workflow(workflow,
                                                   output_dir="inj_files")
-inj_files = []                                                  
-for inj_file, tag in zip(inj_files, inj_tags):
-    inj_files.append(wf.inj_to_hdf(workflow, inj_file, 'inj_files', tag))
+inj_files = []
+for inj_file, tag in zip(inj_files_base, inj_tags):
+    inj_files.append(wf.inj_to_hdf(workflow, inj_file, 'inj_files', [tag]))
 
 inj_coincs = wf.FileList()
 
