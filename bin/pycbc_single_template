@@ -281,9 +281,9 @@ with ctx:
         if isinstance(inj, numpy.record):
             ra, dec, time = inj.ra, inj.dec, inj.tc
         else:
-	    ra, dec, time = inj.longitude, inj.latitude, inj.get_end()
+            ra, dec, time = inj.longitude, inj.latitude, inj.get_end()
         ltt = detector.time_delay_from_earth_center(ra, dec, time)
-        td_template._epoch -= inj.get_end() + ltt
+        td_template._epoch -= time + ltt
         # Check if waveform is too long
         tlen = (flen-1) * 2
         # FIXME: Hardcoded 7./8. factor here, but I'm not too bothered by this.
