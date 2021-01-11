@@ -261,6 +261,8 @@ if __name__ == '__main__':
     if not ligolw:
         # create placeholder fields for FieldArray injections
         for det, column in opts.snr_columns.items():
+            if column in inj_table:
+                continue
             inj_table = inj_table.add_fields(np.zeros(len(inj_table)),
                                              column)
 

@@ -9,6 +9,7 @@ from ligo import segments
 from pycbc import events
 from pycbc.events import indices_within_segments
 from pycbc.types import MultiDetOptionAction
+from pycbc.inject import CBCHDFInjectionSet
 import pycbc.version
 
 
@@ -146,7 +147,8 @@ for trigger_file, injection_file in zip(args.trigger_files,
                                1e-9 * sim_table.get_column('geocent_end_time_ns'),
                                dtype=numpy.float64)
     else:
-        inj_file = h5py.File(injection_file, 'r')
+        inj_file = CBCHDFInjectionSet(injection_file, 'r')
+        inj_data = inj_file.table
         inj_time = inj_file['tc'][:]
 
     logging.info('Determined the found injections by time')
@@ -233,8 +235,15 @@ for trigger_file, injection_file in zip(args.trigger_files,
                        sim_table.get_column(args.redshift_column))
     else:
         # hdf injection format
-        ninj = len(inj_file[list(inj_file.keys())][0])
-        for k in inj_file:
+        ninj = len(inj_data)
+
+        # fill these columns if not provided (rest should be there
+        # if we go this far) as they are commonly used for plots
+        for k in ['spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z']:
+            if k not in inj_data.dtype.names:
+                inj_data.add_fields(numpy.zeros(ninj), k)
+
+        for k in inj_data.dtype.names:
             data = inj_file[k][:]
 
             # set optimal snr to zero for detectors that were vetoed
