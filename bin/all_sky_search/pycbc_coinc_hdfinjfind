@@ -146,7 +146,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
                                1e-9 * sim_table.get_column('geocent_end_time_ns'),
                                dtype=numpy.float64)
     else:
-        inj_file = h5py.File(injection_file)
+        inj_file = h5py.File(injection_file, 'r')
         inj_time = inj_file['tc'][:]
 
     logging.info('Determined the found injections by time')
@@ -186,7 +186,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
         vetoid = numpy.append(vetoid, vi)
         veto_dict[ifo] = vi
         del vi
-    
+
 
     # Find out which of these indices are unique, and how many times each
     # vetoed index occurs - this is how many detectors it is vetoed in
@@ -206,7 +206,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
 
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
-    
+
     logging.info('Saving injection information')
     if '.xml' or '.xml.gz' in injection_file:
         ninj = len(sim_table)
@@ -236,12 +236,12 @@ for trigger_file, injection_file in zip(args.trigger_files,
         ninj = len(inj_file[list(inj_file.keys())][0])
         for k in inj_file:
             data = inj_file[k][:]
-            
+
             # set optimal snr to zero for detectors that were vetoed
             if 'optimal_snr' in k:
                 ifo = k.split('_')[-1]
                 data[veto_dict[ifo]] = 0
-                
+
             hdf_append(fo, 'injections/{}'.format(k), data)
 
     # copy over common search info
