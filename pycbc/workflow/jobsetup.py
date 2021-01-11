@@ -1510,6 +1510,7 @@ class PyCBCCreateInjectionsExecutable(Executable):
     The class used to create jobs for the lalapps_inspinj Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
+    file_input_options = ['--config-files']
     def create_node(self, segment, tags=None):
         if tags is None:
             tags = []
