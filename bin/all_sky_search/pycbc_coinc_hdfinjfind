@@ -138,8 +138,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
     time_sorting = time.argsort()
 
     logging.info('Read in the injection file')
-
-    if '.xml' or '.xml.gz' in injection_file:
+    if '.xml' in injection_file or '.xml.gz' in injection_file:
         indoc = ligolw_utils.load_filename(injection_file, False,
                                            contenthandler=LIGOLWContentHandler)
         sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
@@ -147,9 +146,9 @@ for trigger_file, injection_file in zip(args.trigger_files,
                                1e-9 * sim_table.get_column('geocent_end_time_ns'),
                                dtype=numpy.float64)
     else:
-        inj_file = CBCHDFInjectionSet(injection_file, 'r')
+        inj_file = CBCHDFInjectionSet(injection_file)
         inj_data = inj_file.table
-        inj_time = inj_file['tc'][:]
+        inj_time = inj_data['tc'][:]
 
     logging.info('Determined the found injections by time')
     left = numpy.searchsorted(time[time_sorting],
@@ -210,7 +209,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
 
     logging.info('Saving injection information')
-    if '.xml' or '.xml.gz' in injection_file:
+    if '.xml' in injection_file or '.xml.gz' in injection_file:
         ninj = len(sim_table)
         columns = ['mass1', 'mass2', 'spin1x', 'spin1y',
                    'spin1z', 'spin2x', 'spin2y', 'spin2z',
@@ -244,12 +243,15 @@ for trigger_file, injection_file in zip(args.trigger_files,
                 inj_data.add_fields(numpy.zeros(ninj), k)
 
         for k in inj_data.dtype.names:
-            data = inj_file[k][:]
+            data = inj_data[k][:]
 
             # set optimal snr to zero for detectors that were vetoed
             if 'optimal_snr' in k:
                 ifo = k.split('_')[-1]
                 data[veto_dict[ifo]] = 0
+
+            if data.dtype.char == 'U':
+                data = data.astype('S')
 
             hdf_append(fo, 'injections/{}'.format(k), data)
 
