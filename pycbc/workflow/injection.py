@@ -51,7 +51,6 @@ def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None
     workflow += node
     return node.output_files[0]
 
-
 class PyCBCOptimalSNRExecutable(Executable):
     """Compute optimal SNR for injections"""
     current_retention_level = Executable.ALL_TRIGGERS
@@ -64,7 +63,6 @@ class PyCBCOptimalSNRExecutable(Executable):
         node.new_output_file_opt(workflow.analysis_time, '.xml',
                                  '--output-file')
         return node
-
 
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
@@ -126,6 +124,23 @@ def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
     workflow += node
     return node.output_files[0]
+
+def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
+    """ Convert injection file to hdf format if not already one
+    """
+    name, ext = os.path.splitext(inj_file.lfn)
+    if ext == '.hdf':
+        return inj_file
+    
+    if tags is None:
+        tags = []
+        
+    exe = Executable(workflow.cp, 'inj2hdf', ifos=workflow.ifos,
+                     out_dir=out_dir, tags=tags)
+    node.add_input_opt('--injection-file', inj_file)
+    node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+    workflow += node
+    return node.output_file
 
 def setup_injection_workflow(workflow, output_dir=None,
                              inj_section_name='injections', exttrig_file=None,
@@ -273,4 +288,3 @@ def setup_injection_workflow(workflow, output_dir=None,
 
     logging.info("Leaving injection module.")
     return inj_files, inj_tags
-
