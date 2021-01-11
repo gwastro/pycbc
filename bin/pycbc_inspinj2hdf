@@ -53,6 +53,8 @@ for k in ['simulation_id', 'process_id']:
 
 data['approximant'] = data['waveform']
 data['tc'] = data['geocent_end_time'] + 1e-9 * data['geocent_end_time_ns']
+data['dec'] = data['latitude']
+data['ra'] = data['longitude']
 
 samples = FieldArray.from_kwargs(**data)
 CBCHDFInjectionSet.write(args.output_file, samples)
