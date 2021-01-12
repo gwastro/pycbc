@@ -53,6 +53,7 @@ def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None
     workflow += node
     return node.output_files[0]
 
+
 class PyCBCOptimalSNRExecutable(Executable):
     """Compute optimal SNR for injections"""
     current_retention_level = Executable.ALL_TRIGGERS
@@ -139,7 +140,7 @@ def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
         tags = []
 
     node = Executable(workflow.cp, 'inj2hdf', ifos=workflow.ifos,
-                     out_dir=out_dir, tags=tags).create_node()
+                      out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--injection-file', inj_file)
     node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
     workflow += node

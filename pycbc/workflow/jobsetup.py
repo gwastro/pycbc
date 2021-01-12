@@ -1515,9 +1515,8 @@ class PyCBCCreateInjectionsExecutable(Executable):
         if tags is None:
             tags = []
         node = Node(self)
-        curr_tags = self.tags + tags
         node.new_output_file_opt(segment, '.hdf', '--output-file',
-                                 store_file=self.retain_files)
+                                 store_file=self.retain_files, tags=tags)
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
         node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
         return node
