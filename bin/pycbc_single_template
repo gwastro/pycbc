@@ -259,12 +259,12 @@ with ctx:
         row = WaveformArray.from_kwargs(
             mass1=inj.mass1,
             mass2=inj.mass2,
-            spin1x=inj.spin1x,
-            spin1y=inj.spin1y,
-            spin1z=inj.spin1z,
-            spin2x=inj.spin2x,
-            spin2y=inj.spin2y,
-            spin2z=inj.spin2z)
+            spin1x=inj.spin1x if hasattr(inj, 'spin1x') else 0,
+            spin1y=inj.spin1y if hasattr(inj, 'spin1y') else 0,
+            spin1z=inj.spin1z if hasattr(inj, 'spin1x') else 0,
+            spin2x=inj.spin2x if hasattr(inj, 'spin2x') else 0,
+            spin2y=inj.spin2y if hasattr(inj, 'spin2y') else 0,
+            spin2z=inj.spin2z if hasattr(inj, 'spin2z') else 0)
         # FIXME: Don't like hardcoded 16384 here
         # NOTE: f_lower is set in strain.py as inj.f_lower, but this is a
         #       little unclear to see and caused me some problems! Stating
@@ -320,7 +320,7 @@ with ctx:
                                     f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
             template = tc.multiply_and_add(tp, opt.u_val)
-    
+
     if opt.high_frequency_cutoff:
         kmax = int(opt.high_frequency_cutoff / template.delta_f)
         if kmax < len(template):
