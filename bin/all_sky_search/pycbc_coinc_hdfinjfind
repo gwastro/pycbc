@@ -46,6 +46,10 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
     """ Save xml columns as hdf columns, only float32 supported atm.
     """
     for col in columns:
+        # Look for key in the form 'a:b' where we want to 
+        # read data from column a but store it as named output 'b'
+        # This is used to keep the output consistent where the input may not
+        # depending on the injection file format (xml vs hdf)
         if ':' in col:
             col, new_col = col.split(':')
         else:
@@ -186,8 +190,6 @@ for trigger_file, injection_file in zip(args.trigger_files,
                                         segment_name=args.segment_name)
         vetoid = numpy.append(vetoid, vi)
         veto_dict[ifo] = vi
-        del vi
-
 
     # Find out which of these indices are unique, and how many times each
     # vetoed index occurs - this is how many detectors it is vetoed in
