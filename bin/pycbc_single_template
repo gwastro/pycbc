@@ -292,7 +292,10 @@ with ctx:
             td_template = td_template[new_start_idx:]
             taper_func = pycbc.waveform.utils.taper_timeseries
             td_template = taper_func(td_template, tapermethod='TAPER_START')
-        approximant = inj.waveform
+        if hasattr(inj, 'waveform'):
+            approximant = inj.waveform
+        else:
+            approximant = inj.approximant
         template = waveform.td_waveform_to_fd_waveform(td_template, length=flen)
         template = template.astype(complex_same_precision_as(segments[0]))
     else:
