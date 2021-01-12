@@ -140,19 +140,20 @@ parser.add_argument('--output-path', required=True,
 parser.add_argument('--cores', type=int,
                     help='Restrict calculation to given number of CPU cores')
 parser.add_argument('--optimizer', type=str, default='differential_evolution',
-                    help='The optimizer to use, shgo or differential_evolution')
-parser.add_argument('--maxiter', type=int, default='50',
-                    help='Differential Evolution: The maximum number of '
-                         'generations over which the entire population is evolved.')
-parser.add_argument('--popsize', type=int, default='100',
-                    help='Differential Evolution: A multiplier for setting the '
-                         'total population size.')
-parser.add_argument('--iters', type=int, default='3',
-                    help='shgo: Number of sampling points used in the construction '
-                         'of the simplicial complex. ')
-parser.add_argument('--n', type=int, default='76',
-                    help='shgo: Number of iterations used in the construction of '
-                         'the simplicial complex.')
+                    choices=['differential_evolution', 'shgo'],
+                    help='The optimizer to use, differential_evolution or shgo')
+parser.add_argument('--DI-maxiter', type=int, default=50,
+                    help='Only relevant for --optimizer differential_evolution: '
+                    'The maximum number of generations over which the entire population is evolved.')
+parser.add_argument('--DI-popsize', type=int, default=100,
+                    help='Only relevant for --optimizer differential_evolution: '
+                         'A multiplier for setting the total population size.')
+parser.add_argument('--shgo-samples', type=int, default=76,
+                    help='Only relevant for --optimizer shgo: '
+                    'Number of sampling points used in the construction of the simplicial complex. ')
+parser.add_argument('--shgo-iters', type=int, default=3,
+                    help='Only relevant for --optimizer shgo: '
+                    'Number of iterations used in the construction of the simplicial complex.')
                     
 
 args = parser.parse_args()
@@ -203,21 +204,17 @@ bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
 
 logging.info('Starting optimization')
 
-try:
-
-    if args.optimizer == 'differential_evolution':
-        results = differential_evolution(compute_network_snr, bounds,
-                                 maxiter=args.maxiter, workers=(args.cores or -1),
-                                 popsize=args.popsize, mutation=(0.5,1),
+if args.optimizer == 'differential_evolution':
+    results = differential_evolution(compute_network_snr, bounds,
+                                 maxiter=args.DI_maxiter, workers=(args.cores or -1),
+                                 popsize=args.DI_popsize, mutation=(0.5,1),
                                  recombination=0.7, callback=callback_func,
                                  args=extra_args)
 
-    elif args.optimizer == 'shgo':
-        results = shgo(compute_network_snr, bounds=bounds, args=extra_args, 
-                iters=args.iters, n=args.n, sampling_method="sobol")
-               
-except RuntimeError: 
-    print("You haven't specified an optimizer, either shgo or differential_evolution")
+elif args.optimizer == 'shgo':
+    results = shgo(compute_network_snr, bounds=bounds, args=extra_args, 
+                iters=args.shgo_iters, n=args.shgo_samples, sampling_method="sobol")
+                
 
 logging.info('Optimization complete')
 
