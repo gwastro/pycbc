@@ -436,4 +436,3 @@ with ctx:
     f.attrs['command_line'] = (' '.join(sys.argv)).encode()
 
 logging.info("Finished")
-

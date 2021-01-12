@@ -313,9 +313,9 @@ class InjFilterRejector(object):
                     # hdf format file
                     end_time = inj['tc']
                 else:
-                    # must be an xml file originally            
+                    # must be an xml file originally
                     end_time = inj.geocent_end_time + \
-                        1E-9 * inj.geocent_end_time_ns 
+                        1E-9 * inj.geocent_end_time_ns
 
                 if not(seg_start_time <= end_time <= seg_end_time):
                     continue
@@ -374,11 +374,11 @@ class InjFilterRejector(object):
                     end_time = inj['tc']
                     sim_id = ii
                 else:
-                    # must be an xml file originally            
+                    # must be an xml file originally
                     end_time = inj.geocent_end_time + \
                         1E-9 * inj.geocent_end_time_ns
-                    sim_id = inj.simulation_id     
-                    
+                    sim_id = inj.simulation_id
+
                 if not(seg_start_time < end_time < seg_end_time):
                     continue
                 curr_inj = self.short_injections[sim_id]

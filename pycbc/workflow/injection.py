@@ -59,7 +59,7 @@ class PyCBCOptimalSNRExecutable(Executable):
 
     def create_node(self, workflow, inj_file, precalc_psd_files, group_str):
         node = Node(self)
-        name, ext = os.path.splitext(inj_file.name)
+        _, ext = os.path.splitext(inj_file.name)
         node.add_input_opt('--input-file', inj_file)
         node.add_opt('--injection-fraction-range', group_str)
         node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
@@ -131,7 +131,7 @@ def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
 def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
     """ Convert injection file to hdf format if not already one
     """
-    name, ext = os.path.splitext(inj_file.name)
+    _, ext = os.path.splitext(inj_file.name)
     if ext == '.hdf':
         return inj_file
 
