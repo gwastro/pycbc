@@ -1,4 +1,4 @@
-fou#!/usr/bin/python
+#!/usr/bin/python
 """ Plot search sensitivity as a function of significance.
 """
 import argparse, h5py, numpy, logging, matplotlib, sys
