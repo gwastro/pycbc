@@ -147,7 +147,7 @@ parser.add_argument('--maxiter', type=int, default='50',
 parser.add_argument('--popsize', type=int, default='100',
                     help='Differential Evolution: A multiplier for setting the '
                          'total population size.')
-parser.add_argument('--iters', type=int default='3',
+parser.add_argument('--iters', type=int, default='3',
                     help='shgo: Number of sampling points used in the construction '
                          'of the simplicial complex. ')
 parser.add_argument('--n', type=int, default='76',
