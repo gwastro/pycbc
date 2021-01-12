@@ -261,7 +261,7 @@ with ctx:
             mass2=inj.mass2,
             spin1x=inj.spin1x if hasattr(inj, 'spin1x') else 0,
             spin1y=inj.spin1y if hasattr(inj, 'spin1y') else 0,
-            spin1z=inj.spin1z if hasattr(inj, 'spin1x') else 0,
+            spin1z=inj.spin1z if hasattr(inj, 'spin1z') else 0,
             spin2x=inj.spin2x if hasattr(inj, 'spin2x') else 0,
             spin2y=inj.spin2y if hasattr(inj, 'spin2y') else 0,
             spin2z=inj.spin2z if hasattr(inj, 'spin2z') else 0)
