@@ -142,10 +142,10 @@ parser.add_argument('--cores', type=int,
 parser.add_argument('--optimizer', type=str, default='differential_evolution',
                     choices=['differential_evolution', 'shgo'],
                     help='The optimizer to use, differential_evolution or shgo')
-parser.add_argument('--DI-maxiter', type=int, default=50,
+parser.add_argument('--di-maxiter', type=int, default=50,
                     help='Only relevant for --optimizer differential_evolution: '
                     'The maximum number of generations over which the entire population is evolved.')
-parser.add_argument('--DI-popsize', type=int, default=100,
+parser.add_argument('--di-popsize', type=int, default=100,
                     help='Only relevant for --optimizer differential_evolution: '
                          'A multiplier for setting the total population size.')
 parser.add_argument('--shgo-samples', type=int, default=76,
@@ -206,8 +206,8 @@ logging.info('Starting optimization')
 
 if args.optimizer == 'differential_evolution':
     results = differential_evolution(compute_network_snr, bounds,
-                                 maxiter=args.DI_maxiter, workers=(args.cores or -1),
-                                 popsize=args.DI_popsize, mutation=(0.5,1),
+                                 maxiter=args.di_maxiter, workers=(args.cores or -1),
+                                 popsize=args.di_popsize, mutation=(0.5,1),
                                  recombination=0.7, callback=callback_func,
                                  args=extra_args)
 
