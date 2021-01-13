@@ -30,7 +30,7 @@ import os
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
 from Pegasus.catalogs.transformation_catalog import TransformationCatalog
-import Pegasus.DAX3 as dax
+import Pegasus.api as dax
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -70,35 +70,28 @@ class Executable(ProfileShortcuts):
     """
     id = 0
     def __init__(self, name, namespace=None, os='linux',
-                       arch='x86_64', installed=True, version=None,
+                       arch='x86_64', installed=True,
                        container=None):
         self.logical_name = name + "_ID%s" % str(Executable.id)
         Executable.id += 1
         self.namespace = namespace
-        self.version = version
-        if container:
-            self._dax_executable = dax.Executable(self.logical_name,
-                   namespace=self.namespace, version=version, os=os,
-                   arch=arch, installed=installed, container=container)
-        else:
-            self._dax_executable = dax.Executable(self.logical_name,
-                   namespace=self.namespace, version=version, os=os,
-                   arch=arch, installed=installed)
+        self.os = os
+        self.arch = arch
+        self.installed = installed
+        self.container = container
         self.in_workflow = False
-        self.pfns = {}
 
-    def clear_pfns(self):
-        self._dax_executable.clearPFNs()
-
-    def add_pfn(self, url, site='local'):
-        self._dax_executable.PFN(url, site)
-        self.pfns[site] = url
-
-    def get_pfn(self, site='local'):
-        return self.pfns[site]
-
-    def insert_into_dax(self, dax):
-        dax.addExecutable(self._dax_executable)
+    def create_transformation(self, site, url):
+        transform = dax.Transformation(
+            self.logical_name,
+            site=site,
+            pfn=url,
+            is_stageable=self.installed, # I think??
+            arch=self.arch,
+            os_type=self.os,
+            container=self.container # Is it? There's some new container stuff
+        )
+        return transform
 
     def add_profile(self, namespace, key, value, force=False):
         """ Add profile information to this executable
@@ -138,14 +131,12 @@ class Executable(ProfileShortcuts):
 
 
 class Node(ProfileShortcuts):
-    def __init__(self, executable):
+    def __init__(self, transformation):
         self.in_workflow = False
-        self.executable=executable
+        self.transformation=transformation
         self._inputs = []
         self._outputs = []
-        self._dax_node = dax.Job(name=executable.logical_name,
-                                 version = executable.version,
-                                 namespace=executable.namespace)
+        self._dax_node = dax.Job(transformation)
         self._args = []
         # Each value in _options is added separated with whitespace
         # so ['--option','value'] --> "--option value"
@@ -193,14 +184,14 @@ class Node(ProfileShortcuts):
         """ Add as source of input data
         """
         self._inputs += [inp]
-        inp._set_as_input_of(self)
+        self._dax_node.add_inputs(inp)
 
     def _add_output(self, out):
         """ Add as destination of output data
         """
         self._outputs += [out]
         out.node = self
-        out._set_as_output_of(self)
+        self._dax_node.add_outputs(out)
 
     # public functions to add options, arguments with or without data sources
     def add_input_opt(self, opt, inp):
@@ -272,17 +263,16 @@ class Node(ProfileShortcuts):
 
     def _finalize(self):
         args = self._args + self._options
-        self._dax_node.addArguments(*args)
-        if len(self._raw_options):
-            raw_args = [' '] + self._raw_options
-            self._dax_node.addRawArguments(*raw_args)
+        self._dax_node.add_args(*args)
+        self._dax_node.add_args(*raw_args)
 
 class Workflow(object):
     """
     """
     def __init__(self, name='my_workflow'):
         self.name = name
-        self._adag = dax.ADAG(name)
+        self._adag = dax.Workflow(name)
+        self._rc = dax.ReplicaCatalog()
 
         self._inputs = []
         self._outputs = []
@@ -292,9 +282,8 @@ class Workflow(object):
         self._external_workflow_inputs = []
         self.filename = self.name + '.dax'
 
-        self.as_job = dax.DAX(self.filename)
-
     def _make_root_dependency(self, inp):
+        # FIXME: I'm sure this wil lbe removed
         def root_path(v):
             path = [v]
             while v.in_workflow:
@@ -326,14 +315,10 @@ class Workflow(object):
         workflow.in_workflow = self
         self.sub_workflows += [workflow]
 
-        node = workflow.as_job
-        self._adag.addJob(node)
-
-        node.file.PFN(os.path.join(os.getcwd(), node.file.name), site='local')
-        self._adag.addFile(node.file)
+        self._adag.add_jobs(workflow._adag)
 
         for inp in workflow._external_workflow_inputs:
-            workflow._make_root_dependency(inp.node)
+            self._adag.add_dependency(inp.node, children=workflow._adag)
 
         return self
 
@@ -371,6 +356,8 @@ class Workflow(object):
         # this node requires.
         added_nodes = []
         for inp in node._inputs:
+            # Breaking this loop for testing
+            break
             if inp.node is not None and inp.node.in_workflow == self:
                 if inp.node not in added_nodes:
                     parent = inp.node._dax_node
@@ -479,7 +466,13 @@ class File(DataStorage, dax.File):
     def __init__(self, name):
         DataStorage.__init__(self, name)
         dax.File.__init__(self, name)
+        # Storage_path is where the file would be *output* to
         self.storage_path = None
+        # Input_pfns is *input* locations of the file. This needs a site.
+        self.input_pfns = []
+        # Adding to a dax finalizes the File. Ensure that changes cannot be
+        # made after doing this.
+        self.added_to_dax = False
 
     def _dax_repr(self):
         return self
@@ -489,31 +482,30 @@ class File(DataStorage, dax.File):
         """Return the dax representation of a File."""
         return self._dax_repr()
 
-    def _set_as_input_of(self, node):
-        node._dax_node.uses(self, link=dax.Link.INPUT, register=False,
-                                                       transfer=True)
-    def _set_as_output_of(self, node):
-        if self.storage_path:
-            transfer_file = True
-        else:
-            transfer_file = False
-        node._dax_node.uses(self, link=dax.Link.OUTPUT, register=True,
-                                                        transfer=transfer_file)
     def output_map_str(self):
         if self.storage_path:
             return '%s %s pool="%s"' % (self.name, self.storage_path, 'local')
         else:
             raise ValueError('This file does not have a storage path')
 
-    def has_pfn(self, url, site=None):
-        """ Wrapper of the pegasus hasPFN function, that allows it to be called
-        outside of specific pegasus functions.
+    def add_pfn(self, url, site):
         """
-        curr_pfn = dax.PFN(url, site)
-        return self.hasPFN(curr_pfn)
+        Associate a PFN with this file. Takes a URL and associated site.
+        """
+        self.input_pfns.append((url,site))
 
-    def insert_into_dax(self, dax):
-        dax.addFile(self)
+    def has_pfn(self, url, site='local'):
+        """ 
+        Check if the url, site is already associated to this File. If site is
+        not provided, we will assume it is 'local'.
+        """
+        return (url,site) in self.input_pfns
+
+    def insert_into_dax(self, rep_cat):
+        for (url, site) in self.input_pfns: 
+            rep_cat.add_replica(site, self, url)
+        if self.storage_path:
+            # Add file ... What if intermediate file?? 
 
     @classmethod
     def from_path(cls, path):
