@@ -221,7 +221,7 @@ class Executable(pegasus_workflow.Executable):
                 self.container_mount = None
 
 
-            self.container_cls = Pegasus.DAX3.Container("{}-container".format(
+            self.container_cls = Pegasus.api.Container("{}-container".format(
                                                     name),
                                                     self.container_type,
                                                     self.container_img,
@@ -627,7 +627,7 @@ class Workflow(pegasus_workflow.Workflow):
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs.
     """
-    def __init__(self, args, name):
+    def __init__(self, args, name, **kwargs):
         """
         Create a pycbc workflow
 
@@ -636,7 +636,7 @@ class Workflow(pegasus_workflow.Workflow):
         args : argparse.ArgumentParser
             The command line options to initialize a CBC workflow.
         """
-        super(Workflow, self).__init__(name)
+        super(Workflow, self).__init__(name, **kwargs)
 
         # Parse ini file
         self.cp = WorkflowConfigParser.from_cli(args)
@@ -770,18 +770,20 @@ class Workflow(pegasus_workflow.Workflow):
     def save(self, filename=None, output_map_path=None,
              transformation_catalog_path=None, staging_site=None):
 
+        # FIXME: Too close to pegasus to live here and not in pegasus_workflow
+
         if output_map_path is None:
             output_map_path = self.output_map
-        output_map_file = Pegasus.DAX3.File(os.path.basename(output_map_path))
-        output_map_file.addPFN(Pegasus.DAX3.PFN(output_map_path, 'local'))
+        output_map_file = Pegasus.api.File(os.path.basename(output_map_path))
+        output_map_file.addPFN(Pegasus.api.PFN(output_map_path, 'local'))
         if self.in_workflow is not False:
             self.in_workflow._adag.addFile(output_map_file)
 
         if transformation_catalog_path is None:
             transformation_catalog_path = self.transformation_catalog
-        transformation_catalog_file = Pegasus.DAX3.File(os.path.basename(
+        transformation_catalog_file = Pegasus.api.File(os.path.basename(
                                                         transformation_catalog_path))
-        transformation_catalog_file.addPFN(Pegasus.DAX3.PFN(
+        transformation_catalog_file.addPFN(Pegasus.api.PFN(
             transformation_catalog_path, 'local'))
         if self.in_workflow is not False:
             self.in_workflow._adag.addFile(transformation_catalog_file)

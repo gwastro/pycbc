@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/ian.harry/virtualenvs/pycbc_python3/bin/python3
 
 # Copyright (C) 2013-2019 Ian W. Harry, Alex Nitz, Marton Tapai,
 #     Gareth Davies
@@ -74,8 +74,13 @@ args = parser.parse_args()
 wf.makedir(args.output_dir)
 
 container = wf.Workflow(args, args.workflow_name)
-workflow = wf.Workflow(args, args.workflow_name + '-main')
-finalize_workflow = wf.Workflow(args, args.workflow_name + '-finalization')
+# Setting these as SubWorkflows doesn't work as SubWorkflow is not a sub-class
+# of Workflow, but of Job, so you cannot set anything in a SubWorkflow.
+workflow = wf.Workflow(args, args.workflow_name + '-main', is_subworkflow=False)
+finalize_workflow = wf.Workflow(args, args.workflow_name + '-finalization',
+                                is_subworkflow=False)
+workflow._adag._id = None # HACK!
+finalize_workflow._adag._id = None # HACK!
 
 os.chdir(args.output_dir)
 
@@ -759,9 +764,8 @@ wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
 container += workflow
 container += finalize_workflow
 
-import Pegasus.DAX3 as dax
-dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
-container._adag.addDependency(dep)
+import Pegasus.api as dax
+dep = container._adag.add_dependency(workflow._adag, children=[finalize_workflow._adag])
 
 container.save()
 
