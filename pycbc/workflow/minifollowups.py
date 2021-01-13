@@ -27,7 +27,7 @@ try:
 except ImportError:
     # Python 2
     from itertools import izip_longest as zip_longest
-from Pegasus import DAX3 as dax
+from Pegasus import api as dax
 from pycbc.workflow import pegasus_workflow as wdax
 
 def grouper(iterable, n, fillvalue=None):
@@ -85,7 +85,10 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
+    config_file.add_pfn(
+        urljoin('file:', pathname2url(config_path)),
+        site='local'
+    )
 
     exe = Executable(workflow.cp, 'foreground_minifollowup',
                      ifos=workflow.ifos, out_dir=dax_output, tags=tags)
@@ -125,12 +128,14 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     except:
         staging_site = None
 
-    job = dax.DAX(fil)
-    job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
-    workflow._adag.addJob(job)
-    dep = dax.Dependency(parent=node._dax_node, child=job)
-    workflow._adag.addDependency(dep)
+    # FIXME: This should really be done in pegasus_workflow!
+    job = dax.SubWorkflow(fil, is_planned=False)
+    job.add_args('--basename %s'
+                 % os.path.splitext(os.path.basename(name))[0])
+    Workflow.set_job_properties(job, map_file, tc_file,
+                                staging_site=staging_site)
+    workflow._adag.add_jobs(job)
+    workflow._adag.add_dependency(job, parents=[node._dax_node])
     logging.info('Leaving minifollowups module')
 
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
@@ -187,7 +192,10 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
+    config_file.add_pfn(
+        urljoin('file:', pathname2url(config_path)),
+        site='local'
+    )
 
     exe = Executable(workflow.cp, 'singles_minifollowup',
                      ifos=curr_ifo, out_dir=dax_output, tags=tags)
@@ -237,14 +245,14 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     except:
         staging_site = None
 
-    job = dax.DAX(fil)
-    job.addArguments('--basename %s' \
-                     % os.path.splitext(os.path.basename(name))[0])
+    # FIXME: This should really be done in pegasus_workflow!
+    job = dax.SubWorkflow(fil, is_planned=False)
+    job.add_args('--basename %s'
+                 % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_file, tc_file,
                                 staging_site=staging_site)
-    workflow._adag.addJob(job)
-    dep = dax.Dependency(parent=node._dax_node, child=job)
-    workflow._adag.addDependency(dep)
+    workflow._adag.add_jobs(job)
+    workflow._adag.add_dependency(job, parents=[node._dax_node])
     logging.info('Leaving minifollowups module')
 
 
@@ -296,7 +304,10 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
+    config_file.add_pfn(
+        urljoin('file:', pathname2url(config_path)),
+        site='local'
+    )
 
     exe = Executable(workflow.cp, 'injection_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 
@@ -334,12 +345,15 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     except:
         staging_site = None
 
-    job = dax.DAX(fil)
-    job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
-    workflow._adag.addJob(job)
-    dep = dax.Dependency(parent=node._dax_node, child=job)
-    workflow._adag.addDependency(dep)
+    # FIXME: This should really be done in pegasus_workflow!
+    job = dax.SubWorkflow(fil, is_planned=False)
+    job.add_args('--basename %s'
+                 % os.path.splitext(os.path.basename(name))[0])
+    Workflow.set_job_properties(job, map_file, tc_file,
+                                staging_site=staging_site)
+    workflow._adag.add_jobs(job)
+    workflow._adag.add_dependency(job, parents=[node._dax_node])
+
     logging.info('Leaving injection minifollowups module')
 
 

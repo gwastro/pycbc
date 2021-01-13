@@ -38,7 +38,7 @@ from itertools import combinations, groupby, permutations
 from operator import attrgetter
 import lal
 import lal.utils
-import Pegasus.DAX3
+import Pegasus.api # Try and move this into pegasus_workflow
 from glue import lal as gluelal
 from ligo import segments
 from glue.ligolw import table, lsctables, ligolw
@@ -247,6 +247,7 @@ class Executable(pegasus_workflow.Executable):
         exe_url = urllib.parse.urlparse(exe_path)
 
         # See if the user specified a list of sites for the executable
+        self.exe_pfns = {}
         try:
             exe_site_list = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
         except:
@@ -267,7 +268,7 @@ class Executable(pegasus_workflow.Executable):
                 # Could be http, gsiftp, etc. so it needs fetching if run now
                 self.needs_fetching = True
 
-            self.add_pfn(exe_path, site=exe_site)
+            self.exe_pfns[exe_site] = exe_path
             logging.info("Using %s executable "
                          "at %s on site %s" % (name, exe_url.path, exe_site))
 
@@ -318,7 +319,7 @@ class Executable(pegasus_workflow.Executable):
 
             value = cp.get(sec, opt).strip()
             key = opt.split('|')[1]
-            self.add_profile(namespace, key, value, force=True)
+            self.add_profile(namespace, key, value)
 
             # Remove if Pegasus can apply this hint in the TC
             if namespace == 'hints' and key == 'execution.site':
@@ -735,33 +736,36 @@ class Workflow(pegasus_workflow.Workflow):
     @staticmethod
     def set_job_properties(job, output_map_file, transformation_catalog_file,
                            staging_site=None):
+        # FIXME: This all belongs in pegasus_workflow.py
 
-        job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' %
+        # FIXME: This all needs reassessing as its solving pegasus4 problems!!
+
+        job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
                          os.path.basename(output_map_file.name))
-        job.uses(output_map_file, link=Pegasus.DAX3.Link.INPUT)
-        job.addArguments('-Dpegasus.dir.storage.mapper.replica=File')
+        job.add_inputs(output_map_file)
+        job.add_args('-Dpegasus.dir.storage.mapper.replica=File')
 
         # FIXME this is an ugly hack to connect the right transformation
         # catalog to the right DAX beacuse Pegasus 4.9 does not support
         # the full transformation catalog syntax in the DAX. This will go
         # away in Pegasus 5.x when this code is re-written.
 
-        job.addArguments('-Dpegasus.catalog.transformation.file=%s' %
-                         os.path.basename(transformation_catalog_file.name))
-        job.uses(transformation_catalog_file, link=Pegasus.DAX3.Link.INPUT)
+        job.add_args('-Dpegasus.catalog.transformation.file=%s' %
+                     os.path.basename(transformation_catalog_file.name))
+        job.add_inputs(transformation_catalog_file)
 
-        job.addArguments('--output-site local')
-        job.addArguments('--cleanup inplace')
-        job.addArguments('--cluster label,horizontal')
-        job.addArguments('-vvv')
+        job.add_args('--output-site local')
+        job.add_args('--cleanup inplace')
+        job.add_args('--cluster label,horizontal')
+        job.add_args('-vvv')
 
         # FIXME _reuse_cache needs to be fixed to use PFNs properly. This will
         # work as pegasus-plan is currently invoked on the local site so has
         # access to a file in os.getcwd() but this code is fragile.
-        job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache'))
+        job.add_args('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache'))
 
         if staging_site:
-            job.addArguments('--staging-site %s' % staging_site)
+            job.add_args('--staging-site %s' % staging_site)
 
     def save(self, filename=None, output_map_path=None,
              transformation_catalog_path=None, staging_site=None):
@@ -815,6 +819,7 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).save(filename=filename,
                                    tc=transformation_catalog_path)
 
+        # FIXME: This belongs in pegasus_workflow.py
         # add workflow storage locations to the output mapper
         f = open(output_map_path, 'w')
         for out in self._outputs:
@@ -857,16 +862,20 @@ class Workflow(pegasus_workflow.Workflow):
 
 class Node(pegasus_workflow.Node):
     def __init__(self, executable, valid_seg=None):
-        super(Node, self).__init__(executable)
+        if hasattr(executable, 'execution_site'):
+            site = executable.execution_site
+        else:
+            site = 'local'
+        transform = executable.get_transformation(site)
+        super(Node, self).__init__(transform)
+        self.executable = executable
+        self.transform = transform
         self.executed = False
         self.set_category(executable.name)
         self.valid_seg = valid_seg
 
         if executable.universe == 'vanilla' and executable.installed:
             self.add_profile('condor', 'getenv', 'True')
-
-        if hasattr(executable, 'execution_site'):
-            self.add_profile('hints', 'execution.site', executable.execution_site)
 
         self._options += self.executable.common_options
         self._raw_options += self.executable.common_raw_options
@@ -1907,7 +1916,7 @@ class SegFile(File):
         # write file
         url = urljoin('file:', pathname2url(self.storage_path))
         if not override_file_if_exists or not self.has_pfn(url, site='local'):
-            self.PFN(url, site='local')
+            self.add_pfn(url, site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
@@ -2064,17 +2073,17 @@ def resolve_url_to_file(curr_pfn, attrs=None):
 
         curr_file = File(ifos, exe_name, segs, local_file_path, tags=tags)
         pfn_local = urljoin('file:', pathname2url(local_file_path))
-        curr_file.PFN(pfn_local, 'local')
+        curr_file.add_pfn(pfn_local, 'local')
         # Add other PFNs for nonlocal sites as needed.
         # This block could be extended as needed
         if curr_pfn.startswith(cvmfsstrs):
-            curr_file.PFN(curr_pfn, site='osg')
-            curr_file.PFN(curr_pfn, site='nonfsio')
+            curr_file.add_pfn(curr_pfn, site='osg')
+            curr_file.add_pfn(curr_pfn, site='nonfsio')
             # Also register the CVMFS PFN with the local site. We want to
             # prefer this, and symlink from here, when possible.
             # However, I think we need a little more to avoid it symlinking
             # to this through an NFS mount.
-            curr_file.PFN(curr_pfn, site='local')
+            curr_file.add_pfn(curr_pfn, site='local')
         # Store the file to avoid later duplication
         tuple_val = (local_file_path, curr_file, curr_pfn)
         file_input_from_config_dict[curr_lfn] = tuple_val
