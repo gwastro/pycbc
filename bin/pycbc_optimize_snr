@@ -18,7 +18,7 @@ from pycbc.conversions import (
     mchirp_from_mass1_mass2, mtotal_from_mchirp_eta,
     mass1_from_mtotal_eta, mass2_from_mtotal_eta
 )
-from scipy.optimize import differential_evolution
+from scipy.optimize import differential_evolution, shgo
 from pycbc.io import live
 from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
@@ -97,6 +97,8 @@ def compute_network_snr_core(v, *argv):
     return (network_snrsq**0.5), snr_series_dict
 
 def compute_network_snr(v, *argv):
+    if len(argv) == 1:
+        argv = argv[0]
     nsnr, _ = compute_network_snr_core(v, *argv)
     return -nsnr
 
@@ -137,6 +139,22 @@ parser.add_argument('--output-path', required=True,
                     help='Path to a directory to store results in')
 parser.add_argument('--cores', type=int,
                     help='Restrict calculation to given number of CPU cores')
+parser.add_argument('--optimizer', type=str, default='differential_evolution',
+                    choices=['differential_evolution', 'shgo'],
+                    help='The optimizer to use, differential_evolution or shgo')
+parser.add_argument('--di-maxiter', type=int, default=50,
+                    help='Only relevant for --optimizer differential_evolution: '
+                    'The maximum number of generations over which the entire population is evolved.')
+parser.add_argument('--di-popsize', type=int, default=100,
+                    help='Only relevant for --optimizer differential_evolution: '
+                         'A multiplier for setting the total population size.')
+parser.add_argument('--shgo-samples', type=int, default=76,
+                    help='Only relevant for --optimizer shgo: '
+                    'Number of sampling points used in the construction of the simplicial complex. ')
+parser.add_argument('--shgo-iters', type=int, default=3,
+                    help='Only relevant for --optimizer shgo: '
+                    'Number of iterations used in the construction of the simplicial complex.')
+                    
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -186,11 +204,17 @@ bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
 
 logging.info('Starting optimization')
 
-results = differential_evolution(compute_network_snr, bounds,
-                                 maxiter=100, workers=(args.cores or -1),
-                                 popsize=200, mutation=(0.5,1),
+if args.optimizer == 'differential_evolution':
+    results = differential_evolution(compute_network_snr, bounds,
+                                 maxiter=args.di_maxiter, workers=(args.cores or -1),
+                                 popsize=args.di_popsize, mutation=(0.5,1),
                                  recombination=0.7, callback=callback_func,
                                  args=extra_args)
+
+elif args.optimizer == 'shgo':
+    results = shgo(compute_network_snr, bounds=bounds, args=extra_args, 
+                iters=args.shgo_iters, n=args.shgo_samples, sampling_method="sobol")
+                
 
 logging.info('Optimization complete')
 
