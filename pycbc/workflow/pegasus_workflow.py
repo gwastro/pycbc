@@ -29,7 +29,6 @@ provides additional abstraction and argument handling.
 import os
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
-from Pegasus.catalogs.transformation_catalog import TransformationCatalog
 import Pegasus.api as dax
 
 class ProfileShortcuts(object):
@@ -69,19 +68,31 @@ class Executable(ProfileShortcuts):
     """ The workflow representation of an Executable
     """
     id = 0
-    def __init__(self, name, namespace=None, os='linux',
+    def __init__(self, name, os='linux',
                        arch='x86_64', installed=True,
                        container=None):
         self.logical_name = name + "_ID%s" % str(Executable.id)
         Executable.id += 1
-        self.namespace = namespace
-        self.os = os
-        self.arch = arch
+        self.os = dax.OS(os)
+        self.arch = dax.Arch(arch)
         self.installed = installed
         self.container = container
         self.in_workflow = False
+        self.profiles = {}
+        self.transformations = {}
 
-    def create_transformation(self, site, url):
+    def get_transformation(self, site, url=None):
+        if site in self.transformations:
+            return self.transformations[site]
+        else:
+            return self.create_transformation(site, url=url)
+
+    def create_transformation(self, site, url=None):
+        if url is None:
+            # Rely on URL being set in a child class
+            # FIXME: Error handling niceness needed
+            url = self.exe_pfns[site]
+
         transform = dax.Transformation(
             self.logical_name,
             site=site,
@@ -91,19 +102,21 @@ class Executable(ProfileShortcuts):
             os_type=self.os,
             container=self.container # Is it? There's some new container stuff
         )
+        for (namespace,key), value in self.profiles.items():
+            transform.add_profiles(
+                dax.Namespace(namespace),
+                key=key,
+                value=value
+            )
+        self.transformations[site] = transform
         return transform
 
-    def add_profile(self, namespace, key, value, force=False):
+    def add_profile(self, namespace, key, value):
         """ Add profile information to this executable
         """
-        try:
-            entry = dax.Profile(namespace, key, value)
-            self._dax_executable.addProfile(entry)
-        except dax.DuplicateError:
-            if force:
-                # Replace with the new key
-                self._dax_executable.removeProfile(entry)
-                self._dax_executable.addProfile(entry)
+        if self.transformations:
+            raise ValueError("Need code changes to be able to add profiles after transformations are created.")
+        self.profiles[(namespace,key)] = value
 
     def is_same_as(self, other):
         test_vals = ['namespace', 'version', 'arch', 'os', 'osrelease',
@@ -253,10 +266,14 @@ class Node(ProfileShortcuts):
         """ Add profile information to this node at the DAX level
         """
         try:
-            entry = dax.Profile(namespace, key, value)
-            self._dax_node.addProfile(entry)
-        except dax.DuplicateError:
+            self._dax_node.add_profiles(
+                dax.Namespace(namespace),
+                key=key,
+                value=value
+            )
+        except dax.errors.DuplicateError:
             if force:
+                # FIXME: This definitely won't work. Not sure how to fix yet!
                 # Replace with the new key
                 self._dax_node.removeProfile(entry)
                 self._dax_node.addProfile(entry)
@@ -264,7 +281,9 @@ class Node(ProfileShortcuts):
     def _finalize(self):
         args = self._args + self._options
         self._dax_node.add_args(*args)
-        self._dax_node.add_args(*raw_args)
+        if len(self._raw_options):
+            raw_args = [' '] + self._raw_options
+            self._dax_node.add_args(*raw_args)
 
 class Workflow(object):
     """
@@ -340,6 +359,8 @@ class Workflow(object):
         # Record the executable that this node uses
         if not node.executable.in_workflow:
             for exe in self._executables:
+                # FIXME: This feature needs re-enabling!
+                continue
                 if node.executable.is_same_as(exe):
                     node.executable.in_workflow = True
                     node._dax_node.name = exe.logical_name
@@ -350,7 +371,7 @@ class Workflow(object):
                 self._executables += [node.executable]
 
         # Add the node itself
-        self._adag.addJob(node._dax_node)
+        self._adag.add_jobs(node._dax_node)
 
         # Determine the parent child relationships based on the inputs that
         # this node requires.
@@ -504,8 +525,6 @@ class File(DataStorage, dax.File):
     def insert_into_dax(self, rep_cat):
         for (url, site) in self.input_pfns: 
             rep_cat.add_replica(site, self, url)
-        if self.storage_path:
-            # Add file ... What if intermediate file?? 
 
     @classmethod
     def from_path(cls, path):

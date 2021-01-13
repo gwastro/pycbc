@@ -18,7 +18,7 @@ Module that contains functions for setting up the inference workflow.
 """
 
 import logging, os.path
-from Pegasus import DAX3 as dax
+from Pegasus import api as dax
 from pycbc.workflow.core import (Executable, FileList, Node, makedir, File,
                                  Workflow)
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr

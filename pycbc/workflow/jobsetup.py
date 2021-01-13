@@ -32,7 +32,7 @@ import logging
 import math, os
 import lal
 from ligo import segments
-import Pegasus.DAX3 as dax
+import Pegasus.api as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
 
 def int_gps_time_to_str(t):

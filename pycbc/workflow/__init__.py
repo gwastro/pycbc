@@ -45,7 +45,7 @@ try:
     from pycbc.workflow.plotting import *
     from pycbc.workflow.minifollowups import *
 except ImportError:
-    pass
+    raise
 
 # Set the configuration file base directory
 INI_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'ini_files')

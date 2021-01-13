@@ -416,7 +416,7 @@ def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
     node.add_opt('--template-file', template_path)
     workflow += node
     if explicit_dependencies is not None:
-        import Pegasus.DAX3 as dax
+        import Pegasus.api as dax
         for dep in explicit_dependencies:
             dax_dep = dax.Dependency(parent=dep._dax_node,
                                      child=node._dax_node)
