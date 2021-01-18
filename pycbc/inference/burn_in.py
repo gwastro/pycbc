@@ -282,7 +282,7 @@ def chain_moments(sampler,estimate_len=200,sliding_len=10,percent_deviation=2):
             is_burned_in=False
     
     if len(burnin) != 0 and is_burned_in:
-        burn_in_iteration = 
+        burn_in_iteration = 0 #!FIXME 
         max(burnin)+estimate_len+sampler.iterations-nc
     else:
         burn_in_iteration = NOT_BURNED_IN_ITER
@@ -311,11 +311,11 @@ class BaseBurnInTests(object):
     def __init__(self, sampler, burn_in_test, **kwargs):
         self.sampler = sampler
         # determine the burn-in tests that are going to be done
-        all_test=get_vars_from_arg(burn_in_test)
-        self.do_test = [x for x in all_test if x in available_tests]
-        self.do_sampler_test = [x for x in all_test 
+        all_tests=get_vars_from_arg(burn_in_test)
+        self.do_tests = [x for x in all_tests if x in available_tests]
+        self.do_sampler_tests = [x for x in all_tests 
                                 if x in available_sampler_tests]
-        unrecognized_tests = (set(all_tests) - set(self.do_tests)) -
+        unrecognized_tests = (set(all_tests) - set(self.do_tests)) - \
                               set(self.do_sampler_tests)
         #Raise an error of the burn in test is not listed
         if unrecognized_tests:
@@ -627,7 +627,7 @@ class MCMCBurnInTests(BaseBurnInTests):
         """Applies estimate_sigma test"""
         test = 'chain_moments'
         sigmas,burn_in_iter,is_burned_in = chain_moments(self.sampler)
-        if test is not in self.test_is_burned_in and burn_in_iter==0:
+        #if test is not in self.test_is_burned_in and burn_in_iter==0:
             
         self.test_is_burned_in[test] = is_burned_in
         self.test_aux_info[test] = sigmas
