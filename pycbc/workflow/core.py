@@ -791,7 +791,7 @@ class Workflow(pegasus_workflow.Workflow):
         if staging_site is None:
             staging_site = self.staging_site
 
-        Workflow.set_job_properties(self._adag, output_map_file,
+        Workflow.set_job_properties(self._asdag, output_map_file,
                                     transformation_catalog_file,
                                     staging_site)
 

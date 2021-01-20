@@ -291,9 +291,10 @@ class Workflow(object):
     def __init__(self, name='my_workflow', is_subworkflow=False):
         self.name = name
         if is_subworkflow:
-            self._adag = dax.SubWorkflow(name, is_planned=False)
+            self._asdag = dax.SubWorkflow(name, is_planned=False)
         else:
-            self._adag = dax.Workflow(name)
+            self._asdag = None
+        self._adag = dax.Workflow(name)
         self._rc = dax.ReplicaCatalog()
 
         self._inputs = []
