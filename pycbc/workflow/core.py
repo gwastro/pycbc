@@ -774,24 +774,24 @@ class Workflow(pegasus_workflow.Workflow):
 
         if output_map_path is None:
             output_map_path = self.output_map
-        output_map_file = Pegasus.api.File(os.path.basename(output_map_path))
-        output_map_file.addPFN(Pegasus.api.PFN(output_map_path, 'local'))
+        output_map_file = pegasus_workflow.File(os.path.basename(output_map_path))
+        output_map_file.add_pfn(output_map_path, site='local')
         if self.in_workflow is not False:
             self.in_workflow._adag.addFile(output_map_file)
 
         if transformation_catalog_path is None:
             transformation_catalog_path = self.transformation_catalog
-        transformation_catalog_file = Pegasus.api.File(os.path.basename(
+        transformation_catalog_file = pegasus_workflow.File(os.path.basename(
                                                         transformation_catalog_path))
-        transformation_catalog_file.addPFN(Pegasus.api.PFN(
-            transformation_catalog_path, 'local'))
+        transformation_catalog_file.add_pfn(transformation_catalog_path,
+                                            site='local')
         if self.in_workflow is not False:
             self.in_workflow._adag.addFile(transformation_catalog_file)
 
         if staging_site is None:
             staging_site = self.staging_site
 
-        Workflow.set_job_properties(self.as_job, output_map_file,
+        Workflow.set_job_properties(self._adag, output_map_file,
                                     transformation_catalog_file,
                                     staging_site)
 
