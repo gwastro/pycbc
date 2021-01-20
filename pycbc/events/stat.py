@@ -335,7 +335,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         """
         Read in a signal density file for the ifo combination
 
-
         Parameters
         ----------
         ifos: list
@@ -467,12 +466,12 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         Parameters
         ----------
-        stats: list of dicts giving single-ifo quantities, ordered as
-            self.ifos
-        shift: numpy array of float, size of the time shift vector for each
-            coinc to be ranked
-        to_shift: list of int, multiple of the time shift to apply ordered
-            as self.ifos
+        stats: dict of dicts
+            Single-detector quantities for each detector
+        shift: numpy array of float
+            Time shift vector for each coinc to be ranked
+        to_shift: list of ints
+            Multiple of the time shift to apply, ordered as self.ifos
 
         Returns
         -------
@@ -616,26 +615,37 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        err_msg = "Sorry! No-one has implemented this method yet! "
-        raise NotImplementedError(err_msg)
+        return self.single(single_info[1])
 
-    def rank_stat_coinc(self, s, slide, step, to_shift,
+    def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
-        err_msg = "Sorry! No-one has implemented this method yet! "
-        raise NotImplementedError(err_msg)
+        rstat = sum(s[1]['snglstat'] ** 2 for s in sngls_list)
+        cstat = rstat + 2. * self.logsignalrate(
+            {d: s for d, s in sngls_list},
+            slide * step,
+            to_shift
+        )
+        cstat[cstat < 0] = 0
+        return cstat ** 0.5
 
-    def coinc_lim_for_thresh(self, s, thresh, limifo,
+    def coinc_lim_for_thresh(self, sngls_list, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
         Calculate the required single detector statistic to exceed
         the threshold for each of the input triggers.
         """
-        err_msg = "Sorry! No-one has implemented this method yet! "
-        raise NotImplementedError(err_msg)
+        if self.hist is None:
+            self.get_hist()
+        lim_stat = [b['snglstat'] for a, b in sngls_list if a == limifo][0]
+        s1 = thresh ** 2. - lim_stat ** 2.
+        # Assume best case scenario and use maximum signal rate
+        s1 -= 2. * self.hist_max
+        s1[s1 < 0] = 0
+        return s1 ** 0.5
 
 
 class ExpFitStatistic(QuadratureSumStatistic):
@@ -665,8 +675,8 @@ class ExpFitStatistic(QuadratureSumStatistic):
             The list of detector names
         """
 
-        if not len(files):
-            raise RuntimeError("Can't find any statistic files !")
+        if not files:
+            raise RuntimeError("Statistic files not specified")
         QuadratureSumStatistic.__init__(self, sngl_ranking, files=files,
                                         ifos=ifos, **kwargs)
 
