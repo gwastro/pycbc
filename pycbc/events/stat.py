@@ -240,7 +240,7 @@ class QuadratureSumStatistic(Stat):
         numpy.ndarray
             Array of coincident ranking statistic values
         """
-        cstat = sum(sngl[1] ** 2. for sngl in sngls_list) ** 0.5
+        cstat = sum(sngl[1]['snglstat'] ** 2. for sngl in sngls_list) ** 0.5
         # For single-detector "cuts" the single ranking is set to -1
         for sngls in sngls_list:
             cstat[sngls == -1] = 0
@@ -274,7 +274,7 @@ class QuadratureSumStatistic(Stat):
         allowed_names = ['QuadratureSumStatistic']
         self._check_coinc_lim_subclass(allowed_names)
 
-        s0 = thresh ** 2. - sum(sngl[1] ** 2. for sngl in s)
+        s0 = thresh ** 2. - sum(sngl[1]['snglstat'] ** 2. for sngl in s)
         s0[s0 < 0] = 0
         return s0 ** 0.5
 
@@ -665,8 +665,8 @@ class ExpFitStatistic(QuadratureSumStatistic):
             The list of detector names
         """
 
-        if not len(files):
-            raise RuntimeError("Can't find any statistic files !")
+        if not files:
+            raise RuntimeError("Statistic files not specified")
         QuadratureSumStatistic.__init__(self, sngl_ranking, files=files,
                                         ifos=ifos, **kwargs)
 
@@ -995,7 +995,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         """
 
         # scale by 1/sqrt(number of ifos) to resemble network SNR
-        return sum(sngl[1] for sngl in s) / len(s)**0.5
+        return sum(sngl[1]['snglstat'] for sngl in s) / len(s)**0.5
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
@@ -1025,7 +1025,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         allowed_names = ['ExpFitCombinedSNR']
         self._check_coinc_lim_subclass(allowed_names)
 
-        return thresh * ((len(s) + 1) ** 0.5) - sum(sngl[1] for sngl in s)
+        return thresh * ((len(s) + 1) ** 0.5) - sum(sngl[1]['snglstat'] for sngl in s)
 
 
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
@@ -1229,7 +1229,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
 
         # ranking statistic is -ln(expected rate density of noise triggers)
         # plus normalization constant
-        sngl_dict = {sngl[0]: sngl[1] for sngl in s}
+        sngl_dict = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_dict, kwargs['time_addition'])
         loglr = - ln_noise_rate + self.benchmark_lograte
@@ -1263,7 +1263,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         allowed_names = ['ExpFitSGBgRateStatistic']
         self._check_coinc_lim_subclass(allowed_names)
 
-        sngl_dict = {sngl[0]: sngl[1] for sngl in s}
+        sngl_dict = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
         sngl_dict[limifo] = numpy.zeros(len(s[0][1]))
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_dict, kwargs['time_addition'])
