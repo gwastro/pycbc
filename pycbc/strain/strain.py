@@ -238,7 +238,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         logging.info("Generating Fake Strain")
         duration = opt.gps_end_time - opt.gps_start_time
         pdf = 1.0 / opt.fake_strain_filter_duration
-        fake_rate = opt.fake_strain_sample_rate
         fake_flow = opt.fake_strain_flow
         plen = int(opt.sample_rate / pdf) // 2 + 1
 
