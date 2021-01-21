@@ -691,6 +691,18 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             action=MultiDetOptionAction, metavar='IFO:FILE',
                             help="File containing ASD for generating fake "
                             "noise from it.")
+    data_reading_group_multi.add_argument("--fake-strain-flow",
+                default=6.0, type=float,
+                nargs="+", action=MultiDetOptionAction,
+                help="Low frequency cutoff of the fake strain")
+    data_reading_group_multi.add_argument("--fake-strain-filter-duration",
+                default=128.0, type=float,
+                nargs="+", action=MultiDetOptionAction,
+                help="Duration in seconds of the fake data coloring filter")
+    data_reading_group_multi.add_argument("--fake-strain-sample-rate",
+                default=16384, type=float,
+                nargs="+", action=MultiDetOptionAction,
+                help="Sample rate of the fake data generation")
 
     # Injection options
     data_reading_group_multi.add_argument("--injection-file", type=str,
