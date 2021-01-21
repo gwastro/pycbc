@@ -41,6 +41,8 @@ class TestNoise(unittest.TestCase):
                                     seed=0,
                                     low_frequency_cutoff=1.0,
                                     filter_duration=64)
+        print(self.ts[0:100])
+
     def test_consistent_result(self):
         # This just checks that the result hasn't changed. If it has
         # you should find out why
