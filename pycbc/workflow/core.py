@@ -673,9 +673,16 @@ class Workflow(pegasus_workflow.Workflow):
         path =  os.path.join(os.getcwd(), name)
         return path
 
+    # FIXME: Shouldn't this be in pegasus_workflow?
     @property
     def transformation_catalog(self):
         name = self.name + '.tc.yml'
+        path =  os.path.join(os.getcwd(), name)
+        return path
+
+    @property
+    def replica_catalog(self):
+        name = self.name + '.rc.yml'
         path =  os.path.join(os.getcwd(), name)
         return path
 
@@ -731,7 +738,8 @@ class Workflow(pegasus_workflow.Workflow):
                     site='local')
 
     @staticmethod
-    def set_job_properties(job, output_map_file, transformation_catalog_file,
+    def set_job_properties(job, output_map_file,
+                           transformation_catalog_file,
                            staging_site=None):
         # FIXME: This all belongs in pegasus_workflow.py
 
@@ -746,6 +754,8 @@ class Workflow(pegasus_workflow.Workflow):
         # catalog to the right DAX beacuse Pegasus 4.9 does not support
         # the full transformation catalog syntax in the DAX. This will go
         # away in Pegasus 5.x when this code is re-written.
+
+        # .... I don't think it will go away!
 
         job.add_args('-Dpegasus.catalog.transformation.file=%s' %
                      os.path.basename(transformation_catalog_file.name))
@@ -765,7 +775,9 @@ class Workflow(pegasus_workflow.Workflow):
             job.add_args('--staging-site %s' % staging_site)
 
     def save(self, filename=None, output_map_path=None,
-             transformation_catalog_path=None, staging_site=None):
+             transformation_catalog_path=None,
+             replica_catalog_path=None,
+             staging_site=None):
 
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
 
@@ -773,13 +785,14 @@ class Workflow(pegasus_workflow.Workflow):
             output_map_path = self.output_map
         output_map_file = pegasus_workflow.File(os.path.basename(output_map_path))
         output_map_file.add_pfn(output_map_path, site='local')
+        self.output_map_file = output_map_file
 
         if transformation_catalog_path is None:
             transformation_catalog_path = self.transformation_catalog
-        transformation_catalog_file = pegasus_workflow.File(os.path.basename(
-                                                        transformation_catalog_path))
+        transformation_catalog_file = pegasus_workflow.File(os.path.basename(transformation_catalog_path))
         transformation_catalog_file.add_pfn(transformation_catalog_path,
                                             site='local')
+        self.transformation_catalog_file = transformation_catalog_file
 
         if staging_site is None:
             staging_site = self.staging_site
@@ -798,7 +811,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:
-            fil.insert_into_dax(self._adag)
+            fil.insert_into_dax(self._rc)
 
         # save the configuration file
         ini_file = os.path.abspath(self.name + '.ini')
@@ -815,7 +828,7 @@ class Workflow(pegasus_workflow.Workflow):
         fp.close()
 
         # save the dax file
-        super(Workflow, self).save(transformation_catalog_path, filename=filename)
+        super(Workflow, self).save(transformation_catalog_path)
 
         # FIXME: This belongs in pegasus_workflow.py
         # add workflow storage locations to the output mapper

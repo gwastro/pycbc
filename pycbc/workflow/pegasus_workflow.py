@@ -290,11 +290,6 @@ class Workflow(object):
     """
     def __init__(self, name='my_workflow', is_subworkflow=False):
         self.name = name
-        if is_subworkflow:
-            self._asdag = dax.SubWorkflow(name, is_planned=False)
-        else:
-            self._asdag = None
-        self._adag = dax.Workflow(name)
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
 
@@ -306,6 +301,11 @@ class Workflow(object):
         self.sub_workflows = []
         self._external_workflow_inputs = []
         self.filename = self.name + '.dax'
+        self._adag = dax.Workflow(self.filename)
+        if is_subworkflow:
+            self._asdag = dax.SubWorkflow(self.filename, is_planned=False)
+        else:
+            self._asdag = None
 
     def _make_root_dependency(self, inp):
         # FIXME: I'm sure this wil lbe removed
@@ -343,9 +343,26 @@ class Workflow(object):
         self._adag.add_jobs(workflow._asdag)
 
         for inp in workflow._external_workflow_inputs:
-            self._adag.add_dependency(inp.node, children=workflow._adag)
+            self._adag.add_dependency(inp.node, children=[workflow._asdag])
 
         return self
+
+
+    def add_subworkflow_dependancy(self, parent_workflow, child_workflow):
+        """
+        Add a dependency between two sub-workflows in this workflow
+
+        Parameters
+        ----------
+        parent_workflow : Workflow instance
+            The sub-workflow to use as the parent dependence.
+            Must be a sub-workflow of this workflow.
+        child_workflow : Workflow instance
+            The sub-workflow to add as the child dependence.
+            Must be a sub-workflow of this workflow.
+        """
+        self._adag.add_dependency(parent_workflow._asdag,
+                                  children=[child_workflow._asdag])
 
 
     def add_transformation(self, tranformation):
@@ -411,13 +428,12 @@ class Workflow(object):
         added_nodes = []
         for inp in node._inputs:
             # Breaking this loop for testing
-            break
             if inp.node is not None and inp.node.in_workflow == self:
                 if inp.node not in added_nodes:
-                    parent = inp.node._dax_node
-                    child = node._dax_node
-                    dep = dax.Dependency(parent=parent, child=child)
-                    self._adag.addDependency(dep)
+                    #parent = inp.node._dax_node
+                    #child = node._dax_node
+                    #dep = dax.Dependency(parent=parent, child=child)
+                    #self._adag.addDependency(dep)
                     added_nodes.append(inp.node)
 
             elif inp.node is not None and not inp.node.in_workflow:
@@ -446,16 +462,23 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, tc_path, filename=None):
+    def save(self, tc_path):
         """ Write this workflow to DAX file
         """
-        if filename is None:
-            filename = self.filename
-
         for sub in self.sub_workflows:
             sub.save()
+            sub.transformation_catalog_file.insert_into_dax(self._rc)
+            sub.output_map_file.insert_into_dax(self._rc)
+            sub_workflow_file = File(sub.filename)
+            pfn = os.path.join(os.getcwd(), sub.filename)
+            sub_workflow_file.add_pfn(pfn, site='local')
+            sub_workflow_file.insert_into_dax(self._rc)
 
-        self._adag.write(filename)
+        self._adag.add_replica_catalog(self._rc)
+        # FIXME: Cannot add TC into workflow
+        #self._adag.add_transformation_catalog(self._tc)
+
+        self._adag.write(self.filename)
         self._tc.write(tc_path)
 
 
