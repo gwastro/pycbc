@@ -764,6 +764,8 @@ wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
 container += workflow
 container += finalize_workflow
 
+container.add_subworkflow_dependancy(workflow, finalize_workflow)
+
 container.save()
 
 # Protect the open box results folder
