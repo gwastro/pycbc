@@ -41,14 +41,13 @@ class TestNoise(unittest.TestCase):
                                     seed=0,
                                     low_frequency_cutoff=1.0,
                                     filter_duration=64)
-
     def test_consistent_result(self):
         # This just checks that the result hasn't changed. If it has
         # you should find out why
         summ = self.ts.sum()
         comp = 4.597515648402546e-19
         diff = abs(summ - comp)
-        self.assertTrue(diff < 1e-30)
+        self.assertTrue(diff < 1e-25)
 
     def test_noise_psd(self):
         p = self.ts.psd(4)
@@ -58,7 +57,7 @@ class TestNoise(unittest.TestCase):
         kmax = int(500 / p.delta_f)
         ratio = p[kmin:kmax] / p2[kmin:kmax]
         ave = ratio.numpy().mean()
-        self.assertAlmostEqual(ave, 1, 2)
+        self.assertAlmostEqual(ave, 1, 1)
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNoise))
