@@ -45,6 +45,7 @@ class TestNoise(unittest.TestCase):
         # This just checks that the result hasn't changed. If it has
         # you should find out why
         summ = self.ts.sum()
+        print("SUMM VALUE", summ)
         comp = 4.597515648402546e-19
         diff = abs(summ - comp)
         self.assertTrue(diff < 1e-25)
