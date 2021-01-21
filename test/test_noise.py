@@ -27,6 +27,7 @@ These are the unittests for noise generation
 import unittest
 import numpy
 import pycbc.psd
+import sys
 from utils import simple_exit
 from pycbc.noise.reproduceable import noise_from_string
 from pycbc.fft.fftw import set_measure_level
@@ -47,10 +48,12 @@ class TestNoise(unittest.TestCase):
         # This just checks that the result hasn't changed. If it has
         # you should find out why
         summ = self.ts.sum()
-        print("SUMM VALUE", summ)
-        comp = 4.597515648402546e-19
+        if sys.version_info[0] < 3:
+            comp = 4.597515648402546e-19
+        else:
+            comp = 2.967112629328407e-20
         diff = abs(summ - comp)
-        self.assertTrue(diff < 1e-25)
+        self.assertTrue(diff < 1e-30)
 
     def test_noise_psd(self):
         p = self.ts.psd(4)
