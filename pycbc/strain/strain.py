@@ -501,7 +501,7 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--fake-strain-from-file",
                 help="File containing ASD for generating fake noise from it.")
     data_reading_group.add_argument("--fake-strain-flow",
-                default=6.0, type=float,
+                default=1.0, type=float,
                 help="Low frequency cutoff of the fake strain")
     data_reading_group.add_argument("--fake-strain-filter-duration",
                 default=128.0, type=float,
@@ -692,7 +692,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             help="File containing ASD for generating fake "
                             "noise from it.")
     data_reading_group_multi.add_argument("--fake-strain-flow",
-                default=6.0, type=float,
+                default=1.0, type=float,
                 nargs="+", action=MultiDetOptionAction,
                 help="Low frequency cutoff of the fake strain")
     data_reading_group_multi.add_argument("--fake-strain-filter-duration",
