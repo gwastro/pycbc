@@ -296,10 +296,12 @@ class Workflow(object):
             self._asdag = None
         self._adag = dax.Workflow(name)
         self._rc = dax.ReplicaCatalog()
+        self._tc = dax.TransformationCatalog()
 
         self._inputs = []
         self._outputs = []
-        self._executables = []
+        self._transformations = []
+        self._containers = []
         self.in_workflow = False
         self.sub_workflows = []
         self._external_workflow_inputs = []
@@ -338,12 +340,38 @@ class Workflow(object):
         workflow.in_workflow = self
         self.sub_workflows += [workflow]
 
-        self._adag.add_jobs(workflow._adag)
+        self._adag.add_jobs(workflow._asdag)
 
         for inp in workflow._external_workflow_inputs:
             self._adag.add_dependency(inp.node, children=workflow._adag)
 
         return self
+
+
+    def add_transformation(self, tranformation):
+        """ Add a transformation to this workflow
+
+        Adds the input transformation to this workflow.
+
+        Parameters
+        ----------
+        transformation : Pegasus.api.Transformation
+            The transformation to be added.
+        """
+        self._tc.add_transformations(tranformation)
+
+
+    def add_container(self, container):
+        """ Add a container to this workflow
+
+        Adds the input container to this workflow.
+
+        Parameters
+        ----------
+        container : Pegasus.api.Container
+            The container to be added.
+        """
+        self._tc.add_containers(container)
 
 
     def add_node(self, node):
@@ -361,18 +389,19 @@ class Workflow(object):
         node.in_workflow = self
 
         # Record the executable that this node uses
-        if not node.executable.in_workflow:
-            for exe in self._executables:
-                # FIXME: This feature needs re-enabling!
-                continue
-                if node.executable.is_same_as(exe):
+        if not node.transformation in self._transformations:
+            for exe in self._transformations:
+                # Check if exe is already in self.executables properly
+                if 0: #node.executable.is_same_as(exe):
                     node.executable.in_workflow = True
                     node._dax_node.name = exe.logical_name
                     node.executable.logical_name = exe.logical_name
                     break
             else:
-                node.executable.in_workflow = True
-                self._executables += [node.executable]
+                #node.executable.in_workflow = True
+                self._transformations += [node.transformation]
+                if node.executable.container is not None and node.executable.container not in self._containers:
+                    self._containers.append(node.executable.container)
 
         # Add the node itself
         self._adag.add_jobs(node._dax_node)
@@ -417,7 +446,7 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, filename=None, tc=None):
+    def save(self, tc_path, filename=None):
         """ Write this workflow to DAX file
         """
         if filename is None:
@@ -426,35 +455,8 @@ class Workflow(object):
         for sub in self.sub_workflows:
             sub.save()
 
-        # FIXME this is ugly as pegasus 4.9.0 does not support the full
-        # transformation catalog in the DAX. I have asked Karan to fix this so
-        # that executables and containers can be specified in the DAX itself.
-        # Karan says that XML is going away in Pegasus 5.x and so this code
-        # will need to be re-written anyway.
-        #
-        # the transformation catalog is written in the same directory as the
-        # DAX.  pycbc_submit_dax needs to know this so that the right
-        # transformation catalog is used when the DAX is planned.
-        if tc is None:
-            tc = '{}.tc.txt'.format(filename)
-        p = os.path.dirname(tc)
-        f = os.path.basename(tc)
-        if not p:
-            p = '.'
-
-        tc = TransformationCatalog(p, f)
-
-        for e in self._adag.executables.copy():
-            tc.add(e)
-            try:
-                tc.add_container(e.container)
-            except:
-                pass
-            self._adag.removeExecutable(e)
-
-        f = open(filename, "w")
-        self._adag.writeXML(f)
-        tc.write()
+        self._adag.write(filename)
+        self._tc.write(tc_path)
 
 
 class DataStorage(object):

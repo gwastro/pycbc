@@ -764,9 +764,6 @@ wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
 container += workflow
 container += finalize_workflow
 
-import Pegasus.api as dax
-dep = container._adag.add_dependency(workflow._adag, children=[finalize_workflow._adag])
-
 container.save()
 
 # Protect the open box results folder

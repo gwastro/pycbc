@@ -675,10 +675,7 @@ class Workflow(pegasus_workflow.Workflow):
 
     @property
     def transformation_catalog(self):
-        if self.in_workflow is not False:
-            name = self.name + '.tc.txt'
-        else:
-            name = 'tc.txt'
+        name = self.name + '.tc.yml'
         path =  os.path.join(os.getcwd(), name)
         return path
 
@@ -776,8 +773,6 @@ class Workflow(pegasus_workflow.Workflow):
             output_map_path = self.output_map
         output_map_file = pegasus_workflow.File(os.path.basename(output_map_path))
         output_map_file.add_pfn(output_map_path, site='local')
-        if self.in_workflow is not False:
-            self.in_workflow._adag.addFile(output_map_file)
 
         if transformation_catalog_path is None:
             transformation_catalog_path = self.transformation_catalog
@@ -785,19 +780,21 @@ class Workflow(pegasus_workflow.Workflow):
                                                         transformation_catalog_path))
         transformation_catalog_file.add_pfn(transformation_catalog_path,
                                             site='local')
-        if self.in_workflow is not False:
-            self.in_workflow._adag.addFile(transformation_catalog_file)
 
         if staging_site is None:
             staging_site = self.staging_site
 
-        Workflow.set_job_properties(self._asdag, output_map_file,
-                                    transformation_catalog_file,
-                                    staging_site)
+        if self._asdag is not None:
+            Workflow.set_job_properties(self._asdag, output_map_file,
+                                        transformation_catalog_file,
+                                        staging_site)
 
-        # add executable pfns for local site to dax
-        for exe in self._executables:
-            exe.insert_into_dax(self._adag)
+        # add transformations to dax
+        for transform in self._transformations:
+            self.add_transformation(transform)
+
+        for container in self._containers:
+            self.add_container(container)
 
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:
@@ -818,8 +815,7 @@ class Workflow(pegasus_workflow.Workflow):
         fp.close()
 
         # save the dax file
-        super(Workflow, self).save(filename=filename,
-                                   tc=transformation_catalog_path)
+        super(Workflow, self).save(transformation_catalog_path, filename=filename)
 
         # FIXME: This belongs in pegasus_workflow.py
         # add workflow storage locations to the output mapper
