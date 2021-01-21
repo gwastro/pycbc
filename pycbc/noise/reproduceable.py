@@ -165,7 +165,8 @@ def colored_noise(psd, start_time, end_time,
 
     white_noise = normal(start_time - filter_duration,
                          end_time + filter_duration,
-                         seed=seed)
+                         seed=seed,
+                         sample_rate=sample_rate)
     white_noise = white_noise.to_frequencyseries()
     # Here we color. Do not want to duplicate memory here though so use '*='
     white_noise *= asd
