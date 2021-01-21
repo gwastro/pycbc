@@ -647,14 +647,13 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     hc: pycbc.types.TimeSeries
         Cross polarization time series
     """
-
     # determine the duration to use
     full_duration = duration = get_waveform_filter_length_in_time(**params)
     nparams = params.copy()
 
     while full_duration < duration * 1.5:
         full_duration = get_waveform_filter_length_in_time(**nparams)
-        nparams['f_lower'] -= 1
+        nparams['f_lower'] *= 0.99
 
     if 'f_ref' not in nparams:
         nparams['f_ref'] = params['f_lower']
