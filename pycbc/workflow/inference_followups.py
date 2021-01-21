@@ -724,7 +724,7 @@ def get_diagnostic_plots(workflow):
         diagnostics.append('samples')
     if "plot_acceptance_rate" in workflow.cp.options("executables"):
         diagnostics.append('acceptance_rate')
-    if "plot_mcmc_history" in workflow.cp.options("executable"):
+    if "plot_mcmc_history" in workflow.cp.options("executables"):
         diagnostics.append('mcmc_history')
     if "plot_dynesty_run" in workflow.cp.options("executables"):
         diagnostics.append('dynesty_run')
@@ -799,7 +799,7 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir,
     if 'mcmc_history' in diagnostics:
         # files for samples mcmc history subsection
         base = "mcmc_history/{}".format(label)
-        acceptance_plots = []
+        history_plots = []
         for kk, sf in enumerate(samples_file):
             history_plots += make_inference_plot_mcmc_history(
                 workflow, sf, rdir[base],
