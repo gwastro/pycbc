@@ -239,6 +239,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         duration = opt.gps_end_time - opt.gps_start_time
         pdf = 1.0 / opt.fake_strain_filter_duration
         fake_flow = opt.fake_strain_flow
+        fake_rate = opt.fake_strain_sample_rate
         plen = int(opt.sample_rate / pdf) // 2 + 1
 
         if opt.fake_strain_from_file:
@@ -254,8 +255,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
-            strain = TimeSeries(pycbc.types.zeros(duration * 16384),
-                                delta_t=1. / 16384,
+            strain = TimeSeries(pycbc.types.zeros(duration * fake_rate),
+                                delta_t=1.0 / fake_rate,
                                 epoch=opt.gps_start_time)
         else:
             logging.info("Making colored noise")
@@ -264,7 +265,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                    opt.gps_start_time - opt.pad_data,
                                    opt.gps_end_time + opt.pad_data,
                                    seed=opt.fake_strain_seed,
-                                   sample_rate=opt.fake_strain_sample_rate,
+                                   sample_rate=fake_rate,
                                    low_frequency_cutoff=fake_flow)
 
     if not opt.channel_name and (opt.injection_file \
@@ -500,7 +501,7 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--fake-strain-from-file",
                 help="File containing ASD for generating fake noise from it.")
     data_reading_group.add_argument("--fake-strain-flow",
-                default=1.0, type=float,
+                default=6.0, type=float,
                 help="Low frequency cutoff of the fake strain")
     data_reading_group.add_argument("--fake-strain-filter-duration",
                 default=128.0, type=float,

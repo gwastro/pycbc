@@ -86,7 +86,8 @@ def normal(start, end, sample_rate=16384, seed=0):
 
 def colored_noise(psd, start_time, end_time,
                   seed=0, sample_rate=16384,
-                  low_frequency_cutoff=1.0, filter_duration=128):
+                  low_frequency_cutoff=1.0,
+                  filter_duration=128):
     """ Create noise from a PSD
 
     Return noise from the chosen PSD. Note that if unique noise is desired
