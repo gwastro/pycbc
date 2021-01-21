@@ -27,7 +27,7 @@ from pycbc.types import TimeSeries, FrequencySeries, complex_same_precision_as
 from numpy.random import RandomState
 
 # This constant need to be constant to be able to recover identical results.
-BLOCK_SAMPLES = 2**21
+BLOCK_SAMPLES = 1638400
 
 def block(seed, sample_rate):
     """ Return block of normal random numbers
@@ -161,7 +161,7 @@ def colored_noise(psd, start_time, end_time,
 
     kmin = int(low_frequency_cutoff / psd.delta_f)
     psd[:kmin].clear()
-    asd = (psd.real())**0.5
+    asd = (psd.squared_norm())**0.25
     del psd
 
     white_noise = normal(start_time - filter_duration,
