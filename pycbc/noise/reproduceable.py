@@ -79,12 +79,12 @@ def normal(start, end, sample_rate=16384, seed=0):
         e -= 1
 
     sv = RandomState(seed).randint(-2**50, 2**50)
-    data = numpy.concatenate([block(i + sv, sample_rate) 
+    data = numpy.concatenate([block(i + sv, sample_rate)
                               for i in numpy.arange(s, e + 1, 1)])
     ts = TimeSeries(data, delta_t=1.0 / sample_rate, epoch=start)
     return ts.time_slice(start, end)
 
-def colored_noise(psd, start_time, end_time, sample_rate=16384, 
+def colored_noise(psd, start_time, end_time,
                   seed=0, sample_rate=16384, 
                   low_frequency_cutoff=1.0, filter_duration=128):
     """ Create noise from a PSD
@@ -175,7 +175,7 @@ def colored_noise(psd, start_time, end_time, sample_rate=16384,
     return colored.time_slice(start_time, end_time)
 
 def noise_from_string(psd_name, start_time, end_time,
-                      seed=0, 
+                      seed=0,
                       sample_rate=16384,
                       low_frequency_cutoff=1.0,
                       filter_duration=128,):
