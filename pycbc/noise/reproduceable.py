@@ -138,7 +138,8 @@ def colored_noise(psd, start_time, end_time,
         # inverse_spectrum_truncation truncates the inverted PSD. To truncate
         # the non-inverted PSD we give it the inverted PSD to truncate and then
         # invert the output.
-        psd = 1. / pycbc.psd.inverse_spectrum_truncation(1./psd,
+        psd = 1. / pycbc.psd.inverse_spectrum_truncation(
+                                1./psd,
                                 filter_duration * sample_rate,
                                 low_frequency_cutoff=low_frequency_cutoff,
                                 trunc_method='hann')
@@ -154,7 +155,8 @@ def colored_noise(psd, start_time, end_time,
         psd = psd.to_frequencyseries()
     else:
         psd = pycbc.psd.interpolate(psd, 1.0 / wn_dur)
-        psd = 1. / pycbc.psd.inverse_spectrum_truncation(1./psd,
+        psd = 1. / pycbc.psd.inverse_spectrum_truncation(
+                                1./psd,
                                 filter_duration * sample_rate,
                                 low_frequency_cutoff=low_frequency_cutoff,
                                 trunc_method='hann')
