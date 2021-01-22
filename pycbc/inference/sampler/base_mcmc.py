@@ -556,7 +556,7 @@ class BaseMCMC(object):
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
-        #Perform the sampler burn in tests:
+        # Perform the sampler burn in tests:
         if self.burn_in is not None:
             logging.info("Updating sampler burn in")
             self.burn_in.evaluate_sampler()

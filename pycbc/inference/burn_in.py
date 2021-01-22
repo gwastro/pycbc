@@ -236,57 +236,63 @@ def evaluate_tests(burn_in_test, test_is_burned_in, test_burn_in_iter):
         ii = NOT_BURNED_IN_ITER
     return is_burned_in, ii
 
-def chain_moments(sampler,estimate_len=200,sliding_len=10,percent_deviation=2):
-    """Estimates the evolution of the standard deviation (=sigma) for each 
+
+def chain_moments(sampler, estimate_len=200, sliding_len=10,
+                  percent_deviation=2):
+    """Estimates the evolution of the standard deviation (=sigma) for each
     parameter during the run. The standard deviation is estimated by flattening
     the portion of chain.
-    
-    Parameters                                                                   
-    ---------- 
+
+    Parameters
+    ----------
     sampler: Class
         Current state of the sampler class.
     estimate_len: int
         The length of the chain for estimation of standard deviation.
     sliding_len: int
         The length of sliding window for estimation of next sigma value.
-    
-    Returns                                                                      
-    ------- 
+
+    Returns
+    -------
     sigma_all_params: dict
         An array of sigma values of each of the parameter.
     burn_in_index: int
-        Index in the samples for burn in. If it is None, it means that it is 
+        Index in the samples for burn in. If it is None, it means that it is
         still not burned in.
     is_burned_in: bool
         It tells if the chain has burned in or not
     """
     sigma_all_params = {}
-    burnin=[]
+    burnin = []
     for p in sampler.model.sampling_params:
-        nw,nc = numpy.shape(sampler.samples[p])
+        chain_dim =len(numpy.shape(sampler.samples[p]))
+        if chain_dim == 3:
+            nt,nw,nc = numpy.shape(sampler.samples[p])
+        elif chain_dim == 2:
+            nw,nc = numpy.shape(sampler.samples[p])
         sigma=[]
         for item in range(int((nc-estimate_len)/sliding_len)):
-            effsamp = sampler.samples[p][:,item:(item+1)*estimate_len].flatten()
+            effsamp = 
+                sampler.samples[p][:, item:(item+1)*estimate_len].flatten()
             sigma.append(numpy.std(effsamp))
         sigma_all_params[p] = np.array(sigma)
-        sigma_rev=np.array(sigma[::-1]) # reverse the sigma array
+        sigma_rev = np.array(sigma[::-1])  # reverse the sigma array
 
         # Percentage deviation from last reported value
         sigma_diff = 100*(sigma_rev-sigma_rev[0])/sigma_rev[0]
-        overrun_indices = np.where(abs(sigma_diff)>percent_deviation)[0]
+        overrun_indices = numpy.where(abs(sigma_diff) > percent_deviation)[0]
         if len(overrun_indices) != 0:
             burnin.append(sliding_len*(len(sigma_rev)-overrun_indices.min()))
         elif len(overrun_indices) == 0:
             burn_in_iteration = 0
         else:
-            is_burned_in=False
-    
+            is_burned_in = False
+
     if len(burnin) != 0 and is_burned_in:
-        burn_in_iteration = 0 #!FIXME 
-        max(burnin)+estimate_len+sampler.iterations-nc
+        burn_in_iteration = max(burnin)+estimate_len+sampler.iterations-nc
     else:
         burn_in_iteration = NOT_BURNED_IN_ITER
-    return sigma_all_params,burn_in_iteration,is_burned_in
+    return sigma_all_params, burn_in_iteration, is_burned_in
 
 #
 # =============================================================================
@@ -304,7 +310,7 @@ class BaseBurnInTests(object):
                        'posterior_step', 'nacl',
                        )
     available_sampler_tests = ('chain_moments',
-                              )
+                               )
 
     # pylint: disable=unnecessary-pass
 
@@ -313,16 +319,16 @@ class BaseBurnInTests(object):
         # determine the burn-in tests that are going to be done
         all_tests=get_vars_from_arg(burn_in_test)
         self.do_tests = [x for x in all_tests if x in available_tests]
-        self.do_sampler_tests = [x for x in all_tests 
+        self.do_sampler_tests = [x for x in all_tests
                                 if x in available_sampler_tests]
         unrecognized_tests = (set(all_tests) - set(self.do_tests)) - \
-                              set(self.do_sampler_tests)
-        #Raise an error of the burn in test is not listed
+            set(self.do_sampler_tests)
+        # Raise an error of the burn in test is not listed
         if unrecognized_tests:
             raise ValueError("Following burn in test(s) not recognized: {}"
-                      "Chose from: {}".format(', '.join(unrecognized_tests), 
-                      ', '.join(list(self.available_tests)+
-                      list(self.available_sampler_tests))))
+                "Chose from: {}".format(', '.join(unrecognized_tests),
+                ', '.join(list(self.available_tests) +
+                list(self.available_sampler_tests))))
         self.burn_in_test = burn_in_test
         self.is_burned_in = False
         self.burn_in_iteration = NOT_BURNED_IN_ITER
@@ -479,18 +485,18 @@ class BaseBurnInTests(object):
 
     @abstractmethod
     def evaluate(self, filename):
-        """Performs all tests which are performed on checkpoint files and 
+        """Performs all tests which are performed on checkpoint files and
         evaluates the results to determine if and when all tests pass.
         """
         pass
 
-    def evaluate_sampler(self):                                                
-        """Performs all tests which are performed on sampler and evaluates 
-        the results to determine if and when all tests pass.                                                     
-        """                                                                      
-        for tst in self.do_sampler_tests:                                        
-            logging.info("Evaluating %s burn-in sampler test", tst)              
-            getattr(self, tst)() 
+    def evaluate_sampler(self):
+        """Performs all tests which are performed on sampler and evaluates
+        the results to determine if and when all tests pass.
+        """
+        for tst in self.do_sampler_tests:
+            logging.info("Evaluating %s burn-in sampler test", tst)
+            getattr(self, tst)()
 
     def write(self, fp, path=None):
         """Writes burn-in info to an open HDF file.
@@ -626,12 +632,12 @@ class MCMCBurnInTests(BaseBurnInTests):
     def chain_moments(self):
         """Applies estimate_sigma test"""
         test = 'chain_moments'
-        sigmas,burn_in_iter,is_burned_in = chain_moments(self.sampler)
+        sigmas, burn_in_iter, is_burned_in = chain_moments(self.sampler)
         #if test is not in self.test_is_burned_in and burn_in_iter==0:
-            
+
         self.test_is_burned_in[test] = is_burned_in
         self.test_aux_info[test] = sigmas
-        self.test_burn_in_iteration[test] = self._index2iter(filename,           
+        self.test_burn_in_iteration[test] = self._index2iter(filename,
                                                              burn_in_idx)
 
     def evaluate(self, filename):
@@ -654,7 +660,6 @@ class MCMCBurnInTests(BaseBurnInTests):
             self.burn_in_iteration[ci] = burn_in_iter
         logging.info("Number of chains burned in: %i of %i",
                      self.is_burned_in.sum(), self.nchains)
-
 
     def write(self, fp, path=None):
         """Writes burn-in info to an open HDF file.
@@ -717,9 +722,6 @@ class MultiTemperedMCMCBurnInTests(MCMCBurnInTests):
         ``posterior_step`` function.
         """
         return _multitemper_getlogposts(self.sampler, filename)
-
-    def chain_moments(self):                                                     
-        raise NotImplementedError("This Burn in test is not yet implemented")
 
 
 class EnsembleMCMCBurnInTests(BaseBurnInTests):
@@ -880,7 +882,7 @@ class EnsembleMultiTemperedMCMCBurnInTests(EnsembleMCMCBurnInTests):
         """
         return _multitemper_getlogposts(self.sampler, filename)
 
-    def chain_moments(self):                                                     
+    def chain_moments(self):
         raise NotImplementedError("This Burn in test is not yet implemented")
 
 
