@@ -37,13 +37,13 @@ import logging
 import requests
 import distutils.spawn
 import itertools
+import StringIO
 import six
 from six.moves import configparser as ConfigParser
 from six.moves.urllib.parse import urlparse
 from six.moves import http_cookiejar as cookielib
 from six.moves.http_cookiejar import (_warn_unhandled_exception,
                                       LoadError, Cookie)
-import glue.pipeline
 from bs4 import BeautifulSoup
 
 def _really_load(self, f, filename, ignore_discard, ignore_expires):
@@ -344,17 +344,32 @@ def add_workflow_command_line_group(parser):
                            "section.")
 
 
-class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
+class DeepCopyableConfigParser(ConfigParser.SafeConfigParser):
     """
-    This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
+    The standard SafeConfigParser no longer supports deepcopy() as of python
+    2.7 (see http://bugs.python.org/issue16058). This subclass restores that
+    functionality.
+    """
+    def __deepcopy__(self, memo):
+        # http://stackoverflow.com/questions/23416370
+        # /manually-building-a-deep-copy-of-a-configparser-in-python-2-7
+        config_string = StringIO.StringIO()
+        self.write(config_string)
+        config_string.seek(0)
+        new_config = self.__class__()
+        new_config.readfp(config_string)
+        return new_config
+
+class InterpolatingConfigParser(DeepCopyableConfigParser):
+    """
+    This is a sub-class of DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
     """
     def __init__(self, configFiles=None, overrideTuples=None,
                  parsedFilePath=None, deleteTuples=None, copy_to_cwd=False):
         """
-        Initialize an WorkflowConfigParser. This reads the input configuration
+        Initialize an InterpolatingConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
-        See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
 
         Parameters
         -----------
@@ -376,10 +391,10 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             If False, files will only be copied to the current working
             directory if they are remote. Default is False.
 
-        Returns
+       Returns
         --------
-        WorkflowConfigParser
-            Initialized WorkflowConfigParser instance.
+        InterpolatingConfigParser
+            Initialized InterpolatingConfigParser instance.
         """
         if configFiles is None:
             configFiles = []
@@ -387,7 +402,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             overrideTuples = []
         if deleteTuples is None:
             deleteTuples = []
-        glue.pipeline.DeepCopyableConfigParser.__init__(self)
+        DeepCopyableConfigParser.__init__(self)
 
         # Enable case sensitive options
         self.optionxform = str
@@ -396,9 +411,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                        for cFile in configFiles]
 
         self.read_ini_file(configFiles)
-
-        # Replace exe macros with full paths
-        self.perform_exe_expansion()
 
         # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
         self.split_multi_sections()
@@ -507,75 +519,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         """
         # Read the file
         self.read(cpFile)
-
-
-    def perform_exe_expansion(self):
-        """
-        This function will look through the executables section of the
-        ConfigParser object and replace any values using macros with full paths.
-
-        For any values that look like
-
-        ${which:lalapps_tmpltbank}
-
-        will be replaced with the equivalent of which(lalapps_tmpltbank)
-
-        Otherwise values will be unchanged.
-        """
-        # Only works on executables section
-        if self.has_section('executables'):
-            for option, value in self.items('executables'):
-                # Check the value
-                newStr = self.interpolate_exe(value)
-                if newStr != value:
-                    self.set('executables', option, newStr)
-
-    def interpolate_exe(self, testString):
-        """
-        Replace testString with a path to an executable based on the format.
-
-        If this looks like
-
-        ${which:lalapps_tmpltbank}
-
-        it will return the equivalent of which(lalapps_tmpltbank)
-
-        Otherwise it will return an unchanged string.
-
-        Parameters
-        -----------
-        testString : string
-            The input string
-
-        Returns
-        --------
-        newString : string
-            The output string.
-        """
-        # First check if any interpolation is needed and abort if not
-        testString = testString.strip()
-        if not (testString.startswith('${') and testString.endswith('}')):
-            return testString
-
-        # This may not be an exe interpolation, so even if it has ${ ... } form
-        # I may not have to do anything
-        newString = testString
-
-        # Strip the ${ and }
-        testString = testString[2:-1]
-
-        testList = testString.split(':')
-
-        # Maybe we can add a few different possibilities for substitution
-        if len(testList) == 2:
-            if testList[0] == 'which':
-                newString = distutils.spawn.find_executable(testList[1])
-                if not newString:
-                    errmsg = "Cannot find exe %s in your path " %(testList[1])
-                    errmsg += "and you specified ${which:%s}." %(testList[1])
-                    raise ValueError(errmsg)
-
-        return newString
 
     def resolve_urls(self):
         """
@@ -1060,6 +1003,119 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             return True
         except ConfigParser.Error:
             return False
+
+
+class WorkflowConfigParser(InterpolatingConfigParser):
+    """
+    This is a sub-class of InterpolatingConfigParser, which lets
+    us add a few additional helper features that are useful in workflows.
+    """
+    def __init__(self, configFiles=None, overrideTuples=None,
+                 parsedFilePath=None, deleteTuples=None, copy_to_cwd=False):
+        """
+        Initialize an WorkflowConfigParser. This reads the input configuration
+        files, overrides values if necessary and performs the interpolation.
+        See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
+
+        Parameters
+        -----------
+        configFiles : Path to .ini file, or list of paths
+            The file(s) to be read in and parsed.
+        overrideTuples : List of (section, option, value) tuples
+            Add the (section, option, value) triplets provided
+            in this list to the provided .ini file(s). If the section, option
+            pair is already present, it will be overwritten.
+        parsedFilePath : Path, optional (default=None)
+            If given, write the parsed .ini file back to disk at this location.
+        deleteTuples : List of (section, option) tuples
+            Delete the (section, option) pairs provided
+            in this list from provided .ini file(s). If the section only
+            is provided, the entire section will be deleted.
+        copy_to_cwd : bool, optional
+            Copy the configuration files to the current working directory if
+            they are not already there, even if they already exist locally.
+            If False, files will only be copied to the current working
+            directory if they are remote. Default is False.
+
+        Returns
+        --------
+        WorkflowConfigParser
+            Initialized WorkflowConfigParser instance.
+        """
+        super(WorkflowConfigParser, self).__init__(configFiles,
+                                                   overrideTuples,
+                                                   parsedFilePath,
+                                                   deleteTuples,
+                                                   copy_to_cwd)
+        self.perform_exe_expansion()
+
+    def perform_exe_expansion(self):
+        """
+        This function will look through the executables section of the
+        ConfigParser object and replace any values using macros with full paths.
+
+        For any values that look like
+
+        ${which:lalapps_tmpltbank}
+
+        will be replaced with the equivalent of which(lalapps_tmpltbank)
+
+        Otherwise values will be unchanged.
+        """
+        # Only works on executables section
+        if self.has_section('executables'):
+            for option, value in self.items('executables'):
+                # Check the value
+                newStr = self.interpolate_exe(value)
+                if newStr != value:
+                    self.set('executables', option, newStr)
+
+    def interpolate_exe(self, testString):
+        """
+        Replace testString with a path to an executable based on the format.
+
+        If this looks like
+
+        ${which:lalapps_tmpltbank}
+
+        it will return the equivalent of which(lalapps_tmpltbank)
+
+        Otherwise it will return an unchanged string.
+
+        Parameters
+        -----------
+        testString : string
+            The input string
+
+        Returns
+        --------
+        newString : string
+            The output string.
+        """
+        # First check if any interpolation is needed and abort if not
+        testString = testString.strip()
+        if not (testString.startswith('${') and testString.endswith('}')):
+            return testString
+
+        # This may not be an exe interpolation, so even if it has ${ ... } form
+        # I may not have to do anything
+        newString = testString
+
+        # Strip the ${ and }
+        testString = testString[2:-1]
+
+        testList = testString.split(':')
+
+        # Maybe we can add a few different possibilities for substitution
+        if len(testList) == 2:
+            if testList[0] == 'which':
+                newString = distutils.spawn.find_executable(testList[1])
+                if not newString:
+                    errmsg = "Cannot find exe %s in your path " %(testList[1])
+                    errmsg += "and you specified ${which:%s}." %(testList[1])
+                    raise ValueError(errmsg)
+
+        return newString
 
     def section_to_cli(self, section, skip_opts=None):
         """Converts a section into a command-line string.
