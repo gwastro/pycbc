@@ -27,9 +27,9 @@ This module is described in the page here:
 """
 import os
 import re
-import StringIO
 import itertools
 import logging
+from six.moves import StringIO
 from six.moves import configparser as ConfigParser
 
 class DeepCopyableConfigParser(ConfigParser.SafeConfigParser):
