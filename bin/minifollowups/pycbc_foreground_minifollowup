@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/home/ian.harry/virtualenvs/pycbc_python3/bin/python3
 # Copyright (C) 2015 Alexander Harvey Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
     fil.ifo = ifo
     path = os.path.abspath(path)
-    fil.PFN(path, 'local')
+    fil.add_pfn(path, 'local')
     return fil
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
