@@ -696,7 +696,7 @@ class Workflow(pegasus_workflow.Workflow):
         # vary for different sub-workflows, but this could be changed if that
         # was ever needed.
         workflow_section = 'workflow'
-        if self.cp.has_option('workflow', 'staging-site'):
+        if self.cp.has_option(workflow_section, 'staging-site'):
             staging_site = self.cp.get(workflow_section,'staging-site')
         else:
             staging_site = None
@@ -775,6 +775,7 @@ class Workflow(pegasus_workflow.Workflow):
         # access to a file in os.getcwd() but this code is fragile.
         job.add_args('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache'))
 
+        print ("Staging site is", staging_site)
         if staging_site:
             job.add_args('--staging-site %s' % staging_site)
 
