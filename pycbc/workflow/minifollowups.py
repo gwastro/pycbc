@@ -896,6 +896,6 @@ def create_noop_node():
     """
     exe = wdax.Executable('NOOP')
     pfn = distutils.spawn.find_executable('true')
-    exe.add_pfn(pfn)
-    node = wdax.Node(exe)
+    tform = exe.create_transformation('local', url=pfn)
+    node = wdax.Node(tform)
     return node
