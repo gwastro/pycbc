@@ -204,7 +204,8 @@ class Node(ProfileShortcuts):
         """
         self._outputs += [out]
         out.node = self
-        self._dax_node.add_outputs(out)
+        stage_out = out.storage_path is not None 
+        self._dax_node.add_outputs(out, stage_out=stage_out)
 
     # public functions to add options, arguments with or without data sources
     def add_input_opt(self, opt, inp):
@@ -279,11 +280,13 @@ class Node(ProfileShortcuts):
                 self._dax_node.addProfile(entry)
 
     def _finalize(self):
-        args = self._args + self._options
-        self._dax_node.add_args(*args)
         if len(self._raw_options):
-            raw_args = [' '] + self._raw_options
-            self._dax_node.add_args(*raw_args)
+            raw_args = [''.join([str(a) for a in self._raw_options])]
+            print (raw_args)
+        else:
+            raw_args = []
+        args = self._args + raw_args + self._options
+        self._dax_node.add_args(*args)
 
 class Workflow(object):
     """
@@ -417,7 +420,7 @@ class Workflow(object):
             else:
                 #node.executable.in_workflow = True
                 self._transformations += [node.transformation]
-                if node.executable.container is not None and node.executable.container not in self._containers:
+                if hasattr(node, 'executable') and node.executable.container is not None and node.executable.container not in self._containers:
                     self._containers.append(node.executable.container)
 
         # Add the node itself
@@ -462,9 +465,14 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, tc_path):
+    def save(self, filename=None, transformation_catalog_path=None):
         """ Write this workflow to DAX file
         """
+        if filename is None: 
+            filename = self.filename
+        if transformation_catalog_path is None:
+            transformation_catalog_path = self.transformation_catalog
+
         for sub in self.sub_workflows:
             sub.save()
             sub.transformation_catalog_file.insert_into_dax(self._rc)
@@ -478,8 +486,8 @@ class Workflow(object):
         # FIXME: Cannot add TC into workflow
         #self._adag.add_transformation_catalog(self._tc)
 
-        self._adag.write(self.filename)
-        self._tc.write(tc_path)
+        self._adag.write(filename)
+        self._tc.write(transformation_catalog_path)
 
 
 class DataStorage(object):

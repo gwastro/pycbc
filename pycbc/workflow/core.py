@@ -688,13 +688,17 @@ class Workflow(pegasus_workflow.Workflow):
 
     @property
     def staging_site(self):
-        if self.in_workflow is not False:
-            workflow_section = 'workflow-%s' % self.name
-        else:
-            workflow_section = 'workflow'
-        try:
+        # FIXME: If using a default 'condorpool' site, this would always need
+        #        to be set for that site.
+
+        # Staging site value is currently shared across the entire workflow
+        # including sub-workflows. I'm not sure why we'd ever want this to
+        # vary for different sub-workflows, but this could be changed if that
+        # was ever needed.
+        workflow_section = 'workflow'
+        if self.cp.has_option('workflow', 'staging-site'):
             staging_site = self.cp.get(workflow_section,'staging-site')
-        except:
+        else:
             staging_site = None
         return staging_site
 
@@ -734,8 +738,8 @@ class Workflow(pegasus_workflow.Workflow):
 
         for fil in node._outputs:
             fil.node = None
-            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
-                    site='local')
+            fil.add_pfn(urljoin('file:', pathname2url(fil.storage_path)),
+                        site='local')
 
     @staticmethod
     def set_job_properties(job, output_map_file,
@@ -776,7 +780,6 @@ class Workflow(pegasus_workflow.Workflow):
 
     def save(self, filename=None, output_map_path=None,
              transformation_catalog_path=None,
-             replica_catalog_path=None,
              staging_site=None):
 
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
@@ -828,7 +831,10 @@ class Workflow(pegasus_workflow.Workflow):
         fp.close()
 
         # save the dax file
-        super(Workflow, self).save(transformation_catalog_path)
+        super(Workflow, self).save(
+            filename=filename,
+            transformation_catalog_path=transformation_catalog_path
+        )
 
         # FIXME: This belongs in pegasus_workflow.py
         # add workflow storage locations to the output mapper
@@ -865,7 +871,7 @@ class Workflow(pegasus_workflow.Workflow):
         ini_file = File(self.ifos, "", self.analysis_time,
                         file_url="file://" + ini_file_path)
         # set the physical file name
-        ini_file.PFN(ini_file_path, "local")
+        ini_file.add_pfn(ini_file_path, "local")
         # set the storage path to be the same
         ini_file.storage_path = ini_file_path
         return FileList([ini_file])
@@ -1795,8 +1801,8 @@ class SegFile(File):
         if not file_exists:
             instnc.to_segment_xml()
         else:
-            instnc.PFN(urljoin('file:', pathname2url(instnc.storage_path)),
-                       site='local')
+            instnc.add_pfn(urljoin('file:', pathname2url(instnc.storage_path)),
+                           site='local')
         return instnc
 
     @classmethod
