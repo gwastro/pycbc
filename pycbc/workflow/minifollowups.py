@@ -122,9 +122,9 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     fil = node.output_files[0]
 
     # determine if a staging site has been specified
+    # FIXME: Avoid duplication with this and what's in Workflow.save
     try:
-        staging_site = workflow.cp.get('workflow-foreground_minifollowups',
-                                       'staging-site')
+        staging_site = workflow.cp.get('workflow', 'staging-site')
     except:
         staging_site = None
 
