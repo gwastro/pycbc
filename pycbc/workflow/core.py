@@ -1197,6 +1197,7 @@ class File(pegasus_workflow.File):
         safe_dict['cache_entry'] = None
         return safe_dict
 
+    # FIXME: This is a pegasus_workflow thing
     def add_metadata(self, key, value):
         """ Add arbitrary metadata to this file """
         self.metadata[key] = value
