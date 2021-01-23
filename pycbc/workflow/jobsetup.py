@@ -676,7 +676,8 @@ class PyCBCInspiralExecutable(Executable):
         # set the input and output files
         fil = node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,
                          store_file=self.retain_files, use_tmp_subdirs=True)
-        fil.add_metadata('data_seg', data_seg)
+        # Must ensure this is not a LIGOGPS as JSON won't understand it
+        fil.add_metadata('data_seg', [int(a) for a in data_seg])
         node.add_input_opt('--bank-file', parent)
         if dfParents is not None:
             node.add_input_list_opt('--frame-files', dfParents)

@@ -123,6 +123,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     # determine if a staging site has been specified
     # FIXME: Avoid duplication with this and what's in Workflow.save
+    # FIXME: And avoid duplicating this over the 3 MF jobs
     try:
         staging_site = workflow.cp.get('workflow', 'staging-site')
     except:
@@ -240,8 +241,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
 
     # determine if a staging site has been specified
     try:
-        staging_site = workflow.cp.get('workflow-sngl_minifollowups',
-                                       'staging-site')
+        staging_site = workflow.cp.get('workflow', 'staging-site')
     except:
         staging_site = None
 
@@ -340,8 +340,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
     # determine if a staging site has been specified
     try:
-        staging_site = workflow.cp.get('workflow-injection_minifollowups',
-                                       'staging-site')
+        staging_site = workflow.cp.get('workflow', 'staging-site')
     except:
         staging_site = None
 
