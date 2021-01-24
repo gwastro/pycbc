@@ -132,7 +132,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     # FIXME: This should really be done in pegasus_workflow!
     job = dax.SubWorkflow(fil, is_planned=False)
     input_files = [tmpltbank_file, coinc_file, insp_segs] + single_triggers
-    job.add_inputs(input_files)
+    job.add_inputs(*input_files)
     job.add_args('--basename %s'
                  % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_file, tc_file,
@@ -256,7 +256,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         input_files.append(veto_file)
     if statfiles:
         input_files += statfiles
-    job.add_inputs(input_files)
+    job.add_inputs(*input_files)
     job.add_args('--basename %s'
                  % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_file, tc_file,
@@ -356,9 +356,9 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
     # FIXME: This should really be done in pegasus_workflow!
     job = dax.SubWorkflow(fil, is_planned=False)
-    input_files = [tmpltbank_file, injection_file, inj_xml_file, coinc_file]
-    input_files += [insp_segs] + single_triggers
-    job.add_inputs(input_files)
+    input_files = [tmpltbank_file, injection_file, inj_xml_file, insp_segs]
+    input_files += single_triggers
+    job.add_inputs(*input_files)
 
     job.add_args('--basename %s'
                  % os.path.splitext(os.path.basename(name))[0])
