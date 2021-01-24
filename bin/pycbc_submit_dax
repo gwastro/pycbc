@@ -446,10 +446,12 @@ fi
 
 
 if [ $CACHE_FILE == 0 ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID
+  CACHE_OPTION=''
 else
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID
+  CACHE_OPTION='--cache _reuse.cache'
 fi
+
+pegasus-plan --conf ./pegasus-properties.conf --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace ${CACHE_OPTION} --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID $DAX_FILE
 
 echo
 
@@ -508,7 +510,7 @@ chmod 755 start
 # Copy planning information into workflow directory so it can be displayed on the results page
 cp pegasus-properties.conf workflow/planning
 cp site-catalog.xml workflow/planning
-cp $SUBMIT_DIR/work/braindump.txt workflow/planning
+cp $SUBMIT_DIR/work/braindump.yml workflow/planning
 
 mkdir -p workflow/input_map
 cp _reuse.cache workflow/input_map/reuse.cache
