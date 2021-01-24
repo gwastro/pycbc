@@ -113,6 +113,8 @@ if args.wiki_file:
     add_wiki_row(wiki_file, ['GPS time', 'UTC time', 'newSNR', 'SNR',
                       'm1', 'm2', 's1', 's2', 'duration', 'omega', 'notes',
                       'veto'])
+else:
+    wiki_file = None
 
 # create a FileList that will contain all output files
 layouts = []
