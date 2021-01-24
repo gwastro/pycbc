@@ -31,11 +31,16 @@ import pycbc.events
 from pycbc.events import stat
 from pycbc.io import hdf
 
-def to_file(path, ifo=None):
+#FIXME: Move to workflow module and default to False
+def to_file(path, ifo=None, is_sub_workflow=True):
     fil = wdax.File(os.path.basename(path))
     fil.ifo = ifo
-    path = os.path.abspath(path)
-    fil.add_pfn(path, 'local')
+    # If this is a sub-workflow, pegasus will handle getting the input files
+    # to the job. If it is *not* a sub-workflow, we need to know where to get
+    # the inputs from!
+    if not is_sub_workflow:
+        path = os.path.abspath(path)
+        fil.add_pfn(path, 'local')
     return fil
 
 def add_wiki_row(outfile, cols):

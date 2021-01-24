@@ -28,12 +28,18 @@ import pycbc.version, pycbc.pnutils
 from pycbc.io.hdf import SingleDetTriggers
 
 
-def to_file(path, ifo=None):
+# FIXME: Move yo workflow
+def to_file(path, ifo=None, is_sub_workflow=True):
     fil = wdax.File(os.path.basename(path))
     fil.ifo = ifo
-    path = os.path.abspath(path)
-    fil.add_pfn(path, 'local')
+    # If this is a sub-workflow, pegasus will handle getting the input files
+    # to the job. If it is *not* a sub-workflow, we need to know where to get
+    # the inputs from!
+    if not is_sub_workflow:
+        path = os.path.abspath(path)
+        fil.add_pfn(path, 'local')
     return fil
+
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
