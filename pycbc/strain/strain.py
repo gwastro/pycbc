@@ -93,7 +93,12 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
         Save intermediate time series for debugging.
     """
     # don't waste time trying to optimize a single FFT
-    pycbc.fft.fftw.set_measure_level(0)
+    try:
+        pycbc.fft.fftw.set_measure_level(0)
+    except AttributeError:
+        # No FFTW, then we'd be using MKL instead
+        pass
+
 
     if high_freq_cutoff:
         strain = resample_to_delta_t(strain, 0.5 / high_freq_cutoff,
@@ -171,7 +176,11 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     times = [idx * strain.delta_t + strain.start_time \
              for idx in indices[cluster_idx]]
 
-    pycbc.fft.fftw.set_measure_level(pycbc.fft.fftw._default_measurelvl)
+    try:
+        pycbc.fft.fftw.set_measure_level(pycbc.fft.fftw._default_measurelvl)
+    except AttributeError:
+        # Again, no FFTW, so would have been using MKL
+        pass
 
     return times
 
