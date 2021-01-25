@@ -381,8 +381,8 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         """
         configFiles = [resolve_url(cFile, copy_to_cwd=copy_to_cwd)
                for cFile in configFiles]
-        
-        super(WorkflowConfigParser, self).__init__(configFiles,
+
+        InterpolatingConfigParser.__init__(self, configFiles,
                                                    overrideTuples,
                                                    parsedFilePath,
                                                    deleteTuples,
@@ -523,7 +523,7 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         parser.add_argument(name, **kwds)
         args, _ = parser.parse_known_args(optstr.split())
         return getattr(args, option_name)
-        
+
     def resolve_urls(self):
         """
         This function will look through all sections of the
