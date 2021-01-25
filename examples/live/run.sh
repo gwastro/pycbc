@@ -89,6 +89,18 @@ else
 fi
 
 
+# make phase-time-amplitude histogram files, if needed
+
+if [[ ! -f statHL.hdf ]]
+then
+    echo -e "\\n\\n>> [`date`] Making phase-time-amplitude files"
+
+    bash ../search/stats.sh
+else
+    echo -e "\\n\\n>> [`date`] Pre-existing phase-time-amplitude files found"
+fi
+
+
 # delete old outputs if they exist
 rm -rf ./output
 
@@ -151,8 +163,9 @@ python -m mpi4py `which pycbc_live` \
 --max-batch-size 16777216 \
 --output-path output \
 --day-hour-output-prefix \
---ranking-statistic quadsum \
 --sngl-ranking newsnr_sgveto \
+--ranking-statistic phasetd \
+--statistic-files statHL.hdf statHV.hdf statLV.hdf \
 --sgchisq-snr-threshold 4 \
 --sgchisq-locations "mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120" \
 --enable-background-estimation \
