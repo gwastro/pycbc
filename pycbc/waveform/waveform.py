@@ -852,6 +852,22 @@ def imrphenomhm_length_in_time(**kwargs):
     kwargs['f_lower'] = flow * 2./maxm
     return get_imr_length("IMRPhenomD", **kwargs)
 
+def seobnrv4hm_length_in_time(**kwargs):
+    """ Estimates the duration of SEOBNRv4HM waveforms that include higher modes.
+    """
+    if 'mode_array' in kwargs and kwargs['mode_array'] is not None:
+        maxm = max(m for _, m in kwargs['mode_array'])
+    else:
+        # the highest m for all of these is 4 (from the 4,4 mode)
+        maxm = 5
+    # we'll use the SEOBNRv4 length, with the frequency scaled by 2/m
+    try:
+        flow = kwargs['f_lower']
+    except KeyError:
+        raise ValueError("must provide a f_lower")
+    kwargs['f_lower'] = flow * 2./maxm
+    return get_imr_length("SEOBNRv4", **kwargs)
+
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
 
@@ -877,7 +893,7 @@ _filter_time_lengths["EOBNRv2_ROM"] = seobnrv2_length_in_time
 _filter_time_lengths["EOBNRv2HM_ROM"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv4_ROM"] = seobnrv4_length_in_time
-_filter_time_lengths["SEOBNRv4HM_ROM"] = seobnrv4_length_in_time
+_filter_time_lengths["SEOBNRv4HM_ROM"] = seobnrv4hm_length_in_time
 _filter_time_lengths["SEOBNRv4"] = seobnrv4_length_in_time
 _filter_time_lengths["IMRPhenomC"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
