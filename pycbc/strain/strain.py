@@ -99,7 +99,6 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
         # No FFTW, then we'd be using MKL instead
         pass
 
-
     if high_freq_cutoff:
         strain = resample_to_delta_t(strain, 0.5 / high_freq_cutoff,
                                      method='ldas')
