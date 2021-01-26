@@ -50,7 +50,7 @@ class TestDetector(unittest.TestCase):
     def test_light_time(self):
         for d1 in self.d:
             for d2 in self.d:
-                t1 = lal.LightTravelTime(d1.frDetector, d2.frDetector) * 1e-9
+                t1 = lal.LightTravelTime(d1.lal(), d2.lal()) * 1e-9
                 t2 = d1.light_travel_time_to_detector(d2)
                 self.assertAlmostEqual(t1, t2, 7)
 

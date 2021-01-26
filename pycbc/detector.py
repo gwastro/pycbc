@@ -206,9 +206,8 @@ class Detector(object):
             raise RuntimeError("Can't get accurate sidereal time without GPS "
                                "reference time!")
 
-    def to_lal(self):
+    def lal(self):
         """ Return lal data type detector instance """
-        print("HI")
         if hasattr(self, '_frDetector'):
             return self._frDetector
         else:
@@ -439,7 +438,7 @@ class Detector(object):
             import lalsimulation
             h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
                     hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
-                    ra, dec, polarization, self.to_lal())
+                    ra, dec, polarization, self.lal())
             ts = TimeSeries(
                     h_lal.data.data, delta_t=h_lal.deltaT, epoch=h_lal.epoch,
                     dtype=np.float64, copy=False)
