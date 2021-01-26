@@ -69,19 +69,22 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         help="verbose output")
 
     parser.add_argument("-t", "--trig-file", action="store",
-                        default=None, required=True,
+                        default=None, #required=True,
                         help="The location of the trigger file")
 
     parser.add_argument("-I", "--inj-file", action="store", default=None,
                         help="The location of the injection file")
 
     # pygrb_efficiency only options: start here
-    # Does this differ from trig-file?
+    # Does this differ from trig-file? --> it doesn't contain the onsource.
+    # NB: for now removed the requirement to specify trig_file.
+    # instead added a requirement at the end of the parser function
+    # to specify either offsource-file or trig-file.
     parser.add_argument("-F", "--offsource-file", action="store",
                         default=None, help="The location of the trigger file")
 
-    # How does this differ from offsource-file and trig-file?
-    parser.add_argument("-O", "--onsource-file", action="store",
+    # How does this differ from offsource-file and trig-file? --> only contains onsource.
+    parser.add_argument("--onsource-file", action="store",
                         default=None, help="The location of the trigger file")
 
     parser.add_argument("-f", "--found-file", action="store",
@@ -97,8 +100,15 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         required=True, help="directory holding buffer, on " +
                         "and off source segment files.")
 
-    parser.add_argument("-o", "--output-file", default=None, required=True,
+
+    parser.add_argument("-o", "--output-file", default=None, #required=True,
                         help="Output file.")
+    # pygrb_efficiency only options: start here
+    # FIXME: eventually remove below argument and require output-file
+    # be specified. 
+    parser.add_argument("--output-path", default=os.getcwd(), 
+                        help="Output path for plots")
+    # pygrb_efficiency only options: end here
 
     parser.add_argument("-O", "--zoomed-output-file", default=None,
                         required=False, help="Output file for a zoomed in " +
@@ -160,80 +170,85 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         "or overwhitened (for null statistics plots)")
 
     # pygrb_efficiency options: start here
-    parser.add_argument("-s", "--segment-length", action="store", type="float",
+    parser.add_argument("-s", "--segment-length", action="store", type=float,
                         default=None, help="The length of analysis segments.")
 
-    parser.add_argument("-e", "--pad-data", action="store", type="float",
+    parser.add_argument("-e", "--pad-data", action="store", type=float,
                         default=None,
                         help="The length of padding around analysis chunk.")
 
     parser.add_argument("-g", "--glitch-check-factor", action="store",
-                        type="float",default=1.0, help="When deciding " +
+                        type=float,default=1.0, help="When deciding " +
                         "exclusion efficiencies this value is multiplied " +
                         "to the offsource around the injection trigger to " +
                         "determine if it is just a loud glitch. " +
                         "default: %default")
 
-    parser.add_argument("-C", "--cluster-window", action="store", type="float",
+    parser.add_argument("-C", "--cluster-window", action="store", type=float,
                         default=0.1,help="The cluster window used " +
                         "to cluster triggers in time. default: %default")
 
     parser.add_argument("-U", "--upper-inj-dist", action="store",
-                        type="float",default=1000,help="The upper distance " +
+                        type=float,default=1000,help="The upper distance " +
                         "of the injections, if used. default: %default")
 
     parser.add_argument("-L", "--lower-inj-dist", action="store",
-                        type="float",default=0,help="The lower distance of " +
+                        type=float,default=0,help="The lower distance of " +
                         "the injections, if used. default: %default")
 
-    parser.add_argument("-n", "--num-bins", action="store", type="int",
+    parser.add_argument("-n", "--num-bins", action="store", type=int,
                         default=0,help="The number of bins used to " +
                         "calculate injection efficiency. default: %default")
 
     parser.add_argument("-M", "--num-mc-injections", action="store",
-                        type="int", default=100, help="Number of Monte " +
+                        type=int, default=100, help="Number of Monte " +
                         "Carlo injection simulations to perform, " +
                         "default: %default")
 
     parser.add_argument("-w", "--waveform-error", action="store",
-                        type="float", default=0, help="The standard " +
+                        type=float, default=0, help="The standard " +
                         "deviation to use when calculating the waveform error.")
 
-    parser.add_argument("-y", "--h1-cal-error", action="store", type="float",
+    parser.add_argument("-y", "--h1-cal-error", action="store", type=float,
                         default=0, help="The standard deviation to use when " +
                         "calculating the H1 calibration amplitude error.")
 
-    parser.add_argument("-Y", "--k1-cal-error", action="store", type="float",
+    parser.add_argument("-Y", "--k1-cal-error", action="store", type=float,
                         default=0, help="The standard deviation to use when " +
                         "calculating the K1 calibration amplitude error.")
 
-    parser.add_argument("-z", "--l1-cal-error", action="store", type="float",
+    parser.add_argument("-z", "--l1-cal-error", action="store", type=float,
                         default=0, help="The standard deviation to use when " +
                         "calculating the L1 calibration amplitude error.")
 
-    parser.add_argument("-Z", "--v1-cal-error", action="store", type="float",
+    parser.add_argument("-Z", "--v1-cal-error", action="store", type=float,
                         default=0, help="The standard deviation to use when " +
                         "calculating the V1 calibration amplitude error.")
 
     parser.add_argument("-p", "--h1-dc-cal-error", action="store",
-                        type="float", default=1.0, help="The scaling factor " +
+                        type=float, default=1.0, help="The scaling factor " +
                         "to use when calculating the H1 calibration " +
                         "amplitude error.")
 
     parser.add_argument("-P", "--k1-dc-cal-error", action="store",
-                        type="float", default=1.0, help="The scaling factor " +
+                        type=float, default=1.0, help="The scaling factor " +
                         "to use when calculating the K1 calibration " +
                         "amplitude error.")
 
     parser.add_argument("-r", "--l1-dc-cal-error", action="store",
-                        type="float", default=1.0, help="The scaling factor " +
+                        type=float, default=1.0, help="The scaling factor " +
                         "to use when calculating the L1 calibration " +
                         "amplitude error.")
 
     parser.add_argument("-R", "--v1-dc-cal-error", action="store",
-                        type="float", default=1.0, help="The scaling factor " +
+                        type=float, default=1.0, help="The scaling factor " +
                         "to use when calculating the V1 calibration " +
                         "amplitude error.")
+    # TODO: Deprecated option: remove all over and then here
+    parser.add_argument("--mass-bins", type=str, default="0-3.48,3.48-6,6-20",\
+                    help="comma separated list of dash-separated pairs "\
+                            "of m_low-m_high mass bins, default: %default")
+
     # pygrb_efficiency only options end here
 
     parser.add_argument('--plot-title',
@@ -241,8 +256,12 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
 
     parser.add_argument('--plot-caption',
                         help="If given, use this as the plot caption")
+    
+    args = parser.parse_args()
+    if not (args.trig_file or args.offsource_file):
+        parser.error('Must specify either trig-file or offsource-file.')
 
-    return parser.parse_args()
+    return args
 
 
 # =============================================================================
@@ -616,19 +635,19 @@ def load_time_slides(xml_file):
     time_slide = load_xml_table(xml_file, lsctables.TimeSlideTable.tableName)
     time_slide_unsorted = [dict(i) for i in time_slide.as_dict().values()]
     # NB: sorting not necessary if using python 3
-    sort_idx = np.argsort(np.array([
+    sort_idx = numpy.argsort(numpy.array([
             int(time_slide.get_time_slide_id(ov)) for ov in time_slide_unsorted
     ]))
-    time_slide_list = np.array(time_slide_unsorted)[sort_idx]
+    time_slide_list = numpy.array(time_slide_unsorted)[sort_idx]
     # Check time_slide_ids are ordered correctly. 
     ids = get_id_numbers(time_slide, "time_slide_id")[::len(time_slide_list[0].keys())]
-    if not (np.all(ids[1:] == np.array(ids[:-1])+1) and ids[0]==0):
+    if not (numpy.all(ids[1:] == numpy.array(ids[:-1])+1) and ids[0]==0):
         err_msg = "time_slide_ids list should start at zero and increase by "
         err_msg += "one for every element"
         logging.err(err_msg)
         sys.exit()
     # Check that the zero-lag slide has time_slide_id == 0.
-    if not np.all(np.array(list(time_slide_list[0].values())) == 0):
+    if not numpy.all(numpy.array(list(time_slide_list[0].values())) == 0):
         err_msg = "The zero-lag slide should have time_slide_id == 0 "
         err_msg += "but the first element of time_slide_list is "
         err_msg += "%s \n" % time_slide_list[0]
@@ -652,8 +671,8 @@ def load_segment_dict(xml_file):
             for entry in time_slide_map_table
     }
     # Extract the segment table
-    segment_table = table.get_table(
-        xmldoc,lsctables.SegmentTable.tableName
+    segment_table = load_xml_table(
+        xml_file,lsctables.SegmentTable.tableName
         )
     segmentDict = {}
     for entry in segment_table:
