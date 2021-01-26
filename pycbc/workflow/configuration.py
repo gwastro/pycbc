@@ -379,7 +379,8 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         WorkflowConfigParser
             Initialized WorkflowConfigParser instance.
         """
-        configFiles = [resolve_url(cFile, copy_to_cwd=copy_to_cwd)
+        if configFiles is not None:
+            configFiles = [resolve_url(cFile, copy_to_cwd=copy_to_cwd)
                for cFile in configFiles]
 
         InterpolatingConfigParser.__init__(self, configFiles,
