@@ -29,7 +29,7 @@ import copy
 import logging
 from glue.ligolw import lsctables
 import pycbc.version
-from pycbc.results.pygrb_postprocessing_utils import extract_vetoes, extract_ifos, load_xml_file, load_xml_table
+from pycbc.results.pygrb_postprocessing_utils import extract_vetoes, extract_ifos, load_xml_file, load_xml_table, load_segment_dict, load_time_slides, load_triggers, pygrb_plot_opts_parser
 ## check if the following are needed 
 import matplotlib,re,optparse
 import numpy as np
@@ -63,10 +63,10 @@ usage = __program__ + ' [--options]'
 opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
 
 # TODO: Deprecated options: remove all over and then here
-#sigopts.add_option("-M", "--mass-bins", action="store", type="string",\
-#                                      default="0-3.48,3.48-6,6-20",\
-#                                      help="comma separated list of dash-separated pairs "\
-#                                                "of m_low-m_high mass bins, default: %default")
+# NB: mass-bins is currently coded in pygrb_postprocessing_utils too. Remove later.
+# opts.add_argument("--mass-bins", type=str, default="0-3.48,3.48-6,6-20",\
+#                     help="comma separated list of dash-separated pairs "\
+#                             "of m_low-m_high mass bins, default: %default")
 #calopts.add_option("-q", "--h2-cal-error", action="store",\
 #                                      type="float", default=0,
 #                                      help="The standard deviation to use when calculating the "\
@@ -98,12 +98,12 @@ if opts.veto_directory and (opts.veto_category == None):
     
 if (opts.found_file == None) and (opts.missed_file == None):
     opts.do_injections = False
-    elif (opts.found_file) and opts.missed_file:
-        # TODO: do we need this option?! Should be enough to (not) provide inj_file
-        opts.do_injections = True
-    else:
-        err_msg = "Must provide both found and missed file if running injections."
-        logging.error(err_msg)
+elif (opts.found_file) and opts.missed_file:
+    # TODO: do we need this option?! Should be enough to (not) provide inj_file
+    opts.do_injections = True
+else:
+    err_msg = "Must provide both found and missed file if running injections."
+    logging.error(err_msg)
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
@@ -126,12 +126,12 @@ cal_dc_errs['H1'] = opts.h1_dc_cal_error
 cal_dc_errs['K1'] = opts.k1_dc_cal_error
 cal_dc_errs['L1'] = opts.l1_dc_cal_error
 cal_dc_errs['V1'] = opts.v1_dc_cal_error
-#nullt        = map(float, opts.null_snr_threshold.split(','))
 snr_thresh = opts.snr_threshold
 sngl_snr_thresh = opts.sngl_snr_threshold
 new_snr_thresh = opts.newsnr_threshold
 null_grad_thresh = opts.null_grad_thresh
 null_grad_val    = opts.null_grad_val
+null_thresh        = map(float, opts.null_snr_threshold.split(','))
 upper_dist = opts.upper_inj_dist
 lower_dist = opts.lower_inj_dist
 num_bins = opts.num_bins
@@ -159,23 +159,22 @@ if not os.path.isdir(outdir):
 # Extract IFOs
 # FIXME: This is nasty, we actually read the file twice, can we fix this?
 # In general we may be opening re-reading things (segments too?).
+logging.info("Extracting ifos") 
 ifos = extract_ifos(trig_file)
 # This is in PygrbFilterOutput
 ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t'}
 
 # Extract vetoes
+logging.info("Extracting vetoes")
 vetoes = extract_vetoes(veto_files, ifos)
 
 # Load triggers, time-slides, and segment dictionary
-#trigs = load_triggers(trig_file, vetoes, ifos)
-# import MultiInspiralUtils
-# import pdb
-# pdb.set_trace()
-# trigs, slide_dict, segment_dict = \
-#     MultiInspiralUtils.ReadMultiInspiralTimeSlidesFromFiles([trig_file])
+logging.info("Loading triggers")
 trigs = load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
 #trigs = load_xml_table(trig_file, "multi_inspiral")
+logging.info("Loading timeslides")
 slide_dict = load_time_slides(trig_file)
+logging.info("Loading segments")
 segment_dict = load_segment_dict(trig_file)
 
 # Identify the zero-lag slide
@@ -198,6 +197,7 @@ segs = readSegFiles(opts.segment_dir)
 trial_time = abs(segs['on'])
 
 # Construct trials
+logging.info("Constructing trials")
 trials = segments.segmentlist()
 trial_dict = {}
 sorted_trigs = {}
@@ -233,60 +233,60 @@ for slide_id in range(num_slides):
             err_msg += "analysed segments. This should not happen."
             logging.err(err_msg)
             sys.exit()
-    ###### end of check #####
+        ###### end of check #####
 
-# Construct the buffer segment list
-buffer = segments.segmentlist()
-for ifo in ifos:
-    slide_offset = slide_dict[slide_id][ifo]
-    buffer.append(segments.segment(segs['buffer'][0] - slide_offset,\
-                                   segs['buffer'][1] - slide_offset))
-buffer.coalesce() 
+    # Construct the buffer segment list
+    buffer = segments.segmentlist()
+    for ifo in ifos:
+        slide_offset = slide_dict[slide_id][ifo]
+        buffer.append(segments.segment(segs['buffer'][0] - slide_offset,\
+                                    segs['buffer'][1] - slide_offset))
+    buffer.coalesce() 
 
-# Construct the ifo list
-slid_vetoes = copy.deepcopy(vetoes)
-for ifo in ifos:
-    slid_vetoes[ifo].shift(-slide_dict[slide_id][ifo])
-        
-    #### load_triggers uses the timeslide vetoes to veto trigs
-    #### but the below will veto an entire offtrial if there is a
-    #### veto that intersects with it. Could use the load_trigs function
-    #### to first discard trigs that are vetoes and then additionally do the veto
-    #### of entire segments below. 
-    #### The below will for each timeslide, check how many 6s trials 
-    #### can be constructed that don't intersect with the buffer or 
-    #### vetoes. It will also throw away triggers if they fall into the 
-    #### last bin that has a trial <6s. This might explain why a 
-    #### really loud trigger that appears in offsource doesn't appear
-    #### in the bestNRs list, or affect FAP.
-    #### this is the only time the segment_dict and curr_seg_list is used
-  
-    # Construct trial list and check against buffer      
-    trial_dict[slide_id] = segments.segmentlist()
-    for curr_seg in curr_seg_list:
-        iter_int = 0
-        while 1:
-            if (curr_seg[0] + trial_time*(iter_int+1)) > curr_seg[1]:
-                break
-            currTrial = segments.segment(curr_seg[0] + trial_time*iter_int,\
-                                         curr_seg[0] + trial_time*(iter_int+1))
-            if not buffer.intersects_segment(currTrial):
-                for ifo in ifos:
-                    if slid_vetoes[ifo].intersects_segment(currTrial):
-                        break
-                else:
-                    trial_dict[slide_id].append(currTrial)
-            iter_int += 1
-    # The below line works like the inverse of .veto and only returns trigs 
-    # that are within the segment specified by trial_dict[slide_id]
-    sorted_trigs[slide_id] = sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
+    # Construct the ifo list
+    slid_vetoes = copy.deepcopy(vetoes)
+    for ifo in ifos:
+        slid_vetoes[ifo].shift(-slide_dict[slide_id][ifo])
+            
+        #### load_triggers uses the timeslide vetoes to veto trigs
+        #### but the below will veto an entire offtrial if there is a
+        #### veto that intersects with it. Could use the load_trigs function
+        #### to first discard trigs that are vetoes and then additionally do the veto
+        #### of entire segments below. 
+        #### The below will for each timeslide, check how many 6s trials 
+        #### can be constructed that don't intersect with the buffer or 
+        #### vetoes. It will also throw away triggers if they fall into the 
+        #### last bin that has a trial <6s. This might explain why a 
+        #### really loud trigger that appears in offsource doesn't appear
+        #### in the bestNRs list, or affect FAP.
+        #### this is the only time the segment_dict and curr_seg_list is used
+    
+        # Construct trial list and check against buffer      
+        trial_dict[slide_id] = segments.segmentlist()
+        for curr_seg in curr_seg_list:
+            iter_int = 0
+            while 1:
+                if (curr_seg[0] + trial_time*(iter_int+1)) > curr_seg[1]:
+                    break
+                currTrial = segments.segment(curr_seg[0] + trial_time*iter_int,\
+                                            curr_seg[0] + trial_time*(iter_int+1))
+                if not buffer.intersects_segment(currTrial):
+                    for ifo in ifos:
+                        if slid_vetoes[ifo].intersects_segment(currTrial):
+                            break
+                    else:
+                        trial_dict[slide_id].append(currTrial)
+                iter_int += 1
+        # The below line works like the inverse of .veto and only returns trigs 
+        # that are within the segment specified by trial_dict[slide_id]
+        sorted_trigs[slide_id] = sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
 
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)]) 
 
 msg = "Segments loaded and %d trials generated." % (total_trials)
 logging.info(msg)
 
-# Extract variables
+# Extract variables 
 # TODO: do something along the lines of PygrbFilterOutput
 trig_all_time = {}
 trig_all_snr = {}
@@ -409,7 +409,11 @@ quietest_file.close()
 # Output details of 30 loudest offsouce triggers
 offsource_trigs = []
 for slide_id in range(num_slides):
-    offsource_trigs.extend( zip(trig_all_bestnr[slide_id],sorted_trigs[slide_id]))
+    trial_endtimes = [s[1] for s in trial_dict[slide_id]]
+    trig_endtimes = [trig.get_end() for trig in sorted_trigs[slide_id]]
+    trial_ids = np.searchsorted(trial_endtimes, trig_endtimes)
+    offsource_trigs.extend( zip(trig_all_bestnr[slide_id],sorted_trigs[slide_id], trial_ids))
+    # offsource_trigs.extend( zip(trig_all_bestnr[slide_id],sorted_trigs[slide_id]))
 offsource_trigs.sort(key = lambda element:element[0])
 offsource_trigs.reverse()
 
@@ -422,7 +426,7 @@ th.extend([ '%s SNR' % ifo for ifo in ifos ])
 th.extend([ '%s time shift (s)' % ifo for ifo in ifos ])
 th.append('BestNR')
 td = []
-    
+
 for i in range(min(len(offsource_trigs), 30)):
     # TODO: leave this as bestNR or rename it?
     bestNR = offsource_trigs[i][0]
@@ -673,7 +677,7 @@ if onsource_file:
 
 # Make the cumulative histogram FAP plots
 # TODO: all plots should be calls to function(s)
-pygrb_shared_plot_setups()
+# pygrb_shared_plot_setups()
 
 # FIXME: Quick shot still using pylal. Use PyCBC and move to pygrb_postprocessing_utils.py
 def pygrb_histogram(data, xlabel, ylabel, fig_path, title=None, ymax=1.2, num_bins=50):
@@ -926,7 +930,7 @@ for i,bin in enumerate(mass_bins):
                     logging.info(msg)
                     if len(ifos) == 1:
                         msg = "This is a single ifo analysis. "
-                        msg += "Setting sigmasq to unity for all triggers.")
+                        msg += "Setting sigmasq to unity for all triggers."
                         logging.info(msg)
                         injSigma[ifo][:] = 1.
 
@@ -956,7 +960,7 @@ for i,bin in enumerate(mass_bins):
             injSigmaMean[ifo] = ((injSigma[ifo]*fResp[ifo])/injSigmaTot).mean()
 
         msg = "%d found injections analysed." % (len(foundInjs))
-        logging.ingo(msg)
+        logging.info(msg)
 
         #
         # process missed injections
@@ -1095,7 +1099,7 @@ for i,bin in enumerate(mass_bins):
             longInjDistMC[i+1,:] = longInjDist / (maxDCCalError *\
                                                           (1 + calDistRed) * (1 + wavDistRed))
 
-        msg = "MC injection set distributed with %d iterations." % num_mc_injs)
+        msg = "MC injection set distributed with %d iterations." % num_mc_injs
         logging.info(msg)
 
         # check injections against on source
