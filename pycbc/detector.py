@@ -143,12 +143,15 @@ def load_detector_config(config_files):
         try:
             args = [kwds.pop(arg) for arg in arg_names]
         except KeyError as e:
-            raise ValueError("missing required detector argument") from e
+            raise ValueError("missing required detector argument"
+                             " {} are required".format(arg_names))
         method(det.upper(), *args, **kwds)
+
 
 # autoload detector config files
 if 'PYCBC_DETECTOR_CONFIG' in os.environ:
     load_detector_config(os.environ['PYCBC_DETECTOR_CONFIG'].split(':'))
+
 
 class Detector(object):
     """A gravitational wave detector
