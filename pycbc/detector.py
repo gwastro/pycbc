@@ -28,9 +28,11 @@
 """This module provides utilities for calculating detector responses and timing
 between observatories.
 """
+import os
 import numpy as np
 import lal
 from pycbc.types import TimeSeries
+from pycbc.types.config import InterpolatingConfigParser
 from astropy.time import Time
 from astropy import constants, coordinates, units
 from astropy.coordinates.matrix_utilities import rotation_matrix
@@ -117,6 +119,36 @@ def add_detector_on_earth(name, longitude, latitude,
                                       'response': resp,
                                       }
 
+def load_detector_config(config_files):
+    """ Add custom detectors from a configuration file
+
+    Parameters
+    ----------
+    config_files: str or list of strs
+        The config file(s) which specify new detectors
+    """
+    methods = {'earth_normal': (add_detector_on_earth,
+                                ['longitude', 'latitude'])}
+    conf = InterpolatingConfigParser(config_files)
+    dets = conf.get_subsections('detector')
+    for det in dets:
+        kwds = dict(conf.items('detector-{}'.format(det)))
+        try:
+            method, arg_names = methods[kwds.pop('method')]
+        except KeyError:
+            raise ValueError("Missing or unkown method, "
+                             "options are {}".format(methods.keys()))
+        for k in kwds:
+            kwds[k] = float(kwds[k])
+        try:
+            args = [kwds.pop(arg) for arg in arg_names]
+        except KeyError as e:
+            raise ValueError("missing required detector argument") from e
+        method(det.upper(), *args, **kwds)
+
+# autoload detector config files
+if 'PYCBC_DETECTOR_CONFIG' in os.environ:
+    load_detector_config(os.environ['PYCBC_DETECTOR_CONFIG'].split(':'))
 
 class Detector(object):
     """A gravitational wave detector
