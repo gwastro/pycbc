@@ -846,7 +846,7 @@ def imrphenomhm_length_in_time(**kwargs):
 def seobnrv4hm_length_in_time(**kwargs):
     """ Estimates the duration of SEOBNRv4HM waveforms that include higher modes.
     """
-    # Default maximum node number for SEOBNRv4HM is 5 
+    # Default maximum node number for SEOBNRv4HM is 5
     # The relevant lower order approximant here is SEOBNRv4
     return get_hm_length_in_time('SEOBNRv4', 5, **kwargs)
 
@@ -854,14 +854,13 @@ def get_hm_length_in_time(lor_approx, maxm_default, **kwargs):
     if 'mode_array' in kwargs and kwargs['mode_array'] is not None:
         maxm = max(m for _, m in kwargs['mode_array'])
     else:
-        maxm = maxm_default       
+        maxm = maxm_default
     try:
         flow = kwargs['f_lower']
     except KeyError:
         raise ValueError("must provide a f_lower")
     kwargs['f_lower'] = flow * 2./maxm
     return get_imr_length(lor_approx, **kwargs)
-    
 
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
