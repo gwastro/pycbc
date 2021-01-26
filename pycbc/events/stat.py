@@ -354,12 +354,11 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 if num != len(ifos):
                     continue
 
-                match = [ifo in name for ifo in ifos]
+                match = [ifo in ifokey for ifo in ifos]
                 if False in match:
                     continue
-                else:
-                    selected = name
-                    break
+                selected = name
+                break
 
         if selected is None:
             raise RuntimeError("Couldn't figure out which stat file to use")
@@ -618,27 +617,25 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         return self.single(single_info[1])
 
     def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
+                        **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
         rstat = sum(s[1]['snglstat'] ** 2 for s in sngls_list)
-        cstat = rstat + 2. * self.logsignalrate(
-            {d: s for d, s in sngls_list},
-            slide * step,
-            to_shift
-        )
+        cstat = rstat + 2. * self.logsignalrate(dict(sngls_list),
+                                                slide * step,
+                                                to_shift)
         cstat[cstat < 0] = 0
         return cstat ** 0.5
 
     def coinc_lim_for_thresh(self, sngls_list, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
         Calculate the required single detector statistic to exceed
         the threshold for each of the input triggers.
         """
-        if self.hist is None:
+        if not self.has_hist:
             self.get_hist()
         lim_stat = [b['snglstat'] for a, b in sngls_list if a == limifo][0]
         s1 = thresh ** 2. - lim_stat ** 2.
