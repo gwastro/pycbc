@@ -61,7 +61,8 @@ from matplotlib import pyplot as plt
 
 def pygrb_plot_opts_parser(usage='', description=None, version=None):
     """Parses options for PyGRB post-processing scripts"""
-    parser = argparse.ArgumentParser(usage=usage, description=description)
+    parser = argparse.ArgumentParser(usage=usage, description=description,
+                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument("--version", action="version", version=version)
 
@@ -100,9 +101,9 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         required=True, help="directory holding buffer, on " +
                         "and off source segment files.")
 
-
     parser.add_argument("-o", "--output-file", default=None, #required=True,
                         help="Output file.")
+
     # pygrb_efficiency only options: start here
     # FIXME: eventually remove below argument and require output-file
     # be specified. 
@@ -181,29 +182,27 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         type=float,default=1.0, help="When deciding " +
                         "exclusion efficiencies this value is multiplied " +
                         "to the offsource around the injection trigger to " +
-                        "determine if it is just a loud glitch. " +
-                        "default: %default")
+                        "determine if it is just a loud glitch.")
 
     parser.add_argument("-C", "--cluster-window", action="store", type=float,
                         default=0.1,help="The cluster window used " +
-                        "to cluster triggers in time. default: %default")
+                        "to cluster triggers in time.")
 
     parser.add_argument("-U", "--upper-inj-dist", action="store",
                         type=float,default=1000,help="The upper distance " +
-                        "of the injections, if used. default: %default")
+                        "of the injections, if used.")
 
     parser.add_argument("-L", "--lower-inj-dist", action="store",
                         type=float,default=0,help="The lower distance of " +
-                        "the injections, if used. default: %default")
+                        "the injections, if used.")
 
     parser.add_argument("-n", "--num-bins", action="store", type=int,
                         default=0,help="The number of bins used to " +
-                        "calculate injection efficiency. default: %default")
+                        "calculate injection efficiency.")
 
     parser.add_argument("-M", "--num-mc-injections", action="store",
                         type=int, default=100, help="Number of Monte " +
-                        "Carlo injection simulations to perform, " +
-                        "default: %default")
+                        "Carlo injection simulations to perform.")
 
     parser.add_argument("-w", "--waveform-error", action="store",
                         type=float, default=0, help="The standard " +
@@ -247,7 +246,7 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
     # TODO: Deprecated option: remove all over and then here
     parser.add_argument("--mass-bins", type=str, default="0-3.48,3.48-6,6-20",\
                     help="comma separated list of dash-separated pairs "\
-                            "of m_low-m_high mass bins, default: %default")
+                            "of m_low-m_high mass bins.")
 
     # pygrb_efficiency only options end here
 
@@ -507,7 +506,7 @@ def extract_ifos(trig_file):
 def extract_vetoes(veto_files, ifos):
     """Extracts vetoes from veto filelist"""
 
-    # Initialize vetoe containers
+    # Initialize veto containers
     vetoes = segments.segmentlistdict()
     for ifo in ifos:
         vetoes[ifo] = segments.segmentlist()

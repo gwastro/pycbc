@@ -62,24 +62,6 @@ description = 'Efficiency calculator for the triggered search (PyGRB).'
 usage = __program__ + ' [--options]'
 opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
 
-# TODO: Deprecated options: remove all over and then here
-# NB: mass-bins is currently coded in pygrb_postprocessing_utils too. Remove later.
-# opts.add_argument("--mass-bins", type=str, default="0-3.48,3.48-6,6-20",\
-#                     help="comma separated list of dash-separated pairs "\
-#                             "of m_low-m_high mass bins, default: %default")
-#calopts.add_option("-q", "--h2-cal-error", action="store",\
-#                                      type="float", default=0,
-#                                      help="The standard deviation to use when calculating the "\
-#                                                "H2 calibration amplitude error.")
-#calopts.add_option("-P", "--h2-dc-cal-error", action="store",\
-#                                      type="float", default=1.0,
-#                                      help="The scaling factor to use when calculating the H2 "\
-#                                                  "calibration amplitude error.")
-#parser.add_option("-S", "--old-code", action="store_true", default=False,\
-#                                    help="Use this flag if the old coh_PTF_inspiral, in" +\
-#                                              "which ra,dec was not time dependent was used" +\
-#                                              ", default: %default")
-
 if opts.verbose:
     level = logging.INFO
 else:
@@ -138,14 +120,11 @@ num_bins = opts.num_bins
 # TODO: appears in other executables. Make it a function
 veto_files = []
 if opts.veto_directory:
-      veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
-      veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
+    veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
+    veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
 # TODO: superseded
 mass_bins = map(lambda p: map(float, p.split('-')), opts.mass_bins.split(','))
 num_mc_injs = opts.num_mc_injections
-# TODO: following were unused; remove or add in?
-# seg_length = opts.segment_length
-# pad_data = opts.pad_data
     
 # TODO. Random seed: eventually allow user to specify this
 np.random.seed(1234)
@@ -192,7 +171,7 @@ logging.info("%d triggers loaded." % len(trigs))
 
 # Get segments
 segs = readSegFiles(opts.segment_dir)
-  
+
 # Separate segments
 trial_time = abs(segs['on'])
 
@@ -226,21 +205,21 @@ for slide_id in range(num_slides):
             # This can be raised if the trigger is on the segment boundary, so
             # check if the trigger is within 1/100 of a second within the list
             if (trig.get_end() + 0.01) in curr_seg_list:
-                    continue
+                continue
             if (trig.get_end() - 0.01) in curr_seg_list:
-                    continue
+                continue
             err_msg = "Triggers found in input files not in the list of "
             err_msg += "analysed segments. This should not happen."
             logging.err(err_msg)
             sys.exit()
-        ###### end of check #####
+    ###### end of check #####
 
     # Construct the buffer segment list
     buffer = segments.segmentlist()
     for ifo in ifos:
         slide_offset = slide_dict[slide_id][ifo]
         buffer.append(segments.segment(segs['buffer'][0] - slide_offset,\
-                                    segs['buffer'][1] - slide_offset))
+                                       segs['buffer'][1] - slide_offset))
     buffer.coalesce() 
 
     # Construct the ifo list
@@ -268,14 +247,14 @@ for slide_id in range(num_slides):
             while 1:
                 if (curr_seg[0] + trial_time*(iter_int+1)) > curr_seg[1]:
                     break
-                currTrial = segments.segment(curr_seg[0] + trial_time*iter_int,\
+                curr_trial = segments.segment(curr_seg[0] + trial_time*iter_int,\
                                             curr_seg[0] + trial_time*(iter_int+1))
-                if not buffer.intersects_segment(currTrial):
+                if not buffer.intersects_segment(curr_trial):
                     for ifo in ifos:
-                        if slid_vetoes[ifo].intersects_segment(currTrial):
+                        if slid_vetoes[ifo].intersects_segment(curr_trial):
                             break
                     else:
-                        trial_dict[slide_id].append(currTrial)
+                        trial_dict[slide_id].append(curr_trial)
                 iter_int += 1
         # The below line works like the inverse of .veto and only returns trigs 
         # that are within the segment specified by trial_dict[slide_id]
@@ -286,7 +265,7 @@ total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)]
 msg = "Segments loaded and %d trials generated." % (total_trials)
 logging.info(msg)
 
-# Extract variables 
+# Extract variables
 # TODO: do something along the lines of PygrbFilterOutput
 trig_all_time = {}
 trig_all_snr = {}
@@ -295,20 +274,20 @@ trig_all_bestnr = {}
 trig_all_mchirp = {}
     
 for slide_id in range(num_slides):
-    # get basics
-    slideTrigs = sorted_trigs[slide_id]
-    trig_all_time[slide_id]    = np.asarray(slideTrigs.get_end()).astype(float)
-    trig_all_snr[slide_id]     = np.asarray(slideTrigs.get_column('snr'))
+    # Get basics
+    slide_trigs = sorted_trigs[slide_id]
+    trig_all_time[slide_id]   = np.asarray(slide_trigs.get_end()).astype(float)
+    trig_all_snr[slide_id]    = np.asarray(slide_trigs.get_column('snr'))
     trig_all_bestnr[slide_id] = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
-                                             null_thresh=null_thresh,\
-                                             snr_threshold=snr_thresh,\
-                                             sngl_snr_threshold=sngl_snr_thresh,\
-                                             chisq_threshold=new_snr_thresh,\
-                                             null_grad_thresh=null_grad_thresh,\
-                                             null_grad_val=null_grad_val) \
-                                   for t in slideTrigs]
+                                            null_thresh=null_thresh,\
+                                            snr_threshold=snr_thresh,\
+                                            sngl_snr_threshold=sngl_snr_thresh,\
+                                            chisq_threshold=new_snr_thresh,\
+                                            null_grad_thresh=null_grad_thresh,\
+                                            null_grad_val=null_grad_val) \
+                                 for t in slide_trigs]
     trig_all_bestnr[slide_id] = np.array(trig_all_bestnr[slide_id])
-    trig_all_mchirp[slide_id]  = np.asarray(slideTrigs.get_column('mchirp'))
+    trig_all_mchirp[slide_id] = np.asarray(slide_trigs.get_column('mchirp'))
 
 logging.info("Basic columns extracted.")
 trig_time   = {}
@@ -357,8 +336,8 @@ for slide_id in range(num_slides):
         mass_cut = (bin[0] <= trig_all_mchirp[slide_id]\
                     ) & (trig_all_mchirp[slide_id] < bin[1])
         # Apply cut
-        trig_time[slide_id][bin[0]]    = trig_all_time[slide_id][mass_cut]
-        trig_snr[slide_id][bin[0]]     = trig_all_snr[slide_id][mass_cut]
+        trig_time[slide_id][bin[0]]   = trig_all_time[slide_id][mass_cut]
+        trig_snr[slide_id][bin[0]]    = trig_all_snr[slide_id][mass_cut]
         trig_bestnr[slide_id][bin[0]] = trig_all_bestnr[slide_id][mass_cut]
 
         k = 0
@@ -406,18 +385,20 @@ for val in quietest_fap:
     print >> quietest_file, val
 quietest_file.close()
 
-# Output details of 30 loudest offsouce triggers
+# Output details of (at most) 30 loudest offsouce triggers
+# TODO: Do we really want this hard-coded 30?
 offsource_trigs = []
 for slide_id in range(num_slides):
     trial_endtimes = [s[1] for s in trial_dict[slide_id]]
     trig_endtimes = [trig.get_end() for trig in sorted_trigs[slide_id]]
     trial_ids = np.searchsorted(trial_endtimes, trig_endtimes)
-    offsource_trigs.extend( zip(trig_all_bestnr[slide_id],sorted_trigs[slide_id], trial_ids))
-    # offsource_trigs.extend( zip(trig_all_bestnr[slide_id],sorted_trigs[slide_id]))
+    offsource_trigs.extend(zip(trig_all_bestnr[slide_id],sorted_trigs[slide_id], trial_ids))
+    # offsource_trigs.extend(zip(trig_all_bestnr[slide_id],sorted_trigs[slide_id]))
 offsource_trigs.sort(key = lambda element:element[0])
 offsource_trigs.reverse()
 
-#TODO: we also want the templates spin1z and spin2z
+#TODO: we also want the templates spin1z and spin2z. Do this after switch to hdf5
+# th: table header
 th = [ 'Mass Bin', 'Trial', 'Slide Num', 'FAP', 'GPS',\
        'Rec. m1', 'Rec. m2', 'Rec. Mc',\
        'Rec. RA','Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto',\
@@ -425,6 +406,7 @@ th = [ 'Mass Bin', 'Trial', 'Slide Num', 'FAP', 'GPS',\
 th.extend([ '%s SNR' % ifo for ifo in ifos ])
 th.extend([ '%s time shift (s)' % ifo for ifo in ifos ])
 th.append('BestNR')
+# td: table data
 td = []
 
 for i in range(min(len(offsource_trigs), 30)):
@@ -485,7 +467,7 @@ for i in range(min(len(offsource_trigs), 30)):
     td.append(d)
 
 # Write to html file 
-# TODO (hold for most htmls below too): make this table sortable by column and not static
+# TODO (holds for most htmls below too): make this table sortable by column and not static
 html = pycbc.results.dq.redirect_javascript + str(pycbc.results.static_table(td, th))
 # TODO (hold for most htmls below too): Should pass output_file arg on command line and put this in a seperate executable
 title = 'Parameters of loudest offsource triggers'
@@ -586,10 +568,10 @@ if onsource_file:
 
     # Get trigs
     on_trigs = load_xml_table(onsource_file, "multi_inspiral")
-    # Separate off mass column
-    on_mchirp = on_trigs.get_column('mchirp')
-
     msg = "%d onsource triggers loaded." % (len(on_trigs))
+
+    # Separate off chirp mass column
+    on_mchirp = on_trigs.get_column('mchirp')
 
     # Set loudest event arrays
     loud_on_bestnr_trigs = dict((bin[0], None) for bin in mass_bins)
@@ -629,7 +611,8 @@ if onsource_file:
 
     logging.info("Onsource analysed.")
 
-
+    # Table header and table data
+    # TODO we will want the spins too (easier to deal with after move to hdf5)
     th = ['Bin', 'FAP', 'GPS', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
           'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
          ['%s SNR' % ifo for ifo in ifos ] + ['BestNR']
@@ -673,6 +656,13 @@ if onsource_file:
                                                cmd=' '.join(sys.argv),
                                                title=title,
                                                caption=caption)
+else:
+    for i,bin in enumerate(massBins):
+        totOffSNR = np.array([])
+        for slideID in range(numSlides):
+            totOffSNR = np.concatenate([totOffSNR,timeBinVetoMaxBestNR[slideID][i]])
+        medSNR = np.median(totOffSNR)
+        FAP = sum(totOffSNR>medSNR)/totalTrials
 
 
 # Make the cumulative histogram FAP plots
@@ -718,6 +708,7 @@ for i,bin in enumerate(mass_bins):
     #
 # TODO: turn most/all into a single function with load_time_slides?
 #       load_triggers does a lot of this
+# I don't think the following was indented originally. We have to check.
 
     if doinj:
 
@@ -1089,7 +1080,7 @@ for i,bin in enumerate(mass_bins):
             calDistRed = stats.norm.rvs(size=len(foundInjs)) * cal_error
             wavDistRed = np.abs(stats.norm.rvs(size=len(foundInjs)) * wf_err)
             foundInjDistMC[i+1,:] = foundInjDist / (maxDCCalError * \
-                                                                                        (1 + calDistRed) * (1 + wavDistRed))
+                (1 + calDistRed) * (1 + wavDistRed))
             calDistRed = stats.norm.rvs(size=len(missedInjs)) * cal_error
             wavDistRed = np.abs(stats.norm.rvs(size=len(missedInjs)) * wf_err)
             missedInjDistMC[i+1,:] = missedInjDist / (maxDCCalError *\
@@ -1131,8 +1122,7 @@ for i,bin in enumerate(mass_bins):
             # check louder than on source in this bin
             if onsource_file:
                 foundTrigLoudOnBestNR = np.zeros([len(foundTrigMchirp)])
-                for ix, mc in \
-                                        enumerate(foundTrigMchirp):
+                for ix, mc in enumerate(foundTrigMchirp):
                     try:
                         foundTrigLoudOnBestNR[ix] = loud_on_bestnr[mass_bins[mass_bin(mc)][0]]
                     except IndexError:
@@ -1145,14 +1135,13 @@ for i,bin in enumerate(mass_bins):
                 # check whether injection is found for the purposes of exclusion
                 # distance calculation
                 #
-                # found if more louder than all on source, or louder than
-                # missed if not louder than on loudest on source,
+                # found if louder than all on source, or louder than
+                # missed if not louder than loudest on source,
                 foundExcl = onBestNRCut & (moreSigThanOnSource) & \
                                         (foundTrigBestNR != 0)
                 # if not missed, doublecheck bestNR against nearby triggers
                 nearTest = np.zeros((foundExcl).sum()).astype(bool)
-                for j,(t,bestNR) in enumerate(zip(foundInjTime[foundExcl],\
-                                                                                    foundTrigBestNR[foundExcl])):
+                for j,(t,bestNR) in enumerate(zip(foundInjTime[foundExcl],foundTrigBestNR[foundExcl])):
                     if j==0:
                         print(zero_lag_slide_id)
                         print(len(trig_all_bestnr[zero_lag_slide_id]))
