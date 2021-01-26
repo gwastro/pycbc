@@ -40,9 +40,9 @@ import six
 from pycbc.types.config import InterpolatingConfigParser
 from six.moves.urllib.parse import urlparse
 from six.moves import http_cookiejar as cookielib
-from six.moves.http_cookiejar import (_warn_unhandled_exception,
-                                      LoadError, Cookie)
+from six.moves.http_cookiejar import _warn_unhandled_exception, LoadError, Cookie
 from bs4 import BeautifulSoup
+
 
 def _really_load(self, f, filename, ignore_discard, ignore_expires):
     """
@@ -59,29 +59,32 @@ def _really_load(self, f, filename, ignore_discard, ignore_expires):
     if not re.search(self.magic_re, magic):
         f.close()
         raise LoadError(
-            "%r does not look like a Netscape format cookies file" %
-            filename)
+            "%r does not look like a Netscape format cookies file" % filename
+        )
 
     try:
         while 1:
             line = f.readline()
-            if line == "": break
+            if line == "":
+                break
 
             # last field may be absent, so keep any trailing tab
-            if line.endswith("\n"): line = line[:-1]
+            if line.endswith("\n"):
+                line = line[:-1]
 
             sline = line.strip()
             # support HttpOnly cookies (as stored by curl or old Firefox).
             if sline.startswith("#HttpOnly_"):
                 line = sline[10:]
             # skip comments and blank lines ... what is $ for?
-            elif (sline.startswith(("#", "$")) or sline == ""):
+            elif sline.startswith(("#", "$")) or sline == "":
                 continue
 
-            domain, domain_specified, path, secure, expires, name, value = \
-                    line.split("\t")
-            secure = (secure == "TRUE")
-            domain_specified = (domain_specified == "TRUE")
+            domain, domain_specified, path, secure, expires, name, value = line.split(
+                "\t"
+            )
+            secure = secure == "TRUE"
+            domain_specified = domain_specified == "TRUE"
             if name == "":
                 # cookies.txt regards 'Set-Cookie: foo' as a cookie
                 # with no name, whereas cookielib regards it as a
@@ -98,16 +101,24 @@ def _really_load(self, f, filename, ignore_discard, ignore_expires):
                 discard = True
 
             # assume path_specified is false
-            c = Cookie(0, name, value,
-                       None, False,
-                       domain, domain_specified, initial_dot,
-                       path, False,
-                       secure,
-                       expires,
-                       discard,
-                       None,
-                       None,
-                       {})
+            c = Cookie(
+                0,
+                name,
+                value,
+                None,
+                False,
+                domain,
+                domain_specified,
+                initial_dot,
+                path,
+                False,
+                secure,
+                expires,
+                discard,
+                None,
+                None,
+                {},
+            )
             if not ignore_discard and c.discard:
                 continue
             if not ignore_expires and c.is_expired(now):
@@ -118,11 +129,13 @@ def _really_load(self, f, filename, ignore_discard, ignore_expires):
         raise
     except Exception:
         _warn_unhandled_exception()
-        raise LoadError("invalid Netscape format cookies file %r: %r" %
-                        (filename, line))
+        raise LoadError(
+            "invalid Netscape format cookies file %r: %r" % (filename, line)
+        )
+
 
 # Now monkey patch the code
-cookielib.MozillaCookieJar._really_load = _really_load # noqa
+cookielib.MozillaCookieJar._really_load = _really_load  # noqa
 
 ecp_cookie_error = """The attempt to download the file at
 
@@ -136,6 +149,7 @@ ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback alb
 
 before attempting to download files from git.ligo.org.
 """
+
 
 def istext(s, text_characters=None, threshold=0.3):
     """
@@ -168,7 +182,8 @@ def istext(s, text_characters=None, threshold=0.3):
         # t = s.translate(trans)
 
     # s is 'text' if less than 30% of its characters are non-text ones:
-    return len(t)/float(len(s)) <= threshold
+    return len(t) / float(len(s)) <= threshold
+
 
 def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
     """Resolves a URL to a local file, and returns the path to that file.
@@ -182,7 +197,7 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
     u = urlparse(url)
 
     # determine whether the file exists locally
-    islocal = u.scheme == '' or u.scheme == 'file'
+    islocal = u.scheme == "" or u.scheme == "file"
 
     if not islocal or copy_to_cwd:
         # create the name of the destination file
@@ -195,7 +210,7 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
     if islocal:
         # check that the file exists
         if not os.path.isfile(u.path):
-            errmsg  = "Cannot open file %s from URL %s" % (u.path, url)
+            errmsg = "Cannot open file %s from URL %s" % (u.path, url)
             raise ValueError(errmsg)
         # for regular files, make a direct copy if requested
         elif copy_to_cwd:
@@ -208,14 +223,13 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
             else:
                 shutil.copy(u.path, filename)
 
-    elif u.scheme == 'http' or u.scheme == 'https':
+    elif u.scheme == "http" or u.scheme == "https":
         s = requests.Session()
-        s.mount(str(u.scheme)+'://',
-            requests.adapters.HTTPAdapter(max_retries=5))
+        s.mount(str(u.scheme) + "://", requests.adapters.HTTPAdapter(max_retries=5))
 
         # look for an ecp cookie file and load the cookies
         cookie_dict = {}
-        ecp_file = '/tmp/ecpcookie.u%d' % os.getuid()
+        ecp_file = "/tmp/ecpcookie.u%d" % os.getuid()
         if os.path.isfile(ecp_file):
             cj = cookielib.MozillaCookieJar()
             cj.load(ecp_file, ignore_discard=True, ignore_expires=True)
@@ -226,41 +240,41 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
             if c.domain == u.netloc:
                 # load cookies for this server
                 cookie_dict[c.name] = c.value
-            elif u.netloc == "code.pycbc.phy.syr.edu" and \
-              c.domain == "git.ligo.org":
+            elif u.netloc == "code.pycbc.phy.syr.edu" and c.domain == "git.ligo.org":
                 # handle the redirect for code.pycbc to git.ligo.org
                 cookie_dict[c.name] = c.value
 
         r = s.get(url, cookies=cookie_dict, allow_redirects=True)
         if r.status_code != 200:
-            errmsg = "Unable to download %s\nError code = %d" % (url,
-                r.status_code)
+            errmsg = "Unable to download %s\nError code = %d" % (url, r.status_code)
             raise ValueError(errmsg)
 
         # if we are downloading from git.ligo.org, check that we
         # did not get redirected to the sign-in page
-        if u.netloc == 'git.ligo.org' or u.netloc == 'code.pycbc.phy.syr.edu':
+        if u.netloc == "git.ligo.org" or u.netloc == "code.pycbc.phy.syr.edu":
             # Check if we have downloaded a binary file.
             if istext(r.content):
-                soup = BeautifulSoup(r.content, 'html.parser')
-                desc = soup.findAll(attrs={"property":"og:url"})
-                if len(desc) and \
-                  desc[0]['content'] == 'https://git.ligo.org/users/sign_in':
+                soup = BeautifulSoup(r.content, "html.parser")
+                desc = soup.findAll(attrs={"property": "og:url"})
+                if (
+                    len(desc)
+                    and desc[0]["content"] == "https://git.ligo.org/users/sign_in"
+                ):
                     raise ValueError(ecp_cookie_error.format(url))
 
-        output_fp = open(filename, 'wb')
+        output_fp = open(filename, "wb")
         output_fp.write(r.content)
         output_fp.close()
 
     else:
         # TODO: We could support other schemes such as gsiftp by
         # calling out to globus-url-copy
-        errmsg  = "Unknown URL scheme: %s\n" % (u.scheme)
+        errmsg = "Unknown URL scheme: %s\n" % (u.scheme)
         errmsg += "Currently supported are: file, http, and https."
         raise ValueError(errmsg)
 
     if not os.path.isfile(filename):
-        errmsg = "Error trying to create file %s from %s" % (filename,url)
+        errmsg = "Error trying to create file %s from %s" % (filename, url)
         raise ValueError(errmsg)
 
     if permissions:
@@ -316,30 +330,41 @@ def add_workflow_command_line_group(parser):
     parser : argparse.ArgumentParser instance
         The initialized argparse instance to add the workflow option group to.
     """
-    workflowArgs = parser.add_argument_group('Configuration',
-                                             'Options needed for parsing '
-                                             'config file(s).')
-    workflowArgs.add_argument("--config-files", nargs="+", action='store',
-                           metavar="CONFIGFILE",
-                           help="List of config files to be used in "
-                                "analysis.")
-    workflowArgs.add_argument("--config-overrides", nargs="*", action='store',
-                           metavar="SECTION:OPTION:VALUE",
-                           help="List of section,option,value combinations to "
-                           "add into the configuration file. Normally the gps "
-                           "start and end times might be provided this way, "
-                           "and user specific locations (ie. output directories). "
-                           "This can also be provided as SECTION:OPTION or "
-                           "SECTION:OPTION: both of which indicate that the "
-                           "corresponding value is left blank.")
-    workflowArgs.add_argument("--config-delete", nargs="*", action='store',
-                           metavar="SECTION:OPTION",
-                           help="List of section,option combinations to delete "
-                           "from the configuration file. This can also be "
-                           "provided as SECTION which deletes the enture section"
-                           " from the configuration file or SECTION:OPTION "
-                           "which deletes a specific option from a given "
-                           "section.")
+    workflowArgs = parser.add_argument_group(
+        "Configuration", "Options needed for parsing " "config file(s)."
+    )
+    workflowArgs.add_argument(
+        "--config-files",
+        nargs="+",
+        action="store",
+        metavar="CONFIGFILE",
+        help="List of config files to be used in " "analysis.",
+    )
+    workflowArgs.add_argument(
+        "--config-overrides",
+        nargs="*",
+        action="store",
+        metavar="SECTION:OPTION:VALUE",
+        help="List of section,option,value combinations to "
+        "add into the configuration file. Normally the gps "
+        "start and end times might be provided this way, "
+        "and user specific locations (ie. output directories). "
+        "This can also be provided as SECTION:OPTION or "
+        "SECTION:OPTION: both of which indicate that the "
+        "corresponding value is left blank.",
+    )
+    workflowArgs.add_argument(
+        "--config-delete",
+        nargs="*",
+        action="store",
+        metavar="SECTION:OPTION",
+        help="List of section,option combinations to delete "
+        "from the configuration file. This can also be "
+        "provided as SECTION which deletes the enture section"
+        " from the configuration file or SECTION:OPTION "
+        "which deletes a specific option from a given "
+        "section.",
+    )
 
 
 class WorkflowConfigParser(InterpolatingConfigParser):
@@ -347,8 +372,15 @@ class WorkflowConfigParser(InterpolatingConfigParser):
     This is a sub-class of InterpolatingConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
     """
-    def __init__(self, configFiles=None, overrideTuples=None,
-                 parsedFilePath=None, deleteTuples=None, copy_to_cwd=False):
+
+    def __init__(
+        self,
+        configFiles=None,
+        overrideTuples=None,
+        parsedFilePath=None,
+        deleteTuples=None,
+        copy_to_cwd=False,
+    ):
         """
         Initialize an WorkflowConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
@@ -380,15 +412,19 @@ class WorkflowConfigParser(InterpolatingConfigParser):
             Initialized WorkflowConfigParser instance.
         """
         if configFiles is not None:
-            configFiles = [resolve_url(cFile, copy_to_cwd=copy_to_cwd)
-               for cFile in configFiles]
+            configFiles = [
+                resolve_url(cFile, copy_to_cwd=copy_to_cwd) for cFile in configFiles
+            ]
 
-        InterpolatingConfigParser.__init__(self, configFiles,
-                                                   overrideTuples,
-                                                   parsedFilePath,
-                                                   deleteTuples,
-                                                   copy_to_cwd,
-                                                   skip_extended=True)
+        InterpolatingConfigParser.__init__(
+            self,
+            configFiles,
+            overrideTuples,
+            parsedFilePath,
+            deleteTuples,
+            copy_to_cwd,
+            skip_extended=True,
+        )
         # expand executable which statements
         self.perform_exe_expansion()
 
@@ -413,12 +449,12 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         Otherwise values will be unchanged.
         """
         # Only works on executables section
-        if self.has_section('executables'):
-            for option, value in self.items('executables'):
+        if self.has_section("executables"):
+            for option, value in self.items("executables"):
                 # Check the value
                 newStr = self.interpolate_exe(value)
                 if newStr != value:
-                    self.set('executables', option, newStr)
+                    self.set("executables", option, newStr)
 
     def interpolate_exe(self, testString):
         """
@@ -444,7 +480,7 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         """
         # First check if any interpolation is needed and abort if not
         testString = testString.strip()
-        if not (testString.startswith('${') and testString.endswith('}')):
+        if not (testString.startswith("${") and testString.endswith("}")):
             return testString
 
         # This may not be an exe interpolation, so even if it has ${ ... } form
@@ -454,15 +490,15 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         # Strip the ${ and }
         testString = testString[2:-1]
 
-        testList = testString.split(':')
+        testList = testString.split(":")
 
         # Maybe we can add a few different possibilities for substitution
         if len(testList) == 2:
-            if testList[0] == 'which':
+            if testList[0] == "which":
                 newString = distutils.spawn.find_executable(testList[1])
                 if not newString:
-                    errmsg = "Cannot find exe %s in your path " %(testList[1])
-                    errmsg += "and you specified ${which:%s}." %(testList[1])
+                    errmsg = "Cannot find exe %s in your path " % (testList[1])
+                    errmsg += "and you specified ${which:%s}." % (testList[1])
                     raise ValueError(errmsg)
 
         return newString
@@ -495,15 +531,14 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         """
         if skip_opts is None:
             skip_opts = []
-        read_opts = [opt for opt in self.options(section)
-                     if opt not in skip_opts]
+        read_opts = [opt for opt in self.options(section) if opt not in skip_opts]
         opts = []
         for opt in read_opts:
-            opts.append('--{}'.format(opt))
+            opts.append("--{}".format(opt))
             val = self.get(section, opt)
-            if val != '':
+            if val != "":
                 opts.append(val)
-        return ' '.join(opts)
+        return " ".join(opts)
 
     def get_cli_option(self, section, option_name, **kwds):
         """Return option using CLI action parsing
@@ -523,9 +558,10 @@ class WorkflowConfigParser(InterpolatingConfigParser):
             The parsed value for this option
         """
         import argparse
+
         optstr = self.section_to_cli(section)
         parser = argparse.ArgumentParser()
-        name = "--" + option_name.replace('_', '-')
+        name = "--" + option_name.replace("_", "-")
         parser.add_argument(name, **kwds)
         args, _ = parser.parse_known_args(optstr.split())
         return getattr(args, option_name)
@@ -576,7 +612,7 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         """
         # First check if any interpolation is needed and abort if not
         test_string = test_string.strip()
-        if not (test_string.startswith('${') and test_string.endswith('}')):
+        if not (test_string.startswith("${") and test_string.endswith("}")):
             return test_string
 
         # This may not be a "resolve" interpolation, so even if it has
@@ -585,10 +621,10 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         # Strip the ${ and }
         test_string = test_string[2:-1]
 
-        test_list = test_string.split(':', 1)
+        test_list = test_string.split(":", 1)
 
         if len(test_list) == 2:
-            if test_list[0] == 'resolve':
+            if test_list[0] == "resolve":
                 curr_lfn = os.path.basename(test_list[1])
                 if curr_lfn in self.curr_resolved_files:
                     return self.curr_resolved_files[curr_lfn]
