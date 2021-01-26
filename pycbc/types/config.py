@@ -25,7 +25,6 @@
 This module provides a wrapper to the ConfigParser utilities for pycbc.
 This module is described in the page here:
 """
-import os
 import re
 import itertools
 import logging
@@ -43,7 +42,7 @@ class DeepCopyableConfigParser(ConfigParser.SafeConfigParser):
     def __deepcopy__(self, memo):
         # http://stackoverflow.com/questions/23416370
         # /manually-building-a-deep-copy-of-a-configparser-in-python-2-7
-        config_string = StringIO.StringIO()
+        config_string = StringIO()
         self.write(config_string)
         config_string.seek(0)
         new_config = self.__class__()
@@ -63,7 +62,6 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         overrideTuples=None,
         parsedFilePath=None,
         deleteTuples=None,
-        copy_to_cwd=False,
         skip_extended=False,
     ):
         """
@@ -84,11 +82,6 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
              Delete the (section, option) pairs provided
              in this list from provided .ini file(s). If the section only
              is provided, the entire section will be deleted.
-         copy_to_cwd : bool, optional
-             Copy the configuration files to the current working directory if
-             they are not already there, even if they already exist locally.
-             If False, files will only be copied to the current working
-             directory if they are remote. Default is False.
 
         Returns
          --------
@@ -122,23 +115,26 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                         "Cannot delete section %s, "
                         "no such section in configuration." % delete
                     )
-                else:
-                    logging.info("Deleting section %s from configuration", delete[0])
+
+                logging.info(
+                    "Deleting section %s from configuration", delete[0]
+                )
             elif len(delete) == 2:
                 if self.remove_option(delete[0], delete[1]) is False:
                     raise ValueError(
                         "Cannot delete option %s from section %s,"
                         " no such option in configuration." % delete
                     )
-                else:
-                    logging.info(
-                        "Deleting option %s from section %s in " "configuration",
-                        delete[1],
-                        delete[0],
-                    )
+
+                logging.info(
+                    "Deleting option %s from section %s in " "configuration",
+                    delete[1],
+                    delete[0],
+                )
             else:
                 raise ValueError(
-                    "Deletes must be tuples of length 1 or 2. " "Got %s." % str(delete)
+                    "Deletes must be tuples of length 1 or 2. "
+                    "Got %s." % str(delete)
                 )
 
         # Do overrides from command line
@@ -157,7 +153,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 self.add_section(section)
             self.set(section, option, value)
             logging.info(
-                "Overriding section %s option %s with value %s " "in configuration.",
+                "Overriding section %s option %s with value %s "
+                "in configuration.",
                 section,
                 option,
                 value,
@@ -193,17 +190,20 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         logging.info("Reading configuration file")
         if opts.config_overrides is not None:
             overrides = [
-                tuple(override.split(":", 2)) for override in opts.config_overrides
+                tuple(override.split(":", 2))
+                for override in opts.config_overrides
             ]
         else:
             overrides = None
         if opts.config_delete is not None:
-            deletes = [tuple(delete.split(":")) for delete in opts.config_delete]
+            deletes = [
+                tuple(delete.split(":")) for delete in opts.config_delete
+            ]
         else:
             deletes = None
         return cls(opts.config_files, overrides, deleteTuples=deletes)
 
-    def read_ini_file(self, cpFile):
+    def read_ini_file(self, fpath):
         """
         Read a .ini file and return it as a ConfigParser class.
         This function does none of the parsing/combining of sections. It simply
@@ -213,7 +213,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         Parameters
         ----------
-        cpFile : Path to .ini file, or list of paths
+        fpath : Path to .ini file, or list of paths
             The path(s) to a .ini file to be read in
 
         Returns
@@ -222,13 +222,13 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             The ConfigParser class containing the read in .ini file
         """
         # Read the file
-        self.read(cpFile)
+        self.read(fpath)
 
     def get_subsections(self, section_name):
         """Return a list of subsections for the given section name"""
         # Keep only subsection names
         subsections = [
-            sec[len(section_name) + 1 :]
+            sec[len(section_name) + 1:]
             for sec in self.sections()
             if sec.startswith(section_name + "-")
         ]
@@ -238,7 +238,9 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             # This is unusual, but a format [section-subsection-tag] is okay. Just
             # check that [section-subsection] section exists. If not it is possible
             # the user is trying to use an subsection name with '-' in it
-            if (len(sp) > 1) and not self.has_section("%s-%s" % (section_name, sp[0])):
+            if (len(sp) > 1) and not self.has_section(
+                "%s-%s" % (section_name, sp[0])
+            ):
                 raise ValueError(
                     "Workflow uses the '-' as a delimiter so "
                     "this is interpreted as section-subsection-tag. "
@@ -277,16 +279,16 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         for section in self.sections():
             for option, value in self.items(section):
                 # Check the option name
-                newStr = self.interpolate_string(option, section)
-                if newStr != option:
-                    self.set(section, newStr, value)
+                new_str = self.interpolate_string(option, section)
+                if new_str != option:
+                    self.set(section, new_str, value)
                     self.remove_option(section, option)
                 # Check the value
-                newStr = self.interpolate_string(value, section)
-                if newStr != value:
-                    self.set(section, option, newStr)
+                new_str = self.interpolate_string(value, section)
+                if new_str != value:
+                    self.set(section, option, new_str)
 
-    def interpolate_string(self, testString, section):
+    def interpolate_string(self, test_string, section):
         """
         Take a string and replace all example of ExtendedInterpolation
         formatting within the string with the exact value.
@@ -303,44 +305,46 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         Parameters
         ----------
-        testString : String
+        test_string : String
             The string to parse and interpolate
         section : String
             The current section of the ConfigParser object
 
         Returns
         ----------
-        testString : String
+        test_string : String
             Interpolated string
         """
 
         # First check if any interpolation is needed and abort if not
-        reObj = re.search(r"\$\{.*?\}", testString)
-        while reObj:
+        re_obj = re.search(r"\$\{.*?\}", test_string)
+        while re_obj:
             # Not really sure how this works, but this will obtain the first
             # instance of a string contained within ${....}
-            repString = (reObj).group(0)[2:-1]
+            rep_string = (re_obj).group(0)[2:-1]
             # Need to test which of the two formats we have
-            splitString = repString.split("|")
-            if len(splitString) == 1:
+            split_string = rep_string.split("|")
+            if len(split_string) == 1:
                 try:
-                    testString = testString.replace(
-                        "${" + repString + "}", self.get(section, splitString[0])
+                    test_string = test_string.replace(
+                        "${" + rep_string + "}",
+                        self.get(section, split_string[0]),
                     )
                 except ConfigParser.NoOptionError:
                     print("Substitution failed")
                     raise
-            if len(splitString) == 2:
+            if len(split_string) == 2:
                 try:
-                    testString = testString.replace(
-                        "${" + repString + "}", self.get(splitString[0], splitString[1])
+                    test_string = test_string.replace(
+                        "${" + rep_string + "}",
+                        self.get(split_string[0], split_string[1]),
                     )
                 except ConfigParser.NoOptionError:
                     print("Substitution failed")
                     raise
-            reObj = re.search(r"\$\{.*?\}", testString)
+            re_obj = re.search(r"\$\{.*?\}", test_string)
 
-        return testString
+        return test_string
 
     def split_multi_sections(self):
         """
@@ -356,12 +360,12 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             if "&" not in section:
                 continue
             # Get list of section names to add these options to
-            splitSections = section.split("&")
-            for newSec in splitSections:
+            split_sections = section.split("&")
+            for new_sec in split_sections:
                 # Add sections if they don't already exist
-                if not self.has_section(newSec):
-                    self.add_section(newSec)
-                self.add_options_to_section(newSec, self.items(section))
+                if not self.has_section(new_sec):
+                    self.add_section(new_sec)
+                self.add_options_to_section(new_sec, self.items(section))
             self.remove_section(section)
 
     def populate_shared_sections(self):
@@ -423,7 +427,9 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         """
         # Sanity checking
         if not self.has_section(section):
-            raise ValueError("Section %s not present in ConfigParser." % (section,))
+            raise ValueError(
+                "Section %s not present in ConfigParser." % (section,)
+            )
 
         # Check for duplicate options first
         for option, value in items:
@@ -455,7 +461,9 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 # Check if any are subsections of section
                 if section2.startswith(section + "-"):
                     # Check for duplicate options whenever this exists
-                    self.check_duplicate_options(section, section2, raise_error=True)
+                    self.check_duplicate_options(
+                        section, section2, raise_error=True
+                    )
 
     def check_duplicate_options(self, section1, section2, raise_error=False):
         """
@@ -478,9 +486,13 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         """
         # Sanity checking
         if not self.has_section(section1):
-            raise ValueError("Section %s not present in ConfigParser." % (section1,))
+            raise ValueError(
+                "Section %s not present in ConfigParser." % (section1,)
+            )
         if not self.has_section(section2):
-            raise ValueError("Section %s not present in ConfigParser." % (section2,))
+            raise ValueError(
+                "Section %s not present in ConfigParser." % (section2,)
+            )
 
         items1 = self.options(section1)
         items2 = self.options(section2)
@@ -567,16 +579,21 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 if self.has_section("%s-%s" % (section, sub)):
                     if self.has_option("%s-%s" % (section, sub), option):
                         err_section_list.append("%s-%s" % (section, sub))
-                        return_vals.append(self.get("%s-%s" % (section, sub), option))
+                        return_vals.append(
+                            self.get("%s-%s" % (section, sub), option)
+                        )
 
             # We also want to recursively go into sections
 
             if not return_vals:
-                err_string += "or in sections [%s]." % ("] [".join(section_list))
+                err_string += "or in sections [%s]." % (
+                    "] [".join(section_list)
+                )
                 raise ConfigParser.Error(err_string)
             if len(return_vals) > 1:
-                err_string += "and multiple entries found in sections [%s]." % (
-                    "] [".join(err_section_list)
+                err_string += (
+                    "and multiple entries found in sections [%s]."
+                    % ("] [".join(err_section_list))
                 )
                 raise ConfigParser.Error(err_string)
             return return_vals[0]

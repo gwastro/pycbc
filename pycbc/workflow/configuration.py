@@ -33,14 +33,17 @@ import stat
 import string
 import shutil
 import time
-import logging
 import requests
 import distutils.spawn
 import six
 from pycbc.types.config import InterpolatingConfigParser
 from six.moves.urllib.parse import urlparse
 from six.moves import http_cookiejar as cookielib
-from six.moves.http_cookiejar import _warn_unhandled_exception, LoadError, Cookie
+from six.moves.http_cookiejar import (
+    _warn_unhandled_exception,
+    LoadError,
+    Cookie,
+)
 from bs4 import BeautifulSoup
 
 
@@ -80,9 +83,15 @@ def _really_load(self, f, filename, ignore_discard, ignore_expires):
             elif sline.startswith(("#", "$")) or sline == "":
                 continue
 
-            domain, domain_specified, path, secure, expires, name, value = line.split(
-                "\t"
-            )
+            (
+                domain,
+                domain_specified,
+                path,
+                secure,
+                expires,
+                name,
+                value,
+            ) = line.split("\t")
             secure = secure == "TRUE"
             domain_specified = domain_specified == "TRUE"
             if name == "":
@@ -225,7 +234,9 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
 
     elif u.scheme == "http" or u.scheme == "https":
         s = requests.Session()
-        s.mount(str(u.scheme) + "://", requests.adapters.HTTPAdapter(max_retries=5))
+        s.mount(
+            str(u.scheme) + "://", requests.adapters.HTTPAdapter(max_retries=5)
+        )
 
         # look for an ecp cookie file and load the cookies
         cookie_dict = {}
@@ -240,13 +251,19 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
             if c.domain == u.netloc:
                 # load cookies for this server
                 cookie_dict[c.name] = c.value
-            elif u.netloc == "code.pycbc.phy.syr.edu" and c.domain == "git.ligo.org":
+            elif (
+                u.netloc == "code.pycbc.phy.syr.edu"
+                and c.domain == "git.ligo.org"
+            ):
                 # handle the redirect for code.pycbc to git.ligo.org
                 cookie_dict[c.name] = c.value
 
         r = s.get(url, cookies=cookie_dict, allow_redirects=True)
         if r.status_code != 200:
-            errmsg = "Unable to download %s\nError code = %d" % (url, r.status_code)
+            errmsg = "Unable to download %s\nError code = %d" % (
+                url,
+                r.status_code,
+            )
             raise ValueError(errmsg)
 
         # if we are downloading from git.ligo.org, check that we
@@ -258,7 +275,8 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
                 desc = soup.findAll(attrs={"property": "og:url"})
                 if (
                     len(desc)
-                    and desc[0]["content"] == "https://git.ligo.org/users/sign_in"
+                    and desc[0]["content"]
+                    == "https://git.ligo.org/users/sign_in"
                 ):
                     raise ValueError(ecp_cookie_error.format(url))
 
@@ -413,7 +431,8 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         """
         if configFiles is not None:
             configFiles = [
-                resolve_url(cFile, copy_to_cwd=copy_to_cwd) for cFile in configFiles
+                resolve_url(cFile, copy_to_cwd=copy_to_cwd)
+                for cFile in configFiles
             ]
 
         InterpolatingConfigParser.__init__(
@@ -422,7 +441,6 @@ class WorkflowConfigParser(InterpolatingConfigParser):
             overrideTuples,
             parsedFilePath,
             deleteTuples,
-            copy_to_cwd,
             skip_extended=True,
         )
         # expand executable which statements
@@ -531,7 +549,9 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         """
         if skip_opts is None:
             skip_opts = []
-        read_opts = [opt for opt in self.options(section) if opt not in skip_opts]
+        read_opts = [
+            opt for opt in self.options(section) if opt not in skip_opts
+        ]
         opts = []
         for opt in read_opts:
             opts.append("--{}".format(opt))
