@@ -387,8 +387,13 @@ class WorkflowConfigParser(InterpolatingConfigParser):
                                                    overrideTuples,
                                                    parsedFilePath,
                                                    deleteTuples,
-                                                   copy_to_cwd)
+                                                   copy_to_cwd,
+                                                   skip_extended=True)
+        # expand executable which statements
         self.perform_exe_expansion()
+
+        # Check for any substitutions that can be made
+        self.perform_extended_interpolation()
 
         # Resolve any URLs needing resolving
         self.curr_resolved_files = {}

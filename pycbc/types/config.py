@@ -54,7 +54,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
     us add a few additional helper features that are useful in workflows.
     """
     def __init__(self, configFiles=None, overrideTuples=None,
-                 parsedFilePath=None, deleteTuples=None, copy_to_cwd=False):
+                 parsedFilePath=None, deleteTuples=None, copy_to_cwd=False,
+                 skip_extended=False):
         """
         Initialize an InterpolatingConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
@@ -142,7 +143,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 "in configuration.", section, option, value )
 
         # Check for any substitutions that can be made
-        self.perform_extended_interpolation()
+        if not skip_extended:
+            self.perform_extended_interpolation()
 
         # Check for duplicate options in sub-sections
         self.sanity_check_subsections()
