@@ -107,6 +107,9 @@ parser.add_argument("--null-step", type=float, default=20., help="""
 parser.add_argument("--trigger-time", type=int, help="""
                     Time of the GRB, used to set the antenna patterns.""")
 
+######################################################
+parser.add_argument("--projection-type", default='standard', type=str, help="""Choice of projection matrix with standard, left circular or right circular""")
+########################################################
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
 strain.StrainSegments.insert_segment_option_group_multi_ifo(parser)
@@ -118,7 +121,6 @@ pycbc.opt.insert_optimization_option_group(parser)
 pycbc.inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 SingleDetSGChisq.insert_option_group(parser)
 opt = parser.parse_args()
-
 # Use the time in the middle of the segment to calculate the antenna patterns.
 t_gps = opt.trigger_time
 
@@ -209,6 +211,16 @@ def get_projection_matrix(wp, wc):
                          np.dot(wp, wc)*(np.outer(wp, wc) +
                          np.outer(wc, wp))) / denominator
     return projection_matrix
+
+
+def circular_projection_matrix(wp, wc):
+    """
+    Eq 21: arXiv:1712.04724v1
+    """
+    denom = np.abs(np.dot(wp, wp))**2 + np.abs(np.dot(wc, wc))**2
+    Lp = (np.outer(wp, wp) +np.outer(wc, wc) +((np.outer(wp, wc)) - np.outer(wc, wp)) *1j)/denom 
+    Rp = (np.outer(wp, wp) +np.outer(wc, wc) +((np.outer(wc, wp)) - np.outer(wp, wc)) *1j)/denom 
+    return Lp, Rp
 
 
 def coherent_snr(snr_triggers, index, threshold, projection_matrix,
@@ -513,6 +525,15 @@ with ctx:
             sigma = {ifo : np.sqrt(sigmasq[ifo]) for ifo in opt.instruments}
             # Every time s_num is zero or we skip the segment, we run new 
             # template to increment the template index
+################################################
+            ####### Testing values ###########333
+            wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
+            projection_matrix = get_projection_matrix(wp,wc)
+            LCprojection_matrix, RCprojection_matrix = circular_projection_matrix(wp, wc)
+            logging.info("projection matrix ={0}".format(projection_matrix))
+            logging.info("LCprojection matrix ={0}".format(LCprojection_matrix))
+            logging.info("RCprojection matrix ={0}".format(RCprojection_matrix)) 
+################################################
             if s_num==0:
                 event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
             if not analyse_segment: continue
@@ -600,14 +621,36 @@ with ctx:
                 logging.info("No triggers above coincident SNR threshold")
             # If we have triggers above coinc threshold and more than 2 ifos
             # then calculate the coherent statistics
+            
             if len(coinc_idx) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
-                projection_matrix = get_projection_matrix(wp,wc)
+###################################################################
+              ######## changing choice of projection tensor
+                if opt.projection_type == 'standard':
+                    logging.info("%s choice of projection matrix is "
+                            % str(opt.projection_type))
+                    projection_matrix = get_projection_matrix(wp,wc)
+                elif opt.projection_type == 'left':
+                    logging.info("%s choice of projection matrix is "
+                            % str(opt.projection_type))
+                    projection_matrix = circular_projection_matrix(wp, wc)[0]
+                else:
+                    logging.info("%s choice of projection matrix is "
+                            % str(opt.projection_type))
+                    projection_matrix = circular_projection_matrix(wp, wc)[1] 
                 rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
                     coinc_triggers, coinc_idx, opt.coinc_threshold,
                     projection_matrix, rho_coinc)
                 logging.info("%s points above coherent threshold"
                             % str(len(rho_coh)))
+#####################################################################
+                logging.info("The values with proj tensor = {0}".format(rho_coh))
+                LCprojection_matrix, RCprojection_matrix = circular_projection_matrix(wp, wc)
+                rho_coh2, coinc_idx2, coinc_triggers2, rho_coinc2 = coherent_snr(coinc_triggers, coinc_idx, opt.coinc_threshold, LCprojection_matrix, rho_coinc)
+                logging.info("%s with LC points above coherent threshold"
+                            % str(len(rho_coh2)))
+                logging.info("The values with LC proj tensor = {0}".format(rho_coh2))           
+#####################################################################
                 if len(coinc_idx) != 0:
                     logging.info("Max coherent SNR = %s" % str(max(rho_coh)))
                     #Find the null snr
