@@ -177,9 +177,9 @@ class Detector(object):
 
         if detector_name in [pfx for pfx, name in get_available_detectors()]:
             import lalsimulation as lalsim
-            self._frDetector = lalsim.DetectorPrefixToLALDetector(self.name)
-            self.response = self._frDetector.response
-            self.location = self._frDetector.location
+            self._lal = lalsim.DetectorPrefixToLALDetector(self.name)
+            self.response = self._lal.response
+            self.location = self._lal.location
         elif detector_name in _custom_ground_detectors:
             self.info = _custom_ground_detectors[detector_name]
             self.response = self.info['response']
@@ -208,8 +208,8 @@ class Detector(object):
 
     def lal(self):
         """ Return lal data type detector instance """
-        if hasattr(self, '_frDetector'):
-            return self._frDetector
+        if hasattr(self, '_lal'):
+            return self._lal
         else:
             import lal
             d = lal.FrDetector()
@@ -229,6 +229,7 @@ class Detector(object):
 
             x = lal.Detector()
             r = lal.CreateDetector(x, d, lal.LALDETECTORTYPE_IFODIFF)
+            self._lal = r
             return r
 
     def gmst_estimate(self, gps_time):
