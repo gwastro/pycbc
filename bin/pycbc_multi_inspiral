@@ -107,9 +107,7 @@ parser.add_argument("--null-step", type=float, default=20., help="""
 parser.add_argument("--trigger-time", type=int, help="""
                     Time of the GRB, used to set the antenna patterns.""")
 
-######################################################
 parser.add_argument("--projection-type", default='standard', type=str, help="""Choice of projection matrix with standard, left circular or right circular""")
-########################################################
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
 strain.StrainSegments.insert_segment_option_group_multi_ifo(parser)
@@ -525,15 +523,13 @@ with ctx:
             sigma = {ifo : np.sqrt(sigmasq[ifo]) for ifo in opt.instruments}
             # Every time s_num is zero or we skip the segment, we run new 
             # template to increment the template index
-################################################
-            ####### Testing values ###########333
+            ####### Testing values
             wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
             projection_matrix = get_projection_matrix(wp,wc)
             LCprojection_matrix, RCprojection_matrix = circular_projection_matrix(wp, wc)
             logging.info("projection matrix ={0}".format(projection_matrix))
             logging.info("LCprojection matrix ={0}".format(LCprojection_matrix))
             logging.info("RCprojection matrix ={0}".format(RCprojection_matrix)) 
-################################################
             if s_num==0:
                 event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
             if not analyse_segment: continue
@@ -624,7 +620,6 @@ with ctx:
             
             if len(coinc_idx) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
-###################################################################
               ######## changing choice of projection tensor
                 if opt.projection_type == 'standard':
                     logging.info("%s choice of projection matrix is "
@@ -643,14 +638,6 @@ with ctx:
                     projection_matrix, rho_coinc)
                 logging.info("%s points above coherent threshold"
                             % str(len(rho_coh)))
-#####################################################################
-                logging.info("The values with proj tensor = {0}".format(rho_coh))
-                LCprojection_matrix, RCprojection_matrix = circular_projection_matrix(wp, wc)
-                rho_coh2, coinc_idx2, coinc_triggers2, rho_coinc2 = coherent_snr(coinc_triggers, coinc_idx, opt.coinc_threshold, LCprojection_matrix, rho_coinc)
-                logging.info("%s with LC points above coherent threshold"
-                            % str(len(rho_coh2)))
-                logging.info("The values with LC proj tensor = {0}".format(rho_coh2))           
-#####################################################################
                 if len(coinc_idx) != 0:
                     logging.info("Max coherent SNR = %s" % str(max(rho_coh)))
                     #Find the null snr
