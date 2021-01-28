@@ -153,7 +153,7 @@ class Stat(object):
 
         coinc_lim_for_thresh is only defined for the statistic it is present
         in. If we subclass, we must check explicitly that it is still valid and
-        inidicate this in the code. If the code does not have this explicit
+        indicate this in the code. If the code does not have this explicit
         check you will see the failure message here.
 
         Parameters
@@ -632,12 +632,17 @@ class PhaseTDStatistic(QuadratureSumStatistic):
     def coinc_lim_for_thresh(self, sngls_list, thresh, limifo,
                              **kwargs):  # pylint:disable=unused-argument
         """
-        Optimization function to identify coincs too quiet to be of interest
-        Calculate the required single detector statistic to exceed
-        the threshold for each of the input triggers.
+        Optimization function to identify coincs too quiet to be of interest.
+        Calculate the required single detector statistic to exceed the
+        threshold for each of the input triggers.
         """
+        # Safety against subclassing and not rethinking this
+        allowed_names = ['PhaseTDStatistic']
+        self._check_coinc_lim_subclass(allowed_names)
+
         if not self.has_hist:
             self.get_hist()
+
         lim_stat = [b['snglstat'] for a, b in sngls_list if a == limifo][0]
         s1 = thresh ** 2. - lim_stat ** 2.
         # Assume best case scenario and use maximum signal rate
