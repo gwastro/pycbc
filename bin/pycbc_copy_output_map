@@ -18,7 +18,7 @@ while true
 do
     case "$1" in
 	-h|--help)
-	    echo "usage: pycbc_copy_output_map [-h] input_map output_map [optional arguments]"
+	    echo "usage: pycbc_copy_output_map [-h] -i input_map -o output_map [optional arguments]"
 	    echo
 	    echo "required arguments:"
 	    echo "  -i, --input-file        the .map file that will be copied from"
