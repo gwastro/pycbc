@@ -163,7 +163,8 @@ python -m mpi4py `which pycbc_live` \
 --ifar-upload-threshold 0.0001 \
 --round-start-time 4 \
 --start-time $gps_start_time \
---end-time $gps_end_time
+--end-time $gps_end_time \
+--verbose
 
 echo -e "\\n\\n>> [`date`] Checking results"
 ./check_results.py
