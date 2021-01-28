@@ -619,7 +619,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
     def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
                         **kwargs):  # pylint:disable=unused-argument
         """
-        Calculate the coincident detection statistic.
+        Calculate the coincident detection statistic, defined in Eq 2 of
+        [Nitz et al, 2017](https://doi.org/10.3847/1538-4357/aa8f50).
         """
         rstat = sum(s[1]['snglstat'] ** 2 for s in sngls_list)
         cstat = rstat + 2. * self.logsignalrate(dict(sngls_list),
