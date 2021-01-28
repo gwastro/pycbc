@@ -9,11 +9,11 @@ import h5py, pycbc, subprocess, argparse, tempfile, shutil
 import numpy as np
 import logging
 from pycbc.filter import sigmasq
-from pycbc.io import live
+from pycbc.io import live, WaveformArray
 from pycbc.types import TimeSeries, FrequencySeries, MultiDetOptionAppendAction
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform.spa_tmplt import spa_length_in_time
-from pycbc import frame
+from pycbc import frame, waveform
 from pycbc.psd import interpolate
 from ligo.gracedb.rest import GraceDb
 
@@ -321,11 +321,27 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     else:
         doc.save(ligolw_file_path)
 
+    # Defining the approximant to feed into BAYESTAR
+
+    row = WaveformArray.from_kwargs(
+	    mass1=opt.mass1,
+	    mass2=opt.mass2,
+	    spin1z=opt.spin1z,
+	    spin2z=opt.spin2z)
+
+    approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0]
+
+    # BAYESTAR uses TaylorF2 instead of SPAtmplt
+
+    if approximant == 'SPAtmplt':
+	approximant = 'TaylorF2'
+
     # run BAYESTAR to generate the skymap
 
     cmd = ['bayestar-localize-coincs',
            ligolw_file_path,
            ligolw_file_path,
+	   '--waveform', str(approximant),
            '--f-low', str(f_low),
            '-o', tmpdir]
     subprocess.call(cmd)
