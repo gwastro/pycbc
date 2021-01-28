@@ -14,7 +14,7 @@ while true
 do
     case "$1" in
 	-h|--help)
-	    echo "usage: pycbc_copy_output_map [-h] input_map output_map [optional arguments]"
+	    echo "usage: pycbc_copy_output_map [-h] workflow_directory [optional arguments]"
 	    echo
 	    echo "required arguments:"
 	    echo "  -d, --workflow-dir    the directory of the workflow to be staged out"
