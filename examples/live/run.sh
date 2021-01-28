@@ -8,7 +8,7 @@ export OMP_NUM_THREADS=4
 export HDF5_USE_FILE_LOCKING="FALSE"
 
 gps_start_time=1272790000
-gps_end_time=1272790500
+gps_end_time=1272790512
 
 
 # test if there is a template bank. If not, make one
