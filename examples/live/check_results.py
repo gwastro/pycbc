@@ -195,7 +195,7 @@ log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
 
 # gps times need to match those found in run.sh
 sim_gps_start = 1272790000
-sim_gps_end = 1272790500
+sim_gps_end = 1272790512
 
 # sim f lower needs to match the value in generate_injection.sh
 sim_f_lower = 18
