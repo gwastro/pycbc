@@ -332,7 +332,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0]
 
     # BAYESTAR uses TaylorF2 instead of SPAtmplt
-
     if approximant == 'SPAtmplt':
         approximant = 'TaylorF2'
 
