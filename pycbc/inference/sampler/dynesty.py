@@ -525,7 +525,7 @@ def sample_rwalk_mod(args):
         # Check proposed point.
         v_prop = prior_transform(numpy.array(u_prop))
         logl_prop = loglikelihood(numpy.array(v_prop))
-        if logl_prop >= loglstar:
+        if logl_prop > loglstar:
             u = u_prop
             v = v_prop
             logl = logl_prop
