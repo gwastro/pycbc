@@ -334,14 +334,14 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     # BAYESTAR uses TaylorF2 instead of SPAtmplt
 
     if approximant == 'SPAtmplt':
-	approximant = 'TaylorF2'
+        approximant = 'TaylorF2'
 
     # run BAYESTAR to generate the skymap
 
     cmd = ['bayestar-localize-coincs',
            ligolw_file_path,
-           ligolw_file_path,
-	   '--waveform', str(approximant),
+           ligolw_file_path, 
+            '--waveform', str(approximant),
            '--f-low', str(f_low),
            '-o', tmpdir]
     subprocess.call(cmd)
