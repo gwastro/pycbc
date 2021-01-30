@@ -92,37 +92,10 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
     # Could have a number of choices here
     if mfltrMethod == "WORKFLOW_INDEPENDENT_IFOS":
         logging.info("Adding matched-filter jobs to workflow.")
-        if cp.has_option_tags("workflow-matchedfilter",
-                              "matchedfilter-link-to-tmpltbank", tags):
-            if not cp.has_option_tags("workflow-tmpltbank",
-                              "tmpltbank-link-to-matchedfilter", tags):
-                errMsg = "If using matchedfilter-link-to-tmpltbank, you should "
-                errMsg += "also use tmpltbank-link-to-matchedfilter."
-                logging.warn(errMsg)
-            linkToTmpltbank = True
-        else:
-            linkToTmpltbank = False
-        if cp.has_option_tags("workflow-matchedfilter",
-                              "matchedfilter-compatibility-mode", tags):
-            if not linkToTmpltbank:
-                errMsg = "Compatibility mode requires that the "
-                errMsg += "matchedfilter-link-to-tmpltbank option is also set."
-                raise ValueError(errMsg)
-            if not cp.has_option_tags("workflow-tmpltbank",
-                              "tmpltbank-compatibility-mode", tags):
-                errMsg = "If using compatibility mode it must be set both in "
-                errMsg += "the template bank and matched-filtering stages."
-                raise ValueError(errMsg)
-            compatibility_mode = True
-        else:
-            compatibility_mode = False
-
         inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs,
                                       datafind_outs, tmplt_banks, output_dir,
                                       injection_file=injection_file,
-                                      tags=tags,
-                                      link_to_tmpltbank=linkToTmpltbank,
-                                      compatibility_mode=compatibility_mode)
+                                      tags=tags)
     elif mfltrMethod == "WORKFLOW_MULTIPLE_IFOS":
         logging.info("Adding matched-filter jobs to workflow.")
         inspiral_outs = setup_matchedfltr_dax_generated_multi(workflow,
@@ -140,8 +113,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
 def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
                                     tmplt_banks, output_dir,
                                     injection_file=None,
-                                    tags=None, link_to_tmpltbank=False,
-                                    compatibility_mode=False):
+                                    tags=None):
     '''
     Setup matched-filter jobs that are generated as part of the workflow.
     This
@@ -170,11 +142,6 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
         A list of the tagging strings that will be used for all jobs created
         by this call to the workflow. An example might be ['BNSINJECTIONS'] or
         ['NOINJECTIONANALYSIS']. This will be used in output names.
-    link_to_tmpltbank : boolean, optional (default=True)
-        If this option is given, the job valid_times will be altered so that there
-        will be one inspiral file for every template bank and they will cover the
-        same time span. Note that this option must also be given during template
-        bank generation to be meaningful.
 
     Returns
     -------
@@ -196,20 +163,6 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     # Select the appropriate class
     exe_class = select_matchedfilter_class(match_fltr_exe)
 
-    if link_to_tmpltbank:
-        # Use this to ensure that inspiral and tmpltbank jobs overlap. This
-        # means that there will be 1 inspiral job for every 1 tmpltbank and
-        # the data read in by both will overlap as much as possible. (If you
-        # ask the template bank jobs to use 2000s of data for PSD estimation
-        # and the matched-filter jobs to use 4000s, you will end up with
-        # twice as many matched-filter jobs that still use 4000s to estimate a
-        # PSD but then only generate triggers in the 2000s of data that the
-        # template bank jobs ran on.
-        tmpltbank_exe = os.path.basename(cp.get('executables', 'tmpltbank'))
-        link_exe_instance = select_tmpltbank_class(tmpltbank_exe)
-    else:
-        link_exe_instance = None
-
     # Set up class for holding the banks
     inspiral_outs = FileList([])
 
@@ -222,24 +175,16 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
                                                out_dir=output_dir,
                                                injection_file=injection_file,
                                                tags=tags)
-        if link_exe_instance:
-            link_job_instance = link_exe_instance(cp, 'tmpltbank', ifo=ifo,
-                                               out_dir=output_dir, tags=tags)
-        else:
-            link_job_instance = None
 
         sngl_ifo_job_setup(workflow, ifo, inspiral_outs, job_instance,
                            science_segs[ifo], datafind_outs,
-                           parents=tmplt_banks, allow_overlap=False,
-                           link_job_instance=link_job_instance,
-                           compatibility_mode=compatibility_mode)
+                           parents=tmplt_banks, allow_overlap=False)
     return inspiral_outs
 
 def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                           tmplt_banks, output_dir,
                                           injection_file=None,
-                                          tags=None, link_to_tmpltbank=False,
-                                          compatibility_mode=False):
+                                          tags=None):
     '''
     Setup matched-filter jobs that are generated as part of the workflow in
     which a single job reads in and generates triggers over multiple ifos.
