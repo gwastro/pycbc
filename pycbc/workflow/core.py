@@ -54,27 +54,6 @@ class ContentHandler(ligolw.LIGOLWContentHandler):
 
 lsctables.use_in(ContentHandler)
 
-#REMOVE THESE FUNCTIONS  FOR PYTHON >= 2.7 ####################################
-def check_output_error_and_retcode(*popenargs, **kwargs):
-    """
-    This function is used to obtain the stdout of a command. It is only used
-    internally, recommend using the make_external_call command if you want
-    to call external executables.
-    """
-    if 'stdout' in kwargs:
-        raise ValueError('stdout argument not allowed, it will be overridden.')
-    process = subprocess.Popen(stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
-                               *popenargs, **kwargs)
-    output, error = process.communicate()
-    retcode = process.poll()
-    return output, error, retcode
-
-def check_output(*popenargs, **kwargs):
-    output, _, _ = check_output_error_and_retcode(*popenargs, **kwargs)
-    return output
-
-###############################################################################
 
 def make_analysis_dir(path):
     """
@@ -84,24 +63,6 @@ def make_analysis_dir(path):
     if path is not None:
         makedir(os.path.join(path, 'logs'))
 
-def is_condor_exec(exe_path):
-    """
-    Determine if an executable is condor-compiled
-
-    Parameters
-    ----------
-    exe_path : str
-          The executable path
-
-    Returns
-    -------
-    truth_value  : boolean
-        Return True if the exe is condor compiled, False otherwise.
-    """
-    if str(check_output(['nm', '-a', exe_path])).find('condor') != -1:
-        return True
-    else:
-        return False
 
 file_input_from_config_dict = {}
 
@@ -179,7 +140,8 @@ class Executable(pegasus_workflow.Executable):
         self.container_type = None
 
         try:
-            self.installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
+            self.installed = cp.getboolean('pegasus_profile-%s' % name,
+                                           'pycbc|installed')
         except:
             self.installed = True
 
@@ -206,6 +168,7 @@ class Executable(pegasus_workflow.Executable):
             pass
 
         if self.container_type is not None:
+            # FIXME: Move the actual container setup into pegasus_workflow
             self.container_img = cp.get('pegasus_profile-%s' % name,
                                         'container|image')
             try:
@@ -246,6 +209,8 @@ class Executable(pegasus_workflow.Executable):
 
         exe_url = urllib.parse.urlparse(exe_path)
 
+        # FIXME: Make sure this is tied in to transformation stuff ... Is it
+        #        really needed at all??
         # See if the user specified a list of sites for the executable
         self.exe_pfns = {}
         try:
@@ -274,10 +239,7 @@ class Executable(pegasus_workflow.Executable):
 
         # Determine the condor universe if we aren't given one
         if self.universe is None:
-            if is_condor_exec(exe_path):
-                self.universe = 'standard'
-            else:
-                self.universe = 'vanilla'
+            self.universe = 'vanilla'
 
         if not self.universe == 'vanilla':
             logging.info("%s executable will run as %s universe"
@@ -321,7 +283,7 @@ class Executable(pegasus_workflow.Executable):
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
 
-            # Remove if Pegasus can apply this hint in the TC
+            # FIXME: Remove if Pegasus can apply this hint in the TC
             if namespace == 'hints' and key == 'execution.site':
                 self.execution_site = value
 
@@ -527,7 +489,7 @@ class Executable(pegasus_workflow.Executable):
         if tags is None:
             tags = []
         if '' in tags:
-            logging.warn('DO NOT GIVE ME EMPTY TAGS')
+            logging.warn('DO NOT GIVE ME EMPTY TAGS (in {})'.format(self.name))
             tags.remove('')
         tags = [tag.upper() for tag in tags]
         self.tags = tags
@@ -621,6 +583,7 @@ class Executable(pegasus_workflow.Executable):
                 self.add_ini_profile(self.cp,
                                      'pegasus_profile-{0}'.format(sec))
 
+
 class Workflow(pegasus_workflow.Workflow):
     """
     This class manages a pycbc workflow. It provides convenience
@@ -664,6 +627,7 @@ class Workflow(pegasus_workflow.Workflow):
         self._inputs = FileList([])
         self._outputs = FileList([])
 
+    # FIXME: Should this be in pegasus_workflow?
     @property
     def output_map(self):
         if self.in_workflow is not False:
@@ -681,13 +645,9 @@ class Workflow(pegasus_workflow.Workflow):
         return path
 
     @property
-    def replica_catalog(self):
-        name = self.name + '.rc.yml'
-        path =  os.path.join(os.getcwd(), name)
-        return path
-
-    @property
     def staging_site(self):
+        # FIXME: What does this actually do??
+
         # FIXME: If using a default 'condorpool' site, this would always need
         #        to be set for that site.
 
@@ -718,7 +678,10 @@ class Workflow(pegasus_workflow.Workflow):
                 # entry.
                 pfn = node.executable.get_pfn('nonlocal')
 
-            resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+            resolved = resolve_url(
+                pfn,
+                permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+            )
             node.executable.clear_pfns()
             node.executable.add_pfn(urljoin('file:', pathname2url(resolved)),
                                     site='local')
@@ -732,7 +695,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         # Make call
         make_external_call(cmd_list, out_dir=os.path.join(out_dir, 'logs'),
-                                     out_basename=node.executable.name)
+                           out_basename=node.executable.name)
         # Change back
         os.chdir(curr_dir)
 
@@ -802,6 +765,8 @@ class Workflow(pegasus_workflow.Workflow):
             staging_site = self.staging_site
 
         if self._asdag is not None:
+
+
             Workflow.set_job_properties(self._asdag, output_map_file,
                                         transformation_catalog_file,
                                         staging_site)
@@ -910,6 +875,7 @@ class Node(pegasus_workflow.Node):
             self.resolve_td_options(self.executable.unresolved_td_options)
 
     def get_command_line(self):
+        # FIXME: Put in pegasus_workflow??
         self._finalize()
         arglist = self._dax_node.arguments
 
@@ -1143,7 +1109,7 @@ class File(pegasus_workflow.File):
         if tags is None:
             tags = []
         if '' in tags:
-            logging.warn('DO NOT GIVE ME EMPTY TAGS')
+            logging.warn('DO NOT GIVE EMPTY TAGS (from {})'.format(exe_name))
             tags.remove('')
         self.tags = tags
 
@@ -1173,7 +1139,6 @@ class File(pegasus_workflow.File):
             file_url = urllib.parse.urlunparse(['file', 'localhost', path,
                                                 None, None, None])
 
-        # Let's do a test here
         if use_tmp_subdirs and len(self.segment_list):
             pegasus_lfn = str(int(self.segment_list.extent()[0]))[:-4]
             pegasus_lfn = pegasus_lfn + '/' + os.path.basename(file_url)
@@ -1187,7 +1152,7 @@ class File(pegasus_workflow.File):
             self.storage_path = None
 
     def __getstate__(self):
-        """ Allow the ahope file to be picklable. This disables the usage of
+        """ Allow the workflow.File to be picklable. This disables the usage of
         the internal cache entry.
         """
         for i, seg in enumerate(self.segment_list):
@@ -1197,7 +1162,8 @@ class File(pegasus_workflow.File):
         safe_dict['cache_entry'] = None
         return safe_dict
 
-    # FIXME: This is a pegasus_workflow thing
+    # FIXME: This is a pegasus_workflow thing (don't think it's needed at all!)
+    #        use the pegasus function directly (maybe not).
     def add_metadata(self, key, value):
         """ Add arbitrary metadata to this file """
         self.metadata[key] = value
@@ -1469,8 +1435,8 @@ class FileList(list):
         if not useSplitLists:
             # Slower, but simpler method
             outFiles = [i for i in self if ifo in i.ifo_list]
-            outFiles = [i for i in outFiles \
-                                      if i.segment_list.intersects_segment(currSeg)]
+            outFiles = [i for i in outFiles
+                        if i.segment_list.intersects_segment(currSeg)]
         else:
             # Faster, but more complicated
             # Basically only check if a subset of files intersects_segment by
@@ -1478,8 +1444,8 @@ class FileList(list):
             if not self._check_split_list_validity():
                 # FIXME: DO NOT hard code this.
                 self._temporal_split_list(100)
-            startIdx = int( (currSeg[0] - self._splitListsStart) / \
-                                                          self._splitListsStep )
+            startIdx = int((currSeg[0] - self._splitListsStart) /
+                           self._splitListsStep)
             # Add some small rounding here
             endIdx = (currSeg[1] - self._splitListsStart) / self._splitListsStep
             endIdx = int(endIdx - 0.000001)
@@ -1488,10 +1454,10 @@ class FileList(list):
             for idx in range(startIdx, endIdx + 1):
                 if idx < 0 or idx >= self._splitListsNum:
                     continue
-                outFilesTemp = [i for i in self._splitLists[idx] \
-                                                            if ifo in i.ifo_list]
-                outFiles.extend([i for i in outFilesTemp \
-                                      if i.segment_list.intersects_segment(currSeg)])
+                outFilesTemp = [i for i in self._splitLists[idx]
+                                if ifo in i.ifo_list]
+                outFiles.extend([i for i in outFilesTemp
+                                 if i.segment_list.intersects_segment(currSeg)])
                 # Remove duplicates
                 outFiles = list(set(outFiles))
 
@@ -1612,20 +1578,20 @@ class FileList(list):
     @classmethod
     def load(cls, filename):
         """
-        Load an AhopeFileList from a pickle file
+        Load a FileList from a pickle file
         """
         f = open(filename, 'r')
         return cPickle.load(f)
 
     def dump(self, filename):
         """
-        Output this AhopeFileList to a pickle file
+        Output this FileList to a pickle file
         """
         f = open(filename, 'w')
         cPickle.dump(self, f)
 
     def to_file_object(self, name, out_dir):
-        """Dump to a pickle file and return an File object reference of this list
+        """Dump to a pickle file and return an File object reference
 
         Parameters
         ----------
@@ -1644,6 +1610,7 @@ class FileList(list):
                              extension='.pkl', directory=out_dir)
         self.dump(file_ref.storage_path)
         return file_ref
+
 
 class SegFile(File):
     '''
@@ -2005,6 +1972,7 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
                 errFile=errFile, outFile=outFile, cmdFile=cmdFile)
     logging.info("Call successful, or error checking disabled.")
 
+
 class CalledProcessErrorMod(Exception):
     """
     This exception is raised when subprocess.call returns a non-zero exit code
@@ -2029,6 +1997,8 @@ class CalledProcessErrorMod(Exception):
             msg += "The failed command has been printed in %s ." %(self.cmdFile)
         return msg
 
+
+# FIXME: Is this duplicated (in a few places?)
 def resolve_url_to_file(curr_pfn, attrs=None):
     """
     Resolves a PFN into a workflow.File object.
@@ -2108,6 +2078,7 @@ def resolve_url_to_file(curr_pfn, attrs=None):
         file_input_from_config_dict[curr_lfn] = tuple_val
     return curr_file
 
+
 def get_full_analysis_chunk(science_segs):
     """
     Function to find the first and last time point contained in the science segments
@@ -2132,6 +2103,7 @@ def get_full_analysis_chunk(science_segs):
             max = hi
     fullSegment = segments.segment(min, max)
     return fullSegment
+
 
 def get_random_label():
     """
@@ -2192,6 +2164,7 @@ def resolve_td_option(val_str, valid_seg):
         err_msg = "Could not resolve option {}".format(val_str)
         raise ValueError
     return output
+
 
 def add_workflow_settings_cli(parser, include_subdax_opts=False):
     """Adds workflow options to an argument parser.
