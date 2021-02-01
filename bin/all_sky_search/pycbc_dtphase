@@ -166,8 +166,8 @@ for ifo0 in args.ifos:
         dec = np.arccos(uniform(-1., 1., size=size)) - np.pi/2
         inc = np.arccos(uniform(-1., 1., size=size))
         pol = uniform(0, 2 * np.pi, size=size)
-        ip = np.cos(inc)
-        ic = 0.5 * (1.0 + ip * ip)
+        ic = np.cos(inc)
+        ip = 0.5 * (1.0 + ic * ic)
 
         # calculate the toa, poa, and amplitude of each sample
         data = {}
