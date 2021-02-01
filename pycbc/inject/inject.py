@@ -36,7 +36,7 @@ import h5py
 from pycbc import waveform
 from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
-from pycbc.types import float64, float32, TimeSeries
+from pycbc.types import float64, float32, TimeSeries, load_timeseries
 from pycbc.detector import Detector
 from pycbc.conversions import tau0_from_mass1_mass2
 from pycbc.filter import resample_to_delta_t
@@ -360,9 +360,13 @@ class _HDFInjectionSet(object):
     table
     static_args
     extra_args
+    required_params : tuple
+        Parameter names that must exist in the injection HDF file in order to
+        create an injection of that type.
     """
     _tableclass = pycbc.io.FieldArray
     injtype = None
+    required_params = ()
 
     def __init__(self, sim_file, hdf_group=None, **kwds):
         # open the file
@@ -408,11 +412,11 @@ class _HDFInjectionSet(object):
             if arr.dtype.char == 'S':
                 arr = arr.astype('U')
             injvals[param] = arr
-        # make sure a coalescence time is specified for injections
-        if 'tc' not in injvals:
-            raise ValueError("no tc found in the given injection file; "
-                             "this is needed to determine where to place the "
-                             "injection")
+        # make sure required parameters are provided
+        missing = set(self.required_params) - set(injvals.keys())
+        if missing:
+            raise ValueError("required parameter(s) {} not found in the given "
+                             "injection file".format(', '.join(missing)))
         # initialize the table
         self.table = self._tableclass.from_kwargs(**injvals)
         # save the extra arguments
@@ -496,6 +500,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
     """
     _tableclass = pycbc.io.WaveformArray
     injtype = 'cbc'
+    required_params = ('tc',)
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
               simulation_ids=None,
@@ -639,6 +644,7 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
     and injects it into time series.
     """
     injtype = 'ringdown'
+    required_params = ('tc',)
 
     def apply(self, strain, detector_name, distance_scale=1,
               simulation_ids=None, inj_filter_rejector=None):
@@ -739,9 +745,127 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         return list(waveform.ringdown_td_approximants.keys())
 
 
+class FromFileHDFInjectionSet(_HDFInjectionSet):
+    """Manages injecting an arbitrary time series loaded from a file.
+
+    The injections must have the following attributes set:
+
+    * ``filename``: the name of the file to load containing the time series.
+      The file type and format can be anything understood by
+      :py:func:`pycbc.types.timeseries.load_timeseries`.
+    * ``end_time``: the GPS time of the time series after it is injected.
+    * ``DETECTOR_time_shift``: Number of seconds to add to the end time before
+      injecting into detector ``DETECTOR`` (e.g., ``h1_time_shift``). **The
+      time series will only be injected into a detector if a time shift is
+      given for that detector.** Set 0 to inject at the same time as the
+      ``end_time``; set to -inf, nan, or do not provide a time shift if you
+      do not want to inject the time series into a particular deetector.
+
+    In addition, the following attributes may optionally be provided:
+
+    * ``DETECTOR_phase_shift``: Apply a phase shift to the time series before
+      adding it to detector ``DETECTOR``.
+    * ``DETECTOR_amp_scale``: Scale the amplitude by the given amount before
+      adding it to detector ``DETECTOR``.
+
+    The signal will be resampled to the same sample rate as the strain it is
+    being injected into. No other conditioning (e.g., tapering) is done. If
+    you would like additional conditioning, modify the timeseries stored in
+    the file prior to using.
+
+    In order to use with ``pycbc_create_injections``, set the ``approximant``
+    name to ``'fromfile'``.
+    """
+    injtype = 'fromfile'
+    required_params = ('filename', 'end_time')
+
+    def end_times(self):
+        return self.table.end_time
+
+    @staticmethod
+    def supported_approximants():
+        return ['fromfile']
+
+    def apply(self, strain, detector_name):
+        injections = self.table
+        for ii, inj in enumerate(injections):
+            # figure out if we should inject or not based on the times
+            end_time = inj.end_time
+            try:
+                tshift = inj['{}_time_shift'.format(detector).lower()]
+            except AttributeError:
+                tshift = -numpy.inf
+            if numpy.isnan(tshift):
+                # nan means don't inject
+                tshift = -numpy.inf
+            end_time += tshift
+            # now get the start time...
+            # loading the time series like this is a bit brute-force, since
+            # we really only need to know the delta_t and length of the
+            # timeseries, but that would require adding logic to figure out how
+            # to get that metadata based on the filetype
+            # check if we should inject or not
+            ts = load_timeseries(inj.filename)
+            start_time = end_time - len(ts)*delta_t
+            if start_time < ts.end_time and end_time > ts.end_time:
+                ts = self.make_strain_from_inj_object(
+                    inj, strain.delta_t, detector_name,
+                    distance_scale=distance_scale, ts=ts)
+                # figure out where to add
+                dt = (start_time - ts.start_time) // ts.delta_t
+                if dt <= 0:
+                    # time series starts before the start of the segment
+                    strain_kmin = 0
+                    inj_kmin = abs(dt)
+                else:
+                    # time series starts after the start of the segment
+                    strain_kmin = abs(dt)
+                    inj_kmin = 0
+                dt = (end_time - ts.end_time) // ts.delta_t
+                if dt <= 0:
+                    # time series ends before the end of the segment
+                    strain_kmax = len(strain) - abs(dt)
+                    inj_kmax = None
+                else:
+                    # time series ends after the end of the segment
+                    strain_kmax = None
+                    inj_kmax = len(ts) - dt
+                ts = ts[inj_kmin:inj_kmax]
+                # add to the strain
+                strain[strain_kmin:strain_kmax] += ts
+
+
+    def make_strain_from_inj_object(self, inj, delta_t, detector_name,
+                                    distance_scale=1, ts=None):
+            if ts is None:
+                ts = load_timeseries(inj.filename)
+            # resample
+            ts = resample_to_delta_t(ts, delta_t, method='ldas')
+            # apply any phase shift
+            try:
+                phase_shift = inj[
+                    '{}_phase_shift'.format(detector_name).lower()]
+            except AttributeError:
+                phase_shift = 0
+            if phase_shift:
+                fs = ts.to_frequencyseries()
+                fs *= numpy.exp(1j*phase_shift)
+                ts = fs.to_timeseries()
+            # apply any scaling
+            try:
+                amp_scale = inj[
+                    '{}_amp_scale'.format(detector_name).lower()]
+            except AttributeError:
+                amp_scale = 1.
+            amp_scale /= distance_scale
+            ts *= amp_scale
+            return ts
+
+
 hdfinjtypes = {
     CBCHDFInjectionSet.injtype: CBCHDFInjectionSet,
     RingdownHDFInjectionSet.injtype: RingdownHDFInjectionSet,
+    FromFileHDFInjectionSet.injtype: FromFileHDFInjectionSet,
 }
 
 
