@@ -34,6 +34,8 @@ from abc import ABCMeta, abstractmethod
 import lalsimulation as sim
 import h5py
 from pycbc import waveform
+from pycbc import frame
+from pycbc.opt import LimitedSizeDict
 from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
 from pycbc.types import float64, float32, TimeSeries, load_timeseries
@@ -750,42 +752,165 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
 
     The injections must have the following attributes set:
 
-    * ``filename``: the name of the file to load containing the time series.
-      The file type and format can be anything understood by
-      :py:func:`pycbc.types.timeseries.load_timeseries`.
-    * ``end_time``: the GPS time of the time series after it is injected.
-    * ``DETECTOR_time_shift``: Number of seconds to add to the end time before
-      injecting into detector ``DETECTOR`` (e.g., ``h1_time_shift``). **The
-      time series will only be injected into a detector if a time shift is
-      given for that detector.** Set 0 to inject at the same time as the
-      ``end_time``; set to -inf, nan, or do not provide a time shift if you
-      do not want to inject the time series into a particular deetector.
+    * ``filename``: (str) the name of the file to load containing the time
+      series. The file type and format can be a frame file or anything
+      understood by :py:func:`pycbc.types.timeseries.load_timeseries`. If a
+      frame file (ends in ``.gwf``) is specified, a ``channel`` attribute must
+      also be set.
+
+    * ``DETECTOR_gps_time``: (float) The GPS time at which the time series
+      should be added to the ``DETECTOR`` data, where ``DETECTOR`` is the name
+      of the instrument to inject into (e.g., ``h1_gps_time``). **The time
+      series will only be injected into a detector if a GPS time is given for
+      that detector.** Set to -inf, nan, or do not provide a GPS time for a
+      particular detector if you do not want to inject into that detector.
+
+    * ``ref_point``: (str or float) What to use as the reference time of the
+      injected time series. The time series will be injected into the detector
+      such that the ``ref_point`` in the time series occurs at the specifed
+      ``DETECTOR_gps_time``. Options are: ``'start'``, ``'end'``, ``'center'``,
+      ``'absmax'``, or a float giving the number of seconds into the time
+      series.
 
     In addition, the following attributes may optionally be provided:
 
-    * ``DETECTOR_phase_shift``: Apply a phase shift to the time series before
-      adding it to detector ``DETECTOR``.
-    * ``DETECTOR_amp_scale``: Scale the amplitude by the given amount before
-      adding it to detector ``DETECTOR``.
+    * ``channel``: (str): If the filename points to a frame file, the channel
+      to load in that file. Must be provided for frame files.
 
-    The signal will be resampled to the same sample rate as the strain it is
-    being injected into. No other conditioning (e.g., tapering) is done. If
-    you would like additional conditioning, modify the timeseries stored in
-    the file prior to using.
+    * ``DETECTOR_phase_shift``: (float) Apply a phase shift to the time series
+      before adding it to detector ``DETECTOR``.
+
+    * ``DETECTOR_amp_scale``: (float) Scale the amplitude by the given amount
+      before adding it to detector ``DETECTOR``.
+
+    * ``slice_start``: (float) Slice the time series starting at
+      ``ref_point + slice_start`` before injecting into the data. Measured in
+      seconds.
+
+    * ``slice_end``: (float) Slice the time series ending at
+      ``ref_point + slice_end`` before injecting into the data. Measured in
+      seconds.
+
+    * ``left_taper_width``: (float) Taper the start of the time series (after
+      slicing) using half a kaiser window over the given number of seconds.
+      See `:py:func:waveform.utils.td_taper` for more details.
+
+    * ``right_taper_width``: (float) Taper the end of the time series (after
+      slicing) using half a kaiser window over the given number of seconds.
+      See `:py:func:waveform.utils.td_taper` for more details.
+
+    The signal will be resampled to the same sample rate as the data it is
+    being injected into.
 
     In order to use with ``pycbc_create_injections``, set the ``approximant``
     name to ``'fromfile'``.
     """
     injtype = 'fromfile'
-    required_params = ('filename', 'end_time')
+    required_params = ('filename', 'ref_point')
+    _buffersize = 10
+    _buffer = None
+    _rtbuffer = None
 
     def end_times(self):
-        return self.table.end_time
+        raise NotImplementedError("FromFile times cannot be determined "
+                                  "without loading time series")
 
     @staticmethod
     def supported_approximants():
         return ['fromfile']
 
+    def loadts(self, inj):
+        """Loads an injection time series.
+
+        After the first time a time series is loaded it will be added to an
+        internal buffer for faster in case another injection uses the same
+        series.
+        """
+        if self._buffer is None:
+            # create the buffer
+            self._buffer = LimitedSizeDict(size_limit=self._buffersize)
+        try:
+            return self._buffer[inj.filename]
+        except KeyError:
+            pass
+        # not in buffer, so load
+        if inj.filename.endswith('.gwf'):
+            try:
+                channel = inj.channel
+            except AttributeError:
+                raise ValueError("Must provide a channel for frame files")
+            ts = frame.read_frame(inj.filename, inj.channel)
+        else:
+            ts = load_timeseries(inj.filename)
+        # cache
+        self._buffer[inj.filename] = ts
+        return ts
+
+    def set_ref_time(self, inj, ts):
+        """Sets t=0 of the given time series based on what the given
+        injection's ``ref_point`` is.
+        """
+        try:
+            ref_point = inj.ref_point
+        except AttributeError:
+            raise ValueError("Must provide a ref_point for fromfile "
+                             "injections")
+        # try to get from buffer
+        if self._rtbuffer is None:
+            self._rtbuffer = LimitedSizeDict(size_limit=self._buffersize)
+        try:
+            reftime = self._rtbuffer[inj.filename, ref_point]
+        except KeyError:
+            if ref_point == "start":
+                reftime = 0.
+            elif ref_point == "end":
+                reftime = -len(ts)*ts.delta_t
+            elif ref_point == "center":
+                reftime = -len(ts)*ts.delta_t/2.
+            elif ref_point == "absmax":
+                reftime = -ts.abs_arg_max()*ts.delta_t
+            elif isinstance(ref_point, (float, int)):
+                reftime = -float(ref_point)
+            else:
+                raise ValueError("Unrecognized ref_point {} provided"
+                                 .format(ref_point))
+            self._rtbuffer[inj.filename, ref_point] = reftime
+        ts._epoch = reftime
+
+    def slice_and_taper(self, inj, ts):
+        """Slices and tapers a timeseries based on the injection settings.
+        
+        This assumes that ``set_ref_time`` has been applied to the timeseries
+        first. A copy of the time series will be returned even if no slicing
+        or tapering is done.
+        """
+        try:
+            tstart = inj.slice_start
+        except AttributeError:
+            tstart = ts.start_time
+        try:
+            tend = inj.slice_end
+        except AttributeError:
+            tend = ts.end_time
+        ts = ts.time_slice(tstart, tend).copy()
+        # now taper
+        try:
+            twidth = inj.left_taper_width
+        except AttributeError:
+            twidth = 0
+        if twidth:
+            ts = wfutils.td_taper(ts, ts.start_time, ts.start_time+twidth,
+                                  side='left') 
+        try:
+            twidth = inj.right_taper_width
+        except AttributeError:
+            twidth = 0
+        if twidth:
+            ts = wfutils.td_taper(ts, ts.end_time-twidth, ts.end_time,
+                                  side='right') 
+        return ts
+
+            
     def apply(self, strain, detector_name, distance_scale=1,
               injection_sample_rate=None, inj_filter_rejector=None):
         if inj_filter_rejector is not None:
@@ -797,26 +922,27 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
             delta_t = strain.delta_t
         injections = self.table
         for ii, inj in enumerate(injections):
-            # figure out if we should inject or not based on the times
-            end_time = inj.end_time
-            try:
-                tshift = inj['{}_time_shift'.format(detector_name).lower()]
-            except ValueError:
-                tshift = -np.inf
-            if np.isnan(tshift):
-                # nan means don't inject
-                tshift = -np.inf
-            end_time += tshift
-            # now get the start time...
+            # Check if we should inject or not...
             # loading the time series like this is a bit brute-force, since
             # we really only need to know the delta_t and length of the
-            # timeseries, but that would require adding logic to figure out how
-            # to get that metadata based on the filetype
-            # check if we should inject or not
-            ts = load_timeseries(inj.filename)
-            ts._epoch = end_time - len(ts)*ts.delta_t
-            inject = (ts.start_time < strain.end_time and
-                      ts.end_time > strain.start_time)
+            # timeseries if the ref_point is anything but absmax, but that
+            # would require adding logic to figure out how to get that metadata
+            # based on the filetype and ref_point
+            ts = self.loadts(inj)
+            # set the ref time
+            self.set_ref_time(inj, ts)
+            # determine if we inject or not based on the times
+            try:
+                injtime = inj['{}_gps_time'.format(detector_name).lower()]
+            except ValueError:
+                injtime = -np.inf
+            if np.isnan(injtime):
+                # nan means don't inject
+                injtime = -np.inf
+            start_time = injtime + ts.start_time
+            end_time = injtime + ts.end_time
+            inject = (start_time < strain.end_time and
+                      end_time > strain.start_time)
             if inject:
                 ts = self.make_strain_from_inj_object(
                     inj, delta_t, detector_name,
@@ -829,6 +955,11 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
                                     distance_scale=1, ts=None):
             if ts is None:
                 ts = load_timeseries(inj.filename)
+                self.set_ref_time(inj, ts)
+            # slice and taper
+            ts = self.slice_and_taper(inj, ts)
+            # shift reference to the detector time
+            ts._epoch += inj['{}_gps_time'.format(detector_name).lower()]
             # resample
             ts = resample_to_delta_t(ts, delta_t, method='ldas')
             # apply any phase shift
