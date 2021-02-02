@@ -38,7 +38,7 @@ setup_requires = ['numpy>=1.16.0']
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'cython>=0.29',
                       'decorator>=3.4.2',
-                      'numpy>=1.16.0,!=1.19.0; python_version >= "3.5"',
+                      'numpy>=1.16.0,!=1.19.0,<1.20.0; python_version >= "3.5"',
                       'numpy>=1.16.0,<1.17.0; python_version <= "2.7"',
                       'scipy>=0.16.0; python_version >= "3.5"',
                       'scipy>=0.16.0,<1.3.0; python_version <= "3.4"',
