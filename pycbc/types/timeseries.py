@@ -886,7 +886,7 @@ class TimeSeries(Array):
         fft(tmp, f)
         return f
 
-    def inject(self, other):
+    def inject(self, other, copy=True):
         """Return copy of self with other injected into it.
 
         The other vector will be resized and time shifted with sub-sample
@@ -896,11 +896,13 @@ class TimeSeries(Array):
         # only handle equal sample rate for now.
         if not self.sample_rate_close(other):
             raise ValueError('Sample rate must be the same')
-
+        # determine if we want to inject in place or not
+        if copy:
+            self = self.copy()
         # Other is disjoint
         if ((other.start_time >= self.end_time) or
            (self.start_time > other.end_time)):
-            return self.copy()
+            return self
 
         other = other.copy()
         dt = float((other.start_time - self.start_time) * self.sample_rate)
@@ -934,9 +936,8 @@ class TimeSeries(Array):
             oright = len(other) - (right - len(self))
             right = len(self)
 
-        ts = self.copy()
-        ts[left:right] += other[oleft:oright]
-        return ts
+        self[left:right] += other[oleft:oright]
+        return self
 
     add_into = inject  # maintain backwards compatibility for now
 
