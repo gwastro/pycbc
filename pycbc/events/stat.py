@@ -1277,7 +1277,8 @@ class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
     Statistic combining PhaseTD, ExpFitSGBg and additional foreground info.
     """
 
-    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None,
+                 reference_ifos='H1,L1', **kwargs):
         """
         Create a statistic class instance
 
@@ -1290,8 +1291,11 @@ class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
             construct the coincident statistics. The files must have a 'stat'
             attribute which is used to associate them with the appropriate
             statistic class.
-        ifos: list of strs, not used here
+        ifos: list of strs
             The list of detector names
+        reference_ifos: comma separated list of ifo prefixes
+            List of detectors to be used as the reference network for
+            network sensitivity comparisons. Must be in fits_by_tid
         """
 
         # read in background fit info and store it
@@ -1308,9 +1312,12 @@ class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
 
         for ifo in self.bg_ifos:
             self.assign_median_sigma(ifo)
+
+        ref_ifos = reference_ifos.split(',')
+
         # benchmark_logvol is a benchmark sensitivity array over template id
         hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
-                                       for ifo in ['H1', 'L1']], axis=0)
+                                       for ifo in ref_ifos], axis=0)
         self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
         self.single_increasing = False
 
