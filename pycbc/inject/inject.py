@@ -801,7 +801,7 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
             end_time = inj.end_time
             try:
                 tshift = inj['{}_time_shift'.format(detector_name).lower()]
-            except AttributeError:
+            except ValueError:
                 tshift = -np.inf
             if np.isnan(tshift):
                 # nan means don't inject
@@ -814,36 +814,16 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
             # to get that metadata based on the filetype
             # check if we should inject or not
             ts = load_timeseries(inj.filename)
-            start_time = end_time - len(ts)*ts.delta_t
-            if start_time < ts.end_time and end_time > ts.end_time:
+            ts._epoch = end_time - len(ts)*ts.delta_t
+            inject = (ts.start_time < strain.end_time and
+                      ts.end_time > strain.start_time)
+            if inject:
                 ts = self.make_strain_from_inj_object(
                     inj, delta_t, detector_name,
                     distance_scale=distance_scale, ts=ts)
-                if delta_t != strain.delta_t:
+                if ts.delta_t != strain.delta_t:
                     ts = resample_to_delta_t(ts, strain.delta_t, method='ldas')
-                # figure out where to add
-                dt = (start_time - ts.start_time) // ts.delta_t
-                if dt <= 0:
-                    # time series starts before the start of the segment
-                    strain_kmin = 0
-                    inj_kmin = abs(dt)
-                else:
-                    # time series starts after the start of the segment
-                    strain_kmin = abs(dt)
-                    inj_kmin = 0
-                dt = (end_time - ts.end_time) // ts.delta_t
-                if dt <= 0:
-                    # time series ends before the end of the segment
-                    strain_kmax = len(strain) - abs(dt)
-                    inj_kmax = None
-                else:
-                    # time series ends after the end of the segment
-                    strain_kmax = None
-                    inj_kmax = len(ts) - dt
-                ts = ts[inj_kmin:inj_kmax]
-                # add to the strain
-                strain[strain_kmin:strain_kmax] += ts
-
+                strain.inject(ts, copy=False)
 
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     distance_scale=1, ts=None):
@@ -855,7 +835,7 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
             try:
                 phase_shift = inj[
                     '{}_phase_shift'.format(detector_name).lower()]
-            except AttributeError:
+            except ValueError:
                 phase_shift = 0
             if phase_shift:
                 fs = ts.to_frequencyseries()
@@ -865,7 +845,7 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
             try:
                 amp_scale = inj[
                     '{}_amp_scale'.format(detector_name).lower()]
-            except AttributeError:
+            except ValueError:
                 amp_scale = 1.
             amp_scale /= distance_scale
             ts *= amp_scale
