@@ -786,18 +786,26 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
     def supported_approximants():
         return ['fromfile']
 
-    def apply(self, strain, detector_name):
+    def apply(self, strain, detector_name, distance_scale=1,
+              injection_sample_rate=None, inj_filter_rejector=None):
+        if inj_filter_rejector is not None:
+            raise NotImplementedError("FromFile injections do not support "
+                                      "inj_filter_rejector")
+        if injection_sample_rate is not None:
+            delta_t = 1./injection_sample_rate
+        else:
+            delta_t = strain.delta_t
         injections = self.table
         for ii, inj in enumerate(injections):
             # figure out if we should inject or not based on the times
             end_time = inj.end_time
             try:
-                tshift = inj['{}_time_shift'.format(detector).lower()]
+                tshift = inj['{}_time_shift'.format(detector_name).lower()]
             except AttributeError:
-                tshift = -numpy.inf
-            if numpy.isnan(tshift):
+                tshift = -np.inf
+            if np.isnan(tshift):
                 # nan means don't inject
-                tshift = -numpy.inf
+                tshift = -np.inf
             end_time += tshift
             # now get the start time...
             # loading the time series like this is a bit brute-force, since
@@ -806,11 +814,13 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
             # to get that metadata based on the filetype
             # check if we should inject or not
             ts = load_timeseries(inj.filename)
-            start_time = end_time - len(ts)*delta_t
+            start_time = end_time - len(ts)*ts.delta_t
             if start_time < ts.end_time and end_time > ts.end_time:
                 ts = self.make_strain_from_inj_object(
-                    inj, strain.delta_t, detector_name,
+                    inj, delta_t, detector_name,
                     distance_scale=distance_scale, ts=ts)
+                if delta_t != strain.delta_t:
+                    ts = resample_to_delta_t(ts, strain.delta_t, method='ldas')
                 # figure out where to add
                 dt = (start_time - ts.start_time) // ts.delta_t
                 if dt <= 0:
@@ -849,7 +859,7 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
                 phase_shift = 0
             if phase_shift:
                 fs = ts.to_frequencyseries()
-                fs *= numpy.exp(1j*phase_shift)
+                fs *= np.exp(1j*phase_shift)
                 ts = fs.to_timeseries()
             # apply any scaling
             try:
