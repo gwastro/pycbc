@@ -1293,9 +1293,9 @@ class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
             statistic class.
         ifos: list of strs
             The list of detector names
-        reference_ifos: comma separated list of ifo prefixes
-            List of detectors to be used as the reference network for
-            network sensitivity comparisons. Must be in fits_by_tid
+        reference_ifos: string of comma separated ifo prefixes
+            Detectors to be used as the reference network for network
+            sensitivity comparisons. Each must be in fits_by_tid
         """
 
         # read in background fit info and store it
