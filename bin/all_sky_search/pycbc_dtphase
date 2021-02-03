@@ -1,28 +1,31 @@
 #!/bin/env python
-""" Create a file containing the time, phase and amplitude
-correlations between two or more detectors for signals by
-doing a simple monte-carlo
+
+"""
+Create a file containing the time, phase and amplitude correlations between two
+or more detectors for signals by doing a simple monte-carlo.
 
 Output is the relative amplitude, time, and phase as compared to a reference
-IFO. A separate calculation is done for each IFO as a possible reference.
-The data is stored as two vectors : one vector gives the discrete integer bin
+IFO. A separate calculation is done for each IFO as a possible reference.  The
+data is stored as two vectors : one vector gives the discrete integer bin
 corresponding to a particular location in 3*(Nifo-1)-dimensional
 amplitude/time/phase space, the other gives the weight assigned to that bin.
 To get the signal rate this weight should be scaled by the local sensitivity
 value and by the SNR of the event in the reference detector.
 """
-import argparse, h5py, numpy as np, pycbc.detector, logging, multiprocessing
-from numpy.random import normal, uniform, power
+
+import argparse, h5py, numpy as np, pycbc.detector, logging
+from numpy.random import uniform
 from scipy.stats import norm
 from copy import deepcopy
 
-parser = argparse.ArgumentParser()
+
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--ifos', nargs='+',
                     help="The ifos to generate a histogram for")
-parser.add_argument('--sample-size', type=int,
+parser.add_argument('--sample-size', type=int, required=True,
                     help="Approximate number of independent samples to draw "
                          "for the distribution")
-parser.add_argument('--snr-ratio', type=float,
+parser.add_argument('--snr-ratio', type=float, required=True,
                     help="The SNR ratio permitted between reference ifo and "
                          "all others. Ex. giving 4 permits a ratio of "
                          "0.25 -> 4")
@@ -30,7 +33,7 @@ parser.add_argument('--relative-sensitivities', nargs='+', type=float,
                     help="Numbers proportional to horizon distance or "
                          "expected SNR at fixed distance, one for each ifo")
 parser.add_argument('--seed', type=int, default=124)
-parser.add_argument('--output-file')
+parser.add_argument('--output-file', required=True)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--bin-density', type=int, default=1,
                     help="Number of bins per 1 sigma uncertainty in a "
@@ -60,7 +63,9 @@ parser.add_argument('--param-bin-dtype', default='int32',
                     choices=['int8', 'int16', 'int32'])
 args = parser.parse_args()
 
-assert len(args.relative_sensitivities) == len(args.ifos)
+if len(args.relative_sensitivities) != len(args.ifos):
+    parser.error('--relative-sensitivities requires one numerical argument '
+                 'for each detector')
 
 # Approximate timing error at lower SNRs
 twidth = args.timing_uncertainty / args.bin_density
@@ -161,8 +166,8 @@ for ifo0 in args.ifos:
         dec = np.arccos(uniform(-1., 1., size=size)) - np.pi/2
         inc = np.arccos(uniform(-1., 1., size=size))
         pol = uniform(0, 2 * np.pi, size=size)
-        ip = np.cos(inc)
-        ic = 0.5 * (1.0 + ip * ip)
+        ic = np.cos(inc)
+        ip = 0.5 * (1.0 + ic * ic)
 
         # calculate the toa, poa, and amplitude of each sample
         data = {}
@@ -267,3 +272,5 @@ f.attrs['pwidth'] = pwidth
 f.attrs['swidth'] = swidth
 f.attrs['ifos'] = args.ifos
 f.attrs['stat'] = 'phasetd_newsnr_%s' % ''.join(args.ifos)
+
+logging.info('Done')
