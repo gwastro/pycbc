@@ -109,7 +109,6 @@ def compute_network_snr(v, *argv):
  
 def compute_network_snr_pso(v, *argv, **kwargs):
     argv = kwargs['args']
-    nsnr_array=numpy.zeros(len(v), dtype=float)
     nsnr_array = [-compute_network_snr_core(v_i, *argv)[0] for v_i in v]
     return nsnr_array
 
