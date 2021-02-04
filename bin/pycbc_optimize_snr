@@ -27,7 +27,7 @@ from pycbc.psd import interpolate
 try: 
     import pyswarms as ps
 except:
-    print("No pyswarms package available for pso optimization")
+    ps = None
 
 
 Nfeval = 0
@@ -106,14 +106,12 @@ def compute_network_snr(v, *argv):
         argv = argv[0]
     nsnr, _ = compute_network_snr_core(v, *argv)
     return -nsnr
-    
+ 
 def compute_network_snr_pso(v, *argv, **kwargs):
     argv = kwargs['args']
     nsnr_array=numpy.zeros(len(v), dtype=float)
-    for i in range(len(v)):
-        nsnr, _ = compute_network_snr_core(v[i], *argv)
-        nsnr_array[i] = nsnr
-    return -nsnr_array
+    nsnr_array = [-compute_network_snr_core(v_i, *argv)[0] for v_i in v]
+    return nsnr_array
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -173,13 +171,13 @@ parser.add_argument('--pso-iters', type=int, default=5,
 parser.add_argument('--pso-particles', type=int, default=250,
                     help='Only relevant for --optimizer pso: '
                     'Number of particles used in the swarm.')
-parser.add_argument('--pso-c1', default=0.5,
+parser.add_argument('--pso-c1', type=float, default=0.5,
                     help='Only relevant for --optimizer pso: '
                     'The hyperparameter c1: the cognitive parameter.')
-parser.add_argument('--pso-c2', default=2.0,
+parser.add_argument('--pso-c2', type=float, default=2.0,
                     help='Only relevant for --optimizer pso: '
                     'The hyperparameter c2: the social parameter.')
-parser.add_argument('--pso-w', default=0.01,
+parser.add_argument('--pso-w', type=float, default=0.01,
                     help='Only relevant for --optimizer pso: '
                     'The hyperparameter w: the intertia parameter.')
                     
@@ -215,7 +213,7 @@ f_end = float(fp['f_end'][()])
 delta_f = fp['delta_f'][()]
 sample_rate = fp['sample_rate'][()]
 
-extra_args = [data, coinc_times, coinc_ifos, flen, 
+extra_args = [data, coinc_times, coinc_ifos, flen,
               approximant, flow, f_end, delta_f, sample_rate]
 extra_kwargs = {}
 extra_kwargs['args'] = extra_args
@@ -263,17 +261,16 @@ elif args.optimizer == 'pso':
 logging.info('Optimization complete')
 
 if args.optimizer == 'pso':
-    mtotal = mtotal_from_mchirp_eta(results[0], results[1])
-    mass1 = mass1_from_mtotal_eta(mtotal, results[1])
-    mass2 = mass2_from_mtotal_eta(mtotal, results[1])
-    spin1z = results[2]
-    spin2z = results[3]
+    opt_params = results
 else:
-    mtotal = mtotal_from_mchirp_eta(results.x[0], results.x[1])
-    mass1 = mass1_from_mtotal_eta(mtotal, results.x[1])
-    mass2 = mass2_from_mtotal_eta(mtotal, results.x[1])
-    spin1z = results.x[2]
-    spin2z = results.x[3]
+    opt_params = results.x
+
+mtotal = mtotal_from_mchirp_eta(opt_params[0], opt_params[1])
+mass1 = mass1_from_mtotal_eta(mtotal, opt_params[1])
+mass2 = mass2_from_mtotal_eta(mtotal, opt_params[1])
+spin1z = opt_params[2]
+spin2z = opt_params[3]
+
 
 fup_ifos = set(ifos) - set(coinc_ifos)
 
@@ -282,10 +279,8 @@ for ifo in fup_ifos:
 
 extra_args[2] = ifos
 
-if args.optimizer == 'pso':
-    _, snr_series_dict = compute_network_snr_core(results, *extra_args)
-else:
-    _, snr_series_dict = compute_network_snr_core(results.x, *extra_args)
+_, snr_series_dict = compute_network_snr_core(opt_params, *extra_args)
+
 
 # Prepare for GraceDB upload
 coinc_results = {}
