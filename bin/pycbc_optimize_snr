@@ -216,7 +216,8 @@ f_end = float(fp['f_end'][()])
 delta_f = fp['delta_f'][()]
 sample_rate = fp['sample_rate'][()]
 
-extra_args = [data, coinc_times, coinc_ifos, flen, approximant, flow, f_end, delta_f, sample_rate]
+extra_args = [data, coinc_times, coinc_ifos, flen, 
+              approximant, flow, f_end, delta_f, sample_rate]
 extra_kwargs = {}
 extra_kwargs['args'] = extra_args
 
@@ -254,8 +255,10 @@ elif args.optimizer == 'shgo':
                 
 elif args.optimizer == 'pso':
     options = {'c1': args.pso_c1, 'c2': args.pso_c2, 'w':args.pso_w}
-    optimizer = ps.single.GlobalBestPSO(n_particles=args.pso_particles, dimensions=4, options=options, bounds=bounds)
-    cost, results = optimizer.optimize(compute_network_snr_pso, iters=args.pso_iters, n_processes=args.cores, **extra_kwargs)
+    optimizer = ps.single.GlobalBestPSO(n_particles=args.pso_particles, 
+                                        dimensions=4, options=options, bounds=bounds)
+    cost, results = optimizer.optimize(compute_network_snr_pso, iters=args.pso_iters,
+                                       n_processes=args.cores, **extra_kwargs)
                 
 
 logging.info('Optimization complete')
@@ -284,8 +287,6 @@ if args.optimizer == 'pso':
     _, snr_series_dict = compute_network_snr_core(results, *extra_args)
 else:
     _, snr_series_dict = compute_network_snr_core(results.x, *extra_args)
-    
-print(_)
 
 # Prepare for GraceDB upload
 coinc_results = {}
