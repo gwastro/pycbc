@@ -19,7 +19,6 @@ from pycbc.conversions import (
     mass1_from_mtotal_eta, mass2_from_mtotal_eta
 )
 from scipy.optimize import differential_evolution, shgo
-import pyswarms as ps
 from pycbc.io import live
 from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
