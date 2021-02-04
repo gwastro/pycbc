@@ -184,6 +184,9 @@ parser.add_argument('--pso-w', type=float, default=0.01,
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
+if args.optimizer == 'pso' and ps == None:
+    parser.error('You need to install pyswarms to use the pso optimizer.')
+
 logging.info('Starting optimize SNR')
 
 data = {}
@@ -279,7 +282,6 @@ for ifo in fup_ifos:
 extra_args[2] = ifos
 
 _, snr_series_dict = compute_network_snr_core(opt_params, *extra_args)
-
 
 # Prepare for GraceDB upload
 coinc_results = {}
