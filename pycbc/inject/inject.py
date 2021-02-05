@@ -838,8 +838,9 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
             try:
                 channel = inj.channel
             except AttributeError as _err:
+                # Py3.XX: uncomment the "from _err" when we drop 2.7
                 raise ValueError("Must provide a channel for "
-                                 "frame files") from _err
+                                 "frame files") #from _err
             ts = frame.read_frame(inj.filename, channel)
         else:
             ts = load_timeseries(inj.filename)
@@ -854,8 +855,9 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
         try:
             ref_point = inj.ref_point
         except AttributeError as _err:
-            raise ValueError("Must provide a ref_point for fromfile "
-                             "injections") from _err
+            # Py3.XX: uncomment the "from _err" when we drop 2.7
+            raise ValueError("Must provide a ref_point for {} injections"
+                             .format(self.injtype))  #from _err
         # try to get from buffer
         if self._rtbuffer is None:
             self._rtbuffer = LimitedSizeDict(size_limit=self._buffersize)
