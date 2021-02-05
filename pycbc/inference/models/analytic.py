@@ -19,6 +19,7 @@ log likelihood.
 """
 
 import numpy
+import logging
 from scipy import stats
 
 from .base import BaseModel
@@ -232,15 +233,20 @@ class TestPosterior(BaseModel):
     name = "test_posterior"
 
     def __init__(self, variable_params, posterior_file, nsamples, **kwargs):
-        super(TestKDE, self).__init__(variable_params, **kwargs)
+        super(TestPosterior, self).__init__(variable_params, **kwargs)
+        logging.info('loading test posterior model')
         from pycbc.inference.io import loadfile # avoid cyclic import
         inf_file = loadfile(posterior_file)
+        logging.info('reading samples')
         samples = inf_file.read_samples(variable_params)
-        samples = numpy.array([samples[v] for v in variable_params)
+        samples = numpy.array([samples[v] for v in variable_params])
+        logging.info('making kde with %s samples', samples.shape[-1])
         self.kde = stats.gaussian_kde(samples)
+        logging.info('done initializing test posterior model')
 
     def _loglikelihood(self):
         """Returns the log pdf of the Rosenbrock function.
         """
         p = numpy.array([self.current_params[p] for p in self.variable_params])
-        return self.kde.logpdf(p)
+        logpost = self.kde.logpdf(p)
+        return float(logpost[0])
