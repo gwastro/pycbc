@@ -170,10 +170,7 @@ echo -e "\\n\\n>> [`date`] Checking results"
 ./check_results.py
 
 echo -e "\\n\\n>> [`date`] Running Bayestar"
-if python -c 'import sys; assert sys.version_info >= (3,6)' &> /dev/null;
-then
-  for XMLFIL in `ls output/*xml*`
-  do
-    bayestar-localize-coincs ${XMLFIL} ${XMLFIL}
-  done
-fi
+for XMLFIL in `ls output/*xml*`
+do
+  bayestar-localize-coincs ${XMLFIL} ${XMLFIL}
+done
