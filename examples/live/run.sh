@@ -168,3 +168,9 @@ python -m mpi4py `which pycbc_live` \
 
 echo -e "\\n\\n>> [`date`] Checking results"
 ./check_results.py
+
+echo -e "\\n\\n>> [`date`] Running Bayestar"
+for XMLFIL in `ls output/*xml*`
+do
+  bayestar-localize-coincs ${XMLFIL} ${XMLFIL}
+done
