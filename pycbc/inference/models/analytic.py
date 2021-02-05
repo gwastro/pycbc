@@ -212,3 +212,35 @@ class TestPrior(BaseModel):
         """Returns zero.
         """
         return 0.
+
+class TestPosterior(BaseModel):
+    r"""Build a test posterior from a set of samples using a kde
+
+    Parameters
+    ----------
+    variable_params : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    posterior_file : hdf file
+        A compatible pycbc inference output file which posterior samples can
+        be read from.
+    nsamples : int
+        Number of samples to draw from posterior file to build KDE.
+    **kwargs :
+        All other keyword arguments are passed to ``BaseModel``.
+
+    """
+    name = "test_posterior"
+
+    def __init__(self, variable_params, posterior_file, nsamples, **kwargs):
+        super(TestKDE, self).__init__(variable_params, **kwargs)
+        from pycbc.inference.io import loadfile # avoid cyclic import
+        inf_file = loadfile(posterior_file)
+        samples = inf_file.read_samples(variable_params)
+        samples = numpy.array([samples[v] for v in variable_params)
+        self.kde = stats.gaussian_kde(samples)
+
+    def _loglikelihood(self):
+        """Returns the log pdf of the Rosenbrock function.
+        """
+        p = numpy.array([self.current_params[p] for p in self.variable_params])
+        return self.kde.logpdf(p)
