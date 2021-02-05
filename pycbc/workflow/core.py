@@ -863,7 +863,7 @@ class Node(pegasus_workflow.Node):
         self._options += self.executable.common_options
         self._raw_options += self.executable.common_raw_options
         for inp in self.executable.common_input_files:
-            self._add_input(inp)
+            self.add_input(inp)
 
         if len(self.executable.time_dependent_options):
             # Resolving these options requires the concept of a valid time.
@@ -955,7 +955,7 @@ class Node(pegasus_workflow.Node):
             self.add_raw_arg(':')
             self.add_raw_arg(infile.name)
             self.add_raw_arg(' ')
-            self._add_input(infile)
+            self.add_input(infile)
 
     def add_multiifo_output_list_opt(self, opt, outputs):
         """ Add an option that determines a list of outputs from multiple
@@ -971,7 +971,7 @@ class Node(pegasus_workflow.Node):
             self.add_raw_arg(':')
             self.add_raw_arg(outfile.name)
             self.add_raw_arg(' ')
-            self._add_output(outfile)
+            self.add_output(outfile)
 
     def new_multiifo_output_list_opt(self, opt, ifos, analysis_time, extension,
                                      tags=None, store_file=None,

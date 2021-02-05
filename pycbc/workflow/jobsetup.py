@@ -537,7 +537,7 @@ class PyCBCInspiralExecutable(Executable):
                      int_gps_time_to_str(data_seg[1] - pad_data))
         node.add_opt('--trig-start-time', int_gps_time_to_str(valid_seg[0]))
         node.add_opt('--trig-end-time', int_gps_time_to_str(valid_seg[1]))
-        node.add_profile('condor', 'request_cpus', self.num_threads)
+        node.set_num_cpus(self.num_threads)
 
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
@@ -731,7 +731,7 @@ class PyCBCMultiInspiralExecutable(Executable):
         node.add_opt('--trig-start-time', valid_seg[0])
         node.add_opt('--trig-end-time', valid_seg[1])
 
-        node.add_profile('condor', 'request_cpus', self.num_threads)
+        node.set_num_cpus(self.num_threads)
 
         # Set the input and output files
         node.new_output_file_opt(data_seg, '.hdf', '--output',
@@ -745,7 +745,7 @@ class PyCBCMultiInspiralExecutable(Executable):
                          " ".join([":".join([frameCache.ifo, frameCache.name])\
                                    for frameCache in dfParents]))
             for frameCache in dfParents:
-                node._add_input(frameCache)
+                node.add_input(frameCache)
             #node.add_input_list_opt('--frame-cache', dfParents)
 
         if ipn_file is not None:
