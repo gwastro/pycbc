@@ -4,11 +4,13 @@ gwpy>=0.8.1
 # HEALPix is very useful for some analysis.
 healpy
 
-# Needed for gracedb uploads
+# Needed for gracedb uploads and skymap generation
 ligo-gracedb
+ligo.skymap; python_version >= '3.5'
 
 # auxiliary samplers
 cpnest
 pymultinest
 ultranest
 https://github.com/willvousden/ptemcee/archive/master.tar.gz
+

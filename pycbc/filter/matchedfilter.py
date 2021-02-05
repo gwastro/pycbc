@@ -1812,8 +1812,11 @@ def followup_event_significance(ifo, data_reader, bank,
     pvalue = (1 + (peaks >= peak_value).sum()) / float(1 + nsamples)
 
     # Return recentered source SNR for bayestar, along with p-value, and trig
-    baysnr = snr.time_slice(peak_time - duration / 2.0,
-                            peak_time + duration / 2.0)
+    peak_full = int((peak_time - snr.start_time) / snr.delta_t)
+    half_dur_samples = int(snr.sample_rate * duration / 2)
+    snr_slice = slice(peak_full - half_dur_samples,
+                      peak_full + half_dur_samples + 1)
+    baysnr = snr[snr_slice]
 
     logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
                  pvalue, nsamples)
