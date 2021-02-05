@@ -19,6 +19,7 @@ log likelihood.
 """
 
 import numpy
+import numpy.random
 import logging
 from scipy import stats
 
@@ -234,12 +235,19 @@ class TestPosterior(BaseModel):
 
     def __init__(self, variable_params, posterior_file, nsamples, **kwargs):
         super(TestPosterior, self).__init__(variable_params, **kwargs)
-        logging.info('loading test posterior model')
+
         from pycbc.inference.io import loadfile # avoid cyclic import
+        logging.info('loading test posterior model')
         inf_file = loadfile(posterior_file)
         logging.info('reading samples')
         samples = inf_file.read_samples(variable_params)
         samples = numpy.array([samples[v] for v in variable_params])
+
+        # choose only the requested amount of samples
+        idx = numpy.arange(0, samples.shape[-1])
+        idx = numpy.random.choice(idx, size=nsamples, replace=False)
+        samples = samples[idx]
+        
         logging.info('making kde with %s samples', samples.shape[-1])
         self.kde = stats.gaussian_kde(samples)
         logging.info('done initializing test posterior model')
