@@ -18,9 +18,9 @@ This modules provides models that have analytic solutions for the
 log likelihood.
 """
 
+import logging
 import numpy
 import numpy.random
-import logging
 from scipy import stats
 
 from .base import BaseModel
@@ -215,6 +215,7 @@ class TestPrior(BaseModel):
         """
         return 0.
 
+
 class TestPosterior(BaseModel):
     r"""Build a test posterior from a set of samples using a kde
 
@@ -236,7 +237,7 @@ class TestPosterior(BaseModel):
     def __init__(self, variable_params, posterior_file, nsamples, **kwargs):
         super(TestPosterior, self).__init__(variable_params, **kwargs)
 
-        from pycbc.inference.io import loadfile # avoid cyclic import
+        from pycbc.inference.io import loadfile  # avoid cyclic import
         logging.info('loading test posterior model')
         inf_file = loadfile(posterior_file)
         logging.info('reading samples')
@@ -245,9 +246,9 @@ class TestPosterior(BaseModel):
 
         # choose only the requested amount of samples
         idx = numpy.arange(0, samples.shape[-1])
-        idx = numpy.random.choice(idx, size=nsamples, replace=False)
-        samples = samples[idx]
-        
+        idx = numpy.random.choice(idx, size=int(nsamples), replace=False)
+        samples = samples[:, idx]
+
         logging.info('making kde with %s samples', samples.shape[-1])
         self.kde = stats.gaussian_kde(samples)
         logging.info('done initializing test posterior model')
