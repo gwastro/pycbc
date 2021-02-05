@@ -93,6 +93,8 @@ class Executable(ProfileShortcuts):
             # FIXME: Error handling niceness needed
             url = self.exe_pfns[site]
 
+        # FIXME: Understand is_stageable. Do *not* want exes transferred in
+        #        almost all cases. (Probably that's a site property)
         transform = dax.Transformation(
             self.logical_name,
             site=site,
@@ -208,6 +210,16 @@ class Node(ProfileShortcuts):
         self._dax_node.add_outputs(out, stage_out=stage_out)
 
     # public functions to add options, arguments with or without data sources
+    def add_input(self, inp):
+        """Declares an input file without adding it as a command-line option.
+        """
+        self._add_input(inp)
+
+    def add_output(self, inp):
+        """Declares an output file without adding it as a command-line option.
+        """
+        self._add_output(inp)
+
     def add_input_opt(self, opt, inp):
         """ Add an option that determines an input
         """
@@ -275,9 +287,12 @@ class Node(ProfileShortcuts):
         except dax.errors.DuplicateError:
             if force:
                 # FIXME: This definitely won't work. Not sure how to fix yet!
+                raise
                 # Replace with the new key
                 self._dax_node.removeProfile(entry)
                 self._dax_node.addProfile(entry)
+            else:
+                raise
 
     def _finalize(self):
         if len(self._raw_options):
@@ -287,6 +302,7 @@ class Node(ProfileShortcuts):
             raw_args = []
         args = self._args + raw_args + self._options
         self._dax_node.add_args(*args)
+
 
 class Workflow(object):
     """
@@ -310,25 +326,6 @@ class Workflow(object):
         else:
             self._asdag = None
 
-    def _make_root_dependency(self, inp):
-        # FIXME: I'm sure this wil lbe removed
-        def root_path(v):
-            path = [v]
-            while v.in_workflow:
-                path += [v.in_workflow]
-                v = v.in_workflow
-            return path
-        workflow_root = root_path(self)
-        input_root = root_path(inp)
-        for step in workflow_root:
-            if step in input_root:
-                common = step
-                break
-        dep = dax.Dependency(
-            parent=input_root[input_root.index(common)-1].as_job,
-            child=workflow_root[workflow_root.index(common)-1].as_job)
-        common._adag.addDependency(dep)
-
     def add_workflow(self, workflow):
         """ Add a sub-workflow to this workflow
 
@@ -350,7 +347,6 @@ class Workflow(object):
 
         return self
 
-
     def add_subworkflow_dependancy(self, parent_workflow, child_workflow):
         """
         Add a dependency between two sub-workflows in this workflow
@@ -367,7 +363,6 @@ class Workflow(object):
         self._adag.add_dependency(parent_workflow._asdag,
                                   children=[child_workflow._asdag])
 
-
     def add_transformation(self, tranformation):
         """ Add a transformation to this workflow
 
@@ -380,7 +375,6 @@ class Workflow(object):
         """
         self._tc.add_transformations(tranformation)
 
-
     def add_container(self, container):
         """ Add a container to this workflow
 
@@ -392,7 +386,6 @@ class Workflow(object):
             The container to be added.
         """
         self._tc.add_containers(container)
-
 
     def add_node(self, node):
         """ Add a node to this workflow
@@ -412,6 +405,7 @@ class Workflow(object):
         if not node.transformation in self._transformations:
             for exe in self._transformations:
                 # Check if exe is already in self.executables properly
+                # FIXME: Make this work again
                 if 0: #node.executable.is_same_as(exe):
                     node.executable.in_workflow = True
                     node._dax_node.name = exe.logical_name
@@ -430,6 +424,7 @@ class Workflow(object):
         # this node requires.
         added_nodes = []
         for inp in node._inputs:
+            # FIXME: Make this do whatever it was supposed to do!
             # Breaking this loop for testing
             if inp.node is not None and inp.node.in_workflow == self:
                 if inp.node not in added_nodes:
@@ -448,6 +443,7 @@ class Workflow(object):
                 inp.workflow_input = True
 
             elif inp.node is not None and inp.node.in_workflow != self and inp not in self._inputs:
+                # FIXME: Check if we still need this complication
                 self._inputs += [inp]
                 self._external_workflow_inputs += [inp]
 
@@ -490,28 +486,6 @@ class Workflow(object):
         self._tc.write(transformation_catalog_path)
 
 
-class DataStorage(object):
-    """ A workflow representation of a place to store and read data from.
-
-    The abstract representation of a place to store and read data from. This
-    can include files, database, or remote connections. This object is
-    used as a handle to pass between functions, and is used a way to logically
-    represent the order operation on the physical data.
-    """
-    def __init__(self, name):
-        self.name = name
-        self.node = None
-        self.workflow_input = False
-
-    def _set_as_node_input(self):
-        pass
-
-    def _set_as_node_output(self):
-        pass
-
-    def _dax_repr(self):
-        return self.name
-
 class File(DataStorage, dax.File):
     """ The workflow representation of a physical file
 
@@ -522,7 +496,9 @@ class File(DataStorage, dax.File):
     destination of this file.
     """
     def __init__(self, name):
-        DataStorage.__init__(self, name)
+        self.name = name
+        self.node = None
+        self.workflow_input = False
         dax.File.__init__(self, name)
         # Storage_path is where the file would be *output* to
         self.storage_path = None
@@ -577,6 +553,3 @@ class File(DataStorage, dax.File):
         fil = File(os.path.basename(path))
         fil.PFN(path, site)
         return fil
-
-class Database(DataStorage):
-    pass
