@@ -6,7 +6,7 @@ healpy
 
 # Needed for gracedb uploads and skymap generation
 ligo-gracedb
-ligo.skymap
+ligo.skymap; python_version >= '3.5'
 
 # auxiliary samplers
 cpnest

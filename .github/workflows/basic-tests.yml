@@ -36,7 +36,6 @@ jobs:
         pip install -r requirements.txt
         pip install -r companion.txt
         pip install mpi4py
-        pip install ligo.skymap
         pip install .
     - name: run pycbc test suite
       env:
