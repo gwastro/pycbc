@@ -837,9 +837,10 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
         if inj.filename.endswith('.gwf'):
             try:
                 channel = inj.channel
-            except AttributeError:
-                raise ValueError("Must provide a channel for frame files")
-            ts = frame.read_frame(inj.filename, inj.channel)
+            except AttributeError as _err:
+                raise ValueError("Must provide a channel for "
+                                 "frame files") from _err
+            ts = frame.read_frame(inj.filename, channel)
         else:
             ts = load_timeseries(inj.filename)
         # cache
@@ -852,9 +853,9 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
         """
         try:
             ref_point = inj.ref_point
-        except AttributeError:
+        except AttributeError as _err:
             raise ValueError("Must provide a ref_point for fromfile "
-                             "injections")
+                             "injections") from _err
         # try to get from buffer
         if self._rtbuffer is None:
             self._rtbuffer = LimitedSizeDict(size_limit=self._buffersize)
@@ -877,9 +878,10 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
             self._rtbuffer[inj.filename, ref_point] = reftime
         ts._epoch = reftime
 
-    def slice_and_taper(self, inj, ts):
+    @staticmethod
+    def slice_and_taper(inj, ts):
         """Slices and tapers a timeseries based on the injection settings.
-        
+
         This assumes that ``set_ref_time`` has been applied to the timeseries
         first. A copy of the time series will be returned even if no slicing
         or tapering is done.
@@ -900,17 +902,16 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
             twidth = 0
         if twidth:
             ts = wfutils.td_taper(ts, ts.start_time, ts.start_time+twidth,
-                                  side='left') 
+                                  side='left')
         try:
             twidth = inj.right_taper_width
         except AttributeError:
             twidth = 0
         if twidth:
             ts = wfutils.td_taper(ts, ts.end_time-twidth, ts.end_time,
-                                  side='right') 
+                                  side='right')
         return ts
 
-            
     def apply(self, strain, detector_name, distance_scale=1,
               injection_sample_rate=None, inj_filter_rejector=None):
         if inj_filter_rejector is not None:
@@ -921,7 +922,7 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
         else:
             delta_t = strain.delta_t
         injections = self.table
-        for ii, inj in enumerate(injections):
+        for inj in injections:
             # Check if we should inject or not...
             # loading the time series like this is a bit brute-force, since
             # we really only need to know the delta_t and length of the
@@ -953,34 +954,34 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
 
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     distance_scale=1, ts=None):
-            if ts is None:
-                ts = load_timeseries(inj.filename)
-                self.set_ref_time(inj, ts)
-            # slice and taper
-            ts = self.slice_and_taper(inj, ts)
-            # shift reference to the detector time
-            ts._epoch += inj['{}_gps_time'.format(detector_name).lower()]
-            # resample
-            ts = resample_to_delta_t(ts, delta_t, method='ldas')
-            # apply any phase shift
-            try:
-                phase_shift = inj[
-                    '{}_phase_shift'.format(detector_name).lower()]
-            except ValueError:
-                phase_shift = 0
-            if phase_shift:
-                fs = ts.to_frequencyseries()
-                fs *= np.exp(1j*phase_shift)
-                ts = fs.to_timeseries()
-            # apply any scaling
-            try:
-                amp_scale = inj[
-                    '{}_amp_scale'.format(detector_name).lower()]
-            except ValueError:
-                amp_scale = 1.
-            amp_scale /= distance_scale
-            ts *= amp_scale
-            return ts
+        if ts is None:
+            ts = load_timeseries(inj.filename)
+            self.set_ref_time(inj, ts)
+        # slice and taper
+        ts = self.slice_and_taper(inj, ts)
+        # shift reference to the detector time
+        ts._epoch += inj['{}_gps_time'.format(detector_name).lower()]
+        # resample
+        ts = resample_to_delta_t(ts, delta_t, method='ldas')
+        # apply any phase shift
+        try:
+            phase_shift = inj[
+                '{}_phase_shift'.format(detector_name).lower()]
+        except ValueError:
+            phase_shift = 0
+        if phase_shift:
+            fs = ts.to_frequencyseries()
+            fs *= np.exp(1j*phase_shift)
+            ts = fs.to_timeseries()
+        # apply any scaling
+        try:
+            amp_scale = inj[
+                '{}_amp_scale'.format(detector_name).lower()]
+        except ValueError:
+            amp_scale = 1.
+        amp_scale /= distance_scale
+        ts *= amp_scale
+        return ts
 
 
 hdfinjtypes = {
