@@ -55,8 +55,8 @@ for param, ax in zip(model.variable_params, axs):
     print("{}, p-value={:.3f}".format(param, pvalue))
 
     pylab.sca(ax)
-    pylab.hist(ref[param], density=True, bins=50, label='reference')
-    pylab.hist(rpart, density=True, bins=50, alpha=0.5, label='sampler')
+    pylab.hist(ref[param], density=True, bins=30, label='reference')
+    pylab.hist(result[param], density=True, bins=30, alpha=0.5, label='sampler')
     pylab.title('KS p-value = {:.4f}'.format(pvalue))
     pylab.xlabel(param)
     pylab.legend()
