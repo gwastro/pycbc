@@ -38,7 +38,10 @@ data = {v: draw[i, :] for i, v in enumerate(model.variable_params)}
 ref = FieldArray.from_kwargs(**data)
 
 # apply the prior bounds to ensure kde leakage is not a concern
-ref = ref[prior.contains(ref)]
+for dist in prior.distributions:
+    param = dist._params[0]
+    bound = dist._bounds[param]
+    ref = ref[(bound.min < ref[param]) & (ref[param] < bound.max)]
 
 nparam = len(model.variable_params)
 fig, axs = pylab.subplots(1, nparam, figsize=[6*nparam, 4], dpi=100)
