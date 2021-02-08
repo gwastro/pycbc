@@ -91,6 +91,7 @@ parser.add_argument('--filename-T050017',
                          "output XML filename. Argument is string for "
                          "search identifier in filename, e.g. 'AllSky' "
                          "would give H1L1V1-PYCBC_AllSky-1234567890-1.xml.")
+# https://dcc.ligo.org/LIGO-T050017/public
 parser.add_argument('--no-upload', action='store_true',
                     help="Flag used to indicate that we are not uploading to "
                          "GraceDb.")
