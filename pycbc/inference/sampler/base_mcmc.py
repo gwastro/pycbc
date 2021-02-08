@@ -31,10 +31,10 @@ import logging
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 
 from six import (add_metaclass, string_types)
+from six.moves import configparser as ConfigParser
 
 import numpy
 
-from six.moves import configparser as ConfigParser
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import (validate_checkpoint_files, loadfile)
 from pycbc.inference.io.base_mcmc import nsamples_in_chain
