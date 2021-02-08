@@ -34,7 +34,7 @@ from six import (add_metaclass, string_types)
 
 import numpy
 
-from pycbc.workflow import ConfigParser
+from six.moves import configparser as ConfigParser
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import (validate_checkpoint_files, loadfile)
 from pycbc.inference.io.base_mcmc import nsamples_in_chain
