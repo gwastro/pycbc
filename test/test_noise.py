@@ -32,6 +32,7 @@ from utils import simple_exit
 from pycbc.noise.reproduceable import noise_from_string
 from pycbc.fft.fftw import set_measure_level
 from hashlib import md5
+from pycbc.noise.reproduceable import normal
 set_measure_level(0)
 
 class TestNoise(unittest.TestCase):
@@ -42,7 +43,6 @@ class TestNoise(unittest.TestCase):
                                     seed=0,
                                     low_frequency_cutoff=1.0,
                                     filter_duration=64)
-        print(self.ts[0:100])
 
     def test_consistent_result(self):
         # This just checks that the result hasn't changed. If it has
@@ -64,6 +64,11 @@ class TestNoise(unittest.TestCase):
         ratio = p[kmin:kmax] / p2[kmin:kmax]
         ave = ratio.numpy().mean()
         self.assertAlmostEqual(ave, 1, 1)
+
+    def test_noise_reproducible(self):
+        ts1 = normal(20, 30, sample_rate=16384, seed=87693)
+        ts2 = normal(25, 35, sample_rate=16384, seed=87693)
+        self.assertEqual(ts1.time_slice(25, 30), ts2.time_slice(25, 30))
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestNoise))
