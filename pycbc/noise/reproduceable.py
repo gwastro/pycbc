@@ -71,7 +71,7 @@ def normal(start, end, sample_rate=16384, seed=0):
     """
     # This is reproduceable because we used fixed seeds from known values
     block_dur = BLOCK_SAMPLES / sample_rate
-    s = int(start / block_dur)
+    s = int(numpy.floor(start / block_dur))
     e = int(numpy.floor(end / block_dur))
 
     # The data evenly divides so the last block would be superfluous

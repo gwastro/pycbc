@@ -38,7 +38,7 @@ set_measure_level(0)
 class TestNoise(unittest.TestCase):
     def setUp(self,*args):
         self.ts = noise_from_string('aLIGOZeroDetHighPower',
-                                    0, 100,
+                                    100, 200,
                                     sample_rate=1024,
                                     seed=0,
                                     low_frequency_cutoff=1.0,
