@@ -37,6 +37,27 @@ from glue.ligolw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
 from pycbc.io.live import gracedb_tag_with_version
 
+def check_gracedb_for_event(gdb_handle, query, far):
+    """
+    Check if there is an event in gracedb with the queried string
+    which matches the FAR given
+    """
+    gdb_events_match_query = list(gdb_handle.events(query=query))
+    ifar = 1. / lal.YRJUL_SI / far
+    for gdb_event in gdb_events_match_query:
+        # Test each gracedb event to see if the FAR matches this event
+        if np.abs(gdb_event['far'] - far) < 1e-16:
+            # If an event has been found which matches the FAR
+            logging.info('Event already exists in GraceDb server with '
+                         'time %.3f and IFAR %.3e: %s',
+                         gdb_event['gpstime'], ifar,
+                         gdb_event['graceid'])
+            return True
+
+    # If no event has been found, log this, and return False
+    logging.info('No event found in GraceDb with IFAR %.3e when using '
+                 'query: "%s"', ifar, query)
+    return False
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -58,6 +79,28 @@ parser.add_argument('--min-ifar', type=float, metavar='YEARS',
 parser.add_argument('--production-server', action="store_true", default=False,
                     help="Upload event to production graceDB. If not given "
                          "events will be uploaded to playground server.")
+parser.add_argument('--force-overwrite', action='store_true', default=False,
+                    help="GraceDb instance will be checked for if an event "
+                         "with the same event time and FAR already exist. "
+                         "If so, event will not be uploaded")
+parser.add_argument('--query-string', default='pycbc',
+                    help="If not using --force-overwrite, add a string to "
+                         "gracedb query to further filter events. "
+                         "Default='pycbc'")
+parser.add_argument('--search-id-string', default='AllSky',
+                    help="Using T050017-v1 naming convention for "
+                         "output XML filename. This is a string for "
+                         "search identifier in filename, e.g. 'AllSky' "
+                         "would give H1L1V1-PYCBC_AllSky-1234567890-1.xml. "
+                         "See https://dcc.ligo.org/LIGO-T050017/public. "
+                         "Default: 'AllSky'")
+parser.add_argument('--output-directory', default=os.getcwd(),
+                    help="Output directory for locally stored XML and PSD "
+                         "files. Default: current directory")
+parser.add_argument('--no-upload', action='store_true',
+                    help="Flag used to indicate that we are not uploading to "
+                         "GraceDb.")
+
 args = parser.parse_args()
 
 if args.production_server:
@@ -113,6 +156,13 @@ for event in coinc_table:
             coinc_inspiral_table_curr[0].combined_far > 1./args.min_ifar/lal.YRJUL_SI:
         continue
 
+    time = coinc_inspiral_table_curr[0].end_time
+    if not args.force_overwrite:
+        far = coinc_inspiral_table_curr[0].combined_far
+        query = args.query_string + ' %.3f .. %.3f' % (time - 1, time + 1)
+        if check_gracedb_for_event(gracedb, query, far):
+            continue
+
     sngl_ids = []
     for coinc_map in coinc_event_map_table:
         if coinc_map.coinc_event_id == event.coinc_event_id:
@@ -153,22 +203,41 @@ for event in coinc_table:
     xmldoc.childNodes[-1].appendChild(coinc_inspiral_table_curr)
     xmldoc.childNodes[-1].appendChild(coinc_event_map_table_curr)
     xmldoc.childNodes[-1].appendChild(sngl_inspiral_table_curr)
-    ligolw_utils.write_filename(xmldoc, "tmp_coinc_xml_file.xml")
+
+    ifos = sorted([sngl.ifo for sngl in sngl_inspiral_table_curr])
+    ifos_str = ''.join(ifos)
+    id_str = args.search_id_string
+    filename_xml = "{}-PYCBC_{}-{:d}-1.xml".format(ifos_str, id_str, time)
+    filename_psd = "{}-PYCBC_{}-{:d}-1_psd.xml.gz".format(ifos_str, id_str, time)
+    fullpath_xml = os.path.join(args.output_directory, filename_xml)
+    fullpath_psd = os.path.join(args.output_directory, filename_psd)
+
+    ligolw_utils.write_filename(xmldoc, fullpath_xml)
     psd_xmldoc = lal.series.make_psd_xmldoc(psddict)
-    ligolw_utils.write_filename(psd_xmldoc, "tmp_psd.xml.gz", gz=True)
-    if args.testing:
-        r = gracedb.createEvent("Test", "pycbc", "tmp_coinc_xml_file.xml",
-                                search="AllSky", offline=True).json()
-    else:
-        r = gracedb.createEvent("CBC", "pycbc", "tmp_coinc_xml_file.xml",
-                                search="AllSky", offline=True).json()
+    ligolw_utils.write_filename(psd_xmldoc, fullpath_psd, gz=True)
+
+    if args.no_upload:
+        # We have saved the file, and aren't uploading, so reset the tables
+        # and move to the next event
+        logging.info("Not uploading event")
+        xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
+        xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
+        xmldoc.childNodes[-1].removeChild(coinc_event_map_table_curr)
+        xmldoc.childNodes[-1].removeChild(sngl_inspiral_table_curr)
+        continue
+
+    group_tag = 'Test' if args.testing else 'CBC'
+    r = gracedb.createEvent(group_tag, 'pycbc', filename_xml,
+                            filecontents=open(fullpath_xml, "rb").read(),
+                            search=id_str, offline=True).json()
+
     logging.info("Uploaded event %s.", r["graceid"])
 
     # upload PSD
     gracedb.writeLog(
         r["graceid"], "PyCBC PSD estimate from the time of event",
-        "psd.xml.gz", open("tmp_psd.xml.gz", "rb").read(), "psd").json()
-    logging.info("Uploaded file psd.xml.gz to event %s.", r["graceid"])
+        "psd.xml.gz", open(fullpath_psd, "rb").read(), "psd").json()
+    logging.info("Uploaded file %s to event %s.", filename_psd, r["graceid"])
 
     # add info for tracking code version
     gracedb_tag_with_version(gracedb, r['graceid'])
