@@ -81,7 +81,7 @@ def normal(start, end, sample_rate=16384, seed=0):
     sv = RandomState(seed).randint(-2**50, 2**50)
     data = numpy.concatenate([block(i + sv, sample_rate)
                               for i in numpy.arange(s, e + 1, 1)])
-    ts = TimeSeries(data, delta_t=1.0 / sample_rate, epoch=start)
+    ts = TimeSeries(data, delta_t=1.0 / sample_rate, epoch=(s * block_dur))
     return ts.time_slice(start, end)
 
 def colored_noise(psd, start_time, end_time,
