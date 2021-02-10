@@ -119,7 +119,7 @@ def make_pygrb_timeseries_or_signal_consistency_plot(workflow, exec_name,
     node.add_opt('--segment-dir', seg_dir)
     # Quantity to be displayed on the y-axis of the plot 
     if len(tags) > 0:
-        node.add_opt('--variable', tags[0])
+        node.add_opt('--y-variable', tags[0])
     # IFO and veto type options
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     extra_tags = ['GRB'+grb_name]

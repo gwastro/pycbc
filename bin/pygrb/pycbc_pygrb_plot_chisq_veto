@@ -69,7 +69,7 @@ if opts.veto_directory:
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
 # If an ifo is given, the veto is intended as a single IFO quantity
 ifo = opts.ifo
-veto_type = opts.variable
+veto_type = opts.y_variable
 if veto_type is None:
     msg = "Please specify the chi-square veto to be plotted"
     logging.error(msg)

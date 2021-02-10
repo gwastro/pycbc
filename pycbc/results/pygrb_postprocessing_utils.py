@@ -24,6 +24,7 @@ Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
 import sys
+import glob
 import os
 import logging
 import argparse
@@ -59,6 +60,7 @@ from matplotlib import pyplot as plt
 # Parse command line
 # =============================================================================
 
+# TODO: regroup options that are now all in this unique parser
 def pygrb_plot_opts_parser(usage='', description=None, version=None):
     """Parses options for PyGRB post-processing scripts"""
     parser = argparse.ArgumentParser(usage=usage, description=description,
@@ -76,40 +78,12 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
     parser.add_argument("-I", "--inj-file", action="store", default=None,
                         help="The location of the injection file")
 
-    # pygrb_efficiency only options: start here
-    # Does this differ from trig-file? --> it doesn't contain the onsource.
-    # NB: for now removed the requirement to specify trig_file.
-    # instead added a requirement at the end of the parser function
-    # to specify either offsource-file or trig-file.
-    parser.add_argument("-F", "--offsource-file", action="store",
-                        default=None, help="The location of the trigger file")
-
-    # How does this differ from offsource-file and trig-file? --> only contains onsource.
-    parser.add_argument("--onsource-file", action="store",
-                        default=None, help="The location of the trigger file")
-
-    parser.add_argument("-f", "--found-file", action="store",
-                        default=None,
-                        help="The location of the found injections file")
-
-    # pygrb_efficiency only options end here
-    parser.add_argument("-m", "--missed-file",action="store",
-                        default=None,
-                        help="The location of the missed injections file")
-
     parser.add_argument("-a", "--segment-dir", action="store",
                         required=True, help="directory holding buffer, on " +
                         "and off source segment files.")
 
     parser.add_argument("-o", "--output-file", default=None, #required=True,
                         help="Output file.")
-
-    # pygrb_efficiency only options: start here
-    # FIXME: eventually remove below argument and require output-file
-    # be specified. 
-    parser.add_argument("--output-path", default=os.getcwd(), 
-                        help="Output path for plots")
-    # pygrb_efficiency only options: end here
 
     parser.add_argument("-O", "--zoomed-output-file", default=None,
                         required=False, help="Output file for a zoomed in " +
@@ -163,14 +137,51 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         action="store_true", help="Plots are vs single IFO " +
                         "SNR, rather than coherent SNR")
 
-    parser.add_argument("--variable", default=None, help="Quantity to plot " +
-                        "the vertical axis. Supported choices are: " +
-                        "coherent, single, reweighted, or null (for " +
-                        "timeeries plots), standard, bank, or auto (for " +
+    # This is for found/missed injections plots
+    parser.add_argument("-x", "--x-variable", default=None, help="Quantity " +
+                        "to plot on the horizontal axis. Supported choice " +
+                        "are: distance, mchirp, time (for sky error plots).")
+
+    # This is originally for SNR and chi-square veto plots 
+    parser.add_argument("-y", "--y-variable", default=None, help="Quantity " +
+                        "to plot on the vertical axis. Supported choices " +
+                        "are: coherent, single, reweighted, or null (for " +
+                        "timeseries plots), standard, bank, or auto (for " +
                         "chi-square veto plots), coincident, nullstat, " +
                         "or overwhitened (for null statistics plots)")
 
-    # pygrb_efficiency options: start here
+    parser.add_argument('--plot-title',
+                        help="If given, use this as the plot caption")
+
+    parser.add_argument('--plot-caption',
+                        help="If given, use this as the plot caption")
+    
+
+    # pygrb_efficiency only options: start here
+    # Does this differ from trig-file? --> it doesn't contain the onsource.
+    # NB: for now removed the requirement to specify trig_file.
+    # instead added a requirement at the end of the parser function
+    # to specify either offsource-file or trig-file.
+    parser.add_argument("-F", "--offsource-file", action="store",
+                        default=None, help="The location of the trigger file")
+
+    # As opposed to offsource-file and trig-file, this only contains onsource
+    parser.add_argument("--onsource-file", action="store",
+                        default=None, help="The location of the trigger file")
+
+    parser.add_argument("-f", "--found-file", action="store",
+                        default=None,
+                        help="The location of the found injections file")
+
+    parser.add_argument("-m", "--missed-file",action="store",
+                        default=None,
+                        help="The location of the missed injections file")
+
+    # FIXME: eventually remove below argument and require output-file
+    # be specified. 
+    parser.add_argument("--output-path", default=os.getcwd(), 
+                        help="Output path for plots")
+
     parser.add_argument("-s", "--segment-length", action="store", type=float,
                         default=None, help="The length of analysis segments.")
 
@@ -204,58 +215,50 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         type=int, default=100, help="Number of Monte " +
                         "Carlo injection simulations to perform.")
 
+    parser.add_argument("-S", "--seed", action="store", type=int,
+                        default=1234, help="Seed to initialize Monte Carlo.")
+
     parser.add_argument("-w", "--waveform-error", action="store",
                         type=float, default=0, help="The standard " +
                         "deviation to use when calculating the waveform error.")
 
-    parser.add_argument("-y", "--h1-cal-error", action="store", type=float,
+    parser.add_argument("--h1-cal-error", action="store", type=float,
                         default=0, help="The standard deviation to use when " +
                         "calculating the H1 calibration amplitude error.")
 
-    parser.add_argument("-Y", "--k1-cal-error", action="store", type=float,
+    parser.add_argument("--k1-cal-error", action="store", type=float,
                         default=0, help="The standard deviation to use when " +
                         "calculating the K1 calibration amplitude error.")
 
-    parser.add_argument("-z", "--l1-cal-error", action="store", type=float,
+    parser.add_argument("--l1-cal-error", action="store", type=float,
                         default=0, help="The standard deviation to use when " +
                         "calculating the L1 calibration amplitude error.")
 
-    parser.add_argument("-Z", "--v1-cal-error", action="store", type=float,
+    parser.add_argument("--v1-cal-error", action="store", type=float,
                         default=0, help="The standard deviation to use when " +
                         "calculating the V1 calibration amplitude error.")
 
-    parser.add_argument("-p", "--h1-dc-cal-error", action="store",
+    parser.add_argument("--h1-dc-cal-error", action="store",
                         type=float, default=1.0, help="The scaling factor " +
                         "to use when calculating the H1 calibration " +
                         "amplitude error.")
 
-    parser.add_argument("-P", "--k1-dc-cal-error", action="store",
+    parser.add_argument("--k1-dc-cal-error", action="store",
                         type=float, default=1.0, help="The scaling factor " +
                         "to use when calculating the K1 calibration " +
                         "amplitude error.")
 
-    parser.add_argument("-r", "--l1-dc-cal-error", action="store",
+    parser.add_argument("--l1-dc-cal-error", action="store",
                         type=float, default=1.0, help="The scaling factor " +
                         "to use when calculating the L1 calibration " +
                         "amplitude error.")
 
-    parser.add_argument("-R", "--v1-dc-cal-error", action="store",
+    parser.add_argument("--v1-dc-cal-error", action="store",
                         type=float, default=1.0, help="The scaling factor " +
                         "to use when calculating the V1 calibration " +
                         "amplitude error.")
-    # TODO: Deprecated option: remove all over and then here
-    parser.add_argument("--mass-bins", type=str, default="0-3.48,3.48-6,6-20",\
-                    help="comma separated list of dash-separated pairs "\
-                            "of m_low-m_high mass bins.")
-
     # pygrb_efficiency only options end here
 
-    parser.add_argument('--plot-title',
-                        help="If given, use this as the plot caption")
-
-    parser.add_argument('--plot-caption',
-                        help="If given, use this as the plot caption")
-    
     args = parser.parse_args()
     if not (args.trig_file or args.offsource_file):
         parser.error('Must specify either trig-file or offsource-file.')
@@ -524,6 +527,26 @@ def extract_vetoes(veto_files, ifos):
         vetoes[ifo].coalesce()
 
     return vetoes
+
+
+# =============================================================================
+# Function to extract IFOs and vetoes
+# =============================================================================
+
+def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
+    """Extracts IFOs from search summary table and vetoes from a directory"""
+
+    # Extract IFOs 
+    ifos = extract_ifos(trig_file)
+
+    # Extract vetoes
+    veto_files = []
+    if veto_dir:
+        veto_string = ','.join([str(i) for i in range(2,veto_cat+1)])
+        veto_files = glob.glob(veto_dir +'/*CAT[%s]*.xml' %(veto_string))
+    vetoes = extract_vetoes(veto_files, ifos)
+
+    return ifos, vetoes
 
 
 # =============================================================================
