@@ -63,7 +63,7 @@ veto_files = []
 if opts.veto_directory:
     veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
-snr_type = opts.variable
+snr_type = opts.y_variable
 ifo = opts.ifo
 if snr_type == 'single' and ifo is None:
     msg = "Please specify an interferometer for a single IFO plot"

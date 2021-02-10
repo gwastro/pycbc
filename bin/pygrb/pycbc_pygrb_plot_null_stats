@@ -70,7 +70,7 @@ if opts.veto_directory:
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
 
 # Check that the y-axis variable was specified
-null_stat_type = opts.variable
+null_stat_type = opts.y_variable
 if null_stat_type is None:
     msg = "Please specify the null statistic to be plotted"
     logging.error(msg)
