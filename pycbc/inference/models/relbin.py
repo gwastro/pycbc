@@ -313,7 +313,10 @@ class Relative(BaseGaussianNoise):
             ]
         )
         b0 = numpy.array(
-            [4.0 * self.df[ifo] * numpy.sum(hh[l:h]) for l, h in self.bins[ifo]]
+            [
+                4.0 * self.df[ifo] * numpy.sum(hh[l:h])
+                for l, h in self.bins[ifo]
+            ]
         )
         # linear terms
         bin_lefts = [fl for fl, fh in self.fbins[ifo]]
