@@ -9,6 +9,7 @@ export HDF5_USE_FILE_LOCKING="FALSE"
 
 gps_start_time=1272790000
 gps_end_time=1272790512
+f_min=18
 
 
 # test if there is a template bank. If not, make one
@@ -116,7 +117,7 @@ python -m mpi4py `which pycbc_live` \
 --bank-file template_bank.hdf \
 --sample-rate 2048 \
 --enable-bank-start-frequency \
---low-frequency-cutoff 18 \
+--low-frequency-cutoff ${f_min} \
 --max-length 256 \
 --approximant "SPAtmplt:mtotal<4" "SEOBNRv4_ROM:else" \
 --chisq-bins "0.72*get_freq('fSEOBNRv4Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7" \
@@ -180,10 +181,16 @@ python -m mpi4py `which pycbc_live` \
 --verbose
 
 echo -e "\\n\\n>> [`date`] Checking results"
-./check_results.py
+./check_results.py \
+    --gps-start ${gps_start_time} \
+    --gps-end ${gps_end_time} \
+    --f-min ${f_min} \
+    --bank template_bank.hdf \
+    --injections injections.hdf \
+    --detectors H1 L1 V1
 
 echo -e "\\n\\n>> [`date`] Running Bayestar"
 for XMLFIL in `ls output/*xml*`
 do
-  bayestar-localize-coincs ${XMLFIL} ${XMLFIL}
+    bayestar-localize-coincs --f-low ${f_min} ${XMLFIL} ${XMLFIL}
 done
