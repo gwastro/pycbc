@@ -201,11 +201,11 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
 
     parser.add_argument("-U", "--upper-inj-dist", action="store",
                         type=float,default=1000,help="The upper distance " +
-                        "of the injections, if used.")
+                        "of the injections in Mpc, if used.")
 
     parser.add_argument("-L", "--lower-inj-dist", action="store",
                         type=float,default=0,help="The lower distance of " +
-                        "the injections, if used.")
+                        "the injections in Mpc, if used.")
 
     parser.add_argument("-n", "--num-bins", action="store", type=int,
                         default=0,help="The number of bins used to " +
