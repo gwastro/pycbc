@@ -51,7 +51,7 @@ class TestNoise(unittest.TestCase):
         if sys.version_info[0] < 3:
             comp = 4.265258573533564e-18
         else:
-            comp = 2.967112629328407e-20
+            comp = 4.265258573533567e-18
 
         diff = abs(summ - comp)
         self.assertTrue(diff < 1e-30)
