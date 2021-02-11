@@ -173,7 +173,7 @@ def check_coinc_results(args):
                     and close(inj_mass2[i], trig_props['mass2'][j], 5e-7)
                     and close(inj_spin1z[i], trig_props['spin1z'][j], 5e-7)
                     and close(inj_spin2z[i], trig_props['spin2z'][j], 5e-7)
-                    and close(15.0, trig_props['net_snr'][j], 1.0)):
+                    and close(15.0, trig_props['net_snr'][j], 2.0)):
                 has_match = True
                 break
 
