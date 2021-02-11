@@ -71,8 +71,8 @@ def normal(start, end, sample_rate=16384, seed=0):
     """
     # This is reproduceable because we used fixed seeds from known values
     block_dur = BLOCK_SAMPLES / sample_rate
-    s = int(start / block_dur)
-    e = int(end / block_dur)
+    s = int(numpy.floor(start / block_dur))
+    e = int(numpy.floor(end / block_dur))
 
     # The data evenly divides so the last block would be superfluous
     if end % block_dur == 0:
@@ -81,7 +81,7 @@ def normal(start, end, sample_rate=16384, seed=0):
     sv = RandomState(seed).randint(-2**50, 2**50)
     data = numpy.concatenate([block(i + sv, sample_rate)
                               for i in numpy.arange(s, e + 1, 1)])
-    ts = TimeSeries(data, delta_t=1.0 / sample_rate, epoch=start)
+    ts = TimeSeries(data, delta_t=1.0 / sample_rate, epoch=(s * block_dur))
     return ts.time_slice(start, end)
 
 def colored_noise(psd, start_time, end_time,
