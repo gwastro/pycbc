@@ -49,9 +49,10 @@ class TestNoise(unittest.TestCase):
         # you should find out why
         summ = self.ts.sum()
         if sys.version_info[0] < 3:
-            comp = 4.597515648402546e-19
+            comp = 4.265258573533564e-18
         else:
             comp = 2.967112629328407e-20
+
         diff = abs(summ - comp)
         self.assertTrue(diff < 1e-30)
 
