@@ -254,7 +254,7 @@ class TestPosterior(BaseModel):
         logging.info('done initializing test posterior model')
 
     def _loglikelihood(self):
-        """Returns the log pdf of the Rosenbrock function.
+        """Returns the log pdf of the test posterior kde
         """
         p = numpy.array([self.current_params[p] for p in self.variable_params])
         logpost = self.kde.logpdf(p)
