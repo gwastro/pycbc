@@ -266,14 +266,14 @@ def chain_moments(sampler, estimate_len=200, sliding_len=10,
     burnin = []
     burn_in_list = {}
     for p in sampler.model.sampling_params:
-        chain_dim =len(numpy.shape(sampler.samples[p]))
+        chain_dim = len(numpy.shape(sampler.samples[p]))
         if chain_dim == 3:
-            nt,nw,nc = numpy.shape(sampler.samples[p])
+            nt, nw, nc = numpy.shape(sampler.samples[p])
             samples = sampler.samples[p][0]
         elif chain_dim == 2:
-            nw,nc = numpy.shape(sampler.samples[p])
+            nw, nc = numpy.shape(sampler.samples[p])
             samples = sampler.samples[p]
-        sigma=[]
+        sigma = []
         for item in range(int((nc-estimate_len)/sliding_len)):
             effsamp = \
                 samples[:, item:(item+1)*estimate_len].flatten()
@@ -286,7 +286,7 @@ def chain_moments(sampler, estimate_len=200, sliding_len=10,
         overrun_indices = numpy.where(abs(sigma_diff) > percent_deviation)[0]
         if len(overrun_indices) != 0:
             burnin.append(sliding_len*(len(sigma_rev)-overrun_indices.min()))
-            burn_in_list[p]=True
+            burn_in_list[p] = True
         elif len(overrun_indices) == 0:
             burn_in_iteration = 0
         else:
@@ -324,7 +324,7 @@ class BaseBurnInTests(object):
     def __init__(self, sampler, burn_in_test, **kwargs):
         self.sampler = sampler
         # determine the burn-in tests that are going to be done
-        all_tests=get_vars_from_arg(burn_in_test)
+        all_tests = get_vars_from_arg(burn_in_test)
         self.do_tests = [x for x in all_tests if x in self.available_tests]
         self.do_sampler_tests = [x for x in all_tests
                                 if x in self.available_sampler_tests]
@@ -640,7 +640,7 @@ class MCMCBurnInTests(BaseBurnInTests):
         """Applies estimate_sigma test"""
         test = 'chain_moments'
         sigmas, burn_in_iter, is_burned_in = chain_moments(self.sampler)
-        #if test is not in self.test_is_burned_in and burn_in_iter==0:
+        # if test is not in self.test_is_burned_in and burn_in_iter==0:
 
         self.test_is_burned_in[test] = is_burned_in
         self.test_aux_info[test] = sigmas
@@ -806,7 +806,7 @@ class EnsembleMCMCBurnInTests(BaseBurnInTests):
         """Applies estimate_sigma test"""
         test = 'chain_moments'
         sigmas, burn_in_iter, is_burned_in = chain_moments(self.sampler)
-        #if test is not in self.test_is_burned_in and burn_in_iter==0:
+        # if test is not in self.test_is_burned_in and burn_in_iter==0:
 
         self.test_is_burned_in[test] = is_burned_in
         self.test_aux_info[test] = sigmas
@@ -894,9 +894,6 @@ class EnsembleMultiTemperedMCMCBurnInTests(EnsembleMCMCBurnInTests):
         ``posterior_step`` function.
         """
         return _multitemper_getlogposts(self.sampler, filename)
-
-    #def chain_moments(self):
-    #    raise NotImplementedError("This Burn in test is not yet implemented")
 
 
 def _multitemper_getlogposts(sampler, filename):
