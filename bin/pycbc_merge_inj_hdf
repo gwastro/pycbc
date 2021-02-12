@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2021 Derek Davis
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Merge hdf injection files
+"""
+
+import logging
+import argparse
+import numpy as np
+import h5py
+import pycbc
+import pycbc.inject
+import pycbc.version
+
+def get_gc_end_time(injection):
+    """Return the geocenter end time of an injection. Required for seamless
+    compatibility with LIGOLW and HDF injection objects, which use different
+    names. Copied from pycbc_optimal_snr.
+    """
+    try:
+        # geocent time is robust to potentially incomplete sim tables
+        return injection.geocent_end_time
+    except AttributeError:
+        return injection.tc
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", action=pycbc.version.Version)
+    parser.add_argument('--injection-files', '-i', dest='injection_file',
+                        required=True, nargs='+',
+                        help='Input HDF5 files defining injections')
+    parser.add_argument('--output-file', '-o', dest='out_file', required=True,
+                        help='Output HDF5 file')
+    parser.add_argument('--injection-f-ref', type=float,
+                        help='Reference frequency in Hz for '
+                             'creating CBC injections from an XML '
+                             'file.')
+    parser.add_argument('--injection-f-final', type=float,
+                        help='Override the f_final field of a CBC '
+                             'XML injection file.')
+    opts = parser.parse_args()
+
+    log_level = logging.INFO if opts.verbose else logging.WARN
+    logging.basicConfig(level=log_level,
+                        format='%(asctime)s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+
+    logging.info("Loading injections")
+
+    injection_files = opt.injection_file
+    injection_tables = []
+    for inj_file in injection_files:
+        opts.injection_file = inj_file
+        injections = pycbc.inject.InjectionSet.from_cli(opts)
+        injection_tables.append(injections.table)
+
+    new_inj_table = np.vstack(injection_tables)
+
+    # always store injections sorted by coalescence time
+    new_inj_table.sort(key=get_gc_end_time)
+
+    new_inj_table = pycbc.io.FieldArray.from_records(
+                new_inj_table, dtype=inj_dtype)
+
+    logging.info('Writing output')
+    pycbc.inject.InjectionSet.write(opts.out_file, new_inj_table)
+
+    logging.info('Done')
