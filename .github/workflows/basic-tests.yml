@@ -69,6 +69,11 @@ jobs:
         BRANCH: gh-pages
         FOLDER: _gh-pages
         SINGLE_COMMIT: true
+  build_wheel:
+    name: Build manylinux wheels for later possible upload
+    uses: RalfG/python-wheels-manylinux-build@v0.3.3
+    with:
+        python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38m cp39-cp39m'
   deploy_pypi:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
     needs: build
