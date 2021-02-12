@@ -29,6 +29,7 @@ import logging
 from glue.ligolw import lsctables
 import pycbc.version
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes, load_xml_file, load_xml_table, load_segment_dict, load_time_slides, load_triggers, pygrb_plot_opts_parser
+import itertools
 # TODO: check if the following are needed 
 import matplotlib,re,optparse
 import numpy as np
@@ -254,11 +255,10 @@ logging.info(msg)
 
 # Extract variables
 # TODO: do something along the lines of PygrbFilterOutput
+# TODO: do we really need these now the mass_bins are gone?
 trig_all_time = {}
 trig_all_snr = {}
 trig_all_bestnr = {}
-# TODO: get rid of this?
-trig_all_mchirp = {}
     
 for slide_id in range(num_slides):
     # Get basics
@@ -274,7 +274,6 @@ for slide_id in range(num_slides):
                                             null_grad_val=null_grad_val) \
                                  for t in slide_trigs]
     trig_all_bestnr[slide_id] = np.array(trig_all_bestnr[slide_id])
-    trig_all_mchirp[slide_id] = np.asarray(slide_trigs.get_column('mchirp'))
 
 logging.info("Basic columns extracted.")
 trig_time   = {}
@@ -456,7 +455,10 @@ pycbc.results.save_fig_with_metadata(html, "%s/loudest_median_offsource.html" % 
                                            title=title,
                                            caption=caption)
 
-# TODO: turn into a function; see if pygrb_postprocessing_utils.load_triggers will do
+# Store BestNR and FAP values
+np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
+           full_time_bin_veto_max_bestnr, delimiter='/t')
+
 # =======================
 # Load on source triggers
 # ======================= 
@@ -572,6 +574,29 @@ else:
 
     logging.info("Missed/found injections/triggers loaded.")
 
+    # Grab values of detection statistic 
+    found_trig_bestnr  = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
+                             null_thresh=null_thresh,snr_threshold=snr_thresh,\
+                             sngl_snr_threshold = sngl_snr_thresh,\
+                             chisq_threshold = new_snr_thresh,\
+                             null_grad_thresh = null_grad_thresh,\
+                             null_grad_val = null_grad_val) for t in found_trigs]
+    found_trig_bestnr   = np.asarray(found_trig_bestnr)
+
+    # Construct conditions for:
+    # 1) found louder than background,
+    zero_fap = np.zeros(len(found_injs)).astype(np.bool)
+    zero_fap_cut = found_trig_bestnr > max_bestnr
+    zero_fap    = zero_fap | (zero_fap_cut)
+
+    # 2) found (bestnr > 0) but not louder than background (non-zero FAP)
+    nonzero_fap = ~zero_fap & (found_trig_bestnr!=0)
+
+    # 3) Missed
+    missed = (~zero_fap) & (~nonzero_fap)
+
+
+
     # Extract columns
     found_inj_time   = np.asarray(found_injs.get_column('geocent_end_time')) +\
                        np.asarray(found_injs.get_column('geocent_end_time_ns')*\
@@ -599,15 +624,8 @@ else:
 
     # TODO: a lot of this is identical to all the stuff above
     found_trig_mchirp  = np.asarray(found_trigs.get_column('mchirp'))
-    found_trig_bestnr  = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
-                             null_thresh=null_thresh,snr_threshold=snr_thresh,\
-                             sngl_snr_threshold = sngl_snr_thresh,\
-                             chisq_threshold = new_snr_thresh,\
-                             null_grad_thresh = null_grad_thresh,\
-                             null_grad_val = null_grad_val) for t in found_trigs]
     found_trig_m1       = np.asarray(found_trigs.get_column('mass1'))
     found_trig_m2       = np.asarray(found_trigs.get_column('mass2'))
-    found_trig_bestnr   = np.asarray(found_trig_bestnr)
     found_trig_ra       = np.asarray(found_trigs.get_column('ra'))
     found_trig_dec      = np.asarray(found_trigs.get_column('dec'))
     found_sky_angle     = np.arccos(np.cos(found_inj_dec - found_trig_dec) -\
@@ -621,18 +639,6 @@ else:
     found_trig_sngl_snr = dict((ifo, np.asarray(found_trigs.get_sngl_snr(ifo)))\
                             for ifo in ifos)
  
-    # Construct conditions for found louder than background, found not louder
-    # than background, and missed
-    zero_fap = np.zeros(len(found_injs)).astype(np.bool)
-    zero_fap_cut = found_trig_bestnr > max_bestnr
-    zero_fap    = zero_fap | (zero_fap_cut)
-
-    # Non-zero FAP but bestnr > 0
-    nonzero_fap = ~zero_fap & (found_trig_bestnr!=0)
-
-    # Missed
-    missed = (~zero_fap) & (~nonzero_fap)
-
     # Separate triggers into:
     # zero_fap 'g_found', nonzero_fap 'g_ifar', and missed 'missed_inj'
     # TODO: explain g_missed2
@@ -651,7 +657,6 @@ else:
     g_found_time        = found_inj_time[zero_fap]
     g_found_sky_angle   = found_sky_angle[zero_fap]
     g_found_inc         = found_inj_inc[zero_fap]
-
     g_found_spin1x      = found_inj_spin1x[zero_fap]
     g_found_spin1y      = found_inj_spin1y[zero_fap]
     g_found_spin1z      = found_inj_spin1z[zero_fap]
@@ -662,6 +667,8 @@ else:
     # Non-zero FAP
     g_ifar_mchirp        = found_inj_mchirp[nonzero_fap]
     g_ifar_mtot          = found_inj_mtot[nonzero_fap]
+    g_ifar_m1            = found_inj_m1[nonzero_fap]
+    g_ifar_m2            = found_inj_m2[nonzero_fap]
     g_ifar_eff_site_dist = dict((ifo, found_inj_eff_site_dist[ifo][nonzero_fap])\
                               for ifo in sites)
     g_ifar_eff_dist      = found_inj_eff_dist[nonzero_fap]
@@ -669,6 +676,15 @@ else:
     g_ifar_dist          = found_inj_dist[nonzero_fap]
     g_ifar_time          = found_inj_time[nonzero_fap]
     g_ifar_sky_angle     = found_sky_angle[nonzero_fap]
+    g_ifar_inc           = found_inj_inc[nonzero_fap]
+    g_ifar_spin1x        = found_inj_spin1x[nonzero_fap]
+    g_ifar_spin1y        = found_inj_spin1y[nonzero_fap]
+    g_ifar_spin1z        = found_inj_spin1z[nonzero_fap]
+    g_ifar_spin2x        = found_inj_spin2x[nonzero_fap]
+    g_ifar_spin2y        = found_inj_spin2y[nonzero_fap]
+    g_ifar_spin2z        = found_inj_spin2z[nonzero_fap]
+    g_ifar_ra            = found_inj_ra[nonzero_fap]
+    g_ifar_dec           = found_inj_dec[nonzero_fap]
 
     g_ifar_trig          = np.asarray(found_trigs)[nonzero_fap]
     g_ifar_inj           = np.asarray(found_injs)[nonzero_fap]
@@ -683,18 +699,11 @@ else:
     # Statistics: found-missed
     FM = MF[::-1]
 
-    g_ifar_m1           = found_inj_m1[nonzero_fap]
-    g_ifar_m2           = found_inj_m2[nonzero_fap]
     g_ifar_rec_m1       = found_trig_m1[nonzero_fap]
     g_ifar_rec_m2       = found_trig_m2[nonzero_fap]
     g_ifar_rec_mchirp   = found_trig_mchirp[nonzero_fap]
-
-    g_ifar_inc          = found_inj_inc[nonzero_fap]
-    g_ifar_ra           = found_inj_ra[nonzero_fap]
-    g_ifar_dec          = found_inj_dec[nonzero_fap]
     g_ifar_rec_ra       = found_trig_ra[nonzero_fap]
     g_ifar_rec_dec      = found_trig_dec[nonzero_fap]
-
     g_ifar_snr          = found_trig_snr[nonzero_fap]
     g_ifar_chisq        = found_trig_chisq[nonzero_fap]
     g_ifar_bank         = found_trig_bank[nonzero_fap]
@@ -703,36 +712,35 @@ else:
     g_ifar_sngl_snr     = dict((ifo, found_trig_sngl_snr[ifo][nonzero_fap])\
                                for ifo in ifos)
 
-    g_ifar_spin1x       = found_inj_spin1x[nonzero_fap]
-    g_ifar_spin1y       = found_inj_spin1y[nonzero_fap]
-    g_ifar_spin1z       = found_inj_spin1z[nonzero_fap]
-    g_ifar_spin2x       = found_inj_spin2x[nonzero_fap]
-    g_ifar_spin2y       = found_inj_spin2y[nonzero_fap]
-    g_ifar_spin2z       = found_inj_spin2z[nonzero_fap]
-
     # Missed
     g_missed2_mchirp     = found_inj_mchirp[missed]
     g_missed2_mtot       = found_inj_mtot[missed]
+    g_missed2_m1         = found_inj_m1[missed]
+    g_missed2_m2         = found_inj_m2[missed]
     g_missed2_eff_site_dist = dict((ifo, found_inj_eff_site_dist[ifo][missed])\
                                    for ifo in sites)
     g_missed2_eff_dist   = found_inj_eff_dist[missed]
     g_missed2_det_stat   = found_trig_bestnr[missed]
     g_missed2_dist       = found_inj_dist[missed]
     g_missed2_time       = found_inj_time[missed]
+    g_missed2_inc        = found_inj_inc[missed]
+    g_missed2_spin1x     = found_inj_spin1x[missed]
+    g_missed2_spin1y     = found_inj_spin1y[missed]
+    g_missed2_spin1z     = found_inj_spin1z[missed]
+    g_missed2_spin2x     = found_inj_spin2x[missed]
+    g_missed2_spin2y     = found_inj_spin2y[missed]
+    g_missed2_spin2z     = found_inj_spin2z[missed]
+    g_missed2_ra         = found_inj_ra[missed]
+    g_missed2_dec        = found_inj_dec[missed]
+
     g_missed2_trig       = np.asarray(found_trigs)[missed]
     g_missed2_inj        = np.asarray(found_injs)[missed]
-    g_missed2_m1         = found_inj_m1[missed]
-    g_missed2_m2         = found_inj_m2[missed]
+
     g_missed2_rec_m1     = found_trig_m1[missed]
     g_missed2_rec_m2     = found_trig_m2[missed]
     g_missed2_rec_mchirp = found_trig_mchirp[missed]
-
-    g_missed2_ra         = found_inj_ra[missed]
-    g_missed2_dec        = found_inj_dec[missed]
     g_missed2_rec_ra     = found_trig_ra[missed]
     g_missed2_rec_dec    = found_trig_dec[missed]
-    g_missed2_inc        = found_inj_inc[missed]
-
     g_missed2_snr        = found_trig_snr[missed]
     g_missed2_chisq      = found_trig_chisq[missed]
     g_missed2_bank       = found_trig_bank[missed]
@@ -740,13 +748,6 @@ else:
     g_missed2_null       = found_trig_null_snr[missed]
     g_missed2_sngl_snr   = dict((ifo, found_trig_sngl_snr[ifo][missed])\
                                 for ifo in ifos)
-
-    g_missed2_spin1x     = found_inj_spin1x[missed]
-    g_missed2_spin1y     = found_inj_spin1y[missed]
-    g_missed2_spin1z     = found_inj_spin1z[missed]
-    g_missed2_spin2x     = found_inj_spin2x[missed]
-    g_missed2_spin2y     = found_inj_spin2y[missed]
-    g_missed2_spin2z     = found_inj_spin2z[missed]
 
     # Set the sigma values
     inj_sigma = found_trigs.get_sigmasqs()
@@ -1004,6 +1005,13 @@ else:
     np.savetxt('%s/foundonbestnrnomc.txt' % outdir, found_on_bestnr_no_mc.T)
     np.savetxt('%s/numinjections.txt' % outdir, num_injections.T)
     np.savetxt('%s/numinjectionsnomc.txt' % outdir, num_injections_no_mc.T)
+    file = open("%s/injection_recovery.html" % outdir, "w")
+    file.write("Total injections found louder than all background using %s "\
+               "is: %s<br>\n" % ('BestNR', found_max_bestnr[-1]))
+    file.write("Total injections found louder than all background (and "\
+               "nearby triggers in the offsource) using %s is: %s<br>"\
+               % ('BestNR', found_on_bestnr[-1]))
+    file.close()
 
     logging.info("Found/missed injection efficiency calculations completed.")
 
@@ -1104,130 +1112,48 @@ else:
 
 # Define the 'found' injection colour
 fnd_col = cm.get_cmap()(0)
+# Define FAP colour
+ptfcolormap = cm.spring
+ptfcolormap.set_over('g')
 
 # Plot cumulative histograms
-np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
-           full_time_bin_veto_max_bestnr, delimiter='/t')
-fig = plt.figure()
-ax = fig.gca()
-cumplot = plotutils.CumulativeHistogramPlot("BestNR",
-                                             "False alarm probability",
-                                             "")
-cumplot.add_background([item] for item in full_time_bin_veto_max_bestnr)
-cumplot.finalize(num_bins=50)
-cumplot.ax.set_ylim(ymax=1.2)
-cumplot.savefig('%s/bestnr_vs_fap.png' % (outdir))
-plt.close()
+# TODO: promote to execcutable with stat as option
+x_label_dict = {"bestnr": "BestNR",
+                "snr": "SNR",
+                "snruncut": "SNR after signal based vetoes"}
+data_dict = {"bestnr": full_time_bin_veto_max_bestnr,
+             "snr": full_time_bin_veto_max_snr,
+             "snruncut": full_time_bin_veto_max_snr_uncut}
+for stat in ["bestnr", "snr", "snruncut"]:
+    fig = plt.figure()
+    ax = fig.gca()
+    cumplot = plotutils.CumulativeHistogramPlot(x_label_dict[stat],
+                                                 "False alarm probability",
+                                                 "")
+    cumplot.add_background([item] for item in data_dict[stat])
+    cumplot.finalize(num_bins=50)
+    cumplot.ax.set_ylim(ymax=1.2)
+    cumplot.savefig('%s/%s_vs_fap.png' % (outdir, stat))
+    plt.close()
 
-fig = plt.figure()
-ax = fig.gca()
-cumplot = plotutils.CumulativeHistogramPlot("SNR",
-                                             "False alarm probability",
-                                             "")
-cumplot.add_background([item] for item in full_time_bin_veto_max_snr)
-cumplot.finalize(num_bins=50)
-cumplot.ax.set_ylim(ymax=1.2)
-cumplot.savefig('%s/snr_vs_fap.png' % (outdir))
-plt.close()
-
-fig = plt.figure()
-ax = fig.gca()
-cumplot = plotutils.CumulativeHistogramPlot("SNR after signal based vetoes",
-                                             "False alarm probability",
-                                             "")
-cumplot.add_background([item] for item in full_time_bin_veto_max_snr_uncut)
-cumplot.finalize(num_bins=50)
-cumplot.ax.set_ylim(ymax=1.2)
-cumplot.savefig('%s/snruncut_vs_fap.png' % (outdir))
-plt.close()
-
-  #
-  # Now we can start dealing with the injections
-  #
-
-  if doinj:
-
-    sites = [ifo[0] for ifo in ifos]
-
-    missedInjs = load_xml_table(missedFile, "sim_inspiral").veto(vetoes.union(vetoes.keys()))
-
-    foundInjsNoVeto = load_xml_table(foundFile, "sim_inspiral")
-    foundTrigsNVeto = load_xml_table(foundFile, "multi_inspiral")
-
-    foundInjs = lsctables.New(lsctables.SimInspiralTable)
-    foundTrigs = lsctables.New(lsctables.MultiInspiralTable)
-
-    for trig,sim in zip(foundTrigsNVeto,foundInjsNoVeto):
-      if sim.get_end() not in vetoes.union(vetoes.keys()):
-        foundInjs.append(sim)
-        foundTrigs.append(trig)
-  
-    vprint("Missed/found injections/triggers loaded at "+\
-                                 "%d.\n" % elapsed_time())
-
-    # extract columns
-    foundInjTime   = np.asarray(foundInjs.get_column('geocent_end_time')) +\
-                     np.asarray(foundInjs.get_column('geocent_end_time_ns')*\
-                                   10**-9)
-
-    foundInjMchirp   = np.asarray(foundInjs.get_column('mchirp'))
-    foundInjMtot     = np.asarray(foundInjs.get_column('mtotal'))
-    foundInjEffSiteDist =\
-        dict((ifo, foundInjs.get_column('eff_dist_%s' % ifo.lower()))\
-             for ifo in sites)
-    foundInjEffDist  = np.power(np.power(\
-                                  np.asarray(foundInjEffSiteDist.values()),-1)\
-                                .sum(0),-1)
-    foundInjRA       = np.asarray(foundInjs.get_column('longitude'))
-    foundInjDec      = np.asarray(foundInjs.get_column('latitude'))
-    foundInjDist     = np.asarray(foundInjs.get_column('distance'))
-
-    foundTrigMchirp  = np.asarray(foundTrigs.get_column('mchirp'))
-    foundTrigBestNR  = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
-                             null_thresh=null_thresh,snr_threshold=snrThresh,\
-                             sngl_snr_threshold = snglSnrThresh,\
-                             chisq_threshold = newSnrThresh,\
-                             null_grad_thresh = nullGradThresh,\
-                             null_grad_val = nullGradVal) for t in foundTrigs]
-    foundTrigBestNR  = np.asarray(foundTrigBestNR)
-    foundTrigRA      = np.asarray(foundTrigs.get_column('ra'))
-    foundTrigDec     = np.asarray(foundTrigs.get_column('dec'))
-
-    foundSkyAngle    = np.arccos(np.cos(foundInjDec - foundTrigDec) -\
-                              np.cos(foundInjDec)* np.cos(foundTrigDec) *\
-                              (1 - np.cos(foundInjRA - foundTrigRA)))
-    foundInjm1       = np.asarray(foundInjs.get_column('mass1'))
-    foundInjm2       = np.asarray(foundInjs.get_column('mass2'))
-    foundTrigm1      = np.asarray(foundTrigs.get_column('mass1'))
-    foundTrigm2      = np.asarray(foundTrigs.get_column('mass2'))
-
-    foundInjInc      = np.asarray(foundInjs.get_column('inclination'))
-    foundTrigSNR     = np.asarray(foundTrigs.get_column('snr'))
-    foundTrigChisq   = np.asarray(foundTrigs.get_column('chisq'))
-    foundTrigBank    = np.asarray(foundTrigs.get_column('bank_chisq'))
-    foundTrigAuto    = np.asarray(foundTrigs.get_column('cont_chisq'))
-    foundTrigNullSNR = np.asarray(foundTrigs.get_null_snr())
-    foundTrigSnglSNR = dict((ifo, np.asarray(foundTrigs.get_sngl_snr(ifo)))\
-                            for ifo in ifos)
-    
+if doinj:
+    dist_plot_vals = [np.asarray(bin).mean() for bin in dist_bins]
+ 
     finjs         = found_max_bestnr[:-1] / num_mc_injs
     totalinjs     = num_injections[:-1] / num_mc_injs
     finjs_no_mc     = found_max_bestnr_no_mc[:-1]
     totalinjs_no_mc = num_injections_no_mc[:-1]
-    file.write("Total injections found louder than all background using %s "\
-               "is: %s<br>\n" % ('BestNR', found_max_bestnr[-1]))
 
-        file = open("%s/injection_recovery.html" % outdir, "w")
-        
-        finjs         = found_max_bestnr.sum(0)[:-1] / num_mc_injs
-        totalinjs     = numInjections.sum(0)[:-1] / num_mc_injs
-        finjs_no_mc     = found_max_bestnr_no_mc.sum(0)[:-1]
-        totalinjs_no_mc = numInjections_no_mc.sum(0)[:-1]
-        file.write('\n'.join(["Total injections found in bin mchirp %s to %s "\
-                                                    "louder than all background in that bin using %s "\
-                                                    "is: %s<br>"\
-                                                    % (bin[0], bin[1], 'BestNR', found_max_bestnr[i,-1])\
-                                                    for i,bin in enumerate(mass_bins)])) 
+    # Calculate error bars for efficiency/distance plot
+    # TODO: serial coding (and repeated further down?!)
+    yerr_common   = totalinjs * (2 * finjs + 1)
+    yerr_denom    = 2*totalinjs*(totalinjs + 1)
+    yerr_vary     = 4 * totalinjs * finjs * (totalinjs - finjs) + totalinjs**2
+    yerr_vary     = yerr_vary**0.5
+    yerr_low      = (yerr_common - yerr_vary)/yerr_denom
+    yerr_low_mc    = (finjs/totalinjs) - yerr_low
+    yerr_high     = (yerr_common + yerr_vary)/yerr_denom
+    yerr_high_mc   = yerr_high - (finjs/totalinjs)
 
     # missed
     missed = (~zeroFAP) & (~nonzeroFAP)
@@ -1253,9 +1179,6 @@ plt.close()
     finjs     = found_on_bestnr[:-1] / num_mc_injs
     finjs_no_mc = found_on_bestnr_no_mc[:-1]
 
-    file.write("Total injections found louder than all background (and "\
-               "nearby triggers in the offsource) using %s is: %s<br>"\
-               % ('BestNR', found_on_bestnr[-1]))
     fig = plt.figure()
     ax = fig.gca()
     ax.grid()
@@ -1656,304 +1579,225 @@ plt.close()
     fig.savefig('%s/BestNR_on_efficiency.png' % (outdir))
     plt.close()
 
-    # plot found/missed injections
-    fig = plt.figure()
-    ax = fig.gca()
-    if len(gFoundMchirp):
-      ax.scatter(gFoundMchirp, gFoundEffDist, c="g", marker='x',\
-                 edgecolors='g')
-    if len(gIFARMchirp):
-      p = ax.scatter(gIFARMchirp, gIFAREffDist, c=gIFARStat,\
-                     norm=colors.Normalize(0,1,clip=False), marker='o',\
-                     edgecolors='none', cmap=cm.plasma)
-    if len(gMissed2Mchirp):
-      ax.scatter(gMissed2Mchirp, gMissed2EffDist, c="r", marker='x',\
-                 edgecolors='r')
-    if len(missedInjMchirp):
-      ax.scatter(missedInjMchirp, missedInjEffDist, c="k", marker='x',\
-                 edgecolors='k')
-    ax.grid()
-    ax.semilogy()
-    if len(gIFARMchirp):
-      cb = ax.figure.colorbar(p)
-      cb.ax.set_ylabel("FAP")
-    ax.set_xlabel("Mchirp")
-    ax.set_ylabel("Inverse sum of effective distances")
-    ax.set_title("Injections found louder than loudest background event")
-    #ax.set_ylim([ 0.5, 1000 ])
-    fig.savefig('%s/found_missed_injections_effdist.png' % outdir)
-    plt.close()
+    # Plot found-missed and missed-found injections
+    # Plots: effective distance, distance vs chirp mass, time
+    # TODO: make it an executable and loop at workflow level
+    # Info for site-specific plots
+    sitename = { 'G':'GEO', 'H':'Hanford', 'L':'Livingston', 'V':'Virgo',\
+                 'K':'KAGRA' }
+    inj_plots = list(itertools.product(["found_missed", "missed_found"],\
+                                       ["mchirp", "time"],\
+                                       ["eff_dist", "dist", "eff_site_dist"]))
+    inj_plots.append(["found_missed", "spin1", "spin2"])
+    inj_plots.append(["missed_found", "spin1", "spin2"])
+    inj_plots.append(["found_missed", "q", "mtot"])
+    inj_plots.append(["missed_found", "q", "mtot"])
+    inj_plots.append(["found_missed", "incl", "mchirp"])
+    inj_plots.append(["missed_found", "incl", "mchirp"])
+    inj_plots.append(["found_missed", "cosincl", "dist"])
+    inj_plots.append(["missed_found", "cosincl", "dist"])
+    for inj_plot in inj_plots:
+        #print(inj_plot)
+        fm_or_mf = inj_plot[0]
+        x_qty = inj_plot[1]
+        y_qty = inj_plot[2] 
+        if x_qty == "mchirp":
+            x_label = "Chirp Mass (solar masses)"
+            missed_inj_x = missed_inj_mchirp
+            g_missed2_x = g_missed2_mchirp
+            g_ifar_x = g_ifar_mchirp
+            g_found_x = g_found_mchirp
+        elif x_qty == "time":
+            x_label = "Time since %d" % grb_time
+            missed_inj_x = missed_inj_time
+            g_missed2_x = g_missed2_time
+            g_ifar_x = g_ifar_time
+            g_found_x = g_found_time
+        elif x_qty == "spin1":
+            x_label = "Spin on 1st binary component"
+            found_inj_x = np.sqrt(found_inj_spin1x**2 + \
+                                  found_inj_spin1y**2 + \
+                                  found_inj_spin1z**2)
+            missed_inj_x = missed_inj_spin1
+            #if len(g_missed2_spin1x):
+            g_missed2_x = np.sqrt(g_missed2_spin1x**2 + \
+                                  g_missed2_spin1y**2 + \
+                                  g_missed2_spin1z**2)
+            #if len(g_ifar_spin1x):
+            g_ifar_x = np.sqrt(g_ifar_spin1x**2 + \
+                               g_ifar_spin1y**2 + \
+                               g_ifar_spin1z**2)
+            #if len(g_found_spin1x):
+            g_found_x = np.sqrt(g_found_spin1x**2 + \
+                                g_found_spin1y**2 + \
+                                g_found_spin1z**2)
+        elif x_qty == "q":
+            x_label = "Mass ratio q"
+            missed_inj_x = missed_inj_m2 / missed_inj_m1
+            missed_inj_x = np.where(missed_inj_x > 1, 1. / missed_inj_x, missed_inj_x)
+            g_missed2_x = g_missed2_m2 / g_missed2_m1
+            g_missed2_x = np.where(g_missed2_x > 1, 1. / g_missed2_x, g_missed2_x)
+            g_ifar_x = g_ifar_m2 / g_ifar_m1
+            g_ifar_x = np.where(g_ifar_x > 1, 1. / g_ifar_x, g_ifar_x)
+            g_found_x = g_found_m2 / g_found_m1
+            g_found_x = np.where(g_found_x > 1, 1. / g_found_x, g_found_x)
+        elif x_qty == "incl":
+            x_label = "Inclination (iota)"
+            #x_label = "Magnitude of inclination | iota |"
+            g_found_x = np.rad2deg(g_found_inc)
+            g_ifar_x = np.rad2deg(g_ifar_inc)
+            missed_inj_x = np.rad2deg(missed_inj_inc)
+            g_missed2_x = np.rad2deg(g_missed2_inc)
+            max_inc = np.pi
+        elif x_qty == "cosincl":
+            x_label = "cos(iota)"
+            #x_label = "cos(|iota|)"
+            g_found_x = g_found_inc 
+            #g_found_x = 0.5 * np.pi - abs(g_found_inc - 0.5 * np.pi)
+            g_found_x = np.cos(g_found_x)
+            g_ifar_x = g_ifar_inc 
+            #g_ifar_x = 0.5 * np.pi - abs(g_ifar_inc - 0.5 * np.pi)
+            g_ifar_x = np.cos(g_ifar_x)
+            g_missed2_x = g_missed2_inc 
+            #g_missed2_x = 0.5 * np.pi - abs(g_missed2_inc - 0.5 * np.pi)
+            g_missed2_x = np.cos(g_missed2_x)
+            missed_inj_x = missed_inj_inc 
+            #missed_inj_x = 0.5 * np.pi - abs(missed_inj_inc - 0.5 * np.pi)
+            missed_inj_x = np.cos(missed_inj_x)
+        if "incl" in x_qty:
+            max_inc = np.pi
+            #max_inc = max(np.concatenate((g_found_x, g_ifar_x, g_missed2_x, missed_inj_x)))
+            max_inc_deg = np.rad2deg(max_inc)
+            max_inc_deg = np.ceil(max_inc_deg/10.0)*10
+            max_inc = np.deg2rad(max_inc_deg)
+        if y_qty == "eff_dist":
+            y_label = "Inverse sum of effective distances (Mpc)"
+            missed_inj_y = missed_inj_eff_dist
+            g_missed2_y = g_missed2_eff_dist
+            g_ifar_y = g_ifar_eff_dist
+            g_found_y = g_found_eff_dist
+            # The square brackets are for a one-iteration loop below
+            plot_loop = [None] 
+        elif y_qty == "dist":
+            y_label = "Distance (Mpc)"
+            missed_inj_y = missed_inj_dist
+            g_missed2_y = g_missed2_dist
+            g_ifar_y = g_ifar_dist
+            g_found_y = g_found_dist
+            # The square brackets are for a one-iteration loop below
+            plot_loop = [None]
+        elif y_qty == "eff_site_dist":
+            plot_loop = sites
+        elif y_qty == "spin2":
+            y_label = "Spin on 2nd binary component"
+            found_inj_y = np.sqrt(found_inj_spin2x**2 + \
+                                  found_inj_spin2y**2 + \
+                                  found_inj_spin2z**2)
+            missed_inj_y = missed_inj_spin2
+            #if len(g_missed2_spin1x):
+            g_missed2_y = np.sqrt(g_missed2_spin2x**2 + \
+                                  g_missed2_spin2y**2 + \
+                                  g_missed2_spin2z**2)
+            #if len(g_ifar_spin1x):
+            g_ifar_y = np.sqrt(g_ifar_spin2x**2 + \
+                               g_ifar_spin2y**2 + \
+                               g_ifar_spin2z**2)
+            #if len(g_found_spin1x):
+            g_found_y = np.sqrt(g_found_spin2x**2 + \
+                                g_found_spin2y**2 + \
+                                g_found_spin2z**2)
+            # The square brackets are for a one-iteration loop below
+            plot_loop = [None]
+        elif y_qty == "mtot":
+            y_label = "Total mass M (solar masses)"
+            missed_inj_y = missed_inj_m1 + missed_inj_m2
+            g_missed2_y = g_missed2_m1 + g_missed2_m2
+            g_ifar_y = g_ifar_m1 + g_ifar_m2
+            g_found_y= g_found_m1 + g_found_m2
+            # The square brackets are for a one-iteration loop below
+            plot_loop = [None]
+        elif y_qty == "mchirp":
+            y_label = "Chirp Mass (solar masses)"
+            missed_inj_y = missed_inj_mchirp
+            g_missed2_y = g_missed2_mchirp
+            g_ifar_y = g_ifar_mchirp
+            g_found_y= g_found_mchirp
+        for site in plot_loop: 
+            if site is not None:
+                y_label = "%s effective distance (Mpc)" % sitename[site]
+                missed_inj_y = missed_inj_eff_site_dist[site]
+                g_missed2_y = g_missed2_eff_site_dist[site]
+                g_ifar_y = g_ifar_eff_site_dist[site]
+                g_found_y = g_found_eff_site_dist[site]
+            fig = plt.figure()
+            if y_qty in ["mtot", "spin2", "mchirp"]:
+                ax = fig.gca()
+            else:
+                ax = fig.gca(yscale="log")
+            if fm_or_mf == "found_missed":
+                if len(missed_inj_x):
+                    ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=10)
+                if len(g_missed2_x):
+                    ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=10)
+                if len(g_ifar_x):
+                    p = ax.scatter(g_ifar_x[FM], g_ifar_y[FM], c=g_ifar_stat[FM],
+                                   vmin=0, vmax=1, s=40, edgecolor="w")
+                if len(g_found_x):
+                    ax.scatter(g_found_x, g_found_y, c=fnd_col, marker="+", s=30)
+            elif fm_or_mf == "missed_found":
+                if len(g_found_x):
+                    ax.scatter(g_found_x, g_found_y, c=fnd_col, marker="+", s=15)
+                if len(g_ifar_x):
+                    p = ax.scatter(g_ifar_x[MF], g_ifar_y[MF], c=g_ifar_stat[MF],
+                                   vmin=0, vmax=1, s=40, edgecolor="w")
+                if len(g_missed2_x):
+                    ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=40)
+                if len(missed_inj_x):
+                    ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=40)
+            if len(g_ifar_x):
+                cb = plt.colorbar(p, label="FAP")
+            ax.grid()
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+            plot_path = "%s/%s_injections_%s_%s" % (outdir, fm_or_mf, y_qty, x_qty)
+            if x_qty == "spin1":
+                ax.set_title("Injection recovery with respect to component spins")
+                ax.set_xlim([0, np.ceil(10 * max(max_missed_inj_spin1,
+                                                 found_inj_x.max())) / 10])
+                ax.set_ylim([0, np.ceil(10 * max(max_missed_inj_spin2,
+                                                 found_inj_y.max())) / 10])
+            elif x_qty == "incl":
+                ax.set_title("Injection recovery with respect to inclination angle")
+                ax.set_xlim(0, max_inc_deg)
+            elif x_qty == "cosincl":
+                ax.set_title("Injection recovery with respect to inclination angle")
+                tt = np.arange(0, max_inc_deg + 10, 10)
+                #tt = np.arange(0, 190, 10)
+                tks = np.cos(np.deg2rad(tt))
+                tk_labs = ['cos(%d deg)' % tk for tk in tt]
+                plt.xticks(tks, tk_labs, fontsize=10)
+                fig.autofmt_xdate()
+                ax.set_xlim(np.cos(max_inc), 1)
+                #ax.set_xlim(-1, 1)
+            elif y_qty == "mtot":
+                ax.set_title("Injection recovery with respect to component masses")
+            elif site is not None:
+                ax.set_title("Injection recovery vs background")
+                plot_path += "_%s" % site.lower()
+            else:
+                ax.set_title("Injection recovery vs background")
+            plt.tight_layout()
+            plot_path += ".png"
+            fig.savefig(plot_path)
+            plt.close()
 
-    fig = plt.figure()
-    ax = fig.gca()
-    if len(missedInjMchirp):
-      ax.scatter(missedInjMchirp, missedInjEffDist, c="k", marker='x',\
-                 edgecolors='k')
-    if len(gMissed2Mchirp):
-      ax.scatter(gMissed2Mchirp, gMissed2EffDist, c="r", marker='x',\
-                 edgecolors='r')
-    if len(gIFARMchirp):
-      p = ax.scatter(gIFARMchirp, gIFAREffDist, c=gIFARStat,\
-                     norm=colors.Normalize(0,1,clip=False), marker='o',\
-                     edgecolors='none', cmap=cm.plasma)
-    if len(gFoundMchirp):
-      ax.scatter(gFoundMchirp, gFoundEffDist, c="b", marker='x',\
-                 edgecolors='g')
-    ax.grid()
-    ax.semilogy()
-    if len(gIFARMchirp):
-      cb = ax.figure.colorbar(p)
-      cb.ax.set_ylabel("FAP")
-    ax.set_xlabel("Mchirp")
-    ax.set_ylabel("Inverse sum of effective distances")
-    ax.set_title("Injections found louder than loudest background event")
-    #ax.set_ylim([ 0.5, 1000 ])
-    fig.savefig('%s/missed_found_injections_effdist.png' % outdir)
-    plt.close()
-
-    fig = plt.figure()
-    ax = fig.gca()
-    if len(gFoundTime):
-      ax.scatter(gFoundTime, gFoundEffDist, c="b", marker='x', edgecolors='g')
-    if len(gIFARTime):
-      p = ax.scatter(gIFARTime, gIFAREffDist, c=gIFARStat,\
-                     norm=colors.Normalize(0,1,clip=False), marker='o',\
-                     edgecolors='none', cmap=cm.plasma)
-    if len(gMissed2Time):
-      ax.scatter(gMissed2Time, gMissed2EffDist, c="r", marker='x',\
-                 edgecolors='r')
-    if len(missedInjTime):
-      ax.scatter(missedInjTime, missedInjEffDist, c="k", marker='x',\
-                 edgecolors='k')
-    ax.grid()
-    ax.semilogy()
-    if len(gIFARTime):
-      cb = ax.figure.colorbar(p)
-      cb.ax.set_ylabel("FAP")
-    ax.set_xlabel("Time since %d" % grbTime)
-    ax.set_ylabel("Inverse sum of effective distances")
-    ax.set_title("Injections found louder than loudest background event")
-    ax.set_xlim([ start, end ])
-    #ax.set_ylim([ 0.5, 1000 ])
-    fig.savefig("%s/found_missed_injections_effdist_time.png" % outdir)
-    plt.close()
-
-    fig = plt.figure()
-    ax = fig.gca()
-    if len(missedInjTime):
-      ax.scatter(missedInjTime, missedInjEffDist, c="k", marker='x',\
-                 edgecolors='k')
-    if len(gMissed2Time):
-      ax.scatter(gMissed2Time, gMissed2EffDist, c="r", marker='x',\
-                 edgecolors='r')
-    if len(gIFARTime):
-      p = ax.scatter(gIFARTime, gIFAREffDist, c=gIFARStat,\
-                     norm=colors.Normalize(0,1,clip=False), marker='o',\
-                     edgecolors='none', cmap=cm.plasma)
-    if len(gFoundTime):
-      ax.scatter(gFoundTime, gFoundEffDist, c="b", marker='x', edgecolors='g')
-    ax.grid()
-    ax.semilogy()
-    if len(gIFARTime):
-      cb = ax.figure.colorbar(p)
-      cb.ax.set_ylabel("FAP")
-    ax.set_xlabel("Time since %d" % grbTime)
-    ax.set_ylabel("Inverse sum of effective distances")
-    ax.set_title("Injections found louder than loudest background event")
-    ax.set_xlim([ start, end ])
-    #ax.set_ylim([ 0.5, 1000 ])
-    fig.savefig("%s/missed_found_injections_effdist_time.png" % outdir)
-    plt.close()
-
-    # Injections vs. spins plot
-    fig = plt.figure()
-    ax = fig.gca()
-    ax.grid()
-    foundInjSpin1 = np.sqrt(foundInjSpin1x**2 + foundInjSpin1y**2 + \
-                            foundInjSpin1z**2)
-    foundInjSpin2 = np.sqrt(foundInjSpin2x**2 + foundInjSpin2y**2 + \
-                            foundInjSpin2z**2)
-    if len(gFoundSpin1x):
-      gFoundSpin1 = np.sqrt(gFoundSpin1x**2 + gFoundSpin1y**2 + \
-                            gFoundSpin1z**2)
-      gFoundSpin2 = np.sqrt(gFoundSpin2x**2 + gFoundSpin2y**2 + \
-                            gFoundSpin2z**2)
-      ax.scatter(gFoundSpin1, gFoundSpin2, c="g", marker="x",
-                 edgecolors="g")
-    if len(gIFARSpin1x):
-      gIFARSpin1 = np.sqrt(gIFARSpin1x**2 + gIFARSpin1y**2 + gIFARSpin1z**2)
-      gIFARSpin2 = np.sqrt(gIFARSpin2x**2 + gIFARSpin2y**2 + gIFARSpin2z**2)
-      p = ax.scatter(gIFARSpin1, gIFARSpin2, c=gIFARStat,
-                     norm=colors.Normalize(0, 1, clip=False), marker="o",
-                     edgecolors="none", cmap=cm.plasma)
-    if len(missedInjSpin1x):
-      ax.scatter(missedInjSpin1, missedInjSpin2, c="k", marker="x",
-                 edgecolors="k")
-    if len(gMissed2Spin1x):
-      gMissed2Spin1 = np.sqrt(gMissed2Spin1x**2 + gMissed2Spin1y**2 + \
-                              gMissed2Spin1z**2)
-      gMissed2Spin2 = np.sqrt(gMissed2Spin2x**2 + gMissed2Spin2y**2 + \
-                              gMissed2Spin2z**2)
-      ax.scatter(gMissed2Spin1, gMissed2Spin2, c="r", marker="x",
-                 edgecolors="r")
-    if len(gIFARSpin1x):
-      cb = ax.figure.colorbar(p)
-      cb.ax.set_ylabel("FAP")
-    ax.set_xlabel("Spin on 1st binary component")
-    ax.set_ylabel("Spin on 2nd binary component")
-    ax.set_title("Injection recovery with respect to component spins")
-    ax.set_xlim([0, np.ceil(10 * max(maxMissedInjSpin1,
-                                     foundInjSpin1.max())) / 10])
-    ax.set_ylim([0, np.ceil(10 * max(maxMissedInjSpin2,
-                                     foundInjSpin2.max())) / 10])
-    fig.savefig("%s/found_missed_injections_spins.png" % outdir)
-    plt.close()
-
-    # Injections vs. masses plot
-    fig = plt.figure()
-    ax = fig.gca()
-    ax.grid()
-    if len(gFoundm1):
-      ax.scatter(gFoundm1, gFoundm2, c="g", marker="x", edgecolors="g")
-    if len(gIFARm1):
-      p = ax.scatter(gIFARm1, gIFARm2, c=gIFARStat, edgecolors="none",
-                     norm=colors.Normalize(0, 1, clip=False), marker="o",
-                     cmap=cm.plasma)
-    if len(missedInjm1):
-      ax.scatter(missedInjm1, missedInjm2, c="k", marker="x", edgecolors="k")
-    if len(gMissed2m1):
-      ax.scatter(gMissed2m1, gMissed2m2, c="r", marker="x", edgecolors="r")
-    if len(gIFARm1):
-      cb = ax.figure.colorbar(p)
-      cb.ax.set_ylabel("FAP")
-    ax.set_xlabel("Mass of 1st binary component")
-    ax.set_ylabel("Mass of 2nd binary component")
-    ax.set_title("Injection recovery with respect to component masses")
-    ax.set_xlim([np.floor(10 * min(minMissedInjm1, foundInjm1.min())) / 10,
-                 np.ceil(10 * max(maxMissedInjm1, foundInjm1.max())) / 10])
-    ax.set_ylim([np.floor(10 * max(minMissedInjm2, foundInjm2.min())) / 10,
-                 np.ceil(10 * max(maxMissedInjm2, foundInjm2.max())) / 10])
-    fig.savefig("%s/found_missed_injections_masses.png" % outdir)
-    plt.close()
-
-    # Injections vs. inclinations plot
-    fig = plt.figure()
-    ax = fig.gca()
-    ax.grid()
-    if len(gFoundInc):
-      ax.scatter(gFoundMchirp, gFoundInc, c="g", marker="x", edgecolors="g")
-    if len(gIFARInc):
-      p = ax.scatter(gIFARMchirp, gIFARInc, c=gIFARStat, edgecolors="none",
-                     norm=colors.Normalize(0, 1, clip=False), marker="o",
-                     cmap=cm.plasma)
-    if len(gMissed2Inc):
-      ax.scatter(gMissed2Mchirp, gMissed2Inc, c="r", marker="x",
-                 edgecolors="r")
-    if len(missedInjInc):
-      ax.scatter(missedInjMchirp, missedInjInc, c="k", marker="x",
-                 edgecolors="k")
-    if len(gIFARInc):
-      cb = ax.figure.colorbar(p)
-      cb.ax.set_ylabel("FAP")
-    ax.set_xlabel("Mchirp")
-    ax.set_ylabel("Inclination angle of binary")
-    ax.set_title("Injection recovery with respect to inclination angle")
-    fig.savefig("%s/found_missed_injections_incs.png" % outdir)
-    plt.close()
 
     # Write inclination recovery to file
-    np.savetxt("%s/found_inclinations.txt" % outdir, np.c_[gFoundTime + grbTime,
-                                                           gFoundInc])
+    np.savetxt("%s/found_inclinations.txt" % outdir, np.c_[g_found_time + grb_time,
+                                                           g_found_inc])
     np.savetxt("%s/total_inclinations.txt" % outdir,
-               np.c_[np.concatenate((foundInjTime, missedInjTime)),
-                     np.concatenate((foundInjInc, missedInjInc))])
-
-    # Site-specific plots
-    sitename = { 'G':'GEO', 'H':'Hanford', 'L':'Livingston', 'V':'Virgo',\
-                 'T':'TAMA' }
-
-    for site in sites:
-      fig = plt.figure()
-      ax = fig.gca()
-      if len(missedInjMchirp):
-        ax.scatter(missedInjMchirp, missedInjEffSiteDist[site],\
-                   c="k", marker='x', edgecolors='k')
-      if len(gMissed2Mchirp):
-        ax.scatter(gMissed2Mchirp, gMissed2EffSiteDist[site],\
-                  c="r", marker='x', edgecolors='r')
-      if len(gFoundMchirp):
-        ax.scatter(gFoundMchirp, gFoundEffSiteDist[site],\
-                  c="b", marker='x', edgecolors='g')
-      ax.grid()
-      if len(gIFARMchirp):
-        p = ax.scatter(gIFARMchirp, gIFAREffSiteDist[site],\
-                      c=gIFARStat, norm=colors.Normalize(0,1,clip=False),\
-                      marker='o', edgecolors='none', cmap=cm.plasma)
-      ax.semilogy()
-      if len(gIFARMchirp):
-        cb = ax.figure.colorbar(p)
-        cb.ax.set_ylabel("FAP")
-      ax.set_xlabel("Mchirp")
-      ax.set_ylabel("%s effective distance" % sitename[site])
-      ax.set_title("Injections found louder than loudest background event")
-      #ax.set_ylim([ 0.5, 1000 ])
-      fig.savefig("%s/found_missed_injections_effdist_%s.png"\
-                   % (outdir, site.lower()))
-      plt.close()
-
-      fig = plt.figure()
-      ax  = fig.gca()
-      if len(missedInjTime):
-        ax.scatter(missedInjTime, missedInjEffSiteDist[site],\
-                  c="k", marker='x', edgecolors='k')
-      if len(gMissed2Time):
-        ax.scatter(gMissed2Time, gMissed2EffSiteDist[site],\
-                  c="r", marker='x', edgecolors='r')
-      if len(gFoundTime):
-        ax.scatter(gFoundTime, gFoundEffSiteDist[site],\
-                  c="b", marker='x', edgecolors='g')
-      ax.grid()
-      if len(gIFARTime):
-        p = ax.scatter(gIFARTime ,gIFAREffSiteDist[site],\
-                      c=gIFARStat, norm=colors.Normalize(0,1,clip=False),\
-                      marker='o', edgecolors='none', cmap=cm.plasma)
-      ax.semilogy()
-      if len(gIFARTime):
-        cb = ax.figure.colorbar(p)
-        cb.ax.set_ylabel("FAP")
-      ax.set_xlabel("Time since %d" % grbTime)
-      ax.set_ylabel("%s effective distance" % sitename[site])
-      ax.set_title("Injections found louder than loudest background event")
-      ax.set_xlim([ start, end ])
-      #ax.set_ylim([ 0.5, 1000 ])
-      fig.savefig("%s/found_missed_injections_effdist_time_%s.png"\
-                   % (outdir, site.lower()))
-      plt.close()
-  
-    fig = plt.figure()
-    ax = fig.gca()
-    if len(missedInjMchirp):
-      ax.scatter(missedInjMchirp, missedInjDist,c="k", marker='x', edgecolors='k')
-    if len(gMissed2Mchirp):
-      ax.scatter(gMissed2Mchirp, gMissed2Dist,c="r", marker='x',\
-                  edgecolors='r')
-    if len(gFoundMchirp):
-      ax.scatter(gFoundMchirp, gFoundDist, c="b", marker='x', edgecolors='g')
-    ax.grid()
-    if len(gIFARMchirp):
-      p = ax.scatter(gIFARMchirp, gIFARDist, c=gIFARStat,\
-                    norm=colors.Normalize(0,1,clip=False),\
-                    marker='o', edgecolors='none', cmap=cm.plasma)
-    ax.semilogy()
-    if len(gIFARMchirp):
-      cb = ax.figure.colorbar(p)
-      cb.ax.set_ylabel("FAP")
-    ax.set_xlabel("Mchirp")
-    ax.set_ylabel("Distance (Mpc)")
-    ax.set_title("Injections found louder than loudest background event")
-    #ax.set_ylim([ 0.5, 100 ])
-    fig.savefig("%s/found_missed_injections_dist.png" % outdir)
-    plt.close()
+               np.c_[np.concatenate((found_inj_time, missed_inj_time)),
+                     np.concatenate((found_inj_inc, missed_inj_inc))])
 
     # TODO: finish writing up pycbc_pygrb_plot_sky_error for these 3 plots
     # Plot sky recovery
