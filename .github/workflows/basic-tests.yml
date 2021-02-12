@@ -71,6 +71,7 @@ jobs:
         SINGLE_COMMIT: true
   build_wheel:
     name: Build manylinux wheels for later possible upload
+    runs-on: ubuntu-20.04
     steps: 
       - uses: RalfG/python-wheels-manylinux-build@v0.3.3
         with:
