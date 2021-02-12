@@ -747,7 +747,7 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         return list(waveform.ringdown_td_approximants.keys())
 
 
-class FromFileHDFInjectionSet(_HDFInjectionSet):
+class IncoherentFromFileHDFInjectionSet(_HDFInjectionSet):
     """Manages injecting an arbitrary time series loaded from a file.
 
     The injections must have the following attributes set:
@@ -803,21 +803,21 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
     being injected into.
 
     In order to use with ``pycbc_create_injections``, set the ``approximant``
-    name to ``'fromfile'``.
+    name to ``'incoherent_from_file'``.
     """
-    injtype = 'fromfile'
+    injtype = 'incoherent_from_file'
     required_params = ('filename', 'ref_point')
     _buffersize = 10
     _buffer = None
     _rtbuffer = None
 
     def end_times(self):
-        raise NotImplementedError("FromFile times cannot be determined "
-                                  "without loading time series")
+        raise NotImplementedError("IncoherentFromFile times cannot be "
+                                  "determined without loading time series")
 
     @staticmethod
     def supported_approximants():
-        return ['fromfile']
+        return ['incoherent_from_file']
 
     def loadts(self, inj):
         """Loads an injection time series.
@@ -917,8 +917,8 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
     def apply(self, strain, detector_name, distance_scale=1,
               injection_sample_rate=None, inj_filter_rejector=None):
         if inj_filter_rejector is not None:
-            raise NotImplementedError("FromFile injections do not support "
-                                      "inj_filter_rejector")
+            raise NotImplementedError("IncoherentFromFile injections do not "
+                                      "support inj_filter_rejector")
         if injection_sample_rate is not None:
             delta_t = 1./injection_sample_rate
         else:
@@ -989,7 +989,8 @@ class FromFileHDFInjectionSet(_HDFInjectionSet):
 hdfinjtypes = {
     CBCHDFInjectionSet.injtype: CBCHDFInjectionSet,
     RingdownHDFInjectionSet.injtype: RingdownHDFInjectionSet,
-    FromFileHDFInjectionSet.injtype: FromFileHDFInjectionSet,
+    IncoherentFromFileHDFInjectionSet.injtype: \
+        IncoherentFromFileHDFInjectionSet,
 }
 
 
