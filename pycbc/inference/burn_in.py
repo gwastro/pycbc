@@ -525,7 +525,7 @@ class BaseBurnInTests(object):
         fp.write_data('burn_in_iteration', self.burn_in_iteration, path)
         testgroup = 'burn_in_tests'
         # write individual test data
-        for tst in self.do_tests:
+        for tst in self.do_tests+self.do_sampler_tests:
             subpath = '/'.join([path, testgroup, tst])
             fp.write_data('is_burned_in', self.test_is_burned_in[tst], subpath)
             fp.write_data('burn_in_iteration',
