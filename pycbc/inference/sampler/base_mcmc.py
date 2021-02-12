@@ -838,15 +838,18 @@ class EnsembleSupport(object):
         """The effective number of samples post burn-in that the sampler has
         acquired so far.
         """
+        if self.burn_in is not None and not self.burn_in.is_burned_in:
+            # not burned in, so there's no effective samples
+            return 0
         act = self.act
         if act is None:
             act = numpy.inf
-        if self.burn_in is None or not self.burn_in.is_burned_in:
+        if self.burn_in is None:
             start_iter = 0
         else:
             start_iter = self.burn_in.burn_in_iteration
         nperwalker = nsamples_in_chain(start_iter, act, self.niterations)
-        if self.burn_in is not None and self.burn_in.is_burned_in:
+        if self.burn_in is not None:
             # after burn in, we always have atleast 1 sample per walker
             nperwalker = max(nperwalker, 1)
         return int(self.nwalkers * nperwalker)
