@@ -989,8 +989,8 @@ class IncoherentFromFileHDFInjectionSet(_HDFInjectionSet):
 hdfinjtypes = {
     CBCHDFInjectionSet.injtype: CBCHDFInjectionSet,
     RingdownHDFInjectionSet.injtype: RingdownHDFInjectionSet,
-    IncoherentFromFileHDFInjectionSet.injtype: \
-        IncoherentFromFileHDFInjectionSet,
+    IncoherentFromFileHDFInjectionSet.injtype:
+    IncoherentFromFileHDFInjectionSet,
 }
 
 
