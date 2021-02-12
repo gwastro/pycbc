@@ -51,10 +51,6 @@ if __name__ == '__main__':
                         help="Print logging messages.")
     opts = parser.parse_args()
 
-    # Add unused required opts for inj file reading
-    opts.injection_f_ref = None
-    opts.injection_f_final = None
-
     log_level = logging.INFO if opts.verbose else logging.WARN
     logging.basicConfig(level=log_level,
                         format='%(asctime)s %(message)s',
@@ -66,8 +62,7 @@ if __name__ == '__main__':
     injection_tables = []
     injection_dtypes = []
     for inj_file in injection_files:
-        opts.injection_file = inj_file
-        injections = pycbc.inject.InjectionSet.from_cli(opts)
+        injections = pycbc.inject.InjectionSet(inj_file)
 
         inj_table = injections.table
         inj_table = inj_table[np.sort(inj_table.dtype.fields.keys())]
