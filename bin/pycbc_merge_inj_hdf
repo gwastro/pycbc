@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2021 Derek Davis
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Merge hdf injection files
+"""
+
+import logging
+import argparse
+import numpy as np
+import h5py
+import pycbc
+import pycbc.inject
+import pycbc.version
+
+def get_gc_end_time(injection):
+    """Return the geocenter end time of an injection. Required for seamless
+    compatibility with LIGOLW and HDF injection objects, which use different
+    names. Copied from pycbc_optimal_snr.
+    """
+    try:
+        # geocent time is robust to potentially incomplete sim tables
+        return injection.geocent_end_time
+    except AttributeError:
+        return injection.tc
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", action=pycbc.version.Version)
+    parser.add_argument('--injection-files', '-i', dest='injection_file',
+                        required=True, nargs='+',
+                        help='Input HDF5 files defining injections')
+    parser.add_argument('--output-file', '-o', dest='out_file', required=True,
+                        help='Output HDF5 file')
+    parser.add_argument("--verbose", action="store_true", default=False,
+                        help="Print logging messages.")
+    opts = parser.parse_args()
+
+    log_level = logging.INFO if opts.verbose else logging.WARN
+    logging.basicConfig(level=log_level,
+                        format='%(asctime)s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
+
+    logging.info("Loading injections")
+
+    injection_files = opts.injection_file
+    injection_tables = []
+    injection_dtypes = []
+    for inj_file in injection_files:
+        injections = pycbc.inject.InjectionSet(inj_file)
+
+        inj_table = injections.table
+        inj_table = inj_table[np.sort(inj_table.dtype.fields.keys())]
+        injection_tables.append(injections.table)
+
+        inj_dtypes = [inj_table.dtype.fields[k] for k in \
+                      inj_table.dtype.fields.keys()]
+        injection_dtypes.append(inj_dtypes)
+      
+    # check that all of the fields are the same
+    if not np.all([t.dtype.fields.keys() == \
+          injection_tables[0].dtype.fields.keys() for t in injection_tables]):
+        raise TypeError("All injection files must contain the same fields")
+
+    # check that all of the dtypes are the same
+    if not np.all([dt == injection_dtypes[0] for dt in injection_dtypes]):
+        raise TypeError("All injection files must contain the same " +
+                        "data types")
+
+    inj_dtype = injection_tables[0].dtype
+
+    new_inj_table = []
+    for inj_set in injection_tables:
+        for inj in inj_set:   
+            new_inj_table.append(inj)
+
+    # always store injections sorted by coalescence time
+    new_inj_table.sort(key=get_gc_end_time)
+
+    new_inj_table = pycbc.io.FieldArray.from_records(
+                new_inj_table, dtype=inj_dtype)
+
+    logging.info('Writing output')
+    pycbc.inject.InjectionSet.write(opts.out_file, new_inj_table)
+
+    logging.info('Done')
