@@ -14,7 +14,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: linux_wheels
-          path: dist/*.whl
+          path: dist
           retention-days: 7
   deploy_pypi:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
