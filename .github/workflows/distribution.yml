@@ -1,0 +1,40 @@
+name: build pypi release packages
+
+on: [push, pull_request]
+
+jobs:
+  build_linux_wheel:
+    name: Build manylinux wheels for later possible upload
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      - uses: RalfG/python-wheels-manylinux-build@v0.3.3
+        with:
+          python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist/*.whl
+  deploy_pypi:
+    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+    runs-on: ubuntu-20.04
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.7
+    - name: build pycbc for pypi
+      run: python setup.py sdist
+    - name: Publish distribution 📦 to Test PyPI
+      if: github.ref == 'refs/heads/master'
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.test_pypi_password }}
+        repository_url: https://test.pypi.org/legacy/
+    - name: Publish distribution 📦 to PyPI
+      if: startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.pypi_password }}
