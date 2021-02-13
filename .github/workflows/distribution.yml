@@ -32,7 +32,7 @@ jobs:
     - name: build pycbc for pypi
       run: |
         python setup.py sdist
-        ls
+        mv *.whl dist
         ls dist
     - name: Publish distribution 📦 to Test PyPI
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
