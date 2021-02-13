@@ -13,27 +13,34 @@ jobs:
           python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
       - uses: actions/upload-artifact@v2
         with:
-          name: wheels
+          name: linux_wheels
           path: dist/*.whl
+          retention-days: 7
   deploy_pypi:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
     runs-on: ubuntu-20.04
-    if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python 3.7
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
+    - uses: actions/download-artifact@v2
+      with:
+        name: linux_wheels
     - name: build pycbc for pypi
-      run: python setup.py sdist
+      run: |
+        python setup.py sdist
+        ls dist
     - name: Publish distribution 📦 to Test PyPI
+      if: github.event_name == 'push'
       if: github.ref == 'refs/heads/master'
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.test_pypi_password }}
         repository_url: https://test.pypi.org/legacy/
     - name: Publish distribution 📦 to PyPI
+      if: github.event_name == 'push'
       if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@master
       with:
