@@ -21,7 +21,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install *fftw3* mpi intel-mkl* git-lfs
-        pip install tox
+        pip install tox pip setuptools --upgrade
     - name: installing auxiliary data files
       run: |
         GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
