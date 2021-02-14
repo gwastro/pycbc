@@ -558,14 +558,13 @@ else:
 # TODO: all plots should be calls to function(s)
 # pygrb_shared_plot_setups()
 
-    missed_injs = SimInspiralUtils.ReadSimInspiralFromFiles([missed_file])\
-            .veto(vetoes.union(vetoes.keys()))
 
-    found_injs_no_veto = SimInspiralUtils.ReadSimInspiralFromFiles([found_file])
+    # Triggers and injections recovered in some form
     found_trigs_nveto = MultiInspiralUtils.ReadMultiInspiralFromFiles([found_file])
+    found_injs_no_veto = SimInspiralUtils.ReadSimInspiralFromFiles([found_file])
 
-    found_injs = lsctables.New(lsctables.SimInspiralTable)
     found_trigs = lsctables.New(lsctables.MultiInspiralTable)
+    found_injs = lsctables.New(lsctables.SimInspiralTable)
 
     for trig,sim in zip(found_trigs_nveto,found_injs_no_veto):
         if sim.get_end() not in vetoes.union(vetoes.keys()):
@@ -574,30 +573,7 @@ else:
 
     logging.info("Missed/found injections/triggers loaded.")
 
-    # Grab values of detection statistic 
-    found_trig_bestnr  = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
-                             null_thresh=null_thresh,snr_threshold=snr_thresh,\
-                             sngl_snr_threshold = sngl_snr_thresh,\
-                             chisq_threshold = new_snr_thresh,\
-                             null_grad_thresh = null_grad_thresh,\
-                             null_grad_val = null_grad_val) for t in found_trigs]
-    found_trig_bestnr   = np.asarray(found_trig_bestnr)
-
-    # Construct conditions for:
-    # 1) found louder than background,
-    zero_fap = np.zeros(len(found_injs)).astype(np.bool)
-    zero_fap_cut = found_trig_bestnr > max_bestnr
-    zero_fap    = zero_fap | (zero_fap_cut)
-
-    # 2) found (bestnr > 0) but not louder than background (non-zero FAP)
-    nonzero_fap = ~zero_fap & (found_trig_bestnr!=0)
-
-    # 3) Missed
-    missed = (~zero_fap) & (~nonzero_fap)
-
-
-
-    # Extract columns
+    # Extract columns of found injections and triggers
     found_inj_time   = np.asarray(found_injs.get_column('geocent_end_time')) +\
                        np.asarray(found_injs.get_column('geocent_end_time_ns')*\
                                   10**-9)
@@ -639,10 +615,31 @@ else:
     found_trig_sngl_snr = dict((ifo, np.asarray(found_trigs.get_sngl_snr(ifo)))\
                             for ifo in ifos)
  
+    # Grab values of detection statistic 
+    found_trig_bestnr  = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
+                             null_thresh=null_thresh,snr_threshold=snr_thresh,\
+                             sngl_snr_threshold = sngl_snr_thresh,\
+                             chisq_threshold = new_snr_thresh,\
+                             null_grad_thresh = null_grad_thresh,\
+                             null_grad_val = null_grad_val) for t in found_trigs]
+    found_trig_bestnr   = np.asarray(found_trig_bestnr)
+
+    # Construct conditions for injection:
+    # 1) found louder than background,
+    zero_fap = np.zeros(len(found_injs)).astype(np.bool)
+    zero_fap_cut = found_trig_bestnr > max_bestnr
+    zero_fap    = zero_fap | (zero_fap_cut)
+
+    # 2) found (bestnr > 0) but not louder than background (non-zero FAP)
+    nonzero_fap = ~zero_fap & (found_trig_bestnr!=0)
+
+    # 3) missed after being recovered (i.e., vetoed)
+    missed = (~zero_fap) & (~nonzero_fap)
+
     # Separate triggers into:
-    # zero_fap 'g_found', nonzero_fap 'g_ifar', and missed 'missed_inj'
-    # TODO: explain g_missed2
-    # TODO: Use a class for these
+    # 1) zero_fap 'g_found'
+    # 2) nonzero_fap 'g_ifar'
+    # 3) missed because of vetoes 'g_missed2'
       
     # Zero FAP
     g_found_mchirp      = found_inj_mchirp[zero_fap]
@@ -712,7 +709,7 @@ else:
     g_ifar_sngl_snr     = dict((ifo, found_trig_sngl_snr[ifo][nonzero_fap])\
                                for ifo in ifos)
 
-    # Missed
+    # Missed due to vetoes
     g_missed2_mchirp     = found_inj_mchirp[missed]
     g_missed2_mtot       = found_inj_mtot[missed]
     g_missed2_m1         = found_inj_m1[missed]
@@ -723,6 +720,7 @@ else:
     g_missed2_det_stat   = found_trig_bestnr[missed]
     g_missed2_dist       = found_inj_dist[missed]
     g_missed2_time       = found_inj_time[missed]
+    g_missed2_sky_angle  = found_sky_angle[missed]
     g_missed2_inc        = found_inj_inc[missed]
     g_missed2_spin1x     = found_inj_spin1x[missed]
     g_missed2_spin1y     = found_inj_spin1y[missed]
@@ -782,7 +780,11 @@ else:
 
     logging.info("%d found injections analysed." % (len(found_injs)))
 
-    # Process missed injections
+    # Missed injections (ones not recovered at all)
+    missed_injs = SimInspiralUtils.ReadSimInspiralFromFiles([missed_file])\
+            .veto(vetoes.union(vetoes.keys()))
+
+    # Process missed injections 'missed_inj'
     missed_inj_mchirp = np.asarray(missed_injs.get_column('mchirp'))
     missed_inj_eff_site_dist =\
         dict((ifo, missed_injs.get_column('eff_dist_%s' % ifo.lower()))\
@@ -836,6 +838,25 @@ else:
         max_missed_inj_spin2 = 0
     
     logging.info("%d missed injections analysed." % (len(missed_injs)))
+
+    # Write inclination recovery to file
+    # TODO: some times had the grb_time, others did not. Now we have both.
+    grb_time = segs['on'][1] - 1 # GRB start time
+    f = open('%s/found_inclinations.txt' % outdir, 'w')
+    f.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
+    stacked = np.column_stack([g_found_time,
+                               g_found_time - grb_time,
+                               g_found_inc])
+    np.savetxt(f, stacked, delimiter='\t')
+    f.close()
+    f = open('%s/total_inclinations.txt' % outdir, 'w')
+    f.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
+    stacked = np.column_stack([np.concatenate((found_inj_time, missed_inj_time)),
+                               np.concatenate((found_inj_time - grb_time,
+                                               missed_inj_time - grb_time)),
+                               np.concatenate((found_inj_inc, missed_inj_inc))])
+    np.savetxt(f, stacked, delimiter='\t')
+    f.close()
 
     # Create new set of injections for efficiency calculations
     total_injs = len(found_injs) + len(missed_injs)
@@ -1017,8 +1038,7 @@ else:
 
     # Write data to files
 
-    # Get grb time and start and end times
-    grb_time = segs['on'][1] - 1
+    # Get start and end times
     start = int(min(np.concatenate((found_inj_time,missed_inj_time))))
     end   = int(max(np.concatenate((found_inj_time,missed_inj_time))))
     duration = end - start
@@ -1117,7 +1137,7 @@ ptfcolormap = cm.spring
 ptfcolormap.set_over('g')
 
 # Plot cumulative histograms
-# TODO: promote to execcutable with stat as option
+# TODO: promote to executable with stat as option
 x_label_dict = {"bestnr": "BestNR",
                 "snr": "SNR",
                 "snruncut": "SNR after signal based vetoes"}
@@ -1585,163 +1605,158 @@ if doinj:
     # Info for site-specific plots
     sitename = { 'G':'GEO', 'H':'Hanford', 'L':'Livingston', 'V':'Virgo',\
                  'K':'KAGRA' }
-    inj_plots = list(itertools.product(["found_missed", "missed_found"],\
-                                       ["mchirp", "time"],\
-                                       ["eff_dist", "dist", "eff_site_dist"]))
-    inj_plots.append(["found_missed", "spin1", "spin2"])
-    inj_plots.append(["missed_found", "spin1", "spin2"])
-    inj_plots.append(["found_missed", "q", "mtot"])
-    inj_plots.append(["missed_found", "q", "mtot"])
-    inj_plots.append(["found_missed", "incl", "mchirp"])
-    inj_plots.append(["missed_found", "incl", "mchirp"])
-    inj_plots.append(["found_missed", "cosincl", "dist"])
-    inj_plots.append(["missed_found", "cosincl", "dist"])
+    inj_plots = list(itertools.product([["found_missed"], ["missed_found"]],\
+                                       [["mchirp"], ["time"]],\
+                                       [["eff_dist"], ["dist"],\
+                                        ["eff_site_dist"], ["sky_error"]]))
+    inj_plots.extend(list(itertools.product([["found_missed"], ["missed_found"]],\
+                                            [["spin1", "spin2"], ["q", "mtot"],\
+                                             ["incl", "mchirp"], ["cosincl", "dist"],
+                                             ["dist", "sky_error"]])))
+    inj_plots = list(itertools.chain(*inj_plots))
+    inj_plots = list(itertools.chain(*inj_plots))
+    inj_plots = [inj_plots[i:i+3] for i in range(0, len(inj_plots), 3)]
+    #print(inj_plots)
+                                       
+    # Dictionary of labels for the horizontal axis
+    axis_labels = {'mchirp': "Chirp Mass (solar masses)",
+                   'time': "Time since %d" % grb_time,
+                   'eff_dist': "Inverse sum of effective distances (Mpc)",
+                   'dist': "Distance (Mpc)",
+                   'eff_site_dist': "",
+                   'incl': "Inclination (iota)",
+                   'cosincl': "cos(iota)",
+                   'q': "Mass ratio q",
+                   'mtot': "Total mass M (solar masses)",
+                   'spin1': "Spin on 1st binary component",
+                   'spin2': "Spin on 2nd binary component",
+                   'sky_error': "Rec. sky error (radians)"}
+    # Dictionaries of data to plot 
+    g_found_dict = {'mchirp': g_found_mchirp, 'time': g_found_time,
+                    'eff_dist': g_found_eff_dist, 'dist': g_found_dist,
+                    'eff_site_dist': [],
+                    'incl': np.rad2deg(g_found_inc), 'cosincl': np.cos(g_found_inc),
+                    'q': g_found_m2 / g_found_m1, 'mtot': g_found_m1 + g_found_m2,
+                    'spin1': np.sqrt(g_found_spin1x**2 + \
+                                     g_found_spin1y**2 + \
+                                     g_found_spin1z**2),
+                    'spin2': np.sqrt(g_found_spin2x**2 + \
+                                     g_found_spin2y**2 + \
+                                     g_found_spin2z**2),
+                    'sky_error': g_found_sky_angle}
+    g_ifar_dict = {'mchirp': g_ifar_mchirp, 'time': g_ifar_time,
+                   'eff_dist': g_ifar_eff_dist, 'dist': g_ifar_dist,
+                   'eff_site_dist': [],
+                   'incl': np.rad2deg(g_ifar_inc), 'cosincl': np.cos(g_ifar_inc),
+                   'q': g_ifar_m2 / g_ifar_m1, 'mtot': g_ifar_m1 + g_ifar_m2,
+                   'spin1': np.sqrt(g_ifar_spin1x**2 + \
+                                    g_ifar_spin1y**2 + \
+                                    g_ifar_spin1z**2),
+                   'spin2': np.sqrt(g_ifar_spin2x**2 + \
+                                    g_ifar_spin2y**2 + \
+                                    g_ifar_spin2z**2),
+                   'sky_error': g_ifar_sky_angle}
+    g_missed2_dict = {'mchirp': g_missed2_mchirp, 'time': g_missed2_time,
+                      'eff_dist': g_missed2_eff_dist, 'dist': g_missed2_dist,
+                      'eff_site_dist': [],
+                      'incl': np.rad2deg(g_missed2_inc), 'cosincl': np.cos(g_missed2_inc),
+                      'q': g_missed2_m2 / g_missed2_m1, 'mtot': g_missed2_m1 + g_missed2_m2,
+                      'spin1': np.sqrt(g_missed2_spin1x**2 + \
+                                       g_missed2_spin1y**2 + \
+                                       g_missed2_spin1z**2),
+                      'spin2': np.sqrt(g_missed2_spin2x**2 + \
+                                       g_missed2_spin2y**2 + \
+                                       g_missed2_spin2z**2),
+                      'sky_error': g_missed2_sky_angle}
+    missed_inj_dict = {'mchirp': missed_inj_mchirp, 'time': missed_inj_time,
+                      'eff_dist': missed_inj_eff_dist, 'dist': missed_inj_dist,
+                      'eff_site_dist': [],
+                      'incl': np.rad2deg(missed_inj_inc), 'cosincl': np.cos(missed_inj_inc),
+                      'q': missed_inj_m2 / missed_inj_m1, 'mtot': missed_inj_m1 + missed_inj_m2,
+                      'spin1': np.sqrt(missed_inj_spin1x**2 + \
+                                       missed_inj_spin1y**2 + \
+                                       missed_inj_spin1z**2),
+                      'spin2': np.sqrt(missed_inj_spin2x**2 + \
+                                       missed_inj_spin2y**2 + \
+                                       missed_inj_spin2z**2),
+                      'sky_error': []}
+
+    # Loop
     for inj_plot in inj_plots:
         #print(inj_plot)
         fm_or_mf = inj_plot[0]
         x_qty = inj_plot[1]
         y_qty = inj_plot[2] 
-        if x_qty == "mchirp":
-            x_label = "Chirp Mass (solar masses)"
-            missed_inj_x = missed_inj_mchirp
-            g_missed2_x = g_missed2_mchirp
-            g_ifar_x = g_ifar_mchirp
-            g_found_x = g_found_mchirp
-        elif x_qty == "time":
-            x_label = "Time since %d" % grb_time
-            missed_inj_x = missed_inj_time
-            g_missed2_x = g_missed2_time
-            g_ifar_x = g_ifar_time
-            g_found_x = g_found_time
-        elif x_qty == "spin1":
-            x_label = "Spin on 1st binary component"
+        g_found_x = g_found_dict[x_qty]
+        g_found_y = g_found_dict[y_qty]
+        g_ifar_x = g_ifar_dict[x_qty]
+        g_ifar_y = g_ifar_dict[y_qty]
+        g_missed2_x = g_missed2_dict[x_qty]
+        g_missed2_y = g_missed2_dict[y_qty]
+        missed_inj_x = missed_inj_dict[x_qty]
+        missed_inj_y = missed_inj_dict[y_qty]
+        x_label = axis_labels[x_qty]
+        y_label = axis_labels[y_qty]
+        if x_qty == "spin1":
             found_inj_x = np.sqrt(found_inj_spin1x**2 + \
                                   found_inj_spin1y**2 + \
                                   found_inj_spin1z**2)
-            missed_inj_x = missed_inj_spin1
-            #if len(g_missed2_spin1x):
-            g_missed2_x = np.sqrt(g_missed2_spin1x**2 + \
-                                  g_missed2_spin1y**2 + \
-                                  g_missed2_spin1z**2)
-            #if len(g_ifar_spin1x):
-            g_ifar_x = np.sqrt(g_ifar_spin1x**2 + \
-                               g_ifar_spin1y**2 + \
-                               g_ifar_spin1z**2)
-            #if len(g_found_spin1x):
-            g_found_x = np.sqrt(g_found_spin1x**2 + \
-                                g_found_spin1y**2 + \
-                                g_found_spin1z**2)
         elif x_qty == "q":
-            x_label = "Mass ratio q"
-            missed_inj_x = missed_inj_m2 / missed_inj_m1
             missed_inj_x = np.where(missed_inj_x > 1, 1. / missed_inj_x, missed_inj_x)
-            g_missed2_x = g_missed2_m2 / g_missed2_m1
             g_missed2_x = np.where(g_missed2_x > 1, 1. / g_missed2_x, g_missed2_x)
-            g_ifar_x = g_ifar_m2 / g_ifar_m1
             g_ifar_x = np.where(g_ifar_x > 1, 1. / g_ifar_x, g_ifar_x)
-            g_found_x = g_found_m2 / g_found_m1
             g_found_x = np.where(g_found_x > 1, 1. / g_found_x, g_found_x)
-        elif x_qty == "incl":
-            x_label = "Inclination (iota)"
-            #x_label = "Magnitude of inclination | iota |"
-            g_found_x = np.rad2deg(g_found_inc)
-            g_ifar_x = np.rad2deg(g_ifar_inc)
-            missed_inj_x = np.rad2deg(missed_inj_inc)
-            g_missed2_x = np.rad2deg(g_missed2_inc)
-            max_inc = np.pi
-        elif x_qty == "cosincl":
-            x_label = "cos(iota)"
-            #x_label = "cos(|iota|)"
-            g_found_x = g_found_inc 
-            #g_found_x = 0.5 * np.pi - abs(g_found_inc - 0.5 * np.pi)
-            g_found_x = np.cos(g_found_x)
-            g_ifar_x = g_ifar_inc 
-            #g_ifar_x = 0.5 * np.pi - abs(g_ifar_inc - 0.5 * np.pi)
-            g_ifar_x = np.cos(g_ifar_x)
-            g_missed2_x = g_missed2_inc 
-            #g_missed2_x = 0.5 * np.pi - abs(g_missed2_inc - 0.5 * np.pi)
-            g_missed2_x = np.cos(g_missed2_x)
-            missed_inj_x = missed_inj_inc 
-            #missed_inj_x = 0.5 * np.pi - abs(missed_inj_inc - 0.5 * np.pi)
-            missed_inj_x = np.cos(missed_inj_x)
-        if "incl" in x_qty:
+        #elif x_qty == "incl":
+        #    #x_label = "Magnitude of inclination | iota |"
+        #elif x_qty == "cosincl":
+        #     x_label = "cos(|iota|)"
+        #     g_found_x = 0.5 * np.pi - abs(g_found_inc - 0.5 * np.pi)
+        #     g_ifar_x = 0.5 * np.pi - abs(g_ifar_inc - 0.5 * np.pi)
+        #     g_missed2_x = 0.5 * np.pi - abs(g_missed2_inc - 0.5 * np.pi)
+        #     missed_inj_x = 0.5 * np.pi - abs(missed_inj_inc - 0.5 * np.pi)
+        elif "incl" in x_qty:
             max_inc = np.pi
             #max_inc = max(np.concatenate((g_found_x, g_ifar_x, g_missed2_x, missed_inj_x)))
             max_inc_deg = np.rad2deg(max_inc)
             max_inc_deg = np.ceil(max_inc_deg/10.0)*10
             max_inc = np.deg2rad(max_inc_deg)
-        if y_qty == "eff_dist":
-            y_label = "Inverse sum of effective distances (Mpc)"
-            missed_inj_y = missed_inj_eff_dist
-            g_missed2_y = g_missed2_eff_dist
-            g_ifar_y = g_ifar_eff_dist
-            g_found_y = g_found_eff_dist
-            # The square brackets are for a one-iteration loop below
-            plot_loop = [None] 
-        elif y_qty == "dist":
-            y_label = "Distance (Mpc)"
-            missed_inj_y = missed_inj_dist
-            g_missed2_y = g_missed2_dist
-            g_ifar_y = g_ifar_dist
-            g_found_y = g_found_dist
-            # The square brackets are for a one-iteration loop below
-            plot_loop = [None]
-        elif y_qty == "eff_site_dist":
+        # The square brackets are for a one-iteration loop below
+        plot_loop = [None] 
+        if y_qty == "eff_site_dist":
             plot_loop = sites
         elif y_qty == "spin2":
-            y_label = "Spin on 2nd binary component"
             found_inj_y = np.sqrt(found_inj_spin2x**2 + \
                                   found_inj_spin2y**2 + \
                                   found_inj_spin2z**2)
-            missed_inj_y = missed_inj_spin2
-            #if len(g_missed2_spin1x):
-            g_missed2_y = np.sqrt(g_missed2_spin2x**2 + \
-                                  g_missed2_spin2y**2 + \
-                                  g_missed2_spin2z**2)
-            #if len(g_ifar_spin1x):
-            g_ifar_y = np.sqrt(g_ifar_spin2x**2 + \
-                               g_ifar_spin2y**2 + \
-                               g_ifar_spin2z**2)
-            #if len(g_found_spin1x):
-            g_found_y = np.sqrt(g_found_spin2x**2 + \
-                                g_found_spin2y**2 + \
-                                g_found_spin2z**2)
-            # The square brackets are for a one-iteration loop below
-            plot_loop = [None]
-        elif y_qty == "mtot":
-            y_label = "Total mass M (solar masses)"
-            missed_inj_y = missed_inj_m1 + missed_inj_m2
-            g_missed2_y = g_missed2_m1 + g_missed2_m2
-            g_ifar_y = g_ifar_m1 + g_ifar_m2
-            g_found_y= g_found_m1 + g_found_m2
-            # The square brackets are for a one-iteration loop below
-            plot_loop = [None]
-        elif y_qty == "mchirp":
-            y_label = "Chirp Mass (solar masses)"
-            missed_inj_y = missed_inj_mchirp
-            g_missed2_y = g_missed2_mchirp
-            g_ifar_y = g_ifar_mchirp
-            g_found_y= g_found_mchirp
         for site in plot_loop: 
             if site is not None:
-                y_label = "%s effective distance (Mpc)" % sitename[site]
+                if x_qty == "eff_site_dist":
+                    x_label = "%s effective distance (Mpc)" % sitename[site]
+                if y_qty == "eff_site_dist":
+                    y_label = "%s effective distance (Mpc)" % sitename[site]
                 missed_inj_y = missed_inj_eff_site_dist[site]
                 g_missed2_y = g_missed2_eff_site_dist[site]
                 g_ifar_y = g_ifar_eff_site_dist[site]
-                g_found_y = g_found_eff_site_dist[site]
+                g_found_y =  g_found_eff_site_dist[site]
             fig = plt.figure()
             if y_qty in ["mtot", "spin2", "mchirp"]:
                 ax = fig.gca()
+            elif y_qty == "sky_error":
+                if x_qty == "dist": 
+                    ax = fig.gca(xscale="log")
+                else:
+                    ax = fig.gca()
             else:
                 ax = fig.gca(yscale="log")
             if fm_or_mf == "found_missed":
-                if len(missed_inj_x):
+                if len(missed_inj_x) and len(missed_inj_y):
                     ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=10)
                 if len(g_missed2_x):
                     ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=10)
                 if len(g_ifar_x):
                     p = ax.scatter(g_ifar_x[FM], g_ifar_y[FM], c=g_ifar_stat[FM],
                                    vmin=0, vmax=1, s=40, edgecolor="w")
+                    cb = plt.colorbar(p, label="FAP")
                 if len(g_found_x):
                     ax.scatter(g_found_x, g_found_y, c=fnd_col, marker="+", s=30)
             elif fm_or_mf == "missed_found":
@@ -1750,12 +1765,11 @@ if doinj:
                 if len(g_ifar_x):
                     p = ax.scatter(g_ifar_x[MF], g_ifar_y[MF], c=g_ifar_stat[MF],
                                    vmin=0, vmax=1, s=40, edgecolor="w")
+                    cb = plt.colorbar(p, label="FAP")
                 if len(g_missed2_x):
                     ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=40)
-                if len(missed_inj_x):
+                if len(missed_inj_x) and len(missed_inj_y):
                     ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=40)
-            if len(g_ifar_x):
-                cb = plt.colorbar(p, label="FAP")
             ax.grid()
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
@@ -1790,85 +1804,5 @@ if doinj:
             plot_path += ".png"
             fig.savefig(plot_path)
             plt.close()
-
-
-    # Write inclination recovery to file
-    np.savetxt("%s/found_inclinations.txt" % outdir, np.c_[g_found_time + grb_time,
-                                                           g_found_inc])
-    np.savetxt("%s/total_inclinations.txt" % outdir,
-               np.c_[np.concatenate((found_inj_time, missed_inj_time)),
-                     np.concatenate((found_inj_inc, missed_inj_inc))])
-
-    # TODO: finish writing up pycbc_pygrb_plot_sky_error for these 3 plots
-    # Plot sky recovery
-    fig = plt.figure()
-    ax = fig.gca()
-    if len(g_found_time):
-        ax.scatter(g_found_time, g_found_sky_angle, c=fnd_col, marker="+", s=30)
-    if len(g_ifar_time):
-        p = ax.scatter(g_ifar_time[FM], g_ifar_sky_angle[FM], c=g_ifar_stat[FM],
-                       vmin=0, vmax=1, s=40, edgecolor="w")
-        cb = plt.colorbar(p, label="FAP")
-    ax.grid()
-    if len(gIFARTime):
-      p = ax.scatter(gIFARTime, gIFARDist, c=gIFARStat,\
-                    norm=colors.Normalize(0,1,clip=False),\
-                    marker='o', edgecolors='none', cmap=cm.plasma)
-    ax.semilogy()
-    if len(gIFARTime):
-      cb = ax.figure.colorbar(p)
-      cb.ax.set_ylabel("FAP")
-    ax.set_xlabel("Time since %d" % grbTime)
-    ax.set_ylabel("Distance (Mpc)")
-    ax.set_title("Injections found louder than loudest background event")
-    ax.set_xlim([ start, end ])
-    #ax.set_ylim([ 0.5, 100 ])
-    fig.savefig("%s/found_missed_injections_dist_time.png" % outdir)
-    plt.close()
-
-    # plot sky recovery
-    fig = plt.figure()
-    ax = fig.gca()
-    if len(gFoundTime):
-      ax.plot(gFoundTime, gFoundSkyAngle, 'b.')
-#    if gIFARTime:
-#      ax.plot(gIFARTime, gIFARSkyAngle, 'b.')
-    ax.grid()
-    ax.set_xlabel("Time since %d" % grbTime)
-    ax.set_ylabel("Rec. sky error (radians)")
-    ax.set_xlim([ start, end ])
-    fig.savefig('%s/found_sky_error_time.png' % outdir)
-    plt.close()
-
-    fig = plt.figure()
-    ax = fig.gca()
-    if len(g_found_mchirp):
-        ax.scatter(g_found_mchirp, g_found_sky_angle, c=fnd_col, marker="+", s=30)
-    if len(g_ifar_mchirp):
-        p = ax.scatter(g_ifar_mchirp[FM], g_ifar_sky_angle[FM], c=g_ifar_stat[FM],
-                       vmin=0, vmax=1, s=40, edgecolor="w")
-        cb = plt.colorbar(p, label="FAP")
-    ax.grid()
-    ax.set_xlabel("Mchirp")
-    ax.set_ylabel("Rec. sky error (radians)")
-    fig.savefig('%s/found_sky_error_mchirp.png' % outdir)
-    plt.close()
-
-    fig = plt.figure()
-    ax = fig.gca()
-    if len(g_found_dist):
-        ax.scatter(g_found_dist, g_found_sky_angle, c=fnd_col, marker="+", s=30)
-    if len(g_ifar_dist):
-        p = ax.scatter(g_ifar_dist[FM], g_ifar_sky_angle[FM], c=g_ifar_stat[FM],
-                       vmin=0, vmax=1, s=40, edgecolor="w")
-        cb = plt.colorbar(p, label="FAP")
-    ax.grid()
-    ax.set_xlabel("Distance (Mpc)")
-    ax.set_ylabel("Rec. sky error (radians)")
-    ax.semilogx()
-    ax.set_xlim([ 0.5,100 ])
-    fig.savefig('%s/found_sky_error_distance.png' % outdir)
-    plt.close()
-    #
 
 logging.info("Plots complete.")
