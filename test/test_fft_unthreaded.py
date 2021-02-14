@@ -50,7 +50,10 @@ for backend in backends:
     kdict = {'backends' : [backend], 'scheme' : _scheme, 'context' : _context}
     klass = type('{0}_{1}_test'.format(_scheme,backend),
                  (_BaseTestFFTClass,),kdict)
+    klass.__test__ = True
+    vars()[klass.__name__] = klass
     FFTTestClasses.append(klass)
+    del klass
 
 # Finally, we create suites and run them
 
