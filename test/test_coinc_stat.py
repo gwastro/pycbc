@@ -54,7 +54,7 @@ for stat_name in statistic_dict:
             or 'ExpFit' in stat_name:
         continue
 
-    def test_method(self, sn=stat_name):
+    def stat_test_method(self, sn=stat_name):
         # instantiate an object for this stat
         stat = statistic_dict[sn](self.single_rank,
                                   files=self.aux_files,
@@ -79,7 +79,7 @@ for stat_name in statistic_dict:
         # here one could add a statistical test based on known analytic
         # behavior of a particular statistic in Gaussian noise
 
-    setattr(CoincStatTest, 'test_' + stat_name, test_method)
+    setattr(CoincStatTest, 'test_' + stat_name, stat_test_method)
 
 # create and populate unittest's test suite
 suite = unittest.TestSuite()
