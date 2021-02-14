@@ -9,7 +9,7 @@ ligo-gracedb
 ligo.skymap; python_version >= '3.5'
 
 # auxiliary samplers
-cpnest
+cpnest; python_version >= '3.5'
 pymultinest
 ultranest
 https://github.com/willvousden/ptemcee/archive/master.tar.gz
