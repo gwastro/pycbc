@@ -42,9 +42,7 @@ jobs:
     - name: build pycbc for pypi
       run: |
         python setup.py sdist
-        ls dist
-        ls
-        ls artifact
+        mv artifact/* dist/
     - name: Publish distribution 📦 to Test PyPI
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: pypa/gh-action-pypi-publish@master
