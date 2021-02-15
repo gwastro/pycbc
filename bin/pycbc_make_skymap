@@ -116,10 +116,14 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     # if requested, remove detectors with missing/vetoed data
     if 'detector_state':
         required_duration = gps_end_time - gps_start_time
+        science_flags = {'H1': 'DCS-ANALYSIS_READY_C01:1',
+                         'L1': 'DCS-ANALYSIS_READY_C01:1',
+                         'V1': 'ITF_SCIENCE:2'}
         for ifo in ifos:
-            on_segs = dq.query_flag(ifo, 'DATA', gps_start_time, gps_end_time)
+            on_segs = dq.query_flag(ifo, science_flags[ifo],
+                                    gps_start_time, gps_end_time)
             if abs(on_segs) < required_duration:
-                logging.info('Excluding %s due to missing or vetoed data')
+                logging.info('Excluding %s due to missing or vetoed data', ifo)
                 ifos.remove(ifo)
         if not ifos:
             raise RuntimeError('All detectors have been excluded because of '
