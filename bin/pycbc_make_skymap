@@ -453,4 +453,4 @@ if __name__ == '__main__':
          gracedb_server=opt.gracedb_server,
          test_event=not opt.enable_production_gracedb_upload,
          custom_frame_files=opt.custom_frame_file,
-         approximant=opt.approximant, opt.detector_state)
+         approximant=opt.approximant, detector_state=opt.detector_state)
