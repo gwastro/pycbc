@@ -42,7 +42,6 @@ jobs:
     - name: build pycbc for pypi
       run: |
         python setup.py sdist
-        mv *.whl dist
         ls dist
         ls
         ls artifact
