@@ -15,7 +15,8 @@ import h5py
 import pycbc
 from pycbc.filter import sigmasq
 from pycbc.io import live, WaveformArray
-from pycbc.types import TimeSeries, FrequencySeries, MultiDetOptionAppendAction
+from pycbc.types import TimeSeries, FrequencySeries, MultiDetOptionAction, \
+        MultiDetOptionAppendAction
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc import frame, waveform, dq
@@ -70,7 +71,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          ligolw_event_output=None, window_bins=300,
          frame_types=None, channel_names=None,
          gracedb_server=None, test_event=True,
-         custom_frame_files=None, approximant=None, detector_state=False):
+         custom_frame_files=None, approximant=None, detector_state=None):
 
     if not test_event and not gracedb_server:
         raise RuntimeError('a GraceDB URL must be specified if not a test event.')
@@ -114,20 +115,19 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     logging.info("Using data: %s-%s", gps_start_time, gps_end_time)
 
     # if requested, remove detectors with missing/vetoed data
-    if 'detector_state':
-        required_duration = gps_end_time - gps_start_time
-        science_flags = {'H1': 'DCS-ANALYSIS_READY_C01:1',
-                         'L1': 'DCS-ANALYSIS_READY_C01:1',
-                         'V1': 'ITF_SCIENCE:2'}
-        for ifo in ifos:
-            on_segs = dq.query_flag(ifo, science_flags[ifo],
-                                    gps_start_time, gps_end_time)
-            if abs(on_segs) < required_duration:
-                logging.info('Excluding %s due to missing or vetoed data', ifo)
-                ifos.remove(ifo)
-        if not ifos:
-            raise RuntimeError('All detectors have been excluded because of '
-                               'missing or vetoed data')
+    # over the required segment
+    required_duration = gps_end_time - gps_start_time
+    for ifo in ifos:
+        if detector_state is None or ifo not in detector_state:
+            continue
+        on_segs = dq.query_str(ifo, detector_state[ifo],
+                               gps_start_time, gps_end_time)
+        if abs(on_segs) < required_duration:
+            logging.info('Excluding %s due to missing or vetoed data', ifo)
+            ifos.remove(ifo)
+    if not ifos:
+        raise RuntimeError('All detectors have been excluded due to '
+                           'missing or vetoed data')
 
     highpass_frequency = int(f_low * 0.7)
     logging.info("Setting highpass: %s Hz", highpass_frequency)
@@ -424,8 +424,9 @@ if __name__ == '__main__':
                         help='List of interferometer names, e.g. H1 L1')
     parser.add_argument('--frame-type', type=str, nargs='+')
     parser.add_argument('--channel-name', type=str, nargs='+')
-    parser.add_argument('--detector-state', action='store_true',
-                        help='Query the segment database and exclude detectors '
+    parser.add_argument('--detector-state', type=str, nargs='+',
+                        action=MultiDetOptionAction,
+                        help='Use the segment database to exclude detectors '
                              'with missing or vetoed data')
     parser.add_argument('--ligolw-skymap-output', type=str, default='.',
                         help='Option to output sky map files to directory')
