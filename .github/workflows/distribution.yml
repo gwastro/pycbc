@@ -44,6 +44,8 @@ jobs:
         python setup.py sdist
         mv *.whl dist
         ls dist
+        ls
+        ls artifact
     - name: Publish distribution 📦 to Test PyPI
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: pypa/gh-action-pypi-publish@master
