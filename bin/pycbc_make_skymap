@@ -12,6 +12,7 @@ import tempfile
 import shutil
 import numpy as np
 import h5py
+import pycbc
 from pycbc.filter import sigmasq
 from pycbc.io import live, WaveformArray
 from pycbc.types import TimeSeries, FrequencySeries, MultiDetOptionAppendAction
