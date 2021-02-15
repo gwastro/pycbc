@@ -36,6 +36,10 @@ from pycbc.inference.io import EmceePTFile
 from .. import models
 
 
+if emcee.__version__ >= '3.0.0':
+    raise ImportError
+
+
 class EmceePTSampler(MultiTemperedSupport, EnsembleSupport, BaseMCMC,
                      BaseSampler):
     """This class is used to construct a parallel-tempered MCMC sampler from
