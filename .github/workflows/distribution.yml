@@ -1,21 +1,33 @@
-name: build pypi release packages
+name: Build Wheels
 
 on: [push, pull_request]
 
 jobs:
-  build_linux_wheel:
-    name: Build manylinux wheels for later possible upload
-    runs-on: ubuntu-20.04
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, macos-10.15]
+
     steps:
-      - uses: actions/checkout@v1
-      - uses: RalfG/python-wheels-manylinux-build@v0.3.3
-        with:
-          python-versions: 'cp36-cp36m cp37-cp37m cp38-cp38 cp39-cp39'
+      - uses: actions/checkout@v2
+
+      # Used to host cibuildwheel
+      - uses: actions/setup-python@v2
+
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel==1.9.0
+
+      - name: Build wheels
+        run: python -m cibuildwheel --output-dir wheelhouse
+        # to supply options, put them in 'env', like:
+        # env:
+        #   CIBW_SOME_OPTION: value
+
       - uses: actions/upload-artifact@v2
         with:
-          name: linux_wheels
-          path: dist
-          retention-days: 7
+          path: ./wheelhouse/*.whl
   deploy_pypi:
     name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
     runs-on: ubuntu-20.04
@@ -28,7 +40,7 @@ jobs:
         python-version: 3.7
     - uses: actions/download-artifact@v2
       with:
-        name: linux_wheels
+        path: ./
     - name: build pycbc for pypi
       run: |
         python setup.py sdist
