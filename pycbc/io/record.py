@@ -269,7 +269,17 @@ def get_dtype_descr(dtype):
     offsets specified. This function tries to fix that by not including
     fields that have no names and are void types.
     """
-    return [dt for dt in dtype.descr if not (dt[0] == '' and dt[1][1] == 'V')]
+    dts = []
+    for dt in dtype.descr:
+        if (dt[0] == '' and dt[1][1] == 'V'):
+            continue
+
+        # Downstream codes (numpy, etc) can't handle metadata in dtype
+        if isinstance(dt[1], tuple):
+            dt = (dt[0], dt[1][0])
+
+        dts.append(dt)
+    return dts
 
 
 def combine_fields(dtypes):

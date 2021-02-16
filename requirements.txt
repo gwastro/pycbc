@@ -9,7 +9,7 @@ matplotlib>=2.0.0
 numpy>=1.16.0,!=1.19.0,<1.20.0; python_version >= '3.5'
 numpy>=1.16.0,<1.17.0; python_version <= '3.4'
 pillow
-h5py<2.10.0
+h5py>=2.5
 jinja2
 mpld3>=0.3
 requests>=1.2.1
