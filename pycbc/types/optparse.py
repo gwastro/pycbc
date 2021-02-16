@@ -182,9 +182,6 @@ class MultiDetMultiColonOptionAction(MultiDetOptionAction):
                             "character")
                 raise ValueError(err_msg)
             detector, argument = value.split(':', 1)
-            if len(detector) != 2:
-                err_msg += 'The detector name must be 2 characters long'
-                raise ValueError(err_msg)
             if detector in items:
                 err_msg += ('Multiple values supplied for detector {},\n'
                             'already have {}.')
