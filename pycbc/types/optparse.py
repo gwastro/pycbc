@@ -181,7 +181,7 @@ class MultiDetMultiColonOptionAction(MultiDetOptionAction):
                 err_msg += ("Each argument must contain at least one ':' "
                             "character")
                 raise ValueError(err_msg)
-            detector, argument = value.split(':', 1) # split at most twice
+            detector, argument = value.split(':', 1)
             if len(detector) != 2:
                 err_msg += 'The detector name must be 2 characters long'
                 raise ValueError(err_msg)
