@@ -890,6 +890,7 @@ _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv4_ROM"] = seobnrv4_length_in_time
 _filter_time_lengths["SEOBNRv4HM_ROM"] = seobnrv4hm_length_in_time
 _filter_time_lengths["SEOBNRv4"] = seobnrv4_length_in_time
+_filter_time_lengths["SEOBNRv4P"] = seobnrv4_length_in_time
 _filter_time_lengths["IMRPhenomC"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time

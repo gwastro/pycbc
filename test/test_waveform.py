@@ -35,7 +35,8 @@ from utils import parse_args_all_schemes, simple_exit
 _scheme, _context = parse_args_all_schemes("Waveform")
 
 # We only check a few as some require auxiliary files
-good_waveforms = ['IMRPhenomD', 'TaylorF2', 'SEOBNRv4', 'SpinTaylorT5']
+good_waveforms = ['IMRPhenomD', 'TaylorF2', 'SEOBNRv4', 'SpinTaylorT5',
+                  'IMRPhenomPv2', 'IMRPhenomPv3HM', 'SEOBNRv4P']
 
 class TestWaveform(unittest.TestCase):
     def setUp(self,*args):
