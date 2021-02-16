@@ -52,9 +52,9 @@ class MultiDetOptionAction(argparse.Action):
                  help=None,
                  metavar=None):
         if type is not None:
-            self.internal_type=type
+            self.internal_type = type
         else:
-            self.internal_type=str
+            self.internal_type = str
         new_default = DictWithDefaultReturn(lambda: default)
         #new_default.default_value=default
         if nargs == 0:
@@ -87,7 +87,7 @@ class MultiDetOptionAction(argparse.Action):
         for value in values:
             value = value.split(':')
             if len(value) == 2:
-                # "Normal" case, all ifos supplied independetly as "H1,VALUE"
+                # "Normal" case, all ifos supplied independently as "H1,VALUE"
                 if items.default_set:
                     err_msg += "If you are supplying a value for all ifos, you "
                     err_msg += "cannot also supply values for specific ifos."
@@ -135,7 +135,7 @@ class MultiDetOptionActionSpecial(MultiDetOptionAction):
         for value in values:
             value_split = value.split(':')
             if len(value_split) == 2:
-                # "Normal" case, all ifos supplied independetly as "H1:VALUE"
+                # "Normal" case, all ifos supplied independently as "H1:VALUE"
                 if value_split[0] in items:
                     err_msg += "Multiple values supplied for ifo %s.\n" \
                                %(value_split[0],)
@@ -162,6 +162,36 @@ class MultiDetOptionActionSpecial(MultiDetOptionAction):
                 raise ValueError(err_msg)
         setattr(namespace, self.dest, items)
 
+class MultiDetMultiColonOptionAction(MultiDetOptionAction):
+    """A special case of `MultiDetOptionAction` which allows one to use
+    arguments containing colons, such as `V1:FOOBAR:1`. The first colon is
+    assumed to be the separator between the detector and the argument.
+    All subsequent colons are kept as part of the argument. Unlike
+    `MultiDetOptionAction`, all arguments must be prefixed by the
+    corresponding detector.
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        err_msg = ('Issue with option: {}\n'
+                   'Received value: {}\n').format(self.dest, ' '.join(values))
+        if getattr(namespace, self.dest, None) is None:
+            setattr(namespace, self.dest, {})
+        items = copy.copy(getattr(namespace, self.dest))
+        for value in values:
+            value_split = value.split(':', 1) # split at most twice
+            if len(value_split) == 1:
+                err_msg += ("Each argument must contain at least one ':' "
+                            "character")
+                raise ValueError(err_msg)
+            if len(value_split[0]) != 2:
+                err_msg += 'The detector name must be 2 characters long'
+                raise ValueError(err_msg)
+            if value_split[0] in items:
+                err_msg += ('Multiple values supplied for detector {},\n'
+                            'already have {}.')
+                err_msg = err_msg.format(value_split[0], items[value_split[0]])
+                raise ValueError(err_msg)
+            items[value_split[0]] = value
+        setattr(namespace, self.dest, items)
 
 class MultiDetOptionAppendAction(MultiDetOptionAction):
     def __call__(self, parser, namespace, values, option_string=None):

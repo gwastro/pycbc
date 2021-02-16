@@ -15,8 +15,8 @@ import h5py
 import pycbc
 from pycbc.filter import sigmasq
 from pycbc.io import live, WaveformArray
-from pycbc.types import TimeSeries, FrequencySeries, MultiDetOptionAction, \
-        MultiDetOptionAppendAction
+from pycbc.types import TimeSeries, FrequencySeries, \
+        MultiDetMultiColonOptionAction, MultiDetOptionAppendAction
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc import frame, waveform, dq
@@ -425,7 +425,7 @@ if __name__ == '__main__':
     parser.add_argument('--frame-type', type=str, nargs='+')
     parser.add_argument('--channel-name', type=str, nargs='+')
     parser.add_argument('--detector-state', type=str, nargs='+',
-                        action=MultiDetOptionAction,
+                        action=MultiDetMultiColonOptionAction,
                         help='Use the segment database to exclude detectors '
                              'with missing or vetoed data')
     parser.add_argument('--ligolw-skymap-output', type=str, default='.',
