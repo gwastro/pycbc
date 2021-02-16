@@ -342,7 +342,7 @@ def parse_flag_str(flag_str):
         # Check if the flag should add or subtract time
         if not (flag[0] == '+' or flag[0] == '-'):
             err_msg = "DQ flags must begin with a '+' or a '-' character. "
-            err_msg += "You provided {}.".format(flag)
+            err_msg += "You provided {}. ".format(flag)
             err_msg += "See http://pycbc.org/pycbc/latest/html/workflow/segments.html"
             err_msg += " for more information."
             raise ValueError(err_msg)
