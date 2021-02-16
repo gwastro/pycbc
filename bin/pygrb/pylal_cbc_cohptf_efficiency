@@ -55,6 +55,36 @@ __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_efficiency"
 
+# Calculate error bars and fraction of recovered injections
+# for efficiency/distance plot
+def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
+
+    if not isinstance(num_mc_injs, int):
+        err_msg = "The parameter num_mc_injs is the number of Monte-Carlo "
+        err_msg += "injections.  It must be an integer."
+        logging.error(err_msg)
+
+    found_injs = found_bestnr[:-1]
+    total_injs = num_injections[:-1]
+    fraction = found_injs / total_injs
+
+    # Divide by Monte-Carlo iterations
+    if num_mc_injs:
+        found_injs = found_injs / num_mc_injs
+        total_injs = total_injs / num_mc_injs
+
+    # TODO: optimize
+    yerr_common  = total_injs * (2 * found_injs + 1)
+    yerr_denom   = 2 * total_injs * (total_injs + 1)
+    yerr_vary    = 4 * total_injs * found_injs * (total_injs - found_injs) + total_injs**2
+    yerr_vary    = yerr_vary**0.5
+    yerr_low     = (yerr_common - yerr_vary)/yerr_denom
+    yerr_low_mc  = fraction - yerr_low
+    yerr_high    = (yerr_common + yerr_vary)/yerr_denom
+    yerr_high_mc = yerr_high - fraction
+
+    return yerr_low_mc, yerr_high_mc, fraction
+
 # =============================================================================
 # Main script starts here
 # =============================================================================
@@ -198,7 +228,7 @@ for slide_id in range(num_slides):
                 continue
             err_msg = "Triggers found in input files not in the list of "
             err_msg += "analysed segments. This should not happen."
-            logging.err(err_msg)
+            logging.error(err_msg)
             sys.exit()
     ###### end of check #####
 
@@ -276,6 +306,8 @@ for slide_id in range(num_slides):
     trig_all_bestnr[slide_id] = np.array(trig_all_bestnr[slide_id])
 
 logging.info("Basic columns extracted.")
+
+# Calculate SNR and BestNR values and maxima
 trig_time   = {}
 trig_snr    = {}
 trig_bestnr = {}
@@ -388,8 +420,7 @@ for i in range(min(len(offsource_trigs), 30)):
     d.extend([ '%.2f' % getattr(trig,'snr_%s' % ifo_att[ifo])\
                           for ifo in ifos ])
     d.extend([ slide_dict[trig_slide_id][ifo] for ifo in ifos])
-    d.append('%.2f' % bestNR)
-    td.append(d)
+    d.append('%.2f' % bestnr)
 
 # Write to html file 
 # TODO (holds for most htmls below too): make this table sortable by column and not static
@@ -1136,8 +1167,8 @@ fnd_col = cm.get_cmap()(0)
 ptfcolormap = cm.spring
 ptfcolormap.set_over('g')
 
-# Plot cumulative histograms
 # TODO: promote to executable with stat as option
+# Plot cumulative histograms
 x_label_dict = {"bestnr": "BestNR",
                 "snr": "SNR",
                 "snruncut": "SNR after signal based vetoes"}
@@ -1156,455 +1187,143 @@ for stat in ["bestnr", "snr", "snruncut"]:
     cumplot.savefig('%s/%s_vs_fap.png' % (outdir, stat))
     plt.close()
 
-if doinj:
+# TODO: promote to executable
+# Produce plots and files reporting on efficiency
+if doinj: 
+    # Calculate distances (horizontal axis) as means
     dist_plot_vals = [np.asarray(bin).mean() for bin in dist_bins]
- 
-    finjs         = found_max_bestnr[:-1] / num_mc_injs
-    totalinjs     = num_injections[:-1] / num_mc_injs
-    finjs_no_mc     = found_max_bestnr_no_mc[:-1]
-    totalinjs_no_mc = num_injections_no_mc[:-1]
 
-    # Calculate error bars for efficiency/distance plot
-    # TODO: serial coding (and repeated further down?!)
-    yerr_common   = totalinjs * (2 * finjs + 1)
-    yerr_denom    = 2*totalinjs*(totalinjs + 1)
-    yerr_vary     = 4 * totalinjs * finjs * (totalinjs - finjs) + totalinjs**2
-    yerr_vary     = yerr_vary**0.5
-    yerr_low      = (yerr_common - yerr_vary)/yerr_denom
-    yerr_low_mc    = (finjs/totalinjs) - yerr_low
-    yerr_high     = (yerr_common + yerr_vary)/yerr_denom
-    yerr_high_mc   = yerr_high - (finjs/totalinjs)
+    # Calculate error bars for efficiency/distance plots and datafiles using max BestNR of background
+    yerr_low_mc, yerr_high_mc, fraction_mc = efficiency_with_errs(found_max_bestnr, num_injections, num_mc_injs=num_mc_injs)
+    yerr_low_no_mc, yerr_high_no_mc, fraction_no_mc = efficiency_with_errs(found_max_bestnr_no_mc, num_injections_no_mc)
 
-    # missed
-    missed = (~zeroFAP) & (~nonzeroFAP)
+    # Save the efficiency values to disk
+    f = open('%s/efficiency_numbers.txt' % outdir, 'w')
+    f.write('distance (Mpc) \tfraction\tyerr_low\tyerr_high\n\n')
+    stacked = np.column_stack([dist_plot_vals, fraction_mc,
+                               yerr_low_mc, yerr_high_mc])
+    np.savetxt(f, stacked, fmt='%.8e', delimiter='\t')
+    f.close()
 
-        yerr_common   = totalinjs_no_mc * (2 * finjs_no_mc + 1)
-        yerr_denom    = 2*totalinjs_no_mc*(totalinjs_no_mc + 1)
-        yerr_vary     = (4 * totalinjs_no_mc * finjs_no_mc * (totalinjs_no_mc-finjs_no_mc)\
-                                          + totalinjs_no_mc**2)**0.5
-        yerr_low      = (yerr_common - yerr_vary)/yerr_denom
-        yerr_low_no_mc  = (finjs_no_mc/totalinjs_no_mc) - yerr_low
-        yerr_high     = (yerr_common + yerr_vary)/yerr_denom
-        yerr_high_no_mc = yerr_high - (finjs_no_mc/totalinjs_no_mc)
+    # Calculate and save to disk the 50% sensitive distance 
+    eff_low = fraction_no_mc
+    eff_idx = np.where(eff_low<0.5)[0]
+    if len(eff_idx)==0:
+        sens_dist = -1
+        err_msg = "Efficiency does not drop below 50%!"
+        logging.error(err_msg)
+    elif eff_idx[0]==0:
+        sens_dist = 0
+        err_msg = "Efficiency does not drop below 90%!"
+        logging.error(err_msg)
+    else:
+        i = eff_idx[0]
+        d     = dist_plot_vals[i]
+        d_low = dist_plot_vals[i-1]
+        e     = eff_low[i]
+        e_low = eff_low[i-1]
 
-    gFoundSpin1x      = foundInjSpin1x[zeroFAP]
-    gFoundSpin1y      = foundInjSpin1y[zeroFAP]
-    gFoundSpin1z      = foundInjSpin1z[zeroFAP]
-    gFoundSpin2x      = foundInjSpin2x[zeroFAP]
-    gFoundSpin2y      = foundInjSpin2y[zeroFAP]
-    gFoundSpin2z      = foundInjSpin2z[zeroFAP]
+        sens_dist = d + (e - 0.5) * (d - d_low) / (e_low - e)
+    open("%s/sensitive_distance.txt" % outdir, "w").write('%s\n' % sens_dist)
 
-
-
-    finjs     = found_on_bestnr[:-1] / num_mc_injs
-    finjs_no_mc = found_on_bestnr_no_mc[:-1]
-
+    # Plot efficiency using loudest background
     fig = plt.figure()
     ax = fig.gca()
+    ax.plot(dist_plot_vals, (fraction_no_mc), 'g-',
+            label='No marginalisation')
+    ax.errorbar(dist_plot_vals, (fraction_no_mc),
+                yerr=[yerr_low_no_mc,yerr_high_no_mc], c = 'g')
+    marg_eff = fraction_mc
+    if not np.isnan(marg_eff.sum()):
+        ax.plot(dist_plot_vals, marg_eff, 'r-', label='Marginalised')
+        ax.errorbar(dist_plot_vals, marg_eff, yerr=[yerr_low_mc,yerr_high_mc],
+                    c = 'r')
+    ax.legend()
     ax.grid()
+    ax.set_ylim([0,1])
+    ax.set_xlim(0, 2.*upper_dist - lower_dist)
+    ax.set_title("Efficiency of injection finding using "+\
+                 "BestNR as detection statistic")
+    ax.set_ylabel("Fraction of injections found louder than loudest background")
+    ax.set_xlabel("Distance (Mpc)")
+    fig.savefig('%s/BestNR_max_efficiency.png' % (outdir))
+    plt.close()
 
-        # Calculate 50% sensitive distance to file
-        eff_low = finjs_no_mc/totalinjs_no_mc
-        eff_idx = np.where(eff_low<0.5)[0]
-        if len(eff_idx)==0:
-            sens_dist = -1
-            sys.stderr.write("Efficiency does not drop below 50%!\n")
-        elif eff_idx[0]==0:
-            sens_dist = 0
-            sys.stderr.write("Efficiency below 90% in first bin!\n")
+    # Calculate error bars for efficiency/distance plots and datafiles using max BestNR of foreground 
+    yerr_low_no_mc, yerr_high_no_mc, fraction_no_mc = efficiency_with_errs(found_on_bestnr_no_mc, num_injections_no_mc)
+    yerr_low, yerr_high, fraction_mc = efficiency_with_errs(found_on_bestnr, num_injections, num_mc_injs=num_mc_injs)
+
+    # Marginalized efficiency (isf = inverse survival function)
+    red_efficiency = (fraction_mc) - (yerr_low) * scipy.stats.norm.isf(0.1)
+
+    # Print efficiency curve to file
+    file = open( "%s/efficiency_curve.txt" % outdir, "w" )
+    file.write('Distance (Mpc)\tEfficiency including counting errors\n\n')
+    stacked = np.column_stack([dist_plot_vals, red_efficiency])
+    np.savetxt(file, stacked, delimiter='\t')
+    file.close()
+
+    # Calculate and save to disk 50% and 90% exclusion distances
+    for percentile in [50, 90]:
+        eff_idx = np.where(red_efficiency < (percentile / 100.))[0]
+        if len(eff_idx) == 0:
+            green_efficiency = (fraction_no_mc)
+            excl_efficiency = green_efficiency
+            eff_idx = np.where(green_efficiency < (percentile / 100.))[0]
         else:
             excl_efficiency = redEfficiency
         if len(eff_idx) and eff_idx[0]!=0:
             i = eff_idx[0]
-            d = distPlotVals[i]
-            d_low = distPlotVals[i-1]
-            e     = eff_low[i]
-            e_low = eff_low[i-1]
+            d = dist_plot_vals[i]
+            d_low = dist_plot_vals[i-1]
+            e = excl_efficiency[i]
+            e_low = excl_efficiency[i-1]
+            excl_dist = d + (e - (percentile / 100.)) * (d - d_low) /\
+                    (e_low - e)
+        else:
+            excl_dist = 0
+            err_msg = "Efficiency below %d%% in first bin!" % (percentile)
+            logging.error(err_msg)
+        open("%s/exclusion_distance_%d.txt" % (outdir, percentile), "w")\
+                .write('%s\n' % excl_dist)
 
-            sens_dist = d + (e - 0.5) * (d - d_low) / (e_low - e)
-
-        finjs     = foundOnBestNR.sum(0)[:-1] / num_mc_injs
-        finjs_no_mc = foundOnBestNR_no_mc.sum(0)[:-1]
-
-        file.write('\n'.join(["Total injections found in bin mchirp %s to %s "\
-                                                    "louder than all background in that bin (and nearby "\
-                                                    "triggers in the offsource) using %s is: %s<br>"\
-                                                    % (bin[0], bin[1], 'BestNR', foundOnBestNR[i,-1])\
-                                                    for i,bin in enumerate(mass_bins)])) 
-        fig = plt.figure()
-        ax = fig.gca()
-        ax.grid()
-
-        yerr_common   = totalinjs_no_mc * (2 * finjs_no_mc + 1)
-        yerr_denom    = 2*totalinjs_no_mc*(totalinjs_no_mc + 1)
-        yerr_vary     = (4 * totalinjs_no_mc * finjs_no_mc *\
-                                          (totalinjs_no_mc - finjs_no_mc) + totalinjs_no_mc**2) ** 0.5
-        yerr_low_no_mc  = (finjs_no_mc/totalinjs_no_mc) - \
-                                        (yerr_common - yerr_vary)/yerr_denom
-        yerr_high_no_mc = (yerr_common + yerr_vary)/yerr_denom -\
-                                        (finjs_no_mc/totalinjs_no_mc)
-
-        yerr_common   = totalinjs * (2 * finjs + 1)
-        yerr_denom    = 2*totalinjs*(totalinjs + 1)
-        yerr_vary     = 4 * totalinjs * finjs * (totalinjs - finjs) + totalinjs**2
-        yerr_vary     = yerr_vary**0.5
-        yerr_low      = (yerr_common - yerr_vary)/yerr_denom
-        yerr_low      = (finjs/totalinjs) - yerr_low
-        yerr_high     = (yerr_common + yerr_vary)/yerr_denom
-        yerr_high     = yerr_high - (finjs/totalinjs)
-
-        redEfficiency = (finjs/totalinjs) - (yerr_low) * scipy.stats.norm.isf(0.1)
-        ax.plot(distPlotVals, (finjs_no_mc/totalinjs_no_mc), 'g-',
-                        label='No marginalisation')
-        ax.errorbar(distPlotVals, (finjs_no_mc/totalinjs_no_mc),
-                                yerr=[yerr_low_no_mc,yerr_high_no_mc], c = 'g')
-        marg_eff = finjs / totalinjs
-        if not np.isnan(marg_eff.sum()):
-                ax.plot(distPlotVals, marg_eff ,'r-', label='Marginalised')
-                ax.errorbar(distPlotVals, marg_eff, yerr=[yerr_low,yerr_high], c = 'r')
-        if not np.isnan(redEfficiency.sum()):
-                ax.plot(distPlotVals, redEfficiency, 'm-',
-                                label='Inc. counting errors')
-
-        # Print efficiency curve to file
-        file = open( "%s/efficiency_curve.txt" % outdir, "w" )
-        for i in range(len(distPlotVals)):
-                print >>file, distPlotVals[i],redEfficiency[i]
-        file.close()
-
-        ax.set_ylim([0,1])
-        ax.grid()
-        ax.legend()
-        ax.get_legend().get_frame().set_alpha(0.5)
-        ax.grid()
-        ax.set_ylim([0,1])
-        ax.set_xlim(0, 2.*upper_dist - lower_dist)
-        ax.set_title("Efficiency of injection finding using "+\
-                                  "BestNR as detection statistic")
-        ax.set_ylabel("Fraction of injections found louder than "+\
-                                    "loudest foreground")
-        ax.set_xlabel("Distance (Mpc)")
-
-        # Print 90% and 50% exclusion distance to file and calculate MC error
-        for percentile in [50, 90]:
-                eff_idx = np.where(redEfficiency < (percentile / 100.))[0]
-                if len(eff_idx) == 0:
-                        greenEfficiency = (finjs_no_mc / totalinjs_no_mc)
-                        excl_efficiency = greenEfficiency
-                        eff_idx = np.where(greenEfficiency < (percentile / 100.))[0]
-                else:
-                        excl_efficiency = redEfficiency
-                if len(eff_idx) and eff_idx[0]!=0:
-                        i = eff_idx[0]
-                        d = distPlotVals[i]
-                        d_low = distPlotVals[i-1]
-                        e = excl_efficiency[i]
-                        e_low = excl_efficiency[i-1]
-                        excl_dist = d + (e - (percentile / 100.)) * (d - d_low) /\
-                                        (e_low - e)
-                else:
-                        excl_dist = 0
-                        sys.stderr.write("Efficiency below %d%% in first bin!\n"
-                                                          % percentile)
-                open("%s/exclusion_distance_%d.txt" % (outdir, percentile), "w")\
-                                .write('%s\n' % excl_dist)
-        
-        open("%s/sensitive_distance.txt" % outdir, "w").write('%s\n' % sens_dist)
-
-        ax.plot([excl_dist],[0.9],'gx')
-        ax.set_ylim([0,1])
-        ax.set_xlim(0, 2.*upper_dist - lower_dist)
-        fig.savefig('%s/BestNR_on_efficiency.png' % (outdir))
-        plt.close()
-
-        # plot found/missed injections
-        fig = plt.figure()
-        ax = fig.gca()
-        if len(gFoundMchirp):
-            ax.scatter(gFoundMchirp, gFoundEffDist, c="g", marker='x',\
-                                  edgecolors='g')
-        if len(gIFARMchirp):
-            p = ax.scatter(gIFARMchirp, gIFAREffDist, c=gIFARStat,\
-                                          norm=colors.Normalize(0,1,clip=False), marker='o',\
-                                          edgecolors='none', cmap=cm.plasma)
-        if len(gMissed2Mchirp):
-            ax.scatter(gMissed2Mchirp, gMissed2EffDist, c="r", marker='x',\
-                                  edgecolors='r')
-        if len(missedInjMchirp):
-            ax.scatter(missedInjMchirp, missedInjEffDist, c="k", marker='x',\
-                                  edgecolors='k')
-        ax.grid()
-        ax.semilogy()
-        if len(gIFARMchirp):
-            cb = ax.figure.colorbar(p)
-            cb.ax.set_ylabel("FAP")
-        ax.set_xlabel("Mchirp")
-        ax.set_ylabel("Inverse sum of effective distances")
-        ax.set_title("Injections found louder than loudest background event")
-        #ax.set_ylim([ 0.5, 1000 ])
-        fig.savefig('%s/found_missed_injections_effdist.png' % outdir)
-        plt.close()
-
-        fig = plt.figure()
-        ax = fig.gca()
-        if len(missedInjMchirp):
-            ax.scatter(missedInjMchirp, missedInjEffDist, c="k", marker='x',\
-                                  edgecolors='k')
-        if len(gMissed2Mchirp):
-            ax.scatter(gMissed2Mchirp, gMissed2EffDist, c="r", marker='x',\
-                                  edgecolors='r')
-        if len(gIFARMchirp):
-            p = ax.scatter(gIFARMchirp, gIFAREffDist, c=gIFARStat,\
-                                          norm=colors.Normalize(0,1,clip=False), marker='o',\
-                                          edgecolors='none', cmap=cm.plasma)
-        if len(gFoundMchirp):
-            ax.scatter(gFoundMchirp, gFoundEffDist, c="b", marker='x',\
-                                  edgecolors='g')
-        ax.grid()
-        ax.semilogy()
-        if len(gIFARMchirp):
-            cb = ax.figure.colorbar(p)
-            cb.ax.set_ylabel("FAP")
-        ax.set_xlabel("Mchirp")
-        ax.set_ylabel("Inverse sum of effective distances")
-        ax.set_title("Injections found louder than loudest background event")
-        #ax.set_ylim([ 0.5, 1000 ])
-        fig.savefig('%s/missed_found_injections_effdist.png' % outdir)
-        plt.close()
-
-        fig = plt.figure()
-        ax = fig.gca()
-        if len(gFoundTime):
-            ax.scatter(gFoundTime, gFoundEffDist, c="b", marker='x', edgecolors='g')
-        if len(gIFARTime):
-            p = ax.scatter(gIFARTime, gIFAREffDist, c=gIFARStat,\
-                                          norm=colors.Normalize(0,1,clip=False), marker='o',\
-                                          edgecolors='none', cmap=cm.plasma)
-        if len(gMissed2Time):
-            ax.scatter(gMissed2Time, gMissed2EffDist, c="r", marker='x',\
-                                  edgecolors='r')
-        if len(missedInjTime):
-            ax.scatter(missedInjTime, missedInjEffDist, c="k", marker='x',\
-                                  edgecolors='k')
-        ax.grid()
-        ax.semilogy()
-        if len(gIFARTime):
-            cb = ax.figure.colorbar(p)
-            cb.ax.set_ylabel("FAP")
-        ax.set_xlabel("Time since %d" % grbTime)
-        ax.set_ylabel("Inverse sum of effective distances")
-        ax.set_title("Injections found louder than loudest background event")
-        ax.set_xlim([ start, end ])
-        #ax.set_ylim([ 0.5, 1000 ])
-        fig.savefig("%s/found_missed_injections_effdist_time.png" % outdir)
-        plt.close()
-
-        fig = plt.figure()
-        ax = fig.gca()
-        if len(missedInjTime):
-            ax.scatter(missedInjTime, missedInjEffDist, c="k", marker='x',\
-                                  edgecolors='k')
-        if len(gMissed2Time):
-            ax.scatter(gMissed2Time, gMissed2EffDist, c="r", marker='x',\
-                                  edgecolors='r')
-        if len(gIFARTime):
-            p = ax.scatter(gIFARTime, gIFAREffDist, c=gIFARStat,\
-                                          norm=colors.Normalize(0,1,clip=False), marker='o',\
-                                          edgecolors='none', cmap=cm.plasma)
-        if len(gFoundTime):
-            ax.scatter(gFoundTime, gFoundEffDist, c="b", marker='x', edgecolors='g')
-        ax.grid()
-        ax.semilogy()
-        if len(gIFARTime):
-            cb = ax.figure.colorbar(p)
-            cb.ax.set_ylabel("FAP")
-        ax.set_xlabel("Time since %d" % grbTime)
-        ax.set_ylabel("Inverse sum of effective distances")
-        ax.set_title("Injections found louder than loudest background event")
-        ax.set_xlim([ start, end ])
-        #ax.set_ylim([ 0.5, 1000 ])
-        fig.savefig("%s/missed_found_injections_effdist_time.png" % outdir)
-        plt.close()
-
-        # Injections vs. spins plot
-        fig = plt.figure()
-        ax = fig.gca()
-        ax.grid()
-        foundInjSpin1 = np.sqrt(foundInjSpin1x**2 + foundInjSpin1y**2 + \
-                                                        foundInjSpin1z**2)
-        foundInjSpin2 = np.sqrt(foundInjSpin2x**2 + foundInjSpin2y**2 + \
-                                                        foundInjSpin2z**2)
-        if len(gFoundSpin1x):
-            gFoundSpin1 = np.sqrt(gFoundSpin1x**2 + gFoundSpin1y**2 + \
-                                                        gFoundSpin1z**2)
-            gFoundSpin2 = np.sqrt(gFoundSpin2x**2 + gFoundSpin2y**2 + \
-                                                        gFoundSpin2z**2)
-            ax.scatter(gFoundSpin1, gFoundSpin2, c="g", marker="x",
-                                  edgecolors="g")
-        if len(gIFARSpin1x):
-            gIFARSpin1 = np.sqrt(gIFARSpin1x**2 + gIFARSpin1y**2 + gIFARSpin1z**2)
-            gIFARSpin2 = np.sqrt(gIFARSpin2x**2 + gIFARSpin2y**2 + gIFARSpin2z**2)
-            p = ax.scatter(gIFARSpin1, gIFARSpin2, c=gIFARStat,
-                                          norm=colors.Normalize(0, 1, clip=False), marker="o",
-                                          edgecolors="none", cmap=cm.plasma)
-        if len(missedInjSpin1x):
-            ax.scatter(missedInjSpin1, missedInjSpin2, c="k", marker="x",
-                                  edgecolors="k")
-        if len(gMissed2Spin1x):
-            gMissed2Spin1 = np.sqrt(gMissed2Spin1x**2 + gMissed2Spin1y**2 + \
-                                                            gMissed2Spin1z**2)
-            gMissed2Spin2 = np.sqrt(gMissed2Spin2x**2 + gMissed2Spin2y**2 + \
-                                                            gMissed2Spin2z**2)
-            ax.scatter(gMissed2Spin1, gMissed2Spin2, c="r", marker="x",
-                                  edgecolors="r")
-        if len(gIFARSpin1x):
-            cb = ax.figure.colorbar(p)
-            cb.ax.set_ylabel("FAP")
-        ax.set_xlabel("Spin on 1st binary component")
-        ax.set_ylabel("Spin on 2nd binary component")
-        ax.set_title("Injection recovery with respect to component spins")
-        ax.set_xlim([0, np.ceil(10 * max(maxMissedInjSpin1,
-                                                                          foundInjSpin1.max())) / 10])
-        ax.set_ylim([0, np.ceil(10 * max(maxMissedInjSpin2,
-                                                                          foundInjSpin2.max())) / 10])
-        fig.savefig("%s/found_missed_injections_spins.png" % outdir)
-        plt.close()
-
-        # Injections vs. masses plot
-        fig = plt.figure()
-        ax = fig.gca()
-        ax.grid()
-        if len(gFoundm1):
-            ax.scatter(gFoundm1, gFoundm2, c="g", marker="x", edgecolors="g")
-        if len(gIFARm1):
-            p = ax.scatter(gIFARm1, gIFARm2, c=gIFARStat, edgecolors="none",
-                                          norm=colors.Normalize(0, 1, clip=False), marker="o",
-                                          cmap=cm.plasma)
-        if len(missedInjm1):
-            ax.scatter(missedInjm1, missedInjm2, c="k", marker="x", edgecolors="k")
-        if len(gMissed2m1):
-            ax.scatter(gMissed2m1, gMissed2m2, c="r", marker="x", edgecolors="r")
-        if len(gIFARm1):
-            cb = ax.figure.colorbar(p)
-            cb.ax.set_ylabel("FAP")
-        ax.set_xlabel("Mass of 1st binary component")
-        ax.set_ylabel("Mass of 2nd binary component")
-        ax.set_title("Injection recovery with respect to component masses")
-        ax.set_xlim([np.floor(10 * min(minMissedInjm1, foundInjm1.min())) / 10,
-                                  np.ceil(10 * max(maxMissedInjm1, foundInjm1.max())) / 10])
-        ax.set_ylim([np.floor(10 * max(minMissedInjm2, foundInjm2.min())) / 10,
-                                  np.ceil(10 * max(maxMissedInjm2, foundInjm2.max())) / 10])
-        fig.savefig("%s/found_missed_injections_masses.png" % outdir)
-        plt.close()
-
-        # Injections vs. inclinations plot
-        fig = plt.figure()
-        ax = fig.gca()
-        ax.grid()
-        if len(gFoundInc):
-            ax.scatter(gFoundMchirp, gFoundInc, c="g", marker="x", edgecolors="g")
-        if len(gIFARInc):
-            p = ax.scatter(gIFARMchirp, gIFARInc, c=gIFARStat, edgecolors="none",
-                                          norm=colors.Normalize(0, 1, clip=False), marker="o",
-                                          cmap=cm.plasma)
-        if len(gMissed2Inc):
-            ax.scatter(gMissed2Mchirp, gMissed2Inc, c="r", marker="x",
-                                  edgecolors="r")
-        if len(missedInjInc):
-            ax.scatter(missedInjMchirp, missedInjInc, c="k", marker="x",
-                                  edgecolors="k")
-        if len(gIFARInc):
-            cb = ax.figure.colorbar(p)
-            cb.ax.set_ylabel("FAP")
-        ax.set_xlabel("Mchirp")
-        ax.set_ylabel("Inclination angle of binary")
-        ax.set_title("Injection recovery with respect to inclination angle")
-        fig.savefig("%s/found_missed_injections_incs.png" % outdir)
-        plt.close()
-
-        # Write inclination recovery to file
-        np.savetxt("%s/found_inclinations.txt" % outdir, np.c_[gFoundTime + grbTime,
-                                                                                                                      gFoundInc])
-        np.savetxt("%s/total_inclinations.txt" % outdir,
-                              np.c_[np.concatenate((foundInjTime, missedInjTime)),
-                                          np.concatenate((foundInjInc, missedInjInc))])
-
-        # Site-specific plots
-        sitename = { 'G':'GEO', 'H':'Hanford', 'L':'Livingston', 'V':'Virgo',\
-                                  'T':'TAMA' }
-
-        for site in sites:
-            fig = plt.figure()
-            ax = fig.gca()
-            if len(missedInjMchirp):
-                ax.scatter(missedInjMchirp, missedInjEffSiteDist[site],\
-                                      c="k", marker='x', edgecolors='k')
-            if len(gMissed2Mchirp):
-                ax.scatter(gMissed2Mchirp, gMissed2EffSiteDist[site],\
-                                    c="r", marker='x', edgecolors='r')
-            if len(gFoundMchirp):
-                ax.scatter(gFoundMchirp, gFoundEffSiteDist[site],\
-                                    c="b", marker='x', edgecolors='g')
-            ax.grid()
-            if len(gIFARMchirp):
-                p = ax.scatter(gIFARMchirp, gIFAREffSiteDist[site],\
-                                            c=gIFARStat, norm=colors.Normalize(0,1,clip=False),\
-                                            marker='o', edgecolors='none', cmap=cm.plasma)
-            ax.semilogy()
-            if len(gIFARMchirp):
-                cb = ax.figure.colorbar(p)
-                cb.ax.set_ylabel("FAP")
-            ax.set_xlabel("Mchirp")
-            ax.set_ylabel("%s effective distance" % sitename[site])
-            ax.set_title("Injections found louder than loudest background event")
-            #ax.set_ylim([ 0.5, 1000 ])
-            fig.savefig("%s/found_missed_injections_effdist_%s.png"\
-                                      % (outdir, site.lower()))
-            plt.close()
-
-            fig = plt.figure()
-            ax  = fig.gca()
-            if len(missedInjTime):
-                ax.scatter(missedInjTime, missedInjEffSiteDist[site],\
-                                    c="k", marker='x', edgecolors='k')
-            if len(gMissed2Time):
-                ax.scatter(gMissed2Time, gMissed2EffSiteDist[site],\
-                                    c="r", marker='x', edgecolors='r')
-            if len(gFoundTime):
-                ax.scatter(gFoundTime, gFoundEffSiteDist[site],\
-                                    c="b", marker='x', edgecolors='g')
-            ax.grid()
-            if len(gIFARTime):
-                p = ax.scatter(gIFARTime ,gIFAREffSiteDist[site],\
-                                            c=gIFARStat, norm=colors.Normalize(0,1,clip=False),\
-                                            marker='o', edgecolors='none', cmap=cm.plasma)
-            ax.semilogy()
-            if len(gIFARTime):
-                cb = ax.figure.colorbar(p)
-                cb.ax.set_ylabel("FAP")
-            ax.set_xlabel("Time since %d" % grbTime)
-            ax.set_ylabel("%s effective distance" % sitename[site])
-            ax.set_title("Injections found louder than loudest background event")
-            ax.set_xlim([ start, end ])
-            #ax.set_ylim([ 0.5, 1000 ])
-            fig.savefig("%s/found_missed_injections_effdist_time_%s.png"\
-                                      % (outdir, site.lower()))
-            plt.close()
-    
-    open("%s/sensitive_distance.txt" % outdir, "w").write('%s\n' % sens_dist)
-
+    # Plot efficiency using loudest foreground
+    fig = plt.figure()
+    ax = fig.gca()
+    ax.grid()
+    ax.plot(dist_plot_vals, (fraction_no_mc), 'g-',
+            label='No marginalisation')
+    ax.errorbar(dist_plot_vals, (fraction_no_mc),
+                yerr=[yerr_low_no_mc,yerr_high_no_mc], c = 'g')
+    marg_eff = fraction_mc
+    if not np.isnan(marg_eff.sum()):
+        ax.plot(dist_plot_vals, marg_eff ,'r-', label='Marginalised')
+        ax.errorbar(dist_plot_vals, marg_eff, yerr=[yerr_low,yerr_high], c = 'r')
+    if not np.isnan(red_efficiency.sum()):
+        ax.plot(dist_plot_vals, red_efficiency, 'm-',
+                label='Inc. counting errors')
+    ax.set_ylim([0,1])
+    ax.grid()
+    ax.legend()
+    ax.get_legend().get_frame().set_alpha(0.5)
+    ax.grid()
+    ax.set_ylim([0,1])
+    ax.set_xlim(0, 2.*upper_dist - lower_dist)
+    ax.set_title("Efficiency of injection finding using "+\
+                 "BestNR as detection statistic")
+    ax.set_ylabel("Fraction of injections found louder than "+\
+                  "loudest foreground")
+    ax.set_xlabel("Distance (Mpc)")
     ax.plot([excl_dist],[0.9],'gx')
     ax.set_ylim([0,1])
     ax.set_xlim(0, 2.*upperDist - lowerDist)
     fig.savefig('%s/BestNR_on_efficiency.png' % (outdir))
     plt.close()
 
-    # Plot found-missed and missed-found injections
-    # Plots: effective distance, distance vs chirp mass, time
-    # TODO: make it an executable and loop at workflow level
-    # Info for site-specific plots
-    sitename = { 'G':'GEO', 'H':'Hanford', 'L':'Livingston', 'V':'Virgo',\
-                 'K':'KAGRA' }
+# TODO: turn the following into an executable and loop at workflow level
+# Plot results of injection campaign with found ones on top of missed ones
+# (found-missed) or vice-versa (missed-found)
+if doinj: 
     inj_plots = list(itertools.product([["found_missed"], ["missed_found"]],\
                                        [["mchirp"], ["time"]],\
                                        [["eff_dist"], ["dist"],\
@@ -1616,7 +1335,10 @@ if doinj:
     inj_plots = list(itertools.chain(*inj_plots))
     inj_plots = list(itertools.chain(*inj_plots))
     inj_plots = [inj_plots[i:i+3] for i in range(0, len(inj_plots), 3)]
-    #print(inj_plots)
+
+    # Info for site-specific plots
+    sitename = { 'G':'GEO', 'H':'Hanford', 'L':'Livingston', 'V':'Virgo',\
+                 'K':'KAGRA' }
                                        
     # Dictionary of labels for the horizontal axis
     axis_labels = {'mchirp': "Chirp Mass (solar masses)",
@@ -1631,6 +1353,7 @@ if doinj:
                    'spin1': "Spin on 1st binary component",
                    'spin2': "Spin on 2nd binary component",
                    'sky_error': "Rec. sky error (radians)"}
+
     # Dictionaries of data to plot 
     g_found_dict = {'mchirp': g_found_mchirp, 'time': g_found_time,
                     'eff_dist': g_found_eff_dist, 'dist': g_found_dist,
@@ -1681,7 +1404,7 @@ if doinj:
                                        missed_inj_spin2z**2),
                       'sky_error': []}
 
-    # Loop
+    # Generate scatter plots
     for inj_plot in inj_plots:
         #print(inj_plot)
         fm_or_mf = inj_plot[0]
