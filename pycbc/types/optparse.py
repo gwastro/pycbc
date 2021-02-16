@@ -87,7 +87,7 @@ class MultiDetOptionAction(argparse.Action):
         for value in values:
             value = value.split(':')
             if len(value) == 2:
-                # "Normal" case, all ifos supplied independently as "H1,VALUE"
+                # "Normal" case, all ifos supplied independently as "H1:VALUE"
                 if items.default_set:
                     err_msg += "If you are supplying a value for all ifos, you "
                     err_msg += "cannot also supply values for specific ifos."
@@ -177,20 +177,20 @@ class MultiDetMultiColonOptionAction(MultiDetOptionAction):
             setattr(namespace, self.dest, {})
         items = copy.copy(getattr(namespace, self.dest))
         for value in values:
-            value_split = value.split(':', 1) # split at most twice
-            if len(value_split) == 1:
+            if ':' not in value:
                 err_msg += ("Each argument must contain at least one ':' "
                             "character")
                 raise ValueError(err_msg)
-            if len(value_split[0]) != 2:
+            detector, argument = value.split(':', 1) # split at most twice
+            if len(detector) != 2:
                 err_msg += 'The detector name must be 2 characters long'
                 raise ValueError(err_msg)
-            if value_split[0] in items:
+            if detector in items:
                 err_msg += ('Multiple values supplied for detector {},\n'
                             'already have {}.')
-                err_msg = err_msg.format(value_split[0], items[value_split[0]])
+                err_msg = err_msg.format(detector, items[detector])
                 raise ValueError(err_msg)
-            items[value_split[0]] = value
+            items[detector] = self.internal_type(argument)
         setattr(namespace, self.dest, items)
 
 class MultiDetOptionAppendAction(MultiDetOptionAction):
