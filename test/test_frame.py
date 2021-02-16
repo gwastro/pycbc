@@ -140,6 +140,7 @@ for ty in types:
     klass.__test__ = True
     vars()[klass.__name__] = klass
     TestClasses.append(klass)
+    del klass
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
