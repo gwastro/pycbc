@@ -195,8 +195,8 @@ for event in coinc_table:
 
             fseries = lal.CreateREAL8FrequencySeries(
                 "psd", psd.attrs["epoch"], kmin * df, df,
-                lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
-            fseries.data.data = psd.value[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
+                lal.StrainUnit**2 / lal.HertzUnit, len(psd) - kmin)
+            fseries.data.data = psd[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
             psddict[sngl.ifo] = fseries
 
     xmldoc.childNodes[-1].appendChild(coinc_event_table_curr)
