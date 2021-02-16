@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+"""
+Compute source probabilities using mchirp estimation method for all events
+in a chunk with an IFAR above certain threshold.
+"""
+import os
+import argparse
+import h5py, logging
+import numpy as np
+import json
+import tqdm
+from pycbc.io import hdf
+from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+from pycbc import mchirp_area
+import pycbc.version
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--trigger-file')
+parser.add_argument('--bank-file')
+parser.add_argument('--single-detector-triggers', nargs='+', default=None)
+parser.add_argument('--search-tag',
+                    help='eg: PYCBC_AllSky, PYCBC_HighMass')
+parser.add_argument('--ifar-threshold', type=float, default=None,
+                    help='Select only candidate events with IFAR '
+                         'above threshold.')
+parser.add_argument('--verbose', action='count')
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
+mchirp_area.insert_args(parser)
+args = parser.parse_args()
+
+mc_area_args = mchirp_area.from_cli(args)
+
+if args.verbose:
+    log_level = logging.INFO
+    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+
+logging.info('Using files: %s, %s, %s' % 
+             ((args.trigger_file).split('/')[-1],
+              (args.bank_file).split('/')[-1],
+              (',').join([name.split('/')[-1] for name
+                          in args.single_detector_triggers])))
+
+GPS_START_TIME = args.trigger_file.split('-')[2]
+GPS_START_TIME_NS = args.trigger_file.split('-')[3].split('.')[0]
+
+dir_path = 'source_probability_results/CHUNK_%s-%s/' % (GPS_START_TIME,
+                                                        GPS_START_TIME_NS)
+if not os.path.exists(dir_path):
+    try:
+        os.makedirs(dir_path)
+        logging.info('Created directory %s' % dir_path)
+    except OSError:
+        print('ERROR creating directory %s' % dir_path)
+
+fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
+                                  sngl_files=args.single_detector_triggers)
+
+ifar = fortrigs.get_coincfile_array('ifar')
+N_original = len(ifar)
+
+if args.ifar_threshold:
+    idx = ifar > args.ifar_threshold
+    ifar = ifar[idx]
+    logging.info('%i triggers out of %i with IFAR > %s' %
+                 (len(ifar), N_original, str(args.ifar_threshold)))
+else:
+    idx = np.full(N_original, True)
+
+mass1 = fortrigs.get_bankfile_array('mass1')[idx]
+mass2 = fortrigs.get_bankfile_array('mass2')[idx]
+mchirp,_ = mass1_mass2_to_mchirp_eta(mass1, mass2)
+end_time = fortrigs.get_end_time()[idx]
+sngl_snr = fortrigs.get_snglfile_array_dict('snr')
+sngl_sigmasq = fortrigs.get_snglfile_array_dict('sigmasq')
+
+for event in tqdm.trange(len(ifar)):
+    ifos_event = [ifo for ifo in sngl_snr.keys() if sngl_snr[ifo][1][event]]
+    snrs_event = [sngl_snr[ifo][0][event] for ifo in ifos_event]
+    coinc_snr = sum([sngl_snr**2 for sngl_snr in snrs_event]) ** 0.5
+    min_eff_dist = min([(sngl_sigmasq[ifo][0][event])**0.5
+                       / sngl_snr[ifo][0][event] for ifo in ifos_event])
+    probs = mchirp_area.calc_probabilities(mchirp[event], coinc_snr,
+                                           min_eff_dist, mc_area_args)
+    probs.pop("Mass Gap")
+    ifo_names = ''.join(sorted(ifos_event))
+    end_time_s = str(end_time[event]).split('.')[0]
+
+    out_name = dir_path + '%s-%s-%s-1.json' % (ifo_names, args.search_tag,
+                                               end_time_s)
+    with open(out_name, 'w') as outfile:
+        json.dump(probs, outfile)
