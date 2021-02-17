@@ -12,10 +12,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-      # Used to host cibuildwheel
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v2
-
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel==1.9.0
 
@@ -31,9 +30,11 @@ jobs:
     runs-on: ubuntu-20.04
     needs: build_wheels
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - name: Set up Python 3.7
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: 3.7
     - uses: actions/download-artifact@v2
