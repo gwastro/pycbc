@@ -219,7 +219,7 @@ def add_plot_posterior_option_group(parser):
     pgroup.add_argument('--pick-injection-by-time', action='store_true',
                         default=False,
                         help="In the case of multiple injections, pick one"
-                             "for plotting based on its proximity in time.")
+                             " for plotting based on its proximity in time.")
     add_injsamples_map_opt(pgroup)
     return pgroup
 
