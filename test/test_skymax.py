@@ -427,6 +427,7 @@ for idx in range(4):
         curr_cls = skymax_test_maker(TestChisq, idx, jdx)
         vars()[curr_cls.__name__] = curr_cls
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(curr_cls))
+        del curr_cls
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
