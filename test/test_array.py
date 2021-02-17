@@ -53,6 +53,7 @@ from numpy import ndarray as CPUArray
 # ********************GENERIC ARRAY TESTS ***********************
 
 class ArrayTestBase(array_base,unittest.TestCase):
+    __test__ = False
     def setUp(self):
         self.scheme = _scheme
         self.context = _context
@@ -492,9 +493,9 @@ class ArrayTestBase(array_base,unittest.TestCase):
             self.assertEqual(out[1], out_check[1])
             self.assertEqual(out[2], out_check[2])
 
-
 def array_test_maker(dtype,odtype):
     class tests(ArrayTestBase):
+        __test__ = True
         def __init__(self,*args):
             self.dtype = dtype
             self.odtype = odtype
@@ -502,23 +503,18 @@ def array_test_maker(dtype,odtype):
     tests.__name__ = _scheme + " " + dtype.__name__ + " with " + odtype.__name__
     return tests
 
-types = [ (float32,[float32,complex64]), (float64,[float64,complex128]),
-        (complex64,[complex64,float32]), (complex128,[float64,complex128]) ]
+types = [ (float32,[float32,complex64]), (float64, [float64,complex128]),
+        (complex64,[complex64,float32]), (complex128, [float64,complex128]) ]
 
 suite = unittest.TestSuite()
 
 ind = 0
-for ty,oktype in types:
+for ty, oktype in types:
     for ot in oktype:
         na = 'test' + str(ind)
-        vars()[na] = array_test_maker(ty,ot)
+        vars()[na] = array_test_maker(ty, ot)
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(vars()[na]))
         ind += 1
-
-
-
-# TODO More specific array tests (instatiation, failure modes, type conversion, etc)
-
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)

@@ -17,13 +17,12 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - run: |
+    - name: installing system packages
+      run: |
         sudo apt-get update
         sudo apt-get install *fftw3* mpi intel-mkl* git-lfs
-      if: matrix.os == 'ubuntu-20.04'
-    - run: brew install fftw
-      if: matrix.os == 'macos-latest'
-    - name: Install dependencies
+        pip install tox pip setuptools --upgrade
+    - name: installing auxiliary data files
       run: |
         GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
         cd lalsuite-extra
@@ -32,17 +31,10 @@ jobs:
         git lfs pull -I "data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5"
         mv data/lalsimulation/* ../
         cd ../
-        python -m pip install --upgrade pip setuptools
-        pip install -r requirements.txt
-        pip install -r companion.txt
-        pip install mpi4py
-        pip install .
     - name: run pycbc test suite
-      env:
-        PYCBC_TEST_TYPE: ${{matrix.test-type}}
       run: |
         export LAL_DATA_PATH=$PWD
-        bash tools/pycbc_test_suite.sh
+        tox -e py-${{matrix.test-type}}
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
       uses: actions/upload-artifact@v2

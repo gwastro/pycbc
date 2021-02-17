@@ -222,6 +222,7 @@ class DummyClass(object):
     pass
 
 class TestChisq(unittest.TestCase):
+    __test__ = False
     def setUp(self, *args):
         # Where are my data files?
         if os.path.isfile('test/data/ZERO_DET_high_P.txt'):
@@ -410,8 +411,9 @@ class TestChisq(unittest.TestCase):
 
 
 
-def test_maker(class_name, idx, jdx):
+def skymax_test_maker(class_name, idx, jdx):
     class Test(class_name):
+        __test__ = True
         idx = idx
         jdx = jdx
 
@@ -422,8 +424,10 @@ def test_maker(class_name, idx, jdx):
 suite = unittest.TestSuite()
 for idx in range(4):
     for jdx in range(4):
-        curr_cls = test_maker(TestChisq, idx, jdx)
+        curr_cls = skymax_test_maker(TestChisq, idx, jdx)
+        vars()[curr_cls.__name__] = curr_cls
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(curr_cls))
+        del curr_cls
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)

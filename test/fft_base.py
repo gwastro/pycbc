@@ -314,6 +314,7 @@ class _BaseTestFFTClass(unittest.TestCase):
     This is the base class from which unit tests for all FFT backends
     are derived.
     """
+    __test__ = False
     def setUp(self):
         # Dictionary to convert a dtype to a relative precision to test
         self.tdict = { float32: 1e-6, float64: 1e-14,
