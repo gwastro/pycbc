@@ -149,10 +149,6 @@ if opts.plot_prior is not None:
         for param in fp.attrs['static_params']:
             setattr(prior_samples, param, fp.attrs[param])
 
-# close the files, we don't need them anymore
-for fp in fps:
-    fp.close()
-
 # get minimum and maximum ranges for each parameter from command line
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
 
@@ -176,24 +172,27 @@ if opts.plot_injection_parameters:
 
         if 'tc' in samples[0]:
             pos_time = samples[0]['tc'].mean()
-        elif 'trigger_time' in fp.attrs:
-            pos_time = f.attrs['trigger_time']
+        elif 'trigger_time' in fps[0].attrs:
+            pos_time = fps[0].attrs['trigger_time']
+        elif 'tc_ref' in fps[0].attrs:
+            pos_time = fps[0].attrs['tc_ref']
         else:
             raise ValueError("Couldn't find posterior time, "
-                             "tried tc and trigger_time attribute")
+                             "tried tc, tc_ref, and trigger_time attribute")
+        pick = abs(inj_time - pos_time).argmin()
 
-        pick = numpy.where(abs(inj_time - pos_time).min())[0][0]
-        for p in parameters:
+    for p in parameters:
+        try:
+            vals = injections[p]
+        except (NameError, TypeError):
+            # injection doesn't have this parameter, skip
+            logging.warn("Could not find injection parameter {}".format(p))
+            continue
+
+        if opts.pick_injection_by_time:
             expected_parameters[p] = injections[p][pick]
-    else:
-        for p in parameters:
+        else:
             # check that all of the injections are the same
-            try:
-                vals = injections[p]
-            except (NameError, TypeError):
-                # injection doesn't have this parameter, skip
-                logging.warn("Could not find injection parameter {}".format(p))
-                continue
             unique_vals = numpy.unique(vals)
             if unique_vals.size != 1:
                 raise ValueError("More than one injection found! To use "
@@ -203,6 +202,10 @@ if opts.plot_injection_parameters:
 
             # passed: use the value for the expected
             expected_parameters[p] = unique_vals[0]
+
+# close the files, we don't need them anymore
+for fp in fps:
+    fp.close()
 
 # get expected parameter values from command line
 expected_parameters.update(option_utils.expected_parameters_from_cli(opts))
