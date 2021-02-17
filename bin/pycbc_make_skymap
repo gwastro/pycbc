@@ -5,15 +5,21 @@ Runs a single-template matched filter on strain data from a number of detectors
 and calls BAYESTAR to produce a sky localization from the resulting set of SNR
 time series."""
 
-import h5py, pycbc, subprocess, argparse, tempfile, shutil
-import numpy as np
+import argparse
 import logging
+import subprocess
+import tempfile
+import shutil
+import numpy as np
+import h5py
+import pycbc
 from pycbc.filter import sigmasq
 from pycbc.io import live, WaveformArray
-from pycbc.types import TimeSeries, FrequencySeries, MultiDetOptionAppendAction
+from pycbc.types import TimeSeries, FrequencySeries, \
+        MultiDetMultiColonOptionAction, MultiDetOptionAppendAction
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform.spa_tmplt import spa_length_in_time
-from pycbc import frame, waveform
+from pycbc import frame, waveform, dq
 from pycbc.psd import interpolate
 from ligo.gracedb.rest import GraceDb
 
@@ -65,7 +71,8 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          ligolw_event_output=None, window_bins=300,
          frame_types=None, channel_names=None,
          gracedb_server=None, test_event=True,
-         custom_frame_files=None, approximant=None):
+         custom_frame_files=None, approximant=None, detector_state=None,
+         veto_definer=None):
 
     if not test_event and not gracedb_server:
         raise RuntimeError('a GraceDB URL must be specified if not a test event.')
@@ -107,6 +114,22 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     gps_end_time = int(rough_time + pad // 2)
     gps_start_time = gps_end_time - segment_length
     logging.info("Using data: %s-%s", gps_start_time, gps_end_time)
+
+    # if requested, remove detectors with missing/vetoed data
+    # over the required segment
+    required_duration = gps_end_time - gps_start_time
+    for ifo in ifos:
+        if detector_state is None or ifo not in detector_state:
+            continue
+        on_segs = dq.query_str(ifo, detector_state[ifo],
+                               gps_start_time, gps_end_time,
+                               veto_definer=veto_definer)
+        if abs(on_segs) < required_duration:
+            logging.info('Excluding %s due to missing or vetoed data', ifo)
+            ifos.remove(ifo)
+    if not ifos:
+        raise RuntimeError('All detectors have been excluded due to '
+                           'missing or vetoed data')
 
     highpass_frequency = int(f_low * 0.7)
     logging.info("Setting highpass: %s Hz", highpass_frequency)
@@ -403,6 +426,13 @@ if __name__ == '__main__':
                         help='List of interferometer names, e.g. H1 L1')
     parser.add_argument('--frame-type', type=str, nargs='+')
     parser.add_argument('--channel-name', type=str, nargs='+')
+    parser.add_argument('--detector-state', type=str, nargs='+',
+                        action=MultiDetMultiColonOptionAction,
+                        help='Use the segment database to exclude detectors '
+                             'with missing or vetoed data')
+    parser.add_argument('--veto-definer', type=str,
+                        help='Optional path to a veto definer file to resolve '
+                             'macro flags in --detector-state')
     parser.add_argument('--ligolw-skymap-output', type=str, default='.',
                         help='Option to output sky map files to directory')
     parser.add_argument('--ligolw-event-output', type=str,
@@ -434,4 +464,5 @@ if __name__ == '__main__':
          gracedb_server=opt.gracedb_server,
          test_event=not opt.enable_production_gracedb_upload,
          custom_frame_files=opt.custom_frame_file,
-         approximant=opt.approximant)
+         approximant=opt.approximant, detector_state=opt.detector_state,
+         veto_definer=opt.veto_definer)

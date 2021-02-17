@@ -164,13 +164,9 @@ def query_flag(ifo, segment_name, start_time, end_time,
                 flag_segments = data['segments']
 
         except Exception as e:
-            print(e)
             if source != 'any':
                 raise ValueError("Unable to find {} segments in GWOSC, check "
                                  "flag name or times".format(segment_name))
-            else:
-                print("Tried and failed to find {} in GWOSC, trying dqsegdb".
-                      format(segment_name))
 
             return query_flag(ifo, segment_name, start_time, end_time,
                               source='dqsegdb', server=server,
@@ -342,7 +338,7 @@ def parse_flag_str(flag_str):
         # Check if the flag should add or subtract time
         if not (flag[0] == '+' or flag[0] == '-'):
             err_msg = "DQ flags must begin with a '+' or a '-' character. "
-            err_msg += "You provided {}.".format(flag)
+            err_msg += "You provided {}. ".format(flag)
             err_msg += "See http://pycbc.org/pycbc/latest/html/workflow/segments.html"
             err_msg += " for more information."
             raise ValueError(err_msg)
