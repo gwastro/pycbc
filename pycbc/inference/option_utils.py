@@ -216,6 +216,10 @@ def add_plot_posterior_option_group(parser):
                              "injection in the file to work. Any values "
                              "specified by expected-parameters will override "
                              "the values obtained for the injection.")
+    pgroup.add_argument('--pick-injection-by-time', action='store_true',
+                        default=False,
+                        help="In the case of multiple injections, pick one"
+                             "for plotting based on its proximity in time.")
     add_injsamples_map_opt(pgroup)
     return pgroup
 

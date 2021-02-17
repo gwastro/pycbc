@@ -167,22 +167,42 @@ for p in parameters:
 expected_parameters = {}
 if opts.plot_injection_parameters:
     injections = io.injections_from_cli(opts)
-    for p in parameters:
-        # check that all of the injections are the same
-        try:
-            vals = injections[p]
-        except (NameError, TypeError):
-            # injection doesn't have this parameter, skip
-            logging.warn("Could not find injection parameter {}".format(p))
-            continue
-        unique_vals = numpy.unique(vals)
-        if unique_vals.size != 1:
-            raise ValueError("More than one injection found! To use "
-                "plot-injection-parameters, there must be a single unique "
-                "injection in all input files. Use the expected-parameters "
-                "option to specify an expected parameter instead.")
-        # passed: use the value for the expected
-        expected_parameters[p] = unique_vals[0]
+
+    if opts.pick_injection_by_time:
+        if 'tc' not in injections:
+            raise ValueError("Couldn't determine injection time, tried tc")
+
+        inj_time = injections['tc']
+
+        if 'tc' in samples[0]:
+            pos_time = samples[0]['tc'].mean()
+        elif 'trigger_time' in fp.attrs:
+            pos_time = f.attrs['trigger_time']
+        else:
+            raise ValueError("Couldn't find posterior time, "
+                             "tried tc and trigger_time attribute")
+
+        pick = numpy.where(abs(inj_time - pos_time).min())[0][0]
+        for p in parameters:
+            expected_parameters[p] = injections[p][pick]
+    else:
+        for p in parameters:
+            # check that all of the injections are the same
+            try:
+                vals = injections[p]
+            except (NameError, TypeError):
+                # injection doesn't have this parameter, skip
+                logging.warn("Could not find injection parameter {}".format(p))
+                continue
+            unique_vals = numpy.unique(vals)
+            if unique_vals.size != 1:
+                raise ValueError("More than one injection found! To use "
+                    "plot-injection-parameters, there must be a single unique "
+                    "injection in all input files. Use the expected-parameters"
+                    " option to specify an expected parameter instead.")
+
+            # passed: use the value for the expected
+            expected_parameters[p] = unique_vals[0]
 
 # get expected parameter values from command line
 expected_parameters.update(option_utils.expected_parameters_from_cli(opts))
