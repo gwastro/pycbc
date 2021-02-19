@@ -27,15 +27,15 @@ import os
 import copy
 import logging
 import numpy as np
+from scipy import stats
 import pycbc.version
 import pycbc.results
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
+from pycbc.results.pygrb_postprocessing_utils import find_zero_lag_slide_id
 from pycbc.results.pygrb_postprocessing_utils import load_time_slides
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
-#from pycbc.results.pygrb_postprocessing_utils import load_triggers
-from scipy import stats
 from glue import segments
 from glue.ligolw import lsctables
 
@@ -140,21 +140,8 @@ logging.info("Loading segments.")
 segment_dict = load_segment_dict(trig_file)
 
 # Identify the zero-lag slide
-# TODO: turn most/all into a single function with load_time_slides?
-#       load_triggers does a lot of this
-zero_lag_slide_id = None
+zero_lag_slide_id = find_zero_lag_slide_id(slide_dict)
 num_slides = len(slide_dict)
-for i in range(num_slides):
-    # Is this slide the zero-lag?
-    if max(slide_dict[i].values()) == 0:
-        if min(slide_dict[i].values()) == 0:
-            if zero_lag_slide_id is None:
-                zero_lag_slide_id = i
-            else:
-                raise BrokenError
-
-if zero_lag_slide_id is None:
-    raise BrokenError
 
 # Get segments
 segs = readSegFiles(opts.segment_dir)
@@ -241,7 +228,6 @@ msg = "Segments loaded and %d trials generated." % (total_trials)
 logging.info(msg)
 
 # Extract variables
-# TODO: do something along the lines of PygrbFilterOutput
 # TODO: do we really need these now the mass_bins are gone?
 trig_all_time = {}
 trig_all_snr = {}
@@ -291,7 +277,8 @@ for slide_id in range(num_slides):
     for j, trial in enumerate(trial_dict[slide_id]):
         trial_cut = (trial[0] <= trig_time[slide_id])\
                           & (trig_time[slide_id] < trial[1])
-        if not trial_cut.any(): continue
+        if not trial_cut.any():
+            continue
         # Max SNR
         time_bin_veto_max_snr[slide_id][j] = \
                         max(trig_snr[slide_id][trial_cut])
@@ -300,7 +287,8 @@ for slide_id in range(num_slides):
                         max(trig_bestnr[slide_id][trial_cut])
         # Max SNR for triggers passing SBVs
         sbv_cut = trig_bestnr[slide_id] != 0
-        if not (trial_cut&sbv_cut).any(): continue
+        if not (trial_cut&sbv_cut).any():
+            continue
         time_bin_veto_max_snr_uncut[slide_id][j] =\
                           max(trig_snr[slide_id][trial_cut & sbv_cut])
 
@@ -427,10 +415,10 @@ full_time_bin_veto_max_snr.sort()
 full_time_bin_veto_max_snr_uncut.sort()
 full_time_bin_veto_max_bestnr.sort()
 
-max_snr = max([trig_snr[slide_id].max() if len(trig_snr[slide_id]) else 0 \
+max_snr = max([trig_snr[slide_id].max() if trig_snr[slide_id].size else 0 \
                for slide_id in range(num_slides)])
-max_bestnr = max([trig_bestnr[slide_id].max() if len(trig_snr[slide_id]) else 0 \
-               for slide_id in range(num_slides)])
+max_bestnr = max([trig_bestnr[slide_id].max() if trig_snr[slide_id].size \
+               else 0 for slide_id in range(num_slides)])
 
 if total_trials % 2:
     median_snr = full_time_bin_veto_max_snr[(total_trials - 1) // 2]
@@ -578,7 +566,6 @@ else:
 if doinj:
 
     sites = [ifo[0] for ifo in ifos]
-
 
     # Triggers and injections recovered in some form
     found_trigs_nveto = MultiInspiralUtils.ReadMultiInspiralFromFiles([found_file])
@@ -834,7 +821,7 @@ if doinj:
     #missed_na = ['N/A'] * len(missed_injs)
     missed_na = [-0] * len(missed_injs)
 
-    if len(missed_inj_m1):
+    if missed_inj_m1.size:
         min_missed_inj_m1 = missed_inj_m1.min()
         max_missed_inj_m1 = missed_inj_m1.max()
         min_missed_inj_m2 = missed_inj_m2.min()
@@ -845,26 +832,11 @@ if doinj:
         min_missed_inj_m2 = 1e3
         max_missed_inj_m2 = 0
 
-    if len(missed_inj_spin1x):
-        missed_inj_spin1 = np.sqrt(missed_inj_spin1x**2 + missed_inj_spin1y**2 + \
-                                   missed_inj_spin1z**2)
-        missed_inj_spin2 = np.sqrt(missed_inj_spin2x**2 + missed_inj_spin2y**2 + \
-                                   missed_inj_spin2z**2)
-        min_missed_inj_spin1 = missed_inj_spin1.min()
-        max_missed_inj_spin1 = missed_inj_spin1.max()
-        min_missed_inj_spin2 = missed_inj_spin2.min()
-        max_missed_inj_spin2 = missed_inj_spin2.max()
-    else:
-        min_missed_inj_spin1 = 1
-        max_missed_inj_spin1 = 0
-        min_missed_inj_spin2 = 1
-        max_missed_inj_spin2 = 0
-
     logging.info("%d missed injections analysed.", len(missed_injs))
 
     # Write inclination recovery to file
-    # TODO: some times had the grb_time, others did not. Now we have both.
-    grb_time = segs['on'][1] - 1 # GRB start time
+    # GRB start time 
+    grb_time = segs['on'][1] - 1
     f_incl_txt = open('%s/found_inclinations.txt' % outdir, 'w')
     f_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
     stacked = np.column_stack([g_found_time,
@@ -920,7 +892,7 @@ if doinj:
 
     # Now create the numbers for the efficiency plots; these include calibration
     # and waveform errors. These are incorporated by running over each injection
-    # 100 times, where each time we draw a random value of distance
+    # num_mc_injs times, where each time we draw a random value of distance
 
     # Distribute injections
     found_inj_dist_mc = np.ndarray((num_mc_injs+1, len(found_injs)))
