@@ -34,9 +34,9 @@ import pycbc.version
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
+from pycbc.results.pygrb_postprocessing_utils import find_zero_lag_slide_id
 from pycbc.results.pygrb_postprocessing_utils import load_time_slides
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
-#from pycbc.results.pygrb_postprocessing_utils import load_triggers
 from glue import segments
 from glue.ligolw import lsctables
 
@@ -144,21 +144,8 @@ logging.info("Loading segments.")
 segment_dict = load_segment_dict(trig_file)
 
 # Identify the zero-lag slide
-# TODO: turn most/all into a single function with load_time_slides?
-#       load_triggers does a lot of this
-zero_lag_slide_id = None
+zero_lag_slide_id = find_zero_lag_slide_id(slide_dict)
 num_slides = len(slide_dict)
-for i in range(num_slides):
-    # Is this slide the zero-lag?
-    if max(slide_dict[i].values()) == 0:
-        if min(slide_dict[i].values()) == 0:
-            if zero_lag_slide_id is None:
-                zero_lag_slide_id = i
-            else:
-                raise BrokenError
-
-if zero_lag_slide_id is None:
-    raise BrokenError
 
 # Get segments
 segs = readSegFiles(opts.segment_dir)
@@ -245,7 +232,6 @@ msg = "Segments loaded and %d trials generated." % (total_trials)
 logging.info(msg)
 
 # Extract variables
-# TODO: do something along the lines of PygrbFilterOutput
 # TODO: do we really need these now the mass_bins are gone?
 trig_all_time = {}
 trig_all_snr = {}
@@ -363,7 +349,7 @@ full_time_bin_veto_max_snr.sort()
 full_time_bin_veto_max_snr_uncut.sort()
 full_time_bin_veto_max_bestnr.sort()
 
-max_bestnr = max([trig_bestnr[slide_id].max() if len(trig_snr[slide_id])
+max_bestnr = max([trig_bestnr[slide_id].max() if trig_snr[slide_id].size
                   else 0 for slide_id in range(num_slides)])
 
 # =======================
@@ -450,7 +436,6 @@ if doinj:
 
     sites = [ifo[0] for ifo in ifos]
 
-
     # Triggers and injections recovered in some form
     found_trigs_nveto = MultiInspiralUtils.ReadMultiInspiralFromFiles([found_file])
     found_injs_no_veto = SimInspiralUtils.ReadSimInspiralFromFiles([found_file])
@@ -469,43 +454,11 @@ if doinj:
     found_inj_time = np.asarray(found_injs.get_column('geocent_end_time')) +\
                      np.asarray(found_injs.get_column('geocent_end_time_ns')*\
                                 10**-9)
-    found_inj_mchirp = np.asarray(found_injs.get_column('mchirp'))
-    found_inj_mtot = np.asarray(found_injs.get_column('mtotal'))
-    found_inj_m1 = np.asarray(found_injs.get_column('mass1'))
-    found_inj_m2 = np.asarray(found_injs.get_column('mass2'))
-    found_inj_eff_site_dist =\
-        dict((ifo, found_injs.get_column('eff_dist_%s' % ifo.lower()))\
-             for ifo in sites)
-    found_inj_eff_dist = np.power(np.power(\
-                                  np.asarray(found_inj_eff_site_dist.\
-                                  values()), -1).sum(0), -1)
-    found_inj_ra = np.asarray(found_injs.get_column('longitude'))
-    found_inj_dec = np.asarray(found_injs.get_column('latitude'))
     found_inj_dist = np.asarray(found_injs.get_column('distance'))
     found_inj_inc = np.asarray(found_injs.get_column('inclination'))
-    found_inj_spin1x = np.asarray(found_injs.get_column('spin1x'))
-    found_inj_spin1y = np.asarray(found_injs.get_column('spin1y'))
-    found_inj_spin1z = np.asarray(found_injs.get_column('spin1z'))
-    found_inj_spin2x = np.asarray(found_injs.get_column('spin2x'))
-    found_inj_spin2y = np.asarray(found_injs.get_column('spin2y'))
-    found_inj_spin2z = np.asarray(found_injs.get_column('spin2z'))
 
     # TODO: a lot of this is identical to all the stuff above
     found_trig_mchirp = np.asarray(found_trigs.get_column('mchirp'))
-    found_trig_m1 = np.asarray(found_trigs.get_column('mass1'))
-    found_trig_m2 = np.asarray(found_trigs.get_column('mass2'))
-    found_trig_ra = np.asarray(found_trigs.get_column('ra'))
-    found_trig_dec = np.asarray(found_trigs.get_column('dec'))
-    found_sky_angle = np.arccos(np.cos(found_inj_dec - found_trig_dec) -\
-                                np.cos(found_inj_dec)* np.cos(found_trig_dec) *\
-                                (1 - np.cos(found_inj_ra - found_trig_ra)))
-    found_trig_snr = np.asarray(found_trigs.get_column('snr'))
-    found_trig_chisq = np.asarray(found_trigs.get_column('chisq'))
-    found_trig_bank = np.asarray(found_trigs.get_column('bank_chisq'))
-    found_trig_auto = np.asarray(found_trigs.get_column('cont_chisq'))
-    found_trig_null_snr = np.asarray(found_trigs.get_null_snr())
-    found_trig_sngl_snr = dict((ifo, np.asarray(found_trigs.get_sngl_snr(ifo)))\
-                                for ifo in ifos)
 
     # Grab values of detection statistic
     found_trig_bestnr = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
@@ -539,7 +492,6 @@ if doinj:
 
     # Non-zero FAP
     g_ifar_det_stat = found_trig_bestnr[nonzero_fap]
-
     g_ifar_stat = np.zeros([len(g_ifar_det_stat)])
     for ix, (mc, bestnr) in \
                 enumerate(zip(found_trig_mchirp[nonzero_fap], g_ifar_det_stat)):
@@ -586,62 +538,17 @@ if doinj:
             .veto(vetoes.union(vetoes.keys()))
 
     # Process missed injections 'missed_inj'
-    missed_inj_mchirp = np.asarray(missed_injs.get_column('mchirp'))
-    missed_inj_eff_site_dist =\
-        dict((ifo, missed_injs.get_column('eff_dist_%s' % ifo.lower()))\
-             for ifo in sites)
-    missed_inj_eff_dist = np.power(np.power(\
-                                   np.asarray(missed_inj_eff_site_dist.\
-                                   values()), -1)\
-                                   .sum(0), -1)
     missed_inj_dist = np.asarray(missed_injs.get_column('distance'))
     missed_inj_time = np.asarray(missed_injs.get_column('geocent_end_time') +\
                                  missed_injs.get_column('geocent_end_time_ns') *\
                                  10**-9)
-    missed_inj_m1 = np.asarray(missed_injs.get_column('mass1'))
-    missed_inj_m2 = np.asarray(missed_injs.get_column('mass2'))
     missed_inj_inc = np.asarray(missed_injs.get_column('inclination'))
-    missed_inj_ra = np.asarray(missed_injs.get_column('longitude'))
-    missed_inj_dec = np.asarray(missed_injs.get_column('latitude'))
-
-    missed_inj_spin1x = np.asarray(missed_injs.get_column('spin1x'))
-    missed_inj_spin1y = np.asarray(missed_injs.get_column('spin1y'))
-    missed_inj_spin1z = np.asarray(missed_injs.get_column('spin1z'))
-    missed_inj_spin2x = np.asarray(missed_injs.get_column('spin2x'))
-    missed_inj_spin2y = np.asarray(missed_injs.get_column('spin2y'))
-    missed_inj_spin2z = np.asarray(missed_injs.get_column('spin2z'))
-
-    if len(missed_inj_m1):
-        min_missed_inj_m1 = missed_inj_m1.min()
-        max_missed_inj_m1 = missed_inj_m1.max()
-        min_missed_inj_m2 = missed_inj_m2.min()
-        max_missed_inj_m2 = missed_inj_m2.max()
-    else:
-        min_missed_inj_m1 = 1e3
-        max_missed_inj_m1 = 0
-        min_missed_inj_m2 = 1e3
-        max_missed_inj_m2 = 0
-
-    if len(missed_inj_spin1x):
-        missed_inj_spin1 = np.sqrt(missed_inj_spin1x**2 + missed_inj_spin1y**2 + \
-                                   missed_inj_spin1z**2)
-        missed_inj_spin2 = np.sqrt(missed_inj_spin2x**2 + missed_inj_spin2y**2 + \
-                                   missed_inj_spin2z**2)
-        min_missed_inj_spin1 = missed_inj_spin1.min()
-        max_missed_inj_spin1 = missed_inj_spin1.max()
-        min_missed_inj_spin2 = missed_inj_spin2.min()
-        max_missed_inj_spin2 = missed_inj_spin2.max()
-    else:
-        min_missed_inj_spin1 = 1
-        max_missed_inj_spin1 = 0
-        min_missed_inj_spin2 = 1
-        max_missed_inj_spin2 = 0
 
     logging.info("%d missed injections analysed.", len(missed_injs))
 
     # Write inclination recovery to file
-    # TODO: some times had the grb_time, others did not. Now we have both.
-    grb_time = segs['on'][1] - 1 # GRB start time
+    # GRB start time 
+    grb_time = segs['on'][1] - 1
     f_incl_txt = open('%s/found_inclinations.txt' % outdir, 'w')
     f_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
     stacked = np.column_stack([g_found_time,
@@ -697,7 +604,7 @@ if doinj:
 
     # Now create the numbers for the efficiency plots; these include calibration
     # and waveform errors. These are incorporated by running over each injection
-    # 100 times, where each time we draw a random value of distance
+    # num_mc_injs times, where each time we draw a random value of distance
 
     # Distribute injections
     found_inj_dist_mc = np.ndarray((num_mc_injs+1, len(found_injs)))

@@ -30,6 +30,7 @@ import logging
 import argparse
 import copy
 import numpy
+import logging
 from pycbc.results import save_fig_with_metadata
 # TODO: imports to fix/remove
 try:
@@ -554,7 +555,7 @@ def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
 # =============================================================================
 
 def load_triggers(trig_file, vetoes, ifos):
-    """"Loads triggers from PyGRB output file"""
+    """Loads triggers from PyGRB output file"""
     logging.info("Loading triggers...")
 
     # Extract time-slides
@@ -590,7 +591,7 @@ def load_triggers(trig_file, vetoes, ifos):
 # =============================================================================
 
 def load_injections(inj_file, vetoes):
-    """"Loads injections from PyGRB output file"""
+    """Loads injections from PyGRB output file"""
     logging.info("Loading injections...")
 
     # Load injection file
@@ -652,7 +653,7 @@ def get_id_numbers(ligolw_table, column):
 # =============================================================================
 
 def load_time_slides(xml_file):
-    """"Loads timeslides from PyGRB output file"""
+    """Loads timeslides from PyGRB output file"""
 
     time_slide = load_xml_table(xml_file, lsctables.TimeSlideTable.tableName)
     time_slide_unsorted = [dict(i) for i in time_slide.as_dict().values()]
@@ -680,12 +681,78 @@ def load_time_slides(xml_file):
 
 
 # =============================================================================
+# Function to determine the id of the zero-lag timeslide
+# =============================================================================
+
+def find_zero_lag_slide_id(slide_dict):
+    """Loads timeslides from PyGRB output file"""
+
+    zero_lag_slide_id = None
+    num_slides = len(slide_dict)
+    for i in range(num_slides):
+        # Is this slide the zero-lag?
+        if max(slide_dict[i].values()) == 0:
+            if min(slide_dict[i].values()) == 0:
+                if zero_lag_slide_id is None:
+                    zero_lag_slide_id = i
+                else:
+                    err_msg = 'zero_lag_slide_id was already assigned: there'
+                    err_msg += 'seems to be more than one zero-lag slide!'
+                    logging.error(err_msg)
+    
+    if zero_lag_slide_id is None:
+        err_msg = 'Unable to assign zero_lag_slide_id: '
+        err_msg += 'there seems to be no zero-lag slide!'
+        logging.error(err_msg)
+
+    return zero_lag_slide_id
+
+
+# =============================================================================
+# Function to calculate the error bars and fraction of recovered injections
+# (used for efficiency/distance plots)
+# =============================================================================
+
+def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
+    """Calculates the fraction of recovered injections and its error bars"""
+
+    if not isinstance(num_mc_injs, int):
+        err_msg = "The parameter num_mc_injs is the number of Monte-Carlo "
+        err_msg += "injections.  It must be an integer."
+        logging.error(err_msg)
+
+    only_found_injs = found_bestnr[:-1]
+    all_injs = num_injections[:-1]
+    fraction = only_found_injs / all_injs
+
+    # Divide by Monte-Carlo iterations
+    if num_mc_injs:
+        only_found_injs = only_found_injs / num_mc_injs
+        all_injs = all_injs / num_mc_injs
+
+    # TODO: optimize
+    err_common = all_injs * (2 * only_found_injs + 1)
+    err_denom = 2 * all_injs * (all_injs + 1)
+    err_vary = 4 * all_injs * only_found_injs * (all_injs - only_found_injs) \
+                + all_injs**2
+    err_vary = err_vary**0.5
+    err_low = (err_common - err_vary)/err_denom
+    err_low_mc = fraction - err_low
+    err_high = (err_common + err_vary)/err_denom
+    err_high_mc = err_high - fraction
+
+    return err_low_mc, err_high_mc, fraction
+
+
+# =============================================================================
 # Function to load the segment dicitonary
 # =============================================================================
 
 def load_segment_dict(xml_file):
+    """Loads the segment dictionary """
+
     # Get the mapping table
-    # NB: unclear whether this step is necessary (seems the 
+    # TODO: unclear whether this step is necessary (seems the 
     # segment_def_id and time_slide_id are always identical)
     time_slide_map_table = load_xml_table(xml_file, lsctables.TimeSlideSegmentMapTable.tableName)
     segment_map = {

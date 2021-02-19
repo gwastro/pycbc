@@ -35,9 +35,9 @@ import pycbc.version
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
+from pycbc.results.pygrb_postprocessing_utils import find_zero_lag_slide_id
 from pycbc.results.pygrb_postprocessing_utils import load_time_slides
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
-#from pycbc.results.pygrb_postprocessing_utils import load_triggers
 from glue import segments
 from glue.ligolw import lsctables
 
@@ -145,21 +145,8 @@ logging.info("Loading segments.")
 segment_dict = load_segment_dict(trig_file)
 
 # Identify the zero-lag slide
-# TODO: turn most/all into a single function with load_time_slides?
-#       load_triggers does a lot of this
-zero_lag_slide_id = None
+zero_lag_slide_id = find_zero_lag_slide_id(slide_dict)
 num_slides = len(slide_dict)
-for i in range(num_slides):
-    # Is this slide the zero-lag?
-    if max(slide_dict[i].values()) == 0:
-        if min(slide_dict[i].values()) == 0:
-            if zero_lag_slide_id is None:
-                zero_lag_slide_id = i
-            else:
-                raise BrokenError
-
-if zero_lag_slide_id is None:
-    raise BrokenError
 
 # Get segments
 segs = readSegFiles(opts.segment_dir)
@@ -246,7 +233,6 @@ msg = "Segments loaded and %d trials generated." % (total_trials)
 logging.info(msg)
 
 # Extract variables
-# TODO: do something along the lines of PygrbFilterOutput
 # TODO: do we really need these now the mass_bins are gone?
 trig_all_time = {}
 trig_all_snr = {}
@@ -364,7 +350,7 @@ full_time_bin_veto_max_snr.sort()
 full_time_bin_veto_max_snr_uncut.sort()
 full_time_bin_veto_max_bestnr.sort()
 
-max_bestnr = max([trig_bestnr[slide_id].max() if len(trig_snr[slide_id])
+max_bestnr = max([trig_bestnr[slide_id].max() if trig_snr[slide_id].size
                   else 0 for slide_id in range(num_slides)])
 
 # =======================
@@ -450,7 +436,6 @@ else:
 if doinj:
 
     sites = [ifo[0] for ifo in ifos]
-
 
     # Triggers and injections recovered in some form
     found_trigs_nveto = MultiInspiralUtils.ReadMultiInspiralFromFiles([found_file])
@@ -702,7 +687,7 @@ if doinj:
     missed_inj_spin2y = np.asarray(missed_injs.get_column('spin2y'))
     missed_inj_spin2z = np.asarray(missed_injs.get_column('spin2z'))
 
-    if len(missed_inj_m1):
+    if missed_inj_m1.size:
         min_missed_inj_m1 = missed_inj_m1.min()
         max_missed_inj_m1 = missed_inj_m1.max()
         min_missed_inj_m2 = missed_inj_m2.min()
@@ -713,7 +698,7 @@ if doinj:
         min_missed_inj_m2 = 1e3
         max_missed_inj_m2 = 0
 
-    if len(missed_inj_spin1x):
+    if missed_inj_spin1x.size:
         missed_inj_spin1 = np.sqrt(missed_inj_spin1x**2 + missed_inj_spin1y**2 + \
                                    missed_inj_spin1z**2)
         missed_inj_spin2 = np.sqrt(missed_inj_spin2x**2 + missed_inj_spin2y**2 + \
@@ -731,8 +716,8 @@ if doinj:
     logging.info("%d missed injections analysed.", len(missed_injs))
 
     # Write inclination recovery to file
-    # TODO: some times had the grb_time, others did not. Now we have both.
-    grb_time = segs['on'][1] - 1 # GRB start time
+    # GRB start time
+    grb_time = segs['on'][1] - 1
     f_incl_txt = open('%s/found_inclinations.txt' % outdir, 'w')
     f_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
     stacked = np.column_stack([g_found_time,
@@ -788,7 +773,7 @@ if doinj:
 
     # Now create the numbers for the efficiency plots; these include calibration
     # and waveform errors. These are incorporated by running over each injection
-    # 100 times, where each time we draw a random value of distance
+    # num_mc_injs times, where each time we draw a random value of distance
 
     # Distribute injections
     found_inj_dist_mc = np.ndarray((num_mc_injs+1, len(found_injs)))
@@ -1032,14 +1017,14 @@ if doinj:
         fm_or_mf = inj_plot[0]
         x_qty = inj_plot[1]
         y_qty = inj_plot[2]
-        g_found_x = g_found_dict[x_qty]
-        g_found_y = g_found_dict[y_qty]
-        g_ifar_x = g_ifar_dict[x_qty]
-        g_ifar_y = g_ifar_dict[y_qty]
-        g_missed2_x = g_missed2_dict[x_qty]
-        g_missed2_y = g_missed2_dict[y_qty]
-        missed_inj_x = missed_inj_dict[x_qty]
-        missed_inj_y = missed_inj_dict[y_qty]
+        g_found_x = np.array(g_found_dict[x_qty])
+        g_found_y = np.array(g_found_dict[y_qty])
+        g_ifar_x = np.array(g_ifar_dict[x_qty])
+        g_ifar_y = np.array(g_ifar_dict[y_qty])
+        g_missed2_x = np.array(g_missed2_dict[x_qty])
+        g_missed2_y = np.array(g_missed2_dict[y_qty])
+        missed_inj_x = np.array(missed_inj_dict[x_qty])
+        missed_inj_y = np.array(missed_inj_dict[y_qty])
         x_label = axis_labels[x_qty]
         y_label = axis_labels[y_qty]
         if x_qty == "spin1":
@@ -1079,10 +1064,10 @@ if doinj:
                     x_label = "%s effective distance (Mpc)" % sitename[site]
                 if y_qty == "eff_site_dist":
                     y_label = "%s effective distance (Mpc)" % sitename[site]
-                missed_inj_y = missed_inj_eff_site_dist[site]
-                g_missed2_y = g_missed2_eff_site_dist[site]
-                g_ifar_y = g_ifar_eff_site_dist[site]
-                g_found_y = g_found_eff_site_dist[site]
+                missed_inj_y = np.array(missed_inj_eff_site_dist[site])
+                g_missed2_y = np.array(g_missed2_eff_site_dist[site])
+                g_ifar_y = np.array(g_ifar_eff_site_dist[site])
+                g_found_y = np.array(g_found_eff_site_dist[site])
             fig = plt.figure()
             if y_qty in ["mtot", "spin2", "mchirp"]:
                 ax = fig.gca()
@@ -1094,26 +1079,26 @@ if doinj:
             else:
                 ax = fig.gca(yscale="log")
             if fm_or_mf == "found_missed":
-                if len(missed_inj_x) and len(missed_inj_y):
+                if missed_inj_x.size and missed_inj_y.size:
                     ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=10)
-                if len(g_missed2_x):
+                if g_missed2_x.size:
                     ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=10)
-                if len(g_ifar_x):
+                if g_ifar_x.size:
                     p = ax.scatter(g_ifar_x[FM], g_ifar_y[FM], c=g_ifar_stat[FM],
                                    vmin=0, vmax=1, s=40, edgecolor="w")
                     cb = plt.colorbar(p, label="FAP")
-                if len(g_found_x):
+                if g_found_x.size:
                     ax.scatter(g_found_x, g_found_y, c=fnd_col, marker="+", s=30)
             elif fm_or_mf == "missed_found":
-                if len(g_found_x):
+                if g_found_x.size:
                     ax.scatter(g_found_x, g_found_y, c=fnd_col, marker="+", s=15)
-                if len(g_ifar_x):
+                if g_ifar_x.size:
                     p = ax.scatter(g_ifar_x[MF], g_ifar_y[MF], c=g_ifar_stat[MF],
                                    vmin=0, vmax=1, s=40, edgecolor="w")
                     cb = plt.colorbar(p, label="FAP")
-                if len(g_missed2_x):
+                if g_missed2_x.size:
                     ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=40)
-                if len(missed_inj_x) and len(missed_inj_y):
+                if missed_inj_x.size and missed_inj_y.size:
                     ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=40)
             ax.grid()
             ax.set_xlabel(x_label)
