@@ -159,8 +159,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         "--autogating-pad","16",
         "--strain-high-pass", str(highpass_frequency),
         "--pad-data", "8",
-        "--chisq-bins",'0.72*get_freq("fSEOBNRv4Peak",params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7',
-        "--injection-file", str(opt.injection_file)]
+        "--chisq-bins",'0.72*get_freq("fSEOBNRv4Peak",params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7']
 
         coinc_results['foreground/'+ifo+'/end_time'] = float(trig_time)
         coinc_results['foreground/'+ifo+'/mass1'] = mass1
@@ -174,13 +173,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
         coinc_results['foreground/'+ifo+'/template_id'] = i
         
-        command.append("--fake-strain")
-        if ifo in ['H1', 'L1']:
-            command.append("aLIGOZeroDetHighPowerGWINC")
-        elif ifo in ['V1']:
-            command.append("AdvVirgo")
-        else:
-            print("{} can't be used for simulating data".format(ifo))
+        
         command.append("--approximant")
         for apx in approximant:
             command.append(apx)
@@ -196,6 +189,16 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append("--gps-end-time"),command.append(str(gps_end_time))
         command.append("--trigger-time"),command.append(str(np.round(trig_time,5)))
         command.append("--window"),command.append(str(window))
+        
+        if opt.injection_file is not None:
+            command.append("--injection-file"),command(str(opt.injection_file))
+            command.append("--fake-strain")
+            if ifo in ['H1', 'L1']:
+                command.append("aLIGOZeroDetHighPowerGWINC")
+            elif ifo in ['V1']:
+                command.append("AdvVirgo")
+            else:
+                print("{} can't be used for simulating data".format(ifo))
 
         if opt.injection_file is None:
             if custom_frame_files is None or ifo not in custom_frame_files:
@@ -462,7 +465,7 @@ if __name__ == '__main__':
                         help='Lists of local frame files, e.g., '
                              'H1:/path/to/frame/file L1:/path/to/frame/file')
     parser.add_argument('--injection-file', type=str,
-                        help='The injection file as an .xml.')
+                        help='Optional path to an injection file.')
 
     opt = parser.parse_args()
 
