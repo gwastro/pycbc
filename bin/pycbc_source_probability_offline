@@ -75,7 +75,7 @@ for event in tqdm.trange(len(ifar)):
     # not present in the coincidence
     ifos_event = [ifo for ifo in sngl_snr.keys() if sngl_snr[ifo][1][event]]
     snrs_event = [sngl_snr[ifo][0][event] for ifo in ifos_event]
-    coinc_snr = sum([sngl_snr**2 for sngl_snr in snrs_event]) ** 0.5
+    coinc_snr = sum([snr**2 for snr in snrs_event]) ** 0.5
     min_eff_dist = min([(sngl_sigmasq[ifo][0][event])**0.5
                        / sngl_snr[ifo][0][event] for ifo in ifos_event])
     probs = mchirp_area.calc_probabilities(mchirp[event], coinc_snr,
