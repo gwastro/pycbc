@@ -32,27 +32,21 @@ args = parser.parse_args()
 
 mc_area_args = mchirp_area.from_cli(args)
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(args.verbose)
 
-logging.info('Using files: %s, %s, %s' % 
-             ((args.trigger_file).split('/')[-1],
-              (args.bank_file).split('/')[-1],
-              (',').join([name.split('/')[-1] for name
-                          in args.single_detector_triggers])))
+TRIGGER_FILE = args.trigger_file.split('/')[-1]
+GPS_START_TIME = TRIGGER_FILE.split('-')[2]
+GPS_START_TIME_NS = TRIGGER_FILE.split('-')[3].split('.')[0]
 
-GPS_START_TIME = args.trigger_file.split('-')[2]
-GPS_START_TIME_NS = args.trigger_file.split('-')[3].split('.')[0]
+logging.info('Using files: %s, %s, %s', TRIGGER_FILE,
+             args.bank_file.split('/')[-1],
+             (',').join([name.split('/')[-1] for name in
+                         args.single_detector_triggers]))
 
 dir_path = 'source_probability_results/CHUNK_%s-%s/' % (GPS_START_TIME,
                                                         GPS_START_TIME_NS)
-if not os.path.exists(dir_path):
-    try:
-        os.makedirs(dir_path)
-        logging.info('Created directory %s' % dir_path)
-    except OSError:
-        print('ERROR creating directory %s' % dir_path)
+pycbc.makedir(dir_path)
+logging.info('Created directory %s', dir_path)
 
 fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                   sngl_files=args.single_detector_triggers)
