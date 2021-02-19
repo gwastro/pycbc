@@ -24,6 +24,8 @@ parser.add_argument('--search-tag', required=True,
 parser.add_argument('--ifar-threshold', type=float, default=None,
                     help='Select only candidate events with IFAR '
                          'above threshold.')
+parser.add_argument('--include-mass-gap', action='store_true',
+                    help='Option to include the Mass Gap region.')
 parser.add_argument('--verbose', action='count')
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
@@ -31,6 +33,11 @@ mchirp_area.insert_args(parser)
 args = parser.parse_args()
 
 mc_area_args = mchirp_area.from_cli(args)
+
+if not args.include_mass_gap:
+    mass_bdary = mc_area_args['mass_bdary']
+    assert mass_bdary['ns_max'] == mass_bdary['gap_max'], \
+           'NS/Mass Gap boundaries should be the same.'
 
 pycbc.init_logging(args.verbose)
 
@@ -80,7 +87,8 @@ for event in tqdm.trange(len(ifar)):
                        / sngl_snr[ifo][0][event] for ifo in ifos_event])
     probs = mchirp_area.calc_probabilities(mchirp[event], coinc_snr,
                                            min_eff_dist, mc_area_args)
-    probs.pop("Mass Gap")
+    if not args.include_mass_gap:
+        probs.pop("Mass Gap")
     ifo_names = ''.join(sorted(ifos_event))
     end_time_s = str(end_time[event]).split('.')[0]
 
