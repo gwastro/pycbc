@@ -4,15 +4,16 @@ Compute source probabilities using mchirp estimation method for all events
 in a chunk with an IFAR above certain threshold.
 """
 import os
-import argparse
-import h5py, logging
-import numpy as np
+import h5py
 import json
 import tqdm
+import argparse
+import logging
+import numpy as np
+import pycbc
 from pycbc.io import hdf
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc import mchirp_area
-import pycbc.version
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-file')
