@@ -70,6 +70,9 @@ sngl_snr = fortrigs.get_snglfile_array_dict('snr')
 sngl_sigmasq = fortrigs.get_snglfile_array_dict('sigmasq')
 
 for event in tqdm.trange(len(ifar)):
+    # sngl_snr[ifo] contains 2 arrays: first contains SNR values and
+    # second (True/False) boolean values. If boolean is False, the ifo was
+    # not present in the coincidence
     ifos_event = [ifo for ifo in sngl_snr.keys() if sngl_snr[ifo][1][event]]
     snrs_event = [sngl_snr[ifo][0][event] for ifo in ifos_event]
     coinc_snr = sum([sngl_snr**2 for sngl_snr in snrs_event]) ** 0.5
