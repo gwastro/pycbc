@@ -15,11 +15,11 @@ from pycbc.io import hdf
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc import mchirp_area
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--trigger-file')
-parser.add_argument('--bank-file')
-parser.add_argument('--single-detector-triggers', nargs='+', default=None)
-parser.add_argument('--search-tag',
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--trigger-file', required=True)
+parser.add_argument('--bank-file', required=True)
+parser.add_argument('--single-detector-triggers', nargs='+', required=True)
+parser.add_argument('--search-tag', required=True,
                     help='eg: PYCBC_AllSky, PYCBC_HighMass')
 parser.add_argument('--ifar-threshold', type=float, default=None,
                     help='Select only candidate events with IFAR '
