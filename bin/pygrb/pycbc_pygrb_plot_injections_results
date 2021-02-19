@@ -913,7 +913,9 @@ if doinj:
     start = start - duration*0.05 - grb_time
     end = end + duration*0.05 - grb_time
     missed_inj_time = missed_inj_time - grb_time
+    g_missed2_time -= grb_time
     g_found_time -= grb_time
+    g_ifar_time -= grb_time
 
 # Post-processing of injections ends here
 
