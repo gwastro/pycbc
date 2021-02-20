@@ -110,7 +110,7 @@ class TestAutochisquare(unittest.TestCase):
             snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
                         low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
 
-            print(abs(snr).max(), abs(cor).max())
+            print(abs(snr).max(), abs(cor).max(), abs(self.htilde).max(), abs(sig_tilde).max())
 
         hacor = Array(hautocor, copy=True)
         print("HACOR", abs(hacor).max())
