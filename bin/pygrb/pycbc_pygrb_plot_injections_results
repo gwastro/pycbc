@@ -77,10 +77,9 @@ if opts.veto_directory and (opts.veto_category is None):
     logging.error(err_msg)
 
 if (opts.found_file is None) and (opts.missed_file is None):
-    opts.do_injections = False
+    do_injections = False
 elif (opts.found_file) and opts.missed_file:
-    # TODO: do we need this option?! Should be enough to (not) provide inj_file
-    opts.do_injections = True
+    do_injections = True
 else:
     err_msg = "Must provide both found and missed file if running injections."
     logging.error(err_msg)
@@ -94,7 +93,6 @@ trig_file = opts.offsource_file
 onsource_file = opts.onsource_file
 found_file = opts.found_file
 missed_file = opts.missed_file
-doinj = opts.do_injections
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
 wf_err = opts.waveform_error
@@ -144,7 +142,7 @@ slide_dict = load_time_slides(trig_file)
 logging.info("Loading segments.")
 segment_dict = load_segment_dict(trig_file)
 
-# Identify the zero-lag slide
+# Identify the zero-lag slide and the number of slides
 zero_lag_slide_id = find_zero_lag_slide_id(slide_dict)
 num_slides = len(slide_dict)
 
@@ -233,68 +231,55 @@ msg = "Segments loaded and %d trials generated." % (total_trials)
 logging.info(msg)
 
 # Extract variables
-# TODO: do we really need these now the mass_bins are gone?
-trig_all_time = {}
-trig_all_snr = {}
-trig_all_bestnr = {}
+trig_time = {}
+trig_snr = {}
+trig_bestnr = {}
 
 for slide_id in range(num_slides):
     # Get basics
     slide_trigs = sorted_trigs[slide_id]
-    trig_all_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
-    trig_all_snr[slide_id] = np.asarray(slide_trigs.get_column('snr'))
-    trig_all_bestnr[slide_id] = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
-                                            null_thresh=null_thresh,\
-                                            snr_threshold=snr_thresh,\
-                                            sngl_snr_threshold=sngl_snr_thresh,\
-                                            chisq_threshold=new_snr_thresh,\
-                                            null_grad_thresh=null_grad_thresh,\
-                                            null_grad_val=null_grad_val) \
-                                 for t in slide_trigs]
-    trig_all_bestnr[slide_id] = np.array(trig_all_bestnr[slide_id])
+    trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
+    trig_snr[slide_id] = np.asarray(slide_trigs.get_column('snr'))
+    trig_bestnr[slide_id] = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
+                                        null_thresh=null_thresh,\
+                                        snr_threshold=snr_thresh,\
+                                        sngl_snr_threshold=sngl_snr_thresh,\
+                                        chisq_threshold=new_snr_thresh,\
+                                        null_grad_thresh=null_grad_thresh,\
+                                        null_grad_val=null_grad_val) \
+                             for t in slide_trigs]
+    trig_bestnr[slide_id] = np.array(trig_bestnr[slide_id])
 
 logging.info("Basic columns extracted.")
 
 # Calculate SNR and BestNR values and maxima
-trig_time = {}
-trig_snr = {}
-trig_bestnr = {}
-time_bin_veto_max_snr = {}
-time_bin_veto_max_bestnr = {}
-time_bin_veto_max_snr_uncut = {}
+time_veto_max_snr = {}
+time_veto_max_bestnr = {}
+time_veto_max_snr_uncut = {}
 
 for slide_id in range(num_slides):
     num_slide_segs = len(trial_dict[slide_id])
-    trig_time[slide_id] = {}
-    trig_snr[slide_id] = {}
-    trig_bestnr[slide_id] = {}
-    time_bin_veto_max_snr[slide_id] = np.zeros(num_slide_segs)
-    time_bin_veto_max_bestnr[slide_id] = np.zeros(num_slide_segs)
-    time_bin_veto_max_snr_uncut[slide_id] = np.zeros(num_slide_segs)
+    time_veto_max_snr[slide_id] = np.zeros(num_slide_segs)
+    time_veto_max_bestnr[slide_id] = np.zeros(num_slide_segs)
+    time_veto_max_snr_uncut[slide_id] = np.zeros(num_slide_segs)
 
 for slide_id in range(num_slides):
-    # Record maxima for each trial
-    # Apply cut
-    trig_time[slide_id] = trig_all_time[slide_id]
-    trig_snr[slide_id] = trig_all_snr[slide_id]
-    trig_bestnr[slide_id] = trig_all_bestnr[slide_id]
-
     for j, trial in enumerate(trial_dict[slide_id]):
         trial_cut = (trial[0] <= trig_time[slide_id])\
                           & (trig_time[slide_id] < trial[1])
         if not trial_cut.any():
             continue
         # Max SNR
-        time_bin_veto_max_snr[slide_id][j] = \
+        time_veto_max_snr[slide_id][j] = \
                         max(trig_snr[slide_id][trial_cut])
         # Max BestNR
-        time_bin_veto_max_bestnr[slide_id][j] = \
+        time_veto_max_bestnr[slide_id][j] = \
                         max(trig_bestnr[slide_id][trial_cut])
         # Max SNR for triggers passing SBVs
         sbv_cut = trig_bestnr[slide_id] != 0
         if not (trial_cut&sbv_cut).any():
             continue
-        time_bin_veto_max_snr_uncut[slide_id][j] =\
+        time_veto_max_snr_uncut[slide_id][j] =\
                           max(trig_snr[slide_id][trial_cut & sbv_cut])
 
 logging.info("SNR and bestNR maxima calculated.")
@@ -303,7 +288,7 @@ logging.info("SNR and bestNR maxima calculated.")
 num_events = 0
 for slide_id in range(num_slides):
     for trial in range(len(trial_dict[slide_id])):
-        if time_bin_veto_max_bestnr[slide_id][trial] > 0:
+        if time_veto_max_bestnr[slide_id][trial] > 0:
             num_events += 1
 quietest_file = open('%s/quiet_fap_val.txt' % outdir, 'w')
 quietest_file.write('%s' % (num_events/total_trials))
@@ -313,7 +298,7 @@ quietest_file.close()
 # TODO: Do we really want this hard-coded 30?
 offsource_trigs = []
 for slide_id in range(num_slides):
-    offsource_trigs.extend(zip(trig_all_bestnr[slide_id], sorted_trigs[slide_id]))
+    offsource_trigs.extend(zip(trig_bestnr[slide_id], sorted_trigs[slide_id]))
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
 
@@ -325,7 +310,7 @@ for i in range(min(len(offsource_trigs), 30)):
     # Get FAP of trigger
     num_trials_louder = 0
     for slide_id in range(num_slides):
-        for val in time_bin_veto_max_bestnr[slide_id]:
+        for val in time_veto_max_bestnr[slide_id]:
             if val > bestnr:
                 num_trials_louder += 1
     fap = num_trials_louder/total_trials
@@ -338,17 +323,13 @@ for i in range(min(len(offsource_trigs), 30)):
 # ==========================
 # TODO: very similar lines of code are repeated 3-4 times
 
-full_time_bin_veto_max_snr = []
-full_time_bin_veto_max_snr_uncut = []
-full_time_bin_veto_max_bestnr = []
+full_time_veto_max_snr = []
+full_time_veto_max_bestnr = []
 for slide_id in range(num_slides):
-    full_time_bin_veto_max_snr.extend(time_bin_veto_max_snr[slide_id])
-    full_time_bin_veto_max_snr_uncut.extend(\
-                    time_bin_veto_max_snr_uncut[slide_id])
-    full_time_bin_veto_max_bestnr.extend(time_bin_veto_max_bestnr[slide_id])
-full_time_bin_veto_max_snr.sort()
-full_time_bin_veto_max_snr_uncut.sort()
-full_time_bin_veto_max_bestnr.sort()
+    full_time_veto_max_snr.extend(time_veto_max_snr[slide_id])
+    full_time_veto_max_bestnr.extend(time_veto_max_bestnr[slide_id])
+full_time_veto_max_snr.sort()
+full_time_veto_max_bestnr.sort()
 
 max_bestnr = max([trig_bestnr[slide_id].max() if trig_snr[slide_id].size
                   else 0 for slide_id in range(num_slides)])
@@ -401,7 +382,6 @@ if onsource_file:
 
     logging.info("Onsource analysed.")
 
-    # TODO: Would be good to rename or remove the below output file
     loud_txt = open('%s/loud_numbers.txt' % outdir, 'w')
 
     if loud_on_bestnr_trigs:
@@ -409,10 +389,10 @@ if onsource_file:
         num_trials_louder = 0
         tot_off_snr = np.array([])
         for slide_id in range(num_slides):
-            num_trials_louder += sum(time_bin_veto_max_bestnr[slide_id] > \
+            num_trials_louder += sum(time_veto_max_bestnr[slide_id] > \
                                      loud_on_bestnr)
             tot_off_snr = np.concatenate([tot_off_snr,\
-                                          time_bin_veto_max_bestnr[slide_id]])
+                                          time_veto_max_bestnr[slide_id]])
         fap = num_trials_louder/total_trials
         fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
         pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
@@ -426,14 +406,14 @@ else:
     tot_off_snr = np.array([])
     for slide_id in range(num_slides):
         tot_off_snr = np.concatenate([tot_off_snr,\
-                                      time_bin_veto_max_bestnr[slide_id]])
+                                      time_veto_max_bestnr[slide_id]])
     med_snr = np.median(tot_off_snr)
     fap = sum(tot_off_snr > med_snr)/total_trials
 
 # =======================
 # Post-process injections
 # =======================
-if doinj:
+if do_injections:
 
     sites = [ifo[0] for ifo in ifos]
 
@@ -568,7 +548,7 @@ if doinj:
     g_ifar_stat = np.zeros([len(g_ifar_det_stat)])
     for ix, (mc, bestnr) in \
                 enumerate(zip(found_trig_mchirp[nonzero_fap], g_ifar_det_stat)):
-        g_ifar_stat[ix] = (full_time_bin_veto_max_bestnr > bestnr).sum()
+        g_ifar_stat[ix] = (full_time_veto_max_bestnr > bestnr).sum()
     g_ifar_stat = g_ifar_stat / total_trials
     # Statistics: missed-found
     MF = np.argsort(g_ifar_stat)
@@ -801,15 +781,12 @@ if doinj:
                  num_mc_injs)
 
     # Check injections against on source
-    # TODO: Refactor this
+    more_sig_than_onsource = np.ndarray(len(found_injs))
     if onsource_file:
-        more_sig_than_onsource = np.ndarray(len(found_injs))
         more_sig_than_onsource = (inj_fap <= loud_on_fap)
-        more_sig_than_onsource = more_sig_than_onsource.all(0)
     else:
-        more_sig_than_onsource = np.ndarray(len(found_injs))
         more_sig_than_onsource = (inj_fap <= 0.5)
-        more_sig_than_onsource = more_sig_than_onsource.all(0)
+    more_sig_than_onsource = more_sig_than_onsource.all(0)
 
     distance_count = np.zeros(len(dist_bins))
 
@@ -841,8 +818,8 @@ if doinj:
     near_test = np.zeros((found_excl).sum()).astype(bool)
     for j, (t, bestnr) in enumerate(zip(found_inj_time[found_excl],\
                                         found_trig_bestnr[found_excl])):
-        near_bestnr = trig_all_bestnr[zero_lag_slide_id]\
-                      [np.abs(trig_all_time[zero_lag_slide_id]-t) < cluster_window]
+        near_bestnr = trig_bestnr[zero_lag_slide_id]\
+                      [np.abs(trig_time[zero_lag_slide_id]-t) < cluster_window]
         near_test[j] = ~((near_bestnr * glitch_check_fac > bestnr).any())
     # Apply the local test
     # FIXME: putmask does not seem to work...
@@ -932,7 +909,7 @@ ptfcolormap.set_over('g')
 # TODO: turn the following into an executable and loop at workflow level
 # Plot results of injection campaign with found ones on top of missed ones
 # (found-missed) or vice-versa (missed-found)
-if doinj:
+if do_injections:
     inj_plots = list(itertools.product([["found_missed"], ["missed_found"]],\
                                        [["mchirp"], ["time"]],\
                                        [["eff_dist"], ["dist"],\
