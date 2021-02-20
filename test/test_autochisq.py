@@ -124,6 +124,7 @@ class TestAutochisquare(unittest.TestCase):
 
         obt_snr = abs(snr[indices[1]])
         obt_ach = achisq[1]
+        print("SNR WE GOT", obt_snr)
         self.assertTrue(obt_snr > 10.0 and obt_snr < 12.0)
         self.assertTrue(obt_ach < 2.e-3)
         self.assertTrue(achisq[0] > 20.0)
@@ -198,5 +199,4 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestAutochisquare))
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)
-
 
