@@ -64,6 +64,8 @@ class TestAutochisquare(unittest.TestCase):
                         delta_t=self.del_t, f_lower=self.low_frequency_cutoff, distance=self.Dl, \
                         inclination=self.iota, coa_phase=self.phi_c)
 
+        print("HPHC", abs(hp).max(), abs(hc).max())
+
         # signal which is a noiseless data
         thp = np.zeros(self.seg_len_idx)
         thp[self.tc_indx:len(hp)+self.tc_indx] = hp
@@ -78,7 +80,7 @@ class TestAutochisquare(unittest.TestCase):
         h[0:len(hp)] = hp
         hpt = TimeSeries(h, self.del_t)
         self.htilde = make_frequency_series(hpt)
-
+        print("SIG1 HTILDE", abs(self.sig1).max(), abs(self.htilde).max())
 
         # generate sin-gaussian signal
         time = np.arange(0, len(hp))*self.del_t
