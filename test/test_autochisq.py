@@ -64,8 +64,6 @@ class TestAutochisquare(unittest.TestCase):
                         delta_t=self.del_t, f_lower=self.low_frequency_cutoff, distance=self.Dl, \
                         inclination=self.iota, coa_phase=self.phi_c)
 
-        print("HPHC", abs(hp).max(), abs(hc).max())
-
         # signal which is a noiseless data
         thp = np.zeros(self.seg_len_idx)
         thp[self.tc_indx:len(hp)+self.tc_indx] = hp
@@ -80,7 +78,6 @@ class TestAutochisquare(unittest.TestCase):
         h[0:len(hp)] = hp
         hpt = TimeSeries(h, self.del_t)
         self.htilde = make_frequency_series(hpt)
-        print("SIG1 HTILDE", abs(self.sig1).max(), abs(self.htilde).max())
 
         # generate sin-gaussian signal
         time = np.arange(0, len(hp))*self.del_t
@@ -112,11 +109,8 @@ class TestAutochisquare(unittest.TestCase):
             snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
                         low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
 
-            print(abs(snr).max(), abs(cor).max(), abs(self.htilde).max(), abs(sig_tilde).max())
 
         hacor = Array(hautocor, copy=True)
-        print("HACOR", abs(hacor).max())
-
         indx = np.array([352250, 352256, 352260])
 
         snr = snr*nrm
@@ -129,8 +123,6 @@ class TestAutochisquare(unittest.TestCase):
 
         obt_snr = abs(snr[indices[1]])
         obt_ach = achisq[1]
-        print(obt_ach)
-        print("SNR WE GOT", obt_snr)
         self.assertTrue(obt_snr > 10.0 and obt_snr < 12.0)
         self.assertTrue(obt_ach < 3.e-3)
         self.assertTrue(achisq[0] > 20.0)
