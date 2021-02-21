@@ -777,6 +777,99 @@ def load_segment_dict(xml_file):
 
 
 # =============================================================================
+# Construct the trials from the timeslides, segments, and vetoes 
+# =============================================================================
+
+def construct_trials(num_slides, segs, segment_dict, ifos, slide_dict, vetoes):
+    """Constructs trials from triggers, timeslides, segments and vetoes"""
+
+    trial_dict = {}
+
+    # Separate segments
+    trial_time = abs(segs['on'])
+
+    for slide_id in range(num_slides):
+        # These can only *reduce* the analysis time
+        curr_seg_list = segment_dict[slide_id]
+    
+        # Construct the buffer segment list
+        seg_buffer = segments.segmentlist()
+        for ifo in ifos:
+            slide_offset = slide_dict[slide_id][ifo]
+            seg_buffer.append(segments.segment(segs['buffer'][0] - slide_offset,\
+                                               segs['buffer'][1] - slide_offset))
+        seg_buffer.coalesce()
+    
+        # Construct the ifo list
+        slid_vetoes = copy.deepcopy(vetoes)
+        for ifo in ifos:
+            slid_vetoes[ifo].shift(-slide_dict[slide_id][ifo])
+    
+        # Construct trial list and check against buffer
+        trial_dict[slide_id] = segments.segmentlist()
+        for curr_seg in curr_seg_list:
+            iter_int = 0
+            while 1:
+                if (curr_seg[0] + trial_time*(iter_int+1)) > curr_seg[1]:
+                    break
+                curr_trial = segments.segment(curr_seg[0] + trial_time*iter_int,\
+                                              curr_seg[0] + trial_time*(iter_int+1))
+                if not seg_buffer.intersects_segment(curr_trial):
+                    for ifo in ifos:
+                        if slid_vetoes[ifo].intersects_segment(curr_trial):
+                            break
+                    else:
+                        trial_dict[slide_id].append(curr_trial)
+                iter_int += 1
+    
+    return trial_dict
+
+
+# =============================================================================
+# Construct the sorted triggers from the trials
+# =============================================================================
+
+def sort_trigs(trial_dict, trigs, num_slides, segment_dict):
+    """Constructs sorted triggers"""
+
+    sorted_trigs = {}
+
+    # Begin by sorting the triggers into each slide
+    # New seems pretty slow, so run it once and then use deepcopy
+    tmp_table = lsctables.New(lsctables.MultiInspiralTable)
+    for slide_id in range(num_slides):
+        sorted_trigs[slide_id] = copy.deepcopy(tmp_table)
+    for trig in trigs:
+        sorted_trigs[int(trig.time_slide_id)].append(trig)
+
+    for slide_id in range(num_slides):
+        # These can only *reduce* the analysis time
+        curr_seg_list = segment_dict[slide_id]
+    
+        ###### TODO:below is a check we can possibly remove #####
+        # Check the triggers are all in the analysed segment lists
+        for trig in sorted_trigs[slide_id]:
+            if trig.end_time not in curr_seg_list:
+                # This can be raised if the trigger is on the segment boundary, so
+                # check if the trigger is within 1/100 of a second within the list
+                if trig.get_end() + 0.01 in curr_seg_list:
+                    continue
+                if trig.get_end() - 0.01 in curr_seg_list:
+                    continue
+                err_msg = "Triggers found in input files not in the list of "
+                err_msg += "analysed segments. This should not happen."
+                logging.error(err_msg)
+                sys.exit()
+        ###### end of check #####
+    
+        # The below line works like the inverse of .veto and only returns trigs
+        # that are within the segment specified by trial_dict[slide_id]
+        sorted_trigs[slide_id] = sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
+    
+    return sorted_trigs
+
+
+# =============================================================================
 # Given the trigger and injection values of a quantity, determine the maximum
 # =============================================================================
 
