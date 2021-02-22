@@ -303,8 +303,6 @@ pycbc.results.save_fig_with_metadata(str(html_table), html_path, **kwds)
 # Note: the only new info from above is the median SNR, bestnr
 # and loudest SNR, so could just add this to the above's caption.
 # ==========================
-# TODO: very similar lines of code are repeated 3-4 times
-
 th = ['', 'SNR', 'BestNR']
 td = []
 
