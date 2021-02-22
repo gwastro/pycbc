@@ -870,6 +870,39 @@ def sort_trigs(trial_dict, trigs, num_slides, segment_dict):
 
 
 # =============================================================================
+# Find max and median of loudest SNRs or BestNRs
+# =============================================================================
+
+def sort_stat(time_veto_max_stat):
+    """Sort a dictionary of loudest SNRs/BestNRs"""
+
+    full_time_veto_max_stat = numpy.concatenate(time_veto_max_stat.values())
+    full_time_veto_max_stat.sort()
+
+    return full_time_veto_max_stat
+
+# =============================================================================
+# Find max and median of loudest SNRs or BestNRs
+# =============================================================================
+
+def max_median_stat(num_slides, time_veto_max_stat, trig_stat, total_trials):
+    """Deterime the maximum and median of the loudest SNRs/BestNRs"""
+
+    max_stat = max([trig_stat[slide_id].max() if trig_stat[slide_id].size \
+                   else 0 for slide_id in range(num_slides)])
+    
+    full_time_veto_max_stat = sort_stat(time_veto_max_stat)
+
+    if total_trials % 2:
+        median_stat = full_time_veto_max_stat[(total_trials - 1) // 2]
+    else:
+        median_stat = numpy.mean((full_time_veto_max_stat)\
+                              [total_trials//2 - 1 : total_trials//2 + 1])
+
+    return max_stat, median_stat, full_time_veto_max_stat 
+
+
+# =============================================================================
 # Given the trigger and injection values of a quantity, determine the maximum
 # =============================================================================
 

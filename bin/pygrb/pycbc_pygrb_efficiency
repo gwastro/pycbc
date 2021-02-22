@@ -158,16 +158,14 @@ sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
 
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
 
-msg = "Segments loaded and %d trials generated." % (total_trials)
+msg = "Segments loaded, triggers sorted, and %d trials generated." % (total_trials)
 logging.info(msg)
 
-# Extract variables
+# Extract basic trigger properties and store as dictionaries
 trig_time = {}
 trig_snr = {}
 trig_bestnr = {}
-
 for slide_id in range(num_slides):
-    # Get basics
     slide_trigs = sorted_trigs[slide_id]
     trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
     trig_snr[slide_id] = np.asarray(slide_trigs.get_column('snr'))
@@ -180,8 +178,7 @@ for slide_id in range(num_slides):
                                         null_grad_val=null_grad_val) \
                              for t in slide_trigs]
     trig_bestnr[slide_id] = np.array(trig_bestnr[slide_id])
-
-logging.info("Basic columns extracted.")
+logging.info("Time, SNR, and BestNR of triggers extracted.")
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
