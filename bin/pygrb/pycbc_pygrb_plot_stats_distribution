@@ -37,6 +37,8 @@ from pycbc.results.pygrb_postprocessing_utils import load_time_slides
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
 from pycbc.results.pygrb_postprocessing_utils import construct_trials
 from pycbc.results.pygrb_postprocessing_utils import sort_trigs
+from pycbc.results.pygrb_postprocessing_utils import sort_stat
+from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from glue.ligolw import lsctables
 
 # Deprecated
@@ -247,22 +249,10 @@ for i in range(min(len(offsource_trigs), 30)):
 # Note: the only new info from above is the median SNR, bestnr
 # and loudest SNR, so could just add this to the above's caption.
 # ==========================
-# TODO: very similar lines of code are repeated 3-4 times
+full_time_veto_max_snr = sort_stat(time_veto_max_snr)
+full_time_veto_max_snr_uncut = sort_stat(time_veto_max_snr_uncut)
+max_bestnr, _, full_time_veto_max_bestnr = max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
 
-full_time_veto_max_snr = []
-full_time_veto_max_snr_uncut = []
-full_time_veto_max_bestnr = []
-for slide_id in range(num_slides):
-    full_time_veto_max_snr.extend(time_veto_max_snr[slide_id])
-    full_time_veto_max_snr_uncut.extend(\
-                    time_veto_max_snr_uncut[slide_id])
-    full_time_veto_max_bestnr.extend(time_veto_max_bestnr[slide_id])
-full_time_veto_max_snr.sort()
-full_time_veto_max_snr_uncut.sort()
-full_time_veto_max_bestnr.sort()
-
-max_bestnr = max([trig_bestnr[slide_id].max() if trig_snr[slide_id].size
-                  else 0 for slide_id in range(num_slides)])
 
 # =======================
 # Load on source triggers
