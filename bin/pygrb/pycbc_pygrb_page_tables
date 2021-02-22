@@ -37,6 +37,7 @@ from pycbc.results.pygrb_postprocessing_utils import load_time_slides
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
 from pycbc.results.pygrb_postprocessing_utils import construct_trials
 from pycbc.results.pygrb_postprocessing_utils import sort_trigs
+from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from glue.ligolw import lsctables
 
 # Deprecated
@@ -153,16 +154,14 @@ sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
 
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
 
-msg = "Segments loaded and %d trials generated." % (total_trials)
+msg = "Segments loaded, triggers sorted, and %d trials generated." % (total_trials)
 logging.info(msg)
 
-# Extract variables
+# Extract basic trigger properties and store as dictionaries
 trig_time = {}
 trig_snr = {}
 trig_bestnr = {}
-
 for slide_id in range(num_slides):
-    # Get basics
     slide_trigs = sorted_trigs[slide_id]
     trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
     trig_snr[slide_id] = np.asarray(slide_trigs.get_column('snr'))
@@ -175,8 +174,7 @@ for slide_id in range(num_slides):
                                         null_grad_val=null_grad_val) \
                              for t in slide_trigs]
     trig_bestnr[slide_id] = np.array(trig_bestnr[slide_id])
-
-logging.info("Basic columns extracted.")
+logging.info("Time, SNR, and BestNR of triggers extracted.")
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
@@ -223,7 +221,7 @@ for slide_id in range(num_slides):
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
 
-#TODO: we also want the templates spin1z and spin2z. Do this after switch to hdf5
+#TODO: we also want the template spin1z and spin2z. Do this after switch to hdf5
 # th: table header
 th = ['Trial', 'Slide Num', 'p-value', 'GPS',\
       'Rec. m1', 'Rec. m2', 'Rec. Mc',\
@@ -246,7 +244,7 @@ td = []
 # This is in PygrbFilterOutput
 ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t'}
 
-# Gather data
+# Gather properties of the loudest offsource triggers 
 for i in range(min(len(offsource_trigs), 30)):
     bestnr = offsource_trigs[i][0]
     trig = offsource_trigs[i][1]
@@ -269,15 +267,12 @@ for i in range(min(len(offsource_trigs), 30)):
     fap = num_trials_louder/total_trials
     pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
 
-    # Get null SNR of trigger
-    null_snr = trig.get_null_snr()
-
     d = [chunk_num, trig_slide_id, pval,\
          trig.get_end(),\
          trig.mass1, trig.mass2, trig.mchirp,\
          (np.degrees(trig.ra)), (np.degrees(trig.dec)),\
          trig.snr, trig.chisq, trig.bank_chisq,\
-         trig.cont_chisq, null_snr]
+         trig.cont_chisq, trig.get_null_snr()]
     d.extend([getattr(trig, 'snr_%s' % ifo_att[ifo])\
                      for ifo in ifos])
     d.extend([slide_dict[trig_slide_id][ifo] for ifo in ifos])
@@ -313,28 +308,8 @@ pycbc.results.save_fig_with_metadata(str(html_table), html_path, **kwds)
 th = ['', 'SNR', 'BestNR']
 td = []
 
-full_time_veto_max_snr = []
-full_time_veto_max_bestnr = []
-for slide_id in range(num_slides):
-    full_time_veto_max_snr.extend(time_veto_max_snr[slide_id])
-    full_time_veto_max_bestnr.extend(time_veto_max_bestnr[slide_id])
-full_time_veto_max_snr.sort()
-full_time_veto_max_bestnr.sort()
-
-max_snr = max([trig_snr[slide_id].max() if trig_snr[slide_id].size else 0 \
-               for slide_id in range(num_slides)])
-max_bestnr = max([trig_bestnr[slide_id].max() if trig_snr[slide_id].size \
-               else 0 for slide_id in range(num_slides)])
-
-if total_trials % 2:
-    median_snr = full_time_veto_max_snr[(total_trials - 1) // 2]
-    median_bestnr = full_time_veto_max_bestnr[(total_trials - 1) // 2]
-else:
-    median_snr = np.mean((full_time_veto_max_snr)\
-                                                    [total_trials//2 - 1 : total_trials//2 + 1])
-    median_bestnr = np.mean((full_time_veto_max_bestnr)\
-                                                    [total_trials//2 - 1 : total_trials//2 + 1])
-
+max_snr, median_snr, _ = max_median_stat(num_slides, time_veto_max_snr, trig_snr, total_trials)
+max_bestnr, median_bestnr, full_time_veto_max_bestnr = max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
 
 d = ['Loudest ', max_snr, max_bestnr]
 td.append(d)
@@ -429,7 +404,7 @@ if onsource_file:
              trig.mass1, trig.mass2, trig.mchirp,\
              np.degrees(trig.ra), np.degrees(trig.dec),\
              trig.snr, trig.chisq, trig.bank_chisq,\
-             trig.cont_chisq, null_snr] + \
+             trig.cont_chisq, trig.get_null_snr()] + \
              [trig.get_sngl_snr(ifo) for ifo in ifos] + [loud_on_bestnr]
         loud_txt.write('%s\n' % pval.replace('<', '&lt'))
         td.append(d)
@@ -505,6 +480,7 @@ if do_injections:
     found_inj_spin2z = np.asarray(found_injs.get_column('spin2z'))
 
     # TODO: a lot of this is identical to all the stuff above
+    
     found_trig_mchirp = np.asarray(found_trigs.get_column('mchirp'))
     found_trig_m1 = np.asarray(found_trigs.get_column('mass1'))
     found_trig_m2 = np.asarray(found_trigs.get_column('mass2'))
