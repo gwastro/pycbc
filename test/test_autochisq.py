@@ -60,7 +60,7 @@ class TestAutochisquare(unittest.TestCase):
 
         #  generate waveform and chirp signal
 
-        hp, hc = get_td_waveform(approximant="TaylorT2", mass1=self.m1, mass2=self.m2, \
+        hp, hc = get_td_waveform(approximant="SpinTaylorT5", mass1=self.m1, mass2=self.m2, \
                         delta_t=self.del_t, f_lower=self.low_frequency_cutoff, distance=self.Dl, \
                         inclination=self.iota, coa_phase=self.phi_c)
 
@@ -78,7 +78,6 @@ class TestAutochisquare(unittest.TestCase):
         h[0:len(hp)] = hp
         hpt = TimeSeries(h, self.del_t)
         self.htilde = make_frequency_series(hpt)
-
 
         # generate sin-gaussian signal
         time = np.arange(0, len(hp))*self.del_t
@@ -110,8 +109,8 @@ class TestAutochisquare(unittest.TestCase):
             snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
                         low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
 
-        hacor = Array(hautocor, copy=True)
 
+        hacor = Array(hautocor, copy=True)
         indx = np.array([352250, 352256, 352260])
 
         snr = snr*nrm
@@ -125,7 +124,7 @@ class TestAutochisquare(unittest.TestCase):
         obt_snr = abs(snr[indices[1]])
         obt_ach = achisq[1]
         self.assertTrue(obt_snr > 10.0 and obt_snr < 12.0)
-        self.assertTrue(obt_ach < 2.e-3)
+        self.assertTrue(obt_ach < 3.e-3)
         self.assertTrue(achisq[0] > 20.0)
         self.assertTrue(achisq[2] > 20.0)
 
@@ -198,5 +197,4 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestAutochisquare))
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)
-
 
