@@ -191,7 +191,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append("--window"),command.append(str(window))
         
         if opt.injection_file is not None:
-            command.append("--injection-file"),command(str(opt.injection_file))
+            command.append("--injection-file"),command.append(str(opt.injection_file))
             command.append("--fake-strain")
             if ifo in ['H1', 'L1']:
                 command.append("aLIGOZeroDetHighPowerGWINC")
