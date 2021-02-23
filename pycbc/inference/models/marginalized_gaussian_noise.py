@@ -426,9 +426,9 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
 
     @property
     def _extra_stats(self):
-        """Adds ``maxl_polarization`` and the ``max_phase``
+        """Adds ``maxl_polarization`` and the ``maxl_phase``
         """
-        return ['maxl_polarization', 'max_phase',]
+        return ['maxl_polarization', 'maxl_phase',]
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
