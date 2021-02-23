@@ -3,7 +3,6 @@
 Compute source probabilities using mchirp estimation method for all events
 in a chunk with an IFAR above certain threshold.
 """
-import os
 import h5py
 import json
 import tqdm
@@ -53,7 +52,7 @@ logging.info('Using files: %s, %s, %s', TRIGGER_FILE,
 dir_path = 'source_probability_results/CHUNK_%s-%s/' % (GPS_START_TIME,
                                                         GPS_START_TIME_NS)
 pycbc.makedir(dir_path)
-logging.info('Created directory %s', dir_path)
+logging.info('Saving results in %s', dir_path)
 
 fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                   sngl_files=args.single_detector_triggers)
