@@ -30,6 +30,7 @@ import logging
 import argparse
 import copy
 import numpy
+from scipy import stats
 import logging
 from pycbc.results import save_fig_with_metadata
 # TODO: imports to fix/remove
@@ -881,6 +882,7 @@ def sort_stat(time_veto_max_stat):
 
     return full_time_veto_max_stat
 
+
 # =============================================================================
 # Find max and median of loudest SNRs or BestNRs
 # =============================================================================
@@ -1075,3 +1077,26 @@ def pygrb_plotter(trig_x, trig_y, inj_x, inj_y, inj_file, xlabel, ylabel,
                            caption=plot_caption)
     # fig_kwds=fig_kwds,
     plt.close()
+
+
+
+# =============================================================================
+# Incorporate calibration and waveform errors for efficiency plots
+# =============================================================================
+
+def mc_cal_wf_errs(num_mc_injs, num_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
+    """Includes calibration and waveform errors by running an MC"""
+
+    # The numbers for the efficiency plots include calibration and waveform
+    # errors incorporated by running over each injection num_mc_injs times,
+    # where each time we draw a random value of distance.
+
+    inj_dist_mc = numpy.ndarray((num_mc_injs+1, num_injs))
+    inj_dist_mc[0, :] = inj_dists
+    for i in range(num_mc_injs):
+        cal_dist_red = stats.norm.rvs(size=num_injs) * cal_err
+        wf_dist_red = numpy.abs(stats.norm.rvs(size=num_injs) * wf_err)
+        inj_dist_mc[i+1, :] = inj_dists / (max_dc_cal_err * \
+                                     (1 + cal_dist_red) * (1 + wf_dist_red))
+
+    return inj_dist_mc
