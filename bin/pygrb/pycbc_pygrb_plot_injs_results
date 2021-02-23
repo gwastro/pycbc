@@ -22,8 +22,8 @@
 
 from __future__ import division
 
-import os
 import sys
+import os
 import logging
 import itertools
 # USE THIS TO CHECK NOTHING IS BREAKING
@@ -32,8 +32,8 @@ import cPickle as pickle
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
-from pycbc.results import save_fig_with_metadata
 import pycbc.version
+from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
@@ -49,7 +49,6 @@ from pylal import SimInspiralUtils, MultiInspiralUtils
 from pylal.coh_PTF_pyutils import readSegFiles, get_bestnr
 
 plt.switch_backend('Agg')
-#rc("image", cmap="viridis")
 rc("image")
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
@@ -164,7 +163,6 @@ logging.info("Time and BestNR of triggers extracted.")
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_bestnr = {}
-
 for slide_id in range(num_slides):
     num_slide_segs = len(trial_dict[slide_id])
     time_veto_max_bestnr[slide_id] = np.zeros(num_slide_segs)
