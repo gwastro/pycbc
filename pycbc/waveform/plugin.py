@@ -31,7 +31,7 @@ def add_custom_waveform(approximant, function, domain,
         if sequence:
             if not force and (approximant in fd_sequence):
                 raise used
-            cpu_fd[approximant] = function
+            fd_sequence[approximant] = function
         else:
             if not force and (approximant in cpu_fd):
                 raise used
