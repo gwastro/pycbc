@@ -19,7 +19,9 @@ parser.add_argument('--trigger-file', required=True)
 parser.add_argument('--bank-file', required=True)
 parser.add_argument('--single-detector-triggers', nargs='+', required=True)
 parser.add_argument('--search-tag', required=True,
-                    help='eg: PYCBC_AllSky, PYCBC_HighMass')
+                    help='String to add to the output file names '
+                         'identifying the search. eg: PYCBC_AllSky, '
+                         'PYCBC_HighMass')
 parser.add_argument('--ifar-threshold', type=float, default=None,
                     help='Select only candidate events with IFAR '
                          'above threshold.')
