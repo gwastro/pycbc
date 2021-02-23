@@ -38,6 +38,7 @@ from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
 from pycbc.results.pygrb_postprocessing_utils import construct_trials
 from pycbc.results.pygrb_postprocessing_utils import sort_trigs
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
+from pycbc.results.pygrb_postprocessing_utils import mc_cal_wf_errs
 from glue.ligolw import lsctables
 
 # Deprecated
@@ -48,6 +49,7 @@ __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_stats_distribution"
+
 
 # =============================================================================
 # Main script starts here
@@ -244,7 +246,7 @@ td = []
 # This is in PygrbFilterOutput
 ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t'}
 
-# Gather properties of the loudest offsource triggers 
+# Gather properties of the loudest offsource triggers
 for i in range(min(len(offsource_trigs), 30)):
     bestnr = offsource_trigs[i][0]
     trig = offsource_trigs[i][1]
@@ -307,7 +309,8 @@ th = ['', 'SNR', 'BestNR']
 td = []
 
 max_snr, median_snr, _ = max_median_stat(num_slides, time_veto_max_snr, trig_snr, total_trials)
-max_bestnr, median_bestnr, full_time_veto_max_bestnr = max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
+max_bestnr, median_bestnr, full_time_veto_max_bestnr =\
+    max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
 
 d = ['Loudest ', max_snr, max_bestnr]
 td.append(d)
@@ -478,7 +481,7 @@ if do_injections:
     found_inj_spin2z = np.asarray(found_injs.get_column('spin2z'))
 
     # TODO: a lot of this is identical to all the stuff above
-    
+
     found_trig_mchirp = np.asarray(found_trigs.get_column('mchirp'))
     found_trig_m1 = np.asarray(found_trigs.get_column('mass1'))
     found_trig_m2 = np.asarray(found_trigs.get_column('mass2'))
@@ -751,32 +754,17 @@ if do_injections:
     # Calibration phase uncertainties are neglected
     logging.info("Calibration amplitude uncertainty calculated.")
 
-    # Now create the numbers for the efficiency plots; these include calibration
-    # and waveform errors. These are incorporated by running over each injection
-    # num_mc_injs times, where each time we draw a random value of distance
+    # Now create the numbers for the efficiency plots.  These include calibration
+    # and waveform errors incorporated by running over each injection num_mc_injs
+    # times, where each time we draw a random value of distance.
 
     # Distribute injections
-    found_inj_dist_mc = np.ndarray((num_mc_injs+1, len(found_injs)))
-    found_inj_dist_mc[0, :] = found_inj_dist
-    missed_inj_dist_mc = np.ndarray((num_mc_injs+1, len(missed_injs)))
-    missed_inj_dist_mc[0, :] = missed_inj_dist
-    long_inj_dist_mc = np.ndarray((num_mc_injs+1, total_injs))
-    long_inj_dist_mc[0, :] = long_inj_dist
-    for i in range(num_mc_injs):
-        # TODO: these is a copy and paste of 3 lines of code
-        cal_dist_red = stats.norm.rvs(size=len(found_injs)) * cal_error
-        wav_dist_red = np.abs(stats.norm.rvs(size=len(found_injs)) * wav_err)
-        found_inj_dist_mc[i+1, :] = found_inj_dist / (max_dc_cal_error * \
-                                     (1 + cal_dist_red) * (1 + wav_dist_red))
-        cal_dist_red = stats.norm.rvs(size=len(missed_injs)) * cal_error
-        wav_dist_red = np.abs(stats.norm.rvs(size=len(missed_injs)) * wav_err)
-        missed_inj_dist_mc[i+1, :] = missed_inj_dist / (max_dc_cal_error *\
-                                     (1 + cal_dist_red) * (1 + wav_dist_red))
-        cal_dist_red = stats.norm.rvs(size=total_injs) * cal_error
-        wav_dist_red = np.abs(stats.norm.rvs(size=total_injs) * wav_err)
-        long_inj_dist_mc[i+1, :] = long_inj_dist / (max_dc_cal_error *\
-                                     (1 + cal_dist_red) * (1 + wav_dist_red))
-
+    found_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, len(found_injs), found_inj_dist,
+                                       cal_error, wav_err, max_dc_cal_error)
+    missed_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, len(missed_injs), missed_inj_dist,
+                                        cal_error, wav_err, max_dc_cal_error)
+    long_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, total_injs, long_inj_dist,
+                                      cal_error, wav_err, max_dc_cal_error)
     logging.info("MC injection set distributed with %d iterations.",\
                  num_mc_injs)
 
@@ -962,7 +950,7 @@ if do_injections:
                np.concatenate((g_ifar_spin2z, g_missed2_spin2z,\
                                   missed_inj_spin2z))])
     td.sort(key=lambda elem: elem[0])
-    logging.info("%d triggers written to file.", len(td))
+    logging.info("%d quiet-found triggers written to file.", len(td))
 
     # Write to html file
     td = zip(*td)
@@ -989,7 +977,7 @@ if do_injections:
                      g_missed2_spin1z, g_missed2_spin2x, g_missed2_spin2y,
                      g_missed2_spin2z])
     t_missed.sort(key=lambda elem: elem[0])
-    logging.info("%d triggers written to file.", len(t_missed))
+    logging.info("%d missed-found triggers written to file.", len(t_missed))
 
     t_missed = zip(*t_missed)
     t_missed = [np.asarray(d) for d in t_missed]
