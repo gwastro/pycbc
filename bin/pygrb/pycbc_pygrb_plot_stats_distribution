@@ -181,6 +181,12 @@ full_time_veto_max_snr = sort_stat(time_veto_max_snr)
 full_time_veto_max_snr_uncut = sort_stat(time_veto_max_snr_uncut)
 max_bestnr, _, full_time_veto_max_bestnr =\
     max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
+# The 0.'s here force the histograms to start at (0, 1) if not trial
+# returned a no-event (i.e., BestNR = 0)
+if full_time_veto_max_bestnr[0] != 0.:
+    full_time_veto_max_snr.insert(0, 0.)
+    full_time_veto_max_snr_uncut.insert(0, 0.)
+    full_time_veto_max_bestnr.insert(0, 0.)
 
 logging.info("SNR and bestNR maxima calculated.")
 
