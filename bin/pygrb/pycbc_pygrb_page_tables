@@ -693,17 +693,6 @@ if do_injections:
     #missed_na = ['N/A'] * len(missed_injs)
     missed_na = [-0] * len(missed_injs)
 
-    if missed_inj_m1.size:
-        min_missed_inj_m1 = missed_inj_m1.min()
-        max_missed_inj_m1 = missed_inj_m1.max()
-        min_missed_inj_m2 = missed_inj_m2.min()
-        max_missed_inj_m2 = missed_inj_m2.max()
-    else:
-        min_missed_inj_m1 = 1e3
-        max_missed_inj_m1 = 0
-        min_missed_inj_m2 = 1e3
-        max_missed_inj_m2 = 0
-
     logging.info("%d missed injections analysed.", len(missed_injs))
 
     # Write inclination recovery to file

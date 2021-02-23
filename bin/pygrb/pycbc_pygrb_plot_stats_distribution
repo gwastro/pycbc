@@ -179,7 +179,8 @@ for slide_id in range(num_slides):
 # This is the data that will be plotted
 full_time_veto_max_snr = sort_stat(time_veto_max_snr)
 full_time_veto_max_snr_uncut = sort_stat(time_veto_max_snr_uncut)
-max_bestnr, _, full_time_veto_max_bestnr = max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
+max_bestnr, _, full_time_veto_max_bestnr =\
+    max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
 
 logging.info("SNR and bestNR maxima calculated.")
 
