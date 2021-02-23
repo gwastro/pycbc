@@ -1,7 +1,8 @@
 include test/*test*py
 include bin/*
+include tox.ini
+include pytest.ini
 recursive-include examples *py *sh *xml
 recursive-include tools *py
 recursive-include pycbc *cpp
-include descr.rst
 include LICENSE
