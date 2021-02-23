@@ -433,6 +433,30 @@ def props_sgburst(obj, **kwargs):
     return input_params
 
 # Waveform generation ########################################################
+fd_sequence = {}
+
+def _lalsim_fd_sequence(**p):
+    """ Shim to interface to lalsimulation SimInspiralChooseFDWaveformSequence
+    """
+    lal_pars = _check_lal_pars(p)
+    hp, hc = lalsimulation.SimInspiralChooseFDWaveformSequence(
+               float(p['coa_phase']),
+               float(pnutils.solar_mass_to_kg(p['mass1'])),
+               float(pnutils.solar_mass_to_kg(p['mass2'])),
+               float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
+               float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
+               float(p['f_ref']),
+               pnutils.megaparsecs_to_meters(float(p['distance'])),
+               float(p['inclination']),
+               lal_pars,
+               _lalsim_enum[p['approximant']],
+               p['sample_points'].lal())
+    return Array(hp.data.data), Array(hc.data.data)
+_lalsim_fd_sequence.required = parameters.cbc_fd_required
+
+for apx in _lalsim_enum:
+    fd_sequence[apx] = _lalsim_fd_sequence
+
 def get_fd_waveform_sequence(template=None, **kwds):
     """Return values of the waveform evaluated at the sequence of frequency
     points.
@@ -453,23 +477,20 @@ def get_fd_waveform_sequence(template=None, **kwds):
         The cross phase of the waveform in frequency domain evaluated at the
     frequency points.
     """
-    kwds['delta_f'] = -1
-    kwds['f_lower'] = -1
-    p = props(template, required_args=parameters.cbc_fd_required, **kwds)
-    lal_pars = _check_lal_pars(p)
-
-    hp, hc = lalsimulation.SimInspiralChooseFDWaveformSequence(float(p['coa_phase']),
-               float(pnutils.solar_mass_to_kg(p['mass1'])),
-               float(pnutils.solar_mass_to_kg(p['mass2'])),
-               float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
-               float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
-               float(p['f_ref']),
-               pnutils.megaparsecs_to_meters(float(p['distance'])),
-               float(p['inclination']),
-               lal_pars,
-               _lalsim_enum[p['approximant']],
-               p['sample_points'].lal())
-    return Array(hp.data.data), Array(hc.data.data)
+    input_params = props(template, **kwds)
+    input_params['delta_f'] = -1
+    input_params['f_lower'] = -1
+    if input_params['approximant'] not in fd_sequence:
+        raise ValueError("Approximant %s not available" %
+                            (input_params['approximant']))
+    wav_gen = fd_sequence[input_params['approximant']]
+    if hasattr(wav_gen, 'required'):
+        required = wav_gen.required
+    else:
+        required = parameters.fd_required
+    check_args(input_params, required)
+    return wav_gen(**input_params)
+    
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
@@ -1186,4 +1207,4 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
            "NoWaveformError", "FailedWaveformError", "get_td_waveform_from_fd",
-           'cpu_fd', 'cpu_td', '_filter_time_lengths']
+           'cpu_fd', 'cpu_td', 'fd_sequence', '_filter_time_lengths']
