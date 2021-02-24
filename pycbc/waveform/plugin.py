@@ -40,6 +40,7 @@ def add_custom_waveform(approximant, function, domain,
         raise ValueError("Invalid domain ({}), should be "
                          "'time' or 'frequency'".format(domain))
 
+
 def add_length_estimator(approximant, function):
     """ Add length estimator for an approximant
 
@@ -55,6 +56,7 @@ def add_length_estimator(approximant, function):
         raise RuntimeError("Can't load length estimator {}, the name is"
                            " already in use.".format(approximant))
     _filter_time_lengths[approximant] = function
+
 
 def retrieve_waveform_plugins():
     """ Process external waveform plugins

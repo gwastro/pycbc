@@ -490,7 +490,7 @@ def get_fd_waveform_sequence(template=None, **kwds):
         required = parameters.fd_required
     check_args(input_params, required)
     return wav_gen(**input_params)
-    
+
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
