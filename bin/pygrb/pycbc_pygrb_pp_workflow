@@ -34,6 +34,7 @@ import pycbc.workflow as _workflow
 from pycbc.workflow.plotting import PlotExecutable, excludestr, requirestr
 from pycbc.results import create_versioning_page, layout, pygrb_postprocessing_utils
 from pycbc.results.versioning import save_fig_with_metadata
+#from pprint import pprint
 
 __author__  = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -41,18 +42,18 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_new_pp_workflow"
 
 
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
+logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
                     level=logging.INFO)
 
-def file_from_workflow(workflow, trig_or_inj, tags=None):
+def file_from_workflow(workflow, trig_or_inj_file, tags=None):
     """Function to create File object, here used for trigger/injeciton files"""
 
     file_out = None
-    if trig_or_inj == 'trig':
-        file_out = wflow.cp.get('workflow', 'trig-file')
-    elif trig_or_inj == 'inj':
-        file_out = wflow.cp.get('workflow', 'inj-file')
+    if trig_or_inj_file not in ['trig-file', 'inj-file']:
+        logging.error('Expecting trig-file or inj-file as an argument')
+    file_out = wflow.cp.get('workflow', trig_or_inj_file)
     file_out = _workflow.File.from_path(file_out)
+    #pprint(vars(file_out))
     if tags is None:
         file_out.tags = []
     else:
@@ -77,7 +78,7 @@ def make_pygrb_skygrid_plot(workflow, out_dir, exclude=None, require=None,
                           ifos=wflow.ifos, out_dir=out_dir,
                           tags=tags+['GRB'+grb_name]).create_node()
     # Trigger file
-    trig_file = file_from_workflow(workflow, 'trig')
+    trig_file = file_from_workflow(workflow, 'trig-file')
     node.add_input_opt('--trig-file', trig_file)
     # Veto directory and segments directory options
     veto_dir = workflow.cp.get('workflow', 'veto-directory')
@@ -104,13 +105,16 @@ def make_pygrb_timeseries_or_signal_consistency_plot(workflow, exec_name,
                           out_dir=out_dir,
                           tags=tags+['GRB'+grb_name]).create_node()
     # Trigger file
-    trig_file = file_from_workflow(workflow, 'trig')
-    node.add_input_opt('--trig-file', trig_file)
+    #FIXME: why won't this work?
+    #trig_file = file_from_workflow(workflow, 'trig-file')
+    #node.add_input_opt('--trig-file', trig_file)
+    node.add_opt('--trig-file', wflow.cp.get('workflow', 'trig-file'))
     # Injection file: may or may not be passed
     inj_tag = 'noinj'
     if injs:
-        inj_file = file_from_workflow(workflow, 'inj')
-        node.add_input_opt('--inj-file', inj_file)
+        #FIXME: why won't this work?
+        #inj_file = file_from_workflow(workflow, 'inj-file')
+        node.add_opt('--inj-file', wflow.cp.get('workflow', 'inj-file'))
         inj_tag = 'inj'
     # Veto directory and segments directory
     veto_dir = workflow.cp.get('workflow', 'veto-directory')
@@ -218,12 +222,11 @@ for snr_type in timeseries:
     out_dir = rdir[out_dirs_dict[snr_type]]
     _workflow.makedir(out_dir)
     files = _workflow.FileList([])
-    _workflow.makedir(out_dir)
     # Only single SNR timeseries requires looping over IFOs
     ifos_to_loop = [None]
     if snr_type == 'single':
         ifos_to_loop = ifos
-    inj_file = file_from_workflow(wflow, 'inj')
+    inj_file = file_from_workflow(wflow, 'inj-file')
     for ifo in ifos_to_loop:
         timeseries_plots = _workflow.FileList([])
         # Plots without and with injections
@@ -266,16 +269,21 @@ _workflow.makedir(out_dir)
 files = _workflow.FileList([])
 # Single IFO SNR vs Coherent SNR plots: non-zoomed and zoomed
 # Requires looping over IFOs
-for ifo in ifos:
-    # Plots with and without injections
-    for injs in [True, False]:
-        # Single IFO SNR vs Coherent SNR
-        plot_node, output_files = \
-            make_pygrb_timeseries_or_signal_consistency_plot(wflow,
-                'pygrb_plot_coh_ifosnr', out_dir, injs=injs, ifo=ifo, tags=[])
-        plotting_nodes.append(plot_node)
-        files.append(output_files)
-layout.two_column_layout(out_dir, files)
+if wflow.cp.has_section('pygrb_plot_coh_ifosnr'):
+    for ifo in ifos:
+        # Plots with and without injections
+        for injs in [True, False]:
+            # Single IFO SNR vs Coherent SNR
+            plot_node, output_files = \
+                make_pygrb_timeseries_or_signal_consistency_plot(wflow,
+                    'pygrb_plot_coh_ifosnr', out_dir, injs=injs, ifo=ifo, tags=[])
+            plotting_nodes.append(plot_node)
+            files.append(output_files)
+    layout.two_column_layout(out_dir, files)
+else:
+    msg = 'No pygrb_plot_coh_ifosnr section found in the configuration file. '
+    msg += 'No coherent vs single detector SNR plots will be generated.'
+    logging.info(msg)
 
 # Null SNR/Overwhitened null stat vs Coherent SNR plots: non-zoomed and zoomed
 null_snr_out_dir = rdir['signal_consistency/null_snrs']
