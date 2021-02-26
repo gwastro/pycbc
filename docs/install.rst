@@ -15,10 +15,7 @@ appropriate thing to do.
 
 .. code-block:: bash
 
-    pip install lalsuite pycbc
-
-PyCBC depends on `lalsuite` for a lot of functionality, however, if you are
-getting lalsuite through another means, you may ommit this part of the command.
+    pip install pycbc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Full Virtualenv for Development and Production
