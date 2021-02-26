@@ -30,7 +30,7 @@ import logging
 from glue.ligolw import lsctables
 import pycbc.version
 from matplotlib import rc
-from pycbc.results.pygrb_plotting_utils import *
+from pycbc.results.pygrb_postprocessing_utils import *
 plt.switch_backend('Agg')
 
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
