@@ -291,28 +291,28 @@ class Detector(object):
         x0 = -cospsi * singha - sinpsi * cosgha * sindec
         x1 = -cospsi * cosgha + sinpsi * singha * sindec
         x2 =  sinpsi * cosdec
-        x = np.array([x0, x1, x2])
 
+        x = np.array([x0, x1, x2], dtype=object)
         dx = self.response.dot(x)
 
         y0 =  sinpsi * singha - cospsi * cosgha * sindec
         y1 =  sinpsi * cosgha + cospsi * singha * sindec
         y2 =  cospsi * cosdec
-        y = np.array([y0, y1, y2])
 
+        y = np.array([y0, y1, y2], dtype=object)
         dy = self.response.dot(y)
 
-        z0 = -cosdec * cosgha
-        z1 = cosdec * singha
-        z2 = -sindec
-        z = np.array([z0, z1, z2])
-
-        dz = self.response.dot(z)
+        if polarization_type != 'tensor':
+            z0 = -cosdec * cosgha
+            z1 = cosdec * singha
+            z2 = -sindec
+            z = np.array([z0, z1, z2], dtype=object)
+            dz = self.response.dot(z)
 
         if polarization_type == 'tensor':
             if hasattr(dx, 'shape'):
-                fplus = (x * dx - y * dy).sum(axis=0)
-                fcross = (x * dy + y * dx).sum(axis=0)
+                fplus = (x * dx - y * dy).sum(axis=0).astype(numpy.float64)
+                fcross = (x * dy + y * dx).sum(axis=0).astype(numpy.float64)
             else:
                 fplus = (x * dx - y * dy).sum()
                 fcross = (x * dy + y * dx).sum()
@@ -320,8 +320,8 @@ class Detector(object):
 
         elif polarization_type == 'vector':
             if hasattr(dx, 'shape'):
-                fx = (z * dx + x * dz).sum(axis=0)
-                fy = (z * dy + y * dz).sum(axis=0)
+                fx = (z * dx + x * dz).sum(axis=0).astype(numpy.float64)
+                fy = (z * dy + y * dz).sum(axis=0).astype(numpy.float64)
             else:
                 fx = (z * dx + x * dz).sum()
                 fy = (z * dy + y * dz).sum()
@@ -329,7 +329,7 @@ class Detector(object):
 
         elif polarization_type == 'scalar':
             if hasattr(dx, 'shape'):
-                fb = (x * dx + y * dy).sum(axis=0)
+                fb = (x * dx + y * dy).sum(axis=0).astype(numpy.float64)
                 fl = (z * dz).sum(axis=0)
             else:
                 fb = (x * dx + y * dy).sum()
@@ -351,6 +351,7 @@ class Detector(object):
         In other words return `t1 - t2` where `t1` is the
         arrival time in this detector and `t2` is the arrival time in the
         other location.
+
         Parameters
         ----------
         other_location : numpy.ndarray of coordinates
@@ -361,6 +362,7 @@ class Detector(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
+
         Returns
         -------
         float
@@ -373,9 +375,9 @@ class Detector(object):
         e1 = cosd * -sin(ra_angle)
         e2 = sin(declination)
 
-        ehat = np.array([e0, e1, e2])
+        ehat = np.array([e0, e1, e2], dtype=object)
         dx = other_location - self.location
-        return dx.dot(ehat) / constants.c.value
+        return dx.dot(ehat).astype(numpy.float64) / constants.c.value
 
     def time_delay_from_detector(self, other_detector, right_ascension,
                                  declination, t_gps):
@@ -485,10 +487,12 @@ class Detector(object):
     def optimal_orientation(self, t_gps):
         """Return the optimal orientation in right ascension and declination
            for a given GPS time.
+
         Parameters
         ----------
         t_gps: float
             Time in gps seconds
+
         Returns
         -------
         ra: float
@@ -502,6 +506,7 @@ class Detector(object):
 
     def get_icrs_pos(self):
         """ Transforms GCRS frame to ICRS frame
+
         Returns
         ----------
         loc: numpy.ndarray shape (3,1) units: AU
@@ -595,6 +600,7 @@ class LISA(object):
         Parameters
         ----------
         ref_time : numpy.ScalarType
+
         Returns
         -------
         location : numpy.ndarray of shape (3,3)
@@ -618,11 +624,13 @@ class LISA(object):
 
     def get_gcrs_pos(self, location):
         """ Transforms ICRS frame to GCRS frame
+
         Parameters
         ----------
         loc : numpy.ndarray shape (3,1) units: AU
               Cartesian Coordinates of the location
               in ICRS frame
+
         Returns
         ----------
         loc : numpy.ndarray shape (3,1) units: meters
@@ -643,6 +651,7 @@ class LISA(object):
         a signal with the given sky location. In other words return
         `t1 - t2` where `t1` is the arrival time in this detector and
         `t2` is the arrival time in the other location. Units(AU)
+
         Parameters
         ----------
         other_location : numpy.ndarray of coordinates in ICRS frame
@@ -653,14 +662,13 @@ class LISA(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
+
         Returns
         -------
         numpy.ndarray
             The arrival time difference between the detectors.
         """
-        dx = np.array([self.location[0] - other_location[0],
-                       self.location[1] - other_location[1],
-                       self.location[2] - other_location[2]])
+        dx = self.location - other_location
         cosd = cos(declination)
         e0 = cosd * cos(right_ascension)
         e1 = cosd * -sin(right_ascension)
@@ -674,6 +682,7 @@ class LISA(object):
         the given sky location in ICRS frame; i.e. return `t1 - t2` where
         `t1` is the arrival time in this detector and `t2` is the arrival
         time in the other detector.
+
         Parameters
         ----------
         other_detector : detector.Detector
@@ -684,6 +693,7 @@ class LISA(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
+
         Returns
         -------
         numpy.ndarray
