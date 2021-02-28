@@ -271,6 +271,13 @@ e = Extension("pycbc.waveform.decompress_cpu_cython",
               extra_link_args=cython_link_args,
               compiler_directives={'embedsignature': True})
 ext.append(e)
+e = Extension("pycbc.inference.models.relbin_cpu",
+              ["pycbc/inference/models/relbin_cpu.pyx"],
+              language='c++',
+              extra_compile_args=cython_compile_args,
+              extra_link_args=cython_link_args,
+              compiler_directives={'embedsignature': True})
+ext.append(e)
 
 
 setup (
