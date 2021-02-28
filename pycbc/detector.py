@@ -311,8 +311,8 @@ class Detector(object):
 
         if polarization_type == 'tensor':
             if hasattr(dx, 'shape'):
-                fplus = (x * dx - y * dy).sum(axis=0).astype(numpy.float64)
-                fcross = (x * dy + y * dx).sum(axis=0).astype(numpy.float64)
+                fplus = (x * dx - y * dy).sum(axis=0).astype(np.float64)
+                fcross = (x * dy + y * dx).sum(axis=0).astype(np.float64)
             else:
                 fplus = (x * dx - y * dy).sum()
                 fcross = (x * dy + y * dx).sum()
@@ -320,8 +320,8 @@ class Detector(object):
 
         elif polarization_type == 'vector':
             if hasattr(dx, 'shape'):
-                fx = (z * dx + x * dz).sum(axis=0).astype(numpy.float64)
-                fy = (z * dy + y * dz).sum(axis=0).astype(numpy.float64)
+                fx = (z * dx + x * dz).sum(axis=0).astype(np.float64)
+                fy = (z * dy + y * dz).sum(axis=0).astype(np.float64)
             else:
                 fx = (z * dx + x * dz).sum()
                 fy = (z * dy + y * dz).sum()
@@ -329,7 +329,7 @@ class Detector(object):
 
         elif polarization_type == 'scalar':
             if hasattr(dx, 'shape'):
-                fb = (x * dx + y * dy).sum(axis=0).astype(numpy.float64)
+                fb = (x * dx + y * dy).sum(axis=0).astype(np.float64)
                 fl = (z * dz).sum(axis=0)
             else:
                 fb = (x * dx + y * dy).sum()
@@ -377,7 +377,7 @@ class Detector(object):
 
         ehat = np.array([e0, e1, e2], dtype=object)
         dx = other_location - self.location
-        return dx.dot(ehat).astype(numpy.float64) / constants.c.value
+        return dx.dot(ehat).astype(np.float64) / constants.c.value
 
     def time_delay_from_detector(self, other_detector, right_ascension,
                                  declination, t_gps):
