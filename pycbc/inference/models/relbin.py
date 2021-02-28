@@ -211,12 +211,8 @@ class Relative(BaseGaussianNoise):
             )
 
             # prune low frequency samples to avoid waveform errors
-            nbelow = sum(self.f[ifo] < f_lo)
             fpoints = Array(self.f[ifo].astype(numpy.float64))
             fpoints = fpoints[self.kmin[ifo]:self.kmax[ifo]+1]
-
-            approx = self.static_params["approximant"]
-
             fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                       **self.fid_params)
 
@@ -224,7 +220,7 @@ class Relative(BaseGaussianNoise):
             # make sure only nonzero samples are included in bins
             numzeros = list(fid_hp[::-1] != 0j).index(True)
             if numzeros > 0:
-                new_kmax = self.kmax[ifo] - nzeros
+                new_kmax = self.kmax[ifo] - numzeros
                 f_hi = new_kmax * self.df[ifo]
                 logging.info(
                     "WARNING! Fiducial waveform terminates below "
