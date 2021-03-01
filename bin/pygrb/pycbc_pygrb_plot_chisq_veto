@@ -35,7 +35,7 @@ plt.switch_backend('Agg')
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_plot_signal_consistency"
+__program__ = "pycbc_pygrb_plot_chisq_veto"
 
 
 # =============================================================================

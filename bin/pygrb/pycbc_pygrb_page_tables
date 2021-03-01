@@ -48,7 +48,7 @@ from pylal.coh_PTF_pyutils import readSegFiles, get_bestnr, get_f_resp
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_plot_stats_distribution"
+__program__ = "pycbc_pygrb_page_tables"
 
 
 # =============================================================================
@@ -85,8 +85,14 @@ else:
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
 
+if opts.quiet_found_injs_output_file == None:
+    msg = "Please specify a pathname with quiet-found-injs-ouptut-file option"
+    logging.error(msg)
+if opts.missed_found_injs_output_file == None:
+    msg = "Please specify a pathname with missed-found-injs-ouptut-file option"
+    logging.error(msg)
+
 # Store options used multiple times in local variables
-outdir = opts.output_path
 trig_file = opts.offsource_file
 onsource_file = opts.onsource_file
 found_file = opts.found_file
@@ -117,6 +123,13 @@ wav_err = opts.waveform_error
 cluster_window = opts.cluster_window
 glitch_check_fac = opts.glitch_check_factor
 num_mc_injs = opts.num_mc_injections
+qf_outfile = opts.quiet_found_injs_output_file
+mf_outfile = opts.missed_found_injs_output_file
+# Set output directory
+logging.info("Setting output directory.")
+outdir = os.path.split(os.path.abspath(qf_outfile))[0]
+if not os.path.isdir(outdir):
+    os.makedirs(outdir)
 # Initialize random number generator
 np.random.seed(opts.seed)
 logging.info("Setting random seed to %d.", opts.seed)
@@ -958,12 +971,11 @@ if do_injections:
     html_table = pycbc.results.html_table(td, th,
                                           format_strings=format_strings,
                                           page_size=50)
-    html_path = "%s/quiet_found_injections.html" % outdir
     kwds = {'title' : "Quiet found injections",
             'caption' : "Recovered parameters and statistic values of \
             injections that are recovered, but not louder than background.",
             'cmd' :' '.join(sys.argv), }
-    pycbc.results.save_fig_with_metadata(str(html_table), html_path, **kwds)
+    pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile, **kwds)
 
     t_missed = zip(*[g_missed2_dist] + \
                     [g_missed2_eff_site_dist[ifo] for ifo in sites] + \
@@ -984,12 +996,11 @@ if do_injections:
     html_table = pycbc.results.html_table(t_missed, th,
                                           format_strings=format_strings,
                                           page_size=50)
-    html_path = "%s/missed_found_injections.html" % outdir
     kwds = {'title' : "Missed found injections",
             'caption' : "Recovered parameters and statistic values of \
             injections that are recovered, but downwieghted to BestNR = 0 \
             (i.e., vetoed).",
             'cmd' :' '.join(sys.argv), }
-    pycbc.results.save_fig_with_metadata(str(html_table), html_path, **kwds)
+    pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile, **kwds)
 
 # Post-processing of injections ends here
