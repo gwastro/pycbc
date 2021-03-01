@@ -25,7 +25,6 @@ from __future__ import division
 import sys
 import os
 import logging
-import itertools
 # USE THIS TO CHECK NOTHING IS BREAKING
 # REMOVE ONCE DONE CODING UP THIS SCRIPT
 import cPickle as pickle
@@ -54,7 +53,16 @@ rc("image")
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_efficiency"
+__program__ = "pycbc_pygrb_plot_injs_results"
+
+
+def process_var_strings(qty):
+
+    qty = qty.replace('effdist', 'eff_dist')
+    qty = qty.replace('effsitedist', 'eff_site_dist')
+    qty = qty.replace('skyerror', 'sky_error')
+
+    return qty
 
 # =============================================================================
 # Main script starts here
@@ -90,8 +98,30 @@ else:
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
 
+if opts.found_missed_output_file == None:
+    msg = "Please specify a pathname with found-missed-ouptut-file option"
+    logging.error(msg)
+if opts.missed_found_output_file == None:
+    msg = "Please specify a pathname with missed-found-ouptut-file option"
+    logging.error(msg)
+
+# TODO: expand help message of these two options
+if opts.x_variable is None:
+    msg = "Please specify the quantity to plot on the horizontal axis!"
+    logging.error(msg)
+if opts.y_variable is None:
+    msg = "Please specify the quantity to plot on the vertical axis!"
+    logging.error(msg)
+if opts.x_variable == 'effsitedist' or opts.y_variable == 'effsitedist':
+    if opts.ifo is None:
+        msg = "Please provide --ifo IFO to select the effective site distance!"
+        logging.error(msg)
+
 # Store options used multiple times in local variables
-outdir = opts.output_path
+fm_outfile = opts.found_missed_output_file
+mf_outfile = opts.missed_found_output_file
+x_qty = process_var_strings(opts.x_variable)
+y_qty = process_var_strings(opts.y_variable)
 trig_file = opts.offsource_file
 found_file = opts.found_file
 missed_file = opts.missed_file
@@ -109,8 +139,11 @@ logging.info("Setting random seed to %d.", opts.seed)
 
 # Set output directory
 logging.info("Setting output directory.")
-if not os.path.isdir(outdir):
-    os.makedirs(outdir)
+outdirs = [os.path.split(os.path.abspath(fm_outfile))[0], \
+           os.path.split(os.path.abspath(mf_outfile))[0]]
+for outdir in outdirs:
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
 
 # Extract IFOs and vetoes
 logging.info("Extracting IFOs and vetoes.")
@@ -381,14 +414,14 @@ if do_injections:
     # Write inclination recovery to file
     # GRB start time
     grb_time = segs['on'][1] - 1
-    f_incl_txt = open('%s/found_inclinations.txt' % outdir, 'w')
+    f_incl_txt = open('%s/found_inclinations.txt' % outdirs[0], 'w')
     f_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
     stacked = np.column_stack([g_found_time,
                                g_found_time - grb_time,
                                g_found_inc])
     np.savetxt(f_incl_txt, stacked, delimiter='\t')
     f_incl_txt.close()
-    t_incl_txt = open('%s/total_inclinations.txt' % outdir, 'w')
+    t_incl_txt = open('%s/total_inclinations.txt' % outdirs[0], 'w')
     t_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
     stacked = np.column_stack([np.concatenate((found_inj_time, missed_inj_time)),
                                np.concatenate((found_inj_time - grb_time,
@@ -415,22 +448,9 @@ if do_injections:
 # Make plots
 # ==========
 
-# TODO: turn the following into an executable and loop at workflow level
 # Plot results of injection campaign with found ones on top of missed ones
 # (found-missed) or vice-versa (missed-found)
 if do_injections:
-    inj_plots = list(itertools.product([["found_missed"], ["missed_found"]],\
-                                       [["mchirp"], ["time"]],\
-                                       [["eff_dist"], ["dist"],\
-                                        ["eff_site_dist"], ["sky_error"]]))
-    inj_plots.extend(list(itertools.product([["found_missed"], ["missed_found"]],\
-                                            [["spin1", "spin2"], ["q", "mtot"],\
-                                             ["incl", "mchirp"], ["cosincl", "dist"],
-                                             ["dist", "sky_error"]])))
-    inj_plots = list(itertools.chain(*inj_plots))
-    inj_plots = list(itertools.chain(*inj_plots))
-    inj_plots = [inj_plots[i:i+3] for i in range(0, len(inj_plots), 3)]
-
     # Info for site-specific plots
     sitename = {'G':'GEO', 'H':'Hanford', 'L':'Livingston', 'V':'Virgo',\
                 'K':'KAGRA'}
@@ -504,15 +524,12 @@ if do_injections:
                                  ['g_ifar_dict', g_ifar_dict],\
                                  ['g_missed2_dict', g_missed2_dict],\
                                  ['missed_inj_dict', missed_inj_dict]]:
-        with open(('%s/%s_vals.txt' % (outdir, filename)), 'w') as dump_file:
+        with open(('%s/%s_vals.txt' % (outdirs[0], filename)), 'w') as dump_file:
             dump_file.write(pickle.dumps(dictionary))
 
     # Generate scatter plots
-    for inj_plot in inj_plots:
-        #print(inj_plot)
-        fm_or_mf = inj_plot[0]
-        x_qty = inj_plot[1]
-        y_qty = inj_plot[2]
+    for inj_plot in ["found_missed", "missed_found"]:
+        fm_or_mf = inj_plot
         g_found_x = np.array(g_found_dict[x_qty])
         g_found_y = np.array(g_found_dict[y_qty])
         g_ifar_x = np.array(g_ifar_dict[x_qty])
@@ -547,108 +564,105 @@ if do_injections:
             max_inc_deg = np.ceil(max_inc_deg/10.0)*10
             max_inc = np.deg2rad(max_inc_deg)
         # The square brackets are for a one-iteration loop below
-        plot_loop = [None]
-        if y_qty == "eff_site_dist":
-            plot_loop = sites
-        elif y_qty == "spin2":
+        if y_qty == "spin2":
             found_inj_y = np.sqrt(found_inj_spin2x**2 + \
                                   found_inj_spin2y**2 + \
                                   found_inj_spin2z**2)
-        for site in plot_loop:
-            if site is not None:
-                if x_qty == "eff_site_dist":
-                    x_label = "%s effective distance (Mpc)" % sitename[site]
-                if y_qty == "eff_site_dist":
-                    y_label = "%s effective distance (Mpc)" % sitename[site]
-                missed_inj_y = np.array(missed_inj_eff_site_dist[site])
-                g_missed2_y = np.array(g_missed2_eff_site_dist[site])
-                g_ifar_y = np.array(g_ifar_eff_site_dist[site])
-                g_found_y = np.array(g_found_eff_site_dist[site])
-            fig = plt.figure()
-            if y_qty in ["mtot", "spin2", "mchirp"]:
+        site = opts.ifo
+        if site is not None:
+            site = site[0]
+            if x_qty == "eff_site_dist":
+                x_label = "%s effective distance (Mpc)" % sitename[site]
+            if y_qty == "eff_site_dist":
+                y_label = "%s effective distance (Mpc)" % sitename[site]
+            missed_inj_y = np.array(missed_inj_eff_site_dist[site])
+            g_missed2_y = np.array(g_missed2_eff_site_dist[site])
+            g_ifar_y = np.array(g_ifar_eff_site_dist[site])
+            g_found_y = np.array(g_found_eff_site_dist[site])
+        fig = plt.figure()
+        if y_qty in ["mtot", "spin2", "mchirp"]:
+            ax = fig.gca()
+        elif y_qty == "sky_error":
+            if x_qty == "dist":
+                ax = fig.gca(xscale="log")
+            else:
                 ax = fig.gca()
-            elif y_qty == "sky_error":
-                if x_qty == "dist":
-                    ax = fig.gca(xscale="log")
-                else:
-                    ax = fig.gca()
-            else:
-                ax = fig.gca(yscale="log")
-            # Define p-value colour
-            cmap = plt.get_cmap('cividis_r')
-            #cmap. set_over('g')
-            # Define the 'found' injection colour
-            fnd_col = cmap(0)
-            if fm_or_mf == "found_missed":
-                if missed_inj_x.size and missed_inj_y.size:
-                    ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=10)
-                if g_missed2_x.size:
-                    ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=10)
-                if g_ifar_x.size:
-                    p = ax.scatter(g_ifar_x[FM], g_ifar_y[FM], c=g_ifar_stat[FM],
-                                   cmap=cmap, vmin=0, vmax=1, s=40,
-                                   edgecolor="w", linewidths=2.0)
-                    cb = plt.colorbar(p, label="p-value")
-                if g_found_x.size:
-                    ax.scatter(g_found_x, g_found_y, c=fnd_col, marker="+", s=30)
-            elif fm_or_mf == "missed_found":
-                if g_found_x.size:
-                    ax.scatter(g_found_x, g_found_y, c=fnd_col, marker="+", s=15)
-                if g_ifar_x.size:
-                    p = ax.scatter(g_ifar_x[MF], g_ifar_y[MF], c=g_ifar_stat[MF],
-                                   cmap=cmap, vmin=0, vmax=1, s=40,
-                                   edgecolor="w", linewidths=2.0)
-                    cb = plt.colorbar(p, label="p-value")
-                if g_missed2_x.size:
-                    ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=40)
-                if missed_inj_x.size and missed_inj_y.size:
-                    ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=40)
-            ax.grid()
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            plot_path = "%s/%s_injections_%s_%s" % (outdir, fm_or_mf, y_qty, x_qty)
-            if x_qty == "spin1":
-                plot_title = "Injection recovery with respect to component spins"
-                ax.set_xlim([0, np.ceil(10 * max(max_missed_inj_spin1,
-                                                 found_inj_x.max())) / 10])
-                ax.set_ylim([0, np.ceil(10 * max(max_missed_inj_spin2,
-                                                 found_inj_y.max())) / 10])
-            elif x_qty == "incl":
-                plot_title = "Injection recovery with respect to inclination angle"
-                ax.set_xlim(0, max_inc_deg)
-            elif x_qty == "cosincl":
-                plot_title = "Injection recovery with respect to inclination angle"
-                tt = np.arange(0, max_inc_deg + 10, 10)
-                #tt = np.arange(0, 190, 10)
-                tks = np.cos(np.deg2rad(tt))
-                tk_labs = ['cos(%d deg)' % tk for tk in tt]
-                plt.xticks(tks, tk_labs, fontsize=10)
-                fig.autofmt_xdate()
-                ax.set_xlim(np.cos(max_inc), 1)
-                #ax.set_xlim(-1, 1)
-            elif y_qty == "mtot":
-                plot_title = "Injection recovery with respect to component masses"
-            elif site is not None:
-                plot_title = "Injection recovery vs background"
-                plot_path += "_%s" % site.lower()
-            else:
-                plot_title = "Injection recovery vs background"
-            ax.set_title(plot_title)
-            plt.tight_layout()
-            plot_path += ".png"
-            plot_caption = "Black cross indicates no trigger was found "
-            plot_caption += "coincident with the injection.\n"
-            plot_caption += "Red cross indicates a trigger was found "
-            plot_caption += "coincident with the injection but it was vetoed.\n"
-            plot_caption += "Yellow plus indicates that a trigger was found "
-            plot_caption += "coincident with the injection and it was louder "
-            plot_caption += "than all events in the offsource.\n"
-            plot_caption += "Coloured circle indicates that a trigger was "
-            plot_caption += "found coincident with the injection but it was "
-            plot_caption += "not louder than all offsource events. The colour "
-            plot_caption += "bar gives the p-value of the trigger."
-            save_fig_with_metadata(fig, plot_path, cmd=' '.join(sys.argv),
-                                   title=plot_title, caption=plot_caption)
-            plt.close()
+        else:
+            ax = fig.gca(yscale="log")
+        # Define p-value colour
+        cmap = plt.get_cmap('cividis_r')
+        #cmap. set_over('g')
+        # Define the 'found' injection colour
+        fnd_col = cmap(0)
+        if fm_or_mf == "found_missed":
+            fig_path = fm_outfile
+            if missed_inj_x.size and missed_inj_y.size:
+                ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=10)
+            if g_missed2_x.size:
+                ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=10)
+            if g_ifar_x.size:
+                p = ax.scatter(g_ifar_x[FM], g_ifar_y[FM], c=g_ifar_stat[FM],
+                               cmap=cmap, vmin=0, vmax=1, s=40,
+                               edgecolor="w", linewidths=2.0)
+                cb = plt.colorbar(p, label="p-value")
+            if g_found_x.size:
+                ax.scatter(g_found_x, g_found_y, c=fnd_col, marker="+", s=30)
+        elif fm_or_mf == "missed_found":
+            fig_path = mf_outfile
+            if g_found_x.size:
+                ax.scatter(g_found_x, g_found_y, c=fnd_col, marker="+", s=15)
+            if g_ifar_x.size:
+                p = ax.scatter(g_ifar_x[MF], g_ifar_y[MF], c=g_ifar_stat[MF],
+                               cmap=cmap, vmin=0, vmax=1, s=40,
+                               edgecolor="w", linewidths=2.0)
+                cb = plt.colorbar(p, label="p-value")
+            if g_missed2_x.size:
+                ax.scatter(g_missed2_x, g_missed2_y, c="r", marker="x", s=40)
+            if missed_inj_x.size and missed_inj_y.size:
+                ax.scatter(missed_inj_x, missed_inj_y, c="k", marker="x", s=40)
+        ax.grid()
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        if x_qty == "spin1":
+            plot_title = "Injection recovery with respect to component spins"
+            ax.set_xlim([0, np.ceil(10 * max(max_missed_inj_spin1,
+                                             found_inj_x.max())) / 10])
+            ax.set_ylim([0, np.ceil(10 * max(max_missed_inj_spin2,
+                                             found_inj_y.max())) / 10])
+        elif x_qty == "incl":
+            plot_title = "Injection recovery with respect to inclination angle"
+            ax.set_xlim(0, max_inc_deg)
+        elif x_qty == "cosincl":
+            plot_title = "Injection recovery with respect to inclination angle"
+            tt = np.arange(0, max_inc_deg + 10, 10)
+            #tt = np.arange(0, 190, 10)
+            tks = np.cos(np.deg2rad(tt))
+            tk_labs = ['cos(%d deg)' % tk for tk in tt]
+            plt.xticks(tks, tk_labs, fontsize=10)
+            fig.autofmt_xdate()
+            ax.set_xlim(np.cos(max_inc), 1)
+            #ax.set_xlim(-1, 1)
+        elif y_qty == "mtot":
+            plot_title = "Injection recovery with respect to component masses"
+        elif site is not None:
+            plot_title = "Injection recovery vs background"
+        else:
+            plot_title = "Injection recovery vs background"
+        ax.set_title(plot_title)
+        plt.tight_layout()
+        plot_caption = "Black cross indicates no trigger was found "
+        plot_caption += "coincident with the injection.\n"
+        plot_caption += "Red cross indicates a trigger was found "
+        plot_caption += "coincident with the injection but it was vetoed.\n"
+        plot_caption += "Yellow plus indicates that a trigger was found "
+        plot_caption += "coincident with the injection and it was louder "
+        plot_caption += "than all events in the offsource.\n"
+        plot_caption += "Coloured circle indicates that a trigger was "
+        plot_caption += "found coincident with the injection but it was "
+        plot_caption += "not louder than all offsource events. The colour "
+        plot_caption += "bar gives the p-value of the trigger."
+        save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
+                               title=plot_title, caption=plot_caption)
+        plt.close()
 
 logging.info("Plots complete.")
