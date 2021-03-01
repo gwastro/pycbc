@@ -78,11 +78,10 @@ if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
 
 # Store options used multiple times in local variables
-outdir = opts.output_path
 trig_file = opts.offsource_file
 chisq_nhigh = opts.chisq_nhigh
 null_thresh = map(float, opts.null_snr_threshold.split(','))
-glitch_check_fac = opts.glitch_check_factor
+stat = opts.x_variable
 
 # Initialize random number generator
 np.random.seed(opts.seed)
@@ -90,6 +89,7 @@ logging.info("Setting random seed to %d.", opts.seed)
 
 # Set output directory
 logging.info("Setting output directory.")
+outdir = os.path.split(os.path.abspath(opts.output_file))[0]
 if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
@@ -195,8 +195,7 @@ logging.info("SNR and bestNR maxima calculated.")
 # Make plots
 # ==========
 
-# TODO: promote to executable with stat as option. This option should also
-# determine the time_veto_max_* to calculate.
+# TODO: use stat option also to determine the time_veto_max_* to calculate.
 # Plot cumulative histograms
 x_label_dict = {"bestnr": "BestNR",
                 "snr": "SNR",
@@ -204,18 +203,18 @@ x_label_dict = {"bestnr": "BestNR",
 data_dict = {"bestnr": full_time_veto_max_bestnr,
              "snr": full_time_veto_max_snr,
              "snruncut": full_time_veto_max_snr_uncut}
-for stat in ["bestnr", "snr", "snruncut"]:
-    fig = plt.figure()
-    ax = fig.gca()
-    cumplot = plotutils.CumulativeHistogramPlot(x_label_dict[stat],
-                                                "False alarm probability",
-                                                "")
-    cumplot.add_background([item] for item in data_dict[stat])
-    # TODO: are we using this option with multiple scopes?
-    cumplot.finalize(num_bins=opts.num_bins)
-    cumplot.ax.set_ylim(ymax=1.2)
-    cumplot.savefig('%s/%s_vs_fap.png' % (outdir, stat))
-    plt.close()
+fig = plt.figure()
+ax = fig.gca()
+cumplot = plotutils.CumulativeHistogramPlot(x_label_dict[stat],
+                                            "False alarm probability",
+                                            "")
+cumplot.add_background([item] for item in data_dict[stat])
+# TODO: promote this to an option
+cumplot.finalize(num_bins=50)
+cumplot.ax.set_ylim(ymax=1.2)
+#cumplot.savefig('%s/%s_vs_fap.png' % (outdir, stat))
+cumplot.savefig(opts.output_file)
+plt.close()
 
 logging.info("Plots complete.")
 
