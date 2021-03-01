@@ -884,25 +884,50 @@ class FieldArray(numpy.recarray):
             #
             #   arg isn't a simple argument of row, so we'll have to eval it
             #
-            # get the function library
-            item_dict = dict(_numpy_function_lib.items())
-            item_dict.update(self._functionlib)
-            # get the set of fields & attributes we will need
-            itemvars = get_vars_from_arg(item)
-            # pull out any other needed attributes
-            itemvars = get_fields_from_arg(item)
-            d = {attr: getattr(self, attr)
-                for attr in set(dir(self)).intersection(itemvars)}
-            item_dict.update(d)
-            # pull out the fields: note, by getting the parent fields, we
-            # also get the sub fields name
-            item_dict.update({fn: self.__getbaseitem__(fn) \
-                for fn in set(self.fieldnames).intersection(itemvars)})
-            # add any aliases
-            item_dict.update({alias: item_dict[name]
-                              for alias,name in self.aliases.items()
-                              if name in item_dict})
-            return eval(item, {"__builtins__": None}, item_dict)
+            if not hasattr(self, '_code_cache'):
+                self._code_cache = {}
+
+            if item not in self._code_cache:
+                code = compile(item, '<string>', 'eval')
+
+                # get the function library
+                item_dict = dict(_numpy_function_lib.items())
+                item_dict.update(self._functionlib)
+
+                # parse to get possible fields
+                itemvars_raw = get_fields_from_arg(item)
+
+                itemvars = []
+                for it in itemvars_raw:
+                    try:
+                        float(it)
+                        is_num = True
+                    except ValueError:
+                        is_num = False
+
+                    if not is_num:
+                        itemvars.append(it)
+
+                self._code_cache[item] = (code, itemvars, item_dict)
+
+            code, itemvars, item_dict = self._code_cache[item]
+            for it in itemvars:
+                # pull out the fields: note, by getting the parent fields, we
+                # also get the sub fields name
+                if it in self.fieldnames:
+                    item_dict[it] = self.__getbaseitem__(it)
+
+                # pull out any needed attributes
+                elif hasattr(self, it):
+                    item_dict[it] = getattr(self, it)
+
+                else:
+                    # add any aliases
+                    aliases = self.aliases
+                    if it in aliases:
+                       item_dict[it] = self.__getbaseitem__(aliases[it])
+
+            return eval(code, {"__builtins__": None}, item_dict)
 
     def __contains__(self, field):
         """Returns True if the given field name is in self's fields."""
