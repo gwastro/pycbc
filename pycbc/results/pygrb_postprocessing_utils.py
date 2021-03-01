@@ -139,10 +139,23 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         action="store_true", help="Plots are vs single IFO " +
                         "SNR, rather than coherent SNR")
 
-    # This is for found/missed injections plots
+    # These 3 are for found/missed injections plots
+    parser.add_argument("--found-missed-output-file", default=None, #required=True,
+                        help="Found-missed injections output file.")
+
+    parser.add_argument("--missed-found-output-file", default=None, #required=True,
+                        help="Missed-found injections output file.")
+
     parser.add_argument("-x", "--x-variable", default=None, help="Quantity " +
-                        "to plot on the horizontal axis. Supported choice " +
+                        "to plot on the horizontal axis. Supported choices " +
                         "are: distance, mchirp, time (for sky error plots).")
+
+    # Html output files of pycbc_pygrb_page_tables
+    parser.add_argument("--quiet-found-injs-output-file", default=None, #required=True,
+                        help="Quiet-found injections output html file.")
+
+    parser.add_argument("--missed-found-injs-output-file", default=None, #required=True,
+                        help="Missed-found injections output html file.")
 
     # This is originally for SNR and chi-square veto plots 
     parser.add_argument("-y", "--y-variable", default=None, help="Quantity " +
@@ -158,7 +171,6 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
     parser.add_argument('--plot-caption',
                         help="If given, use this as the plot caption")
     
-
     # pygrb_efficiency only options: start here
     # Does this differ from trig-file? --> it doesn't contain the onsource.
     # NB: for now removed the requirement to specify trig_file.
