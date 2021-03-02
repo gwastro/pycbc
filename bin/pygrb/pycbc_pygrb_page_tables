@@ -589,9 +589,6 @@ if do_injections:
 
     # Construct conditions for injection:
     # 1) found louder than background,
-    # zero_fap = np.zeros(len(found_injs['bestnr'])).astype(np.bool)
-    # zero_fap_cut = found_injs['bestnr'] > max_bestnr
-    # zero_fap = zero_fap | (zero_fap_cut)
     zero_fap = found_injs['bestnr'] > max_bestnr
 
     # 2) found (bestnr > 0) but not louder than background (non-zero FAP)
@@ -616,7 +613,6 @@ if do_injections:
     missed_injs = lsctable_to_dict(missed_inj_table, ifos)
 
     # Avoids a problem with formatting in the non-static html output file
-    #missed_na = ['N/A'] * len(missed_injs['mchirp'])
     missed_na = [-0] * len(missed_injs['mchirp'])
 
     logging.info("%d missed injections analysed.", len(missed_injs['mchirp']))
@@ -679,6 +675,7 @@ if do_injections:
     # times, where each time we draw a random value of distance.
 
     # Distribute injections
+    # TODO: make the lengths a variable determined by mc_cal_wf_errs
     found_injs['distance_mc'] = mc_cal_wf_errs(num_mc_injs, len(found_injs['distance']), found_injs['distance'],
                                        cal_error, wav_err, max_dc_cal_error)
     missed_injs['distance_mc'] = mc_cal_wf_errs(num_mc_injs, len(missed_injs['mchirp']), missed_injs['distance'],

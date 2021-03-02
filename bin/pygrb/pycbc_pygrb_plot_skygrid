@@ -25,14 +25,20 @@ from __future__ import division
 import sys
 import glob
 import os
-import copy
 import logging
-from ligo.lw import lsctables
+import matplotlib.pyplot as plt
+from glue.ligolw import lsctables
 import pycbc.version
-from pycbc.results.pygrb_postprocessing_utils import *
+from pycbc.results import save_fig_with_metadata
+from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
+from pycbc.results.pygrb_postprocessing_utils import load_triggers
+from pycbc.results.pygrb_postprocessing_utils import PygrbFilterOutput
+from pycbc.results.pygrb_postprocessing_utils import pygrb_shared_plot_setups
+from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
+
 plt.switch_backend('Agg')
 
-__author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_skygrid"
@@ -53,15 +59,15 @@ else:
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=level)
 
-trig_file  = os.path.abspath(opts.trig_file)
-inj_file   = None
+trig_file = os.path.abspath(opts.trig_file)
+inj_file = None
 if opts.inj_file:
     inj_file = os.path.abspath(opts.inj_file)
-outfile       = opts.output_file
+outfile = opts.output_file
 seg_dir = opts.segment_dir
 veto_files = []
 if opts.veto_directory:
-    veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
+    veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
 
 if opts.plot_title is None:
@@ -76,10 +82,9 @@ for outdir in outdirs:
         os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos = extract_ifos(trig_file)
-
-# Extract IFOs and vetoes
-vetoes = extract_vetoes(trig_file, ifos)
+logging.info("Extracting IFOs and vetoes.")
+ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+                                       opts.veto_category)
 
 # Load triggers
 trigs = load_triggers(trig_file, vetoes, ifos)
@@ -104,7 +109,7 @@ if opts.verbose:
 
 pygrb_shared_plot_setups()
 fig = plt.figure()
-ax  = fig.gca()
+ax = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
 ax.set_ylabel(ylabel)#, fontsize=16)
 ax.plot(trig_data.longitude, trig_data.latitude, 'ko', markerfacecolor='blue')

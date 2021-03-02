@@ -57,6 +57,7 @@ __program__ = "pycbc_pygrb_plot_injs_results"
 
 
 def process_var_strings(qty):
+    """Add underscores to match xml column name conventions"""
 
     qty = qty.replace('effdist', 'eff_dist')
     qty = qty.replace('effsitedist', 'eff_site_dist')
@@ -98,10 +99,10 @@ else:
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
 
-if opts.found_missed_output_file == None:
+if opts.found_missed_output_file is None:
     msg = "Please specify a pathname with found-missed-ouptut-file option"
     logging.error(msg)
-if opts.missed_found_output_file == None:
+if opts.missed_found_output_file is None:
     msg = "Please specify a pathname with missed-found-ouptut-file option"
     logging.error(msg)
 
