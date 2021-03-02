@@ -25,15 +25,24 @@ from __future__ import division
 import sys
 import glob
 import os
-import copy
 import logging
+import numpy
 from glue.ligolw import lsctables
-import pycbc.version
 from matplotlib import rc
-from pycbc.results.pygrb_postprocessing_utils import *
+import matplotlib.pyplot as plt
+import pycbc.version
+from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
+from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
+from pycbc.results.pygrb_postprocessing_utils import load_triggers
+from pycbc.results.pygrb_postprocessing_utils import load_injections
+from pycbc.results.pygrb_postprocessing_utils import axis_max_value
+from pycbc.results.pygrb_postprocessing_utils import PygrbFilterOutput
+from pycbc.results.pygrb_postprocessing_utils import pygrb_plotter
+from pycbc.results.pygrb_postprocessing_utils import calculate_contours
+
 plt.switch_backend('Agg')
 
-__author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_null_stats"
@@ -66,7 +75,7 @@ if zoomedoutfile is None:
     sys.exit()
 veto_files = []
 if opts.veto_directory:
-    veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
+    veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
 
 # Check that the y-axis variable was specified
@@ -106,11 +115,9 @@ for outdir in outdirs:
         os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos = extract_ifos(trig_file)
-
-# Extract IFOs and vetoes
-vetoes = extract_vetoes(trig_file, ifos)
-
+logging.info("Extracting IFOs and vetoes.")
+ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+                                       opts.veto_category)
 # Load triggers
 trigs = load_triggers(trig_file, vetoes, ifos)
 
@@ -137,14 +144,14 @@ snr_vals = None
 cont_colors = None
 null_stat_conts_list = None
 shade_cont_value = None
-x_max = None 
+x_max = None
 # Coincident SNR plot case: we want a coinc=coh diagonal line on the plot
 if null_stat_type == 'coincident':
     cont_colors = ['g-']
     x_max = axis_max_value(trig_data.snr, inj_data.snr, inj_file)
     snr_vals = [4, x_max]
     conts = [[4, x_max]]
-    null_stat_conts_list = [conts, conts] 
+    null_stat_conts_list = [conts, conts]
 # Overwhitened null stat (null SNR) and null stat  cases: newSNR contours
 else:
     cont_colors = ['k-', 'g-', 'm-']
@@ -163,12 +170,11 @@ else:
 # Overwhitened null stat (null SNR), null stat or coincident SNR vs
 # Coherent SNR plots: non-zoomed and zoomed
 fig_path_list = [outfile, zoomedoutfile]
-xlims_list = [None, [6,30]]
-ylims_list = [None, [0,30]]
+xlims_list = [None, [6, 30]]
+ylims_list = [None, [0, 30]]
 # Get rcParams
 rc('font', size=14)
 # Set color for out-of-range values
-plt.cm.spring.set_over('g')
 # Determine y-axis values of triggers and injections
 y_label = y_labels[null_stat_type]
 trig_null_data_dict = {'nullstat': trig_data.null_stat,
@@ -183,7 +189,8 @@ if inj_file:
     inj_null_stat_data = inj_null_data_dict[null_stat_type]
 
 for fig_path, null_stat_conts, xlims, ylims in zip(fig_path_list,
-                                 null_stat_conts_list, xlims_list, ylims_list):
+                                                   null_stat_conts_list,
+                                                   xlims_list, ylims_list):
     pygrb_plotter(trig_data.snr, trig_null_stat_data,
                   inj_data.snr, inj_null_stat_data, inj_file,
                   "Coherent SNR", y_label, fig_path,

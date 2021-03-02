@@ -25,14 +25,24 @@ from __future__ import division
 import sys
 import glob
 import os
-import copy
 import logging
+from matplotlib import pyplot as plt
 from glue.ligolw import lsctables
 import pycbc.version
-from pycbc.results.pygrb_postprocessing_utils import *
+from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
+from pycbc.results.pygrb_postprocessing_utils import extract_ifos
+from pycbc.results.pygrb_postprocessing_utils import extract_vetoes
+from pycbc.results.pygrb_postprocessing_utils import load_triggers
+from pycbc.results.pygrb_postprocessing_utils import PygrbFilterOutput
+from pycbc.results.pygrb_postprocessing_utils import load_injections
+from pycbc.results.pygrb_postprocessing_utils import axis_max_value
+from pycbc.results.pygrb_postprocessing_utils import calculate_contours
+from pycbc.results.pygrb_postprocessing_utils import pygrb_shared_plot_setups
+from pycbc.results.pygrb_postprocessing_utils import pygrb_plotter
+
 plt.switch_backend('Agg')
 
-__author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_chisq_veto"
@@ -65,7 +75,7 @@ if zoomedoutfile is None:
     sys.exit()
 veto_files = []
 if opts.veto_directory:
-    veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
+    veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
 # If an ifo is given, the veto is intended as a single IFO quantity
 ifo = opts.ifo
@@ -146,9 +156,9 @@ if use_sngl_ifo_snr:
         inj_snr = inj_data.ifo_snr[ifo]
 # Coherent SNR requested with standard chi-square
 elif veto_type == 'standard':
-    trig_snr = trig_data.snr[trig_data.reweighted_snr!=0]
+    trig_snr = trig_data.snr[trig_data.reweighted_snr != 0]
     if inj_file:
-        inj_snr = inj_data.snr[inj_data.reweighted_snr!=0]
+        inj_snr = inj_data.snr[inj_data.reweighted_snr != 0]
 # Sanity check
 if trig_snr is None and inj_snr is None:
     logging.warn("No data to be plotted on the x-axis was found")
@@ -165,7 +175,7 @@ if ifo:
     y_label = "%s Single %s" % (ifo, y_label)
 trig_veto_data = None
 sngl_ifo_veto_flag = ''
-trig_veto_dict = {'standard': trig_data.chi_square[trig_data.reweighted_snr!=0],
+trig_veto_dict = {'standard': trig_data.chi_square[trig_data.reweighted_snr != 0],
                   'bank': trig_data.bank_veto,
                   'auto': trig_data.auto_veto}
 if ifo:
@@ -176,9 +186,9 @@ if ifo:
 trig_veto_data = trig_veto_dict[veto_type+sngl_ifo_veto_flag]
 inj_veto_data = None
 if inj_file:
-    inj_veto_dict = {'standard': inj_data.chi_square[inj_data.reweighted_snr!=0],
-                      'bank': inj_data.bank_veto,
-                      'auto': inj_data.auto_veto}
+    inj_veto_dict = {'standard': inj_data.chi_square[inj_data.reweighted_snr != 0],
+                     'bank': inj_data.bank_veto,
+                     'auto': inj_data.auto_veto}
     if ifo:
         inj_veto_dict.update({'standard1': inj_data.ifo_stan_cs[ifo],
                               'bank1': inj_data.ifo_bank_cs[ifo],
@@ -204,8 +214,8 @@ if ifo is None:
 
 # Produce a non-zoomed and a zoomed veto vs. SNR plot
 fig_path_list = [outfile, zoomedoutfile]
-xlims_list = [[x_min,50], [x_min,1.1*x_max]]
-ylims_list = [[1,20000], [1,10*y_max]]
+xlims_list = [[x_min, 50], [x_min, 1.1*x_max]]
+ylims_list = [[1, 20000], [1, 10*y_max]]
 pygrb_shared_plot_setups()
 for fig_path, xlims, ylims in zip(fig_path_list, xlims_list, ylims_list):
     pygrb_plotter(trig_snr, trig_veto_data, inj_snr, inj_veto_data,
