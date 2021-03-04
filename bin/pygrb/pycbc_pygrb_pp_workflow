@@ -46,7 +46,7 @@ logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
                     level=logging.INFO)
 
 def file_from_workflow(workflow, trig_or_inj_file, tags=None):
-    """Function to create File object, here used for trigger/injeciton files"""
+    """Function to create File object, here used for trigger/injection files"""
 
     file_out = None
     if trig_or_inj_file not in ['trig-file', 'inj-file']:
@@ -87,7 +87,8 @@ def make_pygrb_skygrid_plot(workflow, out_dir, exclude=None, require=None,
     node.add_opt('--segment-dir', seg_dir)
     # Output file
     node.new_output_file_opt(wflow.analysis_time, '.png', '--output-file',
-                             tags=tags+['GRB'+grb_name])
+                             tags=['GRB'+grb_name])
+                             #tags=tags+['GRB'+grb_name])
     # Add job node to the workflow
     workflow += node
 
@@ -95,53 +96,67 @@ def make_pygrb_skygrid_plot(workflow, out_dir, exclude=None, require=None,
 
 
 def make_pygrb_timeseries_or_signal_consistency_plot(workflow, exec_name,
-    out_dir, injs=True, ifo=None, exclude=None, require=None, tags=[]):
+    out_dir, do_injs=True, ifo=None, exclude=None, require=None, tags=[]):
     """Adds a PyGRB signal consistency plot to the workflow"""
 
     logging.info("Executable name: %s" % exec_name)
     # Initialize job node
     grb_name = workflow.cp.get('workflow', 'trigger-name')
+    extra_tags = ['GRB'+grb_name]
     node = PlotExecutable(workflow.cp, exec_name, ifos=wflow.ifos,
                           out_dir=out_dir,
-                          tags=tags+['GRB'+grb_name]).create_node()
+                          tags=tags+extra_tags).create_node()
     # Trigger file
-    #FIXME: why won't this work?
+    #FIXME: why won't this work here and elsewhere?
     #trig_file = file_from_workflow(workflow, 'trig-file')
     #node.add_input_opt('--trig-file', trig_file)
-    node.add_opt('--trig-file', wflow.cp.get('workflow', 'trig-file'))
+    trig_file_path = wflow.cp.get('workflow', 'trig-file')
+    node.add_opt('--trig-file', trig_file_path)
     # Injection file: may or may not be passed
     inj_tag = 'noinj'
-    if injs:
-        #FIXME: why won't this work?
-        #inj_file = file_from_workflow(workflow, 'inj-file')
-        node.add_opt('--inj-file', wflow.cp.get('workflow', 'inj-file'))
+    if do_injs:
         inj_tag = 'inj'
+        # TODO: should this just be a tag? It would add more flexibility
+        inj_set = wflow.cp.get('workflow', 'tuning-inj-set')
+        extra_tags.append(inj_set)
+        node.add_opt('--inj-file', wflow.cp.get('injections-'+inj_set, 'inj-file'))
+    extra_tags.append(inj_tag)
     # Veto directory and segments directory
     veto_dir = workflow.cp.get('workflow', 'veto-directory')
     node.add_opt('--veto-directory', veto_dir)
     seg_dir = workflow.cp.get('workflow', 'segment-dir')
     node.add_opt('--segment-dir', seg_dir)
     # IFO and veto type options
-    grb_name = workflow.cp.get('workflow', 'trigger-name')
-    extra_tags = ['GRB'+grb_name]
     if ifo:
         node.add_opt('--ifo', ifo)
         extra_tags.append(ifo)
-    # Quantity to be displayed on the y-axis of the plot
-    if len(tags) > 0:
-        if exec_name is 'pygrb_plot_stat_distribution':
-            node.add_opt('--x-variable', tags[0])
-        else:
-            node.add_opt('--y-variable', tags[0])
-            extra_tags.append(inj_tag)
     # Output files
     if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_coh_ifosnr',
                      'pygrb_plot_null_stats']:
         node.new_output_file_opt(wflow.analysis_time, '.png',
                                  '--zoomed-output-file',
-                                 tags=tags+extra_tags+['zoom'])
-    node.new_output_file_opt(wflow.analysis_time, '.png',
-                             '--output-file', tags=tags+extra_tags)
+                                 tags=extra_tags+['zoom'])
+    if exec_name == 'pygrb_efficiency':
+        # In this case tags[0] is the injeciton set name
+        node.add_opt('--found-file', wflow.cp.get('injections-'+tags[0], 'found-file'))
+        node.add_opt('--missed-file', wflow.cp.get('injections-'+tags[0], 'missed-file'))
+        # In this case tags[1] is the offtrial
+        onsource_path = trig_file_path.replace('_OFFSOURCE_', '_'+tags[1].upper()+'_')
+        node.add_opt('--onsource-file', onsource_path)
+        node.new_output_file_opt(wflow.analysis_time, '.png',
+                                 '--background-output-file', tags=extra_tags+['max_background'])
+        node.new_output_file_opt(wflow.analysis_time, '.png',
+                                 '--onsource-output-file', tags=extra_tags+['onsource'])
+    else:
+        node.new_output_file_opt(wflow.analysis_time, '.png',
+                                 '--output-file', tags=extra_tags)
+        # Quantity to be displayed on the y-axis of the plot
+        if len(tags) > 0:
+            if exec_name is 'pygrb_plot_stat_distribution':
+                node.add_opt('--x-variable', tags[0])
+            else:
+                node.add_opt('--y-variable', tags[0])
+
     # Add job node to workflow
     workflow += node
 
@@ -170,6 +185,9 @@ def make_pygrb_injs_results_plot(workflow, out_dir, ifo=None,
     if ifo:
         node.add_opt('--ifo', ifo)
         extra_tags.append(ifo)
+    # Found/missed injections input
+    node.add_opt('--found-file', wflow.cp.get('injections-'+tags[0], 'found-file'))
+    node.add_opt('--missed-file', wflow.cp.get('injections-'+tags[0], 'missed-file'))
     # Output file
     node.new_output_file_opt(wflow.analysis_time, '.png', '--found-missed-output-file',
                              tags=['found_missed']+extra_tags)
@@ -201,12 +219,16 @@ def make_pygrb_injs_tables(workflow, out_dir,
     node.add_opt('--veto-directory', veto_dir)
     seg_dir = workflow.cp.get('workflow', 'segment-dir')
     node.add_opt('--segment-dir', seg_dir)
+    # Found/missed injection files
+    # In this case tags[0] is the injeciton set name
+    node.add_opt('--found-file', wflow.cp.get('injections-'+tags[0], 'found-file'))
+    node.add_opt('--missed-file', wflow.cp.get('injections-'+tags[0], 'missed-file'))
     # Missed-found injections output file
     node.new_output_file_opt(wflow.analysis_time, '.html', '--missed-found-injs-output-file',
-                             tags=tags+['GRB'+grb_name, 'MISSED_FOUND'])
+                             tags=['GRB'+grb_name, 'MISSED_FOUND'])
     # Quiet-found injections output file
     node.new_output_file_opt(wflow.analysis_time, '.html', '--quiet-found-injs-output-file',
-                             tags=tags+['GRB'+grb_name, 'QUIET_FOUND'])
+                             tags=['GRB'+grb_name, 'QUIET_FOUND'])
     # Add job node to the workflow
     workflow += node
 
@@ -239,7 +261,7 @@ rdir = layout.SectionNumber('pp_results', ['offsource_triggers_vs_time',
                                            'signal_consistency',
                                            'found_missed_injections',
                                            'loudest_offsource_events',
-                                           'results_for_offtrials',
+                                           'exclusion_distances',
                                            'workflow'])
 _workflow.makedir(rdir.base)
 _workflow.makedir(rdir['workflow'])
@@ -248,13 +270,11 @@ _workflow.makedir(rdir['workflow'])
 trig_file = wflow.cp.get('workflow', 'trig-file')
 # IFOs actually used: determined by data availability
 ifos = pygrb_postprocessing_utils.extract_ifos(trig_file)
+wflow.ifos = ifos
 
 plotting_nodes = []
+html_nodes = []
 
-#
-# Plot sky grid
-#
-out_dir = rdir.base
 # TODO: Pick up inifile, segments plot, GRB time and location, report IFO responses
 # Read the configuration file
 # typecast str from command line to File instances
@@ -264,6 +284,10 @@ out_dir = rdir.base
 #    cp.write(ff)
 #config_file = to_file('inference.ini')
 
+#
+# Plot sky grid
+#
+out_dir = rdir.base
 _workflow.makedir(out_dir)
 files = _workflow.FileList([])
 plot_node, output_files = make_pygrb_skygrid_plot(wflow, out_dir=out_dir, tags=[])
@@ -283,9 +307,8 @@ out_dirs_dict = {'coherent' : 'offsource_triggers_vs_time/coh_snr_timeseries',
                  'single': 'offsource_triggers_vs_time/single_ifo_snr_timeseries',
                  'null': 'offsource_triggers_vs_time/null_snr_timeseries'}
 
-# Timeseries request by the user
+# Loop over timeseries request by the user
 timeseries = wflow.cp.get_subsections('pygrb_plot_snr_timeseries')
-
 for snr_type in timeseries:
     out_dir = rdir[out_dirs_dict[snr_type]]
     _workflow.makedir(out_dir)
@@ -294,16 +317,16 @@ for snr_type in timeseries:
     ifos_to_loop = [None]
     if snr_type == 'single':
         ifos_to_loop = ifos
-    inj_file = file_from_workflow(wflow, 'inj-file')
     for ifo in ifos_to_loop:
         timeseries_plots = _workflow.FileList([])
         # Plots without and with injections
-        for injs in [False, True]:
+        for do_injs in [False, True]:
             plot_node, output_files = \
                 make_pygrb_timeseries_or_signal_consistency_plot(wflow,
-                    'pygrb_plot_snr_timeseries', out_dir, injs=injs, ifo=ifo,
-                    tags=[snr_type])
+                    'pygrb_plot_snr_timeseries', out_dir, do_injs=do_injs,
+                     ifo=ifo, tags=[snr_type])
             plotting_nodes.append(plot_node)
+            # We want a File, not a 1-element list with a File
             # pycbc_pygrb_plot_snr_timeseries produces only one plot: take [0]
             timeseries_plots.append(output_files[0])
         files.append(timeseries_plots)
@@ -323,10 +346,10 @@ files = _workflow.FileList([])
 vetoes = wflow.cp.get_subsections('pygrb_plot_chisq_veto')
 for veto in vetoes:
     # Plots with and without injections
-    for injs in [True, False]:
+    for do_injs in [True, False]:
         plot_node, output_files = \
             make_pygrb_timeseries_or_signal_consistency_plot(wflow,
-                'pygrb_plot_chisq_veto', out_dir, injs=injs, tags=[veto])
+                'pygrb_plot_chisq_veto', out_dir, do_injs=do_injs, tags=[veto])
         plotting_nodes.append(plot_node)
         files.append(output_files)
 layout.two_column_layout(out_dir, files)
@@ -340,11 +363,12 @@ files = _workflow.FileList([])
 if wflow.cp.has_section('pygrb_plot_coh_ifosnr'):
     for ifo in ifos:
         # Plots with and without injections
-        for injs in [True, False]:
+        for do_injs in [True, False]:
             # Single IFO SNR vs Coherent SNR
             plot_node, output_files = \
                 make_pygrb_timeseries_or_signal_consistency_plot(wflow,
-                    'pygrb_plot_coh_ifosnr', out_dir, injs=injs, ifo=ifo, tags=[])
+                    'pygrb_plot_coh_ifosnr', out_dir, do_injs=do_injs, ifo=ifo,
+                    tags=[])
             plotting_nodes.append(plot_node)
             files.append(output_files)
     layout.two_column_layout(out_dir, files)
@@ -365,7 +389,7 @@ coinc_files = _workflow.FileList([])
 nstats = wflow.cp.get_subsections('pygrb_plot_null_stats')
 for nstat in nstats:
     # Plots with and without injections
-    for injs in [True, False]:
+    for do_injs in [True, False]:
         if nstat == 'coincident':
             out_dir = coinc_out_dir
             files = coinc_files
@@ -374,7 +398,7 @@ for nstat in nstats:
             files = null_snr_files
         plot_node, output_files = \
             make_pygrb_timeseries_or_signal_consistency_plot(wflow,
-                'pygrb_plot_null_stats', out_dir, injs=injs, tags=[nstat])
+                'pygrb_plot_null_stats', out_dir, do_injs=do_injs, tags=[nstat])
         plotting_nodes.append(plot_node)
         files.append(output_files)
 layout.two_column_layout(null_snr_out_dir, null_snr_files)
@@ -397,7 +421,7 @@ for inj_set in inj_sets:
     out_dir = rdir['found_missed_injections/'+inj_set]
     _workflow.makedir(out_dir)
     files = _workflow.FileList([])
-    #files = []
+    # Generate plots
     for inj_plot in inj_plots:
         y_qty, x_qty = inj_plot.split('_')
         ifos_to_loop = [None]
@@ -408,13 +432,11 @@ for inj_set in inj_sets:
             plot_node, output_files = make_pygrb_injs_results_plot(wflow,
                 out_dir, ifo=ifo, tags=[inj_set, y_qty, x_qty])
             plotting_nodes.append(plot_node)
-            #files.append(output_files)
             files += output_files
-    #layout.two_column_layout(out_dir, files)
-    # Quiet-found and missed-found html tables
+    # Generate quiet-found and missed-found html tables
     html_node, mf_table, qf_table = make_pygrb_injs_tables(wflow, out_dir,
                                         tags=[inj_set])
-    plotting_nodes.append(html_node)
+    html_nodes.append(html_node)
 
     inj_layout = list(layout.grouper(files, 2)) + [(mf_table,), (qf_table,)]
     layout.two_column_layout(out_dir, inj_layout)
@@ -432,20 +454,36 @@ stats = wflow.cp.get_subsections('pygrb_plot_stat_distribution')
 for stat in stats:
     plot_node, output_file = \
         make_pygrb_timeseries_or_signal_consistency_plot(wflow,
-            'pygrb_plot_stat_distribution', out_dir, injs=False, tags=[stat])
+            'pygrb_plot_stat_distribution', out_dir, do_injs=False, tags=[stat])
     plotting_nodes.append(plot_node)
     # We want a File, not a 1-element list with a File
+    # pycbc_pygrb_plot_stat_distribution produces only one plot: take [0]
     files.append(output_file[0])
 #layout.single_layout(out_dir, files)
 #layout.single_layout(out_dir, (files))
 layout.group_layout(out_dir, files)
 
 #
-# Offtrials plots
+# Exclusion distance and efficiency plots based on offtrials
 #
-out_dir = rdir['results_for_offtrials']
+out_dir = rdir['exclusion_distances']
 _workflow.makedir(out_dir)
-files = _workflow.FileList([])
+
+# Offtrials and injection sets request by the user
+num_trials = int(wflow.cp.get('trig_combiner', 'num-trials'))
+offtrials = ["offtrial_%s" % (i+1) for i in range(num_trials)]
+inj_sets = wflow.cp.get_subsections('injections')
+for offtrial in offtrials:
+    out_dir = rdir['exclusion_distances/'+offtrial]
+    _workflow.makedir(out_dir)
+    files = _workflow.FileList([])
+    for inj_set in inj_sets:
+        plot_node, output_files = \
+            make_pygrb_timeseries_or_signal_consistency_plot(wflow,
+                'pygrb_efficiency', out_dir, tags=[inj_set, offtrial])
+        plotting_nodes.append(plot_node)
+        files.append(output_files)
+    layout.two_column_layout(out_dir, files)
 
 # Create versioning information
 create_versioning_page(rdir['workflow/version'], wflow.cp)
@@ -471,10 +509,9 @@ _workflow.makedir(rdir['workflow/planning'])
 
 
 logging.info("Path for make_results_web_page: %s" % os.path.join(os.getcwd(), rdir.base))
-_workflow.make_results_web_page(wflow, os.path.join(os.getcwd(), rdir.base), explicit_dependencies=plotting_nodes)
-#_workflow.make_results_web_page(wflow, os.path.join(os.getcwd(), rdir.base), explicit_dependencies=[plotting_nodes, html_node])
+_workflow.make_results_web_page(wflow, os.path.join(os.getcwd(), rdir.base), explicit_dependencies=plotting_nodes+html_nodes)
 
 wflow.save()
+logging.info("Dax written.")
 
-logging.info("Written dax.")
 logging.shutdown()

@@ -22,6 +22,7 @@
 
 from __future__ import division
 
+import sys
 import os
 import logging
 import matplotlib.pyplot as plt
@@ -30,6 +31,7 @@ import numpy as np
 import scipy
 from scipy import stats
 import pycbc.version
+from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
@@ -86,15 +88,24 @@ else:
     err_msg = "Must provide both found and missed file if running injections."
     logging.error(err_msg)
 
+if opts.background_output_file is None:
+    err_msg = "Please specify a path to save the detection efficiency plot."
+    logging.error(err_msg)
+
+if opts.onsource_output_file is None:
+    err_msg = "Please specify a path to save the exclusion distance plot."
+    logging.error(err_msg)
+
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
 
 # Store options used multiple times in local variables
-outdir = opts.output_path
+outdir = os.path.split(os.path.abspath(opts.background_output_file))[0]
 trig_file = opts.offsource_file
 onsource_file = opts.onsource_file
 found_file = opts.found_file
 missed_file = opts.missed_file
+inj_set_name = os.path.split(os.path.abspath(missed_file))[1].split('INSPINJ')[1].split('_')[1]
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
 wf_err = opts.waveform_error
@@ -568,7 +579,6 @@ if do_injections:
         more_sig_than_onsource = (inj_fap <= loud_on_fap)
     else:
         more_sig_than_onsource = (inj_fap <= 0.5)
-    more_sig_than_onsource = more_sig_than_onsource.all(0)
 
     distance_count = np.zeros(len(dist_bins))
 
@@ -738,11 +748,15 @@ if do_injections:
     ax.grid()
     ax.set_ylim([0, 1])
     ax.set_xlim(0, 2.*upper_dist - lower_dist)
-    ax.set_title("Efficiency of injection finding using "+\
-                 "BestNR as detection statistic")
     ax.set_ylabel("Fraction of injections found louder than loudest background")
     ax.set_xlabel("Distance (Mpc)")
-    fig.savefig('%s/BestNR_max_efficiency.png' % (outdir))
+    plot_title = "Detection efficiency - "+inj_set_name
+    plot_caption = "Injection recovery efficiency using "
+    plot_caption += "BestNR as detection statistic.  "
+    plot_caption += "Injections louder than loudest background trigger."
+    fig_path = opts.background_output_file
+    save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
+                           title=plot_title, caption=plot_caption)
     plt.close()
 
     # Calculate error bars for efficiency/distance plots and datafiles
@@ -808,15 +822,19 @@ if do_injections:
     ax.grid()
     ax.set_ylim([0, 1])
     ax.set_xlim(0, 2.*upper_dist - lower_dist)
-    ax.set_title("Efficiency of injection finding using "+\
-                 "BestNR as detection statistic")
     ax.set_ylabel("Fraction of injections found louder than "+\
                   "loudest foreground")
     ax.set_xlabel("Distance (Mpc)")
     ax.plot([excl_dist], [0.9], 'gx')
     ax.set_ylim([0, 1])
     ax.set_xlim(0, 2.*upper_dist - lower_dist)
-    fig.savefig('%s/BestNR_on_efficiency.png' % (outdir))
+    plot_title = "Exclusion distance - "+inj_set_name
+    plot_caption = "Injection recovery efficiency using "
+    plot_caption += "BestNR as detection statistic.  "
+    plot_caption += "Injections louder than loudest foreground trigger"
+    fig_path = opts.onsource_output_file
+    save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
+                           title=plot_title, caption=plot_caption)
     plt.close()
 
 logging.info("Plots complete.")
