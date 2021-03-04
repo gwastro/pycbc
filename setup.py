@@ -38,7 +38,7 @@ setup_requires = ['numpy>=1.16.0']
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'cython>=0.29',
                       'decorator>=3.4.2',
-                      'numpy>=1.16.0,!=1.19.0,<1.20.0; python_version >= "3.5"',
+                      'numpy>=1.16.0,!=1.19.0; python_version >= "3.5"',
                       'numpy>=1.16.0,<1.17.0; python_version <= "2.7"',
                       'scipy>=0.16.0; python_version >= "3.5"',
                       'scipy>=0.16.0,<1.3.0; python_version <= "3.4"',
@@ -124,7 +124,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.17.dev2'
+        vinfo.version = '1.18.dev1'
         vinfo.release = 'False'
 
     with open('pycbc/version.py', 'w') as f:
@@ -276,7 +276,8 @@ setup (
     name = 'PyCBC',
     version = VERSION,
     description = 'Core library to analyze gravitational-wave data, find signals, and study their parameters.',
-    long_description = open('descr.rst').read(),
+    long_description = open('README.md').read(),
+    long_description_content_type='text/markdown',
     author = 'The PyCBC team',
     author_email = 'alex.nitz@gmail.org',
     url = 'http://www.pycbc.org/',
@@ -298,6 +299,7 @@ setup (
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
         'Topic :: Scientific/Engineering',
