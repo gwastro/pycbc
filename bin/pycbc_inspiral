@@ -168,7 +168,7 @@ parser.add_argument("--keep-loudest-interval", type=float,
 parser.add_argument("--keep-loudest-num", type=int,
                     help="Number of triggers to keep from each maximization interval")
 parser.add_argument("--keep-loudest-stat", default="newsnr",
-                    choices=events.stat.sngl_statistic_dict.keys(),
+                    choices=events.ranking.sngls_ranking_function_dict.keys(),
                     help="Statistic used to determine loudest to keep")
 parser.add_argument("--finalize-events-template-rate", default=None,
                     type=int, metavar="NUM TEMPLATES",

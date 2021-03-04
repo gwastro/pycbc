@@ -60,8 +60,14 @@ def sigma_cached(self, psd):
                 psd.sigmasq_vec = {}
 
             if self.approximant not in psd.sigmasq_vec:
-                psd.sigmasq_vec[self.approximant] = pycbc.waveform.get_waveform_filter_norm(
-                     self.approximant, psd, len(psd), psd.delta_f, self.f_lower)
+                psd.sigmasq_vec[self.approximant] = \
+                    pycbc.waveform.get_waveform_filter_norm(
+                        self.approximant,
+                        psd,
+                        len(psd),
+                        psd.delta_f,
+                        self.min_f_lower
+                    )
 
             if not hasattr(self, 'sigma_scale'):
                 # Get an amplitude normalization (mass dependant constant norm)
@@ -70,9 +76,11 @@ def sigma_cached(self, psd):
                 amp_norm = 1 if amp_norm is None else amp_norm
                 self.sigma_scale = (DYN_RANGE_FAC * amp_norm) ** 2.0
 
+            curr_sigmasq = psd.sigmasq_vec[self.approximant]
 
+            kmin = int(self.f_lower / psd.delta_f)
             self._sigmasq[key] = self.sigma_scale * \
-                psd.sigmasq_vec[self.approximant][self.end_idx-1]
+                (curr_sigmasq[self.end_idx-1] - curr_sigmasq[kmin])
 
         else:
             if not hasattr(self, 'sigma_view'):
@@ -444,7 +452,10 @@ class TemplateBank(object):
         if 'approximant' not in self.table.fieldnames:
             raise ValueError("approximant not found in input file and no "
                 "approximant was specified on initialization")
-        return self.table["approximant"][index]
+        apx = self.table["approximant"][index]
+        if hasattr(apx, 'decode'):
+            apx = apx.decode()
+        return apx
 
     def __len__(self):
         return len(self.table)

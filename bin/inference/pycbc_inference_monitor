@@ -1,0 +1,83 @@
+#!/bin/env python
+""" Monitor and create updating results page of an inference run
+"""
+
+import os, sys, time, glob, shutil, logging, argparse, pycbc
+import pycbc.workflow as wf
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--inference-file', help="The name of the inference file")
+parser.add_argument('--check-interval', default=10, type=int,
+                    help="Polling interval to check for file changes (s)")
+parser.add_argument('--output-dir', help="Output plots / results directory")
+parser.add_argument('--allow-failure', action='store_true',
+                    help="Allow for a failure in plot generation")
+parser.add_argument('--verbose', action='store_true')
+
+wf.add_workflow_command_line_group(parser)
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+c = wf.Workflow(args, 'results')
+exes = c.cp.options('executables')
+exes = [e for e in exes if e != 'results_page']
+wf.makedir(args.output_dir)
+wf.makedir(args.output_dir + '/logs')
+
+pnode = wf.Executable(c.cp, 'results_page', out_dir=args.output_dir).create_node()
+pnode.add_opt('--plots-dir', './plots')
+pnode.add_opt('--output-path', './html')
+
+def process_plots(fname, subdir):
+    outdir = args.output_dir + '/plots/checkpoints/' + subdir
+    wf.makedir(outdir)
+    wf.makedir(outdir + '/logs')
+    nodes = []
+    for exe in exes:
+        secs = c.cp.get_subsections(exe)
+        for sec in secs:
+            e = wf.Executable(c.cp, exe, out_dir=outdir, tags=[sec])
+            node = e.create_node()
+            node.add_opt('--input-file', os.path.abspath(fname))
+            node.add_opt('--output-file', exe + '-' + sec + '.png')
+            try:
+                c.execute_node(node)
+            except Exception as e:
+                if args.allow_failure:
+                    pass
+                else:
+                    raise e
+    fmade = glob.glob(outdir + '/*.png')
+    for fn in fmade:
+        shutil.copy(fn, args.output_dir + '/plots/' + os.path.basename(fn))
+    c.execute_node(pnode)
+
+# Look for checkpoint / bkup file using the standard naming convention
+fname = args.inference_file + '.bkup'
+last_changed = time.time()
+
+iteration = 0
+while 1:
+    exit = False
+    if not os.path.isfile(fname):
+        if os.path.isfile(args.inference_file):
+            fname = args.inference_file
+            logging.info('Run appears to have finished making final plots')
+            exit = True
+        else:
+            raise RuntimeError('Could not located inference files, exiting...')
+
+    tmod = os.path.getmtime(fname)
+    if tmod > last_changed:
+        tstr = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(tmod))
+        logging.info("File update %.1f seconds ago: %s",
+                     time.time() - tmod, tstr)
+        last_changed = tmod
+        process_plots(fname, subdir=str(iteration))
+        iteration += 1
+
+    time.sleep(args.check_interval)
+    if exit:
+        break
+
+sys.exit(0)

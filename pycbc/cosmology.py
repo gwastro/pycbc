@@ -403,7 +403,7 @@ class ComovingVolInterpolator(object):
         # replace using the faraway interpolation
         replacemask = numpy.isnan(vals)
         if replacemask.any():
-            vals[replacemask] = self.faraway_interp(vals[replacemask])
+            vals[replacemask] = self.faraway_interp(logv[replacemask])
             replacemask = numpy.isnan(vals)
         # if we still have nans, means that some distances are beyond our
         # furthest default; fall back to using astropy

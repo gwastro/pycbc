@@ -123,7 +123,7 @@ class BaseGaussianNoise(BaseDataModel):
         self.ignore_failed_waveforms = ignore_failed_waveforms
         # check if low frequency cutoff has been provided for every IFO with
         # data
-        for ifo in self.data.keys():
+        for ifo in self.data:
             if low_frequency_cutoff[ifo] is None:
                 raise ValueError(
                     "A low-frequency-cutoff must be provided for every "
@@ -143,13 +143,16 @@ class BaseGaussianNoise(BaseDataModel):
             raise ValueError("all data must have the same sample rate")
         if not all(dfs == dfs[0]):
             raise ValueError("all data must have the same segment length")
+
         # store the number of samples in the time domain
         self._N = int(1./(dts[0]*dfs[0]))
-        # Set low frequency cutoff
-        self.low_frequency_cutoff = self._f_lower = low_frequency_cutoff
-        # set upper frequency cutoff
-        self._f_upper = None
-        self.high_frequency_cutoff = high_frequency_cutoff
+
+        # set lower/upper frequency cutoff
+        if high_frequency_cutoff is None:
+            high_frequency_cutoff = {ifo: None for ifo in self.data}
+        self._f_upper = high_frequency_cutoff
+        self._f_lower = low_frequency_cutoff
+
         # Set the cutoff indices
         self._kmin = {}
         self._kmax = {}
@@ -160,16 +163,19 @@ class BaseGaussianNoise(BaseDataModel):
                                                      d.delta_f, self._N)
             self._kmin[det] = kmin
             self._kmax[det] = kmax
+
         # store the psd segments
         self._psd_segments = {}
         if psds is not None:
             self.set_psd_segments(psds)
+
         # store the psds and calculate the inner product weight
         self._psds = {}
         self._weight = {}
         self._lognorm = {}
         self._det_lognls = {}
         self._whitened_data = {}
+
         # set the normalization state
         self._normalize = False
         self.normalize = normalize
@@ -178,34 +184,13 @@ class BaseGaussianNoise(BaseDataModel):
 
     @property
     def high_frequency_cutoff(self):
-        """The high frequency cutoff of the inner product.
-
-        If a high frequency cutoff was not provided for a detector, it will
-        be ``None``.
-        """
+        """The high frequency cutoff of the inner product."""
         return self._f_upper
 
-    @high_frequency_cutoff.setter
-    def high_frequency_cutoff(self, high_frequency_cutoff):
-        """Sets the high frequency cutoff.
-
-        Parameters
-        ----------
-        high_frequency_cutoff : dict
-            Dictionary mapping detector names to frequencies. If a high
-            frequency cutoff is not provided for one or more detectors, the
-            Nyquist frequency will be used for those detectors.
-        """
-        self._f_upper = {}
-        if high_frequency_cutoff is not None and bool(high_frequency_cutoff):
-            for det in self._data:
-                if det in high_frequency_cutoff:
-                    self._f_upper[det] = high_frequency_cutoff[det]
-                else:
-                    self._f_upper[det] = None
-        else:
-            for det in self._data.keys():
-                self._f_upper[det] = None
+    @property
+    def low_frequency_cutoff(self):
+        """The low frequency cutoff of the inner product."""
+        return self._f_lower
 
     @property
     def kmin(self):
@@ -550,6 +535,7 @@ class BaseGaussianNoise(BaseDataModel):
                 args[name] = cp.get_cli_option('model', name,
                                                nargs='+', type=float,
                                                action=MultiDetOptionAction)
+
         if 'low_frequency_cutoff' not in args:
             raise ValueError("low-frequency-cutoff must be provided in the"
                              " model section, but is not found!")
@@ -1052,7 +1038,7 @@ def create_waveform_generator(
                 recalibration=None, gates=None,
                 generator_class=generator.FDomainDetFrameGenerator,
                 **static_params):
-    """Creates a waveform generator for use with a model.
+    r"""Creates a waveform generator for use with a model.
 
     Parameters
     ----------
@@ -1072,6 +1058,12 @@ def create_waveform_generator(
     gates : dict of tuples, optional
         Dictionary of detectors -> tuples of specifying gate times. The
         sort of thing returned by :py:func:`pycbc.gate.gates_from_cli`.
+    generator_class : detector-frame fdomain generator, optional
+        Class to use for generating waveforms. Default is
+        :py:class:`waveform.generator.FDomainDetFrameGenerator`.
+    \**static_params :
+        All other keyword arguments are passed as static parameters to the
+        waveform generator.
 
     Returns
     -------
@@ -1093,7 +1085,7 @@ def create_waveform_generator(
     except KeyError:
         raise ValueError("no approximant provided in the static args")
 
-    generator_function = generator.select_waveform_generator(approximant)
+    generator_function = generator_class.select_rframe_generator(approximant)
     # get data parameters; we'll just use one of the data to get the
     # values, then check that all the others are the same
     delta_f = None

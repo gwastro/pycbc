@@ -1121,12 +1121,13 @@ def freqlmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     """
     mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
     spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    mass, spin, input_is_array = ensurearray(mass, spin)
 
     mass[mass < 0] = numpy.nan
     spin[numpy.abs(spin) > 0.9996] = numpy.nan
 
-    return freq_from_final_mass_spin(mass, spin,
-                                     l=new_l, m=new_m, nmodes=1)
+    new_f0 = freq_from_final_mass_spin(mass, spin, l=new_l, m=new_m, nmodes=1)
+    return formatreturn(new_f0, input_is_array)
 
 
 def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
@@ -1158,12 +1159,13 @@ def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     """
     mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
     spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    mass, spin, input_is_array = ensurearray(mass, spin)
 
     mass[mass < 0] = numpy.nan
     spin[numpy.abs(spin) > 0.9996] = numpy.nan
 
-    return tau_from_final_mass_spin(mass, spin,
-                                    l=new_l, m=new_m, nmodes=1)
+    new_tau = tau_from_final_mass_spin(mass, spin, l=new_l, m=new_m, nmodes=1)
+    return formatreturn(new_tau, input_is_array)
 
 def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                            spin2x=0., spin2y=0., spin2z=0.,
@@ -1538,4 +1540,5 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
            'nltides_gw_phase_diff_isco', 'spin_from_pulsar_freq',
+           'freqlmn_from_other_lmn', 'taulmn_from_other_lmn'
           ]

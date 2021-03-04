@@ -11,7 +11,6 @@ See https://arxiv.org/abs/1805.11174 for an overview."""
 
 import sys
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
-from time import time
 import os.path
 import itertools
 import platform
@@ -33,6 +32,7 @@ import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
 from pycbc import mchirp_area
+
 try:
     from setproctitle import setproctitle
 except ImportError:
@@ -264,7 +264,7 @@ class LiveEventManager(object):
                        'Two-detector ranking statistic: {}<br />'
                        'Followup detectors: {}')
             comment = comment.format(ppdets(coinc_ifos),
-                                     args.background_statistic,
+                                     args.ranking_statistic,
                                      ppdets(followup_ifos))
 
             ifar = coinc_results['foreground/ifar']
@@ -639,7 +639,8 @@ fft.verify_fft_options(args, parser)
 if args.output_background is not None and len(args.output_background) != 2:
     parser.error('--output-background takes two parameters: period and path')
 
-log_format = "%(asctime)s {0} %(message)s".format(platform.node())
+log_format = '%(asctime)s {} {} %(message)s'.format(platform.node(),
+                                                    mpi.COMM_WORLD.Get_rank())
 pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
@@ -725,7 +726,7 @@ with ctx:
     # Synchronize start time if not provided on the command line
     if not args.start_time:
         evnt.barrier()
-        tnow = lal.GPSTimeNow() if evnt.rank == 0 else None
+        tnow = int(pycbc.gps_now()) if evnt.rank == 0 else None
         args.start_time = evnt.comm.bcast(tnow, root=0)
 
     if args.round_start_time:
@@ -776,7 +777,7 @@ with ctx:
         coinc_pool = BroadcastPool(len(estimators))
         coinc_pool.allmap(set_coinc_id, range(len(estimators)))
 
-    logging.info('%s: Starting...', evnt.rank)
+    logging.info('Starting')
 
     if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
         pr = cProfile.Profile()
@@ -786,8 +787,8 @@ with ctx:
     data_end = lambda: data_reader[tuple(data_reader.keys())[0]].end_time
     last_bg_dump_time = int(data_end())
     while data_end() < args.end_time:
-        t1 = time()
-        logging.info('%s: Analyzing from %s', evnt.rank, data_end())
+        t1 = pycbc.gps_now()
+        logging.info('Analyzing from %s', data_end())
 
         results = {}
         evnt.live_detectors = set()
@@ -810,7 +811,7 @@ with ctx:
             if status is True:
                 evnt.live_detectors.add(ifo)
                 if evnt.rank > 0:
-                    logging.info('%s: Filtering %s', evnt.rank, ifo)
+                    logging.info('Filtering %s', ifo)
                     results[ifo] = mf.process_data(data_reader[ifo])
             else:
                 logging.info('Insufficient data for %s analysis', ifo)
@@ -901,11 +902,11 @@ with ctx:
 
         if args.sync:
             evnt.barrier()
-        tdiff = time() - t1
-        lag = float(lal.GPSTimeNow() - data_end())
-        logging.info('%s: Took %1.2f, duty factor of %.2f, '
+        tdiff = pycbc.gps_now() - t1
+        lag = float(pycbc.gps_now() - data_end())
+        logging.info('Took %1.2f, duty factor of %.2f, '
                      'lag %.2f s, %d live detectors',
-                     evnt.rank, tdiff, tdiff / valid_pad, lag,
+                     tdiff, tdiff / valid_pad, lag,
                      len(evnt.live_detectors))
 
         if args.output_status is not None and evnt.rank == 0:
@@ -925,7 +926,7 @@ with ctx:
                                      'start_sec': 240})
             status = {'author': 'Tito Dal Canton',
                       'email': 'tito.canton@ligo.org',
-                      'created_gps': int(lal.GPSTimeNow()),
+                      'created_gps': int(pycbc.gps_now()),
                       'status_intervals': status_intervals}
             try:
                 with open(args.output_status, 'w') as status_fp:

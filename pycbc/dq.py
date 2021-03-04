@@ -27,9 +27,9 @@ gravitational-wave detectors from public sources and/or dqsegdb.
 
 import json
 import numpy
-from astropy.utils.data import download_file
 from ligo.segments import segmentlist, segment
 from pycbc.frame.losc import get_run
+from pycbc.io import get_file
 
 
 def parse_veto_definer(veto_def_filename, ifos):
@@ -158,19 +158,15 @@ def query_flag(ifo, segment_name, start_time, end_time,
                                    ifo, segment_name,
                                    int(start_time), int(duration))
 
-            fname = download_file(url, cache=cache)
+            fname = get_file(url, cache=cache, timeout=10)
             data = json.load(open(fname, 'r'))
             if 'segments' in data:
                 flag_segments = data['segments']
 
         except Exception as e:
             if source != 'any':
-                print(e)
                 raise ValueError("Unable to find {} segments in GWOSC, check "
                                  "flag name or times".format(segment_name))
-            else:
-                print("Tried and failed to find {} in GWOSC, trying dqsegdb".
-                      format(segment_name))
 
             return query_flag(ifo, segment_name, start_time, end_time,
                               source='dqsegdb', server=server,
@@ -342,7 +338,7 @@ def parse_flag_str(flag_str):
         # Check if the flag should add or subtract time
         if not (flag[0] == '+' or flag[0] == '-'):
             err_msg = "DQ flags must begin with a '+' or a '-' character. "
-            err_msg += "You provided {}.".format(flag)
+            err_msg += "You provided {}. ".format(flag)
             err_msg += "See http://pycbc.org/pycbc/latest/html/workflow/segments.html"
             err_msg += " for more information."
             raise ValueError(err_msg)

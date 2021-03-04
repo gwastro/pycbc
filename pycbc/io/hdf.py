@@ -10,6 +10,7 @@ import inspect
 from itertools import chain
 from six.moves import range
 from six.moves import cPickle as pickle
+from six import raise_from
 
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI
@@ -24,7 +25,6 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
-from pycbc.events.stat import sngl_statistic_dict
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -180,7 +180,7 @@ class DictArray(object):
         """
         data = {}
         for k in self.data:
-            data[k] = np.delete(self.data[k], idx)
+            data[k] = np.delete(self.data[k], np.array(idx, dtype=int))
         return self._return(data=data)
 
     def save(self, outname):
@@ -449,6 +449,21 @@ class SingleDetTriggers(object):
             logging.info('%i triggers remain after cut on %s',
                          sum(self.mask), filter_func)
 
+    def __getitem__(self, key):
+        # Is key in the TRIGGER_MERGE file?
+        try:
+            return self.get_column(key)
+        except KeyError:
+            pass
+
+        # Is key in the bank file?
+        try:
+            self.checkbank(key)
+            return self.bank[key][:][self.template_id]
+        except (RuntimeError, KeyError) as exc:
+            err_msg = "Cannot find {} in input files".format(key)
+            raise_from(ValueError(err_msg), exc)
+
     def checkbank(self, param):
         if self.bank == {}:
             return RuntimeError("Can't get %s values without a bank file"
@@ -480,31 +495,16 @@ class SingleDetTriggers(object):
         else:
             self.mask = list(np.array(self.mask)[logic_mask])
 
-    def mask_to_n_loudest_clustered_events(self, n_loudest=10,
-                                           ranking_statistic="newsnr",
-                                           cluster_window=10,
-                                           statistic_files=None):
+    def mask_to_n_loudest_clustered_events(self, rank_method,
+                                           n_loudest=10,
+                                           cluster_window=10):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic. Events are
         clustered so that no more than 1 event within +/- cluster-window will
         be considered."""
-        if statistic_files is None:
-            statistic_files = []
-        # If this becomes memory intensive we can optimize
-        stat_instance = sngl_statistic_dict[ranking_statistic](statistic_files)
-        stat = stat_instance.single(self.trig_dict())
 
-        # Used for naming in plots ... Seems an odd place for this to live!
-        if ranking_statistic == "newsnr":
-            self.stat_name = "Reweighted SNR"
-        elif ranking_statistic == "newsnr_sgveto":
-            self.stat_name = "Reweighted SNR (+sgveto)"
-        elif ranking_statistic == "newsnr_sgveto_psdvar":
-            self.stat_name = "Reweighted SNR (+sgveto+psdvar)"
-        elif ranking_statistic == "snr":
-            self.stat_name = "SNR"
-        else:
-            self.stat_name = ranking_statistic
+        # If this becomes memory intensive we can optimize
+        stat = rank_method.rank_stat_single((self.ifo, self.trig_dict()))
 
         times = self.end_time
         index = stat.argsort()[::-1]
@@ -586,6 +586,11 @@ class SingleDetTriggers(object):
         return self.bank['f_lower'][:][self.template_id]
 
     @property
+    def approximant(self):
+        self.checkbank('approximant')
+        return self.bank['approximant'][:][self.template_id]
+
+    @property
     def mtotal(self):
         return self.mass1 + self.mass2
 
@@ -663,6 +668,9 @@ class SingleDetTriggers(object):
         return ranking.newsnr_sgveto_psdvar_threshold(self.snr, self.rchisq,
                                            self.sgchisq, self.psd_var_val)
 
+    def get_ranking(self, rank_name, **kwargs):
+        return ranking.get_sngls_ranking_from_trigs(self, rank_name, **kwargs)
+
     def get_column(self, cname):
         # Fiducial value that seems to work, not extensively tuned.
         MFRAC = 0.3
@@ -680,6 +688,7 @@ class SingleDetTriggers(object):
             return self.trigs[cname][:][self.mask]
         else:
             return self.trigs[cname][:]
+
 
 class ForegroundTriggers(object):
     # FIXME: A lot of this is hardcoded to expect two ifos
@@ -906,15 +915,16 @@ class ForegroundTriggers(object):
             coinc_id = lsctables.CoincID(idx)
 
             # Set up sngls
-            # FIXME: As two-ifo is hardcoded loop over all ifos
-            sngl_combined_mchirp = 0
-            sngl_combined_mtot = 0
+            sngl_mchirps = []
+            sngl_mtots = []
             net_snrsq = 0
+            triggered_ifos = []
             for ifo in ifos:
                 # If this ifo is not participating in this coincidence then
                 # ignore it and move on.
                 if not sngl_col_vals['snr'][ifo][1][idx]:
                     continue
+                triggered_ifos += [ifo]
                 event_id = lsctables.SnglInspiralID(sngl_event_count)
                 sngl_event_count += 1
                 sngl = return_empty_sngl()
@@ -935,8 +945,10 @@ class ForegroundTriggers(object):
                 sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
                         sngl.mass1, sngl.mass2)
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
-                sngl_combined_mchirp += sngl.mchirp
-                sngl_combined_mtot += sngl.mtotal
+                # If exact match is not used, then take mean
+                # masses from the single triggers
+                sngl_mchirps += [sngl.mchirp]
+                sngl_mtots += [sngl.mtotal]
 
                 sngl_inspiral_table.append(sngl)
 
@@ -947,16 +959,16 @@ class ForegroundTriggers(object):
                 coinc_map_row.event_id = event_id
                 coinc_event_map_table.append(coinc_map_row)
 
-            sngl_combined_mchirp = sngl_combined_mchirp / len(ifos)
-            sngl_combined_mtot = sngl_combined_mtot / len(ifos)
+            sngl_combined_mchirp = np.mean(sngl_mchirps)
+            sngl_combined_mtot = np.mean(sngl_mtots)
 
             # Set up coinc inspiral and coinc event tables
             coinc_event_row = lsctables.Coinc()
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
-            coinc_event_row.nevents = len(ifos)
-            coinc_event_row.instruments = ','.join(ifos)
-            coinc_inspiral_row.set_ifos(ifos)
+            coinc_event_row.nevents = len(triggered_ifos)
+            coinc_event_row.instruments = ','.join(triggered_ifos)
+            coinc_inspiral_row.set_ifos(triggered_ifos)
             coinc_event_row.time_slide_id = time_slide_id
             coinc_event_row.process_id = proc_id
             coinc_event_row.coinc_event_id = coinc_id
@@ -985,6 +997,7 @@ class ForegroundTriggers(object):
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
         ligolw_utils.write_filename(outdoc, file_name)
+
 
 class ReadByTemplate(object):
     # default assignment to {} is OK for a variable used only in __init__

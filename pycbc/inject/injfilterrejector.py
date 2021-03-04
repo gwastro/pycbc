@@ -309,8 +309,14 @@ class InjFilterRejector(object):
             m2 = bank.table[t_num]['mass2']
             tau0_temp, _ = mass1_mass2_to_tau0_tau3(m1, m2, self.f_lower)
             for inj in self.injection_params.table:
-                end_time = inj.geocent_end_time + \
-                    1E-9 * inj.geocent_end_time_ns
+                if isinstance(inj, np.record):
+                    # hdf format file
+                    end_time = inj['tc']
+                else:
+                    # must be an xml file originally
+                    end_time = inj.geocent_end_time + \
+                        1E-9 * inj.geocent_end_time_ns
+
                 if not(seg_start_time <= end_time <= seg_end_time):
                     continue
                 tau0_inj, _ = \
@@ -362,12 +368,20 @@ class InjFilterRejector(object):
             else:
                 htilde = self._short_template_wav
 
-            for inj in self.injection_params.table:
-                end_time = inj.geocent_end_time + \
-                    1E-9 * inj.geocent_end_time_ns
+            for ii, inj in enumerate(self.injection_params.table):
+                if isinstance(inj, np.record):
+                    # hdf format file
+                    end_time = inj['tc']
+                    sim_id = ii
+                else:
+                    # must be an xml file originally
+                    end_time = inj.geocent_end_time + \
+                        1E-9 * inj.geocent_end_time_ns
+                    sim_id = inj.simulation_id
+
                 if not(seg_start_time < end_time < seg_end_time):
                     continue
-                curr_inj = self.short_injections[inj.simulation_id]
+                curr_inj = self.short_injections[sim_id]
                 o, _ = match(htilde, curr_inj, psd=red_psd,
                              low_frequency_cutoff=self.f_lower)
                 if o > self.match_threshold:

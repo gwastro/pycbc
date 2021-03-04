@@ -28,6 +28,7 @@ import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
 import pycbc.workflow as wf
 import pycbc.events
+from pycbc.events import stat
 from pycbc.io import hdf
 
 def to_file(path, ifo=None):
@@ -70,13 +71,6 @@ parser.add_argument('--inspiral-data-analyzed-name',
                          "analyzed by each analysis job.")
 parser.add_argument('--min-snr', type=float, default=6.5,
                     help="Minimum SNR to consider for loudest triggers")
-parser.add_argument('--ranking-statistic',
-                help="How to rank triggers when determining loudest triggers.")
-parser.add_argument('--statistic-files', nargs='+',
-                    action='append', default=[],
-                    help='Use this to supply supplementary files that are '
-                         'necessary for computing the ranking statistic. For '
-                         'example the phase-time consistency file.')
 parser.add_argument('--non-coinc-time-only', default=False,
                     action='store_true',
                     help="If given remove (veto) single-detector triggers "
@@ -95,9 +89,8 @@ parser.add_argument('--transformation-catalog')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
+stat.insert_statistic_option_group(parser)
 args = parser.parse_args()
-# args.statistic_files might be a list of lists. This will flatten this to a single list.
-args.statistic_files = sum(args.statistic_files, [])
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -189,9 +182,9 @@ if len(trigs.snr) == 0:
     sys.exit(0)
 
 logging.info('finding loudest clustered events')
-trigs.mask_to_n_loudest_clustered_events\
-    (n_loudest=num_events, ranking_statistic=args.ranking_statistic,
-     statistic_files=args.statistic_files)
+rank_method = stat.get_statistic_from_opts(args, [args.instrument])
+trigs.mask_to_n_loudest_clustered_events(rank_method, n_loudest=num_events)
+
 if len(trigs.stat) < num_events:
     num_events = len(trigs.stat)
 

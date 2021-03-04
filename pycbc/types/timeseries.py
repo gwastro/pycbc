@@ -90,10 +90,18 @@ class TimeSeries(Array):
 
     def sample_rate_close(self, other):
         """ Check if the sample rate is close enough to allow operations """
-        if (other.delta_t - self.delta_t) / self.delta_t > 1e-4:
+
+        # compare our delta_t either to a another time series' or
+        # to a given sample rate (float)
+        if isinstance(other, TimeSeries):
+            odelta_t = other.delta_t
+        else:
+            odelta_t = 1.0/other
+
+        if (odelta_t - self.delta_t) / self.delta_t > 1e-4:
             return False
 
-        if abs(1 - other.delta_t / self.delta_t) * len(self) > 0.5:
+        if abs(1 - odelta_t / self.delta_t) * len(self) > 0.5:
             return False
 
         return True
@@ -175,6 +183,12 @@ class TimeSeries(Array):
 
         start_idx = float(start - self.start_time) * self.sample_rate
         end_idx = float(end - self.start_time) * self.sample_rate
+
+        if _numpy.isclose(start_idx, round(start_idx)):
+            start_idx = round(start_idx)
+
+        if _numpy.isclose(end_idx, round(end_idx)):
+            end_idx = round(end_idx)
 
         if mode == 'floor':
             start_idx = int(start_idx)
@@ -872,7 +886,7 @@ class TimeSeries(Array):
         fft(tmp, f)
         return f
 
-    def inject(self, other):
+    def inject(self, other, copy=True):
         """Return copy of self with other injected into it.
 
         The other vector will be resized and time shifted with sub-sample
@@ -882,18 +896,22 @@ class TimeSeries(Array):
         # only handle equal sample rate for now.
         if not self.sample_rate_close(other):
             raise ValueError('Sample rate must be the same')
-
+        # determine if we want to inject in place or not
+        if copy:
+            ts = self.copy()
+        else:
+            ts = self
         # Other is disjoint
-        if ((other.start_time >= self.end_time) or
-           (self.start_time > other.end_time)):
-            return self.copy()
+        if ((other.start_time >= ts.end_time) or
+           (ts.start_time > other.end_time)):
+            return ts
 
         other = other.copy()
-        dt = float((other.start_time - self.start_time) * self.sample_rate)
+        dt = float((other.start_time - ts.start_time) * ts.sample_rate)
 
         # This coaligns other to the time stepping of self
         if not dt.is_integer():
-            diff = (dt - _numpy.floor(dt)) * self.delta_t
+            diff = (dt - _numpy.floor(dt)) * ts.delta_t
 
             # insert zeros at end
             other.resize(len(other) + (len(other) + 1) % 2 + 1)
@@ -903,7 +921,7 @@ class TimeSeries(Array):
 
         # get indices of other with respect to self
         # this is already an integer to floating point precission
-        left = float(other.start_time - self.start_time) * self.sample_rate
+        left = float(other.start_time - ts.start_time) * ts.sample_rate
         left = int(round(left))
         right = left + len(other)
 
@@ -916,11 +934,10 @@ class TimeSeries(Array):
             left = 0
 
         # other overhangs on right so truncate
-        if right > len(self):
-            oright = len(other) - (right - len(self))
-            right = len(self)
+        if right > len(ts):
+            oright = len(other) - (right - len(ts))
+            right = len(ts)
 
-        ts = self.copy()
         ts[left:right] += other[oleft:oright]
         return ts
 

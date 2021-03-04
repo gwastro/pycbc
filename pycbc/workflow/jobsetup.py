@@ -148,6 +148,7 @@ def select_generic_executable(workflow, exe_tag):
         'repop_coinc_expfit'       : SQLInOutExecutable,
         'ligolw_cbc_dbinjfind'         : SQLInOutExecutable,
         'lalapps_inspinj'          : LalappsInspinjExecutable,
+        'pycbc_create_injections'  : PyCBCCreateInjectionsExecutable,
         'pycbc_dark_vs_bright_injections' : PycbcDarkVsBrightInjectionsExecutable,
         'pycbc_timeslides'         : PycbcTimeslidesExecutable,
         'pycbc_compute_durations'  : ComputeDurationsExecutable,
@@ -770,7 +771,6 @@ class PyCBCInspiralExecutable(Executable):
             if end > start:
                 data_lengths += [data_length]
                 valid_regions += [segments.segment(start, end)]
-
         return data_lengths, valid_regions
 
     def zero_pad_data_extend(self, job_data_seg, curr_seg):
@@ -1503,6 +1503,22 @@ class GstlalSummaryPage(Executable):
         for parent in parent_nodes:
             dep = dax.Dependency(parent=parent._dax_node, child=node._dax_node)
             workflow._adag.addDependency(dep)
+        return node
+
+class PyCBCCreateInjectionsExecutable(Executable):
+    """
+    The class used to create jobs for the lalapps_inspinj Executable.
+    """
+    current_retention_level = Executable.FINAL_RESULT
+    file_input_options = ['--config-files']
+    def create_node(self, segment, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        node.new_output_file_opt(segment, '.hdf', '--output-file',
+                                 store_file=self.retain_files, tags=tags)
+        node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
+        node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
         return node
 
 class LalappsInspinjExecutable(Executable):

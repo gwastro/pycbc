@@ -6,6 +6,7 @@ pip install .
 cd /
 mkdir -p /opt/pycbc/src
 cp -a /scratch /opt/pycbc/src/pycbc
+chmod a+rw /dev/fuse
 mount /cvmfs/config-osg.opensciencegrid.org
 mount /cvmfs/oasis.opensciencegrid.org
 mkdir -p /opt/pycbc/pycbc-software/share/lal-data

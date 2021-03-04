@@ -92,8 +92,6 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     output_intermediates : {bool, False}
         Save intermediate time series for debugging.
     """
-    # don't waste time trying to optimize a single FFT
-    pycbc.fft.fftw.set_measure_level(0)
 
     if high_freq_cutoff:
         strain = resample_to_delta_t(strain, 0.5 / high_freq_cutoff,
@@ -171,8 +169,6 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     times = [idx * strain.delta_t + strain.start_time \
              for idx in indices[cluster_idx]]
 
-    pycbc.fft.fftw.set_measure_level(pycbc.fft.fftw._default_measurelvl)
-
     return times
 
 def from_cli(opt, dyn_range_fac=1, precision='single',
@@ -234,188 +230,161 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                             opt.gps_start_time - opt.pad_data,
                                             opt.gps_end_time + opt.pad_data)
 
-        if opt.zpk_z and opt.zpk_p and opt.zpk_k:
-            logging.info("Highpass Filtering")
-            strain = highpass(strain, frequency=opt.strain_high_pass)
-
-            logging.info("Applying zpk filter")
-            z = numpy.array(opt.zpk_z)
-            p = numpy.array(opt.zpk_p)
-            k = float(opt.zpk_k)
-            strain = filter_zpk(strain.astype(numpy.float64), z, p, k)
-
-        if opt.normalize_strain:
-            logging.info("Dividing strain by constant")
-            l = opt.normalize_strain
-            strain = strain / l
-
-        if injector is not None:
-            logging.info("Applying injections")
-            injections = \
-                injector.apply(strain, opt.channel_name[0:2],
-                               distance_scale=opt.injection_scale_factor,
-                               inj_filter_rejector=inj_filter_rejector)
-
-        if opt.sgburst_injection_file:
-            logging.info("Applying sine-Gaussian burst injections")
-            injector = SGBurstInjectionSet(opt.sgburst_injection_file)
-            injector.apply(strain, opt.channel_name[0:2],
-                             distance_scale=opt.injection_scale_factor)
-
-        if opt.strain_high_pass:
-            logging.info("Highpass Filtering")
-            strain = highpass(strain, frequency=opt.strain_high_pass)
-
-        if precision == 'single':
-            logging.info("Converting to float32")
-            strain = (strain * dyn_range_fac).astype(pycbc.types.float32)
-        elif precision == "double":
-            logging.info("Converting to float64")
-            strain = (strain * dyn_range_fac).astype(pycbc.types.float64)
-        else:
-            raise ValueError("Unrecognized precision {}".format(precision))
-
-        if opt.sample_rate:
-            logging.info("Resampling data")
-            strain = resample_to_delta_t(strain,
-                                         1. / opt.sample_rate,
-                                         method='ldas')
-
-        if opt.gating_file is not None:
-            logging.info("Gating times contained in gating file")
-            gate_params = numpy.loadtxt(opt.gating_file)
-            if len(gate_params.shape) == 1:
-                gate_params = [gate_params]
-            strain = gate_data(strain, gate_params)
-            gating_info['file'] = \
-                    [gp for gp in gate_params \
-                     if (gp[0] + gp[1] + gp[2] >= strain.start_time) \
-                     and (gp[0] - gp[1] - gp[2] <= strain.end_time)]
-
-        if opt.autogating_threshold is not None:
-            gating_info['auto'] = []
-            for _ in range(opt.autogating_max_iterations):
-                glitch_times = detect_loud_glitches(
-                        strain, threshold=opt.autogating_threshold,
-                        cluster_window=opt.autogating_cluster,
-                        low_freq_cutoff=opt.strain_high_pass,
-                        corrupt_time=opt.pad_data + opt.autogating_pad)
-                gate_params = [[gt, opt.autogating_width, opt.autogating_taper]
-                               for gt in glitch_times]
-                gating_info['auto'] += gate_params
-                strain = gate_data(strain, gate_params)
-                if len(glitch_times) > 0:
-                    logging.info('Autogating at %s',
-                                 ', '.join(['%.3f' % gt
-                                            for gt in glitch_times]))
-                else:
-                    break
-
-        if opt.strain_high_pass:
-            logging.info("Highpass Filtering")
-            strain = highpass(strain, frequency=opt.strain_high_pass)
-
-        if hasattr(opt, 'witness_frame_type') and opt.witness_frame_type:
-            stilde = strain.to_frequencyseries()
-            import h5py
-            tf_file = h5py.File(opt.witness_tf_file)
-            for key in tf_file:
-                witness = pycbc.frame.query_and_read_frame(opt.witness_frame_type, str(key),
-                       start_time=strain.start_time, end_time=strain.end_time)
-                witness = (witness * dyn_range_fac).astype(strain.dtype)
-                tf = pycbc.types.load_frequencyseries(opt.witness_tf_file, group=key)
-                tf = tf.astype(stilde.dtype)
-
-                flen = int(opt.witness_filter_length * strain.sample_rate)
-                tf = pycbc.psd.interpolate(tf, stilde.delta_f)
-
-                tf_time = tf.to_timeseries()
-                window = Array(numpy.hanning(flen * 2), dtype=strain.dtype)
-                tf_time[0:flen] *= window[flen:]
-                tf_time[len(tf_time)-flen:] *= window[0:flen]
-                tf = tf_time.to_frequencyseries()
-
-                kmax = min(len(tf), len(stilde) - 1)
-                stilde[:kmax] -= tf[:kmax] * witness.to_frequencyseries()[:kmax]
-
-            strain = stilde.to_timeseries()
-
-        if opt.pad_data:
-            logging.info("Remove Padding")
-            start = int(opt.pad_data * strain.sample_rate)
-            end = int(len(strain) - strain.sample_rate * opt.pad_data)
-            strain = strain[start:end]
-
-    if opt.fake_strain or opt.fake_strain_from_file:
+    elif opt.fake_strain or opt.fake_strain_from_file:
         logging.info("Generating Fake Strain")
-        if not opt.low_frequency_cutoff:
-            raise ValueError('Please provide low frequency cutoff to '
-                             'generate a fake strain')
         duration = opt.gps_end_time - opt.gps_start_time
-        pdf = 1. / 128
+        pdf = 1.0 / opt.fake_strain_filter_duration
+        fake_flow = opt.fake_strain_flow
+        fake_rate = opt.fake_strain_sample_rate
         plen = int(opt.sample_rate / pdf) // 2 + 1
 
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
-            strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file, plen, pdf,
-                                            opt.low_frequency_cutoff, is_asd_file=True)
+            strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file,
+                                            plen, pdf,
+                                            fake_flow,
+                                            is_asd_file=True)
         elif opt.fake_strain != 'zeroNoise':
             logging.info("Making PSD for strain")
             strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
-                                               opt.low_frequency_cutoff)
+                                               fake_flow)
 
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
-            strain = TimeSeries(pycbc.types.zeros(duration * 16384),
-                                delta_t=1. / 16384,
+            strain = TimeSeries(pycbc.types.zeros(duration * fake_rate),
+                                delta_t=1.0 / fake_rate,
                                 epoch=opt.gps_start_time)
         else:
             logging.info("Making colored noise")
             from pycbc.noise.reproduceable import colored_noise
-            lowfreq = opt.low_frequency_cutoff / 2.
-            strain = colored_noise(strain_psd, opt.gps_start_time,
-                                          opt.gps_end_time,
-                                          seed=opt.fake_strain_seed,
-                                          low_frequency_cutoff=lowfreq)
+            strain = colored_noise(strain_psd,
+                                   opt.gps_start_time - opt.pad_data,
+                                   opt.gps_end_time + opt.pad_data,
+                                   seed=opt.fake_strain_seed,
+                                   sample_rate=fake_rate,
+                                   low_frequency_cutoff=fake_flow)
 
-        if not opt.channel_name and (opt.injection_file \
-                                     or opt.sgburst_injection_file):
-            raise ValueError('Please provide channel names with the format '
-                             'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
-                             'simulated signals into fake strain')
+    if not opt.channel_name and (opt.injection_file \
+                                 or opt.sgburst_injection_file):
+        raise ValueError('Please provide channel names with the format '
+                         'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
+                         'simulated signals into fake strain')
 
-        if injector is not None:
-            logging.info("Applying injections")
-            injections = \
-                injector.apply(strain, opt.channel_name[0:2],
-                               distance_scale=opt.injection_scale_factor,
-                               inj_filter_rejector=inj_filter_rejector)
+    if opt.zpk_z and opt.zpk_p and opt.zpk_k:
+        logging.info("Highpass Filtering")
+        strain = highpass(strain, frequency=opt.strain_high_pass)
 
-        if opt.sgburst_injection_file:
-            logging.info("Applying sine-Gaussian burst injections")
-            injector =  SGBurstInjectionSet(opt.sgburst_injection_file)
-            injector.apply(strain, opt.channel_name[0:2],
-                             distance_scale=opt.injection_scale_factor)
+        logging.info("Applying zpk filter")
+        z = numpy.array(opt.zpk_z)
+        p = numpy.array(opt.zpk_p)
+        k = float(opt.zpk_k)
+        strain = filter_zpk(strain.astype(numpy.float64), z, p, k)
 
-        if opt.strain_high_pass:
-            logging.info("Highpass Filtering")
-            strain = highpass(strain, frequency=opt.strain_high_pass)
+    if opt.normalize_strain:
+        logging.info("Dividing strain by constant")
+        l = opt.normalize_strain
+        strain = strain / l
 
+    if opt.strain_high_pass:
+        logging.info("Highpass Filtering")
+        strain = highpass(strain, frequency=opt.strain_high_pass)
+
+    if opt.sample_rate:
         logging.info("Resampling data")
-        strain = resample_to_delta_t(strain, 1. / opt.sample_rate)
+        strain = resample_to_delta_t(strain,
+                                     1. / opt.sample_rate,
+                                     method='ldas')
 
-        if precision == 'single':
-            logging.info("Converting to float32")
-            strain = (dyn_range_fac * strain).astype(pycbc.types.float32)
-        elif precision == 'double':
-            logging.info("Converting to float64")
-            strain = (dyn_range_fac * strain).astype(pycbc.types.float64)
-        else:
-            raise ValueError("Unrecognized precision {}".format(precision))
+    if injector is not None:
+        logging.info("Applying injections")
+        injections = \
+            injector.apply(strain, opt.channel_name[0:2],
+                           distance_scale=opt.injection_scale_factor,
+                           injection_sample_rate=opt.injection_sample_rate,
+                           inj_filter_rejector=inj_filter_rejector)
 
-        if opt.strain_high_pass:
-            logging.info("Highpass Filtering")
-            strain = highpass(strain, frequency=opt.strain_high_pass)
+    if opt.sgburst_injection_file:
+        logging.info("Applying sine-Gaussian burst injections")
+        injector = SGBurstInjectionSet(opt.sgburst_injection_file)
+        injector.apply(strain, opt.channel_name[0:2],
+                         distance_scale=opt.injection_scale_factor)
+
+    if precision == 'single':
+        logging.info("Converting to float32")
+        strain = (strain * dyn_range_fac).astype(pycbc.types.float32)
+    elif precision == "double":
+        logging.info("Converting to float64")
+        strain = (strain * dyn_range_fac).astype(pycbc.types.float64)
+    else:
+        raise ValueError("Unrecognized precision {}".format(precision))
+
+    if opt.gating_file is not None:
+        logging.info("Gating times contained in gating file")
+        gate_params = numpy.loadtxt(opt.gating_file)
+        if len(gate_params.shape) == 1:
+            gate_params = [gate_params]
+        strain = gate_data(strain, gate_params)
+        gating_info['file'] = \
+                [gp for gp in gate_params \
+                 if (gp[0] + gp[1] + gp[2] >= strain.start_time) \
+                 and (gp[0] - gp[1] - gp[2] <= strain.end_time)]
+
+    if opt.autogating_threshold is not None:
+        gating_info['auto'] = []
+        for _ in range(opt.autogating_max_iterations):
+            glitch_times = detect_loud_glitches(
+                    strain, threshold=opt.autogating_threshold,
+                    cluster_window=opt.autogating_cluster,
+                    low_freq_cutoff=opt.strain_high_pass,
+                    corrupt_time=opt.pad_data + opt.autogating_pad)
+            gate_params = [[gt, opt.autogating_width, opt.autogating_taper]
+                           for gt in glitch_times]
+            gating_info['auto'] += gate_params
+            strain = gate_data(strain, gate_params)
+            if len(glitch_times) > 0:
+                logging.info('Autogating at %s',
+                             ', '.join(['%.3f' % gt
+                                        for gt in glitch_times]))
+            else:
+                break
+
+    if opt.strain_high_pass:
+        logging.info("Highpass Filtering")
+        strain = highpass(strain, frequency=opt.strain_high_pass)
+
+    if hasattr(opt, 'witness_frame_type') and opt.witness_frame_type:
+        stilde = strain.to_frequencyseries()
+        import h5py
+        tf_file = h5py.File(opt.witness_tf_file)
+        for key in tf_file:
+            witness = pycbc.frame.query_and_read_frame(opt.witness_frame_type,
+                   str(key),
+                   start_time=strain.start_time,
+                   end_time=strain.end_time)
+            witness = (witness * dyn_range_fac).astype(strain.dtype)
+            tf = pycbc.types.load_frequencyseries(opt.witness_tf_file,
+                                                  group=key)
+            tf = tf.astype(stilde.dtype)
+
+            flen = int(opt.witness_filter_length * strain.sample_rate)
+            tf = pycbc.psd.interpolate(tf, stilde.delta_f)
+
+            tf_time = tf.to_timeseries()
+            window = Array(numpy.hanning(flen * 2), dtype=strain.dtype)
+            tf_time[0:flen] *= window[flen:]
+            tf_time[len(tf_time)-flen:] *= window[0:flen]
+            tf = tf_time.to_frequencyseries()
+
+            kmax = min(len(tf), len(stilde) - 1)
+            stilde[:kmax] -= tf[:kmax] * witness.to_frequencyseries()[:kmax]
+
+        strain = stilde.to_timeseries()
+
+    if opt.pad_data:
+        logging.info("Remove Padding")
+        start = int(opt.pad_data * strain.sample_rate)
+        end = int(len(strain) - strain.sample_rate * opt.pad_data)
+        strain = strain[start:end]
 
     if opt.taper_data:
         logging.info("Tapering data")
@@ -527,6 +496,15 @@ def insert_strain_option_group(parser, gps_times=True):
                      " gaussian noise")
     data_reading_group.add_argument("--fake-strain-from-file",
                 help="File containing ASD for generating fake noise from it.")
+    data_reading_group.add_argument("--fake-strain-flow",
+                default=1.0, type=float,
+                help="Low frequency cutoff of the fake strain")
+    data_reading_group.add_argument("--fake-strain-filter-duration",
+                default=128.0, type=float,
+                help="Duration in seconds of the fake data coloring filter")
+    data_reading_group.add_argument("--fake-strain-sample-rate",
+                default=16384, type=float,
+                help="Sample rate of the fake data generation")
 
     # Injection options
     data_reading_group.add_argument("--injection-file", type=str,
@@ -538,6 +516,8 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                     default=1, help="Divide injections by this factor "
                     "before injecting into the data.")
+    data_reading_group.add_argument("--injection-sample-rate", type=float,
+                    help="Sample rate for injections")
     data_reading_group.add_argument('--injection-f-ref', type=float,
                                     help='Reference frequency in Hz for '
                                          'creating CBC injections from an XML '
@@ -707,6 +687,18 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             action=MultiDetOptionAction, metavar='IFO:FILE',
                             help="File containing ASD for generating fake "
                             "noise from it.")
+    data_reading_group_multi.add_argument("--fake-strain-flow",
+                default=1.0, type=float,
+                nargs="+", action=MultiDetOptionAction,
+                help="Low frequency cutoff of the fake strain")
+    data_reading_group_multi.add_argument("--fake-strain-filter-duration",
+                default=128.0, type=float,
+                nargs="+", action=MultiDetOptionAction,
+                help="Duration in seconds of the fake data coloring filter")
+    data_reading_group_multi.add_argument("--fake-strain-sample-rate",
+                default=16384, type=float,
+                nargs="+", action=MultiDetOptionAction,
+                help="Sample rate of the fake data generation")
 
     # Injection options
     data_reading_group_multi.add_argument("--injection-file", type=str,
@@ -724,6 +716,10 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                     metavar="IFO:VAL", default=1.,
                     help="Multiple injections by this factor "
                          "before injecting into the data.")
+    data_reading_group_multi.add_argument("--injection-sample-rate",
+                    type=float, nargs="+", action=MultiDetOptionAction,
+                    metavar="IFO:VAL",
+                    help="Sample rate to generate injection with")
 
     data_reading_group_multi.add_argument('--injection-f-ref', type=float,
                                action=MultiDetOptionAction, metavar='IFO:VALUE',
@@ -1385,7 +1381,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
           self.highpass_bandwidth / self.raw_buffer.sample_rate * 2 * numpy.pi)
         self.highpass_samples =  int(highpass_samples / 2)
         resample_corruption = 10 # If using the ldas method
-        self.factor = int(1.0 / self.raw_buffer.delta_t / self.sample_rate)
+        self.factor = round(1.0 / self.raw_buffer.delta_t / self.sample_rate)
         self.corruption = self.highpass_samples // self.factor + resample_corruption
 
         self.psd_corruption =  self.psd_inverse_length * self.sample_rate

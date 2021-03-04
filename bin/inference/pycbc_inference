@@ -82,9 +82,9 @@ opts = parser.parse_args()
 # setup log
 # If we're running in MPI mode, only allow the parent to print
 use_mpi, size, rank = pycbc.pool.use_mpi(opts.use_mpi, log=False)
-if use_mpi:
-    opts.verbose &= rank == 0
 pycbc.init_logging(opts.verbose)
+if use_mpi and rank != 0:
+    logging.disable(logging.WARNING)
 
 # verify options are sane
 fft.verify_fft_options(opts, parser)

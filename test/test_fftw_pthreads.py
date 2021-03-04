@@ -56,6 +56,7 @@ kdict = {'backends' : ['fftw'],
          'context' : CPUScheme(num_threads=2)}
 klass = type('FFTW_pthreads_test',
              (_BaseTestFFTClass,),kdict)
+klass.__test__ = True
 FFTTestClasses.append(klass)
 
 # Finally, we create suites and run them

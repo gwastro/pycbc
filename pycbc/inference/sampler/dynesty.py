@@ -212,9 +212,18 @@ class DynestySampler(BaseSampler):
             The maximum logl stopping condition.
         * ``n_effective = INT``:
             Target effective number of samples stopping condition
-        * ``samples = STR``:
+        * ``sample = STR``:
             The method to sample the space. Should be one of 'uniform',
             'rwalk', 'rwalk2' (a modified version of rwalk), or 'slice'.
+        * ``walk = INT``:
+            Used for some of the walk methods. Sets the minimum number of
+            steps to take when evolving a point.
+        * ``maxmcmc = INT``:
+            Used for some of the walk methods. Sets the maximum number of steps
+            to take when evolving a point.
+        * ``nact = INT``:
+            used for some of the walk methods. Sets number of autorcorrelation
+            lengths before terminating evolution of a point.
         * ``first_update_min_ncall = INT``:
             The minimum number of calls before updating the bounding region
             for the first time.
@@ -283,6 +292,9 @@ class DynestySampler(BaseSampler):
                  'checkpoint_time_interval': float,
                  'first_update_min_ncall': int,
                  'first_update_min_eff': float,
+                 'walks': int,
+                 'maxmcmc': int,
+                 'nact': int,
                  }
         extra = {}
         run_extra = {}
@@ -513,7 +525,7 @@ def sample_rwalk_mod(args):
         # Check proposed point.
         v_prop = prior_transform(numpy.array(u_prop))
         logl_prop = loglikelihood(numpy.array(v_prop))
-        if logl_prop >= loglstar:
+        if logl_prop > loglstar:
             u = u_prop
             v = v_prop
             logl = logl_prop

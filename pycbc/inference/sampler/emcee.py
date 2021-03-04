@@ -50,6 +50,10 @@ from .. import models
 # =============================================================================
 #
 
+if emcee.__version__ >= '3.0.0':
+    raise ImportError
+
+
 class EmceeEnsembleSampler(EnsembleSupport, BaseMCMC, BaseSampler):
     """This class is used to construct an MCMC sampler from the emcee
     package's EnsembleSampler.

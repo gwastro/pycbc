@@ -17,7 +17,7 @@ This modules provides classes and functions for drawing and calculating the
 probability density function of distributions.
 """
 # imports needed for functions below
-from pycbc.workflow import ConfigParser as _ConfigParser
+from six.moves import configparser as _ConfigParser
 from pycbc.distributions import constraints
 from pycbc import VARARGS_DELIM as _VARARGS_DELIM
 

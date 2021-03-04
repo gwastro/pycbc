@@ -444,6 +444,40 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
     return node.output_files
 
 
+def make_inference_plot_mcmc_history(workflow, inference_file, output_dir,
+                                     name="plot_mcmc_history",
+                                     analysis_seg=None, tags=None):
+    """Sets up a plot showing the checkpoint history of an MCMC sampler.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    inference_file: pycbc.workflow.File
+        The file with posterior samples.
+    output_dir: str
+        The directory to store result plots and files.
+    name: str, optional
+        The name in the [executables] section of the configuration file
+        to use, and the section to read for additional arguments to pass to
+        the executable. Default is ``plot_mcmc_history``.
+    analysis_segs: ligo.segments.Segment, optional
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: list, optional
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of output files.
+    """
+    node = make_inference_plot(workflow, inference_file, output_dir,
+                               name, analysis_seg=analysis_seg, tags=tags,
+                               add_to_workflow=True)
+    return node.output_files
+
+
 def make_inference_dynesty_run_plot(workflow, inference_file, output_dir,
                                     name="plot_dynesty_run",
                                     analysis_seg=None, tags=None):
@@ -460,7 +494,7 @@ def make_inference_dynesty_run_plot(workflow, inference_file, output_dir,
     name: str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``plot_acceptance_rate``.
+        the executable. Default is ``plot_dynesty_run``.
     analysis_segs: ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -494,7 +528,7 @@ def make_inference_dynesty_trace_plot(workflow, inference_file, output_dir,
     name: str, optional
         The name in the [executables] section of the configuration file
         to use, and the section to read for additional arguments to pass to
-        the executable. Default is ``plot_acceptance_rate``.
+        the executable. Default is ``plot_dynesty_traceplot``.
     analysis_segs: ligo.segments.Segment, optional
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
@@ -690,6 +724,8 @@ def get_diagnostic_plots(workflow):
         diagnostics.append('samples')
     if "plot_acceptance_rate" in workflow.cp.options("executables"):
         diagnostics.append('acceptance_rate')
+    if "plot_mcmc_history" in workflow.cp.options("executables"):
+        diagnostics.append('mcmc_history')
     if "plot_dynesty_run" in workflow.cp.options("executables"):
         diagnostics.append('dynesty_run')
     if "plot_dynesty_traceplot" in workflow.cp.options("executables"):
@@ -759,6 +795,18 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir,
                 tags=tags+[label, str(kk)])
         out['acceptance_rate'] = acceptance_plots
         layout.single_layout(rdir[base], acceptance_plots)
+
+    if 'mcmc_history' in diagnostics:
+        # files for samples mcmc history subsection
+        base = "mcmc_history/{}".format(label)
+        history_plots = []
+        for kk, sf in enumerate(samples_file):
+            history_plots += make_inference_plot_mcmc_history(
+                workflow, sf, rdir[base],
+                analysis_seg=workflow.analysis_time,
+                tags=tags+[label, str(kk)])
+        out['mcmc_history'] = history_plots
+        layout.single_layout(rdir[base], history_plots)
 
     if 'dynesty_run' in diagnostics:
         # files for dynesty run subsection

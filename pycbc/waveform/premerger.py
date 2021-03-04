@@ -7,6 +7,7 @@ def premerger_taylorf2(**p):
     """ Generate time-shifted TaylorF2"""
     from pycbc.waveform import get_fd_waveform
     from pycbc.waveform.spa_tmplt import spa_length_in_time
+    from pycbc.waveform.utils import fd_taper
 
     p.pop('approximant')
     hp, hc = get_fd_waveform(approximant="TaylorF2", **p)
@@ -28,6 +29,12 @@ def premerger_taylorf2(**p):
     hp[0:kmin] = 0
     hc[0:kmin] = 0
 
+    if 'final_taper' in p:
+        taper_size = p['final_taper']
+        hp = fd_taper(hp, p['f_final'] - taper_size, p['f_final'], side='right')
+        hc = fd_taper(hc, p['f_final'] - taper_size, p['f_final'], side='right')
+
     hp.time_offset = removed
     hc.time_offset = removed
+
     return hp, hc

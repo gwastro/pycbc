@@ -335,11 +335,16 @@ class SingleDetPowerChisq(object):
             psd._chisq_cached_key[id(template.params)] = True
             num_bins = int(self.parse_option(template, self.num_bins))
 
-            if hasattr(psd, 'sigmasq_vec') and template.approximant in psd.sigmasq_vec:
+            if hasattr(psd, 'sigmasq_vec') and \
+                    template.approximant in psd.sigmasq_vec:
                 kmin = int(template.f_lower / psd.delta_f)
                 kmax = template.end_idx
                 bins = power_chisq_bins_from_sigmasq_series(
-                    psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax)
+                    psd.sigmasq_vec[template.approximant],
+                    num_bins,
+                    kmin,
+                    kmax
+                )
             else:
                 bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
             template._bin_cache[key] = bins
@@ -436,6 +441,7 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
                 logging.info('%s above chisq activation threshold' % num_above)
                 above_indices = indices[above]
                 above_snrv = snrv[above]
+                u_vals = u_vals[above]
                 rchisq = numpy.zeros(len(indices), dtype=numpy.float32)
                 dof = -100
             else:
