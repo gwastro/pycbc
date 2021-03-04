@@ -450,10 +450,10 @@ def insert_strain_option_group(parser, gps_times=True):
                                      "(integer seconds)", type=int)
         data_reading_group.add_argument("--gps-end-time",
                                 help="The gps end time of the data "
-                                     " (integer seconds)", type=int)
+                                     "(integer seconds)", type=int)
 
     data_reading_group.add_argument("--strain-high-pass", type=float,
-                            help="High pass frequency")
+              help="High pass frequency")
     data_reading_group.add_argument("--pad-data", default=8,
               help="Extra padding to remove highpass corruption "
                    "(integer seconds)", type=int)
@@ -461,7 +461,7 @@ def insert_strain_option_group(parser, gps_times=True):
               help="Taper ends of data to zero using the supplied length as a "
                    "window (integer seconds)", type=int, default=0)
     data_reading_group.add_argument("--sample-rate", type=int,
-                            help="The sample rate to use for h(t) generation (integer Hz).")
+              help="The sample rate to use for h(t) generation (integer Hz)")
     data_reading_group.add_argument("--channel-name", type=str,
                    help="The channel containing the gravitational strain data")
 
@@ -490,7 +490,7 @@ def insert_strain_option_group(parser, gps_times=True):
     # Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
                 help="Name of model PSD for generating fake gaussian noise.",
-                     choices=pycbc.psd.get_lalsim_psd_list() + ['zeroNoise'])
+                choices=pycbc.psd.get_lalsim_psd_list() + ['zeroNoise'])
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
@@ -508,29 +508,35 @@ def insert_strain_option_group(parser, gps_times=True):
 
     # Injection options
     data_reading_group.add_argument("--injection-file", type=str,
-                      help="(optional) Injection file used to add "
-                           "waveforms into the strain")
+                      help="(optional) Injection file containing parameters"
+                           " of CBC signals to be added to the strain")
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
-                      help="(optional) Injection file used to add "
-                      "sine-Gaussian burst waveforms into the strain")
+                      help="(optional) Injection file containing parameters"
+                      "of sine-Gaussian burst signals to add to the strain")
     data_reading_group.add_argument("--injection-scale-factor", type=float,
-                    default=1, help="Divide injections by this factor "
-                    "before injecting into the data.")
+                      default=1,
+                      help="Divide injections by this factor "
+                           "before adding to the strain data")
     data_reading_group.add_argument("--injection-sample-rate", type=float,
-                    help="Sample rate for injections")
-    data_reading_group.add_argument('--injection-f-ref', type=float,
-                                    help='Reference frequency in Hz for '
-                                         'creating CBC injections from an XML '
-                                         'file.')
-    data_reading_group.add_argument('--injection-f-final', type=float,
-                                    help='Override the f_final field of a CBC '
-                                         'XML injection file.')
+                      help="Sample rate to use for injections (integer Hz). "
+                           "Typically similar to the strain data sample rate."
+                           "If not provided, the strain sample rate will be "
+                           "used")
+    data_reading_group.add_argument("--injection-f-ref", type=float,
+                      help="Reference frequency in Hz for creating CBC "
+                           "injections from an XML file")
+    data_reading_group.add_argument("--injection-f-final", type=float,
+                      help="Sample rate to use for injections (integer Hz). "
+                           "Typically similar to the strain data sample rate."
+                           "If not provided, the strain sample rate will be "
+                           "used")ide the f_final field of a CBC XML "
+                           "injection file (frequency in Hz)")
 
     # Gating options
     data_reading_group.add_argument("--gating-file", type=str,
                     help="(optional) Text file of gating segments to apply."
-                        " Format of each line is (all times in secs):"
-                        "  gps_time zeros_half_width pad_half_width")
+                         " Format of each line is (all values in seconds):"
+                         "  gps_time zeros_half_width pad_half_width")
     data_reading_group.add_argument('--autogating-threshold', type=float,
                                     metavar='SIGMA',
                                     help='If given, find and gate glitches '
@@ -702,34 +708,36 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
 
     # Injection options
     data_reading_group_multi.add_argument("--injection-file", type=str,
-                            nargs="+", action=MultiDetOptionAction,
-                            metavar='IFO:FILE',
-                            help="(optional) Injection file used to add "
-                            "waveforms into the strain")
+                    nargs="+", action=MultiDetOptionAction,
+                    metavar='IFO:FILE',
+                    help="(optional) Injection file containing parameters"
+                         "of CBC signals to be added to the strain")
     data_reading_group_multi.add_argument("--sgburst-injection-file", type=str,
-                      nargs="+", action=MultiDetOptionAction,
-                      metavar='IFO:FILE',
-                      help="(optional) Injection file used to add "
-                      "sine-Gaussian burst waveforms into the strain")
+                    nargs="+", action=MultiDetOptionAction,
+                    metavar='IFO:FILE',
+                    help="(optional) Injection file containing parameters"
+                         "of sine-Gaussian burst signals to add to the strain")
     data_reading_group_multi.add_argument("--injection-scale-factor",
                     type=float, nargs="+", action=MultiDetOptionAction,
                     metavar="IFO:VAL", default=1.,
-                    help="Multiple injections by this factor "
-                         "before injecting into the data.")
+                    help="Multiply injections by this factor "
+                         "before adding to the strain data")
     data_reading_group_multi.add_argument("--injection-sample-rate",
                     type=float, nargs="+", action=MultiDetOptionAction,
                     metavar="IFO:VAL",
-                    help="Sample rate to generate injection with")
+                    help="Sample rate to use for injections (integer Hz). "
+                         "Typically similar to the strain data sample rate."
+                         "If not provided, the strain sample rate will be "
+                         "used")
 
-    data_reading_group_multi.add_argument('--injection-f-ref', type=float,
-                               action=MultiDetOptionAction, metavar='IFO:VALUE',
-                               help='Reference frequency in Hz for '
-                                    'creating CBC injections from an XML '
-                                    'file.')
+    data_reading_group_multi.add_argument("--injection-f-ref", type=float,
+                    action=MultiDetOptionAction, metavar='IFO:VALUE',
+                    help="Reference frequency in Hz for creating CBC "
+                         "injections from an XML file")
     data_reading_group_multi.add_argument('--injection-f-final', type=float,
-                               action=MultiDetOptionAction, metavar='IFO:VALUE',
-                               help='Override the f_final field of a CBC '
-                                    'XML injection file.')
+                    action=MultiDetOptionAction, metavar='IFO:VALUE',
+                    help="Override the f_final field of a CBC XML "
+                         "injection file (frequency in Hz)")
 
     # Gating options
     data_reading_group_multi.add_argument("--gating-file", nargs="+",
@@ -739,9 +747,9 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                            ' Format of each line (units s) :'
                            ' gps_time zeros_half_width pad_half_width')
     data_reading_group_multi.add_argument('--autogating-threshold', type=float,
-                                    nargs="+", action=MultiDetOptionAction,
-                                    metavar='IFO:SIGMA',
-                                    help='If given, find and gate glitches '
+                      nargs="+", action=MultiDetOptionAction,
+                      metavar='IFO:SIGMA',
+                      help='If given, find and gate glitches '
                                          'producing a deviation larger than '
                                          'SIGMA in the whitened strain time '
                                          'series.')
