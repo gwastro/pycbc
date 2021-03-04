@@ -456,19 +456,29 @@ if do_injections:
     sitename = {'G':'GEO', 'H':'Hanford', 'L':'Livingston', 'V':'Virgo',\
                 'K':'KAGRA'}
 
+    # Dictionary of plot titles
+    title_dict = {'mchirp': "chirp mass",
+                 'time': "time",
+                 'incl': "inclination",
+                 'cosincl': "inclination",
+                 'q': "mass ratio",
+                 'mtot': "total mass",
+                 'spin1': "spin",
+                 'spin2': "spin"}
+
     # Dictionary of labels for the horizontal axis
-    axis_labels = {'mchirp': "Chirp Mass (solar masses)",
-                   'time': "Time since %d" % grb_time,
-                   'eff_dist': "Inverse sum of effective distances (Mpc)",
-                   'dist': "Distance (Mpc)",
-                   'eff_site_dist': "",
-                   'incl': "Inclination (iota)",
-                   'cosincl': "cos(iota)",
-                   'q': "Mass ratio q",
-                   'mtot': "Total mass M (solar masses)",
-                   'spin1': "Spin on 1st binary component",
-                   'spin2': "Spin on 2nd binary component",
-                   'sky_error': "Rec. sky error (radians)"}
+    axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
+                        'time': "Time since %d" % grb_time,
+                        'eff_dist': "Inverse sum of effective distances (Mpc)",
+                        'dist': "Distance (Mpc)",
+                        'eff_site_dist': "",
+                        'incl': "Inclination (iota)",
+                        'cosincl': "cos(iota)",
+                        'q': "Mass ratio q",
+                        'mtot': "Total mass M (solar masses)",
+                        'spin1': "Spin on 1st binary component",
+                        'spin2': "Spin on 2nd binary component",
+                        'sky_error': "Rec. sky error (radians)"}
 
     # Dictionaries of data to plot
     g_found_dict = {'mchirp': g_found_mchirp, 'time': g_found_time,
@@ -539,8 +549,8 @@ if do_injections:
         g_missed2_y = np.array(g_missed2_dict[y_qty])
         missed_inj_x = np.array(missed_inj_dict[x_qty])
         missed_inj_y = np.array(missed_inj_dict[y_qty])
-        x_label = axis_labels[x_qty]
-        y_label = axis_labels[y_qty]
+        x_label = axis_labels_dict[x_qty]
+        y_label = axis_labels_dict[y_qty]
         if x_qty == "spin1":
             found_inj_x = np.sqrt(found_inj_spin1x**2 + \
                                   found_inj_spin1y**2 + \
@@ -624,17 +634,25 @@ if do_injections:
         ax.grid()
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
+        if "dist" in y_qty:
+            plot_title = "Injection recovery with respect to "
+            plot_title += title_dict[x_qty]
+        elif y_qty == "sky_error" or x_qty == "sky_error":
+            plot_title = "Sky error of recovered injections"
+        else:
+            plot_title = "Injection recovery with respect to "
+            plot_title += title_dict[x_qty]
+            plot_title += "and "+ title_dict[y_qty]
         if x_qty == "spin1":
-            plot_title = "Injection recovery with respect to component spins"
             ax.set_xlim([0, np.ceil(10 * max(max_missed_inj_spin1,
                                              found_inj_x.max())) / 10])
             ax.set_ylim([0, np.ceil(10 * max(max_missed_inj_spin2,
                                              found_inj_y.max())) / 10])
+            if y_qty == "spin2":
+                plot_title = "Injection recovery with respect to component spins"
         elif x_qty == "incl":
-            plot_title = "Injection recovery with respect to inclination angle"
             ax.set_xlim(0, max_inc_deg)
         elif x_qty == "cosincl":
-            plot_title = "Injection recovery with respect to inclination angle"
             tt = np.arange(0, max_inc_deg + 10, 10)
             #tt = np.arange(0, 190, 10)
             tks = np.cos(np.deg2rad(tt))
@@ -643,13 +661,7 @@ if do_injections:
             fig.autofmt_xdate()
             ax.set_xlim(np.cos(max_inc), 1)
             #ax.set_xlim(-1, 1)
-        elif y_qty == "mtot":
-            plot_title = "Injection recovery with respect to component masses"
-        elif site is not None:
-            plot_title = "Injection recovery vs background"
-        else:
-            plot_title = "Injection recovery vs background"
-        ax.set_title(plot_title)
+        #ax.set_title(plot_title)
         plt.tight_layout()
         plot_caption = "Black cross indicates no trigger was found "
         plot_caption += "coincident with the injection.\n"
@@ -662,6 +674,10 @@ if do_injections:
         plot_caption += "found coincident with the injection but it was "
         plot_caption += "not louder than all offsource events. The colour "
         plot_caption += "bar gives the p-value of the trigger."
+        if opts.plot_title is not None:
+            plot_title = opts.plot_title
+        if opts.plot_caption is not None:
+            plot_title = opts.plot_caption
         save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
                                title=plot_title, caption=plot_caption)
         plt.close()

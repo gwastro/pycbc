@@ -463,6 +463,7 @@ vprint("  off-source segments : [{}]".format(
 # construct off-source trial segments
 offsource = segments.segmentlist()
 _ts = args.trig_start_time
+# TODO: make these random rather than sequential
 for i in range(args.num_trials):
     _te = _ts + trialtime
     bins["OFFTRIAL_{}".format(i+1)] = seg = segments.segment(_ts, _te)

@@ -165,10 +165,10 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         "chi-square veto plots), coincident, nullstat, " +
                         "or overwhitened (for null statistics plots)")
 
-    parser.add_argument('--plot-title',
+    parser.add_argument('--plot-title', default=None,
                         help="If given, use this as the plot caption")
 
-    parser.add_argument('--plot-caption',
+    parser.add_argument('--plot-caption', default=None,
                         help="If given, use this as the plot caption")
     
     # pygrb_efficiency only options: start here
@@ -190,6 +190,12 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
     parser.add_argument("-m", "--missed-file",action="store",
                         default=None,
                         help="The location of the missed injections file")
+
+    parser.add_argument("--background-output-file", default=None, #required=True,
+                        help="Detection efficiency output file.")
+
+    parser.add_argument("--onsource-output-file", default=None, #required=True,
+                        help="Exclusion distance output file.")
 
     # FIXME: eventually remove below argument and require output-file
     # be specified. 
