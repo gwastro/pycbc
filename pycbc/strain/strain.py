@@ -717,7 +717,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
     data_reading_group_multi.add_argument("--injection-scale-factor",
                     type=float, nargs="+", action=MultiDetOptionAction,
                     metavar="IFO:VAL", default=1.,
-                    help="Multiply injections by this factor "
+                    help="Divide injections by this factor "
                          "before adding to the strain data")
     data_reading_group_multi.add_argument("--injection-sample-rate",
                     type=float, nargs="+", action=MultiDetOptionAction,
@@ -746,10 +746,9 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
     data_reading_group_multi.add_argument('--autogating-threshold', type=float,
                       nargs="+", action=MultiDetOptionAction,
                       metavar='IFO:SIGMA',
-                      help='If given, find and gate glitches '
-                                         'producing a deviation larger than '
-                                         'SIGMA in the whitened strain time '
-                                         'series.')
+                      help='If given, find and gate glitches producing a '
+                           'deviation larger than SIGMA in the whitened strain '
+                           'time series')
     data_reading_group_multi.add_argument('--autogating-max-iterations', type=int,
                                     metavar='SIGMA', default=1,
                                     help='If given, iteratively apply '
