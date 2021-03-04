@@ -526,10 +526,7 @@ def insert_strain_option_group(parser, gps_times=True):
                       help="Reference frequency in Hz for creating CBC "
                            "injections from an XML file")
     data_reading_group.add_argument("--injection-f-final", type=float,
-                      help="Sample rate to use for injections (integer Hz). "
-                           "Typically similar to the strain data sample rate."
-                           "If not provided, the strain sample rate will be "
-                           "used")ide the f_final field of a CBC XML "
+                      help="Override the f_final field of a CBC XML "
                            "injection file (frequency in Hz)")
 
     # Gating options
