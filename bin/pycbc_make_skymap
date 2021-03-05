@@ -27,7 +27,7 @@ from ligo.gracedb.rest import GraceDb
 def default_frame_type(time, ifo):
     """Sensible defaults for frame types based on interferometer and time.
     """
-    if opt.injection_file is not None:
+    if opt.fake_strain:
         return ifo + '_FAKE_DATA'
     if time < 1137254517:
         # O1
@@ -50,7 +50,7 @@ def default_frame_type(time, ifo):
 def default_channel_name(time, ifo):
     """Sensible defaults for channel name based on interferometer and time.
     """
-    if opt.injection_file is not None:
+    if opt.fake_strain:
         return ifo + ':FAKE_DATA'
     if time < 1137254517:
         # O1
@@ -76,7 +76,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          frame_types=None, channel_names=None,
          gracedb_server=None, test_event=True,
          custom_frame_files=None, approximant=None, detector_state=None,
-         veto_definer=None, injection_file=None):
+         veto_definer=None, injection_file=None, fake_strain=None, fake_strain_seed=None):
 
     if not test_event and not gracedb_server:
         raise RuntimeError('a GraceDB URL must be specified if not a test event.')
@@ -190,15 +190,17 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append("--trigger-time"),command.append(str(np.round(trig_time,5)))
         command.append("--window"),command.append(str(window))
         
-        if opt.injection_file is not None:
-            command.append("--injection-file"),command.append(str(opt.injection_file))
+        if injection_file:
+            command.append("--injection-file"),command.append(injection_file)
+        
+        if fake_strain:
             command.append("--fake-strain")
-            command.append(str(opt.multiifo_fake_strain[ifo][0]))
-            if opt.multiifo_fake_strain_seed is not None:
+            command.append(fake_strain[ifo][0])
+            if fake_strain_seed:
                 command.append("--fake-strain-seed")
-                command.append(str(opt.multiifo_fake_strain_seed[ifo][0]))            
+                command.append(fake_strain_seed[ifo][0])
 
-        if opt.injection_file is None:
+        if not fake_strain:
             if custom_frame_files is None or ifo not in custom_frame_files:
                 command.append("--frame-type")
                 command.append(frame_types[ifo])
@@ -238,11 +240,12 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
         command.append("--output-file")
         command.append(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf")
-
+        
         log_path = tmpdir + '/pycbc_single_template_{}_{}_log.txt'.format(str(rough_time), ifo)
         log_file = open(log_path, 'w')
         log_file.write(' '.join(command) + '\n\n')
         log_file.flush()
+        #print(command)
 
         proc = subprocess.Popen(command, stdout=log_file, stderr=log_file)
         procs.append((ifo, proc, log_path, log_file))
@@ -464,10 +467,10 @@ if __name__ == '__main__':
                              'H1:/path/to/frame/file L1:/path/to/frame/file')
     parser.add_argument('--injection-file', type=str,
                         help='Optional path to an injection file.')
-    parser.add_argument('--multiifo-fake-strain', nargs='+', type=str,
+    parser.add_argument('--fake-strain', nargs='+', type=str,
                         action=MultiDetOptionAppendAction, metavar="IFO:FAKE_STRAIN",
                         help="The set of fake-strains for each detector")
-    parser.add_argument('--multiifo-fake-strain-seed', nargs='+', type=str,
+    parser.add_argument('--fake-strain-seed', nargs='+', type=str,
                         action=MultiDetOptionAppendAction, metavar="IFO:FAKE_STRAIN_SEED",
                         help="The set of fake-strains-seeds for each detector")
 
@@ -487,4 +490,5 @@ if __name__ == '__main__':
          test_event=not opt.enable_production_gracedb_upload,
          custom_frame_files=opt.custom_frame_file,
          approximant=opt.approximant, detector_state=opt.detector_state,
-         veto_definer=opt.veto_definer, injection_file=opt.injection_file)
+         veto_definer=opt.veto_definer, injection_file=opt.injection_file, 
+         fake_strain=opt.fake_strain, fake_strain_seed=opt.fake_strain_seed)
