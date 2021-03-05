@@ -35,6 +35,7 @@ dqsegdb
 dqsegdb2>=1.0.1
 https://github.com/ahnitz/pegasus-wms-python3/archive/master.tar.gz
 amqplib
+htchirp >= 2.0
 
 # For building documentation
 Sphinx>=1.5.0,<2.0.0
