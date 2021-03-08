@@ -89,8 +89,9 @@ title_dict = {'coherent': "Coherent SNR vs Time",
 if opts.plot_title is None:
     opts.plot_title = title_dict[snr_type]
 if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: Background triggers\n" +
-                         "Red crosses: Injections triggers")
+    opts.plot_caption = ("Blue crosses: background triggers.  ")
+    if inj_file:
+        opts.plot_caption += ("Red crosses: injections triggers.")
 
 logging.info("Imported and ready to go.")
 

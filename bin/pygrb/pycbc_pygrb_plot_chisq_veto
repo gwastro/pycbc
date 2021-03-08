@@ -103,11 +103,13 @@ if opts.plot_title is None:
     else:
         opts.plot_title = "%s vs Coherent SNR" % opts.plot_title
 if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: Background triggers\n" +
-                         "Red crosses: Injections triggers\n" +
-                         "Black line: Veto line\n" +
-                         "Gray shaded region: Vetoed area\n" +
-                         "Yellow lines: Contours of new SNR")
+    opts.plot_caption = ("Blue crosses: background triggers.  " +
+                         "Black line: veto line.  " +
+                         "Gray shaded region: Vetoed area.  " +
+                         "Yellow lines: contours of new SNR.")
+    if inj_file:
+        opts.plot_caption = ("Red crosses: injection triggers.  ") +\
+                            opts.plot_caption
 
 logging.info("Imported and ready to go.")
 

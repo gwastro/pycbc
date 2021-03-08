@@ -153,6 +153,9 @@ def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
     # Initialize job node
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     extra_tags = ['GRB'+grb_name]
+    # Injection file
+    if inj_set is not None:
+        extra_tags.append(inj_set) # TODO: are we getting this tag twice?
     node = PlotExecutable(workflow.cp, exec_name,
                           ifos=workflow.ifos, out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
@@ -178,6 +181,9 @@ def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
         node.new_output_file_opt(workflow.analysis_time,
                                  '.html', '--'+inj_sorting+'-injs-output-file',
                                  tags=extra_tags+[inj_sorting.upper().replace('-', '_')])
+    # TODO: do something about:
+    #node.new_output_file_opt("loudest_events.html")
+    #node.new_output_file_opt("loudest_offsource_trigs.html")
     # Add job node to the workflow
     workflow += node
 
@@ -447,6 +453,10 @@ for offtrial in offtrials:
         plotting_nodes.append(plot_node)
         files.append(output_files)
     layout.two_column_layout(out_dir, files)
+
+# Make room for throughput histograms (TODO)
+base = rdir['workflow/throughput']
+_workflow.makedir(base)
 
 # Save global config file
 base = rdir['workflow/configuration']

@@ -77,13 +77,10 @@ if opts.veto_directory:
 if opts.plot_title is None:
     opts.plot_title = 'PyGRB sky grid'
 
-logging.info("Imported and ready to go.")
+if opts.plot_caption is None:
+    opts.plot_caption = 'Search points.'
 
-# Set output directories
-outdirs = [os.path.split(os.path.abspath(outfile))[0]]
-for outdir in outdirs:
-    if not os.path.isdir(outdir):
-        os.makedirs(outdir)
+logging.info("Imported and ready to go.")
 
 # Extract IFOs and vetoes
 logging.info("Extracting IFOs and vetoes.")

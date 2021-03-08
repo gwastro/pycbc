@@ -95,19 +95,20 @@ y_labels = {'nullstat': "Null statistic",
 if opts.plot_title is None:
     opts.plot_title = y_labels[null_stat_type] + " vs Coherent SNR"
 if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: Background triggers\n" +
-                         "Red crosses: Injections triggers\n")
+    opts.plot_caption = ("Blue crosses: background triggers.  ")
+    if inj_file:
+        opts.plot_caption = opts.plot_caption +\
+                            ("Red crosses: injection triggers.  ")
 
     if null_stat_type == 'coincident':
-        opts.plot_caption = (opts.plot_caption +
-                             "Green line: coincident SNR = coherent SNR")
+        opts.plot_caption += ("Green line: coincident SNR = coherent SNR.")
     else:
-        opts.plot_caption = (opts.plot_caption +
-                             "Black line: Veto line\n" +
-                             "Green line: Above this triggers have reduced " +
-                             "detection statistic\n" +
-                             "Magenta line: On this line the statistic is " +
-                             "reduced by a factor of two")
+        opts.plot_caption = opts.plot_caption +\
+                             "Black line: veto line.  " +\
+                             "Green line: above this triggers have reduced " +\
+                             "detection statistic.  " +\
+                             "Magenta line: in this line the statistic is " +\
+                             "reduced by a factor of two."
 
 logging.info("Imported and ready to go.")
 

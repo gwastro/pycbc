@@ -338,43 +338,10 @@ if do_injections:
     found_inj_time = np.asarray(found_injs.get_column('geocent_end_time')) +\
                      np.asarray(found_injs.get_column('geocent_end_time_ns')*\
                                 10**-9)
-    found_inj_mchirp = np.asarray(found_injs.get_column('mchirp'))
-    found_inj_mtot = np.asarray(found_injs.get_column('mtotal'))
-    found_inj_m1 = np.asarray(found_injs.get_column('mass1'))
-    found_inj_m2 = np.asarray(found_injs.get_column('mass2'))
-    found_inj_eff_site_dist =\
-        dict((ifo, found_injs.get_column('eff_dist_%s' % ifo.lower()))\
-             for ifo in sites)
-    found_inj_eff_dist = np.power(np.power(\
-                                  np.asarray(found_inj_eff_site_dist.\
-                                  values()), -1).sum(0), -1)
-    found_inj_ra = np.asarray(found_injs.get_column('longitude'))
-    found_inj_dec = np.asarray(found_injs.get_column('latitude'))
     found_inj_dist = np.asarray(found_injs.get_column('distance'))
-    found_inj_inc = np.asarray(found_injs.get_column('inclination'))
-    found_inj_spin1x = np.asarray(found_injs.get_column('spin1x'))
-    found_inj_spin1y = np.asarray(found_injs.get_column('spin1y'))
-    found_inj_spin1z = np.asarray(found_injs.get_column('spin1z'))
-    found_inj_spin2x = np.asarray(found_injs.get_column('spin2x'))
-    found_inj_spin2y = np.asarray(found_injs.get_column('spin2y'))
-    found_inj_spin2z = np.asarray(found_injs.get_column('spin2z'))
 
     # TODO: a lot of this is identical to all the stuff above
     found_trig_mchirp = np.asarray(found_trigs.get_column('mchirp'))
-    found_trig_m1 = np.asarray(found_trigs.get_column('mass1'))
-    found_trig_m2 = np.asarray(found_trigs.get_column('mass2'))
-    found_trig_ra = np.asarray(found_trigs.get_column('ra'))
-    found_trig_dec = np.asarray(found_trigs.get_column('dec'))
-    found_sky_angle = np.arccos(np.cos(found_inj_dec - found_trig_dec) -\
-                                np.cos(found_inj_dec)* np.cos(found_trig_dec) *\
-                                (1 - np.cos(found_inj_ra - found_trig_ra)))
-    found_trig_snr = np.asarray(found_trigs.get_column('snr'))
-    found_trig_chisq = np.asarray(found_trigs.get_column('chisq'))
-    found_trig_bank = np.asarray(found_trigs.get_column('bank_chisq'))
-    found_trig_auto = np.asarray(found_trigs.get_column('cont_chisq'))
-    found_trig_null_snr = np.asarray(found_trigs.get_null_snr())
-    found_trig_sngl_snr = dict((ifo, np.asarray(found_trigs.get_sngl_snr(ifo)))\
-                                for ifo in ifos)
 
     # Grab values of detection statistic
     found_trig_bestnr = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
@@ -395,28 +362,16 @@ if do_injections:
     # 2) found (bestnr > 0) but not louder than background (non-zero FAP)
     nonzero_fap = ~zero_fap & (found_trig_bestnr != 0)
 
-    # 3) missed after being recovered (i.e., vetoed)
-    missed = (~zero_fap) & (~nonzero_fap)
+    # 3) missed after being recovered (i.e., vetoed) are not used here
+    # missed = (~zero_fap) & (~nonzero_fap)
 
-    # Separate triggers into:
-    # 1) zero_fap 'g_found'
-    # 2) nonzero_fap 'g_ifar'
-
-    # Zero FAP
-    g_found_time = found_inj_time[zero_fap]
-    g_found_inc = found_inj_inc[zero_fap]
-
-    # Non-zero FAP
+    # Non-zero FAP triggers (g_ifar)
     g_ifar_det_stat = found_trig_bestnr[nonzero_fap]
     g_ifar_stat = np.zeros([len(g_ifar_det_stat)])
     for ix, (mc, bestnr) in \
                 enumerate(zip(found_trig_mchirp[nonzero_fap], g_ifar_det_stat)):
         g_ifar_stat[ix] = (full_time_veto_max_bestnr > bestnr).sum()
     g_ifar_stat = g_ifar_stat / total_trials
-    # Statistics: missed-found
-    MF = np.argsort(g_ifar_stat)
-    # Statistics: found-missed
-    FM = MF[::-1]
 
     # Set the sigma values
     inj_sigma = found_trigs.get_sigmasqs()
@@ -455,10 +410,6 @@ if do_injections:
 
     # Process missed injections 'missed_inj'
     missed_inj_dist = np.asarray(missed_injs.get_column('distance'))
-    missed_inj_time = np.asarray(missed_injs.get_column('geocent_end_time') +\
-                                 missed_injs.get_column('geocent_end_time_ns') *\
-                                 10**-9)
-    missed_inj_inc = np.asarray(missed_injs.get_column('inclination'))
 
     logging.info("%d missed injections analysed.", len(missed_injs))
 
@@ -622,18 +573,6 @@ if do_injections:
 
     logging.info("Found/missed injection efficiency calculations completed.")
 
-    # Get start and end times
-    start = int(min(np.concatenate((found_inj_time, missed_inj_time))))
-    end = int(max(np.concatenate((found_inj_time, missed_inj_time))))
-    duration = end - start
-    # GRB start time
-    grb_time = segs['on'][1] - 1
-    # Pad times and reset to centre on zero
-    start = start - duration*0.05 - grb_time
-    end = end + duration*0.05 - grb_time
-    missed_inj_time = missed_inj_time - grb_time
-    g_found_time -= grb_time
-
 # Post-processing of injections ends here
 
 # ==========
@@ -762,7 +701,7 @@ if do_injections:
     plot_title = "Exclusion distance - "+inj_set_name
     plot_caption = "Injection recovery efficiency using "
     plot_caption += "BestNR as detection statistic.  "
-    plot_caption += "Injections louder than loudest foreground trigger"
+    plot_caption += "Injections louder than loudest foreground trigger."
     fig_path = opts.onsource_output_file
     save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
                            title=plot_title, caption=plot_caption)
