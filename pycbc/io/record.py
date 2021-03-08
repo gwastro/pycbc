@@ -912,20 +912,18 @@ class FieldArray(numpy.recarray):
 
             code, itemvars, item_dict = self._code_cache[item]
             for it in itemvars:
-                # pull out the fields: note, by getting the parent fields, we
-                # also get the sub fields name
                 if it in self.fieldnames:
+                    # pull out the fields: note, by getting the parent fields, we
+                    # also get the sub fields name
                     item_dict[it] = self.__getbaseitem__(it)
-
-                # pull out any needed attributes
-                elif hasattr(self, it):
+                elif it in self.__dict__:
+                    # pull out any needed attributes
                     item_dict[it] = getattr(self, it)
-
                 else:
                     # add any aliases
                     aliases = self.aliases
                     if it in aliases:
-                       item_dict[it] = self.__getbaseitem__(aliases[it])
+                        item_dict[it] = self.__getbaseitem__(aliases[it])
 
             return eval(code, {"__builtins__": None}, item_dict)
 
