@@ -20,6 +20,10 @@
 # Preamble
 # =============================================================================
 
+"""
+Plot null statistic or coincident SNR vs coherent SNR for a PyGRB run.
+"""
+
 from __future__ import division
 
 import sys

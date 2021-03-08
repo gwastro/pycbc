@@ -41,7 +41,7 @@ from pycbc.results.versioning import save_fig_with_metadata
 __author__ = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_new_pp_workflow"
+__program__ = "pycbc_pygrb_pp_workflow"
 
 
 logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
@@ -206,13 +206,13 @@ os.chdir(args.output_dir)
 args.output_dir = '.'
 
 # Setup results directory
-rdir = layout.SectionNumber('pp_results', ['offsource_triggers_vs_time',
-                                           'signal_consistency',
-                                           'injections',
-                                           'loudest_offsource_events',
-                                           'exclusion_distances',
-                                           'open_box',
-                                           'workflow'])
+rdir = layout.SectionNumber('results', ['offsource_triggers_vs_time',
+                                        'signal_consistency',
+                                        'injections',
+                                        'loudest_offsource_events',
+                                        'exclusion_distances',
+                                        'open_box',
+                                        'workflow'])
 _workflow.makedir(rdir.base)
 _workflow.makedir(rdir['workflow'])
 

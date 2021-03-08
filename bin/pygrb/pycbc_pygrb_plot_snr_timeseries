@@ -20,6 +20,10 @@
 # Preamble
 # =============================================================================
 
+"""
+Plot single IFO/coherent/reweighted/null SNR timeseries for a PyGRB run.
+"""
+
 from __future__ import division
 
 import sys

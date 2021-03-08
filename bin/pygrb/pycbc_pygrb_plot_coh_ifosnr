@@ -20,6 +20,10 @@
 # Preamble
 # =============================================================================
 
+"""
+Plot single IFO SNR vs coherent SNR for a PyGRB run.
+"""
+
 from __future__ import division
 
 import sys
@@ -178,18 +182,17 @@ if inj_file:
 # Sigma-mean, min, max
 y_data = [trig_data.sigma_mean[ifo], trig_data.sigma_min[ifo], trig_data.sigma_max[ifo]]
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
-y_data = map(lambda x: zoom_snr*(trig_data.f_resp[ifo]*x)**0.5, y_data)
+y_data = [zoom_snr*(trig_data.f_resp[ifo]*x)**0.5 for x in y_data]
 for el in y_data:
     ax.plot(zoom_snr, el, 'g-')
 # ncx2: non-central chi-squared; ppf: percent point function
 # Plot these for sigma_min and sigma_max
-# TODO: If these are meant to be 2 and 3 sigma (not 1 and 2 sigma, as the old
-# post-processing caption used to say), the 0.0455 should be 0.02275 so that
-# 1-(0.0455*0.5)*2 = 0.9545 (2 sigma) and 1-(0.0027*0.5)*2 = 0.9973 (3 sigma)
-ax.plot(zoom_snr, scipy.stats.ncx2.ppf(0.0455*0.5, 2, y_data[1]*y_data[1])**0.5, 'm-')
-ax.plot(zoom_snr, scipy.stats.ncx2.ppf(1.-0.0455*0.5, 2, y_data[2]*y_data[2])**0.5, 'm-')
-ax.plot(zoom_snr, scipy.stats.ncx2.ppf(0.00135*0.5, 2, y_data[1]*y_data[1])**0.5, 'c-')
-ax.plot(zoom_snr, scipy.stats.ncx2.ppf(1.-0.00135*0.5, 2, y_data[2]*y_data[2])**0.5, 'c-')
+# 2 sigma (0.9545)
+ax.plot(zoom_snr, scipy.stats.ncx2.ppf(0.02275, 2, y_data[1]*y_data[1])**0.5, 'm-')
+ax.plot(zoom_snr, scipy.stats.ncx2.ppf(1.-0.02275, 2, y_data[2]*y_data[2])**0.5, 'm-')
+# 3 sigma (0.9973)
+ax.plot(zoom_snr, scipy.stats.ncx2.ppf(0.00135, 2, y_data[1]*y_data[1])**0.5, 'c-')
+ax.plot(zoom_snr, scipy.stats.ncx2.ppf(1.-0.00135, 2, y_data[2]*y_data[2])**0.5, 'c-')
 # Non-zoomed plot
 ax.plot([0, max_snr], [4, 4], 'k-')
 ax.set_xlabel(x_label)

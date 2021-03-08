@@ -20,6 +20,10 @@
 # Preamble
 # =============================================================================
 
+"""
+Gather information about quiet/missed injections in html tables.
+"""
+
 from __future__ import division
 
 import sys
@@ -84,10 +88,10 @@ else:
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
 
-if opts.quiet_found_injs_output_file == None:
+if opts.quiet_found_injs_output_file is None:
     msg = "Please specify a pathname with quiet-found-injs-ouptut-file option"
     logging.error(msg)
-if opts.missed_found_injs_output_file == None:
+if opts.missed_found_injs_output_file is None:
     msg = "Please specify a pathname with missed-found-injs-ouptut-file option"
     logging.error(msg)
 
@@ -144,20 +148,21 @@ ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                        opts.veto_category)
 
 # set reweighted SNR function
-def reweighted_snr(trig):
+def reweighted_snr(trigger):
     """Wrapper for calculating bestnr.
-    
+
     Parameters
     ----------
-    trig: glue.ligolw.lsctables.MultiInspiral
+    trigger: glue.ligolw.lsctables.MultiInspiral
         Trigger as a single row of MultiInspiral table.
 
     Returns
     -------
-    bestnr: float
+    trigger_bestnr: float
+        BestNR value of the trigger.
     """
-    bestnr = get_bestnr(
-        trig, q=chisq_index, n=chisq_nhigh,
+    trigger_bestnr = get_bestnr(
+        trigger, q=chisq_index, n=chisq_nhigh,
         null_thresh=null_thresh,
         snr_threshold=snr_thresh,
         sngl_snr_threshold=sngl_snr_thresh,
@@ -165,13 +170,13 @@ def reweighted_snr(trig):
         null_grad_thresh=null_grad_thresh,
         null_grad_val=null_grad_val
         )
-    return bestnr
+    return trigger_bestnr
 
 def get_column(table, column_name):
-    """Wrapper for glue.ligolw.lsctables.MultiInspiralTable.get_column 
-    method. Easier for h5py switch. Note: Must still replace 
-    .get_sigmasqs() and .get_snglsnr() methods throughout the scripts. 
-    
+    """Wrapper for glue.ligolw.lsctables.MultiInspiralTable.get_column
+    method. Easier for h5py switch. Note: Must still replace
+    .get_sigmasqs() and .get_snglsnr() methods throughout the scripts.
+
     Parameters
     ----------
     table: glue.ligolw.lsctables.MultiInspiralTable
@@ -184,47 +189,47 @@ def get_column(table, column_name):
     # Annoyingly only first letter of ifo for eff_dist in tables.
     if column_name.startswith("eff_dist_") and column_name.endswith(("1", "2")):
         column_name = column_name[:-1]
-    elif column_name is "null_snr":
+    elif column_name == "null_snr":
         return table.get_null_snr()
     return table.get_column(column_name)
 
-# below function relies on definition of reweighted_snr function above, but otherwise can be moved.
+# Below function relies on definition of reweighted_snr function above, but otherwise can be moved.
 def lsctable_to_dict(inj_table, ifos, trig_table=None, background_bestnrs=None):
-    """Extract parameters from injections in lsctables. If found extract 
+    """Extract parameters from injections in lsctables. If found extract
     trigger info.
 
     Parameters
     ----------
     inj_table: glue.ligolw.lsctables.SimInspiralTable
-    ifos: list 
+    ifos: list
     trig_table: glue.ligolw.lsctables.MultiInspiralTable, optional
     background_bestnrs: numpy.array, optional
-        Used to compute FAP of quiet injections. 
+        Used to compute FAP of quiet injections.
 
     Returns
     -------
-    injection_data: dict of parameter numpy.array pairs
+    inj_data: dict of parameter numpy.array pairs
         Found or missed injection parameter dictionary.
     """
-    d = {}
+    inj_data = {}
     # get inj params
     inj_params = [
-        'mchirp', 'mass1', 'mass2', 'distance', 'inclination', 'spin1x', 
+        'mchirp', 'mass1', 'mass2', 'distance', 'inclination', 'spin1x',
         'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z'
     ]
     for param in inj_params:
-        d[param] = get_column(inj_table, param)
-    d['ra'] = get_column(inj_table, 'longitude')
-    d['dec'] = get_column(inj_table, 'latitude')
-    d['time'] = get_column(inj_table, 'geocent_end_time') \
-                + 1e-9 * get_column(inj_table, 'geocent_end_time_ns') 
+        inj_data[param] = get_column(inj_table, param)
+    inj_data['ra'] = get_column(inj_table, 'longitude')
+    inj_data['dec'] = get_column(inj_table, 'latitude')
+    inj_data['time'] = get_column(inj_table, 'geocent_end_time') \
+                + 1e-9 * get_column(inj_table, 'geocent_end_time_ns')
     for ifo in ifos:
         site = ifo.lower()
-        d['eff_dist_{}'.format(site)] = get_column(
+        inj_data['eff_dist_{}'.format(site)] = get_column(
             inj_table, 'eff_dist_{}'.format(site)
             )
-    d['eff_dist'] = np.asarray([
-        1.0 / sum(1.0 / d['eff_dist_{}'.format(site)] for ifo in ifos)
+    inj_data['eff_dist'] = np.asarray([
+        1.0 / sum(1.0 / inj_data['eff_dist_{}'.format(site)] for ifo in ifos)
         ])
 
     if trig_table is not None:
@@ -234,24 +239,24 @@ def lsctable_to_dict(inj_table, ifos, trig_table=None, background_bestnrs=None):
             'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr'
             ]
         for param in rec_params:
-            d["rec_" + param] = get_column(trig_table, param)
+            inj_data["rec_" + param] = get_column(trig_table, param)
         for stat in filter_stats:
-            d[stat] = get_column(trig_table, stat)
+            inj_data[stat] = get_column(trig_table, stat)
         for ifo in ifos:
             site = ifo.lower()
-            d['snr_{}'.format(site)] = trig_table.get_sngl_snr(site)
-        d['bestnr'] = np.asarray([reweighted_snr(t) for t in trig_table])
+            inj_data['snr_{}'.format(site)] = trig_table.get_sngl_snr(site)
+        inj_data['bestnr'] = np.asarray([reweighted_snr(t) for t in trig_table])
         if background_bestnrs is not None:
-            d['fap'] = np.array(
-                [sum(background_bestnrs > bestnr) for bestnr in d['bestnr']],
+            inj_data['fap'] = np.array(
+                [sum(background_bestnrs > bestnr) for bestnr in inj_data['bestnr']],
                 dtype=float
                 ) / len(background_bestnrs)
 
         # Calibration errors:
-        # Get the relative detector sensitivities averaged over the 
+        # Get the relative detector sensitivities averaged over the
         # parameters. This is used to marginalize over calibration errors.
         inj_sigma = trig_table.get_sigmasqs()
-        # If the sigmasqs are not populated, we can only do calibration 
+        # If the sigmasqs are not populated, we can only do calibration
         # errors in the 1-detector case.
         for ifo in ifos:
             if sum(inj_sigma[ifo] == 0):
@@ -269,15 +274,15 @@ def lsctable_to_dict(inj_table, ifos, trig_table=None, background_bestnrs=None):
                 ) for ifo in ifos # not ideal, but will be replaced soon
             }
         def dict_to_ndarray(dict_to_convert):
-            """Turn single level dict into 2d numpy.ndarray.""" 
+            """Turn single level dict into 2d numpy.ndarray."""
             return np.asarray(list(dict_to_convert.values()))
         inj_sigma_mult = dict_to_ndarray(inj_sigma) * dict_to_ndarray(f_resp)
         inj_sigma_tot = np.sum(inj_sigma_mult, axis=0)
         for ifo in ifos:
-            d['inj_sigma_mean_%s' % ifo.lower()] = np.mean(
+            inj_data['inj_sigma_mean_%s' % ifo.lower()] = np.mean(
                 inj_sigma[ifo] * f_resp[ifo] / inj_sigma_tot
             )
-    return d
+    return inj_data
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
@@ -346,18 +351,7 @@ for slide_id in range(num_slides):
 
 logging.info("SNR and bestNR maxima calculated.")
 
-# Calculate and print fraction of trials with an event (highest FAP value)
-num_events = 0
-for slide_id in range(num_slides):
-    for trial in range(len(trial_dict[slide_id])):
-        if time_veto_max_bestnr[slide_id][trial] > 0:
-            num_events += 1
-quietest_file = open('%s/quiet_fap_val.txt' % outdir, 'w')
-quietest_file.write('%s' % (num_events/total_trials))
-quietest_file.close()
-
-# Output details of (at most) 30 loudest offsouce triggers
-# TODO: Do we really want this hard-coded 30?
+# Output details of loudest offsouce triggers
 offsource_trigs = []
 for slide_id in range(num_slides):
     offsource_trigs.extend(zip(trig_bestnr[slide_id], sorted_trigs[slide_id]))
@@ -388,7 +382,7 @@ td = []
 ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t'}
 
 # Gather properties of the loudest offsource triggers
-for i in range(min(len(offsource_trigs), 30)):
+for i in range(min(len(offsource_trigs), opts.num_loudest_off_trigs)):
     bestnr = offsource_trigs[i][0]
     trig = offsource_trigs[i][1]
     trig_slide_id = int(trig.time_slide_id)
@@ -435,7 +429,9 @@ html_table = pycbc.results.html_table(td, th,
 # Write to html file
 html_path = "%s/loudest_offsource_trigs.html" % outdir
 kwds = {'title' : "Parameters of loudest offsource triggers",
-        'caption' : "Parameters of 30 loudest offsource triggers.",
+        'caption' : "Parameters of "+
+                    str(min(len(offsource_trigs), opts.num_loudest_off_trigs))+
+                    " loudest offsource triggers.",
         'cmd' :' '.join(sys.argv), }
 pycbc.results.save_fig_with_metadata(str(html_table), html_path, **kwds)
 
@@ -469,6 +465,7 @@ pycbc.results.save_fig_with_metadata(html, html_path, {},
                                      caption=caption)
 
 # Store BestNR and FAP values
+# This is needed when we study all FAPs of a run together
 np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
            full_time_veto_max_bestnr, delimiter='/t')
 
@@ -498,8 +495,6 @@ if onsource_file:
         loud_on_bestnr = 0
 
     logging.info("Onsource analysed.")
-
-    loud_txt = open('%s/loud_numbers.txt' % outdir, 'w')
 
     # Table header and table data
     # TODO we will want the spins too (easier to deal with after move to hdf5)
@@ -535,13 +530,10 @@ if onsource_file:
              trig.snr, trig.chisq, trig.bank_chisq,\
              trig.cont_chisq, trig.get_null_snr()] + \
              [trig.get_sngl_snr(ifo) for ifo in ifos] + [loud_on_bestnr]
-        loud_txt.write('%s\n' % pval.replace('<', '&lt'))
         td.append(d)
     else:
         td.append(["There are no events"] + [0 for number in xrange(11)] + \
                   [0 for ifo in ifos] + [0])
-        loud_txt.write('-2\n')
-    loud_txt.close()
 
     # Write to html file
     td = zip(*td)
@@ -583,7 +575,7 @@ if do_injections:
 
     # Extract columns of found injections and triggers
     found_injs = lsctable_to_dict(
-        found_inj_table, ifos, trig_table=found_trig_table, 
+        found_inj_table, ifos, trig_table=found_trig_table,
         background_bestnrs=full_time_veto_max_bestnr
         )
 
@@ -594,7 +586,7 @@ if do_injections:
     # 2) found (bestnr > 0) but not louder than background (non-zero FAP)
     nonzero_fap = ~zero_fap & (found_injs['bestnr'] != 0)
 
-    # 3) missed after being recovered (i.e., vetoed) 
+    # 3) missed after being recovered (i.e., vetoed)
     # -- > question: is there ever another way this happens other than veto?
     # vetoed_trigs = (~zero_fap) & (~nonzero_fap)
     vetoed_trigs = found_injs['bestnr'] == 0
@@ -616,25 +608,6 @@ if do_injections:
     missed_na = [-0] * len(missed_injs['mchirp'])
 
     logging.info("%d missed injections analysed.", len(missed_injs['mchirp']))
-
-    # Write inclination recovery to file
-    # GRB start time
-    grb_time = segs['on'][1] - 1
-    f_incl_txt = open('%s/found_inclinations.txt' % outdir, 'w')
-    f_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
-    stacked = np.column_stack([found_injs["time"][zero_fap],
-                               found_injs["time"][zero_fap] - grb_time,
-                               found_injs["inclination"][zero_fap]])
-    np.savetxt(f_incl_txt, stacked, delimiter='\t')
-    f_incl_txt.close()
-    t_incl_txt = open('%s/total_inclinations.txt' % outdir, 'w')
-    t_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
-    stacked = np.column_stack([np.concatenate((found_injs['time'], missed_injs['time'])),
-                               np.concatenate((found_injs['time'] - grb_time,
-                                               missed_injs['time'] - grb_time)),
-                               np.concatenate((found_injs['inclination'], missed_injs['inclination']))])
-    np.savetxt(t_incl_txt, stacked, delimiter='\t')
-    t_incl_txt.close()
 
     ## Efficiency marginalization starts here
     # Create new set of injections for efficiency calculations
@@ -676,10 +649,16 @@ if do_injections:
 
     # Distribute injections
     # TODO: make the lengths a variable determined by mc_cal_wf_errs
-    found_injs['distance_mc'] = mc_cal_wf_errs(num_mc_injs, len(found_injs['distance']), found_injs['distance'],
-                                       cal_error, wav_err, max_dc_cal_error)
-    missed_injs['distance_mc'] = mc_cal_wf_errs(num_mc_injs, len(missed_injs['mchirp']), missed_injs['distance'],
-                                        cal_error, wav_err, max_dc_cal_error)
+    found_injs['distance_mc'] = mc_cal_wf_errs(num_mc_injs,
+                                               len(found_injs['distance']),
+                                               found_injs['distance'],
+                                               cal_error, wav_err,
+                                               max_dc_cal_error)
+    missed_injs['distance_mc'] = mc_cal_wf_errs(num_mc_injs,
+                                                len(missed_injs['mchirp']),
+                                                missed_injs['distance'],
+                                                cal_error, wav_err,
+                                                max_dc_cal_error)
     long_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, total_injs, long_inj_dist,
                                       cal_error, wav_err, max_dc_cal_error)
     logging.info("MC injection set distributed with %d iterations.",\
@@ -768,26 +747,14 @@ if do_injections:
                 found_on_bestnr[j] += num_excl
                 found_on_bestnr[-1] += num_excl
 
-    np.savetxt('%s/found_maxbestnr.txt' % outdir, found_max_bestnr.T)
-    np.savetxt('%s/found_maxbestnrnomc.txt' % outdir, found_max_bestnr_no_mc.T)
-    np.savetxt('%s/foundonbestnr.txt' % outdir, found_on_bestnr.T)
-    np.savetxt('%s/foundonbestnrnomc.txt' % outdir, found_on_bestnr_no_mc.T)
-    np.savetxt('%s/numinjections.txt' % outdir, num_injections.T)
-    np.savetxt('%s/numinjectionsnomc.txt' % outdir, num_injections_no_mc.T)
-    inj_rec_file = open("%s/injection_recovery.html" % outdir, "w")
-    inj_rec_file.write("Total injections found louder than all background using %s "\
-                       "is: %s<br>\n" % ('BestNR', found_max_bestnr[-1]))
-    inj_rec_file.write("Total injections found louder than all background (and "\
-                       "nearby triggers in the offsource) using %s is: %s<br>"\
-                       % ('BestNR', found_on_bestnr[-1]))
-    inj_rec_file.close()
-
     logging.info("Found/missed injection efficiency calculations completed.")
 
     # Get start and end times
     start = int(min(np.concatenate((found_injs['time'], missed_injs['time']))))
     end = int(max(np.concatenate((found_injs['time'], missed_injs['time']))))
     duration = end - start
+    # GRB start time
+    grb_time = segs['on'][1] - 1
     # Pad times and reset to centre on zero
     start = start - duration*0.05 - grb_time
     end = end + duration*0.05 - grb_time
@@ -817,46 +784,85 @@ if do_injections:
                            '##.##', '##.##', '##.##', '##.##', '##.##',
                            '##.##'])
     # TODO: serial coding
-    td = zip(*[np.concatenate((found_injs['distance'][nonzero_fap], found_injs['distance'][vetoed_trigs],\
+    td = zip(*[np.concatenate((found_injs['distance'][nonzero_fap],\
+                               found_injs['distance'][vetoed_trigs],\
                                missed_injs['distance']))] +\
               [np.concatenate((found_injs['eff_dist_{}'.format(ifo.lower())][nonzero_fap],\
                                found_injs['eff_dist_{}'.format(ifo.lower())][vetoed_trigs],\
                                missed_injs['eff_dist_{}'.format(ifo.lower())]))\
                for ifo in ifos] +\
-              [np.concatenate((found_injs['mass1'][nonzero_fap], found_injs['mass1'][vetoed_trigs], missed_injs['mass1'])),\
-               np.concatenate((found_injs['mass2'][nonzero_fap], found_injs['mass2'][vetoed_trigs], missed_injs['mass2'])),\
-               np.concatenate((found_injs['mchirp'][nonzero_fap], found_injs['mchirp'][vetoed_trigs],\
-                                  missed_injs['mchirp'])),\
-               np.concatenate((found_injs['rec_mass1'][nonzero_fap], found_injs['rec_mass1'][vetoed_trigs], missed_na)),\
-               np.concatenate((found_injs['rec_mass2'][nonzero_fap], found_injs['rec_mass2'][vetoed_trigs], missed_na)),\
-               np.concatenate((found_injs['rec_mchirp'][nonzero_fap], found_injs['rec_mchirp'][vetoed_trigs],\
-                                  missed_na)),\
-               np.concatenate((found_injs['inclination'][nonzero_fap], found_injs['inclination'][vetoed_trigs], missed_injs['inclination'])),\
-               np.concatenate((found_injs['ra'][nonzero_fap], found_injs['ra'][vetoed_trigs], missed_injs['ra'])),\
-               np.concatenate((found_injs['dec'][nonzero_fap], found_injs['dec'][vetoed_trigs], missed_injs['dec'])),\
-               np.concatenate((found_injs['rec_ra'][nonzero_fap], found_injs['rec_ra'][vetoed_trigs], missed_na)),\
-               np.concatenate((found_injs['rec_dec'][nonzero_fap], found_injs['rec_dec'][vetoed_trigs], missed_na)),\
-               np.concatenate((found_injs['snr'][nonzero_fap], found_injs['snr'][vetoed_trigs], missed_na)),\
-               np.concatenate((found_injs['chisq'][nonzero_fap], found_injs['chisq'][vetoed_trigs], missed_na)),\
-               np.concatenate((found_injs['bank_chisq'][nonzero_fap], found_injs['bank_chisq'][vetoed_trigs], missed_na)),\
-               np.concatenate((found_injs['cont_chisq'][nonzero_fap], found_injs['cont_chisq'][vetoed_trigs], missed_na)),\
-               np.concatenate((found_injs['null_snr'][nonzero_fap], found_injs['null_snr'][vetoed_trigs], missed_na))] +\
-              [np.concatenate((found_injs['snr_{}'.format(ifo.lower())][nonzero_fap], found_injs['snr_{}'.format(ifo.lower())][vetoed_trigs],\
-                                  missed_na)) for ifo in ifos] +\
-              [np.concatenate((found_injs['bestnr'][nonzero_fap], found_injs['bestnr'][vetoed_trigs],\
-                                  missed_na)),\
-               np.concatenate((found_injs['spin1x'][nonzero_fap], found_injs['spin1x'][vetoed_trigs],\
-                                  missed_injs['spin1x'])),\
-               np.concatenate((found_injs['spin1y'][nonzero_fap], found_injs['spin1y'][vetoed_trigs],\
-                                  missed_injs['spin1y'])),\
-               np.concatenate((found_injs['spin1z'][nonzero_fap], found_injs['spin1z'][vetoed_trigs],\
-                                  missed_injs['spin1z'])),\
-               np.concatenate((found_injs['spin2x'][nonzero_fap], found_injs['spin2x'][vetoed_trigs],\
-                                  missed_injs['spin2x'])),\
-               np.concatenate((found_injs['spin2y'][nonzero_fap], found_injs['spin2y'][vetoed_trigs],\
-                                  missed_injs['spin2y'])),\
-               np.concatenate((found_injs['spin2z'][nonzero_fap], found_injs['spin2z'][vetoed_trigs],\
-                                  missed_injs['spin2z']))])
+              [np.concatenate((found_injs['mass1'][nonzero_fap],\
+                               found_injs['mass1'][vetoed_trigs],\
+                               missed_injs['mass1'])),\
+               np.concatenate((found_injs['mass2'][nonzero_fap],\
+                               found_injs['mass2'][vetoed_trigs],\
+                               missed_injs['mass2'])),\
+               np.concatenate((found_injs['mchirp'][nonzero_fap],\
+                               found_injs['mchirp'][vetoed_trigs],\
+                               missed_injs['mchirp'])),\
+               np.concatenate((found_injs['rec_mass1'][nonzero_fap],\
+                               found_injs['rec_mass1'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['rec_mass2'][nonzero_fap],\
+                               found_injs['rec_mass2'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['rec_mchirp'][nonzero_fap],\
+                               found_injs['rec_mchirp'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['inclination'][nonzero_fap],\
+                               found_injs['inclination'][vetoed_trigs],\
+                               missed_injs['inclination'])),\
+               np.concatenate((found_injs['ra'][nonzero_fap],\
+                               found_injs['ra'][vetoed_trigs],\
+                               missed_injs['ra'])),\
+               np.concatenate((found_injs['dec'][nonzero_fap],\
+                               found_injs['dec'][vetoed_trigs],\
+                               missed_injs['dec'])),\
+               np.concatenate((found_injs['rec_ra'][nonzero_fap],\
+                               found_injs['rec_ra'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['rec_dec'][nonzero_fap],\
+                               found_injs['rec_dec'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['snr'][nonzero_fap],\
+                               found_injs['snr'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['chisq'][nonzero_fap],\
+                               found_injs['chisq'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['bank_chisq'][nonzero_fap],\
+                               found_injs['bank_chisq'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['cont_chisq'][nonzero_fap],\
+                               found_injs['cont_chisq'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['null_snr'][nonzero_fap],\
+                               found_injs['null_snr'][vetoed_trigs],\
+                               missed_na))] +\
+              [np.concatenate((found_injs['snr_{}'.format(ifo.lower())][nonzero_fap],\
+                               found_injs['snr_{}'.format(ifo.lower())][vetoed_trigs],\
+                               missed_na)) for ifo in ifos] +\
+              [np.concatenate((found_injs['bestnr'][nonzero_fap],\
+                               found_injs['bestnr'][vetoed_trigs],\
+                               missed_na)),\
+               np.concatenate((found_injs['spin1x'][nonzero_fap],
+                               found_injs['spin1x'][vetoed_trigs],\
+                               missed_injs['spin1x'])),\
+               np.concatenate((found_injs['spin1y'][nonzero_fap],
+                               found_injs['spin1y'][vetoed_trigs],\
+                               missed_injs['spin1y'])),\
+               np.concatenate((found_injs['spin1z'][nonzero_fap],\
+                               found_injs['spin1z'][vetoed_trigs],\
+                               missed_injs['spin1z'])),\
+               np.concatenate((found_injs['spin2x'][nonzero_fap],\
+                               found_injs['spin2x'][vetoed_trigs],\
+                               missed_injs['spin2x'])),\
+               np.concatenate((found_injs['spin2y'][nonzero_fap],\
+                               found_injs['spin2y'][vetoed_trigs],\
+                               missed_injs['spin2y'])),\
+               np.concatenate((found_injs['spin2z'][nonzero_fap],\
+                               found_injs['spin2z'][vetoed_trigs],\
+                               missed_injs['spin2z']))])
     td.sort(key=lambda elem: elem[0])
     logging.info("%d quiet-found triggers written to file.", len(td))
 
@@ -873,15 +879,32 @@ if do_injections:
     pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile, **kwds)
 
     t_missed = zip(*[found_injs['distance'][vetoed_trigs]] + \
-                    [found_injs['eff_dist_{}'.format(ifo.lower())][vetoed_trigs] for ifo in ifos] + \
-                    [found_injs['mass1'][vetoed_trigs], found_injs['mass2'][vetoed_trigs], found_injs['mchirp'][vetoed_trigs], found_injs['rec_mass1'][vetoed_trigs],
-                     found_injs['rec_mass2'][vetoed_trigs], found_injs['rec_mchirp'][vetoed_trigs], found_injs['inclination'][vetoed_trigs], found_injs['ra'][vetoed_trigs],
-                     found_injs['dec'][vetoed_trigs], found_injs['rec_ra'][vetoed_trigs], found_injs['rec_dec'][vetoed_trigs], found_injs['snr'][vetoed_trigs],
-                     found_injs['chisq'][vetoed_trigs], found_injs['bank_chisq'][vetoed_trigs], found_injs['cont_chisq'][vetoed_trigs],
+                    [found_injs['eff_dist_{}'.format(ifo.lower())][vetoed_trigs]
+                     for ifo in ifos] + \
+                    [found_injs['mass1'][vetoed_trigs],
+                     found_injs['mass2'][vetoed_trigs],
+                     found_injs['mchirp'][vetoed_trigs],
+                     found_injs['rec_mass1'][vetoed_trigs],
+                     found_injs['rec_mass2'][vetoed_trigs],
+                     found_injs['rec_mchirp'][vetoed_trigs],
+                     found_injs['inclination'][vetoed_trigs],
+                     found_injs['ra'][vetoed_trigs],
+                     found_injs['dec'][vetoed_trigs],
+                     found_injs['rec_ra'][vetoed_trigs],
+                     found_injs['rec_dec'][vetoed_trigs],
+                     found_injs['snr'][vetoed_trigs],
+                     found_injs['chisq'][vetoed_trigs],
+                     found_injs['bank_chisq'][vetoed_trigs],
+                     found_injs['cont_chisq'][vetoed_trigs],
                      found_injs['null_snr'][vetoed_trigs]] + \
-                    [found_injs['snr_{}'.format(ifo.lower())][vetoed_trigs] for ifo in ifos] + \
-                    [found_injs['bestnr'][vetoed_trigs], found_injs['spin1x'][vetoed_trigs], found_injs['spin1y'][vetoed_trigs],
-                     found_injs['spin1z'][vetoed_trigs], found_injs['spin2x'][vetoed_trigs], found_injs['spin2y'][vetoed_trigs],
+                    [found_injs['snr_{}'.format(ifo.lower())][vetoed_trigs]
+                     for ifo in ifos] + \
+                    [found_injs['bestnr'][vetoed_trigs],
+                     found_injs['spin1x'][vetoed_trigs],
+                     found_injs['spin1y'][vetoed_trigs],
+                     found_injs['spin1z'][vetoed_trigs],
+                     found_injs['spin2x'][vetoed_trigs],
+                     found_injs['spin2y'][vetoed_trigs],
                      found_injs['spin2z'][vetoed_trigs]])
     t_missed.sort(key=lambda elem: elem[0])
     logging.info("%d missed-found triggers written to file.", len(t_missed))

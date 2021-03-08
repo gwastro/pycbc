@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Francesco Pannarale, Gino Contestabile
+# Copyright (C) 2019 Francesco Pannarale, Gino Contestabile, Cameron Mills
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -196,6 +196,11 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
 
     parser.add_argument("--onsource-output-file", default=None, #required=True,
                         help="Exclusion distance output file.")
+
+    # pycbc_pygrb_page_table uses this too: does efficiency really need it?
+    parser.add_argument("--num-loudest-off-trigs", default=30,
+                        help="Number of loudest offsouce triggers to " +
+                        "output details abouth.")
 
     # FIXME: eventually remove below argument and require output-file
     # be specified. 
@@ -1118,3 +1123,71 @@ def mc_cal_wf_errs(num_mc_injs, num_injs, inj_dists, cal_err, wf_err, max_dc_cal
                                      (1 + cal_dist_red) * (1 + wf_dist_red))
 
     return inj_dist_mc
+
+
+
+# =============================================================================
+# Dumping material from pycbc_pygrb_efficiency and pycbc_pygrb_page_tables
+# that is not strictly needed but that we may want to turn into functions,
+# additional tools, unit tests
+# =============================================================================
+# Calculate and print fraction of trials with an event (highest FAP value)
+#num_events = 0
+#for slide_id in range(num_slides):
+#    for trial in range(len(trial_dict[slide_id])):
+#        if time_veto_max_bestnr[slide_id][trial] > 0:
+#            num_events += 1
+#quietest_file = open('%s/quiet_fap_val.txt' % outdir, 'w')
+#quietest_file.write('%s' % (num_events/total_trials))
+#quietest_file.close()
+
+
+# Write inclination recovery to file
+# GRB start time
+#grb_time = segs['on'][1] - 1
+#f_incl_txt = open('%s/found_inclinations.txt' % outdir, 'w')
+#f_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
+#stacked = np.column_stack([found_injs["time"][zero_fap],
+#                           found_injs["time"][zero_fap] - grb_time,
+#                           found_injs["inclination"][zero_fap]])
+#np.savetxt(f_incl_txt, stacked, delimiter='\t')
+#f_incl_txt.close()
+#t_incl_txt = open('%s/total_inclinations.txt' % outdir, 'w')
+#t_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
+#stacked = np.column_stack([np.concatenate((found_injs['time'], missed_injs['time'])),
+#                           np.concatenate((found_injs['time'] - grb_time,
+#                                           missed_injs['time'] - grb_time)),
+#                           np.concatenate((found_injs['inclination'], missed_injs['inclination']))])
+#np.savetxt(t_incl_txt, stacked, delimiter='\t')
+#t_incl_txt.close()
+
+
+# Save the efficiency values to disk
+#efficiency_txt = open('%s/efficiency_numbers.txt' % outdir, 'w')
+#efficiency_txt.write('distance (Mpc) \tfraction\tyerr_low\tyerr_high\n\n')
+#stacked = np.column_stack([dist_plot_vals, fraction_mc,
+#                           yerr_low_mc, yerr_high_mc])
+#np.savetxt(efficiency_txt, stacked, fmt='%.8e', delimiter='\t')
+#efficiency_txt.close()
+
+# Print efficiency curve to file
+#efficiency_curve_txt = open("%s/efficiency_curve.txt" % outdir, "w")
+#efficiency_curve_txt.write('Distance (Mpc)\tEfficiency including counting errors\n\n')
+#stacked = np.column_stack([dist_plot_vals, red_efficiency])
+#np.savetxt(efficiency_curve_txt, stacked, delimiter='\t')
+#efficiency_curve_txt.close()
+
+# Useful while developping: exploit as unit test?
+#np.savetxt('%s/found_maxbestnr.txt' % outdir, found_max_bestnr.T)
+#np.savetxt('%s/found_maxbestnrnomc.txt' % outdir, found_max_bestnr_no_mc.T)
+#np.savetxt('%s/foundonbestnr.txt' % outdir, found_on_bestnr.T)
+#np.savetxt('%s/foundonbestnrnomc.txt' % outdir, found_on_bestnr_no_mc.T)
+#np.savetxt('%s/numinjections.txt' % outdir, num_injections.T)
+#np.savetxt('%s/numinjectionsnomc.txt' % outdir, num_injections_no_mc.T)
+#inj_rec_file = open("%s/injection_recovery.html" % outdir, "w")
+#inj_rec_file.write("Total injections found louder than all background using %s "\
+#                   "is: %s<br>\n" % ('BestNR', found_max_bestnr[-1]))
+#inj_rec_file.write("Total injections found louder than all background (and "\
+#                   "nearby triggers in the offsource) using %s is: %s<br>"\
+#                   % ('BestNR', found_on_bestnr[-1]))
+#inj_rec_file.close()
