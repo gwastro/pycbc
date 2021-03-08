@@ -93,16 +93,18 @@ if ifo is None:
 if opts.plot_title is None:
     opts.plot_title = '%s SNR vs Coherent SNR' % ifo
 if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: Background triggers\n" +
-                         "Red crosses: Injections triggers\n" +
-                         "Black line: Veto line\n" +
-                         "Gray shaded region: vetoed area - The cut is " +
-                         "applied only to the two most sensitive detectors, " +
-                         "which can vary with mass and sky location.\n" +
-                         "Green lines: the expected SNR for optimally " +
-                         "oriented injections (mean, min, and max)\n" +
-                         "Magenta lines: 2 sigma errors\n" +
-                         "Cyan lines: 3 sigma errors")
+    opts.plot_caption = ("Blue crosses: background triggers.  ")
+    if inj_file:
+        opts.plot_caption += ("Red crosses: injection triggers.  ")
+    opts.plot_caption = opts.plot_caption +\
+                         "Black line: veto line.  " +\
+                         "Gray shaded region: vetoed area - The cut is " +\
+                         "applied only to the two most sensitive detectors, " +\
+                         "which can vary with mass and sky location.  " +\
+                         "Green lines: the expected SNR for optimally " +\
+                         "oriented injections (mean, min, and max).  " +\
+                         "Magenta lines: 2 sigma errors.  " +\
+                         "Cyan lines: 3 sigma errors."
 
 logging.info("Imported and ready to go.")
 

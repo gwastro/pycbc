@@ -426,43 +426,23 @@ td = [np.asarray(d) for d in td]
 html_table = pycbc.results.html_table(td, th,
                                       format_strings=format_strings,
                                       page_size=30)
-# Write to html file
-html_path = "%s/loudest_offsource_trigs.html" % outdir
-kwds = {'title' : "Parameters of loudest offsource triggers",
-        'caption' : "Parameters of "+
-                    str(min(len(offsource_trigs), opts.num_loudest_off_trigs))+
-                    " loudest offsource triggers.",
-        'cmd' :' '.join(sys.argv), }
-pycbc.results.save_fig_with_metadata(str(html_table), html_path, **kwds)
-
-
-# ==========================
-# Print loudest SNRs to file
-# THIS OUTPUT FILE IS CURRENTLY UNUSED - MAYBE DELETE?
-# Note: the only new info from above is the median SNR, bestnr
-# and loudest SNR, so could just add this to the above's caption.
-# ==========================
-th = ['', 'SNR', 'BestNR']
-td = []
-
-max_snr, median_snr, _ = max_median_stat(num_slides, time_veto_max_snr, trig_snr, total_trials)
+# Median and max values
+_, median_snr, _ = max_median_stat(num_slides, time_veto_max_snr, trig_snr, total_trials)
 max_bestnr, median_bestnr, full_time_veto_max_bestnr =\
     max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
-
-d = ['Loudest ', max_snr, max_bestnr]
-td.append(d)
-d = ['Median ', median_snr, median_bestnr]
-td.append(d)
-td.append([])
-
-# Write html table with results
-html = pycbc.results.dq.redirect_javascript + str(pycbc.results.static_table(td, th))
-title = 'Re-weighted SNR and SNR of the loudest and median offsource trigger'
-caption = ('Re-weighted SNR and SNR of the loudest and median offsource trigger')
-html_path = "%s/loudest_median_offsource.html" % outdir
-pycbc.results.save_fig_with_metadata(html, html_path, {},
-                                     cmd=' '.join(sys.argv), title=title,
-                                     caption=caption)
+# Write to html file
+# TODO: needs a final place in the results webpage
+html_path = "%s/loudest_offsource_trigs.html" % outdir
+kwds = {'title' : "Parameters of loudest offsource triggers",
+        'caption' : "Parameters of the "+
+                    str(min(len(offsource_trigs), opts.num_loudest_off_trigs))+
+                    " loudest offsource triggers.  "+
+                    "The median reweighted SNR value is "+
+                    str(median_bestnr)+
+                    ".  The median SNR value is "+
+                    str(median_snr),
+        'cmd' :' '.join(sys.argv), }
+pycbc.results.save_fig_with_metadata(str(html_table), html_path, **kwds)
 
 # Store BestNR and FAP values
 # This is needed when we study all FAPs of a run together
@@ -477,6 +457,7 @@ if onsource_file:
     # Get trigs
     on_trigs = load_xml_table(onsource_file, "multi_inspiral")
     msg = "%d onsource triggers loaded." % (len(on_trigs))
+    logging.info(msg)
 
     # Separate off chirp mass column
     on_mchirp = on_trigs.get_column('mchirp')
@@ -536,6 +517,7 @@ if onsource_file:
                   [0 for ifo in ifos] + [0])
 
     # Write to html file
+    # TODO: find place in the output webpage
     td = zip(*td)
     td = [np.asarray(d) for d in td]
     html_table = pycbc.results.html_table(td, th,
@@ -609,7 +591,7 @@ if do_injections:
 
     logging.info("%d missed injections analysed.", len(missed_injs['mchirp']))
 
-    ## Efficiency marginalization starts here
+    # Efficiency marginalization starts here
     # Create new set of injections for efficiency calculations
     total_injs = len(found_injs['mchirp']) + len(missed_injs['mchirp'])
     long_inj_dist = stats.uniform.rvs(size=total_injs) * (upper_dist-lower_dist) +\
@@ -758,7 +740,7 @@ if do_injections:
     # Pad times and reset to centre on zero
     start = start - duration*0.05 - grb_time
     end = end + duration*0.05 - grb_time
-    missed_injs['time'] = missed_injs['time'] - grb_time
+    missed_injs['time'] -= grb_time
     found_injs['time'][vetoed_trigs] -= grb_time
     found_injs["time"][zero_fap] -= grb_time
     found_injs['time'][nonzero_fap] -= grb_time
@@ -784,6 +766,8 @@ if do_injections:
                            '##.##', '##.##', '##.##', '##.##', '##.##',
                            '##.##'])
     # TODO: serial coding
+    print(found_injs.keys())
+    print(missed_injs.keys())
     td = zip(*[np.concatenate((found_injs['distance'][nonzero_fap],\
                                found_injs['distance'][vetoed_trigs],\
                                missed_injs['distance']))] +\
@@ -871,7 +855,7 @@ if do_injections:
     td = [np.asarray(d) for d in td]
     html_table = pycbc.results.html_table(td, th,
                                           format_strings=format_strings,
-                                          page_size=50)
+                                          page_size=20)
     kwds = {'title' : "Quiet found injections",
             'caption' : "Recovered parameters and statistic values of \
             injections that are recovered, but not louder than background.",
@@ -913,7 +897,7 @@ if do_injections:
     t_missed = [np.asarray(d) for d in t_missed]
     html_table = pycbc.results.html_table(t_missed, th,
                                           format_strings=format_strings,
-                                          page_size=50)
+                                          page_size=20)
     kwds = {'title' : "Missed found injections",
             'caption' : "Recovered parameters and statistic values of \
             injections that are recovered, but downwieghted to BestNR = 0 \
