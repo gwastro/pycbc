@@ -20,6 +20,10 @@
 # Preamble
 # =============================================================================
 
+"""
+Plot found/missed injection properties.
+"""
+
 from __future__ import division
 
 import sys
@@ -106,7 +110,6 @@ if opts.missed_found_output_file is None:
     msg = "Please specify a pathname with missed-found-ouptut-file option"
     logging.error(msg)
 
-# TODO: expand help message of these two options
 if opts.x_variable is None:
     msg = "Please specify the quantity to plot on the horizontal axis!"
     logging.error(msg)
@@ -412,29 +415,12 @@ if do_injections:
 
     logging.info("%d missed injections analysed.", len(missed_injs))
 
-    # Write inclination recovery to file
-    # GRB start time
-    grb_time = segs['on'][1] - 1
-    f_incl_txt = open('%s/found_inclinations.txt' % outdirs[0], 'w')
-    f_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
-    stacked = np.column_stack([g_found_time,
-                               g_found_time - grb_time,
-                               g_found_inc])
-    np.savetxt(f_incl_txt, stacked, delimiter='\t')
-    f_incl_txt.close()
-    t_incl_txt = open('%s/total_inclinations.txt' % outdirs[0], 'w')
-    t_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
-    stacked = np.column_stack([np.concatenate((found_inj_time, missed_inj_time)),
-                               np.concatenate((found_inj_time - grb_time,
-                                               missed_inj_time - grb_time)),
-                               np.concatenate((found_inj_inc, missed_inj_inc))])
-    np.savetxt(t_incl_txt, stacked, delimiter='\t')
-    t_incl_txt.close()
-
     # Get start and end times
     start = int(min(np.concatenate((found_inj_time, missed_inj_time))))
     end = int(max(np.concatenate((found_inj_time, missed_inj_time))))
     duration = end - start
+    # GRB start time
+    grb_time = segs['on'][1] - 1
     # Pad times and reset to centre on zero
     start = start - duration*0.05 - grb_time
     end = end + duration*0.05 - grb_time
@@ -458,13 +444,13 @@ if do_injections:
 
     # Dictionary of plot titles
     title_dict = {'mchirp': "chirp mass",
-                 'time': "time",
-                 'incl': "inclination",
-                 'cosincl': "inclination",
-                 'q': "mass ratio",
-                 'mtot': "total mass",
-                 'spin1': "spin",
-                 'spin2': "spin"}
+                  'time': "time",
+                  'incl': "inclination",
+                  'cosincl': "inclination",
+                  'q': "mass ratio",
+                  'mtot': "total mass",
+                  'spin1': "spin",
+                  'spin2': "spin"}
 
     # Dictionary of labels for the horizontal axis
     axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",

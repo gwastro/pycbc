@@ -20,6 +20,10 @@
 # Preamble
 # =============================================================================
 
+"""
+Determine efficiency and exlucion distances of a PyGRB run.
+"""
+
 from __future__ import division
 
 import sys
@@ -225,36 +229,12 @@ for slide_id in range(num_slides):
 
 logging.info("SNR and bestNR maxima calculated.")
 
-# Calculate and print fraction of trials with an event (highest FAP value)
-num_events = 0
-for slide_id in range(num_slides):
-    for trial in range(len(trial_dict[slide_id])):
-        if time_veto_max_bestnr[slide_id][trial] > 0:
-            num_events += 1
-quietest_file = open('%s/quiet_fap_val.txt' % outdir, 'w')
-quietest_file.write('%s' % (num_events/total_trials))
-quietest_file.close()
-
-# Output details of (at most) 30 loudest offsouce triggers
-# TODO: Do we really want this hard-coded 30?
+# Output details of loudest offsouce triggers
 offsource_trigs = []
 for slide_id in range(num_slides):
     offsource_trigs.extend(zip(trig_bestnr[slide_id], sorted_trigs[slide_id]))
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
-
-for i in range(min(len(offsource_trigs), 30)):
-    bestnr = offsource_trigs[i][0]
-    trig = offsource_trigs[i][1]
-
-
-    # Get FAP of trigger
-    num_trials_louder = 0
-    for slide_id in range(num_slides):
-        for val in time_veto_max_bestnr[slide_id]:
-            if val > bestnr:
-                num_trials_louder += 1
-    fap = num_trials_louder/total_trials
 
 # ==========================
 # Print loudest SNRs to file
@@ -311,8 +291,6 @@ if onsource_file:
 
     logging.info("Onsource analysed.")
 
-    loud_txt = open('%s/loud_numbers.txt' % outdir, 'w')
-
     if loud_on_bestnr_trigs:
         trig = loud_on_bestnr_trigs
         num_trials_louder = 0
@@ -326,11 +304,7 @@ if onsource_file:
         fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
         pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
         loud_on_fap = fap
-        loud_txt.write('%s\n' % pval.replace('<', '&lt'))
 
-    else:
-        loud_txt.write('-2\n')
-    loud_txt.close()
 else:
     tot_off_snr = np.array([])
     for slide_id in range(num_slides):
@@ -487,25 +461,6 @@ if do_injections:
     missed_inj_inc = np.asarray(missed_injs.get_column('inclination'))
 
     logging.info("%d missed injections analysed.", len(missed_injs))
-
-    # Write inclination recovery to file
-    # GRB start time
-    grb_time = segs['on'][1] - 1
-    f_incl_txt = open('%s/found_inclinations.txt' % outdir, 'w')
-    f_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
-    stacked = np.column_stack([g_found_time,
-                               g_found_time - grb_time,
-                               g_found_inc])
-    np.savetxt(f_incl_txt, stacked, delimiter='\t')
-    f_incl_txt.close()
-    t_incl_txt = open('%s/total_inclinations.txt' % outdir, 'w')
-    t_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
-    stacked = np.column_stack([np.concatenate((found_inj_time, missed_inj_time)),
-                               np.concatenate((found_inj_time - grb_time,
-                                               missed_inj_time - grb_time)),
-                               np.concatenate((found_inj_inc, missed_inj_inc))])
-    np.savetxt(t_incl_txt, stacked, delimiter='\t')
-    t_incl_txt.close()
 
     # Create new set of injections for efficiency calculations
     total_injs = len(found_injs) + len(missed_injs)
@@ -665,19 +620,14 @@ if do_injections:
                 found_on_bestnr[j] += num_excl
                 found_on_bestnr[-1] += num_excl
 
-    np.savetxt('%s/found_maxbestnr.txt' % outdir, found_max_bestnr.T)
-    np.savetxt('%s/found_maxbestnrnomc.txt' % outdir, found_max_bestnr_no_mc.T)
-    np.savetxt('%s/foundonbestnr.txt' % outdir, found_on_bestnr.T)
-    np.savetxt('%s/foundonbestnrnomc.txt' % outdir, found_on_bestnr_no_mc.T)
-    np.savetxt('%s/numinjections.txt' % outdir, num_injections.T)
-    np.savetxt('%s/numinjectionsnomc.txt' % outdir, num_injections_no_mc.T)
-
     logging.info("Found/missed injection efficiency calculations completed.")
 
     # Get start and end times
     start = int(min(np.concatenate((found_inj_time, missed_inj_time))))
     end = int(max(np.concatenate((found_inj_time, missed_inj_time))))
     duration = end - start
+    # GRB start time
+    grb_time = segs['on'][1] - 1
     # Pad times and reset to centre on zero
     start = start - duration*0.05 - grb_time
     end = end + duration*0.05 - grb_time
@@ -690,8 +640,6 @@ if do_injections:
 # Make plots
 # ==========
 
-# TODO: promote to executable
-# Produce plots and files reporting on efficiency
 if do_injections:
     # Calculate distances (horizontal axis) as means
     dist_plot_vals = [np.asarray(dist_bin).mean() for dist_bin in dist_bins]
@@ -702,14 +650,6 @@ if do_injections:
          found_max_bestnr, num_injections, num_mc_injs=num_mc_injs)
     yerr_low_no_mc, yerr_high_no_mc, fraction_no_mc = efficiency_with_errs(\
                                found_max_bestnr_no_mc, num_injections_no_mc)
-
-    # Save the efficiency values to disk
-    efficiency_txt = open('%s/efficiency_numbers.txt' % outdir, 'w')
-    efficiency_txt.write('distance (Mpc) \tfraction\tyerr_low\tyerr_high\n\n')
-    stacked = np.column_stack([dist_plot_vals, fraction_mc,
-                               yerr_low_mc, yerr_high_mc])
-    np.savetxt(efficiency_txt, stacked, fmt='%.8e', delimiter='\t')
-    efficiency_txt.close()
 
     # Calculate and save to disk the 50% sensitive distance
     eff_low = fraction_no_mc
@@ -728,9 +668,8 @@ if do_injections:
         d_low = dist_plot_vals[i-1]
         e = eff_low[i]
         e_low = eff_low[i-1]
-
+        # TODO: insert this in the output pages
         sens_dist = d + (e - 0.5) * (d - d_low) / (e_low - e)
-    open("%s/sensitive_distance.txt" % outdir, "w").write('%s\n' % sens_dist)
 
     # Plot efficiency using loudest background
     fig = plt.figure()
@@ -769,13 +708,6 @@ if do_injections:
     # Marginalized efficiency (isf = inverse survival function)
     red_efficiency = (fraction_mc) - (yerr_low) * scipy.stats.norm.isf(0.1)
 
-    # Print efficiency curve to file
-    efficiency_curve_txt = open("%s/efficiency_curve.txt" % outdir, "w")
-    efficiency_curve_txt.write('Distance (Mpc)\tEfficiency including counting errors\n\n')
-    stacked = np.column_stack([dist_plot_vals, red_efficiency])
-    np.savetxt(efficiency_curve_txt, stacked, delimiter='\t')
-    efficiency_curve_txt.close()
-
     # Calculate and save to disk 50% and 90% exclusion distances
     for percentile in [50, 90]:
         eff_idx = np.where(red_efficiency < (percentile / 100.))[0]
@@ -797,8 +729,7 @@ if do_injections:
             excl_dist = 0
             err_msg = "Efficiency below %d%% in first bin!" % (percentile)
             logging.error(err_msg)
-        open("%s/exclusion_distance_%d.txt" % (outdir, percentile), "w")\
-                .write('%s\n' % excl_dist)
+        # TODO: include percentile, excl_dist on output pages
 
     # Plot efficiency using loudest foreground
     fig = plt.figure()
