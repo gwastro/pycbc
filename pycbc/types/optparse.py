@@ -43,7 +43,7 @@ class MultiDetOptionAction(argparse.Action):
     def __init__(self,
                  option_strings,
                  dest,
-                 nargs=None,
+                 nargs='+',
                  const=None,
                  default=None,
                  type=None,
