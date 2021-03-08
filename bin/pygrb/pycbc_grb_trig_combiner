@@ -136,7 +136,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
                 assert dtype == datasets[name][1], (
                     "Cannot merge {0}/{1}, does not match dtype".format(
                         obj.file.filename, name,
-                ))
+                    ))
             datasets[name] = (shape, dtype)
 
             # use default compression options from this file
