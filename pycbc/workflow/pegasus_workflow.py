@@ -391,7 +391,7 @@ class Workflow(object):
         """ Add a node to this workflow
 
         This function adds nodes to the workflow. It also determines
-        parent/child relations from the DataStorage inputs to this job.
+        parent/child relations from the inputs to this job.
 
         Parameters
         ----------
@@ -486,7 +486,7 @@ class Workflow(object):
         self._tc.write(transformation_catalog_path)
 
 
-class File(DataStorage, dax.File):
+class File(dax.File):
     """ The workflow representation of a physical file
 
     An object that represents a file from the perspective of setting up a
