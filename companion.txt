@@ -13,4 +13,3 @@ cpnest; python_version >= '3.5'
 pymultinest
 ultranest
 https://github.com/willvousden/ptemcee/archive/master.tar.gz
-
