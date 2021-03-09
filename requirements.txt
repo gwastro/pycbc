@@ -47,4 +47,4 @@ sphinxcontrib-programoutput>=0.11
 # and several samplers which do depend on it
 # REMOVE when we drop 2.7 support or corner has a new release
 # and 2.2.0 is taken removed or samplers exclude its version
-corner < 2.2.0
+corner < 2.2.0; python_version < '3.6'
