@@ -42,3 +42,9 @@ htchirp >= 2.0
 Sphinx>=1.5.0,<2.0.0
 sphinx-rtd-theme
 sphinxcontrib-programoutput>=0.11
+
+# required due to ecosystem incompatibility with 2.7
+# and several samplers which do depend on it
+# REMOVE when we drop 2.7 support or corner has a new release
+# and 2.2.0 is taken removed or samplers exclude its version
+corner < 2.2.0
