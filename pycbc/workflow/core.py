@@ -216,13 +216,13 @@ class Executable(pegasus_workflow.Executable):
         try:
             exe_site_list = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
         except:
-            exe_site_list = 'local'
+            exe_site_list = 'local,condorpool'
 
         for s in exe_site_list.split(','):
             exe_site = s.strip()
 
             if exe_url.scheme in ['', 'file']:
-                if exe_site is 'local':
+                if exe_site in ['local', 'condorpool']:
                     # Check that executables at file urls
                     #  on the local site exist
                     if os.path.isfile(exe_url.path) is False:
@@ -848,7 +848,7 @@ class Node(pegasus_workflow.Node):
         if hasattr(executable, 'execution_site'):
             site = executable.execution_site
         else:
-            site = 'local'
+            site = 'condorpool'
         transform = executable.get_transformation(site)
         super(Node, self).__init__(transform)
         self.executable = executable
@@ -2068,6 +2068,7 @@ def resolve_url_to_file(curr_pfn, attrs=None):
         if curr_pfn.startswith(cvmfsstrs):
             curr_file.add_pfn(curr_pfn, site='osg')
             curr_file.add_pfn(curr_pfn, site='nonfsio')
+            curr_file.add_pfn(curr_pfn, site='condorpool')
             # Also register the CVMFS PFN with the local site. We want to
             # prefer this, and symlink from here, when possible.
             # However, I think we need a little more to avoid it symlinking
