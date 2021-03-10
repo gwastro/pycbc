@@ -294,7 +294,7 @@ setup (
                     'pycbc.results': find_files('pycbc/results'),
                     'pycbc.tmpltbank': find_files('pycbc/tmpltbank')},
     ext_modules = ext,
-    python_requires='2.7, >=3.6',
+    python_requires='==2.7, >=3.6',
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
