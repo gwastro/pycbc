@@ -916,7 +916,7 @@ class FieldArray(numpy.recarray):
                     # pull out the fields: note, by getting the parent fields
                     # we also get the sub fields name
                     item_dict[it] = self.__getbaseitem__(it)
-                elif it in self.__dict__:
+                elif (it in self.__dict__ ) or (it in self):
                     # pull out any needed attributes
                     item_dict[it] = getattr(self, it)
                 else:
