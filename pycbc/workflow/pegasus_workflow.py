@@ -64,6 +64,9 @@ class ProfileShortcuts(object):
     def set_num_retries(self, number):
         self.add_profile("dagman", "retry", number)
 
+    def set_execution_site(self, site):
+        self.add_profile("selector", "execution_site", site)
+
 class Executable(ProfileShortcuts):
     """ The workflow representation of an Executable
     """
@@ -110,6 +113,12 @@ class Executable(ProfileShortcuts):
                 key=key,
                 value=value
             )
+        # Set the execution site
+        transform.add_profiles(
+            dax.Namespace('selector'),
+            key='execution_site',
+            value=site
+        )
         self.transformations[site] = transform
         return transform
 
