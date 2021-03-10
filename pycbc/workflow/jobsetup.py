@@ -274,7 +274,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 # pain until we can set the output names for all Executables
                 node = curr_exe_job.create_node(job_data_seg, job_valid_seg,
                                                 parent=parent,
-                                                dfParents=curr_dfouts,
+                                                df_parents=curr_dfouts,
                                                 tags=tag)
                 workflow.add_node(node)
                 curr_out_files = node.output_files
@@ -813,12 +813,12 @@ class PyCBCTmpltbankExecutable(Executable):
         self.write_psd = write_psd
         self.psd_files = psd_files
 
-    def create_node(self, data_seg, valid_seg, parent=None, dfParents=None, tags=None):
+    def create_node(self, data_seg, valid_seg, parent=None, df_parents=None, tags=None):
         if tags is None:
             tags = []
         node = Node(self)
 
-        if not dfParents:
+        if not df_parents:
             raise ValueError("%s must be supplied with data file(s)"
                               % self.name)
 
@@ -840,7 +840,7 @@ class PyCBCTmpltbankExecutable(Executable):
                                      tags=tags+['PSD_FILE'], store_file=self.retain_files)
         node.new_output_file_opt(valid_seg, '.xml.gz', '--output-file',
                                  tags=tags, store_file=self.retain_files)
-        node.add_input_list_opt('--frame-files', dfParents)
+        node.add_input_list_opt('--frame-files', df_parents)
         return node
 
     def create_nodata_node(self, valid_seg, tags=None):
