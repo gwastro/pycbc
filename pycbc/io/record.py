@@ -913,8 +913,8 @@ class FieldArray(numpy.recarray):
             code, itemvars, item_dict = self._code_cache[item]
             for it in itemvars:
                 if it in self.fieldnames:
-                    # pull out the fields: note, by getting the parent fields, we
-                    # also get the sub fields name
+                    # pull out the fields: note, by getting the parent fields
+                    # we also get the sub fields name
                     item_dict[it] = self.__getbaseitem__(it)
                 elif it in self.__dict__:
                     # pull out any needed attributes
