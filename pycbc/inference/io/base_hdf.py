@@ -46,6 +46,7 @@ from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
 from pycbc.io import (dump_state, load_state)
 from pycbc.workflow import WorkflowConfigParser
+from pycbc.types import FrequencySeries
 
 
 def format_attr(val):
@@ -913,3 +914,44 @@ class BaseInferenceFile(h5py.File):
             cp.read_file(cf)
             return cp
         return cf
+
+    def read_data(self):
+        """Loads the data stored in the file as a FrequencySeries.
+
+        Only works for models that store data as a frequency series in
+        ``data/DET/stilde``. A ``KeyError`` will be raised if the model used
+        did not store data in that path.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector name -> FrequencySeries.
+        """
+        data = {}
+        fmt = 'data/{}/stilde'
+        for det in self['data'].keys():
+            group = self[fmt.format(det)]
+            data[det] = FrequencySeries(
+                group[()], delta_f=group.attrs['delta_f'],
+                epoch=group.attrs['epoch'])
+        return data
+
+    def read_psds(self):
+        """Loads the PSDs stored in the file as a FrequencySeries.
+
+        Only works for models that store PSDs in
+        ``data/DET/psds/0``. A ``KeyError`` will be raised if the model used
+        did not store PSDs in that path.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector name -> FrequencySeries.
+        """
+        psds = {}
+        fmt = 'data/{}/psds/0'
+        for det in self['data'].keys():
+            group = self[fmt.format(det)]
+            psds[det] = FrequencySeries(
+                group[()], delta_f=group.attrs['delta_f'])
+        return psds
