@@ -330,9 +330,9 @@ export LOCAL_SITE_STORAGE_PATH LOCAL_SITE_STORAGE_URL
 # add the local site
 # Set remote staging url to local
 if [ -z $SITE_LIST ] ; then
-  SITE_LIST="local"
+  SITE_LIST="local,condorpool"
 else
-  SITE_LIST="local,${SITE_LIST}"
+  SITE_LIST="local,condorpool,${SITE_LIST}"
 fi
 
 if [ -z ${PEGASUS_SITE_CATALOG_PATH} ] ; then
@@ -341,7 +341,7 @@ fi
 
 # Create the site catalog
 # Don't overwrite remote staging URL if site list is local
-if [ ${SITE_LIST} != "local" ] ; then
+if [ ${SITE_LIST} != "local,condorpool" ] ; then
   if [ -z $REMOTE_STAGING_SERVER ] ; then
     REMOTE_SITE_SCRATCH_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
   else
