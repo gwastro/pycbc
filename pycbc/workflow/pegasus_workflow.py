@@ -113,12 +113,6 @@ class Executable(ProfileShortcuts):
                 key=key,
                 value=value
             )
-        # Set the execution site
-        transform.add_profiles(
-            dax.Namespace('selector'),
-            key='execution_site',
-            value=site
-        )
         self.transformations[site] = transform
         return transform
 
@@ -161,6 +155,9 @@ class Node(ProfileShortcuts):
         self._inputs = []
         self._outputs = []
         self._dax_node = dax.Job(transformation)
+        # NOTE: We are enforcing one site per transformation. Therefore the
+        #       transformation used indicates the site to be used.
+        self.set_execution_site(list(transformation.sites.keys())[0])
         self._args = []
         # Each value in _options is added separated with whitespace
         # so ['--option','value'] --> "--option value"
