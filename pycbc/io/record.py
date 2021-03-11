@@ -810,13 +810,17 @@ class FieldArray(numpy.recarray):
         [setattr(other, attr, copy.deepcopy(getattr(self, attr, default))) \
             for attr in self.__persistent_attributes__]
 
-    def __getattribute__(self, attr):
+    def __getattribute__(self, attr, no_fallback=False):
         """Allows fields to be accessed as attributes.
         """
         # first try to get the attribute
         try:
             return numpy.ndarray.__getattribute__(self, attr)
         except AttributeError as e:
+            # don't try getitem, which might get back here
+            if no_fallback:
+                raise(e)
+
             # might be a field, try to retrive it using getitem
             if attr in self.fields:
                 return self.__getitem__(attr)
@@ -916,9 +920,9 @@ class FieldArray(numpy.recarray):
                     # pull out the fields: note, by getting the parent fields
                     # we also get the sub fields name
                     item_dict[it] = self.__getbaseitem__(it)
-                elif (it in self.__dict__ ) or (it in self):
+                elif (it in self.__dict__) or (it in self._virtualfields):
                     # pull out any needed attributes
-                    item_dict[it] = getattr(self, it)
+                    item_dict[it] = self.__getattribute__(it, no_fallback=True)
                 else:
                     # add any aliases
                     aliases = self.aliases
