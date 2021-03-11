@@ -115,12 +115,16 @@ class BaseGaussianNoise(BaseDataModel):
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, ignore_failed_waveforms=False,
+                 no_save_data=False,
                  **kwargs):
         # set up the boiler-plate attributes
         super(BaseGaussianNoise, self).__init__(variable_params, data,
                                                 static_params=static_params,
+                                                no_save_data=no_save_data,
                                                 **kwargs)
         self.ignore_failed_waveforms = ignore_failed_waveforms
+        self.no_save_data = no_save_data
+
         # check if low frequency cutoff has been provided for every IFO with
         # data
         for ifo in self.data:
@@ -432,7 +436,7 @@ class BaseGaussianNoise(BaseDataModel):
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
             fp.attrs[key] = [float(data.start_time), float(data.end_time)]
-        if self._psds is not None:
+        if self._psds is not None and not self.no_save_data:
             fp.write_psd(self._psds)
         # write the times used for psd estimation (if they were provided)
         for det in self.psd_segments:
@@ -527,8 +531,11 @@ class BaseGaussianNoise(BaseDataModel):
             args['normalize'] = True
         if cp.has_option('model', 'ignore-failed-waveforms'):
             args['ignore_failed_waveforms'] = True
+        if cp.has_option('model', 'no-save-data'):
+            args['no_save_data'] = True
         # get any other keyword arguments provided in the model section
-        ignore_args = ['name', 'normalize', 'ignore-failed-waveforms']
+        ignore_args = ['name', 'normalize',
+                       'ignore-failed-waveforms', 'no-save-data']
         for option in cp.options("model"):
             if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)

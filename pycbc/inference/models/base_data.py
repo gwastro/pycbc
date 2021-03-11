@@ -81,10 +81,11 @@ class BaseDataModel(BaseModel):
     See ``BaseModel`` for additional attributes and properties.
     """
     def __init__(self, variable_params, data, recalibration=None, gates=None,
-                 injection_file=None, **kwargs):
+                 injection_file=None, no_save_data=False, **kwargs):
         self._data = None
         self.data = data
         self.recalibration = recalibration
+        self.no_save_data = no_save_data
         self.gates = gates
         self.injection_file = injection_file
         super(BaseDataModel, self).__init__(variable_params, **kwargs)
@@ -163,7 +164,8 @@ class BaseDataModel(BaseModel):
             The inference file to write to.
         """
         super(BaseDataModel, self).write_metadata(fp)
-        fp.write_stilde(self.data)
+        if not self.no_save_data:
+            fp.write_stilde(self.data)
         # save injection parameters
         if self.injection_file is not None:
             fp.write_injections(self.injection_file)
