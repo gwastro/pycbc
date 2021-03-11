@@ -81,7 +81,8 @@ class SingleTemplate(BaseGaussianNoise):
         #polarization array to marginalize over if num_samples given
         self.pflag = 0
         if polarization_samples is not None:
-            self.polarization = numpy.linspace(0, 2*numpy.pi, int(polarization_samples))
+            self.polarization = numpy.linspace(0, 2*numpy.pi,
+                                               int(polarization_samples))
             self.pflag = 1
 
         # Calculate high sample rate SNR time series
