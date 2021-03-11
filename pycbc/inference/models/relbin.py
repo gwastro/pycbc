@@ -36,6 +36,7 @@ from pycbc.detector import Detector
 from pycbc.types import Array
 
 from .gaussian_noise import BaseGaussianNoise
+from .relbin_cpu import likelihood_parts, likelihood_parts_v
 
 
 def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
@@ -137,7 +138,7 @@ class Relative(BaseGaussianNoise):
     epsilon : float, optional
         Tuning parameter used in calculating the frequency bins. Lower values
         will result in higher resolution and more bins.
-    vary_polarization: boolean, optional
+    earth_rotation: boolean, optional
         Default is False. If True, then vary the fp/fc polarization values
         as a function of frequency bin, using a predetermined PN approximation
         for the time offsets.
@@ -155,7 +156,7 @@ class Relative(BaseGaussianNoise):
         fiducial_params=None,
         gammas=None,
         epsilon=0.5,
-        vary_polarization=False,
+        earth_rotation=False,
         **kwargs
     ):
         super(Relative, self).__init__(
@@ -179,7 +180,8 @@ class Relative(BaseGaussianNoise):
         self.comp_psds = {ifo: p.numpy() for ifo, p in self.psds.items()}
 
         # store fiducial waveform params
-        self.fid_params = fiducial_params
+        self.fid_params = self.static_params.copy()
+        self.fid_params.update(fiducial_params)
 
         for ifo in data:
             # store data and frequencies
@@ -209,36 +211,32 @@ class Relative(BaseGaussianNoise):
             )
 
             # prune low frequency samples to avoid waveform errors
-            nbelow = sum(self.f[ifo] < f_lo)
-            fpoints = Array(self.f[ifo].astype(numpy.float64))[nbelow:]
-            approx = self.static_params["approximant"]
-            fid_hp, fid_hc = get_fd_waveform_sequence(
-                approximant=approx, sample_points=fpoints, **self.fid_params
-            )
+            fpoints = Array(self.f[ifo].astype(numpy.float64))
+            fpoints = fpoints[self.kmin[ifo]:self.kmax[ifo]+1]
+            fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
+                                                      **self.fid_params)
+
             # check for zeros at high frequencies
-            numzeros = list(fid_hp[::-1] != 0j).index(True)
-            n_above_fhi = (len(self.f[ifo]) - 1) - self.kmax[ifo]
             # make sure only nonzero samples are included in bins
-            if numzeros > n_above_fhi:
-                nremove = numzeros - n_above_fhi
-                new_kmax = self.kmax[ifo] - nremove
+            numzeros = list(fid_hp[::-1] != 0j).index(True)
+            if numzeros > 0:
+                new_kmax = self.kmax[ifo] - numzeros
                 f_hi = new_kmax * self.df[ifo]
                 logging.info(
                     "WARNING! Fiducial waveform terminates below "
                     "high-frequency-cutoff, final bin frequency "
-                    "will be %s Hz",
-                    f_hi,
-                )
+                    "will be %s Hz", f_hi)
 
             # make copy of fiducial wfs, adding back in low frequencies
-            hp0 = numpy.concatenate([[0j] * nbelow, fid_hp.copy()])
-            hc0 = numpy.concatenate([[0j] * nbelow, fid_hc.copy()])
+            fid_hp.resize(len(self.f[ifo]))
+            fid_hc.resize(len(self.f[ifo]))
+            hp0 = numpy.roll(fid_hp, self.kmin[ifo])
+            hc0 = numpy.roll(fid_hc, self.kmin[ifo])
+
             fp, fc = self.det[ifo].antenna_pattern(
-                self.fid_params["ra"],
-                self.fid_params["dec"],
-                self.fid_params["polarization"],
-                self.fid_params["tc"],
-            )
+                self.fid_params["ra"], self.fid_params["dec"],
+                self.fid_params["polarization"], self.fid_params["tc"])
+
             tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
             self.h00[ifo] = numpy.array(hp0 * fp + hc0 * fc) * tshift
 
@@ -277,8 +275,8 @@ class Relative(BaseGaussianNoise):
             self.sdat[ifo] = self.summary_data(ifo)
 
             # Calculate the times to evaluate fp/fc
-            if vary_polarization is not False:
-                logging.info("Enabling frequency-dependent polarization")
+            if earth_rotation is not False:
+                logging.info("Enabling frequency-dependent earth rotation")
                 from pycbc.waveform.spa_tmplt import spa_length_in_time
 
                 times = spa_length_in_time(
@@ -288,8 +286,27 @@ class Relative(BaseGaussianNoise):
                     f_lower=self.fedges[ifo],
                 )
                 self.antenna_time[ifo] = self.fid_params["tc"] - times
+                self.lik = likelihood_parts_v
             else:
                 self.antenna_time[ifo] = self.fid_params["tc"]
+                self.lik = likelihood_parts
+
+        # determine the unique ifo layouts
+        self.edge_unique = []
+        self.ifo_map = {}
+        for ifo in self.fedges:
+            if len(self.edge_unique) == 0:
+                self.ifo_map[ifo] = 0
+                self.edge_unique.append(Array(self.fedges[ifo]))
+            else:
+                for i, edge in enumerate(self.edge_unique):
+                    if numpy.array_equal(edge, self.fedges[ifo]):
+                        self.ifo_map[ifo] = i
+                        break
+                else:
+                    self.ifo_map[ifo] = len(self.edge_unique)
+                    self.edge_unique.append(Array(self.fedges[ifo]))
+        logging.info("%s unique ifo layouts", len(self.edge_unique))
 
     def summary_data(self, ifo):
         """Compute summary data bin coefficients encoding linear
@@ -305,38 +322,46 @@ class Relative(BaseGaussianNoise):
         hd = numpy.conjugate(self.comp_data[ifo]) * self.h00[ifo]
         hd /= self.comp_psds[ifo]
         hh = (numpy.absolute(self.h00[ifo]) ** 2.0) / self.comp_psds[ifo]
+
         # constant terms
-        a0 = numpy.array(
-            [
+        a0 = numpy.array([
                 4.0 * self.df[ifo] * numpy.sum(hd[l:h])
                 for l, h in self.bins[ifo]
-            ]
-        )
-        b0 = numpy.array(
-            [
+            ])
+        b0 = numpy.array([
                 4.0 * self.df[ifo] * numpy.sum(hh[l:h])
                 for l, h in self.bins[ifo]
-            ]
-        )
+            ])
+
         # linear terms
         bin_lefts = [fl for fl, fh in self.fbins[ifo]]
-        a1 = numpy.array(
-            [
-                4.0
-                * self.df[ifo]
+        a1 = numpy.array([
+                4.0 * self.df[ifo]
                 * numpy.sum(hd[l:h] * (self.f[ifo][l:h] - bl))
                 for (l, h), bl in zip(self.bins[ifo], bin_lefts)
-            ]
-        )
-        b1 = numpy.array(
-            [
-                4.0
-                * self.df[ifo]
+            ])
+        b1 = numpy.array([
+                4.0 * self.df[ifo]
                 * numpy.sum(hh[l:h] * (self.f[ifo][l:h] - bl))
                 for (l, h), bl in zip(self.bins[ifo], bin_lefts)
-            ]
-        )
+            ])
+
+        freqs = self.fedges[ifo]
+        df = (freqs[1:] - freqs[:-1])
+        a1 /= df
+        b1 /= df
         return {"a0": a0, "a1": a1, "b0": b0, "b1": b1}
+
+    def get_waveforms(self, params):
+        """ Get the waveform polarizations for each ifo
+        """
+        wfs = []
+        for edge in self.edge_unique:
+            hp, hc = get_fd_waveform_sequence(sample_points=edge, **params)
+            hp = hp.numpy()
+            hc = hc.numpy()
+            wfs.append((hp, hc))
+        return {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
@@ -357,40 +382,34 @@ class Relative(BaseGaussianNoise):
         # get model params
         p = self.current_params.copy()
         p.update(self.static_params)
+        wfs = self.get_waveforms(p)
 
         hh = 0.0
         hd = 0j
         for ifo in self.data:
-            # get detector antenna pattern
-            fp, fc = self.det[ifo].antenna_pattern(
-                p["ra"], p["dec"], p["polarization"], self.antenna_time[ifo]
-            )
-            # get timeshift relative to end of data
-            dt = self.det[ifo].time_delay_from_earth_center(
-                p["ra"], p["dec"], p["tc"]
-            )
-            dtc = p["tc"] + dt - self.end_time[ifo]
-            tshift = numpy.exp(-2.0j * numpy.pi * self.fedges[ifo] * dtc)
-            # generate template and calculate waveform ratio
-            hp, hc = get_fd_waveform_sequence(
-                sample_points=Array(self.fedges[ifo]), **p
-            )
-            htilde = numpy.array(fp * hp + fc * hc) * tshift
-            r = (htilde / self.h00_sparse[ifo]).astype(numpy.complex128)
-            r0 = r[:-1]
-            r1 = (r[1:] - r[:-1]) / (
-                self.fedges[ifo][1:] - self.fedges[ifo][:-1]
-            )
 
-            # <h, d> is sum over bins of A0r0 + A1r1
-            hd += numpy.sum(
-                self.sdat[ifo]["a0"] * r0 + self.sdat[ifo]["a1"] * r1
-            )
-            # <h, h> is sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
-            hh += numpy.sum(
-                self.sdat[ifo]["b0"] * numpy.absolute(r0) ** 2.0
-                + 2.0 * self.sdat[ifo]["b1"] * (r1 * numpy.conjugate(r0)).real
-            )
+            det = self.det[ifo]
+            freqs = self.fedges[ifo]
+            sdat = self.sdat[ifo]
+            hp, hc = wfs[ifo]
+            h00 = self.h00_sparse[ifo]
+            end_time = self.end_time[ifo]
+            times = self.antenna_time[ifo]
+
+            # project waveform to detector frame
+            fp, fc = det.antenna_pattern(p["ra"], p["dec"],
+                                         p["polarization"], times)
+            dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
+            dtc = p["tc"] + dt - end_time
+
+            hdp, hhp = self.lik(freqs, fp, fc, dtc,
+                                hp, hc, h00,
+                                sdat['a0'], sdat['a1'],
+                                sdat['b0'], sdat['b1'])
+
+            hd += hdp
+            hh += hhp
+
         hd = abs(hd)
         llr = numpy.log(special.i0e(hd)) + hd - 0.5 * hh
         return float(llr)
