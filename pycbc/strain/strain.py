@@ -323,7 +323,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         gate_params = numpy.loadtxt(opt.gating_file)
         if len(gate_params.shape) == 1:
             gate_params = [gate_params]
-        strain = gate_data(strain, gate_params)
+        for gate_time, gate_window, gate_taper in gate_params:
+            strain = strain.gate(gate_time, window=gate_window,
+                                 method=args.gating_method,
+                                 copy=False,
+                                 taper_width=gate_taper)
         gating_info['file'] = \
                 [gp for gp in gate_params \
                  if (gp[0] + gp[1] + gp[2] >= strain.start_time) \
@@ -342,7 +346,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             gating_info['auto'] += gate_params
             for gate_time, gate_window, gate_taper in gate_params:
                 strain = strain.gate(gate_time, window=gate_window,
-                                     method=args.autogating_method,
+                                     method=args.gating_method,
                                      copy=False,
                                      taper_width=gate_taper)
             if len(glitch_times) > 0:
@@ -565,9 +569,11 @@ def insert_strain_option_group(parser, gps_times=True):
                                     help='Ignore the given length of whitened '
                                          'strain at the ends of a segment, to '
                                          'avoid filters ringing.')
-    data_reading_group.add_argument('--autogating-method', type=str,
+    data_reading_group.add_argument('--gating-method', type=str,
                                     default='taper',
-                                    help="Choose the method for gating. Default: `taper`")
+                                    help='Choose the method for gating. '
+                                         'Default: `taper`',
+                                    choices=['hard', 'taper', 'paint'])
     # Optional
     data_reading_group.add_argument("--normalize-strain", type=float,
                     help="(optional) Divide frame data by constant.")
