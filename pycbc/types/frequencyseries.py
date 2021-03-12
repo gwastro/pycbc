@@ -561,6 +561,19 @@ class FrequencySeries(Array):
                      low_frequency_cutoff=low_frequency_cutoff,
                      high_frequency_cutoff=high_frequency_cutoff)
 
+    def plot(self, **kwds):
+        """ Basic plot of this frequency series
+        """
+        from matplotlib import pyplot
+
+        if self.kind == 'real':
+            plot = pyplot.plot(self.sample_frequencies, self, **kwds)
+            return plot
+        elif self.kind == 'complex':
+            plot1 = pyplot.plot(self.sample_frequencies, self.real(), **kwds)
+            plot2 = pyplot.plot(self.sample_frequencies, self.imag(), **kwds)
+            return plot1, plot2
+
 def load_frequencyseries(path, group=None):
     """
     Load a FrequencySeries from a .hdf, .txt or .npy file. The

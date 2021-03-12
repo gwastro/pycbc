@@ -1016,6 +1016,19 @@ class TimeSeries(Array):
         from scipy.signal import detrend
         return self._return(detrend(self.numpy(), type=type))
 
+    def plot(self, **kwds):
+        """ Basic plot of this time series
+        """
+        from matplotlib import pyplot
+
+        if self.kind == 'real':
+            plot = pyplot.plot(self.sample_times, self, **kwds)
+            return plot
+        elif self.kind == 'complex':
+            plot1 = pyplot.plot(self.sample_times, self.real(), **kwds)
+            plot2 = pyplot.plot(self.sample_times, self.imag(), **kwds)
+            return plot1, plot2
+
 def load_timeseries(path, group=None):
     """
     Load a TimeSeries from a .hdf, .txt or .npy file. The
