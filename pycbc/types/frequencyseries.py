@@ -565,8 +565,14 @@ class FrequencySeries(Array):
         """ Basic plot of this frequency series
         """
         from matplotlib import pyplot
-        plot = pyplot.plot(self.sample_frequencies, self, **kwds)
-        return plot
+
+        if self.kind == 'real':
+            plot = pyplot.plot(self.sample_frequencies, self, **kwds)
+            return plot
+        elif self.kind == 'complex':
+            plot1 = pyplot.plot(self.sample_frequencies, self.real(), **kwds)
+            plot2 = pyplot.plot(self.sample_frequencies, self.imag(), **kwds)
+            return plot1, plot2
 
 def load_frequencyseries(path, group=None):
     """
