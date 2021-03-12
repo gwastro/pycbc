@@ -143,7 +143,7 @@ if opts.plot_prior is not None:
         for func, param in fp.attrs['remapped_params']:
             try:
                 remapped_params[param] = prior_samples[func]
-            except (NameError, TypeError):
+            except (NameError, TypeError, AttributeError):
                 continue
         prior_samples = FieldArray.from_kwargs(**remapped_params)
         for param in fp.attrs['static_params']:
@@ -184,7 +184,7 @@ if opts.plot_injection_parameters:
     for p in parameters:
         try:
             vals = injections[p]
-        except (NameError, TypeError):
+        except (NameError, TypeError, AttributeError):
             # injection doesn't have this parameter, skip
             logging.warn("Could not find injection parameter {}".format(p))
             continue
