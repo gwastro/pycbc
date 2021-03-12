@@ -1,0 +1,193 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2020 Francesco Pannarale & Michael Patel
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+"""
+Gather information about quiet/missed injections in html tables.
+"""
+
+from __future__ import division
+
+import sys
+import os
+import logging
+import numpy as np
+import pycbc.version
+import pycbc.results
+from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
+from pycbc.results.pygrb_postprocessing_utils import load_xml_table
+from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
+from pycbc.results.pygrb_postprocessing_utils import process_trigs_for_followup
+from glue.ligolw import lsctables, ligolw, utils
+
+# Deprecated
+from pylal.coh_PTF_pyutils import get_bestnr
+
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__ = pycbc.version.date
+__program__ = "pycbc_pygrb_page_tables"
+
+
+# =============================================================================
+# Main script starts here
+# =============================================================================
+description = 'Split quiet/missed injections from a PyGRB analysis.'
+usage = __program__ + ' [--options]'
+opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
+
+if opts.verbose:
+    level = logging.INFO
+else:
+    level = logging.WARNING
+logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
+                    level=level)
+
+# Check options
+if opts.offsource_file is None:
+    err_msg = "Please specify a path to the offsource trigger file."
+    logging.error(err_msg)
+
+if opts.veto_directory and (opts.veto_category is None):
+    err_msg = "Must supply veto category if applying vetoes."
+    logging.error(err_msg)
+
+if (opts.found_file is None) or (opts.missed_file is None):
+    err_msg = "Must provide both found and missed injection file."
+    logging.error(err_msg)
+
+if opts.output_file is None:
+    err_msg = "Must specify an output file."
+    logging.error(err_msg)
+
+# Store options used multiple times in local variables
+trig_file = opts.offsource_file
+found_file = opts.found_file
+missed_file = opts.missed_file
+chisq_index = opts.chisq_index
+chisq_nhigh = opts.chisq_nhigh
+snr_thresh = opts.snr_threshold
+sngl_snr_thresh = opts.sngl_snr_threshold
+new_snr_thresh = opts.newsnr_threshold
+null_grad_thresh = opts.null_grad_thresh
+null_grad_val = opts.null_grad_val
+null_thresh = map(float, opts.null_snr_threshold.split(','))
+followup_idx = opts.followup_inj_idx
+output_file = opts.output_file
+
+# Set output directory
+logging.info("Setting output directory.")
+outdir = os.path.split(os.path.abspath(output_file))[0]
+
+# Create output directory if it does not exist
+if not os.path.isdir(outdir):
+    logging.info("Creating output directory.")
+    os.makedirs(outdir)
+
+# Wrapper function for reweighted SNR calculation
+def reweighted_snr(trigger):
+    """Wrapper for calculating bestnr.
+
+    Parameters
+    ----------
+    trigger: glue.ligolw.lsctables.MultiInspiral
+        Trigger as a single row of MultiInspiral table.
+
+    Returns
+    -------
+    trigger_bestnr: float
+        BestNR value of the trigger.
+    """
+    trigger_bestnr = get_bestnr(
+        trigger, q=chisq_index, n=chisq_nhigh,
+        null_thresh=null_thresh,
+        snr_threshold=snr_thresh,
+        sngl_snr_threshold=sngl_snr_thresh,
+        chisq_threshold=new_snr_thresh,
+        null_grad_thresh=null_grad_thresh,
+        null_grad_val=null_grad_val
+        )
+    return trigger_bestnr
+
+
+# Extract IFOs and vetoes
+logging.info("Extracting IFOs and vetoes.")
+ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+                                       opts.veto_category)
+
+logging.info("Processing offsource triggers for max BestNR.")
+max_bestnr = process_trigs_for_followup(trig_file, opts.segment_dir, opts.veto_directory, 
+                                        opts.veto_category, chisq_index, chisq_nhigh, 
+                                        null_thresh, snr_thresh, sngl_snr_thresh, 
+                                        new_snr_thresh, null_grad_thresh,
+                                        null_grad_val, do_injections=True)
+
+# Load the found injections and check if they are in veto times
+found_trigs_nveto = load_xml_table(found_file, lsctables.MultiInspiralTable.tableName)
+found_injs_no_veto = load_xml_table(found_file, lsctables.SimInspiralTable.tableName)
+
+found_trig_table = lsctables.New(lsctables.MultiInspiralTable)
+found_inj_table = lsctables.New(lsctables.SimInspiralTable)
+
+for trig, sim in zip(found_trigs_nveto, found_injs_no_veto):
+    if sim.get_end() not in vetoes.union(vetoes.keys()):
+        found_inj_table.append(sim)
+        found_trig_table.append(trig)
+
+logging.info("Missed/found injections/triggers loaded.")
+
+found_injs = list(zip([reweighted_snr(t) for t in found_trig_table], found_inj_table))
+logging.info("BestNRs calcuated for found injections.")
+
+# We are only interested in quiet/vetoed found injections
+quiet_injs = [inj for inj in found_injs if inj[0] < max_bestnr]
+
+logging.info("%d quite/vetoed injections found.", len(quiet_injs))
+
+# Also need the missed injections
+missed_inj_table = load_xml_table(missed_file, 
+                                  lsctables.SimInspiralTable.tableName
+                                  ).veto(vetoes.union(vetoes.keys()))
+logging.info("%d missed missed injections loaded.", len(missed_inj_table))
+
+# There has to be a cleaner way to do this?
+missed_inj_table.extend([inj[1] for inj in quiet_injs])
+missed_inj_table = list(zip([inj.distance for inj in missed_inj_table], missed_inj_table))
+missed_inj_table = [inj[1] for inj in sorted(missed_inj_table, key=lambda inj: inj[0])]
+logging.info("Injections combined and sorted by distance.")
+
+cols = ['geocent_end_time', 'geocent_end_time_ns', 'mass1', 'mass2',
+        'mchirp', 'f_lower', 'inclination', 'spin1x', 'spin1y', 'spin1z',
+        'spin2x', 'spin2y', 'spin2z', 'longitude', 'latitude', 'distance',
+        'eff_dist_h', 'eff_dist_l', 'eff_dist_v']
+
+lsctables.SimInspiralTable.loadcolumns = cols
+
+output_inj_table = lsctables.New(lsctables.SimInspiralTable,
+                                 columns=lsctables.SimInspiralTable.loadcolumns)
+output_inj_table.append(missed_inj_table[followup_idx])
+
+# Write the Nth injection to file
+xmldoc = ligolw.Document()
+xmldoc.appendChild(ligolw.LIGO_LW())
+xmldoc.childNodes[-1].appendChild(output_inj_table)
+utils.write_filename(xmldoc, output_file)
+logging.info("Injection file written to disk")

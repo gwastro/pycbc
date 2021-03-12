@@ -282,7 +282,12 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
     # pycbc_pygrb_page_table uses this
     parser.add_argument("--num-loudest-off-trigs", default=30,
                         help="Number of loudest offsouce triggers to " +
-                        "output details abouth.")
+                        "output details about.")
+
+    # pycbc_pygrb_slice_inj_followup uses this
+    parser.add_argument("--followup-inj-idx", action="store", type=int, 
+                        default=None, help="Index of missed/quiet injeciton " + 
+                        "to followup.")
 
     args = parser.parse_args()
     if not (args.trig_file or args.offsource_file):
@@ -1125,6 +1130,119 @@ def mc_cal_wf_errs(num_mc_injs, num_injs, inj_dists, cal_err, wf_err, max_dc_cal
                                      (1 + cal_dist_red) * (1 + wf_dist_red))
 
     return inj_dist_mc
+
+
+
+# =============================================================================
+# Process the trigger table for q-scan follow-ups
+# =============================================================================
+
+def process_trigs_for_followup(trig_file, seg_dir, veto_dir, veto_cat, 
+                               chisq_index, chisq_nhigh, null_thresh, 
+                               snr_thresh, sngl_snr_thresh, new_snr_thresh,
+                               null_grad_thresh, null_grad_val,
+                               num_followup_trigs=10, do_injections=False):
+    # The basis for this code is in multiple places, but it is 
+    # specifically added here so that we can use it for q-scan
+    # follow-ups of missed injections and loudest offsource
+    # events. 
+
+    ifos, vetoes = extract_ifos_and_vetoes(trig_file, veto_dir, int(veto_cat))
+    
+    # Load triggers, time-slides, and segment dictionary
+    trigs = load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
+    slide_dict = load_time_slides(trig_file)
+    segment_dict = load_segment_dict(trig_file)
+
+    # Identify the zero-lag slide and the number of slides
+    zero_lag_slide_id = find_zero_lag_slide_id(slide_dict)
+    num_slides = len(slide_dict)
+
+    # Get segments
+    segs = readSegFiles(seg_dir)
+
+    # Construct trials
+    trial_dict = construct_trials(num_slides, segs, segment_dict, ifos, 
+                                  slide_dict, vetoes)
+    # Sort the triggers into each slide
+    sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
+    total_trials = sum([len(trial_dict[slide_id]) 
+                        for slide_id in range(num_slides)])
+
+    # Extract basic trigger properties and store as dictionaries
+    trig_time = {}
+    trig_snr = {}
+    trig_bestnr = {}
+    for slide_id in range(num_slides):
+        slide_trigs = sorted_trigs[slide_id]
+        trig_time[slide_id] = numpy.asarray(slide_trigs.get_end()).astype(float)
+        trig_snr[slide_id] = numpy.asarray(slide_trigs.get_column('snr'))
+        trig_bestnr[slide_id] = [get_bestnr(t, q=float(chisq_index), 
+                                            n=float(chisq_nhigh),
+                                            null_thresh=null_thresh,
+                                            snr_threshold=float(snr_thresh),
+                                            sngl_snr_threshold=float(sngl_snr_thresh),
+                                            chisq_threshold=float(new_snr_thresh),
+                                            null_grad_thresh=float(null_grad_thresh),
+                                            null_grad_val=float(null_grad_val))
+                                 for t in slide_trigs]
+        trig_bestnr[slide_id] = numpy.array(trig_bestnr[slide_id])
+
+    # Calculate SNR and BestNR values and maxima
+    time_veto_max_snr = {}
+    time_veto_max_bestnr = {}
+    for slide_id in range(num_slides):
+        num_slide_segs = len(trial_dict[slide_id])
+        time_veto_max_snr[slide_id] = numpy.zeros(num_slide_segs)
+        time_veto_max_bestnr[slide_id] = numpy.zeros(num_slide_segs)
+
+    for slide_id in range(num_slides):
+        for j, trial in enumerate(trial_dict[slide_id]):
+            trial_cut = (trial[0] <= trig_time[slide_id])\
+                              & (trig_time[slide_id] < trial[1])
+            if not trial_cut.any():
+                continue
+            # Max SNR
+            time_veto_max_snr[slide_id][j] = \
+                            max(trig_snr[slide_id][trial_cut])
+            # Max BestNR
+            time_veto_max_bestnr[slide_id][j] = \
+                            max(trig_bestnr[slide_id][trial_cut])
+            # Max SNR for triggers passing SBVs
+            sbv_cut = trig_bestnr[slide_id] != 0
+            if not (trial_cut&sbv_cut).any():
+                continue
+
+    # Sort loudest offsource triggers by BestNR
+    offsource_trigs = []
+    for slide_id in range(num_slides):
+        offsource_trigs.extend(zip(trig_bestnr[slide_id], 
+                                   sorted_trigs[slide_id]))
+    offsource_trigs.sort(key=lambda element: element[0])
+    offsource_trigs.reverse()
+    if do_injections:
+        # If do_injections=true then this function is called from 
+        # pycbc_pygrb_inj_followup and it just needs the max
+        # bestnr value to calculate missed injections.
+        max_bestnr, _, _ = max_median_stat(num_slides, time_veto_max_bestnr, 
+                                           trig_bestnr, total_trials)
+        return max_bestnr
+    else:
+        # If do_injections=false we are calling this function from the 
+        # post_processing workflow and are intending to follow-up on
+        # the loudest offsource events. In that case we just need to 
+        # return a list containing the GPS times for the num_followup_trigs
+        # with the approproate time shifts. 
+        loudest_trigs = []
+        for trig_num in range(0, int(num_followup_trigs)):
+            trig = offsource_trigs[trig_num][1]
+            time_shifts = [slide_dict[int(trig.time_slide_id)][ifo] 
+                           for ifo in ifos]
+            loudest_trigs.append([str(int(trig.end_time) + int(ts)) + 
+                                  '.' + str(trig.end_time_ns) 
+                                  for ts in time_shifts])
+ 
+        return loudest_trigs
 
 
 
