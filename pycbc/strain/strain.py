@@ -263,6 +263,13 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                    seed=opt.fake_strain_seed,
                                    sample_rate=fake_rate,
                                    low_frequency_cutoff=fake_flow)
+        if not strain.sample_rate_close(fake_rate):
+            err_msg = "Actual sample rate of generated data does not match "
+            err_msg += "that expected. Possible causes of this:\n"
+            err_msg += "The desired duration is not a multiple of delta_t. "
+            err_msg += "e.g. If using LISA with delta_t = 15 the duration "
+            err_msg += "must be a multiple of 15 seconds."
+            raise ValueError(err_msg)
 
     if not opt.channel_name and (opt.injection_file \
                                  or opt.sgburst_injection_file):
@@ -460,7 +467,7 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--taper-data",
               help="Taper ends of data to zero using the supplied length as a "
                    "window (integer seconds)", type=int, default=0)
-    data_reading_group.add_argument("--sample-rate", type=int,
+    data_reading_group.add_argument("--sample-rate", type=float,
               help="The sample rate to use for h(t) generation (integer Hz)")
     data_reading_group.add_argument("--channel-name", type=str,
                    help="The channel containing the gravitational strain data")
@@ -637,7 +644,8 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             type=int, default=0, metavar='IFO:LENGTH',
                             help="Taper ends of data to zero using the "
                                 "supplied length as a window (integer seconds)")
-    data_reading_group_multi.add_argument("--sample-rate", type=int, nargs='+',
+    data_reading_group_multi.add_argument("--sample-rate", type=float,
+                            nargs='+',
                             action=MultiDetOptionAction, metavar='IFO:RATE',
                             help="The sample rate to use for h(t) generation "
                                 " (integer Hz).")
