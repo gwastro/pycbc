@@ -35,7 +35,7 @@ import pycbc.version
 import pycbc.workflow as _workflow
 from pycbc.workflow.plotting import PlotExecutable #, excludestr, requirestr
 from pycbc.results import create_versioning_page, layout, pygrb_postprocessing_utils
-from pycbc.results.pygrb_postprocessing_utils import process_trigs_for_followup
+#from pycbc.results.pygrb_postprocessing_utils import process_trigs_for_followup
 from pycbc.results.versioning import save_fig_with_metadata
 #from pprint import pprint
 
@@ -54,6 +54,7 @@ def file_from_workflow(workflow, trig_or_inj_file, tags=None):
     file_out = None
     if trig_or_inj_file not in ['trig-file', 'inj-file']:
         logging.error('Expecting trig-file or inj-file as an argument')
+        sys.exit()
     file_out = workflow.cp.get('workflow', trig_or_inj_file)
     file_out = _workflow.File.from_path(file_out)
     #pprint(vars(file_out))
@@ -174,17 +175,31 @@ def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
                 'veto-category', 'snr-threshold', 'newsnr-threshold',
                 'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
         node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
-    # Found/missed injection files
-    for inj_file_type in ['found-file', 'missed-file']:
-        node.add_opt('--'+inj_file_type, workflow.cp.get('injections-'+inj_set, inj_file_type))
-    # Missed-found injections output file
-    for inj_sorting in ['missed-found', 'quiet-found']:
-        node.new_output_file_opt(workflow.analysis_time,
-                                 '.html', '--'+inj_sorting+'-injs-output-file',
-                                 tags=extra_tags+[inj_sorting.upper().replace('-', '_')])
-    # TODO: do something about:
-    #node.new_output_file_opt("loudest_events.html")
-    #node.new_output_file_opt("loudest_offsource_trigs.html")
+    # Handle input/output for injections
+    if inj_set is not None:
+        # Found/missed injection files
+        for inj_file_type in ['found-file', 'missed-file']:
+            node.add_opt('--'+inj_file_type, workflow.cp.get('injections-'+inj_set, inj_file_type))
+        # Missed-found and quiet-found injections html output files
+        for inj_sorting in ['missed-found', 'quiet-found']:
+            node.new_output_file_opt(workflow.analysis_time, '.html',
+                                     '--'+inj_sorting+'-injs-output-file',
+                                     tags=extra_tags+[inj_sorting.upper().replace('-', '_')])
+        # Quiet-found injections h5 output file
+        node.new_output_file_opt(workflow.analysis_time, '.h5',
+                                 '--quiet-found-injs-h5-output-file',
+                                 tags=extra_tags+['QUIET_FOUND'])
+    # Handle input/output for onsource/offsource
+    else:
+        # Loudest offsource triggers and onsource trigger html and h5 output files
+        for source_type in ['onsource-trig', 'offsource-trigs']:
+            node.new_output_file_opt(workflow.analysis_time, '.html',
+                                     '--loudest-'+source_type+'-output-file',
+                                     tags=extra_tags+[source_type.upper().replace('-', '_')])
+            node.new_output_file_opt(workflow.analysis_time, '.h5',
+                                     '--loudest-'+source_type+'-h5-output-file',
+                                     tags=extra_tags+[source_type.upper().replace('-', '_')])
+
     # Add job node to the workflow
     workflow += node
 
@@ -404,12 +419,15 @@ for inj_set in inj_sets:
             plotting_nodes.append(plot_node)
             files += output_files
     # Generate quiet-found and missed-found html tables
-    html_node, [mf_table, qf_table] = make_pygrb_injs_tables(wflow, out_dir,
-                                                             inj_set=inj_set)
+    # TODO:  pass lont/lofft arguments if inj_set=None
+    html_node, [mf_table, qf_table, qf_h5] =\
+         make_pygrb_injs_tables(wflow, out_dir, inj_set=inj_set)
     html_nodes.append(html_node)
 
     inj_layout = list(layout.grouper(files, 2)) + [(mf_table,), (qf_table,)]
     layout.two_column_layout(out_dir, inj_layout)
+
+    # TODO: follow up of loudest n quiet-missed injections (parent-child)
 
 
 #
@@ -429,9 +447,19 @@ for stat in stats:
     # We want a File, not a 1-element list with a File
     # pycbc_pygrb_plot_stat_distribution produces only one plot: take [0]
     files.append(output_file[0])
-#layout.single_layout(out_dir, files)
-#layout.single_layout(out_dir, (files))
-layout.group_layout(out_dir, files)
+##layout.single_layout(out_dir, files)
+##layout.single_layout(out_dir, (files))
+#layout.group_layout(out_dir, files)
+
+html_node, [lont_table, lont_h5, lofft_table, lofft_h5] =\
+     make_pygrb_injs_tables(wflow, out_dir, inj_set=None)
+html_nodes.append(html_node)
+
+lofft_layout = list(layout.grouper(files, 2)) + [(lofft_table,)]
+layout.two_column_layout(out_dir, lofft_layout)
+
+# TODO: follow up n loudest offsource triggers (parent-child)
+
 
 #
 # Exclusion distance and efficiency plots based on offtrials
@@ -456,56 +484,56 @@ for offtrial in offtrials:
     layout.two_column_layout(out_dir, files)
 
 
-# 
-# Trigger Followups (TODO: Just skeleton)
-#
-if wflow.cp.has_section('pygrb_followups'):
-    #
-    # Loudest Offsource followups
-    #
-    # This function call takes ~2 minutes and will output all the time
-    # shifted gps times for the requested number of loudest offsource
-    # events. The return format it 
-    # [[IFO1 GPS, IFO2 GPS, IFO3 GPS], [IFO1 GPS, IFO2 GPS, IFO3 GPS], ... ]
-    trigger_gps_array = process_trigs_for_followup(wflow.cp.get('workflow', 'trig-file'),
-                                                   wflow.cp.get('workflow', 'segment-dir'),
-                                                   wflow.cp.get('workflow', 'veto-directory'),
-                                                   wflow.cp.get('workflow', 'veto-category'),
-                                                   wflow.cp.get('workflow', 'chisq-index'),
-                                                   wflow.cp.get('workflow', 'chisq-nhigh'),
-                                                   map(float, wflow.cp.get('workflow', 'null-snr-threshold').split(',')),
-                                                   wflow.cp.get('workflow', 'snr-threshold'),
-                                                   wflow.cp.get('workflow', 'sngl-snr-threshold'),
-                                                   wflow.cp.get('workflow', 'newsnr-threshold'),
-                                                   wflow.cp.get('workflow', 'null-grad-thresh'),
-                                                   wflow.cp.get('workflow', 'null-grad-val'),
-                                                   num_followup_trigs = wflow.cp.get('pygrb_followups', 
-                                                                                     'num-loudest-offsource-followups'))
-    # I think then creating the q-scan jobs will be as simple as looping through the
-    # IFOs and spinning off a job with the given GPS
-    for trigger in trigger_gps_array:
-        for ifo in ifos:
-            ifo_gps = trigger_gps_array[ifos.index(ifo)]
-            # Spin up a pycbc_plot_qscan node with --center-time = ifo_gps
-            pass
-    
-    #
-    # Missed Injection followups are harder becuase we need an injection
-    #
-    # These are harder because we need an injection file to pass into 
-    # pycbc_plot_qscan. The executable to make this file is pycbc_pygrb_inj_followup.
-    for inj_set in inj_sets: 
-        for idx in range(0, int(wflow.cp.get('pygrb_followups', 'num-injection-followups'))):
-            # Spin up a pycbc_pygrb_inj_followup node for each followup_inj_idx = idx. 
-            # The required arguments are:
-            # offsource_file, found_file, missed_file, chisq_index, chisq_nhigh, snr_threshold
-            # newsnr_threshold, null_grad_thresh, null_grad_val, null_snr_threshold, output_file
-            # veto_directory, veto_catagory, segment_dir, followup_inj_idx
-            # Once that node finishes you will have the injection file to pass on to the
-            # pycbc_plot_qscan node. Is it possible to scrape the gps time from the injection
-            # file, or do we need to add something similar to what is above where we get a list
-            # of gps --center-times?
-            pass
+## 
+## Trigger Followups (TODO: Just skeleton)
+##
+#if wflow.cp.has_section('pygrb_followups'):
+#    #
+#    # Loudest Offsource followups
+#    #
+#    # This function call takes ~2 minutes and will output all the time
+#    # shifted gps times for the requested number of loudest offsource
+#    # events. The return format it 
+#    # [[IFO1 GPS, IFO2 GPS, IFO3 GPS], [IFO1 GPS, IFO2 GPS, IFO3 GPS], ... ]
+#    trigger_gps_array = process_trigs_for_followup(wflow.cp.get('workflow', 'trig-file'),
+#                                                   wflow.cp.get('workflow', 'segment-dir'),
+#                                                   wflow.cp.get('workflow', 'veto-directory'),
+#                                                   wflow.cp.get('workflow', 'veto-category'),
+#                                                   wflow.cp.get('workflow', 'chisq-index'),
+#                                                   wflow.cp.get('workflow', 'chisq-nhigh'),
+#                                                   map(float, wflow.cp.get('workflow', 'null-snr-threshold').split(',')),
+#                                                   wflow.cp.get('workflow', 'snr-threshold'),
+#                                                   wflow.cp.get('workflow', 'sngl-snr-threshold'),
+#                                                   wflow.cp.get('workflow', 'newsnr-threshold'),
+#                                                   wflow.cp.get('workflow', 'null-grad-thresh'),
+#                                                   wflow.cp.get('workflow', 'null-grad-val'),
+#                                                   num_followup_trigs = wflow.cp.get('pygrb_followups', 
+#                                                                                     'num-loudest-offsource-followups'))
+#    # I think then creating the q-scan jobs will be as simple as looping through the
+#    # IFOs and spinning off a job with the given GPS
+#    for trigger in trigger_gps_array:
+#        for ifo in ifos:
+#            ifo_gps = trigger_gps_array[ifos.index(ifo)]
+#            # Spin up a pycbc_plot_qscan node with --center-time = ifo_gps
+#            pass
+#    
+#    #
+#    # Missed Injection followups are harder becuase we need an injection
+#    #
+#    # These are harder because we need an injection file to pass into 
+#    # pycbc_plot_qscan. The executable to make this file is pycbc_pygrb_inj_followup.
+#    for inj_set in inj_sets: 
+#        for idx in range(0, int(wflow.cp.get('pygrb_followups', 'num-injection-followups'))):
+#            # Spin up a pycbc_pygrb_inj_followup node for each followup_inj_idx = idx. 
+#            # The required arguments are:
+#            # offsource_file, found_file, missed_file, chisq_index, chisq_nhigh, snr_threshold
+#            # newsnr_threshold, null_grad_thresh, null_grad_val, null_snr_threshold, output_file
+#            # veto_directory, veto_catagory, segment_dir, followup_inj_idx
+#            # Once that node finishes you will have the injection file to pass on to the
+#            # pycbc_plot_qscan node. Is it possible to scrape the gps time from the injection
+#            # file, or do we need to add something similar to what is above where we get a list
+#            # of gps --center-times?
+#            pass
     
     
 
@@ -557,6 +585,7 @@ logging.info("Dax written.")
 out_dir = rdir['open_box']
 _workflow.makedir(out_dir)
 os.chmod(out_dir, 0o0700)
+# TODO: follow up loudest offsource trigger (parent-child)
 
 # Close the log and flush to the html file
 logging.shutdown()
