@@ -73,10 +73,12 @@ logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
 if opts.offsource_file is None:
     err_msg = "Please specify a path to the offsource trigger file."
     logging.error(err_msg)
+    sys.exit()
 
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
     logging.error(err_msg)
+    sys.exit()
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
