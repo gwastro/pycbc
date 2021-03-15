@@ -383,7 +383,7 @@ EOF
 
 OLD_IFS=${IFS}
 IFS=','
-read -ra SITE <<< "$SITE_LIST"
+read -ra SITE <<< "${SITE_LIST},local"
 IFS=${OLD_IFS}
 for s in "${SITE[@]}"; do
   SITE_TEMPLATE=$PEGASUS_SITE_CATALOG_PATH/${s}-site-template.xml
