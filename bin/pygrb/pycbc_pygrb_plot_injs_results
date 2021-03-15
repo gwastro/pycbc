@@ -87,10 +87,12 @@ logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
 if opts.offsource_file is None:
     err_msg = "Please specify a path to the offsource trigger file."
     logging.error(err_msg)
+    sys.exit()
 
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
     logging.error(err_msg)
+    sys.exit()
 
 if (opts.found_file is None) and (opts.missed_file is None):
     do_injections = False
@@ -99,6 +101,7 @@ elif (opts.found_file) and opts.missed_file:
 else:
     err_msg = "Must provide both found and missed file if running injections."
     logging.error(err_msg)
+    sys.exit()
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
@@ -106,20 +109,25 @@ if not opts.newsnr_threshold:
 if opts.found_missed_output_file is None:
     msg = "Please specify a pathname with found-missed-ouptut-file option"
     logging.error(msg)
+    sys.exit()
 if opts.missed_found_output_file is None:
     msg = "Please specify a pathname with missed-found-ouptut-file option"
     logging.error(msg)
+    sys.exit()
 
 if opts.x_variable is None:
     msg = "Please specify the quantity to plot on the horizontal axis!"
     logging.error(msg)
+    sys.exit()
 if opts.y_variable is None:
     msg = "Please specify the quantity to plot on the vertical axis!"
     logging.error(msg)
+    sys.exit()
 if opts.x_variable == 'effsitedist' or opts.y_variable == 'effsitedist':
     if opts.ifo is None:
         msg = "Please provide --ifo IFO to select the effective site distance!"
         logging.error(msg)
+        sys.exit()
 
 # Store options used multiple times in local variables
 fm_outfile = opts.found_missed_output_file
