@@ -150,12 +150,32 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         "to plot on the horizontal axis. Supported choices " +
                         "are: distance, mchirp, time (for sky error plots).")
 
-    # Html output files of pycbc_pygrb_page_tables
+    # Html and h5 output files of pycbc_pygrb_page_tables
     parser.add_argument("--quiet-found-injs-output-file", default=None, #required=True,
-                        help="Quiet-found injections output html file.")
+                        help="Quiet-found injections html output file.")
 
     parser.add_argument("--missed-found-injs-output-file", default=None, #required=True,
-                        help="Missed-found injections output html file.")
+                        help="Missed-found injections html output file.")
+
+    parser.add_argument("--quiet-found-injs-h5-output-file", default=None, #required=True,
+                        help="Quiet-found injections h5 output file.")
+
+    parser.add_argument("--loudest-offsource-trigs-output-file", default=None, #required=True,
+                        help="Loudest offsource triggers html output file.")
+
+    parser.add_argument("--loudest-offsource-trigs-h5-output-file", default=None, #required=True,
+                        help="Loudest offsource triggers h5 output file.")
+ 
+    parser.add_argument("--loudest-onsource-trig-output-file", default=None, #required=True,
+                        help="Loudest onsource trigger html output file.")
+
+    parser.add_argument("--loudest-onsource-trig-h5-output-file", default=None, #required=True,
+                        help="Loudest onsource trigger h5 output file.")
+
+    parser.add_argument("--num-loudest-off-trigs", action="store",
+                        type=int, default=30, help="Number of loudest " +
+                        "offsouce triggers to output details about.")
+
 
     # This is originally for SNR and chi-square veto plots 
     parser.add_argument("-y", "--y-variable", default=None, help="Quantity " +
@@ -177,19 +197,19 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
     # instead added a requirement at the end of the parser function
     # to specify either offsource-file or trig-file.
     parser.add_argument("-F", "--offsource-file", action="store",
-                        default=None, help="The location of the trigger file")
+                        default=None, help="Location of off-source trigger file")
 
     # As opposed to offsource-file and trig-file, this only contains onsource
     parser.add_argument("--onsource-file", action="store",
-                        default=None, help="The location of the trigger file")
+                        default=None, help="Location of on-source trigger file")
 
     parser.add_argument("-f", "--found-file", action="store",
                         default=None,
-                        help="The location of the found injections file")
+                        help="Location of the found injections file")
 
     parser.add_argument("-m", "--missed-file",action="store",
                         default=None,
-                        help="The location of the missed injections file")
+                        help="Location of the missed injections file")
 
     parser.add_argument("--background-output-file", default=None, #required=True,
                         help="Detection efficiency output file.")
@@ -278,11 +298,6 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         "to use when calculating the V1 calibration " +
                         "amplitude error.")
     # pygrb_efficiency only options end here
-
-    # pycbc_pygrb_page_table uses this
-    parser.add_argument("--num-loudest-off-trigs", default=30,
-                        help="Number of loudest offsouce triggers to " +
-                        "output details about.")
 
     # pycbc_pygrb_slice_inj_followup uses this
     parser.add_argument("--followup-inj-idx", action="store", type=int, 
@@ -524,7 +539,7 @@ def extract_ifos(trig_file):
 
     # Load search summary
     search_summ = load_xml_table(trig_file,
-                                  lsctables.SearchSummaryTable.tableName)
+                                 lsctables.SearchSummaryTable.tableName)
 
     # Extract IFOs
     ifos = sorted(map(str, search_summ[0].get_ifos()))
