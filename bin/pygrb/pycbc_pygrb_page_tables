@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2011 Ian W. Harry
+# Copyright (C) 2021 Francesco Pannarale & Cameron Mills
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -31,6 +31,7 @@ import os
 import logging
 import numpy as np
 from scipy import stats
+import h5py
 import pycbc.version
 import pycbc.results
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
@@ -57,7 +58,7 @@ __program__ = "pycbc_pygrb_page_tables"
 # =============================================================================
 # Main script starts here
 # =============================================================================
-description = 'Efficiency calculator for the triggered search (PyGRB).'
+description = 'Processes PyGRB triggers and injections to create results tables.'
 usage = __program__ + ' [--options]'
 opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
 
@@ -72,28 +73,57 @@ logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
 if opts.offsource_file is None:
     err_msg = "Please specify a path to the offsource trigger file."
     logging.error(err_msg)
+    sys.exit()
 
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
     logging.error(err_msg)
+    sys.exit()
 
-if (opts.found_file is None) and (opts.missed_file is None):
-    do_injections = False
-elif (opts.found_file) and opts.missed_file:
+# TODO: split this script into one that handls injections
+# and one that handles loudest on/off-source events?
+# TODO: deal better with the multiple output file possibilities?
+# The hdf5 output files are handfy for injection follow-up
+# but for the moment this remains a hacky solution
+output_files = [opts.quiet_found_injs_output_file,
+                opts.missed_found_injs_output_file,
+                opts.quiet_found_injs_h5_output_file,
+                opts.loudest_offsource_trigs_output_file,
+                opts.loudest_offsource_trigs_h5_output_file,
+                opts.loudest_onsource_trig_output_file,
+                opts.loudest_onsource_trig_h5_output_file]
+if output_files.count(None) == len(output_files):
+    msg = "Please specify at least one output file location."
+    logging.error(msg)
+    sys.exit()
+
+if opts.quiet_found_injs_output_file or opts.missed_found_injs_output_file or\
+    opts.quiet_found_injs_h5_output_file:
     do_injections = True
+    if (opts.found_file is None) and (opts.missed_file is None):
+        err_msg = "Must provide both found and missed injections file "
+        err_msg += "locations if processing injections."
+        logging.error(err_msg)
+        sys.exit()
 else:
-    err_msg = "Must provide both found and missed file if running injections."
-    logging.error(err_msg)
+    do_injections = False
+
+if opts.loudest_onsource_trig_output_file or opts.loudest_onsource_trig_h5_output_file:
+    if opts.onsource_file is None:
+        err_msg = "Must provide the on-source file location to output its "
+        err_msg += "loudest trigger information."
+        logging.error(err_msg)
+        sys.exit()
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
 
-if opts.quiet_found_injs_output_file is None:
-    msg = "Please specify a pathname with quiet-found-injs-ouptut-file option"
-    logging.error(msg)
-if opts.missed_found_injs_output_file is None:
-    msg = "Please specify a pathname with missed-found-injs-ouptut-file option"
-    logging.error(msg)
+#if opts.quiet_found_injs_output_file is None:
+#    msg = "Please specify a pathname with quiet-found-injs-ouptut-file option"
+#    logging.error(msg)
+#if opts.missed_found_injs_output_file is None:
+#    msg = "Please specify a pathname with missed-found-injs-ouptut-file option"
+#    logging.error(msg)
 
 # Store options used multiple times in local variables
 trig_file = opts.offsource_file
@@ -128,19 +158,21 @@ glitch_check_fac = opts.glitch_check_factor
 num_mc_injs = opts.num_mc_injections
 qf_outfile = opts.quiet_found_injs_output_file
 mf_outfile = opts.missed_found_injs_output_file
-# Set output directory
+lofft_outfile = opts.loudest_offsource_trigs_output_file
+lont_outfile = opts.loudest_onsource_trig_output_file
+qf_h5_outfile = opts.quiet_found_injs_h5_output_file
+lofft_h5_outfile = opts.loudest_offsource_trigs_h5_output_file
+lont_h5_outfile = opts.loudest_onsource_trig_h5_output_file
+# Set output directories
 logging.info("Setting output directory.")
-outdir = os.path.split(os.path.abspath(qf_outfile))[0]
-if not os.path.isdir(outdir):
-    os.makedirs(outdir)
+for output_file in output_files:
+    if output_file:
+        outdir = os.path.split(os.path.abspath(output_file))[0]
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
 # Initialize random number generator
 np.random.seed(opts.seed)
 logging.info("Setting random seed to %d.", opts.seed)
-
-# Set output directory
-logging.info("Setting output directory.")
-if not os.path.isdir(outdir):
-    os.makedirs(outdir)
 
 # Extract IFOs and vetoes
 logging.info("Extracting IFOs and vetoes.")
@@ -193,7 +225,7 @@ def get_column(table, column_name):
         return table.get_null_snr()
     return table.get_column(column_name)
 
-# Below function relies on definition of reweighted_snr function above, but otherwise can be moved.
+# Below function relies on definition of reweighted_snr function above, but otherwise can be moved.
 def lsctable_to_dict(inj_table, ifos, trig_table=None, background_bestnrs=None):
     """Extract parameters from injections in lsctables. If found extract
     trigger info.
@@ -351,103 +383,118 @@ for slide_id in range(num_slides):
 
 logging.info("SNR and bestNR maxima calculated.")
 
-# Output details of loudest offsouce triggers
+# Output details of loudest offsouce triggers, sorte by BestNR
 offsource_trigs = []
 for slide_id in range(num_slides):
     offsource_trigs.extend(zip(trig_bestnr[slide_id], sorted_trigs[slide_id]))
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
 
-#TODO: we also want the template spin1z and spin2z. Do this after switch to hdf5
-# th: table header
-th = ['Trial', 'Slide Num', 'p-value', 'GPS',\
-      'Rec. m1', 'Rec. m2', 'Rec. Mc',\
-      'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto',\
-      'Null SNR']
-th.extend(['%s SNR' % ifo for ifo in ifos])
-th.extend(['%s time shift (s)' % ifo for ifo in ifos])
-th.append('BestNR')
-# Format of table data
-format_strings = ['##.##', '##.##', None, '##.#####',
-                  '##.##', '##.##', '##.##',
-                  '##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
-                  '##.##']
-format_strings.extend(['##.##' for ifo in ifos])
-format_strings.extend(['##.##' for ifo in ifos])
-format_strings.extend(['##.##'])
-# td: table data
-td = []
-
-# This is in PygrbFilterOutput
-ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t'}
-
-# Gather properties of the loudest offsource triggers
-for i in range(min(len(offsource_trigs), opts.num_loudest_off_trigs)):
-    bestnr = offsource_trigs[i][0]
-    trig = offsource_trigs[i][1]
-    trig_slide_id = int(trig.time_slide_id)
-
-    # Get trial of trigger, triggers with 'No trial' should have been removed!
-    for j, trial in enumerate(trial_dict[trig_slide_id]):
-        if trig.get_end() in trial:
-            chunk_num = j
-            break
-    else:
-        chunk_num = 'No trial'
-
-    # Get FAP of trigger
-    num_trials_louder = 0
-    for slide_id in range(num_slides):
-        for val in time_veto_max_bestnr[slide_id]:
-            if val > bestnr:
-                num_trials_louder += 1
-    fap = num_trials_louder/total_trials
-    pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
-
-    d = [chunk_num, trig_slide_id, pval,\
-         trig.get_end(),\
-         trig.mass1, trig.mass2, trig.mchirp,\
-         (np.degrees(trig.ra)), (np.degrees(trig.dec)),\
-         trig.snr, trig.chisq, trig.bank_chisq,\
-         trig.cont_chisq, trig.get_null_snr()]
-    d.extend([getattr(trig, 'snr_%s' % ifo_att[ifo])\
-                     for ifo in ifos])
-    d.extend([slide_dict[trig_slide_id][ifo] for ifo in ifos])
-    d.append(bestnr)
-    td.append(d)
-
-# To ensure desired formatting in the html table:
-# 1) "transpose" the data preserving its dtype
-# 2) convert the columns to numpy arrays
-# This is necessary as the p-values need to be treated as strings,
-# as they may contain a '<'
-td = zip(*td)
-td = [np.asarray(d) for d in td]
-html_table = pycbc.results.html_table(td, th,
-                                      format_strings=format_strings,
-                                      page_size=30)
-# Median and max values
+# Median and max values of SNR and BestNR
 _, median_snr, _ = max_median_stat(num_slides, time_veto_max_snr, trig_snr, total_trials)
 max_bestnr, median_bestnr, full_time_veto_max_bestnr =\
     max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
-# Write to html file
-# TODO: needs a final place in the results webpage
-html_path = "%s/loudest_offsource_trigs.html" % outdir
-kwds = {'title' : "Parameters of loudest offsource triggers",
-        'caption' : "Parameters of the "+
-                    str(min(len(offsource_trigs), opts.num_loudest_off_trigs))+
-                    " loudest offsource triggers.  "+
-                    "The median reweighted SNR value is "+
-                    str(median_bestnr)+
-                    ".  The median SNR value is "+
-                    str(median_snr),
-        'cmd' :' '.join(sys.argv), }
-pycbc.results.save_fig_with_metadata(str(html_table), html_path, **kwds)
 
-# Store BestNR and FAP values
-# This is needed when we study all FAPs of a run together
-np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
-           full_time_veto_max_bestnr, delimiter='/t')
+if lofft_outfile or lofft_h5_outfile:
+    # td: table data
+    td = []
+
+    # This is in PygrbFilterOutput
+    ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t'}
+
+    # Gather properties of the loudest offsource triggers
+    for i in range(min(len(offsource_trigs), opts.num_loudest_off_trigs)):
+        bestnr = offsource_trigs[i][0]
+        trig = offsource_trigs[i][1]
+        trig_slide_id = int(trig.time_slide_id)
+
+        # Get trial of trigger, triggers with 'No trial' should have been removed!
+        for j, trial in enumerate(trial_dict[trig_slide_id]):
+            if trig.get_end() in trial:
+                chunk_num = j
+                break
+        else:
+            chunk_num = 'No trial'
+
+        # Get FAP of trigger
+        num_trials_louder = 0
+        for slide_id in range(num_slides):
+            for val in time_veto_max_bestnr[slide_id]:
+                if val > bestnr:
+                    num_trials_louder += 1
+        fap = num_trials_louder/total_trials
+        pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
+
+        d = [chunk_num, trig_slide_id, pval,\
+             np.asarray(trig.get_end()).astype(float),\
+             trig.mass1, trig.mass2, trig.mchirp,\
+             (np.degrees(trig.ra)), (np.degrees(trig.dec)),\
+             trig.snr, trig.chisq, trig.bank_chisq,\
+             trig.cont_chisq, trig.get_null_snr()]
+        d.extend([getattr(trig, 'snr_%s' % ifo_att[ifo])\
+                         for ifo in ifos])
+        d.extend([slide_dict[trig_slide_id][ifo] for ifo in ifos])
+        d.append(bestnr)
+        td.append(d)
+
+    # Write to h5 file
+    if lofft_outfile:
+        logging.info("Writing %d lousdest offsource triggers to h5 file.", len(td))
+        lofft_h5_fp = h5py.File(lofft_h5_outfile, 'w')
+        #lofft_h5_fp.create_dataset('loudest_offsource_triggers', data=np.asarray(td).astype(np.float))
+        #tdd = [np.asarray(d) for d in td]
+        lofft_h5_fp.create_dataset('loudest_offsource_triggers', data=td)
+        lofft_h5_fp.close()
+
+    # Write to html file
+    if lofft_outfile:
+        logging.info("Writing %d loudest loudest triggers to html file.", len(td))
+
+        # To ensure desired formatting in the html table:
+        # 1) "transpose" the data preserving its dtype
+        # 2) convert the columns to numpy arrays
+        # This is necessary as the p-values need to be treated as strings,
+        # because they may contain a '<'
+        td = zip(*td)
+        td = [np.asarray(d) for d in td]
+
+        #TODO: we also want the template spin1z and spin2z. Do this after switch to hdf5
+        # th: table header
+        th = ['Trial', 'Slide Num', 'p-value', 'GPS time',\
+              'Rec. m1', 'Rec. m2', 'Rec. Mc',\
+              'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto',\
+              'Null SNR']
+        th.extend(['%s SNR' % ifo for ifo in ifos])
+        th.extend(['%s time shift (s)' % ifo for ifo in ifos])
+        th.append('BestNR')
+        # Format of table data
+        format_strings = ['##.##', '##.##', None, '##.#####',
+                          '##.##', '##.##', '##.##',
+                          '##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
+                          '##.##']
+        format_strings.extend(['##.##' for ifo in ifos])
+        format_strings.extend(['##.##' for ifo in ifos])
+        format_strings.extend(['##.##'])
+        html_table = pycbc.results.html_table(td, th,
+                                              format_strings=format_strings,
+                                              page_size=30)
+        #html_path = "%s/loudest_offsource_trigs.html" % outdir
+        kwds = {'title' : "Parameters of loudest offsource triggers",
+                'caption' : "Parameters of the "+
+                            str(min(len(offsource_trigs), opts.num_loudest_off_trigs))+
+                            " loudest offsource triggers.  "+
+                            "The median reweighted SNR value is "+
+                            str(median_bestnr)+
+                            ".  The median SNR value is "+
+                            str(median_snr),
+                'cmd' :' '.join(sys.argv), }
+        pycbc.results.save_fig_with_metadata(str(html_table), lofft_outfile, **kwds)
+
+    # Store BestNR and FAP values: needed when we study FAPs of an observing run collectively
+    # TODO: needs a final place in the results webpage
+    #if False:
+    #    np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
+    #               full_time_veto_max_bestnr, delimiter='/t')
 
 # =======================
 # Load on source triggers
@@ -473,22 +520,12 @@ if onsource_file:
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
-        loud_on_bestnr = 0
+        #loud_on_bestnr = 0 # TODO: remove?
 
     logging.info("Onsource analysed.")
 
-    # Table header and table data
-    # TODO we will want the spins too (easier to deal with after move to hdf5)
-    th = ['p-value', 'GPS', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
-          'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
-         ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
+    # Table data
     td = []
-
-    # Format of table data
-    format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
-                      '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
-    format_strings.extend(['##.##' for ifo in ifos])
-    format_strings.extend(['##.##'])
 
     # Gather data
     loud_on_fap = 1
@@ -505,7 +542,7 @@ if onsource_file:
         fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
         pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
         loud_on_fap = fap
-        d = [pval, trig.get_end(),\
+        d = [pval, np.asarray(trig.get_end()).astype(float),\
              trig.mass1, trig.mass2, trig.mchirp,\
              np.degrees(trig.ra), np.degrees(trig.dec),\
              trig.snr, trig.chisq, trig.bank_chisq,\
@@ -516,18 +553,38 @@ if onsource_file:
         td.append(["There are no events"] + [0 for number in xrange(11)] + \
                   [0 for ifo in ifos] + [0])
 
+    # Write to h5 file
+    if lont_h5_outfile:
+        logging.info("Writing loudest onsource trigger to h5 file.")
+        lont_h5_fp = h5py.File(lont_h5_outfile, 'w')
+        lont_h5_fp.create_dataset('loudest_onsource_trigger', data=td)
+        lont_h5_fp.close()
+
     # Write to html file
-    # TODO: find place in the output webpage
-    td = zip(*td)
-    td = [np.asarray(d) for d in td]
-    html_table = pycbc.results.html_table(td, th,
-                                          format_strings=format_strings,
-                                          page_size=1)
-    html_path = "%s/loudest_events.html" % outdir
-    kwds = {'title' : "Loudest event",
-            'caption' : "Recovered parameters and statistic values of the loudest trigger.",
-            'cmd' :' '.join(sys.argv), }
-    pycbc.results.save_fig_with_metadata(str(html_table), html_path, **kwds)
+    if lont_outfile:
+        logging.info("Writing loudest onsource trigger to html file.")
+        # TODO we will want the spins too (easier to deal with after move to hdf5)
+        # Table header
+        th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
+              'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
+             ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
+
+        # Format of table data
+        format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
+                          '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
+        format_strings.extend(['##.##' for ifo in ifos])
+        format_strings.extend(['##.##'])
+
+        # Table data
+        td = zip(*td)
+        td = [np.asarray(d) for d in td]
+        html_table = pycbc.results.html_table(td, th,
+                                              format_strings=format_strings,
+                                              page_size=1)
+        kwds = {'title' : "Loudest event",
+                'caption' : "Recovered parameters and statistic values of the loudest trigger.",
+                'cmd' :' '.join(sys.argv), }
+        pycbc.results.save_fig_with_metadata(str(html_table), lont_outfile, **kwds)
 else:
     tot_off_snr = np.array([])
     for slide_id in range(num_slides):
@@ -744,6 +801,7 @@ if do_injections:
     found_injs['time'][vetoed_trigs] -= grb_time
     found_injs["time"][zero_fap] -= grb_time
     found_injs['time'][nonzero_fap] -= grb_time
+    # TODOO: report times as well!
 
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
@@ -766,8 +824,6 @@ if do_injections:
                            '##.##', '##.##', '##.##', '##.##', '##.##',
                            '##.##'])
     # TODO: serial coding
-    print(found_injs.keys())
-    print(missed_injs.keys())
     td = zip(*[np.concatenate((found_injs['distance'][nonzero_fap],\
                                found_injs['distance'][vetoed_trigs],\
                                missed_injs['distance']))] +\
@@ -848,61 +904,70 @@ if do_injections:
                                found_injs['spin2z'][vetoed_trigs],\
                                missed_injs['spin2z']))])
     td.sort(key=lambda elem: elem[0])
-    logging.info("%d quiet-found triggers written to file.", len(td))
+    # Write to h5 file
+    if qf_h5_outfile:
+        logging.info("Writing %d quiet-found injections to h5 file.", len(td))
+        qf_h5_fp = h5py.File(qf_h5_outfile, 'w')
+        qf_h5_fp.create_dataset('quiet_found_injections', data=td)
+        qf_h5_fp.close()
 
     # Write to html file
-    td = zip(*td)
-    td = [np.asarray(d) for d in td]
-    html_table = pycbc.results.html_table(td, th,
-                                          format_strings=format_strings,
-                                          page_size=20)
-    kwds = {'title' : "Quiet found injections",
-            'caption' : "Recovered parameters and statistic values of \
-            injections that are recovered, but not louder than background.",
-            'cmd' :' '.join(sys.argv), }
-    pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile, **kwds)
+    if qf_outfile:
+        logging.info("Writing %d quiet-found injections to html file.", len(td))
+        td = zip(*td)
+        td = [np.asarray(d) for d in td]
+        html_table = pycbc.results.html_table(td, th,
+                                              format_strings=format_strings,
+                                              page_size=20)
+        kwds = {'title' : "Quiet found injections",
+                'caption' : "Recovered parameters and statistic values of \
+                injections that are recovered, but not louder than background.",
+                'cmd' :' '.join(sys.argv), }
+        pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile, **kwds)
 
-    t_missed = zip(*[found_injs['distance'][vetoed_trigs]] + \
-                    [found_injs['eff_dist_{}'.format(ifo.lower())][vetoed_trigs]
-                     for ifo in ifos] + \
-                    [found_injs['mass1'][vetoed_trigs],
-                     found_injs['mass2'][vetoed_trigs],
-                     found_injs['mchirp'][vetoed_trigs],
-                     found_injs['rec_mass1'][vetoed_trigs],
-                     found_injs['rec_mass2'][vetoed_trigs],
-                     found_injs['rec_mchirp'][vetoed_trigs],
-                     found_injs['inclination'][vetoed_trigs],
-                     found_injs['ra'][vetoed_trigs],
-                     found_injs['dec'][vetoed_trigs],
-                     found_injs['rec_ra'][vetoed_trigs],
-                     found_injs['rec_dec'][vetoed_trigs],
-                     found_injs['snr'][vetoed_trigs],
-                     found_injs['chisq'][vetoed_trigs],
-                     found_injs['bank_chisq'][vetoed_trigs],
-                     found_injs['cont_chisq'][vetoed_trigs],
-                     found_injs['null_snr'][vetoed_trigs]] + \
-                    [found_injs['snr_{}'.format(ifo.lower())][vetoed_trigs]
-                     for ifo in ifos] + \
-                    [found_injs['bestnr'][vetoed_trigs],
-                     found_injs['spin1x'][vetoed_trigs],
-                     found_injs['spin1y'][vetoed_trigs],
-                     found_injs['spin1z'][vetoed_trigs],
-                     found_injs['spin2x'][vetoed_trigs],
-                     found_injs['spin2y'][vetoed_trigs],
-                     found_injs['spin2z'][vetoed_trigs]])
-    t_missed.sort(key=lambda elem: elem[0])
-    logging.info("%d missed-found triggers written to file.", len(t_missed))
+    # Write to html file
+    if mf_outfile:
+        t_missed = zip(*[found_injs['distance'][vetoed_trigs]] + \
+                        [found_injs['eff_dist_{}'.format(ifo.lower())][vetoed_trigs]
+                         for ifo in ifos] + \
+                        [found_injs['mass1'][vetoed_trigs],
+                         found_injs['mass2'][vetoed_trigs],
+                         found_injs['mchirp'][vetoed_trigs],
+                         found_injs['rec_mass1'][vetoed_trigs],
+                         found_injs['rec_mass2'][vetoed_trigs],
+                         found_injs['rec_mchirp'][vetoed_trigs],
+                         found_injs['inclination'][vetoed_trigs],
+                         found_injs['ra'][vetoed_trigs],
+                         found_injs['dec'][vetoed_trigs],
+                         found_injs['rec_ra'][vetoed_trigs],
+                         found_injs['rec_dec'][vetoed_trigs],
+                         found_injs['snr'][vetoed_trigs],
+                         found_injs['chisq'][vetoed_trigs],
+                         found_injs['bank_chisq'][vetoed_trigs],
+                         found_injs['cont_chisq'][vetoed_trigs],
+                         found_injs['null_snr'][vetoed_trigs]] + \
+                        [found_injs['snr_{}'.format(ifo.lower())][vetoed_trigs]
+                         for ifo in ifos] + \
+                        [found_injs['bestnr'][vetoed_trigs],
+                         found_injs['spin1x'][vetoed_trigs],
+                         found_injs['spin1y'][vetoed_trigs],
+                         found_injs['spin1z'][vetoed_trigs],
+                         found_injs['spin2x'][vetoed_trigs],
+                         found_injs['spin2y'][vetoed_trigs],
+                         found_injs['spin2z'][vetoed_trigs]])
+        t_missed.sort(key=lambda elem: elem[0])
+        logging.info("Writing %d missed-found injections to html file.", len(t_missed))
 
-    t_missed = zip(*t_missed)
-    t_missed = [np.asarray(d) for d in t_missed]
-    html_table = pycbc.results.html_table(t_missed, th,
-                                          format_strings=format_strings,
-                                          page_size=20)
-    kwds = {'title' : "Missed found injections",
-            'caption' : "Recovered parameters and statistic values of \
-            injections that are recovered, but downwieghted to BestNR = 0 \
-            (i.e., vetoed).",
-            'cmd' :' '.join(sys.argv), }
-    pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile, **kwds)
+        t_missed = zip(*t_missed)
+        t_missed = [np.asarray(d) for d in t_missed]
+        html_table = pycbc.results.html_table(t_missed, th,
+                                              format_strings=format_strings,
+                                              page_size=20)
+        kwds = {'title' : "Missed found injections",
+                'caption' : "Recovered parameters and statistic values of \
+                injections that are recovered, but downwieghted to BestNR = 0 \
+                (i.e., vetoed).",
+                'cmd' :' '.join(sys.argv), }
+        pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile, **kwds)
 
 # Post-processing of injections ends here
