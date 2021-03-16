@@ -459,6 +459,13 @@ lofft_layout = list(layout.grouper(files, 2)) + [(lofft_table,)]
 layout.two_column_layout(out_dir, lofft_layout)
 
 # TODO: follow up n loudest offsource triggers (parent-child)
+#out_dir = rdir['loudest_offsource_events/followups']
+#        wf.setup_single_det_minifollowups\
+#            (workflow, insp_file, hdfbank, insp_files_seg_file,
+#             data_analysed_name, trig_generated_name, 'daxes', out_dir,
+#             veto_file=censored_veto, veto_segment_name='closed_box',
+#             tags=insp_file.tags + [subsec])
+
 
 
 #
@@ -576,6 +583,7 @@ _workflow.makedir(rdir['workflow/planning'])
 
 logging.info("Path for make_results_web_page: %s", os.path.join(os.getcwd(), rdir.base))
 _workflow.make_results_web_page(wflow, os.path.join(os.getcwd(), rdir.base),
+                                template='red',
                                 explicit_dependencies=plotting_nodes+html_nodes)
 
 wflow.save()

@@ -405,9 +405,9 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
     workflow += node
     return node.output_files[0]
 
-
-def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
-    template_path = 'templates/orange.html'
+def make_results_web_page(workflow, results_dir, template='orange',
+                          explicit_dependencies=None):
+    template_path = 'templates/'+template+'.html'
 
     out_dir = workflow.cp.get('results_page', 'output-path')
     makedir(out_dir)
