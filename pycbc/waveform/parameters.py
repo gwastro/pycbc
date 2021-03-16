@@ -397,8 +397,12 @@ coa_phase = Parameter("coa_phase",
 inclination = Parameter("inclination",
                 dtype=float, default=0., label=r"$\iota$",
                 description="Inclination (rad), defined as the angle between "
-                            "the total angular momentum J and the "
-                            "line-of-sight.")
+                            "the orbital angular momentum L and the "
+                            "line-of-sight at the reference frequency.")
+thetajn = Parameter("thetajn",
+                    dtype=float, default=0., label=r"$\theta_{JN}$",
+                    description="The angle between the total angular momentum "
+                                "J and the line-of-sight.")
 long_asc_nodes = Parameter("long_asc_nodes",
                 dtype=float, default=0., label=r"$\Omega$",
                 description="Longitude of ascending nodes axis (rad).")
