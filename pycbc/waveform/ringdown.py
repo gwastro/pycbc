@@ -486,6 +486,9 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
     """
     input_params['lmns'] = format_lmns(input_params['lmns'])
     amps, phis = lm_amps_phases(**input_params)
+    inc = None
+    if 'inclination' in input_params.keys():
+        inc = input_params['inclination']
     if freq_tau_approximant:
         freqs, taus = lm_freqs_taus(**input_params)
         norm = 1.
@@ -510,11 +513,11 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
             hplus, hcross = td_damped_sinusoid(freqs[lmn], taus[lmn],
                             amps[lmn], phis[lmn], outplus.delta_t,
                             outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
-                            input_params['inclination'])
+                            inc)
             if input_params['taper'] and outplus.delta_t < taus[lmn]:
                 taper_hp, taper_hc = apply_taper(taus[lmn], amps[lmn],
                                      phis[lmn], outplus.delta_t, int(lmn[0]),
-                                     int(lmn[1]), input_params['inclination'])
+                                     int(lmn[1]), inc)
                 t0 = -int(outplus.start_time * outplus.sample_rate)
                 outplus[t0-len(taper_hp):t0].data += taper_hp
                 outplus[t0:].data += hplus
@@ -537,7 +540,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
                             input_params['f_lower'],
                             input_params['f_final'],
                             l=int(lmn[0]), m=int(lmn[1]),
-                            inclination=input_params['inclination'])
+                            inclination=inc)
             outplus.data += hplus.data
             outcross.data += hcross.data
     else:
