@@ -325,7 +325,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             gate_params = [gate_params]
         for gate_time, gate_window, gate_taper in gate_params:
             strain = strain.gate(gate_time, window=gate_window,
-                                 method=args.gating_method,
+                                 method=opt.gating_method,
                                  copy=False,
                                  taper_width=gate_taper)
         gating_info['file'] = \
@@ -346,7 +346,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             gating_info['auto'] += gate_params
             for gate_time, gate_window, gate_taper in gate_params:
                 strain = strain.gate(gate_time, window=gate_window,
-                                     method=args.gating_method,
+                                     method=opt.gating_method,
                                      copy=False,
                                      taper_width=gate_taper)
             if len(glitch_times) > 0:

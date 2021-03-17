@@ -163,7 +163,7 @@ def get_version_info():
                                                 vinfo.status)).encode('utf-8'))
         f.write('from pycbc._version import *\n'.encode('utf-8'))
         version = vinfo.version
-    
+
     from pycbc import version
     version = version.version
     return version

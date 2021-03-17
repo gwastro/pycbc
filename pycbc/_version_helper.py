@@ -39,6 +39,7 @@ class GitInfo(object):
         self.builder = None
         self.build_date = None
 
+
 class GitInvocationError(LookupError):
     pass
 
