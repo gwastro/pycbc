@@ -1,0 +1,3 @@
+I am working on new definition for re-weighted  snr for pygrb tests. I will make changes in pycbc_multi_inspiral code.
+
+Currently I am facing issue how I can save network chi squared in the output hdf file. 
