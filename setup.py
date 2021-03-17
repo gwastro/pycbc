@@ -122,6 +122,7 @@ def get_version_info():
     # If this is a pycbc git repo always populate version information using GIT
     try:
         vinfo = _version_helper.generate_git_version_info()
+        vinfo.encode(encoding='utf-8')
     except:
         vinfo = vdummy()
         vinfo.version = '1.18.dev1'
@@ -142,10 +143,10 @@ def get_version_info():
         f.write('\ngit_hash = \'%s\'\n' % vinfo.hash)
         f.write('git_branch = \'%s\'\n' % vinfo.branch)
         f.write('git_tag = \'%s\'\n' % vinfo.tag)
-        f.write('git_author = \'%s\'\n' % vinfo.author.encode('utf-8'))
-        f.write('git_committer = \'%s\'\n' % vinfo.committer.encode('utf-8'))
+        f.write('git_author = \'%s\'\n' % vinfo.author)
+        f.write('git_committer = \'%s\'\n' % vinfo.committer)
         f.write('git_status = \'%s\'\n' % vinfo.status)
-        f.write('git_builder = \'%s\'\n' % vinfo.builder.encode('utf-8'))
+        f.write('git_builder = \'%s\'\n' % vinfo.builder)
         f.write('git_build_date = \'%s\'\n' % vinfo.build_date)
         f.write('git_verbose_msg = """Version: %s\n'
                 'Branch: %s\n'
@@ -154,16 +155,16 @@ def get_version_info():
                 'Builder: %s\n'
                 'Build date: %s\n'
                 'Repository status is %s"""\n' %(
-                                               vinfo.version.encode('utf-8'),
-                                               vinfo.branch.encode('utf-8'),
+                                               vinfo.version,
+                                               vinfo.branch,
                                                vinfo.tag,
-                                               vinfo.hash.encode('utf-8'),
-                                               vinfo.builder.encode('utf-8'),
-                                               vinfo.build_date.encode('utf-8'),
-                                               vinfo.status.encode('utf-8')))
+                                               vinfo.hash,
+                                               vinfo.builder,
+                                               vinfo.build_date,
+                                               vinfo.status))
         f.write('from pycbc._version import *\n')
         version = vinfo.version
-
+    
     from pycbc import version
     version = version.version
     return version

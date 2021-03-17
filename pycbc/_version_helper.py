@@ -38,7 +38,18 @@ class GitInfo(object):
         self.status = None
         self.builder = None
         self.build_date = None
-
+    
+    def encode(self, encoding='utf-8', errors='replace'):
+        for key, val in self.__dict__.items():
+            if hasattr(val, "encode"):
+                setattr(self, key, val.encode(encoding=encoding,
+                                              errors=errors))
+    
+    def decode(self, encoding='utf-8', errors='replace'):
+        for key, val in self.__dict__.items():
+            if hasattr(val, "decode"):
+                setattr(self, key, val.decode(encoding=encoding,
+                                              errors=errors))
 
 class GitInvocationError(LookupError):
     pass
