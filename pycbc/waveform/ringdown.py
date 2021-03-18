@@ -167,6 +167,17 @@ def lm_freqs_taus(**kwargs):
 
     return freqs, taus
 
+def lm_polarizations(**kwargs):
+    """Take input_params and return dictionaries with polarization for
+    each mode.
+    """
+    lmns = format_lmns(kwargs['lmns'])
+    pols = {}
+    for lmn in lmns:
+        mode = lmn[:2]+str(int(lmn[-1])-1)
+        pols[mode] = kwargs.pop('pol{}'.format(mode), None)
+    return pols
+
 # Functions to obtain t_final, f_final and output vector ######################
 
 def qnm_time_decay(tau, decay):
@@ -371,12 +382,15 @@ def Kerr_factor(final_mass, distance):
 
 # Functions for tapering ######################################################
 
-def apply_taper(tau, amp, phi, delta_t, l=2, m=2, inclination=None):
+def apply_taper(tau, amp, phi, delta_t, l=2, m=2, inclination=None, pol=None):
     """Return a tapering window of the form exp(10*t/tau).
     """
 
     taper_times = -numpy.arange(0, int(tau/delta_t))[::-1] * delta_t
-    if inclination is not None:
+    if pol is not None:
+        Y_plus = numpy.cos(pol)
+        Y_cross = numpy.sin(pol)
+    elif inclination is not None:
         Y_plus, Y_cross = spher_harms(l, m, inclination)
     else:
         Y_plus, Y_cross = 1, 1
@@ -395,7 +409,7 @@ def apply_taper(tau, amp, phi, delta_t, l=2, m=2, inclination=None):
 ######################################################
 
 def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
-                       l=2, m=2, inclination=None):
+                       l=2, m=2, inclination=None, pol=None):
     """Return a time domain damped sinusoid (plus and cross polarizations)
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
     The l, m, and inclination parameters are used for the spherical harmonics.
@@ -404,7 +418,10 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     tlen = int(t_final/delta_t) + 1
     times = numpy.linspace(0, t_final, num=tlen)
 
-    if inclination is not None:
+    if pol is not None:
+        Y_plus = numpy.cos(pol)
+        Y_cross = numpy.sin(pol)
+    elif inclination is not None:
         Y_plus, Y_cross = spher_harms(l, m, inclination)
     else:
         Y_plus, Y_cross = 1, 1
@@ -418,7 +435,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     return hplus, hcross
 
 def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
-                       l=2, m=2, inclination=None):
+                       l=2, m=2, inclination=None, pol=None):
     """Return a frequency domain damped sinusoid (plus and cross polarizations)
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
     The l, m, and inclination parameters are used for the spherical harmonics.
@@ -434,7 +451,10 @@ def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
     outplus, outcross = fd_output_vector(f_0, tau, delta_f, f_final)
     freqs = outplus.sample_frequencies[kmin:]
 
-    if inclination is not None:
+    if pol is not None:
+        Y_plus = numpy.cos(pol)
+        Y_cross = numpy.sin(pol)
+    elif inclination is not None:
         Y_plus, Y_cross = spher_harms(l, m, inclination)
     else:
         Y_plus, Y_cross = 1, 1
@@ -486,6 +506,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
     """
     input_params['lmns'] = format_lmns(input_params['lmns'])
     amps, phis = lm_amps_phases(**input_params)
+    pols = lm_polarizations(**input_params)
     if freq_tau_approximant:
         freqs, taus = lm_freqs_taus(**input_params)
         norm = 1.
@@ -510,11 +531,12 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
             hplus, hcross = td_damped_sinusoid(freqs[lmn], taus[lmn],
                             amps[lmn], phis[lmn], outplus.delta_t,
                             outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
-                            input_params['inclination'])
+                            input_params['inclination'], pols[lmn])
             if input_params['taper'] and outplus.delta_t < taus[lmn]:
                 taper_hp, taper_hc = apply_taper(taus[lmn], amps[lmn],
                                      phis[lmn], outplus.delta_t, int(lmn[0]),
-                                     int(lmn[1]), input_params['inclination'])
+                                     int(lmn[1]), input_params['inclination'],
+                                     pols[lmn])
                 t0 = -int(outplus.start_time * outplus.sample_rate)
                 outplus[t0-len(taper_hp):t0].data += taper_hp
                 outplus[t0:].data += hplus
@@ -537,7 +559,8 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
                             input_params['f_lower'],
                             input_params['f_final'],
                             l=int(lmn[0]), m=int(lmn[1]),
-                            inclination=input_params['inclination'])
+                            inclination=input_params['inclination'],
+                            pol=pols[lmn])
             outplus.data += hplus.data
             outcross.data += hcross.data
     else:
