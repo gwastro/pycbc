@@ -857,9 +857,6 @@ class Node(pegasus_workflow.Node):
         self.set_category(executable.name)
         self.valid_seg = valid_seg
 
-        if executable.universe == 'vanilla' and executable.installed:
-            self.add_profile('condor', 'getenv', 'True')
-
         self._options += self.executable.common_options
         self._raw_options += self.executable.common_raw_options
         for inp in self.executable.common_input_files:
