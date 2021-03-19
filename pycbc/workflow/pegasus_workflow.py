@@ -30,6 +30,7 @@ import os
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
+from .pegasus_sites import add_site
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -317,6 +318,7 @@ class Workflow(object):
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
+        self._sc = dax.SiteCatalog()
 
         self._inputs = []
         self._outputs = []
@@ -419,6 +421,8 @@ class Workflow(object):
                     break
             else:
                 #node.executable.in_workflow = True
+                if node.transormation.site in self._tc.sites:
+                    add_site(self._tc, node.transormation.site)
                 self._transformations += [node.transformation]
                 if hasattr(node, 'executable') and node.executable.container is not None and node.executable.container not in self._containers:
                     self._containers.append(node.executable.container)
