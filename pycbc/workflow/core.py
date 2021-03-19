@@ -644,6 +644,13 @@ class Workflow(pegasus_workflow.Workflow):
         path =  os.path.join(os.getcwd(), name)
         return path
 
+    # FIXME: Shouldn't this be in pegasus_workflow?
+    @property
+    def site_catalog(self):
+        name = self.name + '.sc.yml'
+        path =  os.path.join(os.getcwd(), name)
+        return path
+
     @property
     def staging_site(self):
         # FIXME: What does this actually do??
