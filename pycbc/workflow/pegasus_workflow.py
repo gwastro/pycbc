@@ -319,6 +319,7 @@ class Workflow(object):
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
         self._sc = dax.SiteCatalog()
+        add_site(self._sc, 'local')
 
         self._inputs = []
         self._outputs = []
@@ -421,8 +422,9 @@ class Workflow(object):
                     break
             else:
                 #node.executable.in_workflow = True
-                if node.transormation.site in self._tc.sites:
-                    add_site(self._tc, node.transormation.site)
+                tform_site = list(node.transformation.sites.keys())[0]
+                if not tform_site in self._sc.sites:
+                    add_site(self._sc, tform_site)
                 self._transformations += [node.transformation]
                 if hasattr(node, 'executable') and node.executable.container is not None and node.executable.container not in self._containers:
                     self._containers.append(node.executable.container)
@@ -494,6 +496,7 @@ class Workflow(object):
 
         self._adag.write(filename)
         self._tc.write(transformation_catalog_path)
+        self._sc.write(self.site_catalog)
 
 
 class File(dax.File):

@@ -15,8 +15,8 @@ possible to implement a new site, but not sure how that would work in practice.
 import os
 from urllib.parse import urljoin
 from urllib.request import pathname2url
-import pegasus.api import Directory, FileServer, Site, Operation, Namespace
-import pegasus.api import Arch, OS
+from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
+from Pegasus.api import Arch, OS
 
 def add_local_site(sitecat, local_path, local_url): 
     local = Site("local", arch=Arch.X86_64, os_type=OS.LINUX)
