@@ -8,7 +8,6 @@
         </file-server>
     </directory>
     <profile namespace="pegasus" key="style">condor</profile>
-    <profile namespace="condor" key="getenv">True</profile>
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
     <profile namespace="condor" key="+DESIRED_Sites">&quot;nogrid&quot;</profile>
