@@ -19,10 +19,11 @@ mass ratio from uniform component mass.
 
 import numpy
 from pycbc.distributions import uniform
+from pycbc.distributions import bounded
 from scipy.interpolate import interp1d
 from scipy.special import hyp2f1
 
-class MchirpfromUniformMass1Mass2(UniformPowerLaw):
+class MchirpfromUniformMass1Mass2(uniform.UniformPowerLaw):
     """ For a uniform distribution in volume using spherical coordinates, this
     is the distriubtion to use for the radius.
 
