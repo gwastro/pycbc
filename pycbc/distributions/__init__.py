@@ -35,6 +35,7 @@ from pycbc.distributions.qnm import UniformF0Tau
 from pycbc.distributions.joint import JointDistribution
 from pycbc.distributions.external import External
 from pycbc.distributions.fixedsamples import FixedSamples
+from pycbc.distributions.mass import MchirpfromUniformMass1Mass2,QfromUniformMass1Mass2
 
 # a dict of all available distributions
 distribs = {
@@ -53,7 +54,9 @@ distribs = {
     UniformLog10.name : UniformLog10,
     UniformF0Tau.name : UniformF0Tau,
     External.name: External,
-    FixedSamples.name: FixedSamples
+    FixedSamples.name: FixedSamples,
+    MchirpfromUniformMass1Mass2.name: MchirpfromUniformMass1Mass2,
+    QfromUniformMass1Mass2.name: QfromUniformMass1Mass2
 }
 
 def read_distributions_from_config(cp, section="prior"):
