@@ -18,12 +18,12 @@ mass ratio from uniform component mass.
 """
 
 import numpy
-from pycbc.distributions import uniform
+from pycbc.distributions import power_law
 from pycbc.distributions import bounded
 from scipy.interpolate import interp1d
 from scipy.special import hyp2f1
 
-class MchirpfromUniformMass1Mass2(uniform.UniformPowerLaw):
+class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     """ For a uniform distribution in volume using spherical coordinates, this
     is the distriubtion to use for the radius.
 
@@ -129,9 +129,9 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         if param in self._params:
             lower_bound = self._bounds[param][0]
             upper_bound = self._bounds[param][1]
-            q_array = np.linspace(lower_bound, upper_bound, 1000)
+            q_array = numpy.linspace(lower_bound, upper_bound, 1000)
             q_invcdf_interp = interp1d(self._cdf_param(param,q_array), q_array, kind='cubic',
-            bounds_error=False, fill_value=(minimum, maximum))  
+            bounds_error=False, fill_value=(lower_bound, upper_bound))  
             return q_invcdf_interp(value)
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
