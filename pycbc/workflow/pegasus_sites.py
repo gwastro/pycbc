@@ -33,6 +33,10 @@ def add_local_site(sitecat, local_path, local_url):
     local.add_directories(local_dir)
 
     local.add_profiles(Namespace.PEGASUS, key="style", value="condor")
+    local.add_profiles(Namespace.PEGASUS, key="transfer.force",
+                       value="true")
+    local.add_profiles(Namespace.PEGASUS, key="transfer.links",
+                       value="true")
     local.add_profiles(Namespace.CONDOR, key="getenv", value="True")
     local.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                        value="Yes")
@@ -54,6 +58,10 @@ def add_condorpool_site(sitecat, local_path, local_url):
     site.add_directories(local_dir)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
+    site.add_profiles(Namespace.PEGASUS, key="transfer.force",
+                      value="true")
+    site.add_profiles(Namespace.PEGASUS, key="transfer.links",
+                      value="true")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files", 
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output", 
@@ -88,6 +96,8 @@ def add_osg_site(sitecat):
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
                       value="True")
+    # On OSG failure rate is high
+    site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
 
 def add_site(sitecat, sitename):
     curr_dir = os.getcwd()
