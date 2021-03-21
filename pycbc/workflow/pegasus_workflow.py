@@ -319,7 +319,8 @@ class Workflow(object):
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
         self._sc = dax.SiteCatalog()
-        add_site(self._sc, 'local')
+        # FIXME: self.cp is not a part of pegasus_workflow.Workflow.
+        add_site(self._sc, 'local', self.cp)
 
         self._inputs = []
         self._outputs = []
@@ -424,7 +425,7 @@ class Workflow(object):
                 #node.executable.in_workflow = True
                 tform_site = list(node.transformation.sites.keys())[0]
                 if not tform_site in self._sc.sites:
-                    add_site(self._sc, tform_site)
+                    add_site(self._sc, tform_site, self.cp)
                 self._transformations += [node.transformation]
                 if hasattr(node, 'executable') and node.executable.container is not None and node.executable.container not in self._containers:
                     self._containers.append(node.executable.container)
