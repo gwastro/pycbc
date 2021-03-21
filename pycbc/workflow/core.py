@@ -573,10 +573,6 @@ class Executable(pegasus_workflow.Executable):
         for nodes that might already have been created. Therefore this is
         only called once in __init__. Second calls to this will fail.
         """
-        # Add executable non-specific profile information
-        if self.cp.has_section('pegasus_profile'):
-            self.add_ini_profile(self.cp, 'pegasus_profile')
-
         # Executable- and tag-specific profile information
         for sec in self.sections:
             if self.cp.has_section('pegasus_profile-{0}'.format(sec)):
