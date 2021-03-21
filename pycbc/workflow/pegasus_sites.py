@@ -49,6 +49,7 @@ def add_local_site(sitecat, cp, local_path, local_url):
 
     local_dir = Directory(Directory.LOCAL_STORAGE, path=local_path)
     local_file_serv = FileServer(local_url, Operation.ALL)
+    local_dir.add_file_servers(local_file_serv)
     local.add_directories(local_dir)
 
     local.add_profiles(Namespace.PEGASUS, key="style", value="condor")
@@ -61,7 +62,7 @@ def add_local_site(sitecat, cp, local_path, local_url):
                        value="Yes")
     local.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                        value="ON_EXIT_OR_EVICT")
-    sitecat.add_sites(site)
+    sitecat.add_sites(local)
 
 def add_condorpool_site(sitecat, cp, local_path, local_url):
     site = Site("condorpool", arch=Arch.X86_64, os_type=OS.LINUX)
@@ -76,6 +77,7 @@ def add_condorpool_site(sitecat, cp, local_path, local_url):
     
     local_dir = Directory(Directory.LOCAL_STORAGE, path=local_path)
     local_file_serv = FileServer(local_url, Operation.ALL)
+    local_dir.add_file_servers(local_file_serv)
     site.add_directories(local_dir)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")

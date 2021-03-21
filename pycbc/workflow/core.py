@@ -595,10 +595,10 @@ class Workflow(pegasus_workflow.Workflow):
         args : argparse.ArgumentParser
             The command line options to initialize a CBC workflow.
         """
-        super(Workflow, self).__init__(name, **kwargs)
-
         # Parse ini file
         self.cp = WorkflowConfigParser.from_cli(args)
+
+        super(Workflow, self).__init__(name, **kwargs)
 
         # Set global values
         start_time = end_time = 0
