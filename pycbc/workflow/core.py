@@ -756,6 +756,7 @@ class Workflow(pegasus_workflow.Workflow):
 
     def save(self, filename=None, output_map_path=None,
              transformation_catalog_path=None,
+             site_catalog_path=None,
              staging_site=None):
 
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
@@ -774,9 +775,11 @@ class Workflow(pegasus_workflow.Workflow):
                                             site='local')
         self.transformation_catalog_file = transformation_catalog_file
 
-        scpath = os.path.basename(site_catalog)
+        if site_catalog_path is None:
+            site_catalog_path = self.site_catalog
+        scpath = os.path.basename(site_catalog_path)
         site_catalog_file = pegasus_workflow.File(scpath)
-        site_catalog_file.add_pfn(site_catalog, site='local')
+        site_catalog_file.add_pfn(site_catalog_path, site='local')
         self.site_catalog_file = site_catalog_file
 
         if staging_site is None:
@@ -787,7 +790,7 @@ class Workflow(pegasus_workflow.Workflow):
 
             Workflow.set_job_properties(self._asdag, output_map_file,
                                         transformation_catalog_file,
-                                        site_catalog_file
+                                        site_catalog_file,
                                         staging_site)
 
         # add transformations to dax
@@ -818,7 +821,8 @@ class Workflow(pegasus_workflow.Workflow):
         # save the dax file
         super(Workflow, self).save(
             filename=filename,
-            transformation_catalog_path=transformation_catalog_path
+            transformation_catalog_path=transformation_catalog_path,
+            site_catalog_path=site_catalog_path
         )
 
         # FIXME: This belongs in pegasus_workflow.py

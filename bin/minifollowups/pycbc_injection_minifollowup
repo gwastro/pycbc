@@ -73,6 +73,10 @@ parser.add_argument('--maximum-decisive-snr', type=float, default=None,
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--transformation-catalog')
+parser.add_argument('--site-catalog', type=str, required=False,
+                    help='Supply the location of the pegasus site '
+                         'catalog file. '
+                         'Only needed if running this job within a workflow.')
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
@@ -300,5 +304,6 @@ for num_event in range(num_events):
     num_event += 1
 
 workflow.save(filename=args.output_file, output_map_path=args.output_map,
-              transformation_catalog_path=args.transformation_catalog)
+              transformation_catalog_path=args.transformation_catalog,
+              site_catalog_path=args.site_catalog)
 layout.two_column_layout(args.output_dir, layouts)
