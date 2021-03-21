@@ -489,6 +489,7 @@ class Workflow(object):
             sub.save()
             sub.transformation_catalog_file.insert_into_dax(self._rc)
             sub.output_map_file.insert_into_dax(self._rc)
+            sub.site_catalog_file.insert_into_dax(self._rc)
             sub_workflow_file = File(sub.filename)
             pfn = os.path.join(os.getcwd(), sub.filename)
             sub_workflow_file.add_pfn(pfn, site='local')
