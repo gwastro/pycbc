@@ -20,10 +20,10 @@ from Pegasus.api import Arch, OS
 
 def add_site_pegasus_profile(site, cp):
     # Add global profile information
-    if self.cp.has_section('pegasus_profile'):
+    if cp.has_section('pegasus_profile'):
         add_ini_site_profile(site, cp, 'pegasus_profile')
     # Add site-specific profile information
-    if self.cp.has_section('pegasus_profile-{}'.format(site.name)):
+    if cp.has_section('pegasus_profile-{}'.format(site.name)):
         add_ini_site_profile(site, cp, 'pegasus_profile-{}'.format(site.name))
 
 def add_ini_site_profile(site, cp, sec):
@@ -61,6 +61,7 @@ def add_local_site(sitecat, cp, local_path, local_url):
                        value="Yes")
     local.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                        value="ON_EXIT_OR_EVICT")
+    sitecat.add_sites(site)
 
 def add_condorpool_site(sitecat, cp, local_path, local_url):
     site = Site("condorpool", arch=Arch.X86_64, os_type=OS.LINUX)
@@ -92,6 +93,7 @@ def add_condorpool_site(sitecat, cp, local_path, local_url):
                       value="'False'")
     site.add_profiles(Namespace.CONDOR, key="+flock_local", 
                       value="True")
+    sitecat.add_sites(site)
 
 def add_nonfsio_site(sitecat, cp):
     site = Site("nonfsio", arch=Arch.X86_64, os_type=OS.LINUX)
@@ -107,6 +109,7 @@ def add_nonfsio_site(sitecat, cp):
                       value="'False'")
     site.add_profiles(Namespace.CONDOR, key="+flock_local",
                       value="True")
+    sitecat.add_sites(site)
 
 def add_osg_site(sitecat, cp):
     site = Site("osg", arch=Arch.X86_64, os_type=OS.LINUX)
@@ -120,6 +123,7 @@ def add_osg_site(sitecat, cp):
                       value="True")
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
+    sitecat.add_sites(site)
 
 def add_site(sitecat, sitename, cp):
     curr_dir = os.getcwd()
