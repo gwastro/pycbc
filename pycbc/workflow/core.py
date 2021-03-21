@@ -714,15 +714,20 @@ class Workflow(pegasus_workflow.Workflow):
     @staticmethod
     def set_job_properties(job, output_map_file,
                            transformation_catalog_file,
+                           site_catalog_file,
                            staging_site=None):
         # FIXME: This all belongs in pegasus_workflow.py
 
         # FIXME: This all needs reassessing as its solving pegasus4 problems!!
 
         job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
-                         os.path.basename(output_map_file.name))
+                     os.path.basename(output_map_file.name))
         job.add_inputs(output_map_file)
         job.add_args('-Dpegasus.dir.storage.mapper.replica=File')
+
+        job.add_args('-Dpegasus.catalog.site.file=%s' %
+                     os.path.basename(site_catalog_file.name))
+        job.add_inputs(site_catalog_file)
 
         # FIXME this is an ugly hack to connect the right transformation
         # catalog to the right DAX beacuse Pegasus 4.9 does not support
@@ -763,10 +768,16 @@ class Workflow(pegasus_workflow.Workflow):
 
         if transformation_catalog_path is None:
             transformation_catalog_path = self.transformation_catalog
-        transformation_catalog_file = pegasus_workflow.File(os.path.basename(transformation_catalog_path))
+        tcpath = os.path.basename(transformation_catalog_path)
+        transformation_catalog_file = pegasus_workflow.File(tcpath)
         transformation_catalog_file.add_pfn(transformation_catalog_path,
                                             site='local')
         self.transformation_catalog_file = transformation_catalog_file
+
+        scpath = os.path.basename(site_catalog)
+        site_catalog_file = pegasus_workflow.File(scpath)
+        site_catalog_file.add_pfn(site_catalog, site='local')
+        self.site_catalog_file = site_catalog_file
 
         if staging_site is None:
             staging_site = self.staging_site
@@ -776,6 +787,7 @@ class Workflow(pegasus_workflow.Workflow):
 
             Workflow.set_job_properties(self._asdag, output_map_file,
                                         transformation_catalog_file,
+                                        site_catalog_file
                                         staging_site)
 
         # add transformations to dax
