@@ -78,6 +78,11 @@ parser.add_argument('--transformation-catalog', type=str, required=False,
                     help='Supply the location of the pegasus executable '
                          'transformation catalog file. '
                          'Only needed if running this job within a workflow.')
+parser.add_argument('--site-catalog', type=str, required=False,
+                    help='Supply the location of the pegasus site '
+                         'catalog file. '
+                         'Only needed if running this job within a workflow.')
+
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
@@ -134,7 +139,8 @@ if len(stat) == 0:
     noop_node = mini.create_noop_node()
     workflow += noop_node
     workflow.save(filename=args.output_file, output_map_path=args.output_map,
-                  transformation_catalog_path=args.transformation_catalog)
+                  transformation_catalog_path=args.transformation_catalog,
+                  site_catalog_path=args.site_catalog)
     sys.exit(0)
 
 events_to_read = num_events * 100
@@ -271,5 +277,6 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
     layouts += list(layout.grouper(files, 2))
 
 workflow.save(filename=args.output_file, output_map_path=args.output_map,
-              transformation_catalog_path=args.transformation_catalog)
+              transformation_catalog_path=args.transformation_catalog,
+              site_catalog_path=args.site_catalog)
 layout.two_column_layout(args.output_dir, layouts)

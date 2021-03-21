@@ -473,13 +473,16 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, filename=None, transformation_catalog_path=None):
+    def save(self, filename=None, transformation_catalog_path=None,
+             site_catalog_path=None):
         """ Write this workflow to DAX file
         """
         if filename is None: 
             filename = self.filename
         if transformation_catalog_path is None:
             transformation_catalog_path = self.transformation_catalog
+        if site_catalog_path is None:
+            site_catalog_path = self.site_catalog
 
         for sub in self.sub_workflows:
             sub.save()
@@ -496,7 +499,7 @@ class Workflow(object):
 
         self._adag.write(filename)
         self._tc.write(transformation_catalog_path)
-        self._sc.write(self.site_catalog)
+        self._sc.write(site_catalog_path)
 
 
 class File(dax.File):

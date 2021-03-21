@@ -106,12 +106,15 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
         node.add_list_opt('--tags', tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt',
+    node.new_output_file_opt(workflow.analysis_time, '.tc.yml',
                              '--transformation-catalog')
+    node.new_output_file_opt(workflow.analysis_time, '.sc.yml',
+                             '--site-catalog')
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
     tc_file = node.output_files[2]
+    sc_file = node.output_files[3]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -135,7 +138,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     job.add_inputs(*input_files)
     job.add_args('--basename %s'
                  % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file,
+    Workflow.set_job_properties(job, map_file, tc_file, sc_file,
                                 staging_site=staging_site)
     workflow._adag.add_jobs(job)
     workflow._adag.add_dependency(job, parents=[node._dax_node])
@@ -228,12 +231,15 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map',
                              '--output-map')
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt',
+    node.new_output_file_opt(workflow.analysis_time, '.tc.yml',
                              '--transformation-catalog')
+    node.new_output_file_opt(workflow.analysis_time, '.sc.yml',
+                             '--site-catalog')
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
     tc_file = node.output_files[2]
+    sc_file = node.output_files[3]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -259,7 +265,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     job.add_inputs(*input_files)
     job.add_args('--basename %s'
                  % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file,
+    Workflow.set_job_properties(job, map_file, tc_file, sc_file,
                                 staging_site=staging_site)
     workflow._adag.add_jobs(job)
     workflow._adag.add_dependency(job, parents=[node._dax_node])
@@ -334,11 +340,13 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
         node.add_list_opt('--tags', tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.tc.yml', '--transformation-catalog', tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.sc.yml', '--site-catalog', tags=tags)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
     tc_file = node.output_files[2]
+    sc_file = node.output_files[3]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -362,7 +370,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
     job.add_args('--basename %s'
                  % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file,
+    Workflow.set_job_properties(job, map_file, tc_file, sc_file,
                                 staging_site=staging_site)
     workflow._adag.add_jobs(job)
     workflow._adag.add_dependency(job, parents=[node._dax_node])
