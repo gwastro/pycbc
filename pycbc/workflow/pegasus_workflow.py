@@ -336,6 +336,17 @@ class Workflow(object):
         else:
             self._asdag = None
 
+        # HACK as pegasus cannot handle an empty transformation catalog
+        keg = dax.Transformation(
+            "keg",
+            namespace="example",
+            version="1.0",
+            site="isi",
+            pfn="/path/to/keg",
+            is_stageable=False,
+        )
+        self._tc.add_transformations(keg)
+
     def add_workflow(self, workflow):
         """ Add a sub-workflow to this workflow
 
