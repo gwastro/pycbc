@@ -23,6 +23,7 @@ SHARED_FILESYSTEM=0
 SITE_LIST=""
 STAGING_SITES=""
 TRANSFORMATION_CATALOG=""
+SITE_CATALOG=""
 LOCAL_STAGING_SERVER="file://"
 REMOTE_STAGING_SERVER="file://"
 NO_CREATE_PROXY=0
@@ -47,7 +48,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:r:p:P:es:S:t:nl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,transformation-catalog:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:C:g:r:p:P:es:S:t:nl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,transformation-catalog:,site-catalog:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -130,6 +131,11 @@ EOF`
         "") shift 2 ;;
         *) TRANSFORMATION_CATALOG=$2 ; shift 2 ;;
       esac ;;
+    -C|--site-catalog)
+      case "$2" in
+        "") shift 2 ;;
+        *) SITE_CATALOG=$2 ; shift 2 ;;
+      esac ;;
     -K|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
     -Q|--no-query-db) NO_QUERY_DB=1 ; shift ;;
     -n|--no-submit) SUBMIT_DAX="" ; shift ;;
@@ -166,6 +172,8 @@ EOF`
       echo "                                   staging site for that execution site"
       echo "  -t, --transformation-catalog FILE pass the specified"
       echo "                                   transformation catalog to Pegasus"
+      echo "  -t, --site-catalog FILE pass the specified"
+      echo "                                   site catalog to Pegasus"
       echo "  -K, --no-create-proxy   Do not run ligo-proxy-init and assume"
       echo "                             that the user has a valid grid proxy"
       echo "  -n, --no-submit         Plan the DAX but do not submit it"
@@ -269,13 +277,16 @@ else
   cp ${PEGASUS_PROPERTIES} ./pegasus-properties.conf
 fi
 
-# add a transformation catalog, if specified
-if [ ! -z ${TRANSFORMATION_CATALOG} ] ; then
-  cp ${TRANSFORMATION_CATALOG} ./transformation-catalog.txt
-  echo >> pegasus-properties.conf
-  echo "pegasus.catalog.transformation Text" >> pegasus-properties.conf
-  echo "pegasus.catalog.transformation.file ${PWD}/transformation-catalog.txt" >> pegasus-properties.conf
+# add a transformation catalog, if not given
+if [ -z ${TRANSFORMATION_CATALOG} ] ; then
+  TRANSFORMATION_CATALOG="${DAX_FILE%.dax}.tc.yml"
 fi
+
+# add a site catalog, if not give
+if [ -z ${SITE_CATALOG} ] ; then
+  SITE_CATALOG="${DAX_FILE%.dax}.sc.yml"
+fi
+
 
 echo >> pegasus-properties.conf
 cat extra-properties.conf >> pegasus-properties.conf
@@ -300,7 +311,7 @@ else
   CACHE_OPTION='--cache _reuse.cache'
 fi
 
-pegasus-plan --conf ./pegasus-properties.conf --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace ${CACHE_OPTION} --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID $DAX_FILE
+pegasus-plan -Dpegasus.catalog.site.file=${SITE_CATALOG} -Dpegasus.catalog.transformation.file=${TRANSFORMATION_CATALOG} --conf ./pegasus-properties.conf --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace ${CACHE_OPTION} --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID $DAX_FILE
 
 echo
 
