@@ -18,8 +18,27 @@ from urllib.request import pathname2url
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
 from Pegasus.api import Arch, OS
 
-def add_local_site(sitecat, local_path, local_url): 
+def add_site_pegasus_profile(site, cp):
+    # Add global profile information
+    if self.cp.has_section('pegasus_profile'):
+        add_ini_site_profile(site, cp, 'pegasus_profile')
+    # Add site-specific profile information
+    if self.cp.has_section('pegasus_profile-{}'.format(site.name)):
+        add_ini_site_profile(site, cp, 'pegasus_profile-{}'.format(site.name))
+
+def add_ini_site_profile(site, cp, sec):
+    for opt in cp.options(sec):
+        namespace = opt.split('|')[0]
+        if namespace == 'pycbc' or namespace == 'container':
+            continue
+
+        value = cp.get(sec, opt).strip()
+        key = opt.split('|')[1]
+        site.add_profiles(Namespace(namespace), key=key, value=value)
+
+def add_local_site(sitecat, cp, local_path, local_url): 
     local = Site("local", arch=Arch.X86_64, os_type=OS.LINUX)
+    add_site_pegasus_profile(local, cp)
 
     local_dir = Directory(Directory.SHARED_SCRATCH,
                           path=os.path.join(local_path, 'local-site-scratch'))
@@ -43,8 +62,9 @@ def add_local_site(sitecat, local_path, local_url):
     local.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                        value="ON_EXIT_OR_EVICT")
 
-def add_condorpool_site(sitecat, local_path, local_url):
+def add_condorpool_site(sitecat, cp, local_path, local_url):
     site = Site("condorpool", arch=Arch.X86_64, os_type=OS.LINUX)
+    add_site_pegasus_profile(site, cp)
 
     local_dir = Directory(Directory.SHARED_SCRATCH,
                           path=os.path.join(local_path, 'local-site-scratch'))
@@ -73,8 +93,9 @@ def add_condorpool_site(sitecat, local_path, local_url):
     site.add_profiles(Namespace.CONDOR, key="+flock_local", 
                       value="True")
 
-def add_nonfsio_site(sitecat):
+def add_nonfsio_site(sitecat, cp):
     site = Site("nonfsio", arch=Arch.X86_64, os_type=OS.LINUX)
+    add_site_pegasus_profile(site, cp)
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
@@ -87,8 +108,9 @@ def add_nonfsio_site(sitecat):
     site.add_profiles(Namespace.CONDOR, key="+flock_local",
                       value="True")
 
-def add_osg_site(sitecat):
+def add_osg_site(sitecat, cp):
     site = Site("osg", arch=Arch.X86_64, os_type=OS.LINUX)
+    add_site_pegasus_profile(site, cp)
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
@@ -99,17 +121,17 @@ def add_osg_site(sitecat):
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
 
-def add_site(sitecat, sitename):
+def add_site(sitecat, sitename, cp):
     curr_dir = os.getcwd()
     local_url = urljoin('file:', pathname2url(curr_dir))
     if sitename == 'local':
-        add_local_site(sitecat, curr_dir, local_url)   
+        add_local_site(sitecat, cp, curr_dir, local_url)   
     elif sitename == 'condorpool':
-        add_condorpool_site(sitecat, curr_dir, local_url)
+        add_condorpool_site(sitecat, cp, curr_dir, local_url)
     elif sitename == 'nonfsio':
-        add_nonfsio_site(sitecat)
+        add_nonfsio_site(sitecat, cp)
     elif sitename == 'osg':
-        add_osg_site(sitecat)
+        add_osg_site(sitecat, cp)
     else:
         raise ValueError("Do not recognize site {}".format(sitename))
 
