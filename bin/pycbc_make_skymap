@@ -27,8 +27,6 @@ from ligo.gracedb.rest import GraceDb
 def default_frame_type(time, ifo):
     """Sensible defaults for frame types based on interferometer and time.
     """
-    if opt.fake_strain:
-        return ifo + '_FAKE_DATA'
     if time < 1137254517:
         # O1
         if ifo in ['H1', 'L1']:
@@ -173,7 +171,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
         coinc_results['foreground/'+ifo+'/template_id'] = i
         
-        
         command.append("--approximant")
         for apx in approximant:
             command.append(apx)
@@ -196,7 +193,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         if fake_strain:
             command.append("--fake-strain")
             command.append(fake_strain[ifo][0])
-            if fake_strain_seed:
+            if fake_strain_seed is not None:
                 command.append("--fake-strain-seed")
                 command.append(fake_strain_seed[ifo][0])
 
@@ -245,7 +242,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         log_file = open(log_path, 'w')
         log_file.write(' '.join(command) + '\n\n')
         log_file.flush()
-        #print(command)
 
         proc = subprocess.Popen(command, stdout=log_file, stderr=log_file)
         procs.append((ifo, proc, log_path, log_file))
@@ -470,7 +466,7 @@ if __name__ == '__main__':
     parser.add_argument('--fake-strain', nargs='+', type=str,
                         action=MultiDetOptionAppendAction, metavar="IFO:FAKE_STRAIN",
                         help="The set of fake-strains for each detector")
-    parser.add_argument('--fake-strain-seed', nargs='+', type=str,
+    parser.add_argument('--fake-strain-seed', type=int,
                         action=MultiDetOptionAppendAction, metavar="IFO:FAKE_STRAIN_SEED",
                         help="The set of fake-strains-seeds for each detector")
 
