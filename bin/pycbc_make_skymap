@@ -466,7 +466,7 @@ if __name__ == '__main__':
     parser.add_argument('--fake-strain', nargs='+', type=str,
                         action=MultiDetOptionAppendAction, metavar="IFO:FAKE_STRAIN",
                         help="The set of fake-strains for each detector")
-    parser.add_argument('--fake-strain-seed', type=int,
+    parser.add_argument('--fake-strain-seed', nargs='+', type=int,
                         action=MultiDetOptionAppendAction, metavar="IFO:FAKE_STRAIN_SEED",
                         help="The set of fake-strains-seeds for each detector")
 
