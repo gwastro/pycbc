@@ -807,6 +807,11 @@ def snr_from_loglr(loglr):
 #
 # =============================================================================
 #
+
+# suffix used for specifying negative modes
+MINUS_M_SUFFIX = 'nm'
+
+
 def _genqnmfreq(mass, spin, l, m, nmodes, qnmfreq=None):
     """Convenience function to generate QNM frequencies from lalsimulation.
 
@@ -912,10 +917,13 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
     spin : float or array
         Dimensionless spin of the final black hole.
     modes : list of str
-        The modes to get. Each string in the list should be formatted 'lmN',
-        where l (m) is the l (m) index of the harmonic and N is the number of
-        overtones to generate (note, N is not the index of the overtone). For
-        example, '221' will generate the 0th overtone of the l = m = 2 mode.
+        The modes to get. Each string in the list should be formatted
+        'lmN[nm]', where l (m) is the l (m) index of the harmonic and N is the
+        number of overtones to generate (note, N is not the index of the
+        overtone). If a mode has the string "nm" added to the end of it (for
+        negative m), the -m mode will be used. For example, '221' will generate
+        the 0th overtone of the l = m = 2 mode; '221nm' will generate the 0th
+        overtone of the l = 2, m = -2 mode.
 
     Returns
     -------
@@ -931,7 +939,11 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
     f0, tau = {}, {}
     key = '{}{}{}'
     for lmn in modes:
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        if lmn.endswith(MINUS_M_SUFFIX):
+            msign = -1
+        else:
+            msign = 1
+        l, m, nmodes = int(lmn[0]), msign*int(lmn[1]), int(lmn[2])
         tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, nmodes)
         if nmodes == 1:
             # in this case, tmp_f0 and tmp_tau will just be floats

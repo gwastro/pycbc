@@ -28,7 +28,7 @@
 import re, numpy, lal
 from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
-from pycbc.conversions import get_lm_f0tau_allmodes
+from pycbc.conversions import (get_lm_f0tau_allmodes, MINUS_M_SUFFIX)
 
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
 mass_spin_required_args = ['final_mass','final_spin', 'lmns', 'inclination']
@@ -41,6 +41,7 @@ min_dt = 1. / (2 * max_freq)
 pi = numpy.pi
 two_pi = 2 * numpy.pi
 pi_sq = numpy.pi * numpy.pi
+
 
 # Input parameters ############################################################
 
@@ -82,7 +83,10 @@ def format_lmns(lmns):
     # Catch case of lmns given as float (as int injection values are cast
     # to float by pycbc_create_injections), cast to int, then string
     if isinstance(lmns, float):
-        lmns = str(int(lmns))
+        if lmns < 0:
+            lmns = str(abs(int(lmns))) + MINUS_M_SUFFIX
+        else:
+            lmns = str(int(lmns))
     # Case 1: the lmns are given as a string, e.g. '221 331'
     if isinstance(lmns, str):
         lmns = lmns.split(' ')
@@ -102,6 +106,9 @@ def format_lmns(lmns):
         # to a string
         # lmn = lmn.strip(" b'")
         # Try to convert to int and then str, to ensure the right format
+        minusm = lmn.endswith(MINUS_M_SUFFIX):
+        if minusm:
+            lmn = lmn[1:]
         lmn = str(int(lmn))
         if len(lmn) != 3:
             raise ValueError('Format of parameter lmns not recognized. See '
@@ -109,13 +116,30 @@ def format_lmns(lmns):
         elif int(lmn[2]) == 0:
             raise ValueError('Number of overtones (nmodes) must be greater '
                              'than zero in lmn={}.'.format(lmn))
+        if minusm:
+            lmn = lmn + MINUS_M_SUFFIX
         out.append(lmn)
 
     return out
 
+def parse_mode(lmn):
+    """Extracts overtones from an lmn.
+    """
+    lm, nmodes = lmn[0:2], int(lmn[2])
+    minusm = lmn.endswith(MINUS_M_SUFFIX)
+    overtones = []
+    for n in range(nmodes):
+        mode = lm + '{}'.format(n)
+        if minusm:
+            mode += MINUS_M_SUFFIX
+        overtones.append(mode)
+    return overtones
+
+
 def lm_amps_phases(**kwargs):
-    """ Take input_params and return dictionaries with amplitudes and phases
-    of each overtone of a specific lm mode, checking that all of them are given.
+    """Takes input_params and return dictionaries with amplitudes and phases
+    of each overtone of a specific lm mode, checking that all of them are
+    given.
     """
     lmns = format_lmns(kwargs['lmns'])
     amps, phis = {}, {}
@@ -125,13 +149,11 @@ def lm_amps_phases(**kwargs):
         amps['220'] = kwargs['amp220']
     except KeyError:
         raise ValueError('amp220 is always required')
-
     # Get amplitudes of subdominant modes and all phases
     for lmn in lmns:
-        lm, nmodes = lmn[0:-1], int(lmn[2])
-        for n in range(nmodes):
+        overtones = parse_mode(lmn)
+        for mode in overtones:
             # If it is the 22 mode, skip 220 amplitude
-            mode = lm + '{}'.format(n)
             if mode != '220':
                 try:
                     amps[mode] = kwargs['amp' + mode] * amps['220']
@@ -141,21 +163,19 @@ def lm_amps_phases(**kwargs):
                 phis[mode] = kwargs['phi' + mode]
             except KeyError:
                 raise ValueError('phi{} is required'.format(mode))
-
     return amps, phis
 
+
 def lm_freqs_taus(**kwargs):
-    """ Take input_params and return dictionaries with frequencies and damping
+    """Take input_params and return dictionaries with frequencies and damping
     times of each overtone of a specific lm mode, checking that all of them
     are given.
     """
     lmns = format_lmns(kwargs['lmns'])
     freqs, taus = {}, {}
-
     for lmn in lmns:
-        lm, nmodes = lmn[0:-1], int(lmn[2])
-        for n in range(nmodes):
-            mode = lm + '{}'.format(n)
+        overtones = parse_mode(lmn)
+        for mode in overtones:
             try:
                 freqs[mode] = kwargs['f_' + mode]
             except KeyError:
@@ -164,8 +184,8 @@ def lm_freqs_taus(**kwargs):
                 taus[mode] = kwargs['tau_' + mode]
             except KeyError:
                 raise ValueError('tau_{} is required'.format(mode))
-
     return freqs, taus
+
 
 def lm_polarizations(**kwargs):
     """Take input_params and return dictionaries with polarization for
@@ -174,8 +194,9 @@ def lm_polarizations(**kwargs):
     lmns = format_lmns(kwargs['lmns'])
     pols = {}
     for lmn in lmns:
-        mode = lmn[:2]+str(int(lmn[-1])-1)
-        pols[mode] = kwargs.pop('pol{}'.format(mode), None)
+        overtones = parse_mode(lmn)
+        for mode in overtones:
+            pols[mode] = kwargs.pop('pol{}'.format(mode), None)
     return pols
 
 # Functions to obtain t_final, f_final and output vector ######################
