@@ -783,10 +783,14 @@ class Workflow(pegasus_workflow.Workflow):
             staging_site = self.staging_site
 
         if self._asdag is not None:
-            self.set_job_properties(output_map_file,
-                                    transformation_catalog_file,
-                                    site_catalog_file,
-                                    staging_site)
+            pegasus_workflow.set_subworkflow_properties(
+                job,
+                map_file,
+                tc_file,
+                sc_file,
+                self.out_dir,
+                staging_site=staging_site
+            )
 
         # add transformations to dax
         for transform in self._transformations:

@@ -20,6 +20,7 @@ from six.moves.urllib.parse import urljoin
 import distutils.spawn
 from ligo import segments
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
+from pycbc.workflow.pegasus_workflow import set_subworkflow_properties
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 try:
     # Python 3
@@ -138,8 +139,9 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     job.add_inputs(*input_files)
     job.add_args('--basename %s'
                  % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file, sc_file,
-                                staging_site=staging_site)
+    set_subworkflow_properties(job, map_file, tc_file, sc_file,
+                               workflow.out_dir,
+                               staging_site=staging_site)
     workflow._adag.add_jobs(job)
     workflow._adag.add_dependency(job, parents=[node._dax_node])
     logging.info('Leaving minifollowups module')
@@ -265,8 +267,9 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     job.add_inputs(*input_files)
     job.add_args('--basename %s'
                  % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file, sc_file,
-                                staging_site=staging_site)
+    set_subworkflow_properties(job, map_file, tc_file, sc_file,
+                               workflow.out_dir,
+                               staging_site=staging_site)
     workflow._adag.add_jobs(job)
     workflow._adag.add_dependency(job, parents=[node._dax_node])
     logging.info('Leaving minifollowups module')
@@ -370,8 +373,9 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
     job.add_args('--basename %s'
                  % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file, sc_file,
-                                staging_site=staging_site)
+    set_subworkflow_properties(job, map_file, tc_file, sc_file,
+                               workflow.out_dir,
+                               staging_site=staging_site)
     workflow._adag.add_jobs(job)
     workflow._adag.add_dependency(job, parents=[node._dax_node])
 
