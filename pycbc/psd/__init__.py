@@ -248,6 +248,12 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                                  "then excess data will not be used in "
                                  "the PSD estimate. If not enough data "
                                  "is given, the code will fail.")
+        psd_options.add_argument('--psd-match-segments', action='store_true',
+                          help="Optional and Incompatible with "
+                                " --psd-num-segments. Generate a single PSD "
+                                "for each strain segment using the same "
+                                "boundaries")
+
     if output:
         psd_options.add_argument("--psd-output",
                           help="(Optional) Write PSD to specified file")
@@ -302,6 +308,11 @@ def insert_psd_option_group_multi_ifo(parser):
                                "segments than excess data will not be used in "
                                "the PSD estimate. If not enough data is given "
                                "the code will fail.")
+    psd_options.add_argument('--psd-match-segments', action='store_true',
+                          help="Optional and Incompatible with "
+                                " --psd-num-segments. Generate a single PSD "
+                                "for each strain segment using the same "
+                                "boundaries")
     psd_options.add_argument("--psd-inverse-length", type=float, nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:LENGTH',
                           help="(Optional) The maximum length of the impulse"
@@ -388,7 +399,7 @@ def verify_psd_options_multi_ifo(opt, parser, ifos):
                       ['--psd-segment-stride', '--psd-segment-length'],
                           required_by = "--psd-estimation")
 
-def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
+def generate_overlapping_psds(opt, gwstrain, fd_segments, flen, delta_f, flow,
                               dyn_range_factor=1., precision=None):
     """Generate a set of overlapping PSDs to cover a stretch of data. This
     allows one to analyse a long stretch of data with PSD measurements that
@@ -402,6 +413,8 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
         psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
     gwstrain : Strain object
         The timeseries of raw data on which to estimate PSDs.
+    fd_segments: list, Optional
+        List of frequencyseries of each segment
     flen : int
         The length in samples of the output PSDs.
     delta_f : float
@@ -431,6 +444,16 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
         psd = from_cli(opt, flen, delta_f, flow, strain=gwstrain,
                        dyn_range_factor=dyn_range_factor, precision=precision)
         psds_and_times = [ (0, len(gwstrain), psd) ]
+        return psds_and_times
+
+    if opt.psd_match_segments:
+        psds_and_times = []
+        for seg in fd_segments:
+            strain_part = gwstrain[seg.seg_slice]
+            psd = from_cli(opt, flen, delta_f, flow, strain=strain_part,
+               dyn_range_factor=dyn_range_factor, precision=precision)  
+            pinfo = (seg.seg_slice.start, seg.seg_slice.stop, psd)
+            psds_and_times.append(pinfo) 
         return psds_and_times
 
     # Figure out the data length used for PSD generation
@@ -509,7 +532,8 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
     """
-    psds_and_times = generate_overlapping_psds(opt, gwstrain, flen, delta_f,
+    psds_and_times = generate_overlapping_psds(opt, gwstrain, fd_segments,
+                                       flen, delta_f,
                                        flow, dyn_range_factor=dyn_range_factor,
                                        precision=precision)
 
@@ -519,9 +543,9 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         inp_seg = segments.segment(fd_segment.seg_slice.start,
                                    fd_segment.seg_slice.stop)
         for start_idx, end_idx, psd in psds_and_times:
-            psd_seg = segments.segment(start_idx, end_idx)
-            if psd_seg.intersects(inp_seg):
-                curr_overlap = abs(inp_seg & psd_seg)
+            psd.psd_seg = segments.segment(start_idx, end_idx)
+            if psd.psd_seg.intersects(inp_seg):
+                curr_overlap = abs(inp_seg & psd.psd_seg)
                 if curr_overlap > psd_overlap:
                     psd_overlap = curr_overlap
                     best_psd = psd
