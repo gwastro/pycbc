@@ -76,9 +76,11 @@ wf.makedir(args.output_dir)
 container = wf.Workflow(args, args.workflow_name, directory=args.output_dir)
 # Setting these as SubWorkflows doesn't work as SubWorkflow is not a sub-class
 # of Workflow, but of Job, so you cannot set anything in a SubWorkflow.
-workflow = wf.Workflow(args, args.workflow_name + '-main', is_subworkflow=True)
+workflow = wf.Workflow(args, args.workflow_name + '-main', is_subworkflow=True,
+                       directory=args.output_dir)
 finalize_workflow = wf.Workflow(args, args.workflow_name + '-finalization',
-                                is_subworkflow=True)
+                                is_subworkflow=True, 
+                                directory=args.output_dir)
 workflow._adag._id = None # HACK!
 finalize_workflow._adag._id = None # HACK!
 
