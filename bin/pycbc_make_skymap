@@ -191,10 +191,10 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         if injection_file:
             command.append("--injection-file"),command.append(injection_file)
 
-        if fake_strain:
+        if fake_strain[ifo] is not None:
             command.append("--fake-strain")
             command.append(fake_strain[ifo])
-            if fake_strain_seed is not None:
+            if fake_strain_seed[ifo] is not None:
                 command.append("--fake-strain-seed")
                 command.append(str(fake_strain_seed[ifo]))
 
@@ -464,10 +464,10 @@ if __name__ == '__main__':
                              'H1:/path/to/frame/file L1:/path/to/frame/file')
     parser.add_argument('--injection-file', type=str,
                         help='Optional path to an injection file.')
-    parser.add_argument('--fake-strain', type=str, nargs='+', 
+    parser.add_argument('--fake-strain', type=str, 
                         action=MultiDetOptionAction, metavar="IFO:FAKE_STRAIN",
                         help="The set of fake-strains for each detector")
-    parser.add_argument('--fake-strain-seed', nargs='+', type=int,
+    parser.add_argument('--fake-strain-seed', type=int,
                         action=MultiDetOptionAction, metavar="IFO:FAKE_STRAIN_SEED",
                         help="The set of fake-strains-seeds for each detector")
 
