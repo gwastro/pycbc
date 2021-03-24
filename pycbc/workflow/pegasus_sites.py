@@ -37,6 +37,10 @@ def add_ini_site_profile(site, cp, sec):
         site.add_profiles(Namespace(namespace), key=key, value=value)
 
 def add_local_site(sitecat, cp, local_path, local_url): 
+    # local_url must end with a '/'
+    if not local_url.endswith('/'):
+        local_url = local_url + '/'
+
     local = Site("local", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(local, cp)
 
@@ -65,6 +69,10 @@ def add_local_site(sitecat, cp, local_path, local_url):
     sitecat.add_sites(local)
 
 def add_condorpool_site(sitecat, cp, local_path, local_url):
+    # local_url must end with a '/'
+    if not local_url.endswith('/'):
+        local_url = local_url + '/'
+
     site = Site("condorpool", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
 
@@ -127,8 +135,9 @@ def add_osg_site(sitecat, cp):
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
     sitecat.add_sites(site)
 
-def add_site(sitecat, sitename, cp):
-    curr_dir = os.getcwd()
+def add_site(sitecat, sitename, cp, out_dir=None):
+    if out_dir is None:
+        out_dir = os.getcwd()
     local_url = urljoin('file:', pathname2url(curr_dir))
     if sitename == 'local':
         add_local_site(sitecat, cp, curr_dir, local_url)   

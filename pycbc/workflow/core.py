@@ -630,21 +630,22 @@ class Workflow(pegasus_workflow.Workflow):
             name = self.name + '.map'
         else:
             name = 'output.map'
-        path =  os.path.join(os.getcwd(), name)
+
+        path =  os.path.join(self.out_dir, name)
         return path
 
     # FIXME: Shouldn't this be in pegasus_workflow?
     @property
     def transformation_catalog(self):
         name = self.name + '.tc.yml'
-        path =  os.path.join(os.getcwd(), name)
+        path =  os.path.join(self.out_dir, name)
         return path
 
     # FIXME: Shouldn't this be in pegasus_workflow?
     @property
     def site_catalog(self):
         name = self.name + '.sc.yml'
-        path =  os.path.join(os.getcwd(), name)
+        path =  os.path.join(self.out_dir, name)
         return path
 
     @property
@@ -660,7 +661,7 @@ class Workflow(pegasus_workflow.Workflow):
         # was ever needed.
         workflow_section = 'workflow'
         if self.cp.has_option(workflow_section, 'staging-site'):
-            staging_site = self.cp.get(workflow_section,'staging-site')
+            staging_site = self.cp.get(workflow_section, 'staging-site')
         else:
             staging_site = None
         return staging_site
@@ -743,8 +744,8 @@ class Workflow(pegasus_workflow.Workflow):
 
         # FIXME _reuse_cache needs to be fixed to use PFNs properly. This will
         # work as pegasus-plan is currently invoked on the local site so has
-        # access to a file in os.getcwd() but this code is fragile.
-        job.add_args('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache'))
+        # access to a file in out_dir but this code is fragile.
+        job.add_args('--cache %s' % os.path.join(self.out_dir, '_reuse.cache'))
 
         print ("Staging site is", staging_site)
         if staging_site:
@@ -807,7 +808,7 @@ class Workflow(pegasus_workflow.Workflow):
         if os.path.isfile(ini_file):
             err_msg = "Refusing to overwrite configuration file that "
             err_msg += "shouldn't be there: "
-            err_msg += os.path.join(os.getcwd(), ini_file)
+            err_msg += os.path.join(self.out_dir, ini_file)
             raise ValueError(err_msg)
 
         fp = open(ini_file, 'w')

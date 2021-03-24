@@ -314,13 +314,20 @@ class Node(ProfileShortcuts):
 class Workflow(object):
     """
     """
-    def __init__(self, name='my_workflow', is_subworkflow=False):
+    def __init__(self, name='my_workflow', is_subworkflow=False,
+                 directory=None):
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
         self._sc = dax.SiteCatalog()
+
+        if directory is None:
+            self.out_dir = os.getcwd()
+        else:
+            self.out_dir = os.path.abspath(directory)
+
         # FIXME: self.cp is not a part of pegasus_workflow.Workflow.
-        add_site(self._sc, 'local', self.cp)
+        add_site(self._sc, 'local', self.cp, outdir=self.out_dir)
 
         self._inputs = []
         self._outputs = []
