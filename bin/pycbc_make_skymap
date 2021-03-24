@@ -170,7 +170,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         coinc_results['foreground/'+ifo+'/window'] = window
         coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
         coinc_results['foreground/'+ifo+'/template_id'] = i
-        
+
         command.append("--approximant")
         for apx in approximant:
             command.append(apx)
@@ -186,10 +186,10 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append("--gps-end-time"),command.append(str(gps_end_time))
         command.append("--trigger-time"),command.append(str(np.round(trig_time,5)))
         command.append("--window"),command.append(str(window))
-        
+
         if injection_file:
             command.append("--injection-file"),command.append(injection_file)
-        
+
         if fake_strain:
             command.append("--fake-strain")
             command.append(fake_strain[ifo][0])
@@ -237,7 +237,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
         command.append("--output-file")
         command.append(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf")
-        
+
         log_path = tmpdir + '/pycbc_single_template_{}_{}_log.txt'.format(str(rough_time), ifo)
         log_file = open(log_path, 'w')
         log_file.write(' '.join(command) + '\n\n')
@@ -360,10 +360,10 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     # Defining the approximant to feed into BAYESTAR
 
     row = WaveformArray.from_kwargs(
-	    mass1=mass1,
-	    mass2=mass2,
-	    spin1z=spin1z,
-	    spin2z=spin2z)
+        mass1=mass1,
+        mass2=mass2,
+        spin1z=spin1z,
+        spin2z=spin2z)
 
     approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0]
 
@@ -463,10 +463,10 @@ if __name__ == '__main__':
                              'H1:/path/to/frame/file L1:/path/to/frame/file')
     parser.add_argument('--injection-file', type=str,
                         help='Optional path to an injection file.')
-    parser.add_argument('--fake-strain', nargs='+', type=str,
+    parser.add_argument('--fake-strain', type=str, nargs='+', 
                         action=MultiDetOptionAppendAction, metavar="IFO:FAKE_STRAIN",
                         help="The set of fake-strains for each detector")
-    parser.add_argument('--fake-strain-seed', nargs='+', type=int,
+    parser.add_argument('--fake-strain-seed', nargs='+', type=str,
                         action=MultiDetOptionAppendAction, metavar="IFO:FAKE_STRAIN_SEED",
                         help="The set of fake-strains-seeds for each detector")
 
