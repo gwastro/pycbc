@@ -708,14 +708,14 @@ class Workflow(pegasus_workflow.Workflow):
             fil.add_pfn(urljoin('file:', pathname2url(fil.storage_path)),
                         site='local')
 
-    @staticmethod
-    def set_job_properties(job, output_map_file,
+    def set_job_properties(self, output_map_file,
                            transformation_catalog_file,
                            site_catalog_file,
                            staging_site=None):
         # FIXME: This all belongs in pegasus_workflow.py
 
         # FIXME: This all needs reassessing as its solving pegasus4 problems!!
+        job = self._asdag
 
         job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
                      os.path.basename(output_map_file.name))
@@ -783,12 +783,10 @@ class Workflow(pegasus_workflow.Workflow):
             staging_site = self.staging_site
 
         if self._asdag is not None:
-
-
-            Workflow.set_job_properties(self._asdag, output_map_file,
-                                        transformation_catalog_file,
-                                        site_catalog_file,
-                                        staging_site)
+            self.set_job_properties(output_map_file,
+                                    transformation_catalog_file,
+                                    site_catalog_file,
+                                    staging_site)
 
         # add transformations to dax
         for transform in self._transformations:
