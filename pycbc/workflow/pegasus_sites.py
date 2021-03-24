@@ -138,11 +138,11 @@ def add_osg_site(sitecat, cp):
 def add_site(sitecat, sitename, cp, out_dir=None):
     if out_dir is None:
         out_dir = os.getcwd()
-    local_url = urljoin('file:', pathname2url(curr_dir))
+    local_url = urljoin('file:', pathname2url(out_dir))
     if sitename == 'local':
-        add_local_site(sitecat, cp, curr_dir, local_url)   
+        add_local_site(sitecat, cp, out_dir, local_url)   
     elif sitename == 'condorpool':
-        add_condorpool_site(sitecat, cp, curr_dir, local_url)
+        add_condorpool_site(sitecat, cp, out_dir, local_url)
     elif sitename == 'nonfsio':
         add_nonfsio_site(sitecat, cp)
     elif sitename == 'osg':
