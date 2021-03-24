@@ -19,7 +19,6 @@ DAX_FILE=""
 CACHE_FILE=0
 LOCAL_PEGASUS_DIR=""
 PEGASUS_PROPERTIES=""
-SHARED_FILESYSTEM=0
 SITE_LIST=""
 STAGING_SITES=""
 TRANSFORMATION_CATALOG=""
@@ -48,7 +47,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:C:g:r:p:P:es:S:t:nl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,transformation-catalog:,site-catalog:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:C:g:r:p:P:es:S:t:nl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,pegasus-properties:,append-pegasus-property:,staging-sites:,transformation-catalog:,site-catalog:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -115,7 +114,6 @@ EOF`
         "") shift 2 ;;
         *) echo $2 >> extra-properties.conf ; shift 2 ;;
       esac ;;
-    -e|--enable-shared-filesystem) SHARED_FILESYSTEM=1 ; shift ;;
     -s|--execution-sites)
       case "$2" in
         "") shift 2 ;;
@@ -290,20 +288,6 @@ fi
 
 echo >> pegasus-properties.conf
 cat extra-properties.conf >> pegasus-properties.conf
-
-# If user specified a value for pegasus.data.configuration
-# then don't add another one
-if ! grep -q pegasus.data.configuration= pegasus-properties.conf
-then
-  # No option specified, append nonshared unless user said
-  # not to
-  if [ $SHARED_FILESYSTEM == 0 ]
-  then
-    echo 'pegasus.data.configuration=nonsharedfs' >> pegasus-properties.conf
-  fi
-fi
-
-
 
 if [ $CACHE_FILE == 0 ]; then
   CACHE_OPTION=''
