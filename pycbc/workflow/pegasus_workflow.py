@@ -35,6 +35,7 @@ from .pegasus_sites import add_site
 def set_subworkflow_properties(job, output_map_file,
                                transformation_catalog_file,
                                site_catalog_file,
+                               out_dir,
                                staging_site=None):
 
     # FIXME: Does this need to be tied to some form of SubWorkflow object?
@@ -60,7 +61,7 @@ def set_subworkflow_properties(job, output_map_file,
     # FIXME _reuse_cache needs to be fixed to use PFNs properly. This will
     # work as pegasus-plan is currently invoked on the local site so has
     # access to a file in out_dir but this code is fragile.
-    job.add_args('--cache %s' % os.path.join(self.out_dir, '_reuse.cache'))
+    job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
 
     # FIXME: Does this do anything?
     print ("Staging site is", staging_site)

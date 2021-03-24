@@ -784,10 +784,10 @@ class Workflow(pegasus_workflow.Workflow):
 
         if self._asdag is not None:
             pegasus_workflow.set_subworkflow_properties(
-                job,
-                map_file,
-                tc_file,
-                sc_file,
+                self._asdag,
+                output_map_file,
+                transformation_catalog_file,
+                site_catalog_file,
                 self.out_dir,
                 staging_site=staging_site
             )
