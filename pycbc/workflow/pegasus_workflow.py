@@ -32,6 +32,42 @@ from six.moves.urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
 from .pegasus_sites import add_site
 
+def set_subworkflow_properties(job, output_map_file,
+                               transformation_catalog_file,
+                               site_catalog_file,
+                               staging_site=None):
+
+    # FIXME: Does this need to be tied to some form of SubWorkflow object?
+    job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
+                 os.path.basename(output_map_file.name))
+    job.add_inputs(output_map_file)
+    job.add_args('-Dpegasus.dir.storage.mapper.replica=File')
+
+    job.add_args('-Dpegasus.catalog.site.file=%s' %
+                 os.path.basename(site_catalog_file.name))
+    job.add_inputs(site_catalog_file)
+
+    job.add_args('-Dpegasus.catalog.transformation.file=%s' %
+                 os.path.basename(transformation_catalog_file.name))
+    job.add_inputs(transformation_catalog_file)
+    job.add_args('--output-site local')
+    job.add_args('--cleanup inplace')
+    job.add_args('--cluster label,horizontal')
+    job.add_args('-vvv')
+
+    # FIXME: This does need to be a proper File.
+
+    # FIXME _reuse_cache needs to be fixed to use PFNs properly. This will
+    # work as pegasus-plan is currently invoked on the local site so has
+    # access to a file in out_dir but this code is fragile.
+    job.add_args('--cache %s' % os.path.join(self.out_dir, '_reuse.cache'))
+
+    # FIXME: Does this do anything?
+    print ("Staging site is", staging_site)
+    if staging_site:
+        job.add_args('--staging-site %s' % staging_site)
+
+
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
     on Executables and nodes. This class expects to be inherited from
