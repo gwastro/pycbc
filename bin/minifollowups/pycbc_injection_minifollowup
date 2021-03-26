@@ -77,6 +77,11 @@ parser.add_argument('--site-catalog', type=str, required=False,
                     help='Supply the location of the pegasus site '
                          'catalog file. '
                          'Only needed if running this job within a workflow.')
+parser.add_argument('--main-workflow-directory', default=None, required=False,
+                    help='Supply the location that the main workflow was '
+                         'generated in. Only needed if running this job '
+                         'within a workflow, and then identifies where the '
+                         'local-site-scratch is')
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
@@ -84,7 +89,8 @@ args = parser.parse_args()
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
-workflow = wf.Workflow(args, args.workflow_name)
+workflow = wf.Workflow(args, args.workflow_name,
+                       directory=args.main_workflow_directory)
 
 wf.makedir(args.output_dir)
 
