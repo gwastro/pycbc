@@ -209,8 +209,9 @@ if [ $NO_CREATE_PROXY == 0 ]; then
       break
     fi
   done
-  unset X509_USER_PROXY
-  ligo-proxy-init -p $LIGO_USER_NAME || exit 1
+  # HACK FOR SPEED: PUT THIS BACK!!
+  #unset X509_USER_PROXY
+  #ligo-proxy-init -p $LIGO_USER_NAME || exit 1
 else
   if [ ! -z ${X509_USER_PROXY} ] ; then
     if [ -f ${X509_USER_PROXY} ] ; then
