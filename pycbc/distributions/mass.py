@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""This modules provides classes for evaluating distributions for mchirp and 
+"""This modules provides classes for evaluating distributions for mchirp and
 q (i.e., mass ratio) from uniform component mass.
 """
 
@@ -25,12 +25,12 @@ from pycbc.distributions import bounded
 
 
 class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
-    r""" A distribution for chirp mass from uniform component mass + 
-    constraints given by chirp mass. This is a special case for UniformPowerLaw 
+    r""" A distribution for chirp mass from uniform component mass +
+    constraints given by chirp mass. This is a special case for UniformPowerLaw
     with index 1. For more details see UniformPowerLaw.
 
     The parameters are independent of each other. Instances of this class can
-    be called like a function. By default, logpdf will be called, but this can 
+    be called like a function. By default, logpdf will be called, but this can
     be changed by setting the class's __call__ method to its pdf method.
 
     Since
@@ -40,26 +40,26 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
         P(m_1,m_2)dm_1dm_2 = P(\mathcal{M}_c,q)d\mathcal{M}_cdq
 
     Where :math:`\mathcal{M}_c` is chirp mass and math:`q` is mass ratio,
-    math:`m_1` and math:`m_2` are component masses. The jacobian to transform 
-    chirp mass and mass ratio to component masses is 
+    math:`m_1` and math:`m_2` are component masses. The jacobian to transform
+    chirp mass and mass ratio to component masses is
 
     .. math::
 
         \frac{\partial(m_1,m_2)}{\partial(\mathcal{M}_c,q)} = \
-        \mathcal{M}_c \left(\frac{1+q}{q^3}\right)^{2/5} 
+        \mathcal{M}_c \left(\frac{1+q}{q^3}\right)^{2/5}
 
     (cf:https://github.com/gwastro/pycbc/blob/master/pycbc/transforms.py#L416.)
 
-    Because :math:`P(m_1,m_2) = const', then 
+    Because :math:`P(m_1,m_2) = const', then
     :math:`P(\mathcal{M}_c,q) =
-    P(\mathcal{M}_c)P(q) \propto 
+    P(\mathcal{M}_c)P(q) \propto
     \mathcal{M}_c \left(\frac{1+q}{q^3}\right)^{2/5}`.
-    Therefore, 
+    Therefore,
 
     .. math::
         P(\mathcal{M}_c) \propto \mathcal{M}_c
 
-    and 
+    and
 
     .. math::
         P(q) \propto \left(\frac{1+q}{q^3}\right)^{2/5}
@@ -159,7 +159,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     The settings in the configuration file for pycbc_inference should be
 
     [variable_params]
-    q = 
+    q =
     [prior-q]
     name = q_from_uniform_mass1_mass2
     min-q = 1
@@ -218,11 +218,11 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             return -numpy.inf
 
     def _cdf_param(self, param, value):
-        """>>> from sympy import *
+        r""">>> from sympy import *
            >>> x = Symbol('x')
            >>> integrate((1+x)**(2/5)/x**(6/5))
            Output:
-                             _                        
+                             _
                       -0.2  |_  /-0.4, -0.2 |    I*pi\
                 -5.0*x    * |   |           | x*e    |
                            2  1 \   0.8     |        /
@@ -239,9 +239,9 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             lower_bound = self._bounds[param][0]
             upper_bound = self._bounds[param][1]
             q_array = numpy.linspace(lower_bound, upper_bound, 1000)
-            q_invcdf_interp = interp1d(self._cdf_param(param, q_array), q_array,
-                                       kind='cubic', bounds_error=False,
-                                       fill_value=(lower_bound, upper_bound))
+            q_invcdf_interp = interp1d(self._cdf_param(param, q_array),
+                              q_array, kind='cubic', bounds_error=False,
+                              fill_value=(lower_bound, upper_bound))
             return q_invcdf_interp(value)
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
@@ -271,10 +271,10 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
         for (p, _) in dtype:
-            uniformcdf = numpy.random.uniform(self._cdf_param(p, self._bounds[p][0]),
-                                              self._cdf_param(
-                                                  p, self._bounds[p][1]),
-                                              size=size)
+            uniformcdf = numpy.random.uniform(
+                         self._cdf_param(p, self._bounds[p][0]),
+                         self._cdf_param(p, self._bounds[p][1]),
+                         size=size)
             arr[p] = self._cdfinv_param(p, uniformcdf)
         return arr
 
@@ -301,6 +301,5 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         Uniform
             A distribution instance from the pycbc.inference.prior module.
         """
-        return super(QfromUniformMass1Mass2, cls).from_config(cp, section,
-                                                              variable_args,
-                                                              bounds_required=True)
+        return super(QfromUniformMass1Mass2, cls).from_config(
+                     cp, section, variable_args,bounds_required=True)
