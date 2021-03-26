@@ -13,8 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""
-This modules provides classes for evaluating distributions for mchirp and 
+"""This modules provides classes for evaluating distributions for mchirp and 
 q (i.e., mass ratio) from uniform component mass.
 """
 
@@ -25,12 +24,12 @@ from pycbc.distributions import power_law
 from pycbc.distributions import bounded
 
 class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
-    """ 
-    A distribution for chirp mass from uniform component mass + constraints given by chirp mass.
-    This is a special case for UniformPowerLaw with index 1. For more details see UniformPowerLaw.
+    """ A distribution for chirp mass from uniform component mass + constraints 
+    given by chirp mass. This is a special case for UniformPowerLaw with index 1. 
+    For more details see UniformPowerLaw.
     
-    The parameters are independent of each other. Instances of this class can be called like
-    a function. By default, logpdf will be called, but this can be changed
+    The parameters are independent of each other. Instances of this class can be 
+    called like a function. By default, logpdf will be called, but this can be changed
     by setting the class's __call__ method to its pdf method.
 
     Parameters
@@ -59,24 +58,34 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     Examples
     --------
     
-    from pycbc import distributions as dist
-    minmc = 5
-    maxmc = 100
-    size = 10000
-    mc = dist.MchirpfromUniformMass1Mass2(value=(minmc,maxmc)).rvs(size)
+    Generate 10000 random numbers from this distribution in [5,100]
+
+    >>> from pycbc import distributions as dist
+    >>> minmc = 5, maxmc = 100, size = 10000
+    >>> mc = dist.MchirpfromUniformMass1Mass2(value=(minmc,maxmc)).rvs(size)
+
+    The settings in the configuration file for pycbc_inference should be
+    
+    [variable_params]
+    mchirp = 
+    [prior-mchirp]
+    name = mchirp_from_uniform_mass1_mass2
+    min-mchirp = 10
+    max-mchirp = 80
 
     """
+
     name = "mchirp_from_uniform_mass1_mass2"
     def __init__(self, dim=2, **params):
         super(MchirpfromUniformMass1Mass2, self).__init__(dim=2, **params)
 
 class QfromUniformMass1Mass2(bounded.BoundedDist):
-    """
-    A distribution for mass ratio (i.e., q) from uniform component mass + constraints given by q.
+    """A distribution for mass ratio (i.e., q) from uniform component mass
+    + constraints given by q.
 
-    The parameters are independent of each other. Instances of this class can be called like
-    a function. By default, logpdf will be called, but this can be changed
-    by setting the class's __call__ method to its pdf method.
+    The parameters are independent of each other. Instances of this class can
+    be called like a function. By default, logpdf will be called, but this can
+    be changed by setting the class's __call__ method to its pdf method.
 
     Parameters
     ----------
@@ -104,13 +113,23 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     Examples
     --------
     
-    from pycbc import distributions as dist
-    minq = 1
-    maxq = 8
-    size = 10000
-    q = dist.QfromUniformMass1Mass2(value=(minq,maxq)).rvs(size)
+    Generate 10000 random numbers from this distribution in [1,8]
+
+    >>> from pycbc import distributions as dist
+    >>> minq = 1, maxq = 8, size = 10000
+    >>> q = dist.QfromUniformMass1Mass2(value=(minq,maxq)).rvs(size)
+    
+    The settings in the configuration file for pycbc_inference should be
+    
+    [variable_params]
+    q = 
+    [prior-q]
+    name = q_from_uniform_mass1_mass2
+    min-q = 1
+    max-q = 8
 
     """
+
     name = 'q_from_uniform_mass1_mass2'
     def __init__(self, **params):
         super(QfromUniformMass1Mass2, self).__init__(**params)
