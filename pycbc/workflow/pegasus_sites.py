@@ -90,13 +90,13 @@ def add_condorpool_site(sitecat, cp, local_path, local_url):
     #site.add_directories(local_dir)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    site.add_profiles(Namespace.PEGASUS, key="transfer.force",
-                      value="true")
     site.add_profiles(Namespace.PEGASUS, key="transfer.links",
                       value="true")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key="auxillary.local",
+                      value="True")
+    site.add_profiles(Namepsace.PEGASUS, key='transfer.bypass.input.staging',
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files", 
                       value="Yes")
