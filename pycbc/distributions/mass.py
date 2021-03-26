@@ -23,15 +23,16 @@ from scipy.special import hyp2f1
 from pycbc.distributions import power_law
 from pycbc.distributions import bounded
 
+
 class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     """ A distribution for chirp mass from uniform component mass + constraints 
     given by chirp mass. This is a special case for UniformPowerLaw with index 1. 
     For more details see UniformPowerLaw.
-    
+
     The parameters are independent of each other. Instances of this class can be 
     called like a function. By default, logpdf will be called, but this can be changed
     by setting the class's __call__ method to its pdf method.
-    
+
     Since
 
     .. math::
@@ -51,7 +52,7 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     Because :math:`P(m_1,m_2) = const', then :math:`P(\mathcal{M}_c,q) = \
     P(\mathcal{M}_c)P(q) \propto \mathcal{M}_c \left(\frac{1+q}{q^3}\right)^{2/5}`.
     Therefore, 
-    
+
     .. math::
         P(\mathcal{M}_c) \propto \mathcal{M}_c
 
@@ -85,7 +86,7 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
 
     Examples
     --------
-    
+
     Generate 10000 random numbers from this distribution in [5,100]
 
     >>> from pycbc import distributions as dist
@@ -93,7 +94,7 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     >>> mc = dist.MchirpfromUniformMass1Mass2(value=(minmc,maxmc)).rvs(size)
 
     The settings in the configuration file for pycbc_inference should be
-    
+
     [variable_params]
     mchirp = 
     [prior-mchirp]
@@ -104,8 +105,10 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     """
 
     name = "mchirp_from_uniform_mass1_mass2"
+
     def __init__(self, dim=2, **params):
         super(MchirpfromUniformMass1Mass2, self).__init__(dim=2, **params)
+
 
 class QfromUniformMass1Mass2(bounded.BoundedDist):
     """A distribution for mass ratio (i.e., q) from uniform component mass
@@ -114,7 +117,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     The parameters are independent of each other. Instances of this class can
     be called like a function. By default, logpdf will be called, but this can
     be changed by setting the class's __call__ method to its pdf method.
-    
+
     For mathematical derivation see the documentation in "MchirpfromUniformMass1Mass2".
 
     Parameters
@@ -142,15 +145,15 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
 
     Examples
     --------
-    
+
     Generate 10000 random numbers from this distribution in [1,8]
 
     >>> from pycbc import distributions as dist
     >>> minq = 1, maxq = 8, size = 10000
     >>> q = dist.QfromUniformMass1Mass2(value=(minq,maxq)).rvs(size)
-    
+
     The settings in the configuration file for pycbc_inference should be
-    
+
     [variable_params]
     q = 
     [prior-q]
@@ -161,13 +164,14 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     """
 
     name = 'q_from_uniform_mass1_mass2'
+
     def __init__(self, **params):
         super(QfromUniformMass1Mass2, self).__init__(**params)
         self._norm = 1.0
         self._lognorm = 0.0
         for p in self._params:
-            self._norm /= self._cdf_param(p,self._bounds[p][1]) - \
-                          self._cdf_param(p,self._bounds[p][0]) 
+            self._norm /= self._cdf_param(p, self._bounds[p][1]) - \
+                self._cdf_param(p, self._bounds[p][0])
             self._lognorm += numpy.log(self._norm)
 
     @property
@@ -186,11 +190,11 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         for p in self._params:
             if p not in kwargs.keys():
                 raise ValueError(
-                            'Missing parameter {} to construct pdf.'.format(p))
+                    'Missing parameter {} to construct pdf.'.format(p))
         if kwargs in self:
             pdf = self._norm * \
-                  numpy.prod([(1.+kwargs[p])**(2./5)/kwargs[p]**(6./5) \
-                              for p in self._params])
+                numpy.prod([(1.+kwargs[p])**(2./5)/kwargs[p]**(6./5)
+                            for p in self._params])
             return float(pdf)
         else:
             return 0.0
@@ -203,7 +207,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         for p in self._params:
             if p not in kwargs.keys():
                 raise ValueError(
-                            'Missing parameter {} to construct logpdf.'.format(p))
+                    'Missing parameter {} to construct logpdf.'.format(p))
         if kwargs in self:
             return numpy.log(self._pdf(**kwargs))
         else:
@@ -231,8 +235,8 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             lower_bound = self._bounds[param][0]
             upper_bound = self._bounds[param][1]
             q_array = numpy.linspace(lower_bound, upper_bound, 1000)
-            q_invcdf_interp = interp1d(self._cdf_param(param,q_array), q_array,
-            kind='cubic', bounds_error=False, fill_value=(lower_bound, upper_bound))  
+            q_invcdf_interp = interp1d(self._cdf_param(param, q_array), q_array,
+                                       kind='cubic', bounds_error=False, fill_value=(lower_bound, upper_bound))
             return q_invcdf_interp(value)
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
@@ -261,11 +265,12 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         else:
             dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
-        for (p,_) in dtype:
-            uniformcdf = numpy.random.uniform(self._cdf_param(p,self._bounds[p][0]),
-                                        self._cdf_param(p,self._bounds[p][1]),
-                                        size=size)
-            arr[p] = self._cdfinv_param(p,uniformcdf)
+        for (p, _) in dtype:
+            uniformcdf = numpy.random.uniform(self._cdf_param(p, self._bounds[p][0]),
+                                              self._cdf_param(
+                                                  p, self._bounds[p][1]),
+                                              size=size)
+            arr[p] = self._cdfinv_param(p, uniformcdf)
         return arr
 
     @classmethod
@@ -292,4 +297,4 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             A distribution instance from the pycbc.inference.prior module.
         """
         return super(QfromUniformMass1Mass2, cls).from_config(cp, section, variable_args,
-                     bounds_required=True)
+                                                              bounds_required=True)
