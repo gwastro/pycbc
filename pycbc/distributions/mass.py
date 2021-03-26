@@ -28,8 +28,8 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     r""" A distribution for chirp mass from uniform component mass + 
     constraints given by chirp mass. This is a special case for UniformPowerLaw 
     with index 1. For more details see UniformPowerLaw.
-    
-    The parameters are independent of each other. Instances of this class can 
+
+    The parameters are independent of each other. Instances of this class can
     be called like a function. By default, logpdf will be called, but this can 
     be changed by setting the class's __call__ method to its pdf method.
 
