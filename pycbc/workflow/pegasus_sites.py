@@ -79,18 +79,18 @@ def add_condorpool_site(sitecat, cp, local_path, local_url):
     site = Site("condorpool", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
 
-    local_dir = Directory(Directory.SHARED_SCRATCH,
-                          path=os.path.join(local_path,
-                                            'condorpool-site-scratch'))
-    local_file_serv = FileServer(urljoin(local_url, 'condorpool-site-scratch'),
-                                 Operation.ALL)
-    local_dir.add_file_servers(local_file_serv)
-    site.add_directories(local_dir)
+    #local_dir = Directory(Directory.SHARED_SCRATCH,
+    #                      path=os.path.join(local_path,
+    #                                        'condorpool-site-scratch'))
+    #local_file_serv = FileServer(urljoin(local_url, 'condorpool-site-scratch'),
+    #                             Operation.ALL)
+    #local_dir.add_file_servers(local_file_serv)
+    #site.add_directories(local_dir)
     
-    local_dir = Directory(Directory.LOCAL_STORAGE, path=local_path)
-    local_file_serv = FileServer(local_url, Operation.ALL)
-    local_dir.add_file_servers(local_file_serv)
-    site.add_directories(local_dir)
+    #local_dir = Directory(Directory.LOCAL_STORAGE, path=local_path)
+    #local_file_serv = FileServer(local_url, Operation.ALL)
+    #local_dir.add_file_servers(local_file_serv)
+    #site.add_directories(local_dir)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="transfer.links",
@@ -153,7 +153,8 @@ def add_osg_site(sitecat, cp):
 def add_site(sitecat, sitename, cp, out_dir=None):
     if out_dir is None:
         out_dir = os.getcwd()
-    local_url = urljoin('file:', pathname2url(out_dir))
+    local_url = urljoin('gsiftp://ldas-pcdev1.ligo-wa.caltech.edu/',
+                        pathname2url(out_dir))
     if sitename == 'local':
         add_local_site(sitecat, cp, out_dir, local_url)   
     elif sitename == 'condorpool':
