@@ -61,6 +61,9 @@ def add_local_site(sitecat, cp, local_path, local_url):
                        value="true")
     local.add_profiles(Namespace.PEGASUS, key="transfer.links",
                        value="true")
+    # Try sharedfs later!
+    local.add_profiles(Namespace.PEGASUS, key="data.configuration",
+                       value="nonsharedfs")
     local.add_profiles(Namespace.CONDOR, key="getenv", value="True")
     local.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                        value="Yes")
@@ -96,7 +99,7 @@ def add_condorpool_site(sitecat, cp, local_path, local_url):
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key="auxillary.local",
                       value="True")
-    site.add_profiles(Namepsace.PEGASUS, key='transfer.bypass.input.staging',
+    site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files", 
                       value="Yes")
