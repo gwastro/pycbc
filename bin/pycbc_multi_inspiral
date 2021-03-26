@@ -452,6 +452,7 @@ with ctx:
         'coherent_snr'   : float32,
         'null_snr'      : float32,
         'nifo'          : int,
+        'my_network_chisq':float32,
         'reweighted_snr' : float32
                }
     network_out_vals = {
@@ -461,6 +462,7 @@ with ctx:
         'coherent_snr'   : None,
         'null_snr'      : None,
         'nifo'          : None,
+        'my_network_chisq' : None, 
         'reweighted_snr' : None
                }
     network_names = sorted(network_out_vals.keys())
@@ -621,18 +623,18 @@ with ctx:
             if len(coinc_idx) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
               ######## changing choice of projection tensor
-                if opt.projection_type == 'standard':
-                    logging.info("%s choice of projection matrix is "
-                            % str(opt.projection_type))
-                    projection_matrix = get_projection_matrix(wp,wc)
-                elif opt.projection_type == 'left':
+                if opt.projection_type == 'left':
                     logging.info("%s choice of projection matrix is "
                             % str(opt.projection_type))
                     projection_matrix = circular_projection_matrix(wp, wc)[0]
+                elif opt.projection_type == 'right':
+                    logging.info("%s choice of projection matrix is "
+                            % str(opt.projection_type))
+                    projection_matrix = circular_projection_matrix(wp, wc)[1]
                 else:
                     logging.info("%s choice of projection matrix is "
                             % str(opt.projection_type))
-                    projection_matrix = circular_projection_matrix(wp, wc)[1] 
+                    projection_matrix = get_projection_matrix(wp,wc)
                 rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
                     coinc_triggers, coinc_idx, opt.coinc_threshold,
                     projection_matrix, rho_coinc)
@@ -676,6 +678,8 @@ with ctx:
                 # Calculate network chisq value
                 network_chisq_dict = network_chisq(chisq, chisq_dof, 
                                               coherent_ifo_triggers)
+                for i in range(len(network_chisq_dict)):
+                    logging.info("netwrkchisquare ={0}".format(network_chisq_dict[i]))
 
                 # Calculate chisq reweighted SNR
                 if nifo > 2:
@@ -694,7 +698,9 @@ with ctx:
                 # entries that are single values need to be repeated once
                 # per event.
                 num_events = len(reweighted_snr)
+                # the output will only be possible if len(networkchi2) == num_events
 
+                logging.info("reweghtsnr, networkchi2 ={0}, {1}".format(num_events ,len(network_chisq_dict)))
                 for ifo in opt.instruments:
                     ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
                         bank_chisq.values(template, stilde[ifo].psd, stilde[ifo],
@@ -723,6 +729,8 @@ with ctx:
                     network_out_vals['coherent_snr'] = \
                         abs(snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]])
                 network_out_vals['reweighted_snr'] = reweighted_snr
+                network_out_vals['my_network_chisq'] = np.real(network_chisq_dict)
+
                 network_out_vals['time_index'] = \
                     coinc_idx+stilde[ifo].cumulative_index
                 network_out_vals['nifo'] = [nifo] * num_events
