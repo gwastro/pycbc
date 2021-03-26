@@ -871,8 +871,7 @@ class Node(pegasus_workflow.Node):
             site = executable.execution_site
         else:
             site = 'condorpool'
-        # FIXME: Probably not good for singularity!
-        transform = executable.get_transformation('local')
+        transform = executable.get_transformation(site)
         super(Node, self).__init__(transform)
         self.executable = executable
         self.transform = transform
