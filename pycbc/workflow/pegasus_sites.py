@@ -95,6 +95,8 @@ def add_condorpool_site(sitecat, cp, local_path, local_url):
                       value="true")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="nonsharedfs")
+    site.add_profiles(Namespace.PEGASUS, key="auxillary.local",
+                      value="True")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files", 
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output", 
