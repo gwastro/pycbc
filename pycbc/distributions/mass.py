@@ -13,30 +13,23 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-""" This modules provides classes for evaluating distributions for mchirp and 
-mass ratio from uniform component mass.
+"""
+This modules provides classes for evaluating distributions for mchirp and 
+q (i.e., mass ratio) from uniform component mass.
 """
 
 import numpy
-from pycbc.distributions import power_law
-from pycbc.distributions import bounded
 from scipy.interpolate import interp1d
 from scipy.special import hyp2f1
+from pycbc.distributions import power_law
+from pycbc.distributions import bounded
 
 class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
-    """ For a uniform distribution in volume using spherical coordinates, this
-    is the distriubtion to use for the radius.
-
-    For more details see UniformPowerLaw.
-    """
-    name = "mchirp_from_uniform_mass1_mass2"
-    def __init__(self, dim=2, **params):
-        super(MchirpfromUniformMass1Mass2, self).__init__(dim=2, **params)
-
-class QfromUniformMass1Mass2(bounded.BoundedDist):
-    """
-    A distribution for mass ratio (i.e., q) from uniform component mass. The parameters are
-    independent of each other. Instances of this class can be called like
+    """ 
+    A distribution for chirp mass from uniform component mass + constraints given by chirp mass.
+    This is a special case for UniformPowerLaw with index 1. For more details see UniformPowerLaw.
+    
+    The parameters are independent of each other. Instances of this class can be called like
     a function. By default, logpdf will be called, but this can be changed
     by setting the class's __call__ method to its pdf method.
 
@@ -49,7 +42,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
 
     Attributes
     ----------
-    name : 'q_from_uniform_componentmass'
+    name : 'mchirp_from_uniform_mass1_mass2'
         The name of this distribution.
 
     Attributes
@@ -66,8 +59,59 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     Examples
     --------
     
+    from pycbc import distributions as dist
+    minmc = 5
+    maxmc = 100
+    size = 10000
+    mc = dist.MchirpfromUniformMass1Mass2(value=(minmc,maxmc)).rvs(size)
+
     """
-    name = 'q_from_uniform_componentmass'
+    name = "mchirp_from_uniform_mass1_mass2"
+    def __init__(self, dim=2, **params):
+        super(MchirpfromUniformMass1Mass2, self).__init__(dim=2, **params)
+
+class QfromUniformMass1Mass2(bounded.BoundedDist):
+    """
+    A distribution for mass ratio (i.e., q) from uniform component mass + constraints given by q.
+
+    The parameters are independent of each other. Instances of this class can be called like
+    a function. By default, logpdf will be called, but this can be changed
+    by setting the class's __call__ method to its pdf method.
+
+    Parameters
+    ----------
+    \**params :
+        The keyword arguments should provide the names of parameters and their
+        corresponding bounds, as either tuples or a `boundaries.Bounds`
+        instance.
+
+    Attributes
+    ----------
+    name : 'q_from_uniform_mass1_mass2'
+        The name of this distribution.
+
+    Attributes
+    ----------
+    params : list of strings
+        The list of parameter names.
+    bounds : dict
+        A dictionary of the parameter names and their bounds.
+    norm : float
+        The normalization of the multi-dimensional pdf.
+    lognorm : float
+        The log of the normalization.
+
+    Examples
+    --------
+    
+    from pycbc import distributions as dist
+    minq = 1
+    maxq = 8
+    size = 10000
+    q = dist.QfromUniformMass1Mass2(value=(minq,maxq)).rvs(size)
+
+    """
+    name = 'q_from_uniform_mass1_mass2'
     def __init__(self, **params):
         super(QfromUniformMass1Mass2, self).__init__(**params)
         self._norm = 1.0

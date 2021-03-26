@@ -35,7 +35,8 @@ from pycbc.distributions.qnm import UniformF0Tau
 from pycbc.distributions.joint import JointDistribution
 from pycbc.distributions.external import External
 from pycbc.distributions.fixedsamples import FixedSamples
-from pycbc.distributions.mass import MchirpfromUniformMass1Mass2,QfromUniformMass1Mass2
+from pycbc.distributions.mass import MchirpfromUniformMass1Mass2, \
+                                     QfromUniformMass1Mass2
 
 # a dict of all available distributions
 distribs = {
