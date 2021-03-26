@@ -101,6 +101,7 @@ def add_condorpool_site(sitecat, cp, local_path, local_url):
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output", 
                       value="ON_EXIT_OR_EVICT")
+    site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
     site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites", 
                       value="'nogrid'")
     site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN", 
