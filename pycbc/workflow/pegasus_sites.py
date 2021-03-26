@@ -13,10 +13,17 @@ possible to implement a new site, but not sure how that would work in practice.
 """
 
 import os
+import urllib.parse
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
 from Pegasus.api import Arch, OS
+
+# NOTE urllib is weird. For some reason it only allows known schemes and will
+# give *wrong* results, rather then failing, if you use something like gsiftp
+# We can add schemes explicitly, as below, but be careful with this!
+urllib.parse.uses_relative.append('gsiftp')
+urllib.parse.uses_netloc.append('gsiftp')
 
 def add_site_pegasus_profile(site, cp):
     # Add global profile information
