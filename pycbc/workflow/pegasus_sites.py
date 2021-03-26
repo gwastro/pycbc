@@ -79,18 +79,18 @@ def add_condorpool_site(sitecat, cp, local_path, local_url):
     site = Site("condorpool", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
 
-    #local_dir = Directory(Directory.SHARED_SCRATCH,
-    #                      path=os.path.join(local_path,
-    #                                        'condorpool-site-scratch'))
-    #local_file_serv = FileServer(urljoin(local_url, 'condorpool-site-scratch'),
-    #                             Operation.ALL)
-    #local_dir.add_file_servers(local_file_serv)
-    #site.add_directories(local_dir)
+    local_dir = Directory(Directory.SHARED_SCRATCH,
+                          path=os.path.join(local_path,
+                                            'condorpool-site-scratch'))
+    local_file_serv = FileServer(urljoin(local_url, 'condorpool-site-scratch'),
+                                 Operation.ALL)
+    local_dir.add_file_servers(local_file_serv)
+    site.add_directories(local_dir)
     
-    #local_dir = Directory(Directory.LOCAL_STORAGE, path=local_path)
-    #local_file_serv = FileServer(local_url, Operation.ALL)
-    #local_dir.add_file_servers(local_file_serv)
-    #site.add_directories(local_dir)
+    local_dir = Directory(Directory.LOCAL_STORAGE, path=local_path)
+    local_file_serv = FileServer(local_url, Operation.ALL)
+    local_dir.add_file_servers(local_file_serv)
+    site.add_directories(local_dir)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="transfer.links",

@@ -365,8 +365,6 @@ class Workflow(object):
 
         # FIXME: self.cp is not a part of pegasus_workflow.Workflow.
         add_site(self._sc, 'local', self.cp, out_dir=self.out_dir)
-        # FIXME: TEMP HACK,  REMOVE
-        add_site(self._sc, 'condorpool', self.cp, out_dir=self.out_dir)
 
         self._inputs = []
         self._outputs = []
