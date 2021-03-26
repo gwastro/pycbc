@@ -180,9 +180,17 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             return -numpy.inf
 
     def _cdf_param(self, param, value):
+        """>>> from sympy import *
+           >>> x = Symbol('x')
+           >>> integrate((1+x)**(2/5)/x**(6/5))
+           Output:
+                             _                        
+                      -0.2  |_  /-0.4, -0.2 |    I*pi\
+                -5.0*x    * |   |           | x*e    |
+                           2  1 \   0.8     |        /
+        """
         if param in self._params:
-            return -5. * value**(-1. / 5.) \
-            * hyp2f1(-2. / 5., -1. / 5., 4. / 5., -value)
+            return -5. * value**(-0.2) * hyp2f1(-0.4, -0.2, 0.8, -value)
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
 
