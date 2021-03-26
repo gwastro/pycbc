@@ -31,6 +31,34 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     The parameters are independent of each other. Instances of this class can be 
     called like a function. By default, logpdf will be called, but this can be changed
     by setting the class's __call__ method to its pdf method.
+    
+    Since
+
+    .. math::
+
+        P(m_1,m_2)dm_1dm_2 = P(\mathcal{M}_c,q)d\mathcal{M}_cdq
+
+    Where :math:`\mathcal{M}_c` is chirp mass and math:`q` is mass ratio,
+    math:`m_1` and math:`m_2` are component masses. The jacobian to transform 
+    chirp mass and mass ratio to component masses is 
+
+    .. math::
+
+        \frac{\partial(m_1,m_2)}{\partial(\mathcal{M}_c,q)} = \
+        \mathcal{M}_c \left(\frac{1+q}{q^3}\right)^{2/5} 
+
+    (e.g., see https://github.com/gwastro/pycbc/blob/master/pycbc/transforms.py#L416.)
+    Because :math:`P(m_1,m_2) = const', then :math:`P(\mathcal{M}_c,q) = \
+    P(\mathcal{M}_c)P(q) \propto \mathcal{M}_c \left(\frac{1+q}{q^3}\right)^{2/5}`.
+    Therefore, 
+    
+    .. math::
+        P(\mathcal{M}_c) \propto \mathcal{M}_c
+
+    and 
+
+    .. math::
+        P(q) \propto \left(\frac{1+q}{q^3}\right)^{2/5}
 
     Parameters
     ----------
@@ -86,6 +114,8 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     The parameters are independent of each other. Instances of this class can
     be called like a function. By default, logpdf will be called, but this can
     be changed by setting the class's __call__ method to its pdf method.
+    
+    For mathematical derivation see the documentation in "MchirpfromUniformMass1Mass2".
 
     Parameters
     ----------
@@ -190,7 +220,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
                            2  1 \   0.8     |        /
         """
         if param in self._params:
-            return -5. * value**(-0.2) * hyp2f1(-0.4, -0.2, 0.8, -value)
+            return -5. * value**(-1./5) * hyp2f1(-2./5, -1./5, 4./5, -value)
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
 
@@ -201,8 +231,8 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             lower_bound = self._bounds[param][0]
             upper_bound = self._bounds[param][1]
             q_array = numpy.linspace(lower_bound, upper_bound, 1000)
-            q_invcdf_interp = interp1d(self._cdf_param(param,q_array), q_array, kind='cubic',
-            bounds_error=False, fill_value=(lower_bound, upper_bound))  
+            q_invcdf_interp = interp1d(self._cdf_param(param,q_array), q_array,
+            kind='cubic', bounds_error=False, fill_value=(lower_bound, upper_bound))  
             return q_invcdf_interp(value)
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
