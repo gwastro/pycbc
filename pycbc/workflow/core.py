@@ -623,6 +623,9 @@ class Workflow(pegasus_workflow.Workflow):
         self._inputs = FileList([])
         self._outputs = FileList([])
 
+        # Setup staging site links
+        self._staging_site = {}
+
     # FIXME: Should this be in pegasus_workflow?
     @property
     def output_map(self):
@@ -650,21 +653,7 @@ class Workflow(pegasus_workflow.Workflow):
 
     @property
     def staging_site(self):
-        # FIXME: What does this actually do??
-
-        # FIXME: If using a default 'condorpool' site, this would always need
-        #        to be set for that site.
-
-        # Staging site value is currently shared across the entire workflow
-        # including sub-workflows. I'm not sure why we'd ever want this to
-        # vary for different sub-workflows, but this could be changed if that
-        # was ever needed.
-        workflow_section = 'workflow'
-        if self.cp.has_option(workflow_section, 'staging-site'):
-            staging_site = self.cp.get(workflow_section, 'staging-site')
-        else:
-            staging_site = None
-        return staging_site
+        return ','.join(['='.join(x) for x in self._staging_site.items()])
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
@@ -708,53 +697,9 @@ class Workflow(pegasus_workflow.Workflow):
             fil.add_pfn(urljoin('file:', pathname2url(fil.storage_path)),
                         site='local')
 
-    def set_job_properties(self, output_map_file,
-                           transformation_catalog_file,
-                           site_catalog_file,
-                           staging_site=None):
-        # FIXME: This all belongs in pegasus_workflow.py
-
-        # FIXME: This all needs reassessing as its solving pegasus4 problems!!
-        job = self._asdag
-
-        job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
-                     os.path.basename(output_map_file.name))
-        job.add_inputs(output_map_file)
-        job.add_args('-Dpegasus.dir.storage.mapper.replica=File')
-
-        job.add_args('-Dpegasus.catalog.site.file=%s' %
-                     os.path.basename(site_catalog_file.name))
-        job.add_inputs(site_catalog_file)
-
-        # FIXME this is an ugly hack to connect the right transformation
-        # catalog to the right DAX beacuse Pegasus 4.9 does not support
-        # the full transformation catalog syntax in the DAX. This will go
-        # away in Pegasus 5.x when this code is re-written.
-
-        # .... I don't think it will go away!
-
-        job.add_args('-Dpegasus.catalog.transformation.file=%s' %
-                     os.path.basename(transformation_catalog_file.name))
-        job.add_inputs(transformation_catalog_file)
-
-        job.add_args('--output-site local')
-        job.add_args('--cleanup inplace')
-        job.add_args('--cluster label,horizontal')
-        job.add_args('-vvv')
-
-        # FIXME _reuse_cache needs to be fixed to use PFNs properly. This will
-        # work as pegasus-plan is currently invoked on the local site so has
-        # access to a file in out_dir but this code is fragile.
-        job.add_args('--cache %s' % os.path.join(self.out_dir, '_reuse.cache'))
-
-        print ("Staging site is", staging_site)
-        if staging_site:
-            job.add_args('--staging-site %s' % staging_site)
-
     def save(self, filename=None, output_map_path=None,
              transformation_catalog_path=None,
-             site_catalog_path=None,
-             staging_site=None):
+             site_catalog_path=None):
 
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
 
@@ -779,9 +724,6 @@ class Workflow(pegasus_workflow.Workflow):
         site_catalog_file.add_pfn(site_catalog_path, site='local')
         self.site_catalog_file = site_catalog_file
 
-        if staging_site is None:
-            staging_site = self.staging_site
-
         if self._asdag is not None:
             pegasus_workflow.set_subworkflow_properties(
                 self._asdag,
@@ -789,7 +731,7 @@ class Workflow(pegasus_workflow.Workflow):
                 transformation_catalog_file,
                 site_catalog_file,
                 self.out_dir,
-                staging_site=staging_site
+                staging_site=self.staging_site
             )
 
         # add transformations to dax
