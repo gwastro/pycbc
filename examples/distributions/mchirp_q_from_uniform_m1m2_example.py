@@ -32,7 +32,7 @@ yq = ((1+xq)/(xq**3))**(2/5)
 xmc = np.linspace(minmc,maxmc,100)
 ymc = xmc
 
-
+plt.figure(figsize=(10,10))
 # Plot histograms of samples in subplots
 plt.subplot(221)
 plt.hist2d(mc_samples['mc'], q_samples['q'], bins=n_bins, cmap='Blues')
