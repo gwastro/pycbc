@@ -63,7 +63,6 @@ def set_subworkflow_properties(job, output_map_file,
     # access to a file in out_dir but this code is fragile.
     job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
 
-    # FIXME: Does this do anything?
     print ("Staging site is", staging_site)
     if staging_site:
         job.add_args('--staging-site %s' % staging_site)
@@ -482,6 +481,9 @@ class Workflow(object):
                 if not tform_site in self._sc.sites:
                     add_site(self._sc, tform_site, self.cp,
                              out_dir=self.out_dir)
+                    # NOTE: For now we *always* stage from local. This doesn't
+                    #       have to always be true though.
+                    self._staging_site[tform_site] = 'local'
                 self._transformations += [node.transformation]
                 if hasattr(node, 'executable') and node.executable.container is not None and node.executable.container not in self._containers:
                     self._containers.append(node.executable.container)
