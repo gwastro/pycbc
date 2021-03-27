@@ -52,7 +52,7 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     (https://github.com/gwastro/pycbc/blob/master/pycbc/transforms.py#L416.)
 
     Because :math:`P(m_1,m_2) = const`, then
-    
+
     .. math::
 
         P(\mathcal{M}_c,q) = P(\mathcal{M}_c)P(q)\propto
@@ -120,7 +120,7 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
 
 
 class QfromUniformMass1Mass2(bounded.BoundedDist):
-    """A distribution for mass ratio (i.e., q) from uniform component mass
+    r"""A distribution for mass ratio (i.e., q) from uniform component mass
     + constraints given by q.
 
     The parameters (i.e. **params) are independent of each other. Instances
@@ -248,9 +248,9 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             lower_bound = self._bounds[param][0]
             upper_bound = self._bounds[param][1]
             q_array = numpy.linspace(lower_bound, upper_bound, 1000)
-            q_invcdf_interp = interp1d(self._cdf_param(param, q_array), q_array,
-                                       kind='cubic', bounds_error=False,
-                                       fill_value=(lower_bound, upper_bound))
+            q_invcdf_interp = interp1d(self._cdf_param(param, q_array),
+                            q_array, kind='cubic', bounds_error=False,
+                            fill_value=(lower_bound, upper_bound))
             return q_invcdf_interp(value)
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
