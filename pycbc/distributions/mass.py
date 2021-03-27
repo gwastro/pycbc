@@ -110,7 +110,7 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
         The normalization of the multi-dimensional pdf.
     lognorm : float
         The log of the normalization.
-    
+
     """
 
     name = "mchirp_from_uniform_mass1_mass2"
@@ -284,7 +284,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         "[`section`-`variable_args`]" in the config file.
 
         Example:
-        
+
         .. code-block:: ini
 
             [variable_params]
@@ -305,8 +305,6 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             The names of the parameters for this distribution, separated by
             ``VARARGS_DELIM``. These must appear in the "tag" part
             of the section header.
-        
-            The settings in the configuration file for pycbc_inference should be
 
         Returns
         -------
