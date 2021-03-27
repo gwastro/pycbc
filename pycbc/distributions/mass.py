@@ -310,3 +310,5 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         """
         return super(QfromUniformMass1Mass2, cls).from_config(
                      cp, section, variable_args,bounds_required=True)
+
+__all__ = ["MchirpfromUniformMass1Mass2","QfromUniformMass1Mass2"]

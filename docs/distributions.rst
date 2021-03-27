@@ -13,6 +13,16 @@ Here we will demonstrate how to make different mass populations of binaries. Thi
 .. plot:: ../examples/distributions/mass_examples.py
    :include-source:
 
+=========================================
+Generating mchirp and q from uniform mass1 and mass2
+=========================================
+
+This example shows chirp mass and mass ratio samples drawn from uniform mass1 and mass2 with boundaries
+given by chirp mass and mass ratio.
+
+.. plot:: ../examples/distributions/mchirp_q_from_uniform_m1m2_example.py
+   :include-source:
+
 ========================================================
 Sky Location Distribution as Spin Distribution Example 
 ========================================================
