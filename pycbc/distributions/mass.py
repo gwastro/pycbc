@@ -68,6 +68,26 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     .. math::
         P(q) \propto \left(\frac{1+q}{q^3}\right)^{2/5}
 
+    Examples
+    --------
+
+    Generate 10000 random numbers from this distribution in [5,100]
+
+    >>> from pycbc import distributions as dist
+    >>> minmc = 5, maxmc = 100, size = 10000
+    >>> mc = dist.MchirpfromUniformMass1Mass2(value=(minmc,maxmc)).rvs(size)
+
+    The settings in the configuration file for pycbc_inference should be
+
+    .. code-block:: ini
+
+        [variable_params]
+        mchirp =
+        [prior-mchirp]
+        name = mchirp_from_uniform_mass1_mass2
+        min-mchirp = 10
+        max-mchirp = 80
+
     Parameters
     ----------
     \**params :
@@ -90,27 +110,7 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
         The normalization of the multi-dimensional pdf.
     lognorm : float
         The log of the normalization.
-
-    Examples
-    --------
-
-    Generate 10000 random numbers from this distribution in [5,100]
-
-    >>> from pycbc import distributions as dist
-    >>> minmc = 5, maxmc = 100, size = 10000
-    >>> mc = dist.MchirpfromUniformMass1Mass2(value=(minmc,maxmc)).rvs(size)
-
-    The settings in the configuration file for pycbc_inference should be
-
-    .. code-block:: ini
-
-        [variable_params]
-        mchirp =
-        [prior-mchirp]
-        name = mchirp_from_uniform_mass1_mass2
-        min-mchirp = 10
-        max-mchirp = 80
-
+    
     """
 
     name = "mchirp_from_uniform_mass1_mass2"
@@ -162,17 +162,6 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     >>> from pycbc import distributions as dist
     >>> minq = 1, maxq = 8, size = 10000
     >>> q = dist.QfromUniformMass1Mass2(value=(minq,maxq)).rvs(size)
-
-    The settings in the configuration file for pycbc_inference should be
-
-    .. code-block:: ini
-
-        [variable_params]
-        q =
-        [prior-q]
-        name = q_from_uniform_mass1_mass2
-        min-q = 1
-        max-q = 8
 
     """
 
@@ -294,6 +283,17 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         for the distribution are retrieved from the section titled
         "[`section`-`variable_args`]" in the config file.
 
+        Example:
+        
+        .. code-block:: ini
+
+            [variable_params]
+            q =
+            [prior-q]
+            name = q_from_uniform_mass1_mass2
+            min-q = 1
+            max-q = 8
+
         Parameters
         ----------
         cp : pycbc.workflow.WorkflowConfigParser
@@ -305,6 +305,8 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             The names of the parameters for this distribution, separated by
             ``VARARGS_DELIM``. These must appear in the "tag" part
             of the section header.
+        
+            The settings in the configuration file for pycbc_inference should be
 
         Returns
         -------
