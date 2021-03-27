@@ -249,8 +249,9 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             upper_bound = self._bounds[param][1]
             q_array = numpy.linspace(lower_bound, upper_bound, 1000)
             q_invcdf_interp = interp1d(self._cdf_param(param, q_array),
-                                 q_array, kind='cubic', bounds_error=False,
-                                 fill_value=(lower_bound, upper_bound))
+                                       q_array, kind='cubic',
+                                       bounds_error=False,
+                                       fill_value=(lower_bound, upper_bound))
             return q_invcdf_interp(value)
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
@@ -281,9 +282,9 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         arr = numpy.zeros(size, dtype=dtype)
         for (p, _) in dtype:
             uniformcdf = numpy.random.uniform(
-                         self._cdf_param(p, self._bounds[p][0]),
-                         self._cdf_param(p, self._bounds[p][1]),
-                         size=size)
+                self._cdf_param(p, self._bounds[p][0]),
+                self._cdf_param(p, self._bounds[p][1]),
+                size=size)
             arr[p] = self._cdfinv_param(p, uniformcdf)
         return arr
 
@@ -308,10 +309,11 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         Returns
         -------
         QfromUniformMass1Mass2
-            A distribution instance from the pycbc.distributions.bounded module.
+            A distribution instance from the pycbc.distributions.bounded
+        module.
         """
         return super(QfromUniformMass1Mass2, cls).from_config(
-                     cp, section, variable_args, bounds_required=True)
+            cp, section, variable_args, bounds_required=True)
 
 
 __all__ = ["MchirpfromUniformMass1Mass2", "QfromUniformMass1Mass2"]
