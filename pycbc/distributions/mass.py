@@ -29,9 +29,10 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     constraints given by chirp mass. This is a special case for UniformPowerLaw
     with index 1. For more details see UniformPowerLaw.
 
-    The parameters (i.e. **params) are independent of each other. Instances of
-    this class can be called like a function. By default, logpdf will be called,
-    but this can be changed by setting the class's __call__ method to its pdf method.
+    The parameters (i.e. **params) are independent of each other. Instances
+    of this class can be called like a function. By default, logpdf will be
+    called, but this can be changed by setting the class's __call__ method
+    to its pdf method.
 
     Derivation for the probability density function:
 
@@ -48,7 +49,7 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
         \frac{\partial(m_1,m_2)}{\partial(\mathcal{M}_c,q)} = \
         \mathcal{M}_c \left(\frac{1+q}{q^3}\right)^{2/5}
 
-    (see https://github.com/gwastro/pycbc/blob/master/pycbc/transforms.py#L416.)
+    (https://github.com/gwastro/pycbc/blob/master/pycbc/transforms.py#L416.)
 
     Because :math:`P(m_1,m_2) = const`, then
     
@@ -56,7 +57,7 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
 
         P(\mathcal{M}_c,q) = P(\mathcal{M}_c)P(q)\propto
         \mathcal{M}_c \left(\frac{1+q}{q^3}\right)^{2/5}`.
-    
+
     Therefore,
 
     .. math::
@@ -100,8 +101,8 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
     >>> mc = dist.MchirpfromUniformMass1Mass2(value=(minmc,maxmc)).rvs(size)
 
     The settings in the configuration file for pycbc_inference should be
-    
-    .. code-block::
+
+    .. code-block:: ini
 
     [variable_params]
     mchirp =
@@ -122,9 +123,10 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     """A distribution for mass ratio (i.e., q) from uniform component mass
     + constraints given by q.
 
-    The parameters (i.e. **params) are independent of each other. Instances of
-    this class can be called like a function. By default, logpdf will be called,
-    but this can be changed by setting the class's __call__ method to its pdf method.
+    The parameters (i.e. **params) are independent of each other. Instances
+    of this class can be called like a function. By default, logpdf will be
+    called, but this can be changed by setting the class's __call__ method
+    to its pdf method.
 
     For mathematical derivation see the documentation above in the class
     "MchirpfromUniformMass1Mass2".
@@ -162,8 +164,8 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     >>> q = dist.QfromUniformMass1Mass2(value=(minq,maxq)).rvs(size)
 
     The settings in the configuration file for pycbc_inference should be
-    
-    .. code-block::
+
+    .. code-block:: ini
 
     [variable_params]
     q =
@@ -246,9 +248,9 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             lower_bound = self._bounds[param][0]
             upper_bound = self._bounds[param][1]
             q_array = numpy.linspace(lower_bound, upper_bound, 1000)
-            q_invcdf_interp = interp1d(self._cdf_param(param, q_array),
-                              q_array, kind='cubic', bounds_error=False,
-                              fill_value=(lower_bound, upper_bound))
+            q_invcdf_interp = interp1d(self._cdf_param(param, q_array), q_array,
+                                       kind='cubic', bounds_error=False,
+                                       fill_value=(lower_bound, upper_bound))
             return q_invcdf_interp(value)
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
@@ -309,6 +311,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             A distribution instance from the pycbc.inference.prior module.
         """
         return super(QfromUniformMass1Mass2, cls).from_config(
-                     cp, section, variable_args,bounds_required=True)
+                     cp, section, variable_args, bounds_required=True)
 
-__all__ = ["MchirpfromUniformMass1Mass2","QfromUniformMass1Mass2"]
+
+__all__ = ["MchirpfromUniformMass1Mass2", "QfromUniformMass1Mass2"]
