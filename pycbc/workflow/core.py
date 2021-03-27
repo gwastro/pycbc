@@ -216,13 +216,13 @@ class Executable(pegasus_workflow.Executable):
         try:
             exe_site_list = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
         except:
-            exe_site_list = 'local,condorpool'
+            exe_site_list = 'condorpool'
 
         for s in exe_site_list.split(','):
             exe_site = s.strip()
 
             if exe_url.scheme in ['', 'file']:
-                if exe_site in ['local', 'condorpool']:
+                if exe_site in ['condorpool']:
                     # Check that executables at file urls
                     #  on the local site exist
                     if os.path.isfile(exe_url.path) is False:

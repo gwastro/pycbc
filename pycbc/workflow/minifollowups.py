@@ -129,10 +129,6 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     # determine if a staging site has been specified
     # FIXME: Avoid duplication with this and what's in Workflow.save
     # FIXME: And avoid duplicating this over the 3 MF jobs
-    try:
-        staging_site = workflow.cp.get('workflow', 'staging-site')
-    except:
-        staging_site = None
 
     # FIXME: This should really be done in pegasus_workflow!
     job = dax.SubWorkflow(fil, is_planned=False)
@@ -142,7 +138,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
                  % os.path.splitext(os.path.basename(name))[0])
     set_subworkflow_properties(job, map_file, tc_file, sc_file,
                                workflow.out_dir,
-                               staging_site=staging_site)
+                               staging_site=workflow.staging_site)
     workflow._adag.add_jobs(job)
     workflow._adag.add_dependency(job, parents=[node._dax_node])
     logging.info('Leaving minifollowups module')
@@ -253,12 +249,6 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
-    # determine if a staging site has been specified
-    try:
-        staging_site = workflow.cp.get('workflow', 'staging-site')
-    except:
-        staging_site = None
-
     # FIXME: This should really be done in pegasus_workflow!
     job = dax.SubWorkflow(fil, is_planned=False)
     input_files = [tmpltbank_file, insp_segs, single_trig_file]
@@ -271,7 +261,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
                  % os.path.splitext(os.path.basename(name))[0])
     set_subworkflow_properties(job, map_file, tc_file, sc_file,
                                workflow.out_dir,
-                               staging_site=staging_site)
+                               staging_site=workflow.staging_site)
     workflow._adag.add_jobs(job)
     workflow._adag.add_dependency(job, parents=[node._dax_node])
     logging.info('Leaving minifollowups module')
@@ -362,12 +352,6 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
-    # determine if a staging site has been specified
-    try:
-        staging_site = workflow.cp.get('workflow', 'staging-site')
-    except:
-        staging_site = None
-
     # FIXME: This should really be done in pegasus_workflow!
     job = dax.SubWorkflow(fil, is_planned=False)
     input_files = [tmpltbank_file, injection_file, inj_xml_file, insp_segs]
@@ -378,7 +362,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
                  % os.path.splitext(os.path.basename(name))[0])
     set_subworkflow_properties(job, map_file, tc_file, sc_file,
                                workflow.out_dir,
-                               staging_site=staging_site)
+                               staging_site=workflow.staging_site)
     workflow._adag.add_jobs(job)
     workflow._adag.add_dependency(job, parents=[node._dax_node])
 
@@ -912,8 +896,9 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
     files = node.output_files
     return files
 
-
-def create_noop_node():
+# FIXME: Is there a better way to do this? Need to make sure site is sent
+#        properly if condorpool is not in use, otherwise failures will occur.
+def create_noop_node(site='condorpool'):
     """
     Creates a noop node that can be added to a DAX doing nothing. The reason
     for using this is if a minifollowups dax contains no triggers currently
@@ -924,6 +909,6 @@ def create_noop_node():
     """
     exe = wdax.Executable('NOOP')
     pfn = distutils.spawn.find_executable('true')
-    tform = exe.create_transformation('local', url=pfn)
+    tform = exe.create_transformation(site, url=pfn)
     node = wdax.Node(tform)
     return node
