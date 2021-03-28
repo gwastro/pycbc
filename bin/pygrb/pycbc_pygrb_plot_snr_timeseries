@@ -155,6 +155,9 @@ if inj_file:
 # Single IFO SNR versus time plots
 pygrb_shared_plot_setups()
 xlims = [start, end]
+if opts.x_lims:
+    xlims = opts.x_lims
+    xlims = map(float, xlims.split(','))
 pygrb_plotter(trig_data.time, trig_snr_data,
               inj_data.time, inj_snr_data, inj_file,
               "Time since %s" % (str(grb_time)), y_label, outfile,
