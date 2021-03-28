@@ -700,7 +700,6 @@ class Workflow(pegasus_workflow.Workflow):
                        if sec.startswith('pegasus_profile-')]
 
         for subsec in subsections:
-            print (subsec)
             if self.cp.has_option(subsec, 'pycbc|site'):
                 site = self.cp.get(subsec, 'pycbc|site')
                 add_site(self._sc, site, self.cp, out_dir=self.out_dir)
