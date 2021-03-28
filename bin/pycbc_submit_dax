@@ -260,9 +260,9 @@ fi
 # add the local site
 # Set remote staging url to local
 if [ -z $SITE_LIST ] ; then
-  SITE_LIST="condorpool"
+  SITE_LIST="condorpool_symlink"
 else
-  SITE_LIST="condorpool,${SITE_LIST}"
+  SITE_LIST="${SITE_LIST}"
 fi
 
 
