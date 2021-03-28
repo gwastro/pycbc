@@ -121,20 +121,18 @@ class Executable(ProfileShortcuts):
         self.profiles = {}
         self.transformations = {}
 
-    def get_transformation(self, site, url=None):
+    def get_transformation(self, site):
         if site in self.transformations:
             return self.transformations[site]
         else:
-            return self.create_transformation(site, url=url)
+            raise ValueError("No transformation for site %s", site)
 
-    def create_transformation(self, site, url=None):
+    def create_transformation(self, site, url):
         if url is None:
             # Rely on URL being set in a child class
             # FIXME: Error handling niceness needed
             url = self.exe_pfns[site]
 
-        # FIXME: Understand is_stageable. Do *not* want exes transferred in
-        #        almost all cases. (Probably that's a site property)
         transform = dax.Transformation(
             self.logical_name,
             site=site,

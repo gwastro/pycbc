@@ -143,7 +143,7 @@ class Executable(pegasus_workflow.Executable):
             self.installed = cp.getboolean('pegasus_profile-%s' % name,
                                            'pycbc|installed')
         except:
-            self.installed = True
+            self.installed = False
 
         self.name=name
 
@@ -159,6 +159,71 @@ class Executable(pegasus_workflow.Executable):
             self.pegasus_name = self.name
         else:
             self.pegasus_name = self.tagged_name
+
+        # Check that the executable actually exists locally or
+        # looks like a URL, in which case trust Pegasus to be
+        # able to fetch it.
+        exe_path = cp.get('executables', name)
+        self.needs_fetching = False
+
+        exe_url = urllib.parse.urlparse(exe_path)
+
+        # FIXME: Make sure this is tied in to transformation stuff ... Is it
+        #        really needed at all??
+        # See if the user specified a list of sites for the executable
+        self.exe_pfns = {}
+        if cp.has_option_tags('pegasus_profile-%s' % name, 'pycbc|site', tags):
+            exe_site = cp.get_opt_tags('pegasus_profile-%s' % name,
+                                       'pycbc|site', tags)
+        elif cp.has_option('pegasus_profile', 'pycbc|primary_site'):
+            exe_site = cp.get('pegasus_profile', 'pycbc|primary_site')
+        else:
+            exe_site = 'condorpool_symlink'
+
+        exe_site = s.strip()
+
+        if exe_url.scheme in ['', 'file']:
+            # NOTE: There could be a case where the exe is available at a
+            #       remote site, but not on the submit host. We could work to
+            #       allow this if it ever becomes a viable use-case. Some other
+            #       places (e.g. versioning) would have to be edited as well.
+
+            # Check that executables at file urls
+            #  on the local site exist
+            if os.path.isfile(exe_url.path) is False:
+                raise TypeError("Failed to find %s executable "
+                                "at %s on site %s" % (name, exe_path,
+                                exe_site))
+        else:
+            # Could be http, gsiftp, etc. so it needs fetching if run now
+            self.needs_fetching = True
+            if self.needs_fetching and not self.installed:
+                err_msg = "Non-file path URLs cannot be used unless the "
+                err_msg += "executable is a bundled standalone executable. "
+                err_msg += "If this is the case, then add the "
+                err_msg += "pycbc.installed=True property."
+                raise ValueError(err_msg)
+
+        if self.installed:
+            # Is installed, so copy from local site, like other inputs
+            self.exe_pfns['local'] = exe_path
+        else:
+            # We must rely on the executables, and accompanying libraries,
+            # being directly accessible on the execution site.
+            # CVMFS is perfect for this! As is singularity.
+            self.exe_pfns[exe_site] = exe_path
+        logging.info("Using %s executable "
+                     "at %s on site %s" % (name, exe_url.path, exe_site))
+
+        # Determine the condor universe if we aren't given one
+        if self.universe is None:
+            self.universe = 'vanilla'
+
+        if not self.universe == 'vanilla':
+            logging.info("%s executable will run as %s universe"
+                         % (name, self.universe))
+
+        self.set_universe(self.universe)
 
         # Determine if this executables should be run in a container
         try:
@@ -201,54 +266,12 @@ class Executable(pegasus_workflow.Executable):
 
         self._set_pegasus_profile_options()
 
-        # Check that the executable actually exists locally or
-        # looks like a URL, in which case trust Pegasus to be
-        # able to fetch it.
-        exe_path = cp.get('executables', name)
-        self.needs_fetching = False
-
-        exe_url = urllib.parse.urlparse(exe_path)
-
-        # FIXME: Make sure this is tied in to transformation stuff ... Is it
-        #        really needed at all??
-        # See if the user specified a list of sites for the executable
-        self.exe_pfns = {}
-        try:
-            exe_site_list = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
-        except:
-            exe_site_list = 'condorpool'
-
-        for s in exe_site_list.split(','):
-            exe_site = s.strip()
-
-            if exe_url.scheme in ['', 'file']:
-                if exe_site in ['condorpool']:
-                    # Check that executables at file urls
-                    #  on the local site exist
-                    if os.path.isfile(exe_url.path) is False:
-                        raise TypeError("Failed to find %s executable "
-                                        "at %s on site %s" % (name, exe_path,
-                                        exe_site))
-            else:
-                # Could be http, gsiftp, etc. so it needs fetching if run now
-                self.needs_fetching = True
-
-            self.exe_pfns[exe_site] = exe_path
-            logging.info("Using %s executable "
-                         "at %s on site %s" % (name, exe_url.path, exe_site))
-
-        # Determine the condor universe if we aren't given one
-        if self.universe is None:
-            self.universe = 'vanilla'
-
-        if not self.universe == 'vanilla':
-            logging.info("%s executable will run as %s universe"
-                         % (name, self.universe))
-
-        self.set_universe(self.universe)
-
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
+
+        self.execution_site = exe_site
+        self.create_transformation(exe_site, url=exe_path)
+
 
     @property
     def ifo(self):
@@ -809,14 +832,9 @@ class Workflow(pegasus_workflow.Workflow):
 
 class Node(pegasus_workflow.Node):
     def __init__(self, executable, valid_seg=None):
-        if hasattr(executable, 'execution_site'):
-            site = executable.execution_site
-        else:
-            site = 'condorpool'
         transform = executable.get_transformation(site)
         super(Node, self).__init__(transform)
         self.executable = executable
-        self.transform = transform
         self.executed = False
         self.set_category(executable.name)
         self.valid_seg = valid_seg
