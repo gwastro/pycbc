@@ -91,6 +91,11 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
                         required=False, help="Output file for a zoomed in " +
                         "version of the plot.")
 
+    parser.add_argument("--x-lims", action="store", default=None,
+                        help="Comma separated minimum and maximum values "+
+                        "for the horizontal axis. When using negative values "+
+                        "an equal sign after --x-lims is necessary.")
+
     parser.add_argument("-Q", "--chisq-index", action="store", type=float,
                         default=4.0, help="chisq_index for newSNR calculation")
 
