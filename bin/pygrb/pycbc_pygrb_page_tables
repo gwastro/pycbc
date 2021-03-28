@@ -66,7 +66,7 @@ if opts.verbose:
     level = logging.INFO
 else:
     level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
+logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
                     level=level)
 
 # Check options
@@ -437,36 +437,38 @@ if lofft_outfile or lofft_h5_outfile:
         d.append(bestnr)
         td.append(d)
 
+    #TODO: we also want the template spin1z and spin2z. Do this after switch to hdf5
+    # th: table header
+    th = ['Trial', 'Slide Num', 'p-value', 'GPS time',\
+          'Rec. m1', 'Rec. m2', 'Rec. Mc',\
+          'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto',\
+          'Null SNR']
+    th.extend(['%s SNR' % ifo for ifo in ifos])
+    th.extend(['%s time shift (s)' % ifo for ifo in ifos])
+    th.append('BestNR')
+
+    # To ensure desired formatting in the h5 file and html table:
+    # 1) "transpose" the data preserving its dtype
+    td = zip(*td)
+
     # Write to h5 file
     if lofft_outfile:
         logging.info("Writing %d lousdest offsource triggers to h5 file.", len(td))
         lofft_h5_fp = h5py.File(lofft_h5_outfile, 'w')
-        #lofft_h5_fp.create_dataset('loudest_offsource_triggers', data=np.asarray(td).astype(np.float))
-        #tdd = [np.asarray(d) for d in td]
-        lofft_h5_fp.create_dataset('loudest_offsource_triggers', data=td)
+        for i, key in enumerate(th):
+            lofft_h5_fp.create_dataset(key, data=td[i])
         lofft_h5_fp.close()
 
     # Write to html file
     if lofft_outfile:
-        logging.info("Writing %d loudest loudest triggers to html file.", len(td))
+        logging.info("Writing %d loudest triggers to html file.", len(td))
 
         # To ensure desired formatting in the html table:
-        # 1) "transpose" the data preserving its dtype
         # 2) convert the columns to numpy arrays
         # This is necessary as the p-values need to be treated as strings,
         # because they may contain a '<'
-        td = zip(*td)
         td = [np.asarray(d) for d in td]
 
-        #TODO: we also want the template spin1z and spin2z. Do this after switch to hdf5
-        # th: table header
-        th = ['Trial', 'Slide Num', 'p-value', 'GPS time',\
-              'Rec. m1', 'Rec. m2', 'Rec. Mc',\
-              'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto',\
-              'Null SNR']
-        th.extend(['%s SNR' % ifo for ifo in ifos])
-        th.extend(['%s time shift (s)' % ifo for ifo in ifos])
-        th.append('BestNR')
         # Format of table data
         format_strings = ['##.##', '##.##', None, '##.#####',
                           '##.##', '##.##', '##.##',
@@ -553,21 +555,25 @@ if onsource_file:
         td.append(["There are no events"] + [0 for number in xrange(11)] + \
                   [0 for ifo in ifos] + [0])
 
+    # TODO we will want the spins too (easier to deal with after move to hdf5)
+    # Table header
+    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
+          'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
+         ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
+
+    td = zip(*td)
+
     # Write to h5 file
     if lont_h5_outfile:
         logging.info("Writing loudest onsource trigger to h5 file.")
         lont_h5_fp = h5py.File(lont_h5_outfile, 'w')
-        lont_h5_fp.create_dataset('loudest_onsource_trigger', data=td)
+        for i, key in enumerate(th):
+            lont_h5_fp.create_dataset(key, data=td[i])
         lont_h5_fp.close()
 
     # Write to html file
     if lont_outfile:
         logging.info("Writing loudest onsource trigger to html file.")
-        # TODO we will want the spins too (easier to deal with after move to hdf5)
-        # Table header
-        th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
-              'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
-             ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
 
         # Format of table data
         format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
@@ -576,7 +582,6 @@ if onsource_file:
         format_strings.extend(['##.##'])
 
         # Table data
-        td = zip(*td)
         td = [np.asarray(d) for d in td]
         html_table = pycbc.results.html_table(td, th,
                                               format_strings=format_strings,
@@ -789,23 +794,23 @@ if do_injections:
     logging.info("Found/missed injection efficiency calculations completed.")
 
     # Get start and end times
-    start = int(min(np.concatenate((found_injs['time'], missed_injs['time']))))
-    end = int(max(np.concatenate((found_injs['time'], missed_injs['time']))))
-    duration = end - start
+    #start = int(min(np.concatenate((found_injs['time'], missed_injs['time']))))
+    #end = int(max(np.concatenate((found_injs['time'], missed_injs['time']))))
+    #duration = end - start
     # GRB start time
-    grb_time = segs['on'][1] - 1
+    #grb_time = segs['on'][1] - 1
     # Pad times and reset to centre on zero
-    start = start - duration*0.05 - grb_time
-    end = end + duration*0.05 - grb_time
-    missed_injs['time'] -= grb_time
-    found_injs['time'][vetoed_trigs] -= grb_time
-    found_injs["time"][zero_fap] -= grb_time
-    found_injs['time'][nonzero_fap] -= grb_time
-    # TODOO: report times as well!
+    #start = start - duration*0.05 - grb_time
+    #end = end + duration*0.05 - grb_time
+    #missed_injs['time'] -= grb_time
+    #found_injs['time'][vetoed_trigs] -= grb_time
+    #found_injs['time'][zero_fap] -= grb_time
+    #found_injs['time'][nonzero_fap] -= grb_time 
 
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
     th = ['Dist'] + ['Eff. Dist. %s' % site for site in sites] +\
+         ['GPS time'] +\
          ['Inj. m1', 'Inj. m2', 'Inj. Mc', 'Rec. m1', 'Rec. m2', 'Rec. Mc',\
           'Inj. inc', 'Inj. RA', 'Inj. Dec', 'Rec. RA', 'Rec. Dec', 'SNR',\
           'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
@@ -815,7 +820,8 @@ if do_injections:
     # Format of table data
     format_strings = ['##.##']
     format_strings.extend(['##.##' for ifo in ifos])
-    format_strings.extend(['##.##', '##.##', '##.##',
+    format_strings.extend(['##.#####',
+                           '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##', '##.##', '##.##', '##.##', '##.##'])
@@ -831,7 +837,10 @@ if do_injections:
                                found_injs['eff_dist_{}'.format(ifo.lower())][vetoed_trigs],\
                                missed_injs['eff_dist_{}'.format(ifo.lower())]))\
                for ifo in ifos] +\
-              [np.concatenate((found_injs['mass1'][nonzero_fap],\
+              [np.concatenate((found_injs['time'][nonzero_fap],\
+                               found_injs['time'][vetoed_trigs],\
+                               missed_injs['time'])),\
+               np.concatenate((found_injs['mass1'][nonzero_fap],\
                                found_injs['mass1'][vetoed_trigs],\
                                missed_injs['mass1'])),\
                np.concatenate((found_injs['mass2'][nonzero_fap],\
@@ -904,17 +913,18 @@ if do_injections:
                                found_injs['spin2z'][vetoed_trigs],\
                                missed_injs['spin2z']))])
     td.sort(key=lambda elem: elem[0])
+    td = zip(*td)
     # Write to h5 file
     if qf_h5_outfile:
         logging.info("Writing %d quiet-found injections to h5 file.", len(td))
         qf_h5_fp = h5py.File(qf_h5_outfile, 'w')
-        qf_h5_fp.create_dataset('quiet_found_injections', data=td)
+        for i, key in enumerate(th):
+            qf_h5_fp.create_dataset(key, data=td[i])
         qf_h5_fp.close()
 
     # Write to html file
     if qf_outfile:
         logging.info("Writing %d quiet-found injections to html file.", len(td))
-        td = zip(*td)
         td = [np.asarray(d) for d in td]
         html_table = pycbc.results.html_table(td, th,
                                               format_strings=format_strings,
@@ -930,7 +940,8 @@ if do_injections:
         t_missed = zip(*[found_injs['distance'][vetoed_trigs]] + \
                         [found_injs['eff_dist_{}'.format(ifo.lower())][vetoed_trigs]
                          for ifo in ifos] + \
-                        [found_injs['mass1'][vetoed_trigs],
+                        [found_injs['time'][vetoed_trigs],
+                         found_injs['mass1'][vetoed_trigs],
                          found_injs['mass2'][vetoed_trigs],
                          found_injs['mchirp'][vetoed_trigs],
                          found_injs['rec_mass1'][vetoed_trigs],
