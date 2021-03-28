@@ -47,7 +47,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:C:g:r:p:P:es:S:t:nl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,pegasus-properties:,append-pegasus-property:,staging-sites:,transformation-catalog:,site-catalog:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:C:g:r:p:P:es:S:t:nl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,pegasus-properties:,append-pegasus-property:,execution-sites:,staging-sites:,transformation-catalog:,site-catalog:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do

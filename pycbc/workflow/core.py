@@ -46,8 +46,9 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import segments as ligolw_segments
 from glue.ligolw.utils import process as ligolw_process
 from pycbc import makedir
-from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
-from pycbc.workflow import pegasus_workflow
+from . import pegasus_workflow
+from .configuration import WorkflowConfigParser, resolve_url
+from .pegasus_sites import add_site
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -652,6 +653,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         # Setup staging site links
         self._staging_site = {}
+        self.add_sites_from_config()
 
     # FIXME: Should this be in pegasus_workflow?
     @property
@@ -684,8 +686,8 @@ class Workflow(pegasus_workflow.Workflow):
 
     def add_sites_from_config(self):
         add_site(self._sc, 'local', self.cp, out_dir=self.out_dir)
-        if cp.has_option('pegasus_profile', 'pycbc|primary_site'):
-            site = cp.get('pegasus_profile', 'pycbc|primary_site')
+        if self.cp.has_option('pegasus_profile', 'pycbc|primary_site'):
+            site = self.cp.get('pegasus_profile', 'pycbc|primary_site')
         else:
             # The default if not chosen
             site = 'condorpool_symlink'
@@ -696,8 +698,10 @@ class Workflow(pegasus_workflow.Workflow):
 
         for subsec in self.cp.get_subsections('pegasus_profile'):
             print ('pegasus_profile' + '-' + "subsec")
-            if cp.has_option('pegasus_profile' + '-' + subsec, 'pycbc|site'):
-                site = cp.get('pegasus_profile' + '-' + subsec, 'pycbc|site')
+            if self.cp.has_option('pegasus_profile' + '-' + subsec,
+                                  'pycbc|site'):
+                site = self.cp.get('pegasus_profile' + '-' + subsec,
+                                   'pycbc|site')
                 add_site(self._sc, site, self.cp, out_dir=self.out_dir)
                 # NOTE: For now we *always* stage from local. This doesn't
                 #       have to always be true though.

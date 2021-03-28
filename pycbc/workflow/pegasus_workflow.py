@@ -351,9 +351,6 @@ class Workflow(object):
         else:
             self.out_dir = os.path.abspath(directory)
 
-        # FIXME: self.cp is not a part of pegasus_workflow.Workflow.
-        add_site(self._sc, 'local', self.cp, out_dir=self.out_dir)
-
         self._inputs = []
         self._outputs = []
         self._transformations = []
