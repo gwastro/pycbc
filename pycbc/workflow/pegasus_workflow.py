@@ -143,14 +143,6 @@ class Executable(ProfileShortcuts):
             )
         self.transformations[site] = transform
 
-        # It's important to make sure pegasus knows this should run at the
-        # desired site.
-        transform.add_profiles(
-            dax.Namespace('Selector'),
-            key='execution.site',
-            value=site
-        ) 
-
     def add_profile(self, namespace, key, value):
         """ Add profile information to this executable
         """
