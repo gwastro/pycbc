@@ -694,18 +694,19 @@ class Workflow(pegasus_workflow.Workflow):
         add_site(self._sc, site, self.cp, out_dir=self.out_dir)
         # NOTE: For now we *always* stage from local. This doesn't
         #       have to always be true though.
-        self._staging_site[tform_site] = 'local'
+        self._staging_site[site] = 'local'
 
-        for subsec in self.cp.get_subsections('pegasus_profile'):
-            print ('pegasus_profile' + '-' + "subsec")
-            if self.cp.has_option('pegasus_profile' + '-' + subsec,
-                                  'pycbc|site'):
-                site = self.cp.get('pegasus_profile' + '-' + subsec,
-                                   'pycbc|site')
+        subsections = [sec for sec in self.cp.sections()
+                       if sec.startswith('pegasus_profile-')]
+
+        for subsec in subsections:
+            print (subsec)
+            if self.cp.has_option(subsec, 'pycbc|site'):
+                site = self.cp.get(subsec, 'pycbc|site')
                 add_site(self._sc, site, self.cp, out_dir=self.out_dir)
                 # NOTE: For now we *always* stage from local. This doesn't
                 #       have to always be true though.
-                self._staging_site[tform_site] = 'local'
+                self._staging_site[site] = 'local'
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
