@@ -63,7 +63,6 @@ def set_subworkflow_properties(job, output_map_file,
     # access to a file in out_dir but this code is fragile.
     job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
 
-    print ("Staging site is", staging_site)
     if staging_site:
         job.add_args('--staging-site %s' % staging_site)
 
@@ -109,8 +108,8 @@ class Executable(ProfileShortcuts):
     """
     id = 0
     def __init__(self, name, os='linux',
-                       arch='x86_64', installed=True,
-                       container=None):
+                 arch='x86_64', installed=False,
+                 container=None):
         self.logical_name = name + "_ID%s" % str(Executable.id)
         Executable.id += 1
         self.os = dax.OS(os)
@@ -143,6 +142,14 @@ class Executable(ProfileShortcuts):
                 value=value
             )
         self.transformations[site] = transform
+
+        # It's important to make sure pegasus knows this should run at the
+        # desired site.
+        transform.add_profiles(
+            dax.Namespace('Selector'),
+            key='execution.site',
+            value=site
+        ) 
 
     def add_profile(self, namespace, key, value):
         """ Add profile information to this executable
@@ -331,7 +338,6 @@ class Node(ProfileShortcuts):
     def _finalize(self):
         if len(self._raw_options):
             raw_args = [''.join([str(a) for a in self._raw_options])]
-            print (raw_args)
         else:
             raw_args = []
         args = self._args + raw_args + self._options

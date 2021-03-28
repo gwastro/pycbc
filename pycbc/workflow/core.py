@@ -313,9 +313,6 @@ class Executable(pegasus_workflow.Executable):
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
 
-            # FIXME: Remove if Pegasus can apply this hint in the TC
-            if namespace == 'hints' and key == 'execution.site':
-                self.execution_site = value
 
     def add_ini_opts(self, cp, sec):
         """Add job-specific options from configuration file.
@@ -839,8 +836,7 @@ class Workflow(pegasus_workflow.Workflow):
 
 class Node(pegasus_workflow.Node):
     def __init__(self, executable, valid_seg=None):
-        transform = executable.get_transformation(executable.execution_site)
-        super(Node, self).__init__(transform)
+        super(Node, self).__init__(executable.get_transformation())
         self.executable = executable
         self.executed = False
         self.set_category(executable.name)
@@ -2052,14 +2048,11 @@ def resolve_url_to_file(curr_pfn, attrs=None):
         # Add other PFNs for nonlocal sites as needed.
         # This block could be extended as needed
         if curr_pfn.startswith(cvmfsstrs):
+            # FIXME: Can we set a "all sites" variable?
+            curr_file.add_pfn(curr_pfn, site='condorpool_symlink')
+            curr_file.add_pfn(curr_pfn, site='condorpool_copy')
+            curr_file.add_pfn(curr_pfn, site='condorpool_shared')
             curr_file.add_pfn(curr_pfn, site='osg')
-            curr_file.add_pfn(curr_pfn, site='nonfsio')
-            curr_file.add_pfn(curr_pfn, site='condorpool')
-            # Also register the CVMFS PFN with the local site. We want to
-            # prefer this, and symlink from here, when possible.
-            # However, I think we need a little more to avoid it symlinking
-            # to this through an NFS mount.
-            curr_file.add_pfn(curr_pfn, site='local')
         # Store the file to avoid later duplication
         tuple_val = (local_file_path, curr_file, curr_pfn)
         file_input_from_config_dict[curr_lfn] = tuple_val
