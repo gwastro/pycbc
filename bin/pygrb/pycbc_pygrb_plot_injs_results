@@ -80,7 +80,7 @@ if opts.verbose:
     level = logging.INFO
 else:
     level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
+logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
                     level=level)
 
 # Check options
