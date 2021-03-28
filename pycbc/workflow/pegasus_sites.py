@@ -73,7 +73,7 @@ def add_condorpool_symlink_site(sitecat, cp):
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
-                      value="True")
+                      value="true")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files", 
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output", 
@@ -96,7 +96,7 @@ def add_condorpool_copy_site(sitecat, cp):
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
-                      value="True")
+                      value="true")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
@@ -119,7 +119,7 @@ def add_condorpool_shared_site(sitecat, cp):
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="sharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
-                      value="True")
+                      value="true")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
