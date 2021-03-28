@@ -38,6 +38,11 @@ from pycbc.results import create_versioning_page, layout, pygrb_postprocessing_u
 #from pycbc.results.pygrb_postprocessing_utils import process_trigs_for_followup
 from pycbc.results.versioning import save_fig_with_metadata
 #from pprint import pprint
+from Pegasus import DAX3 as dax
+from pycbc.workflow import pegasus_workflow as wdax
+#from pycbc.workflow.core import Executable, makedir
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.parse import urljoin
 
 __author__ = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -205,6 +210,97 @@ def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
 
     return node, node.output_files
 
+# Based on setup_single_det_minifollowups
+def setup_pygrb_minifollowups(workflow, followups_file, ifos,
+                              dax_output, out_dir,
+                              tags=None):
+    """ Create plots that followup the the loudest PyGRB triggers or
+    missed injections from an HDF file.
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    followups_file: pycbc.workflow.File
+        The File class holding the triggers/injections.
+    ifos: List of available IFOs to loop over.
+    dax_output: The directory that will contain the dax file.
+    out_dir: path
+        The directory to store minifollowups result plots and files
+    tags: {None, optional}
+        Tags to add to the minifollowups executables
+    """
+
+    logging.info('Entering minifollowups module')
+
+    if not workflow.cp.has_section('workflow-minifollowups'):
+        msg = 'There is no [workflow-minifollowups] section in '
+        msg += 'configuration file'
+        logging.info(msg)
+        logging.info('Leaving minifollowups')
+        return
+
+    tags = [] if tags is None else tags
+    _workflow.makedir(dax_output)
+
+    # Turn the config file into a File class
+    #curr_ifo = single_trig_file.ifo
+    #config_path = os.path.abspath(dax_output + '/' + curr_ifo + \
+    config_path = os.path.abspath(dax_output + '/' + \
+                                   '_'.join(tags) + '_minifollowup.ini')
+    workflow.cp.write(open(config_path, 'w'))
+
+    config_file = wdax.File(os.path.basename(config_path))
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
+
+    exe = _workflow.Executable(workflow.cp, 'pygrb_minifollowups',
+                               ifos=ifos, out_dir=dax_output, tags=tags)
+
+    #wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
+    wikifile = '_'.join(tags) + 'loudest_table.txt'
+
+    node = exe.create_node()
+    node.add_input_opt('--config-files', config_file)
+    node.add_input_opt('--followups-file', followups_file)
+    node.add_opt('--wiki-file', wikifile)
+    if tags:
+        node.add_list_opt('--tags', tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map',
+                             '--output-map')
+    node.new_output_file_opt(workflow.analysis_time, '.tc.txt',
+                             '--transformation-catalog')
+
+    name = node.output_files[0].name
+    map_file = node.output_files[1]
+    tc_file = node.output_files[2]
+
+    node.add_opt('--workflow-name', name)
+    node.add_opt('--output-dir', out_dir)
+
+    workflow += node
+
+    # execute this in a sub-workflow
+    fil = node.output_files[0]
+
+    # determine if a staging site has been specified
+    try:
+        staging_site = workflow.cp.get('workflow-minifollowups',
+                                       'staging-site')
+    except:
+        staging_site = None
+
+    job = dax.DAX(fil)
+    job.addArguments('--basename %s' \
+                     % os.path.splitext(os.path.basename(name))[0])
+    _workflow.Workflow.set_job_properties(job, map_file, tc_file,
+                                          staging_site=staging_site)
+    workflow._adag.addJob(job)
+    dep = dax.Dependency(parent=node._dax_node, child=job)
+    #dep = dax.Dependency(parent=workflow.as_job, child=job)
+    workflow._adag.addDependency(dep)
+    logging.info('Leaving minifollowups module')
+
+
 
 # Use the standard workflow command-line parsing routines.
 _desc = __doc__[1:]
@@ -217,9 +313,11 @@ parser.add_argument("-d", "--output-dir", default=None,
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
-# Create the workflow object
+# Create the workflow objects
 logging.info("Generating %s workflow", args.workflow_name)
-wflow = _workflow.Workflow(args, args.workflow_name)
+container = _workflow.Workflow(args, args.workflow_name)
+wflow = _workflow.Workflow(args, args.workflow_name + '-main')
+finalize_wflow = _workflow.Workflow(args, args.workflow_name + '-finalization')
 
 logging.info("Post-processing output will be generated in %s", args.output_dir)
 if not os.path.exists(args.output_dir):
@@ -398,8 +496,8 @@ _workflow.makedir(out_dir)
 # Loop over injection plots requested by the user
 inj_sets = wflow.cp.get_subsections('injections')
 inj_plots = wflow.cp.get_subsections('pygrb_plot_injs_results')
-# The command above will also pick up the injection set names so we remove them from
-# the set of requested injeciton plot types
+# The command above also picks up the injection set names so we remove them
+# from the set of requested injection plot types
 inj_plots = [inj_plot for inj_plot in inj_plots if inj_plot not in inj_sets]
 for inj_set in inj_sets:
     out_dir = rdir['injections/'+inj_set]
@@ -427,7 +525,12 @@ for inj_set in inj_sets:
     inj_layout = list(layout.grouper(files, 2)) + [(mf_table,), (qf_table,)]
     layout.two_column_layout(out_dir, inj_layout)
 
-    # TODO: follow up of loudest n quiet-missed injections (parent-child)
+    # Follow up of loudest N quiet-found injections:
+    # qf_h5 includes quiet and missed found injections
+    out_dir = rdir['injections/'+inj_set+'loudest_quiet_found_followups']
+    setup_pygrb_minifollowups(wflow, qf_h5, wflow.ifos,
+                              'daxes', out_dir,
+                              tags=[inj_set, 'loudest_quiet_found_injs'])
 
 
 #
@@ -458,14 +561,11 @@ html_nodes.append(html_node)
 lofft_layout = list(layout.grouper(files, 2)) + [(lofft_table,)]
 layout.two_column_layout(out_dir, lofft_layout)
 
-# TODO: follow up n loudest offsource triggers (parent-child)
-#out_dir = rdir['loudest_offsource_events/followups']
-#        wf.setup_single_det_minifollowups\
-#            (workflow, insp_file, hdfbank, insp_files_seg_file,
-#             data_analysed_name, trig_generated_name, 'daxes', out_dir,
-#             veto_file=censored_veto, veto_segment_name='closed_box',
-#             tags=insp_file.tags + [subsec])
-
+# Follow up N loudest offsource triggers (parent-child)
+out_dir = rdir['loudest_offsource_events/followups']
+setup_pygrb_minifollowups(wflow, lofft_h5, wflow.ifos,
+                          'daxes', out_dir,
+                          tags=['loudest_offsource_events'])
 
 
 #
@@ -491,58 +591,9 @@ for offtrial in offtrials:
     layout.two_column_layout(out_dir, files)
 
 
-## 
-## Trigger Followups (TODO: Just skeleton)
-##
-#if wflow.cp.has_section('pygrb_followups'):
-#    #
-#    # Loudest Offsource followups
-#    #
-#    # This function call takes ~2 minutes and will output all the time
-#    # shifted gps times for the requested number of loudest offsource
-#    # events. The return format it 
-#    # [[IFO1 GPS, IFO2 GPS, IFO3 GPS], [IFO1 GPS, IFO2 GPS, IFO3 GPS], ... ]
-#    trigger_gps_array = process_trigs_for_followup(wflow.cp.get('workflow', 'trig-file'),
-#                                                   wflow.cp.get('workflow', 'segment-dir'),
-#                                                   wflow.cp.get('workflow', 'veto-directory'),
-#                                                   wflow.cp.get('workflow', 'veto-category'),
-#                                                   wflow.cp.get('workflow', 'chisq-index'),
-#                                                   wflow.cp.get('workflow', 'chisq-nhigh'),
-#                                                   map(float, wflow.cp.get('workflow', 'null-snr-threshold').split(',')),
-#                                                   wflow.cp.get('workflow', 'snr-threshold'),
-#                                                   wflow.cp.get('workflow', 'sngl-snr-threshold'),
-#                                                   wflow.cp.get('workflow', 'newsnr-threshold'),
-#                                                   wflow.cp.get('workflow', 'null-grad-thresh'),
-#                                                   wflow.cp.get('workflow', 'null-grad-val'),
-#                                                   num_followup_trigs = wflow.cp.get('pygrb_followups', 
-#                                                                                     'num-loudest-offsource-followups'))
-#    # I think then creating the q-scan jobs will be as simple as looping through the
-#    # IFOs and spinning off a job with the given GPS
-#    for trigger in trigger_gps_array:
-#        for ifo in ifos:
-#            ifo_gps = trigger_gps_array[ifos.index(ifo)]
-#            # Spin up a pycbc_plot_qscan node with --center-time = ifo_gps
-#            pass
-#    
-#    #
-#    # Missed Injection followups are harder becuase we need an injection
-#    #
-#    # These are harder because we need an injection file to pass into 
-#    # pycbc_plot_qscan. The executable to make this file is pycbc_pygrb_inj_followup.
-#    for inj_set in inj_sets: 
-#        for idx in range(0, int(wflow.cp.get('pygrb_followups', 'num-injection-followups'))):
-#            # Spin up a pycbc_pygrb_inj_followup node for each followup_inj_idx = idx. 
-#            # The required arguments are:
-#            # offsource_file, found_file, missed_file, chisq_index, chisq_nhigh, snr_threshold
-#            # newsnr_threshold, null_grad_thresh, null_grad_val, null_snr_threshold, output_file
-#            # veto_directory, veto_catagory, segment_dir, followup_inj_idx
-#            # Once that node finishes you will have the injection file to pass on to the
-#            # pycbc_plot_qscan node. Is it possible to scrape the gps time from the injection
-#            # file, or do we need to add something similar to what is above where we get a list
-#            # of gps --center-times?
-#            pass
-    
-    
+#
+# Trigger Followups (TODO)
+#
 
 # Make room for throughput histograms (TODO)
 base = rdir['workflow/throughput']
@@ -582,18 +633,28 @@ _workflow.makedir(rdir['workflow/output_map'])
 _workflow.makedir(rdir['workflow/planning'])
 
 logging.info("Path for make_results_web_page: %s", os.path.join(os.getcwd(), rdir.base))
-_workflow.make_results_web_page(wflow, os.path.join(os.getcwd(), rdir.base),
-                                template='red',
-                                explicit_dependencies=plotting_nodes+html_nodes)
+_workflow.make_results_web_page(finalize_wflow, os.path.join(os.getcwd(), rdir.base),
+                                template='red')
 
-wflow.save()
+container += wflow
+container += finalize_wflow
+
+import Pegasus.DAX3 as dax
+dep = dax.Dependency(parent=wflow.as_job, child=finalize_wflow.as_job)
+container._adag.addDependency(dep)
+
+container.save()
 logging.info("Dax written.")
 
 # Protect the open box results folder
 out_dir = rdir['open_box']
 _workflow.makedir(out_dir)
 os.chmod(out_dir, 0o0700)
-# TODO: follow up loudest offsource trigger (parent-child)
+# TODO: follow up loudest offsource trigger
+#out_dir = rdir['open_box/loudest_event/followup']
+#setup_pygrb_minifollowups(wflow, lont_h5, wflow.ifos,
+#                          'daxes', out_dir,
+#                          tags=['loudest_onsource_event'])
 
 # Close the log and flush to the html file
 logging.shutdown()
