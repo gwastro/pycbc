@@ -121,12 +121,6 @@ class Executable(ProfileShortcuts):
         self.profiles = {}
         self.transformations = {}
 
-    def get_transformation(self, site):
-        if site in self.transformations:
-            return self.transformations[site]
-        else:
-            raise ValueError("No transformation for site %s", site)
-
     def create_transformation(self, site, url):
         if url is None:
             # Rely on URL being set in a child class
@@ -149,7 +143,6 @@ class Executable(ProfileShortcuts):
                 value=value
             )
         self.transformations[site] = transform
-        return transform
 
     def add_profile(self, namespace, key, value):
         """ Add profile information to this executable

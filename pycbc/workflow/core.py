@@ -180,7 +180,7 @@ class Executable(pegasus_workflow.Executable):
         else:
             exe_site = 'condorpool_symlink'
 
-        exe_site = s.strip()
+        exe_site = exe_site.strip()
 
         if exe_url.scheme in ['', 'file']:
             # NOTE: There could be a case where the exe is available at a
@@ -223,8 +223,6 @@ class Executable(pegasus_workflow.Executable):
             logging.info("%s executable will run as %s universe"
                          % (name, self.universe))
 
-        self.set_universe(self.universe)
-
         # Determine if this executables should be run in a container
         try:
             self.container_type = cp.get('pegasus_profile-%s' % name,
@@ -265,12 +263,13 @@ class Executable(pegasus_workflow.Executable):
                                              installed=self.installed)
 
         self._set_pegasus_profile_options()
+        self.set_universe(self.universe)
 
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
 
         self.execution_site = exe_site
-        self.create_transformation(exe_site, url=exe_path)
+        self.executable_url = exe_path
 
 
     @property
@@ -286,6 +285,14 @@ class Executable(pegasus_workflow.Executable):
             errMsg = "self.ifoList must contain only one ifo to access the "
             errMsg += "ifo property. %s." %(str(self.ifo_list),)
             raise TypeError(errMsg)
+
+    def get_transformation(self):
+        if self.execution_site in self.transformations:
+            return self.transformations[self.execution_site]
+        else:
+            self.create_transformation(self.execution_site,
+                                       self.executable_url)
+            return self.get_transformation()
 
     def add_ini_profile(self, cp, sec):
         """Add profile from configuration file.
@@ -832,7 +839,7 @@ class Workflow(pegasus_workflow.Workflow):
 
 class Node(pegasus_workflow.Node):
     def __init__(self, executable, valid_seg=None):
-        transform = executable.get_transformation(site)
+        transform = executable.get_transformation(executable.execution_site)
         super(Node, self).__init__(transform)
         self.executable = executable
         self.executed = False
