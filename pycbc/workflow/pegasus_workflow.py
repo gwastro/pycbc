@@ -468,6 +468,9 @@ class Workflow(object):
                 #node.executable.in_workflow = True
                 tform_site = list(node.transformation.sites.keys())[0]
                 if not tform_site in self._sc.sites:
+                    # This block should never be accessed in the way things
+                    # are set up. However, it might be possible to hit this if
+                    # certain overrides are allowed.
                     add_site(self._sc, tform_site, self.cp,
                              out_dir=self.out_dir)
                     # NOTE: For now we *always* stage from local. This doesn't

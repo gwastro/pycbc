@@ -682,6 +682,27 @@ class Workflow(pegasus_workflow.Workflow):
     def staging_site(self):
         return ','.join(['='.join(x) for x in self._staging_site.items()])
 
+    def add_sites_from_config(self):
+        add_site(self._sc, 'local', self.cp, out_dir=self.out_dir)
+        if cp.has_option('pegasus_profile', 'pycbc|primary_site'):
+            site = cp.get('pegasus_profile', 'pycbc|primary_site')
+        else:
+            # The default if not chosen
+            site = 'condorpool_symlink'
+        add_site(self._sc, site, self.cp, out_dir=self.out_dir)
+        # NOTE: For now we *always* stage from local. This doesn't
+        #       have to always be true though.
+        self._staging_site[tform_site] = 'local'
+
+        for subsec in self.cp.get_subsections('pegasus_profile'):
+            print ('pegasus_profile' + '-' + "subsec")
+            if cp.has_option('pegasus_profile' + '-' + subsec, 'pycbc|site'):
+                site = cp.get('pegasus_profile' + '-' + subsec, 'pycbc|site')
+                add_site(self._sc, site, self.cp, out_dir=self.out_dir)
+                # NOTE: For now we *always* stage from local. This doesn't
+                #       have to always be true though.
+                self._staging_site[tform_site] = 'local'
+
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
         """
