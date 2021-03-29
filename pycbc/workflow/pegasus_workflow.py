@@ -473,6 +473,11 @@ class Workflow(object):
                     # NOTE: For now we *always* stage from local. This doesn't
                     #       have to always be true though.
                     self._staging_site[tform_site] = 'local'
+                    if hasattr(tform_site, 'do_not_stage'):
+                        self._staging_site[tform_site] = tform_site
+                    else:
+                        self._staging_site[tform_site] = 'local'
+
                 self._transformations += [node.transformation]
                 if hasattr(node, 'executable') and node.executable.container is not None and node.executable.container not in self._containers:
                     self._containers.append(node.executable.container)
