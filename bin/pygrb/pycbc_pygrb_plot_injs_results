@@ -45,11 +45,12 @@ from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
 from pycbc.results.pygrb_postprocessing_utils import construct_trials
 from pycbc.results.pygrb_postprocessing_utils import sort_trigs
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
+from pycbc.results.pygrb_postprocessing_utils import read_seg_files
 from glue.ligolw import lsctables
 
 # Deprecated
 from pylal import SimInspiralUtils, MultiInspiralUtils
-from pylal.coh_PTF_pyutils import readSegFiles, get_bestnr
+from pylal.coh_PTF_pyutils import get_bestnr
 
 plt.switch_backend('Agg')
 rc("image")
@@ -175,7 +176,7 @@ segment_dict = load_segment_dict(trig_file)
 num_slides = len(slide_dict)
 
 # Get segments
-segs = readSegFiles(opts.segment_dir)
+segs = read_seg_files(opts.segment_dir)
 
 # Construct trials
 logging.info("Constructing trials.")

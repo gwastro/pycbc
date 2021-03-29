@@ -196,6 +196,11 @@ def pygrb_plot_opts_parser(usage='', description=None, version=None):
     parser.add_argument('--plot-caption', default=None,
                         help="If given, use this as the plot caption")
     
+    # This is originally for SNR timeseries plots 
+    parser.add_argument('--central-time', type=float, default=None,
+                        help="Center plot on the given GPS time. If omitted, "+
+                        "use the GRB trigger time")
+
     # pygrb_efficiency only options: start here
     # Does this differ from trig-file? --> it doesn't contain the onsource.
     # NB: for now removed the requirement to specify trig_file.
@@ -330,25 +335,51 @@ def format_single_chisqs(trig_ifo_cs, ifos):
 
 
 # =============================================================================
-# Reset times so that t=0 is corresponds to the GRB trigger time
+# Wrapper to read segments files
 # =============================================================================
 
-def reset_times(seg_dir, trig_data, inj_data, inj_file):
-    """Reset times so that t=0 is corresponds to the GRB trigger time"""
+def read_seg_files(seg_dir):
+    """Given the segments directroy, read segments files"""
     segs = readSegFiles(seg_dir)
+
+    return segs 
+
+
+# =============================================================================
+# Find GRB trigger time
+# =============================================================================
+
+def get_grb_time(seg_dir):
+    """Determine GRB trigger time"""
+    segs = read_seg_files(seg_dir)
     grb_time = segs['on'][1] - 1
-    start = int(min(trig_data.time)) - grb_time
-    end = int(max(trig_data.time)) - grb_time
+
+    return grb_time
+
+
+# =============================================================================
+# Find start and end times of trigger/injecton data relative to a given time
+# =============================================================================
+def get_start_end_times(data, central_time):
+    """Determine start and end times of data relative to central_time"""
+    start = int(min(data.time)) - central_time
+    end = int(max(data.time)) - central_time
     duration = end-start
     start -= duration*0.05
     end += duration*0.05
-    trig_data.time = [t-grb_time for t in trig_data.time]
 
-    if inj_file:
-        inj_data.time = [t-grb_time for t in inj_data.time]
+    return start, end
 
-    return grb_time, start, end, trig_data, inj_data
 
+# =============================================================================
+# Reset times so that t=0 is corresponds to the given trigger time
+# =============================================================================
+
+def reset_times(data, trig_time):
+    """Reset times in data so that t=0 corresponds to the trigger time provided"""
+    data.time = [t-trig_time for t in data.time]
+
+    return data
 
 # =============================================================================
 # Extract trigger/injection data produced by PyGRB
@@ -1179,7 +1210,7 @@ def process_trigs_for_followup(trig_file, seg_dir, veto_dir, veto_cat,
     num_slides = len(slide_dict)
 
     # Get segments
-    segs = readSegFiles(seg_dir)
+    segs = read_seg_files(seg_dir)
 
     # Construct trials
     trial_dict = construct_trials(num_slides, segs, segment_dict, ifos, 
