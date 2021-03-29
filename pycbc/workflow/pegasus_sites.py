@@ -13,6 +13,7 @@ possible to implement a new site, but not sure how that would work in practice.
 """
 
 import os
+import distutils
 import urllib.parse
 from urllib.parse import urljoin
 from urllib.request import pathname2url
@@ -111,6 +112,9 @@ def add_condorpool_copy_site(sitecat, cp):
     sitecat.add_sites(site)
 
 def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
+    # local_url must end with a '/'
+    if not local_url.endswith('/'):
+        local_url = local_url + '/'
 
     site = Site("condorpool_shared", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
@@ -152,6 +156,7 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
 # Would like to add this, but need to figure out some issues with copy
 # protocol. Probably condorio would be the ideal thing to use here, but that
 # doesn't work with our INSPIRAL 111111/FILENAME.xml LFN schem
+
 # def add_condorpool_nonfs_site(sitecat, cp):
 
 def add_osg_site(sitecat, cp):
