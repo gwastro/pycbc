@@ -114,6 +114,15 @@ def add_condorpool_shared_site(sitecat, cp):
 
     site = Site("condorpool_shared", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
+
+    # It's annoying that this is needed!
+    local_dir = Directory(Directory.SHARED_SCRATCH,
+                          path=os.path.join(local_path, 'cpool-site-scratch'))
+    local_file_serv = FileServer(urljoin(local_url, 'cpool-site-scratch'),
+                                 Operation.ALL)
+    local_dir.add_file_servers(local_file_serv)
+    local.add_directories(local_dir)
+
     
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
