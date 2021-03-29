@@ -110,7 +110,7 @@ def add_condorpool_copy_site(sitecat, cp):
                       value="True")
     sitecat.add_sites(site)
 
-def add_condorpool_shared_site(sitecat, cp):
+def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
 
     site = Site("condorpool_shared", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
@@ -121,13 +121,15 @@ def add_condorpool_shared_site(sitecat, cp):
     local_file_serv = FileServer(urljoin(local_url, 'cpool-site-scratch'),
                                  Operation.ALL)
     local_dir.add_file_servers(local_file_serv)
-    local.add_directories(local_dir)
+    site.add_directories(local_dir)
 
     
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="sharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
+                      value="true")
+    site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
                       value="true")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
@@ -175,7 +177,7 @@ def add_site(sitecat, sitename, cp, out_dir=None):
     elif sitename == 'condorpool_copy':
         add_condorpool_copy_site(sitecat, cp)
     elif sitename == 'condorpool_shared':
-        add_condorpool_shared_site(sitecat, cp)
+        add_condorpool_shared_site(sitecat, cp, out_dir, local_url)
     elif sitename == 'osg':
         add_osg_site(sitecat, cp)
     else:
