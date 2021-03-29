@@ -692,9 +692,12 @@ class Workflow(pegasus_workflow.Workflow):
             # The default if not chosen
             site = 'condorpool_symlink'
         add_site(self._sc, site, self.cp, out_dir=self.out_dir)
-        # NOTE: For now we *always* stage from local. This doesn't
-        #       have to always be true though.
-        self._staging_site[site] = 'local'
+        # NOTE: For now we *always* stage from local or the site itself.
+        #       This doesn't have to always be true though.
+        if hasattr(site, 'do_not_stage'):
+            self._staging_site[site] = site
+        else:
+            self._staging_site[site] = 'local'
 
         subsections = [sec for sec in self.cp.sections()
                        if sec.startswith('pegasus_profile-')]

@@ -143,6 +143,7 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
     site.add_profiles(Namespace.CONDOR, key="+flock_local",
                       value="True")
     sitecat.add_sites(site)
+    site.do_not_stage = True
 
 # Would like to add this, but need to figure out some issues with copy
 # protocol. Probably condorio would be the ideal thing to use here, but that
