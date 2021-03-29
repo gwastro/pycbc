@@ -694,7 +694,8 @@ class Workflow(pegasus_workflow.Workflow):
         add_site(self._sc, site, self.cp, out_dir=self.out_dir)
         # NOTE: For now we *always* stage from local or the site itself.
         #       This doesn't have to always be true though.
-        if hasattr(site, 'do_not_stage'):
+        # FIXME: Don't want to hardcode this!
+        if site in ['condorpool_shared']:
             self._staging_site[site] = site
         else:
             self._staging_site[site] = 'local'
