@@ -40,6 +40,8 @@ from pycbc.results.pygrb_postprocessing_utils import PygrbFilterOutput
 from pycbc.results.pygrb_postprocessing_utils import pygrb_shared_plot_setups
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plotter
+from pycbc.results.pygrb_postprocessing_utils import get_grb_time
+from pycbc.results.pygrb_postprocessing_utils import get_start_end_times
 from pycbc.results.pygrb_postprocessing_utils import reset_times
 
 plt.switch_backend('Agg')
@@ -62,7 +64,7 @@ if opts.verbose:
     level = logging.INFO
 else:
     level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
+logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
                     level=level)
 
 trig_file = os.path.abspath(opts.trig_file)
@@ -119,17 +121,27 @@ injs = None
 if inj_file:
     injs = load_injections(inj_file, vetoes)
 
-# Extract injection data
+# Extract (or initialize) injection data
 inj_data = PygrbFilterOutput(injs, ifos,
                              lsctables.MultiInspiralTable.loadcolumns,
                              "injections", opts)
 
-# Generate plots
-logging.info("Plotting...")
+# Determine the central time (t=0): default is the GRB trigger time
+if opts.central_time is not None:
+    central_time = opts.central_time
+else:
+    central_time = get_grb_time(seg_dir)
+
+# Determine trigger data start and end times relative to the central time
+start, end = get_start_end_times(trig_data, central_time)
 
 # Reset trigger and injection times
-grb_time, start, end, trig_data, inj_data = reset_times(seg_dir, trig_data,
-                                                        inj_data, inj_file)
+trig_data = reset_times(trig_data, central_time)
+if inj_file:
+    inj_data = reset_times(inj_data, central_time)
+
+# Generate plots
+logging.info("Plotting...")
 
 # Determine what goes on the vertical axis
 y_labels = {'coherent': "Coherent SNR",
@@ -160,6 +172,6 @@ if opts.x_lims:
     xlims = map(float, xlims.split(','))
 pygrb_plotter(trig_data.time, trig_snr_data,
               inj_data.time, inj_snr_data, inj_file,
-              "Time since %s" % (str(grb_time)), y_label, outfile,
+              "Time since %.3f (s)" % (central_time), y_label, outfile,
               xlims=xlims, use_logs=False, cmd=' '.join(sys.argv),
               plot_title=opts.plot_title, plot_caption=opts.plot_caption)
