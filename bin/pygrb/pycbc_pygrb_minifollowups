@@ -188,28 +188,22 @@ for num_event in range(num_events):
     try:
         for ifo in ifos:
             time_shift = fp[ifo+' time shift (s)'][num_event] 
-            # TODO: check whether this should be -time_shift or +time_shift
-            ifo_time = gps_time + time_shift
+            ifo_time = gps_time - time_shift
             files += make_timeseries_plot(workflow, 'single', gps_time, ifo_time,
                                           args.output_dir, ifo=ifo, 
+                                          tags=args.tags + [str(num_event)])
+            files += mini.make_qscan_plot(workflow, ifo, ifo_time,
+                                          args.output_dir,
                                           tags=args.tags + [str(num_event)])
     except:
         for snr_type in ['reweighted', 'coherent']:
             files += make_timeseries_plot(workflow, snr_type, gps_time, gps_time,
                                           args.output_dir, ifo=None, 
                                           tags=args.tags + [str(num_event)])
-    for ifo in ifos:
-        # TODO: the following makes sense if injections are on unslid data 
-        #       [Loudest offsource events are on time-slid data.]
-        try:
-            time_shift = fp[ifo+' time shift (s)'][num_event] 
-        except:
-            time_shift = 0.
-        ifo_time = gps_time + time_shift
-        #files += mini.make_qscan_plot(workflow, args.instrument, ifo_time,
-        files += mini.make_qscan_plot(workflow, ifo, ifo_time,
-                                      args.output_dir,
-                                      tags=args.tags + [str(num_event)])
+        for ifo in ifos:
+            files += mini.make_qscan_plot(workflow, ifo, gps_time,
+                                          args.output_dir,
+                                          tags=args.tags + [str(num_event)])
 
     layouts += list(layout.grouper(files, 2))
 

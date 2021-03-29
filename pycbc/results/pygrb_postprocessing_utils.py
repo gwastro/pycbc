@@ -32,6 +32,7 @@ import copy
 import numpy
 from scipy import stats
 import logging
+from pycbc.detector import Detector
 from pycbc.results import save_fig_with_metadata
 # TODO: imports to fix/remove
 try:
