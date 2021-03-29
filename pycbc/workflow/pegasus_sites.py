@@ -142,8 +142,12 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
                       value="'False'")
     site.add_profiles(Namespace.CONDOR, key="+flock_local",
                       value="True")
+    # Need to set PEGASUS_HOME
+    peg_home = distutils.spawn.find_executable('pegasus-plan')
+    assert(peg_home.endswith('bin/pegasus-plan'))
+    peg_home = peg_home.replace('bin/pegasus-plan', '')
+    site.add_profiles(Namespace.ENV, key="PEGASUS_HOME", value=peg_home)
     sitecat.add_sites(site)
-    site.do_not_stage = True
 
 # Would like to add this, but need to figure out some issues with copy
 # protocol. Probably condorio would be the ideal thing to use here, but that

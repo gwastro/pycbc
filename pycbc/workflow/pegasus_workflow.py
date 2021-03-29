@@ -473,7 +473,8 @@ class Workflow(object):
                     # NOTE: For now we *always* stage from local. This doesn't
                     #       have to always be true though.
                     self._staging_site[tform_site] = 'local'
-                    if hasattr(tform_site, 'do_not_stage'):
+                    # FIXME: Don't want to hardcode this!
+                    if tform_site in ['condorpool_shared']:
                         self._staging_site[tform_site] = tform_site
                     else:
                         self._staging_site[tform_site] = 'local'
