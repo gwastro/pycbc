@@ -16,7 +16,8 @@ import pycbc
 from pycbc.filter import sigmasq
 from pycbc.io import live, WaveformArray
 from pycbc.types import TimeSeries, FrequencySeries, \
-        MultiDetMultiColonOptionAction, MultiDetOptionAppendAction
+        MultiDetMultiColonOptionAction, MultiDetOptionAppendAction, \
+        MultiDetOptionAction
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc import frame, waveform, dq
@@ -48,6 +49,8 @@ def default_frame_type(time, ifo):
 def default_channel_name(time, ifo):
     """Sensible defaults for channel name based on interferometer and time.
     """
+    if opt.fake_strain:
+        return ifo + ':FAKE_DATA'
     if time < 1137254517:
         # O1
         if ifo in ['H1', 'L1']:
@@ -72,7 +75,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          frame_types=None, channel_names=None,
          gracedb_server=None, test_event=True,
          custom_frame_files=None, approximant=None, detector_state=None,
-         veto_definer=None):
+         veto_definer=None, injection_file=None, fake_strain=None, fake_strain_seed=None):
 
     if not test_event and not gracedb_server:
         raise RuntimeError('a GraceDB URL must be specified if not a test event.')
@@ -185,37 +188,48 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append("--trigger-time"),command.append(str(np.round(trig_time,5)))
         command.append("--window"),command.append(str(window))
 
-        if custom_frame_files is None or ifo not in custom_frame_files:
-            command.append("--frame-type")
-            command.append(frame_types[ifo])
-        else:
-            logging.info("Check if the segment in the custom frame file is safe")
-            fr_start_times = []
-            fr_end_times = []
-            for custom_frame in custom_frame_files[ifo]:
-                try:
-                    frame_data = frame.read_frame(custom_frame, channel_names[ifo])
-                except RuntimeError:
-                    msg = 'Channel name in {} is not {}'.format(
-                            custom_frame, channel_names[ifo])
-                    raise RuntimeError(msg)
-                fr_start_times.append(frame_data.start_time)
-                fr_end_times.append(frame_data.end_time)
-            if gps_start_time < np.min(fr_start_times):
-                msg = 'Start time of {} must be before the required start time {}'
-                msg = msg.format(np.min(fr_start_times), gps_start_time)
-                raise RuntimeError(msg)
-            if np.max(fr_end_times) < gps_end_time:
-                msg = 'End time of {} must be after the required end time {}'
-                msg = msg.format(np.max(fr_end_times), gps_end_time)
-                raise RuntimeError(msg)
-            if trig_time < np.min(fr_start_times) or np.max(fr_end_times) < trig_time:
-                msg = 'Trigger time must be within your frame file(s)'
-                raise RuntimeError(msg)
+        if injection_file:
+            command.append("--injection-file"),command.append(injection_file)
 
-            command.append("--frame-files")
-            for custom_frame in custom_frame_files[ifo]:
-                command.append(custom_frame)
+        if fake_strain[ifo] is not None:
+            command.append("--fake-strain")
+            command.append(fake_strain[ifo])
+            if fake_strain_seed[ifo] is not None:
+                command.append("--fake-strain-seed")
+                command.append(str(fake_strain_seed[ifo]))
+
+        else:
+            if custom_frame_files is None or ifo not in custom_frame_files:
+                command.append("--frame-type")
+                command.append(frame_types[ifo])
+            else:
+                logging.info("Check if the segment in the custom frame file is safe")
+                fr_start_times = []
+                fr_end_times = []
+                for custom_frame in custom_frame_files[ifo]:
+                    try:
+                        frame_data = frame.read_frame(custom_frame, channel_names[ifo])
+                    except RuntimeError:
+                        msg = 'Channel name in {} is not {}'.format(
+                                custom_frame, channel_names[ifo])
+                        raise RuntimeError(msg)
+                    fr_start_times.append(frame_data.start_time)
+                    fr_end_times.append(frame_data.end_time)
+                if gps_start_time < np.min(fr_start_times):
+                    msg = 'Start time of {} must be before the required start time {}'
+                    msg = msg.format(np.min(fr_start_times), gps_start_time)
+                    raise RuntimeError(msg)
+                if np.max(fr_end_times) < gps_end_time:
+                    msg = 'End time of {} must be after the required end time {}'
+                    msg = msg.format(np.max(fr_end_times), gps_end_time)
+                    raise RuntimeError(msg)
+                if trig_time < np.min(fr_start_times) or np.max(fr_end_times) < trig_time:
+                    msg = 'Trigger time must be within your frame file(s)'
+                    raise RuntimeError(msg)
+
+                command.append("--frame-files")
+                for custom_frame in custom_frame_files[ifo]:
+                    command.append(custom_frame)
 
         command.append("--channel-name")
         command.append(channel_names[ifo])
@@ -347,10 +361,10 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     # Defining the approximant to feed into BAYESTAR
 
     row = WaveformArray.from_kwargs(
-	    mass1=opt.mass1,
-	    mass2=opt.mass2,
-	    spin1z=opt.spin1z,
-	    spin2z=opt.spin2z)
+        mass1=mass1,
+        mass2=mass2,
+        spin1z=spin1z,
+        spin2z=spin2z)
 
     approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0]
 
@@ -448,6 +462,14 @@ if __name__ == '__main__':
                         action=MultiDetOptionAppendAction,
                         help='Lists of local frame files, e.g., '
                              'H1:/path/to/frame/file L1:/path/to/frame/file')
+    parser.add_argument('--injection-file', type=str,
+                        help='Optional path to an injection file.')
+    parser.add_argument('--fake-strain', type=str, 
+                        action=MultiDetOptionAction, metavar="IFO:FAKE_STRAIN",
+                        help="The set of fake-strains for each detector")
+    parser.add_argument('--fake-strain-seed', type=int,
+                        action=MultiDetOptionAction, metavar="IFO:FAKE_STRAIN_SEED",
+                        help="The set of fake-strains-seeds for each detector")
 
     opt = parser.parse_args()
 
@@ -465,4 +487,5 @@ if __name__ == '__main__':
          test_event=not opt.enable_production_gracedb_upload,
          custom_frame_files=opt.custom_frame_file,
          approximant=opt.approximant, detector_state=opt.detector_state,
-         veto_definer=opt.veto_definer)
+         veto_definer=opt.veto_definer, injection_file=opt.injection_file, 
+         fake_strain=opt.fake_strain, fake_strain_seed=opt.fake_strain_seed)
