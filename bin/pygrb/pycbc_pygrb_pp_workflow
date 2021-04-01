@@ -35,7 +35,6 @@ import pycbc.version
 import pycbc.workflow as _workflow
 from pycbc.workflow.plotting import PlotExecutable #, excludestr, requirestr
 from pycbc.results import create_versioning_page, layout, pygrb_postprocessing_utils
-#from pycbc.results.pygrb_postprocessing_utils import process_trigs_for_followup
 from pycbc.results.versioning import save_fig_with_metadata
 #from pprint import pprint
 from Pegasus import DAX3 as dax

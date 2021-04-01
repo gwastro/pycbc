@@ -46,11 +46,11 @@ from pycbc.results.pygrb_postprocessing_utils import construct_trials
 from pycbc.results.pygrb_postprocessing_utils import sort_trigs
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
+from pycbc.results.pygrb_postprocessing_utils import get_bestnr
 from glue.ligolw import lsctables
 
 # Deprecated
 from pylal import SimInspiralUtils, MultiInspiralUtils
-from pylal.coh_PTF_pyutils import get_bestnr
 
 plt.switch_backend('Agg')
 rc("image")
