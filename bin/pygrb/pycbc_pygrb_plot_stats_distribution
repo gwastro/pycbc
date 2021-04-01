@@ -42,11 +42,11 @@ from pycbc.results.pygrb_postprocessing_utils import sort_trigs
 from pycbc.results.pygrb_postprocessing_utils import sort_stat
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
+from pycbc.results.pygrb_postprocessing_utils import get_bestnr
 from glue.ligolw import lsctables
 
 # Deprecated
-from pylal import plotutils
-from pylal.coh_PTF_pyutils import get_bestnr
+from pylal.plotutils import CumulativeHistogramPlot
 
 plt.switch_backend('Agg')
 rc("image", cmap="cividis_r")
@@ -212,9 +212,9 @@ data_dict = {"bestnr": full_time_veto_max_bestnr,
              "snruncut": full_time_veto_max_snr_uncut}
 fig = plt.figure()
 ax = fig.gca()
-cumplot = plotutils.CumulativeHistogramPlot(x_label_dict[stat],
-                                            "False alarm probability",
-                                            "")
+cumplot = CumulativeHistogramPlot(x_label_dict[stat],
+                                  "False alarm probability",
+                                  "")
 cumplot.add_background([item] for item in data_dict[stat])
 # TODO: promote this to an option
 cumplot.finalize(num_bins=50)

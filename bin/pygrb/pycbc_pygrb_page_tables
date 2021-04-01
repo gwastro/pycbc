@@ -45,10 +45,9 @@ from pycbc.results.pygrb_postprocessing_utils import sort_trigs
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import mc_cal_wf_errs
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
+from pycbc.results.pygrb_postprocessing_utils import get_f_resp
+from pycbc.results.pygrb_postprocessing_utils import get_bestnr
 from glue.ligolw import lsctables
-
-# Deprecated
-from pylal.coh_PTF_pyutils import get_bestnr, get_f_resp
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
