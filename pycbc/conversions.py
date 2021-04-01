@@ -937,25 +937,26 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
         same as ``f0``.
     """
     f0, tau = {}, {}
-    key = '{}{}{}'
     for lmn in modes:
         if lmn.endswith(MINUS_M_SUFFIX):
             msign = -1
+            key = '{}{}{}' + MINUS_M_SUFFIX
         else:
             msign = 1
+            key = '{}{}{}'
         l, m, nmodes = int(lmn[0]), msign*int(lmn[1]), int(lmn[2])
         tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, nmodes)
         if nmodes == 1:
             # in this case, tmp_f0 and tmp_tau will just be floats
-            f0[key.format(l, m, '0')] = tmp_f0
-            tau[key.format(l, m, '0')] = tmp_tau
+            f0[key.format(l, abs(m), '0')] = tmp_f0
+            tau[key.format(l, abs(m), '0')] = tmp_tau
         else:
             for n in range(nmodes):
                 # we need to wrap tmp_f0 with formatreturn to ensure that if
                 # only a mass, spin pair was requested, the value stored to
                 # the dict is a float
-                f0[key.format(l, m, n)] = formatreturn(tmp_f0[..., n])
-                tau[key.format(l, m, n)] = formatreturn(tmp_tau[..., n])
+                f0[key.format(l, abs(m), n)] = formatreturn(tmp_f0[..., n])
+                tau[key.format(l, abs(m), n)] = formatreturn(tmp_tau[..., n])
     return f0, tau
 
 

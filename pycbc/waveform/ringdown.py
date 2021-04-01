@@ -25,7 +25,7 @@
 """Generate ringdown templates in the time and frequency domain.
 """
 
-import re, numpy, lal
+import re, numpy, lal, lalsimulation
 from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
 from pycbc.conversions import (get_lm_f0tau_allmodes, MINUS_M_SUFFIX)
@@ -106,9 +106,9 @@ def format_lmns(lmns):
         # to a string
         # lmn = lmn.strip(" b'")
         # Try to convert to int and then str, to ensure the right format
-        minusm = lmn.endswith(MINUS_M_SUFFIX):
+        minusm = lmn.endswith(MINUS_M_SUFFIX)
         if minusm:
-            lmn = lmn[1:]
+            lmn = lmn.replace(MINUS_M_SUFFIX, '')
         lmn = str(int(lmn))
         if len(lmn) != 3:
             raise ValueError('Format of parameter lmns not recognized. See '
@@ -143,20 +143,29 @@ def lm_amps_phases(**kwargs):
     """
     lmns = format_lmns(kwargs['lmns'])
     amps, phis = {}, {}
-    # amp220 is always required, because the amplitudes of subdominant modes
-    # are given as fractions of amp220.
-    try:
-        amps['220'] = kwargs['amp220']
-    except KeyError:
-        raise ValueError('amp220 is always required')
-    # Get amplitudes of subdominant modes and all phases
+    # reference mode
+    ref_amp = kwargs.pop('ref_amp', None)
+    if ref_amp is None:
+        # default to the 220 mode
+        ref_amp = 'amp220'
+    if isinstance(ref_amp, str) and ref_amp.startswith('amp'):
+        # assume a mode was provided; check if the mode exists
+        ref_mode = ref_amp
+        try:
+            ref_amp = kwargs.pop(ref_mode)
+        except KeyError:
+            raise ValueError("Must provide an amplitude for the reference "
+                             "mode {}".format(ref_amp))
+    else:
+        ref_mode = None
+    # Get amplitudes and phases of the modes
     for lmn in lmns:
         overtones = parse_mode(lmn)
         for mode in overtones:
-            # If it is the 22 mode, skip 220 amplitude
-            if mode != '220':
+            # skip the reference mode
+            if mode != ref_mode:
                 try:
-                    amps[mode] = kwargs['amp' + mode] * amps['220']
+                    amps[mode] = kwargs['amp' + mode] * ref_amp
                 except KeyError:
                     raise ValueError('amp{} is required'.format(mode))
             try:
@@ -429,6 +438,35 @@ def apply_taper(tau, amp, phi, delta_t, l=2, m=2, inclination=None, pol=None):
 #### Basic functions to generate damped sinusoid
 ######################################################
 
+def td_lm_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
+                          l=2, m=2, inclination=None, azimuthal=None,
+                          spheroidal=False, final_spin=None):
+    """Return a time domain damped sinusoid (plus and cross polarizations)
+    with central frequency f_0, damping time tau, amplitude amp and phase phi.
+    The l, m, and inclination parameters are used for the spherical harmonics.
+    """
+
+    tlen = int(t_final/delta_t) + 1
+    times = numpy.linspace(0, t_final, num=tlen)
+
+    if inclination is None:
+        inclination = 0.
+    if azimuthal is None:
+        azimuthal = 0.
+    if spheroidal:
+        if final_spin is None:
+            raise ValueError("must provide a final_spin to use the "
+                             "spheroidal harmonics")
+        xlm = lalsimulation.SimBlackHoleRingdownSpheroidalWaveFunction(
+                inclination, final_spin, l, m, -2)
+    else:
+        xlm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, m)
+    phase = 1j*(two_pi * f_0 * times + phi + m*azimuthal)
+    hlm = amp * numpy.exp(-times/tau + phase)
+    hlm *= xlm
+    return hlm.real, -hlm.imag
+
+
 def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
                        l=2, m=2, inclination=None, pol=None):
     """Return a time domain damped sinusoid (plus and cross polarizations)
@@ -543,16 +581,32 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
         for mode in taus:
             if 'delta_tau{}'.format(mode) in input_params:
                 taus[mode] += input_params['delta_tau{}'.format(mode)] * taus[mode]
-
+    # check if we're using spheroidal harmonics or not
+    spheroidal = 'spheroidal' in input_params and input_params['spheroidal']
+    if spheroidal and 'final_spin' not in input_params:
+        raise ValueError('spheroidal harmonics require final_spin to be '
+                         'provided')
     if domain == 'td':
         outplus, outcross = td_output_vector(freqs, taus,
                             input_params['taper'], input_params['delta_t'],
                             input_params['t_final'])
         for lmn in freqs:
-            hplus, hcross = td_damped_sinusoid(freqs[lmn], taus[lmn],
-                            amps[lmn], phis[lmn], outplus.delta_t,
-                            outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
-                            input_params['inclination'], pols[lmn])
+            #hplus, hcross = td_damped_sinusoid(freqs[lmn], taus[lmn],
+            #                amps[lmn], phis[lmn], outplus.delta_t,
+            #                outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
+            #                input_params['inclination'], pols[lmn])
+            if spheroidal:
+                final_spin = input_params['final_spin']
+            else:
+                final_spin = None
+            if amps[lmn] == 0.:
+                # skip
+                continue
+            hplus, hcross = td_lm_damped_sinusoid(
+                freqs[lmn], taus[lmn], amps[lmn], phis[lmn], outplus.delta_t,
+                outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
+                input_params['inclination'], pols[lmn],
+                spheroidal=spheroidal, final_spin=final_spin)
             if input_params['taper'] and outplus.delta_t < taus[lmn]:
                 taper_hp, taper_hc = apply_taper(taus[lmn], amps[lmn],
                                      phis[lmn], outplus.delta_t, int(lmn[0]),
