@@ -134,7 +134,7 @@ class UniformPowerLaw(bounded.BoundedDist):
             self._norm *= self.dim  / \
                                    (self._bounds[p][1]**(self.dim) -
                                     self._bounds[p][0]**(self.dim))
-            self._lognorm += numpy.log(self._norm)
+        self._lognorm = numpy.log(self._norm)
 
     @property
     def norm(self):

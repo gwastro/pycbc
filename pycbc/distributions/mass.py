@@ -174,7 +174,7 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         for p in self._params:
             self._norm /= self._cdf_param(p, self._bounds[p][1]) - \
                 self._cdf_param(p, self._bounds[p][0])
-            self._lognorm += numpy.log(self._norm)
+        self._lognorm = numpy.log(self._norm)
 
     @property
     def norm(self):
