@@ -439,7 +439,7 @@ def apply_taper(tau, amp, phi, delta_t, l=2, m=2, inclination=None, pol=None):
 ######################################################
 
 def td_lm_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
-                          l=2, m=2, inclination=None, azimuthal=None,
+                          l=2, m=2, inclination=None, azimuthal=None, pol=None,
                           spheroidal=False, final_spin=None):
     """Return a time domain damped sinusoid (plus and cross polarizations)
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
@@ -459,6 +459,8 @@ def td_lm_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
                              "spheroidal harmonics")
         xlm = lalsimulation.SimBlackHoleRingdownSpheroidalWaveFunction(
                 inclination, final_spin, l, m, -2)
+    elif pol is not None:
+        xlm = numpy.exp(1j*pol)
     else:
         xlm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, m)
     phase = 1j*(two_pi * f_0 * times + phi + m*azimuthal)
@@ -604,8 +606,8 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
                 continue
             hplus, hcross = td_lm_damped_sinusoid(
                 freqs[lmn], taus[lmn], amps[lmn], phis[lmn], outplus.delta_t,
-                outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
-                input_params['inclination'], pols[lmn],
+                outplus.sample_times[-1], l=int(lmn[0]), m=int(lmn[1]),
+                inclination=input_params['inclination'], pol=pols[lmn],
                 spheroidal=spheroidal, final_spin=final_spin)
             if input_params['taper'] and outplus.delta_t < taus[lmn]:
                 taper_hp, taper_hc = apply_taper(taus[lmn], amps[lmn],
