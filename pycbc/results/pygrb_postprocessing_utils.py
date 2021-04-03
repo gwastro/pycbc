@@ -38,22 +38,19 @@ from pycbc.results import save_fig_with_metadata
 try:
     from glue import segments
     from glue.ligolw import utils, lsctables, ligolw, table
+    from glue.segmentsUtils import fromsegwizard
 except ImportError:
     pass
 try:
     #TODO: Look at pycbc/io/hdf.py
     from pylal import MultiInspiralUtils
     from pylal.coh_PTF_pyutils import get_bestnr as pylal_get_bestnr
-    from pylal.coh_PTF_pyutils import get_det_response as pylal_get_det_response
-    from pylal.coh_PTF_pyutils import get_f_resp as pylal_get_f_resp
-    from pylal.coh_PTF_pyutils import readSegFiles
-    from pylal.dq import dqSegmentUtils
 except ImportError:
     pass
 # Only if a backend is not already set ... This should really *not* be done
 # here, but in the executables you should set matplotlib.use()
 # This matches the check that matplotlib does internally, but this *may* be
-# version dependenant. If this is a problem then remove this and control from
+# version dependent. If this is a problem then remove this and control from
 # the executables directly.
 import matplotlib
 if 'matplotlib.backends' not in sys.modules:  # nopep8
@@ -63,50 +60,42 @@ from matplotlib import pyplot as plt
 
 
 # =============================================================================
-# Wrappers to avoid import pylal in executables: these pylal functions should
-# then be removed by acting here first.
-# TODO: switch here to PyCBC functions when ready.
-# =============================================================================
-# =============================================================================
 # Function to calculate the antenna factors F+ and Fx
 # =============================================================================
-def get_det_response(longitude, latitude, time):
-    f_plus, f_cross = pylal_get_det_response(longitude, latitude, time)
-    """Returns the antenna responses F+ and Fx of an IFO at a """
-    """given sky location and time."""
-    return f_plus, f_cross
+# TODO: the call, e.g., Detector("H1", reference_time=None) will not always
+# work because we are on Python 2.7 and therefore on an old version of astropy
+# which cannot download recent enough IERS tables. TEMPORARILY use the
+# default time (GW150914) as reference, thus approximating the sidereal time.
+def get_antenna_factors(antenna, ra, dec, geocent_time):
+    """Returns the antenna responses F+ and Fx of an IFO (passed as pycbc """
+    """Detector type) at a given sky location and time."""
 
-# TODO: Check units when switching!
-#def get_antenna_factors(ifo, ra, dec, geocent_time):
-#    """Returns the antenna responses F+ and Fx of an IFO at a """
-#    """given sky location and time."""
-#
-#    i = Detector(ifo, reference_time=None)
-#    f_plus, f_cross = i.antenna_pattern(ra, dec, 0, geocent_time)
-#
-#    return f_plus, f_cross
+    f_plus, f_cross = antenna.antenna_pattern(ra, dec, 0, geocent_time)
+
+    return f_plus, f_cross
 
 
 # =============================================================================
 # Function to calculate the antenna response F+^2 + Fx^2
 # =============================================================================
-def get_f_resp(inj):
-    responses_dict = pylal_get_f_resp(inj)
-    return responses_dict
+def get_antenna_single_response(antenna, ra, dec, geocent_time):
+    """Returns the antenna response F+^2 + Fx^2 of an IFO (passed as pycbc """
+    """Detector type) at a given sky location and time."""
 
+    fp, fc = get_antenna_factors(antenna, ra, dec, geocent_time)
 
-# TODO: the function above returns a dictionary and takes the injection/trigger
-# as argument. The one below does not do either of thess things.
-#def get_antenna_response(ifo, ra, dec, geocent_time):
-#    """Returns the antenna response F+^2 + Fx^2 of an IFO at a """
-#    """given sky location and time."""
-#
-#    fp, fc = get_antenna_factors(ifo, ra, dec, geocent_time)
-#
-#    return fp**2 + fc**2
+    return fp**2 + fc**2
+
+# Vectorize the function above on all but the first argument
+get_antenna_responses = numpy.vectorize(get_antenna_single_response,\
+                                    otypes=[float])
+get_antenna_responses.excluded.add(0)
 
 
 # =============================================================================
+# Wrapper to avoid import pylal in executables: switch here from this pylal
+# function to PyCBC functions when ready.
+# 
 # Function to calculate the detection statistic
 # =============================================================================
 def get_bestnr(trig, q=4.0, n=3.0, null_thresh=(4.25,6), snr_threshold=6.,\
@@ -162,8 +151,11 @@ def get_bestnr(trig, q=4.0, n=3.0, null_thresh=(4.25,6), snr_threshold=6.,\
 #            i = ifo.lower()
 #        else:
 #            i = ifo[0].lower()
+##        sens[ifo] = getattr(trig, 'sigmasq_%s' % i.lower()) * \
+##                        sum(numpy.array([fPlus[ifo], fCross[ifo]])**2)
 #        sens[ifo] = getattr(trig, 'sigmasq_%s' % i.lower()) * \
-#                        sum(numpy.array([fPlus[ifo], fCross[ifo]])**2)
+#                        get_antenna_single_response(ifo, self.ra[i],
+#                                                    self.dec[i], self.time[i])
 #    ifos.sort(key=lambda ifo: sens[ifo], reverse=True)
 #    if len(ifos) > 1:
 #        for i in xrange(0, 2):
@@ -472,10 +464,20 @@ def format_single_chisqs(trig_ifo_cs, ifos):
 # =============================================================================
 
 def read_seg_files(seg_dir):
-    """Given the segments directroy, read segments files"""
-    segs = readSegFiles(seg_dir)
+    """Given the segments directory, read segments files"""
 
-    return segs 
+    times = {}
+    keys = ["buffer", "off", "on"]
+    file_names = ["bufferSeg.txt","offSourceSeg.txt","onSourceSeg.txt"]
+
+    for key,file_name in zip(keys, file_names):
+        segs = fromsegwizard(open(os.path.join(seg_dir,file_name), 'r'))
+        if len(segs)>1:
+            logging.error('More than one segment, an error has occured.')
+            sys.exit()
+        times[key] = segs[0]
+
+    return times
 
 
 # =============================================================================
@@ -631,32 +633,27 @@ class PygrbFilterOutput(object):
                 logging.info("%d %s found.", num_trigs_or_injs, output_type)
             # Deal with the sigma-squares (historically called sigmas here)
             if output_type == "triggers":
+                # Get antenna response based parameters
+                self.ra = trigs_or_injs.get_column('ra')
+                self.longitude = numpy.degrees(self.ra)
+                self.dec = trigs_or_injs.get_column('dec')
+                self.latitude = numpy.degrees(self.dec)
+                self.f_resp = {}
                 sigma = trigs_or_injs.get_sigmasqs()
                 self.sigma_tot = numpy.zeros(num_trigs_or_injs)
-                # Get antenna response based parameters
-                self.longitude = numpy.degrees(trigs_or_injs.get_column('ra'))
-                self.latitude = numpy.degrees(trigs_or_injs.get_column('dec'))
-                self.f_resp = dict((ifo, numpy.empty(num_trigs_or_injs))
-                                   for ifo in ifos)
-                for i in range(num_trigs_or_injs):
-                    # Calculate f_resp for each IFO if we haven't done so yet
-                    f_plus, f_cross = get_det_response(self.longitude[i],
-                                                       self.latitude[i],
-                                                       self.time[i])
-                    for ifo in ifos:
-                        self.f_resp[ifo][i] = sum(numpy.array([f_plus[ifo],
-                                                               f_cross[ifo]]
-                                                              )**2)
-                        self.sigma_tot[i] += (sigma[ifo][i] *
-                                              self.f_resp[ifo][i])
-
                 for ifo in ifos:
+                    antenna = Detector(ifo)
+                    self.f_resp[ifo] = get_antenna_responses(antenna,
+                                                             self.ra,
+                                                             self.dec,
+                                                             self.time)
+                    self.sigma_tot += (sigma[ifo] * self.f_resp[ifo])
+                    # After the detailed calculations, this only stores the mean responses
                     self.f_resp[ifo] = self.f_resp[ifo].mean()
 
                 # Normalise trig_sigma
-                self.sigma_tot = numpy.array(self.sigma_tot)
                 for ifo in ifos:
-                    sigma[ifo] = numpy.asarray(sigma[ifo]) / self.sigma_tot
+                    sigma[ifo] /= self.sigma_tot
 
                 self.sigma_mean = {}
                 self.sigma_max = {}
@@ -677,10 +674,10 @@ class PygrbFilterOutput(object):
 # Function to open trigger and injection xml files
 # =============================================================================
 
-def load_xml_file(filename):
+def load_xml_file(file_name):
     """Wrapper to ligolw's utils.load_filename"""
 
-    xml_doc = utils.load_filename(filename, gz=filename.endswith("gz"),
+    xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
                                   contenthandler=lsctables.use_in(
                                       ligolw.LIGOLWContentHandler))
 
@@ -691,12 +688,12 @@ def load_xml_file(filename):
 # Function to load a table from an xml file
 # =============================================================================
 
-def load_xml_table(filename, table_name):
+def load_xml_table(file_name, table_name):
     """Load xml table from file."""
 
-    xmldoc = load_xml_file(filename)
+    xml_doc = load_xml_file(file_name)
 
-    return table.get_table(xmldoc, table_name)
+    return table.get_table(xml_doc, table_name)
 
 
 # =============================================================================
@@ -716,6 +713,62 @@ def extract_ifos(trig_file):
     return ifos
 
 
+# ==============================================================================
+# Function to load segments from an xml file
+# ==============================================================================
+def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
+    """Read a glue.segments.segmentlist from the file object file containing an
+    xml segment table.
+
+    Parameters
+    ----------
+        xml_doc: name of segment xml file
+
+        Keyword Arguments:
+            return_dict : [ True | False ]
+                return a glue.segments.segmentlistdict containing coalesced
+                glue.segments.segmentlists keyed by seg_def.name for each entry
+                in the contained segment_def_table. Default False
+            select_id : int
+                return a glue.segments.segmentlist object containing only
+                those segments matching the given segment_def_id integer
+
+    """
+
+    # Load SegmentDefTable and SegmentTable
+    seg_def_table = load_xml_table(xml_doc, lsctables.SegmentDefTable.tableName)
+    seg_table = load_xml_table(xml_doc, lsctables.SegmentTable.tableName)
+
+    if return_dict:
+        segs = segments.segmentlistdict()
+    else:
+        segs = segments.segmentlist()
+
+    seg_id = {}
+    for seg_def in seg_def_table:
+        seg_id[int(seg_def.segment_def_id)] = str(seg_def.name)
+        if return_dict:
+            segs[str(seg_def.name)] = segments.segmentlist()
+
+    for seg in seg_table:
+        if return_dict:
+            segs[seg_id[int(seg.segment_def_id)]]\
+                .append(segments.segment(seg.start_time, seg.end_time))
+            continue
+        if select_id and int(seg.segment_def_id)==select_id:
+            segs.append(segments.segment(seg.start_time, seg.end_time))
+            continue
+        segs.append(segments.segment(seg.start_time, seg.end_time))
+
+    if return_dict:
+       for seg_name in seg_id.values():
+           segs[seg_name] = segs[seg_name].coalesce()
+    else:
+        segs = segs.coalesce()
+
+    return segs
+
+
 # =============================================================================
 # Function to extract vetoes
 # =============================================================================
@@ -730,11 +783,11 @@ def extract_vetoes(veto_files, ifos):
 
     # Construct veto list from veto filelist
     if veto_files:
-        for file in veto_files:
-            ifo = os.path.basename(file)[:2]
+        for veto_file in veto_files:
+            ifo = os.path.basename(veto_file)[:2]
             if ifo in ifos:
                 # This returns a coalesced list of the vetoes
-                tmp_veto_segs = dqSegmentUtils.fromsegmentxml(open(file, 'r'))
+                tmp_veto_segs = load_segments_from_xml(veto_file)
                 for entry in tmp_veto_segs:
                     vetoes[ifo].append(entry)
     for ifo in ifos:
@@ -807,14 +860,12 @@ def load_injections(inj_file, vetoes):
     """Loads injections from PyGRB output file"""
     logging.info("Loading injections...")
 
-    # Load injection file
+    # Load injections in injection file
     multis = load_xml_table(inj_file, lsctables.MultiInspiralTable.tableName)
 
-    # Extract injections
+    # Extract injections in time-slid non-vetoed data
     injs = lsctables.New(lsctables.MultiInspiralTable,
                          columns=lsctables.MultiInspiralTable.loadcolumns)
-
-    # Injections in time-slid non-vetoed data
     injs.extend(t for t in multis if t.get_end() not in vetoes)
 
     logging.info("%d injections found.", len(injs))
@@ -899,11 +950,13 @@ def find_zero_lag_slide_id(slide_dict):
                     err_msg = 'zero_lag_slide_id was already assigned: there'
                     err_msg += 'seems to be more than one zero-lag slide!'
                     logging.error(err_msg)
+                    sys.exit()
     
     if zero_lag_slide_id is None:
         err_msg = 'Unable to assign zero_lag_slide_id: '
         err_msg += 'there seems to be no zero-lag slide!'
         logging.error(err_msg)
+        sys.exit()
 
     return zero_lag_slide_id
 
@@ -920,6 +973,7 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
         err_msg = "The parameter num_mc_injs is the number of Monte-Carlo "
         err_msg += "injections.  It must be an integer."
         logging.error(err_msg)
+        sys.exit()
 
     only_found_injs = found_bestnr[:-1]
     all_injs = num_injections[:-1]
@@ -1301,120 +1355,6 @@ def mc_cal_wf_errs(num_mc_injs, num_injs, inj_dists, cal_err, wf_err, max_dc_cal
                                      (1 + cal_dist_red) * (1 + wf_dist_red))
 
     return inj_dist_mc
-
-
-
-# =============================================================================
-# Process the trigger table for q-scan follow-ups
-# =============================================================================
-#
-#def process_trigs_for_followup(trig_file, seg_dir, veto_dir, veto_cat,
-#                               chisq_index, chisq_nhigh, null_thresh,
-#                               snr_thresh, sngl_snr_thresh, new_snr_thresh,
-#                               null_grad_thresh, null_grad_val,
-#                               num_followup_trigs=10, do_injections=False):
-#    # The basis for this code is in multiple places, but it is
-#    # specifically added here so that we can use it for q-scan
-#    # follow-ups of missed injections and loudest offsource
-#    # events.
-#
-#    ifos, vetoes = extract_ifos_and_vetoes(trig_file, veto_dir, int(veto_cat))
-#
-#    # Load triggers, time-slides, and segment dictionary
-#    trigs = load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
-#    slide_dict = load_time_slides(trig_file)
-#    segment_dict = load_segment_dict(trig_file)
-#
-#    # Identify the zero-lag slide and the number of slides
-#    zero_lag_slide_id = find_zero_lag_slide_id(slide_dict)
-#    num_slides = len(slide_dict)
-#
-#    # Get segments
-#    segs = read_seg_files(seg_dir)
-#
-#    # Construct trials
-#    trial_dict = construct_trials(num_slides, segs, segment_dict, ifos,
-#                                  slide_dict, vetoes)
-#    # Sort the triggers into each slide
-#    sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
-#    total_trials = sum([len(trial_dict[slide_id])
-#                        for slide_id in range(num_slides)])
-#
-#    # Extract basic trigger properties and store as dictionaries
-#    trig_time = {}
-#    trig_snr = {}
-#    trig_bestnr = {}
-#    for slide_id in range(num_slides):
-#        slide_trigs = sorted_trigs[slide_id]
-#        trig_time[slide_id] = numpy.asarray(slide_trigs.get_end()).astype(float)
-#        trig_snr[slide_id] = numpy.asarray(slide_trigs.get_column('snr'))
-#        trig_bestnr[slide_id] = [get_bestnr(t, q=float(chisq_index),
-#                                            n=float(chisq_nhigh),
-#                                            null_thresh=null_thresh,
-#                                            snr_threshold=float(snr_thresh),
-#                                            sngl_snr_threshold=float(sngl_snr_thresh),
-#                                            chisq_threshold=float(new_snr_thresh),
-#                                            null_grad_thresh=float(null_grad_thresh),
-#                                            null_grad_val=float(null_grad_val))
-#                                 for t in slide_trigs]
-#        trig_bestnr[slide_id] = numpy.array(trig_bestnr[slide_id])
-#
-#    # Calculate SNR and BestNR values and maxima
-#    time_veto_max_snr = {}
-#    time_veto_max_bestnr = {}
-#    for slide_id in range(num_slides):
-#        num_slide_segs = len(trial_dict[slide_id])
-#        time_veto_max_snr[slide_id] = numpy.zeros(num_slide_segs)
-#        time_veto_max_bestnr[slide_id] = numpy.zeros(num_slide_segs)
-#
-#    for slide_id in range(num_slides):
-#        for j, trial in enumerate(trial_dict[slide_id]):
-#            trial_cut = (trial[0] <= trig_time[slide_id])\
-#                              & (trig_time[slide_id] < trial[1])
-#            if not trial_cut.any():
-#                continue
-#            # Max SNR
-#            time_veto_max_snr[slide_id][j] = \
-#                            max(trig_snr[slide_id][trial_cut])
-#            # Max BestNR
-#            time_veto_max_bestnr[slide_id][j] = \
-#                            max(trig_bestnr[slide_id][trial_cut])
-#            # Max SNR for triggers passing SBVs
-#            sbv_cut = trig_bestnr[slide_id] != 0
-#            if not (trial_cut&sbv_cut).any():
-#                continue
-#
-#    # Sort loudest offsource triggers by BestNR
-#    offsource_trigs = []
-#    for slide_id in range(num_slides):
-#        offsource_trigs.extend(zip(trig_bestnr[slide_id],
-#                                   sorted_trigs[slide_id]))
-#    offsource_trigs.sort(key=lambda element: element[0])
-#    offsource_trigs.reverse()
-#    if do_injections:
-#        # If do_injections=true then this function is called from
-#        # pycbc_pygrb_inj_followup and it just needs the max
-#        # bestnr value to calculate missed injections.
-#        max_bestnr, _, _ = max_median_stat(num_slides, time_veto_max_bestnr,
-#                                           trig_bestnr, total_trials)
-#        return max_bestnr
-#    else:
-#        # If do_injections=false we are calling this function from the
-#        # post_processing workflow and are intending to follow-up on
-#        # the loudest offsource events. In that case we just need to
-#        # return a list containing the GPS times for the num_followup_trigs
-#        # with the approproate time shifts.
-#        loudest_trigs = []
-#        for trig_num in range(0, int(num_followup_trigs)):
-#            trig = offsource_trigs[trig_num][1]
-#            time_shifts = [slide_dict[int(trig.time_slide_id)][ifo]
-#                           for ifo in ifos]
-#            loudest_trigs.append([str(int(trig.end_time) + int(ts)) +
-#                                  '.' + str(trig.end_time_ns)
-#                                  for ts in time_shifts])
-#
-#        return loudest_trigs
-
 
 
 # =============================================================================

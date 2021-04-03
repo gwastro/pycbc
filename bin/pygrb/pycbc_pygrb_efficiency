@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2011 Ian W. Harry
+# Copyright (C) 2021 Francesco Pannarale
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -35,6 +35,7 @@ import numpy as np
 import scipy
 from scipy import stats
 import pycbc.version
+from pycbc.detector import Detector
 from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
@@ -48,7 +49,7 @@ from pycbc.results.pygrb_postprocessing_utils import sort_stat
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import efficiency_with_errs
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
-from pycbc.results.pygrb_postprocessing_utils import get_f_resp
+from pycbc.results.pygrb_postprocessing_utils import get_antenna_responses
 from pycbc.results.pygrb_postprocessing_utils import get_bestnr
 from glue.ligolw import lsctables
 
@@ -342,6 +343,8 @@ if do_injections:
     logging.info("Missed/found injections/triggers loaded.")
 
     # Extract columns of found injections and triggers
+    found_inj_ra = np.asarray(found_injs.get_column('longitude'))
+    found_inj_dec = np.asarray(found_injs.get_column('latitude'))
     found_inj_time = np.asarray(found_injs.get_column('geocent_end_time')) +\
                      np.asarray(found_injs.get_column('geocent_end_time_ns')*\
                                 10**-9)
@@ -395,8 +398,11 @@ if do_injections:
                 logging.info(msg)
                 inj_sigma[ifo][:] = 1.
 
-    f_resp = dict((ifo, np.asarray([get_f_resp(inj)[ifo] \
-                   for inj in found_injs]))  for ifo in ifos)
+    f_resp = {}
+    for ifo in ifos:
+        antenna = Detector(ifo)
+        f_resp[ifo] = get_antenna_responses(antenna, found_inj_ra,
+                                            found_inj_dec, found_inj_time)
 
     inj_sigma_mult = (np.asarray(inj_sigma.values()) *\
                       np.asarray(f_resp.values()))

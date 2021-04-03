@@ -33,6 +33,7 @@ import numpy as np
 from scipy import stats
 import h5py
 import pycbc.version
+from pycbc.detector import Detector
 import pycbc.results
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
@@ -45,7 +46,7 @@ from pycbc.results.pygrb_postprocessing_utils import sort_trigs
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import mc_cal_wf_errs
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
-from pycbc.results.pygrb_postprocessing_utils import get_f_resp
+from pycbc.results.pygrb_postprocessing_utils import get_antenna_responses
 from pycbc.results.pygrb_postprocessing_utils import get_bestnr
 from glue.ligolw import lsctables
 
@@ -284,6 +285,8 @@ def lsctable_to_dict(inj_table, ifos, trig_table=None, background_bestnrs=None):
                 dtype=float
                 ) / len(background_bestnrs)
 
+        # Antenna responses
+        f_resp = {}
         # Calibration errors:
         # Get the relative detector sensitivities averaged over the
         # parameters. This is used to marginalize over calibration errors.
@@ -300,11 +303,11 @@ def lsctable_to_dict(inj_table, ifos, trig_table=None, background_bestnrs=None):
                     msg += "Setting sigmasq to unity for all triggers."
                     logging.info(msg)
                     inj_sigma[ifo][:] = 1.0
-        f_resp = {
-            ifo: np.asarray(
-                [get_f_resp(inj)[ifo] for inj in inj_table], dtype=float
-                ) for ifo in ifos # not ideal, but will be replaced soon
-            }
+            antenna = Detector(ifo)
+            f_resp[ifo] = get_antenna_responses(antenna, inj_data['ra'],
+                                                inj_data['dec'],
+                                                inj_data['time'])
+
         def dict_to_ndarray(dict_to_convert):
             """Turn single level dict into 2d numpy.ndarray."""
             return np.asarray(list(dict_to_convert.values()))
