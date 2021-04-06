@@ -146,6 +146,7 @@ class TestModels(unittest.TestCase):
                         static_params = self.static,
                         prior = self.prior,
                         marginalize_phase=400,
+                        cores=1,
                         base_model='marginalized_polarization',
                         )
         model.update(**self.q1)
