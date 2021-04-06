@@ -18,7 +18,7 @@ using at the likelihood level.
 """
 import numpy
 
-from multiprocessing import Pool
+from multiprocessing import Pool, set_start_method
 from .gaussian_noise import BaseGaussianNoise
 from scipy.special import logsumexp
 
@@ -51,6 +51,7 @@ class BruteParallelGaussianMarginalize(BaseGaussianNoise):
         self.call = likelihood_wrapper(self.model)
 
         # size of pool for each likelihood call
+        set_start_method('fork')
         self.pool = Pool(int(cores))
 
         # Only one for now, but can be easily extended
