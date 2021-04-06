@@ -506,6 +506,10 @@ class SingleDetTriggers(object):
 
         # If this becomes memory intensive we can optimize
         stat = rank_method.rank_stat_single((self.ifo, self.trig_dict()))
+        if len(stat) == 0:
+            # No triggers, so just return here
+            self.stat = np.array([])
+            return
 
         times = self.end_time
         index = stat.argsort()[::-1]
