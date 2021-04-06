@@ -1,6 +1,6 @@
 # requirements for most basic library use
 astropy>=2.0.3,<3.0.0; python_version <= '2.7'
-astropy>=2.0.3; python_version >= '3.0'
+astropy>=2.0.3,!=4.2.1,!=4.0.5; python_version >= '3.0'
 Mako>=1.0.1
 decorator>=3.4.2
 scipy>=0.16.0; python_version >= '3.5'
