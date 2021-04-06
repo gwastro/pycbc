@@ -140,14 +140,9 @@ if args.sort_variable not in f[file_val]:
                    '{1} are {2}'.format(args.sort_variable, file_val,
                                         ', '.join(all_datasets)))
 
-if len(stat) == 0:
-    # There are no triggers, make no-op job and exit
-    noop_node = mini.create_noop_node()
-    workflow += noop_node
-    workflow.save(filename=args.output_file, output_map_path=args.output_map,
-                  transformation_catalog_path=args.transformation_catalog,
-                  site_catalog_path=args.site_catalog)
-    sys.exit(0)
+# Empty workflow cause failures, so add a "do nothing" (/bin/true) job.
+noop_node = mini.create_noop_node()
+workflow += noop_node
 
 events_to_read = num_events * 100
 
