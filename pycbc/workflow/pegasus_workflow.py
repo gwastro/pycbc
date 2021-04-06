@@ -36,7 +36,7 @@ def set_subworkflow_properties(job, output_map_file,
                                transformation_catalog_file,
                                site_catalog_file,
                                out_dir,
-                               staging_site=None):
+                               staging_site):
 
     # FIXME: Does this need to be tied to some form of SubWorkflow object?
     job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
@@ -56,11 +56,15 @@ def set_subworkflow_properties(job, output_map_file,
     job.add_args('--cluster label,horizontal')
     job.add_args('-vvv')
 
-    # FIXME: This does need to be a proper File.
-
-    # FIXME _reuse_cache needs to be fixed to use PFNs properly. This will
-    # work as pegasus-plan is currently invoked on the local site so has
-    # access to a file in out_dir but this code is fragile.
+    # NOTE: The _reuse.cache file is produced during submit_dax and would be
+    #       sent to all sub-workflows. Currently we do not declare this as a
+    #       proper File, as this is a special case. While the use-case is that
+    #       this is always created during submit_dax then this is the right
+    #       thing to do. pegasus-plan must run on local site, and this is
+    #       guaranteed to be visible. However, we could consider having this
+    #       file created differently. Note that all other inputs might be
+    #       generated within the workflow, and then pegasus data transfer is
+    #       needed, so these must be File objects.
     job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
 
     if staging_site:
@@ -121,19 +125,14 @@ class Executable(ProfileShortcuts):
         self.transformations = {}
 
     def create_transformation(self, site, url):
-        if url is None:
-            # Rely on URL being set in a child class
-            # FIXME: Error handling niceness needed
-            url = self.exe_pfns[site]
-
         transform = dax.Transformation(
             self.logical_name,
             site=site,
             pfn=url,
-            is_stageable=self.installed, # I think??
+            is_stageable=self.installed,
             arch=self.arch,
             os_type=self.os,
-            container=self.container # Is it? There's some new container stuff
+            container=self.container
         )
         for (namespace,key), value in self.profiles.items():
             transform.add_profiles(
