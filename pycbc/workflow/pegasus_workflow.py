@@ -360,7 +360,8 @@ class Workflow(object):
         self.filename = self.name + '.dax'
         self._adag = dax.Workflow(self.filename)
         if is_subworkflow:
-            self._asdag = dax.SubWorkflow(self.filename, is_planned=False)
+            self._asdag = dax.SubWorkflow(self.filename, is_planned=False,
+                                          node_label=self.name)
         else:
             self._asdag = None
 
