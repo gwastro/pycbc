@@ -115,6 +115,7 @@ class Executable(ProfileShortcuts):
                  arch='x86_64', installed=False,
                  container=None):
         self.logical_name = name + "_ID%s" % str(Executable.id)
+        self.name=name
         Executable.id += 1
         self.os = dax.OS(os)
         self.arch = dax.Arch(arch)
@@ -125,7 +126,7 @@ class Executable(ProfileShortcuts):
         self.transformations = {}
 
     def create_transformation(self, site, url):
-        transform = dax.Transformation(
+        transform = Transformation(
             self.logical_name,
             site=site,
             pfn=url,
@@ -134,6 +135,7 @@ class Executable(ProfileShortcuts):
             os_type=self.os,
             container=self.container
         )
+        transform.pycbc_name = self.name
         for (namespace,key), value in self.profiles.items():
             transform.add_profiles(
                 dax.Namespace(namespace),
@@ -169,6 +171,33 @@ class Executable(ProfileShortcuts):
                 return False
         for profile in other._dax_executable.profiles:
             if profile not in self._dax_executable.profiles:
+                return False
+
+        return True
+
+
+class Transformation(dax.Transformation):
+
+    def is_same_as(self, other):
+        test_vals = ['namespace', 'version', 'arch', 'os_type', 'os_release',
+                     'os_version', 'is_stageable', 'container']
+        # Check for logical name first
+        if not self.pycbc_name == other.pycbc_name:
+            return False
+
+        # Check the properties of the executable
+        for val in test_vals:
+            sattr = getattr(self, val)
+            oattr = getattr(other, val)
+            if not sattr == oattr:
+                return False
+        # Also check the "profile". This is things like Universe, RAM/disk/CPU
+        # requests, execution site, getenv=True, etc.
+        for profile in self.profiles:
+            if profile not in other.profiles:
+                return False
+        for profile in other.profiles:
+            if profile not in self.profiles:
                 return False
 
         return True
@@ -374,6 +403,7 @@ class Workflow(object):
             pfn="/path/to/keg",
             is_stageable=False,
         )
+        keg.pycbc_name = 'keg'
         self._tc.add_transformations(keg)
 
     def add_workflow(self, workflow):
@@ -393,6 +423,10 @@ class Workflow(object):
         self._adag.add_jobs(workflow._asdag)
 
         for inp in workflow._external_workflow_inputs:
+            # FIXME: This won't work is inp.node is not in the same workflow as
+            # workflow._asdag. In pegasus5 I think this isn't the right way of
+            # handling this anyway. We need to declare such files as inputs and
+            # outputs of the various jobs, and not add explicit dependencies.
             self._adag.add_dependency(inp.node, children=[workflow._asdag])
 
         return self
@@ -453,13 +487,12 @@ class Workflow(object):
 
         # Record the executable that this node uses
         if not node.transformation in self._transformations:
-            for exe in self._transformations:
-                # Check if exe is already in self.executables properly
-                # FIXME: Make this work again
-                if 0: #node.executable.is_same_as(exe):
-                    node.executable.in_workflow = True
-                    node._dax_node.name = exe.logical_name
-                    node.executable.logical_name = exe.logical_name
+            for tform in self._transformations:
+                # Check if transform is already in workflow
+                if node.transformation.is_same_as(tform):
+                    node.transformation.in_workflow = True
+                    node._dax_node.name = tform.name
+                    node.transformation.name = tform.name
                     break
             else:
                 #node.executable.in_workflow = True
@@ -488,30 +521,36 @@ class Workflow(object):
 
         # Determine the parent child relationships based on the inputs that
         # this node requires.
-        added_nodes = []
+        # In Pegasus5 this is mostly handled by pegasus, we just need to
+        # connect files correctly if dealing with file management between 
+        # workflows/subworkflows
         for inp in node._inputs:
-            # FIXME: Make this do whatever it was supposed to do!
-            # Breaking this loop for testing
             if inp.node is not None and inp.node.in_workflow == self:
-                if inp.node not in added_nodes:
-                    #parent = inp.node._dax_node
-                    #child = node._dax_node
-                    #dep = dax.Dependency(parent=parent, child=child)
-                    #self._adag.addDependency(dep)
-                    added_nodes.append(inp.node)
+                # Standard case: File produced within the same workflow.
+                # Don't need to do anything here.
+                continue
 
             elif inp.node is not None and not inp.node.in_workflow:
+                # This error should be rare, but can happen. If a Node hasn't
+                # yet been added to a workflow, this logic breaks. Always add
+                # nodes in order that files will be produced.
                 raise ValueError('Parents of this node must be added to the '
                                  'workflow first.')
 
             elif inp.node is None and not inp.workflow_input:
+                # File is external to the workflow (e.g. a pregenerated 
+                # template bank).
+                # FIXME: Do we do anything with this??
                 self._inputs += [inp]
                 inp.workflow_input = True
 
-            elif inp.node is not None and inp.node.in_workflow != self and inp not in self._inputs:
-                # FIXME: Check if we still need this complication
-                self._inputs += [inp]
-                self._external_workflow_inputs += [inp]
+            elif inp.node is not None and inp.node.in_workflow != self:
+                # File is generated in a different Workflow/Subworkflow that is
+                # also being constructed here. Will need to add this as an
+                # input and output of relevant SubWorkflow Jobs.
+                if inp not in self._inputs:
+                    self._inputs += [inp]
+                    self._external_workflow_inputs += [inp]
 
         # Record the outputs that this node generates
         self._outputs += node._outputs

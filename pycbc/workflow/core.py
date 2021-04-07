@@ -146,8 +146,6 @@ class Executable(pegasus_workflow.Executable):
         except:
             self.installed = False
 
-        self.name=name
-
         self.update_current_tags(tags)
 
         self.update_output_directory(out_dir=out_dir)
