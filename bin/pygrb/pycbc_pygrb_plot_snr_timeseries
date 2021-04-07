@@ -31,7 +31,6 @@ import glob
 import os
 import logging
 import matplotlib.pyplot as plt
-from glue.ligolw import lsctables
 import pycbc.version
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_injections_data

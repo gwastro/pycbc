@@ -31,7 +31,6 @@ import glob
 import os
 import logging
 import numpy
-from glue.ligolw import lsctables
 from matplotlib import rc
 import matplotlib.pyplot as plt
 import pycbc.version

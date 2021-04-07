@@ -28,6 +28,7 @@ from __future__ import division
 
 import os
 import logging
+import sys
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np

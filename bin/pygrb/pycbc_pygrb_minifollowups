@@ -31,7 +31,6 @@ import h5py
 #from lal import GPSToUTC
 import numpy as np
 import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
 import pycbc.workflow as wf
 import pycbc.events
@@ -158,7 +157,7 @@ if args.wiki_file:
     wiki_file = os.path.join(args.output_dir, args.wiki_file)
     add_wiki_row(wiki_file, fp.keys())
 
-# Trigger time 
+# Trigger time
 seg_dir = workflow.cp.get('workflow', 'segment-dir')
 trig_time = get_grb_time(seg_dir)
 
@@ -170,7 +169,7 @@ num_events = min(num_events, len(fp['BestNR'][:]))
 # TODO: get ifos in a better way
 ifos = args.followups_file.split('/')[-1].split('-PYGRB')[0]
 ifos = [ifo+'1' for ifo in ifos.split('1')[:-1]]
-num_ifos = len(ifos) 
+num_ifos = len(ifos)
 
 # Loop over triggers/injections to be folloed up
 for num_event in range(num_events):
@@ -183,14 +182,14 @@ for num_event in range(num_events):
         for key in fp.keys():
             row.append(fp[key][num_event])
         add_wiki_row(wiki_file, row)
-    # TODO: the following makes sense if injections are on unslid data. 
+    # TODO: the following makes sense if injections are on unslid data.
     #       [Loudest offsource events are on time-slid data.]
     try:
         for ifo in ifos:
-            time_shift = fp[ifo+' time shift (s)'][num_event] 
+            time_shift = fp[ifo+' time shift (s)'][num_event]
             ifo_time = gps_time - time_shift
             files += make_timeseries_plot(workflow, 'single', gps_time, ifo_time,
-                                          args.output_dir, ifo=ifo, 
+                                          args.output_dir, ifo=ifo,
                                           tags=args.tags + [str(num_event)])
             files += mini.make_qscan_plot(workflow, ifo, ifo_time,
                                           args.output_dir,
@@ -198,7 +197,7 @@ for num_event in range(num_events):
     except:
         for snr_type in ['reweighted', 'coherent']:
             files += make_timeseries_plot(workflow, snr_type, gps_time, gps_time,
-                                          args.output_dir, ifo=None, 
+                                          args.output_dir, ifo=None,
                                           tags=args.tags + [str(num_event)])
         for ifo in ifos:
             files += mini.make_qscan_plot(workflow, ifo, gps_time,
