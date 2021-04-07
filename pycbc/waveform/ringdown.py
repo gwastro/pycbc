@@ -150,9 +150,10 @@ def lm_amps_phases(**kwargs):
         ref_amp = 'amp220'
     if isinstance(ref_amp, str) and ref_amp.startswith('amp'):
         # assume a mode was provided; check if the mode exists
-        ref_mode = ref_amp
+        ref_mode = ref_amp.replace('amp', '')
         try:
-            ref_amp = kwargs.pop(ref_mode)
+            ref_amp = kwargs.pop(ref_amp)
+            amps[ref_mode] = ref_amp
         except KeyError:
             raise ValueError("Must provide an amplitude for the reference "
                              "mode {}".format(ref_amp))
