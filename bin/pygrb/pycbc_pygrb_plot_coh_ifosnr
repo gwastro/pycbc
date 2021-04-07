@@ -33,14 +33,12 @@ import logging
 import collections
 import operator
 from matplotlib import pyplot as plt
-from glue.ligolw import lsctables
 import numpy
 import scipy
 import pycbc.version
 from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
-from pycbc.results.pygrb_postprocessing_utils import extract_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_triggers_data
 from pycbc.results.pygrb_postprocessing_utils import load_injections_data
 from pycbc.results.pygrb_postprocessing_utils import axis_max_value

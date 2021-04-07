@@ -797,7 +797,7 @@ if do_injections:
     #missed_injs['time'] -= grb_time
     #found_injs['time'][vetoed_trigs] -= grb_time
     #found_injs['time'][zero_fap] -= grb_time
-    #found_injs['time'][nonzero_fap] -= grb_time 
+    #found_injs['time'][nonzero_fap] -= grb_time
 
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
@@ -828,7 +828,7 @@ if do_injections:
              'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra', 'rec_dec',
              'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr']
     keys += sngl_snr_keys
-    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z','spin2x','spin2y', 'spin2z']
+    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z']
     # The following parameters are available only for recovered injections
     na_keys = ['rec_mass1', 'rec_mass2', 'rec_mchirp', 'rec_ra', 'rec_dec',
                'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr', 'bestnr']
@@ -871,7 +871,7 @@ if do_injections:
     if mf_outfile:
         t_missed = []
         for key in keys:
-            t_missed +=  [found_injs[key][vetoed_trigs]]
+            t_missed += [found_injs[key][vetoed_trigs]]
         t_missed = zip(*t_missed)
         t_missed.sort(key=lambda elem: elem[0])
         logging.info("Writing %d missed-found injections to html file.", len(t_missed))

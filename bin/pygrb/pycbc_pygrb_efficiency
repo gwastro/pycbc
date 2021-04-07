@@ -424,7 +424,7 @@ if do_injections:
     # Set distance bins and data arrays
     dist_bins = zip(np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),\
                              (upper_dist-lower_dist)/num_bins),\
-                   np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),\
+                    np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),\
                              (upper_dist-lower_dist)/num_bins) +\
                              (upper_dist-lower_dist)/num_bins)
 

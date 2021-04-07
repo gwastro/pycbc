@@ -585,6 +585,7 @@ if do_injections:
             ax = fig.gca(yscale="log")
         # Define p-value colour
         cmap = plt.get_cmap('cividis_r')
+        # Set color for out-of-range values
         #cmap. set_over('g')
         # Define the 'found' injection colour
         fnd_col = cmap(0)
