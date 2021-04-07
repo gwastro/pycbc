@@ -82,17 +82,6 @@ if snr_type == 'single' and ifo is None:
     logging.error(msg)
     sys.exit()
 
-title_dict = {'coherent': "Coherent SNR vs Time",
-              'single': "%s SNR vs Time" % ifo,
-              'null': "Null SNR vs Time",
-              'reweighted': "Reweighted SNR vs Time"}
-if opts.plot_title is None:
-    opts.plot_title = title_dict[snr_type]
-if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: background triggers.  ")
-    if inj_file:
-        opts.plot_caption += ("Red crosses: injections triggers.")
-
 logging.info("Imported and ready to go.")
 
 # Set output directories
@@ -148,6 +137,14 @@ if inj_file:
     if ifo:
         inj_snr_data_dict.update({'single': inj_data.ifo_snr[ifo]})
     inj_snr_data = inj_snr_data_dict[snr_type]
+
+# Determine title and caption
+if opts.plot_title is None:
+    opts.plot_title = y_label + " vs Time"
+if opts.plot_caption is None:
+    opts.plot_caption = ("Blue crosses: background triggers.  ")
+    if inj_file:
+        opts.plot_caption += ("Red crosses: injections triggers.")
 
 # Single IFO SNR versus time plots
 pygrb_shared_plot_setups()
