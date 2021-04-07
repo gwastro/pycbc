@@ -137,6 +137,7 @@ class Executable(pegasus_workflow.Executable):
             self.ifo_string = None
         self.cp = cp
         self.universe=universe
+        self.name = name
         self.container_cls = None
         self.container_type = None
 

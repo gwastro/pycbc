@@ -115,7 +115,7 @@ class Executable(ProfileShortcuts):
                  arch='x86_64', installed=False,
                  container=None):
         self.logical_name = name + "_ID%s" % str(Executable.id)
-        self.name=name
+        self.pegasus_name = name
         Executable.id += 1
         self.os = dax.OS(os)
         self.arch = dax.Arch(arch)
@@ -135,7 +135,7 @@ class Executable(ProfileShortcuts):
             os_type=self.os,
             container=self.container
         )
-        transform.pycbc_name = self.name
+        transform.pycbc_name = self.pegasus_name
         for (namespace,key), value in self.profiles.items():
             transform.add_profiles(
                 dax.Namespace(namespace),
