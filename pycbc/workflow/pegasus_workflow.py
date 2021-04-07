@@ -385,7 +385,6 @@ class Workflow(object):
         self._containers = []
         self.in_workflow = False
         self.sub_workflows = []
-        self._external_workflow_inputs = []
         self.filename = self.name + '.dax'
         self._adag = dax.Workflow(self.filename)
         if is_subworkflow:
@@ -422,12 +421,12 @@ class Workflow(object):
 
         self._adag.add_jobs(workflow._asdag)
 
-        for inp in workflow._external_workflow_inputs:
+        #for inp in workflow._external_workflow_inputs:
             # FIXME: This won't work is inp.node is not in the same workflow as
             # workflow._asdag. In pegasus5 I think this isn't the right way of
             # handling this anyway. We need to declare such files as inputs and
             # outputs of the various jobs, and not add explicit dependencies.
-            self._adag.add_dependency(inp.node, children=[workflow._asdag])
+            #self._adag.add_dependency(inp.node, children=[workflow._asdag])
 
         return self
 
@@ -537,20 +536,14 @@ class Workflow(object):
                 raise ValueError('Parents of this node must be added to the '
                                  'workflow first.')
 
-            elif inp.node is None and not inp.workflow_input:
+            elif inp.node is None or inp.node.in_workflow != self:
                 # File is external to the workflow (e.g. a pregenerated 
-                # template bank).
-                # FIXME: Do we do anything with this??
-                self._inputs += [inp]
-                inp.workflow_input = True
-
-            elif inp.node is not None and inp.node.in_workflow != self:
+                # template bank). (if inp.node is None)
+                # OR
                 # File is generated in a different Workflow/Subworkflow that is
-                # also being constructed here. Will need to add this as an
-                # input and output of relevant SubWorkflow Jobs.
+                # also being constructed here.
                 if inp not in self._inputs:
                     self._inputs += [inp]
-                    self._external_workflow_inputs += [inp]
 
         # Record the outputs that this node generates
         self._outputs += node._outputs
@@ -587,6 +580,10 @@ class Workflow(object):
             sub_workflow_file.add_pfn(pfn, site='local')
             sub_workflow_file.insert_into_dax(self._rc)
 
+        if is_subworkflow:
+            self._asdag.add_inputs(*self._inputs)
+            self._asdag.add_output(*self._outputs, stage_out=False)
+
         self._adag.add_replica_catalog(self._rc)
         # FIXME: Cannot add TC into workflow
         #self._adag.add_transformation_catalog(self._tc)
@@ -608,7 +605,6 @@ class File(dax.File):
     def __init__(self, name):
         self.name = name
         self.node = None
-        self.workflow_input = False
         dax.File.__init__(self, name)
         # Storage_path is where the file would be *output* to
         self.storage_path = None
