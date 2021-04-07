@@ -38,8 +38,9 @@ import pycbc.results
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
-from pycbc.results.pygrb_postprocessing_utils import find_zero_lag_slide_id
 from pycbc.results.pygrb_postprocessing_utils import load_time_slides
+from pycbc.results.pygrb_postprocessing_utils import load_injections
+from pycbc.results.pygrb_postprocessing_utils import find_zero_lag_slide_id
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
 from pycbc.results.pygrb_postprocessing_utils import construct_trials
 from pycbc.results.pygrb_postprocessing_utils import sort_trigs
@@ -176,7 +177,6 @@ np.random.seed(opts.seed)
 logging.info("Setting random seed to %d.", opts.seed)
 
 # Extract IFOs and vetoes
-logging.info("Extracting IFOs and vetoes.")
 ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                        opts.veto_category)
 
@@ -606,17 +606,8 @@ else:
 # =======================
 if do_injections:
 
-    # found_trigs_nveto - is nveto short for no_veto?
-    found_trigs_nveto = load_xml_table(found_file, lsctables.MultiInspiralTable.tableName)
-    found_injs_no_veto = load_xml_table(found_file, lsctables.SimInspiralTable.tableName)
-
-    found_trig_table = lsctables.New(lsctables.MultiInspiralTable)
-    found_inj_table = lsctables.New(lsctables.SimInspiralTable)
-
-    for trig, sim in zip(found_trigs_nveto, found_injs_no_veto):
-        if sim.get_end() not in vetoes.union(vetoes.keys()):
-            found_inj_table.append(sim)
-            found_trig_table.append(trig)
+    found_trig_table = load_injections(found_file, vetoes)
+    found_inj_table = load_injections(found_file, vetoes, sim_table=True)
 
     logging.info("Missed/found injections/triggers loaded.")
 
@@ -646,9 +637,7 @@ if do_injections:
     logging.info("%d found injections analysed.", len(found_injs['mchirp']))
 
     # Missed injections (ones not recovered at all)
-    missed_inj_table = load_xml_table(
-        missed_file, lsctables.SimInspiralTable.tableName
-        ).veto(vetoes.union(vetoes.keys()))
+    missed_inj_table = load_injections(missed_file, vetoes, sim_table=True)
     missed_injs = lsctable_to_dict(missed_inj_table, ifos)
 
     # Avoids a problem with formatting in the non-static html output file
@@ -832,89 +821,29 @@ if do_injections:
     format_strings.extend(['##.##',
                            '##.##', '##.##', '##.##', '##.##', '##.##',
                            '##.##'])
-    # TODO: serial coding
-    td = zip(*[np.concatenate((found_injs['distance'][nonzero_fap],\
-                               found_injs['distance'][vetoed_trigs],\
-                               missed_injs['distance']))] +\
-              [np.concatenate((found_injs['eff_dist_{}'.format(ifo.lower())][nonzero_fap],\
-                               found_injs['eff_dist_{}'.format(ifo.lower())][vetoed_trigs],\
-                               missed_injs['eff_dist_{}'.format(ifo.lower())]))\
-               for ifo in ifos] +\
-              [np.concatenate((found_injs['time'][nonzero_fap],\
-                               found_injs['time'][vetoed_trigs],\
-                               missed_injs['time'])),\
-               np.concatenate((found_injs['mass1'][nonzero_fap],\
-                               found_injs['mass1'][vetoed_trigs],\
-                               missed_injs['mass1'])),\
-               np.concatenate((found_injs['mass2'][nonzero_fap],\
-                               found_injs['mass2'][vetoed_trigs],\
-                               missed_injs['mass2'])),\
-               np.concatenate((found_injs['mchirp'][nonzero_fap],\
-                               found_injs['mchirp'][vetoed_trigs],\
-                               missed_injs['mchirp'])),\
-               np.concatenate((found_injs['rec_mass1'][nonzero_fap],\
-                               found_injs['rec_mass1'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['rec_mass2'][nonzero_fap],\
-                               found_injs['rec_mass2'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['rec_mchirp'][nonzero_fap],\
-                               found_injs['rec_mchirp'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['inclination'][nonzero_fap],\
-                               found_injs['inclination'][vetoed_trigs],\
-                               missed_injs['inclination'])),\
-               np.concatenate((found_injs['ra'][nonzero_fap],\
-                               found_injs['ra'][vetoed_trigs],\
-                               missed_injs['ra'])),\
-               np.concatenate((found_injs['dec'][nonzero_fap],\
-                               found_injs['dec'][vetoed_trigs],\
-                               missed_injs['dec'])),\
-               np.concatenate((found_injs['rec_ra'][nonzero_fap],\
-                               found_injs['rec_ra'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['rec_dec'][nonzero_fap],\
-                               found_injs['rec_dec'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['snr'][nonzero_fap],\
-                               found_injs['snr'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['chisq'][nonzero_fap],\
-                               found_injs['chisq'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['bank_chisq'][nonzero_fap],\
-                               found_injs['bank_chisq'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['cont_chisq'][nonzero_fap],\
-                               found_injs['cont_chisq'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['null_snr'][nonzero_fap],\
-                               found_injs['null_snr'][vetoed_trigs],\
-                               missed_na))] +\
-              [np.concatenate((found_injs['snr_{}'.format(ifo.lower())][nonzero_fap],\
-                               found_injs['snr_{}'.format(ifo.lower())][vetoed_trigs],\
-                               missed_na)) for ifo in ifos] +\
-              [np.concatenate((found_injs['bestnr'][nonzero_fap],\
-                               found_injs['bestnr'][vetoed_trigs],\
-                               missed_na)),\
-               np.concatenate((found_injs['spin1x'][nonzero_fap],
-                               found_injs['spin1x'][vetoed_trigs],\
-                               missed_injs['spin1x'])),\
-               np.concatenate((found_injs['spin1y'][nonzero_fap],
-                               found_injs['spin1y'][vetoed_trigs],\
-                               missed_injs['spin1y'])),\
-               np.concatenate((found_injs['spin1z'][nonzero_fap],\
-                               found_injs['spin1z'][vetoed_trigs],\
-                               missed_injs['spin1z'])),\
-               np.concatenate((found_injs['spin2x'][nonzero_fap],\
-                               found_injs['spin2x'][vetoed_trigs],\
-                               missed_injs['spin2x'])),\
-               np.concatenate((found_injs['spin2y'][nonzero_fap],\
-                               found_injs['spin2y'][vetoed_trigs],\
-                               missed_injs['spin2y'])),\
-               np.concatenate((found_injs['spin2z'][nonzero_fap],\
-                               found_injs['spin2z'][vetoed_trigs],\
-                               missed_injs['spin2z']))])
+    sngl_snr_keys = ['snr_{}'.format(ifo.lower()) for ifo in ifos]
+    keys = ['distance']
+    keys += ['eff_dist_{}'.format(ifo.lower()) for ifo in ifos]
+    keys += ['time', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
+             'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra', 'rec_dec',
+             'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr']
+    keys += sngl_snr_keys
+    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z','spin2x','spin2y', 'spin2z']
+    # The following parameters are available only for recovered injections
+    na_keys = ['rec_mass1', 'rec_mass2', 'rec_mchirp', 'rec_ra', 'rec_dec',
+               'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr', 'bestnr']
+    na_keys += sngl_snr_keys
+    td = []
+    for key in keys:
+        if key in na_keys:
+            td += [np.concatenate((found_injs[key][nonzero_fap],\
+                                   found_injs[key][vetoed_trigs],\
+                                   missed_na))]
+        else:
+            td += [np.concatenate((found_injs[key][nonzero_fap],\
+                                   found_injs[key][vetoed_trigs],\
+                                   missed_injs[key]))]
+    td = zip(*td)
     td.sort(key=lambda elem: elem[0])
     td = zip(*td)
     # Write to h5 file
@@ -940,35 +869,10 @@ if do_injections:
 
     # Write to html file
     if mf_outfile:
-        t_missed = zip(*[found_injs['distance'][vetoed_trigs]] + \
-                        [found_injs['eff_dist_{}'.format(ifo.lower())][vetoed_trigs]
-                         for ifo in ifos] + \
-                        [found_injs['time'][vetoed_trigs],
-                         found_injs['mass1'][vetoed_trigs],
-                         found_injs['mass2'][vetoed_trigs],
-                         found_injs['mchirp'][vetoed_trigs],
-                         found_injs['rec_mass1'][vetoed_trigs],
-                         found_injs['rec_mass2'][vetoed_trigs],
-                         found_injs['rec_mchirp'][vetoed_trigs],
-                         found_injs['inclination'][vetoed_trigs],
-                         found_injs['ra'][vetoed_trigs],
-                         found_injs['dec'][vetoed_trigs],
-                         found_injs['rec_ra'][vetoed_trigs],
-                         found_injs['rec_dec'][vetoed_trigs],
-                         found_injs['snr'][vetoed_trigs],
-                         found_injs['chisq'][vetoed_trigs],
-                         found_injs['bank_chisq'][vetoed_trigs],
-                         found_injs['cont_chisq'][vetoed_trigs],
-                         found_injs['null_snr'][vetoed_trigs]] + \
-                        [found_injs['snr_{}'.format(ifo.lower())][vetoed_trigs]
-                         for ifo in ifos] + \
-                        [found_injs['bestnr'][vetoed_trigs],
-                         found_injs['spin1x'][vetoed_trigs],
-                         found_injs['spin1y'][vetoed_trigs],
-                         found_injs['spin1z'][vetoed_trigs],
-                         found_injs['spin2x'][vetoed_trigs],
-                         found_injs['spin2y'][vetoed_trigs],
-                         found_injs['spin2z'][vetoed_trigs]])
+        t_missed = []
+        for key in keys:
+            t_missed +=  [found_injs[key][vetoed_trigs]]
+        t_missed = zip(*t_missed)
         t_missed.sort(key=lambda elem: elem[0])
         logging.info("Writing %d missed-found injections to html file.", len(t_missed))
 
