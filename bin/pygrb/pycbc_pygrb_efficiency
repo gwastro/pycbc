@@ -40,6 +40,7 @@ from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
+from pycbc.results.pygrb_postprocessing_utils import load_injections
 from pycbc.results.pygrb_postprocessing_utils import find_zero_lag_slide_id
 from pycbc.results.pygrb_postprocessing_utils import load_time_slides
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
@@ -52,9 +53,6 @@ from pycbc.results.pygrb_postprocessing_utils import read_seg_files
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_responses
 from pycbc.results.pygrb_postprocessing_utils import get_bestnr
 from glue.ligolw import lsctables
-
-# Deprecated
-from pylal import SimInspiralUtils, MultiInspiralUtils
 
 plt.switch_backend('Agg')
 rc("image")
@@ -154,7 +152,6 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-logging.info("Extracting IFOs and vetoes.")
 ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                        opts.veto_category)
 
@@ -328,17 +325,9 @@ if do_injections:
 
     sites = [ifo[0] for ifo in ifos]
 
-    # Triggers and injections recovered in some form
-    found_trigs_nveto = MultiInspiralUtils.ReadMultiInspiralFromFiles([found_file])
-    found_injs_no_veto = SimInspiralUtils.ReadSimInspiralFromFiles([found_file])
-
-    found_trigs = lsctables.New(lsctables.MultiInspiralTable)
-    found_injs = lsctables.New(lsctables.SimInspiralTable)
-
-    for trig, sim in zip(found_trigs_nveto, found_injs_no_veto):
-        if sim.get_end() not in vetoes.union(vetoes.keys()):
-            found_injs.append(sim)
-            found_trigs.append(trig)
+    # Triggers and injections recovered in some form: discard ones at vetoed times
+    found_trigs = load_injections(found_file, vetoes)
+    found_injs = load_injections(found_file, vetoes, sim_table=True)
 
     logging.info("Missed/found injections/triggers loaded.")
 
@@ -418,8 +407,7 @@ if do_injections:
     logging.info("%d found injections analysed.", len(found_injs))
 
     # Missed injections (ones not recovered at all)
-    missed_injs = SimInspiralUtils.ReadSimInspiralFromFiles([missed_file])\
-            .veto(vetoes.union(vetoes.keys()))
+    missed_injs = load_injections(missed_file, vetoes, sim_table=True)
 
     # Process missed injections 'missed_inj'
     missed_inj_dist = np.asarray(missed_injs.get_column('distance'))

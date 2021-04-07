@@ -583,6 +583,9 @@ class PygrbFilterOutput(object):
             numpy.putmask(self.chi_square, self.chi_square == 0, 0.005)
             numpy.putmask(self.bank_veto, self.bank_veto == 0, 0.005)
             numpy.putmask(self.auto_veto, self.auto_veto == 0, 0.005)
+            self.chisq_dof = numpy.unique(trigs_or_injs.get_column('chisq_dof'))
+            self.bank_chisq_dof = numpy.unique(trigs_or_injs.get_column('bank_chisq_dof'))
+            self.cont_chisq_dof = numpy.unique(trigs_or_injs.get_column('cont_chisq_dof'))
 
             # Get single detector data
             self.coinc_snr = (trigs_or_injs.get_column('coinc_snr'))
@@ -803,6 +806,8 @@ def extract_vetoes(veto_files, ifos):
 def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
     """Extracts IFOs from search summary table and vetoes from a directory"""
 
+    logging.info("Extracting IFOs and vetoes.") 
+
     # Extract IFOs 
     ifos = extract_ifos(trig_file)
 
@@ -820,9 +825,12 @@ def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
 # Function to load triggers
 # =============================================================================
 
-def load_triggers(trig_file, vetoes, ifos):
+def load_triggers(trig_file, vetoes):
     """Loads triggers from PyGRB output file"""
     logging.info("Loading triggers...")
+
+    # Determine ifos
+    ifos = vetoes.keys()
 
     # Extract time-slides
     multis, slide_dict, _ = \
@@ -853,24 +861,69 @@ def load_triggers(trig_file, vetoes, ifos):
 
 
 # =============================================================================
+# Function to load data contained in a trigger file
+# =============================================================================
+
+def load_triggers_data(trig_file, vetoes, opts):
+    """Loads data from triggers in a PyGRB output file"""
+
+    # Load triggers
+    trigs = load_triggers(trig_file, vetoes)
+
+    # Determine ifos
+    ifos = vetoes.keys()
+
+    # Extract trigger data
+    trig_data = PygrbFilterOutput(trigs, ifos,
+                                  lsctables.MultiInspiralTable.loadcolumns,
+                                  "triggers", opts)
+
+    return trig_data
+
+
+# =============================================================================
 # Function to load injections
 # =============================================================================
 
-def load_injections(inj_file, vetoes):
+def load_injections(inj_file, vetoes, sim_table=False):
     """Loads injections from PyGRB output file"""
     logging.info("Loading injections...")
 
+    insp_table = lsctables.MultiInspiralTable
+    if sim_table:
+        insp_table = lsctables.SimInspiralTable
+
     # Load injections in injection file
-    multis = load_xml_table(inj_file, lsctables.MultiInspiralTable.tableName)
+    table = load_xml_table(inj_file, insp_table.tableName)
 
     # Extract injections in time-slid non-vetoed data
-    injs = lsctables.New(lsctables.MultiInspiralTable,
-                         columns=lsctables.MultiInspiralTable.loadcolumns)
-    injs.extend(t for t in multis if t.get_end() not in vetoes)
+    injs = lsctables.New(insp_table, columns=insp_table.loadcolumns)
+    injs.extend(t for t in table if t.get_end() not in vetoes)
 
     logging.info("%d injections found.", len(injs))
 
     return injs
+
+
+# =============================================================================
+# Function to load data contained in an injection file
+# =============================================================================
+def load_injections_data(inj_file, vetoes, opts, sim_table=False):
+
+    # Load injections
+    injs = None
+    if inj_file:
+        injs = load_injections(inj_file, vetoes, sim_table)
+
+    # Determine ifos
+    ifos = vetoes.keys()
+
+    # Extract (or initialize) injection data
+    inj_data = PygrbFilterOutput(injs, ifos,
+                                 lsctables.MultiInspiralTable.loadcolumns,
+                                 "injections", opts)
+
+    return inj_data
 
 
 # =============================================================================
@@ -1174,7 +1227,7 @@ def axis_max_value(trig_values, inj_values, inj_file):
 # Calculate all chi-square contours for diagnostic plots
 # =============================================================================
 
-def calculate_contours(trigs, opts, new_snrs=None):
+def calculate_contours(trig_data, opts, new_snrs=None):
     """Generate the plot contours for chisq variable plots"""
 
     if new_snrs is None:
@@ -1188,9 +1241,9 @@ def calculate_contours(trigs, opts, new_snrs=None):
     null_thresh = null_thresh[-1]
     null_grad_snr = opts.null_grad_thresh
     null_grad_val = opts.null_grad_val
-    chisq_dof = trigs[0].chisq_dof
-    bank_chisq_dof = trigs[0].bank_chisq_dof
-    cont_chisq_dof = trigs[0].cont_chisq_dof
+    chisq_dof = trig_data.chisq_dof[0]
+    bank_chisq_dof = trig_data.bank_chisq_dof[0]
+    cont_chisq_dof = trig_data.cont_chisq_dof[0]
 
     # Add the new SNR threshold contour to the list if necessary
     # and keep track of where it is

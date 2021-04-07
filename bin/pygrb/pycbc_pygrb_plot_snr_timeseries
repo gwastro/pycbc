@@ -34,9 +34,8 @@ import matplotlib.pyplot as plt
 from glue.ligolw import lsctables
 import pycbc.version
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
-from pycbc.results.pygrb_postprocessing_utils import load_injections
-from pycbc.results.pygrb_postprocessing_utils import load_triggers
-from pycbc.results.pygrb_postprocessing_utils import PygrbFilterOutput
+from pycbc.results.pygrb_postprocessing_utils import load_injections_data
+from pycbc.results.pygrb_postprocessing_utils import load_triggers_data
 from pycbc.results.pygrb_postprocessing_utils import pygrb_shared_plot_setups
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plotter
@@ -104,27 +103,14 @@ for outdir in outdirs:
         os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-logging.info("Extracting IFOs and vetoes.")
-ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
-                                       opts.veto_category)
-
-# Load triggers
-trigs = load_triggers(trig_file, vetoes, ifos)
+_, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+                                    opts.veto_category)
 
 # Extract trigger data
-trig_data = PygrbFilterOutput(trigs, ifos,
-                              lsctables.MultiInspiralTable.loadcolumns,
-                              "triggers", opts)
-
-# Load injections
-injs = None
-if inj_file:
-    injs = load_injections(inj_file, vetoes)
+trig_data = load_triggers_data(trig_file, vetoes, opts)
 
 # Extract (or initialize) injection data
-inj_data = PygrbFilterOutput(injs, ifos,
-                             lsctables.MultiInspiralTable.loadcolumns,
-                             "injections", opts)
+inj_data = load_injections_data(inj_file, vetoes, opts)
 
 # Determine the central time (t=0): default is the GRB trigger time
 if opts.central_time is not None:

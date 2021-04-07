@@ -101,7 +101,6 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-logging.info("Extracting IFOs and vetoes.")
 ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                        opts.veto_category)
 

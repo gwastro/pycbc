@@ -34,11 +34,10 @@ from matplotlib import pyplot as plt
 from glue.ligolw import lsctables
 import pycbc.version
 from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
-from pycbc.results.pygrb_postprocessing_utils import extract_ifos
+from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import extract_vetoes
-from pycbc.results.pygrb_postprocessing_utils import load_triggers
-from pycbc.results.pygrb_postprocessing_utils import PygrbFilterOutput
-from pycbc.results.pygrb_postprocessing_utils import load_injections
+from pycbc.results.pygrb_postprocessing_utils import load_triggers_data
+from pycbc.results.pygrb_postprocessing_utils import load_injections_data
 from pycbc.results.pygrb_postprocessing_utils import axis_max_value
 from pycbc.results.pygrb_postprocessing_utils import calculate_contours
 from pycbc.results.pygrb_postprocessing_utils import pygrb_shared_plot_setups
@@ -121,28 +120,14 @@ for outdir in outdirs:
         os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos = extract_ifos(trig_file)
-
-# Extract IFOs and vetoes
-vetoes = extract_vetoes(trig_file, ifos)
-
-# Load triggers
-trigs = load_triggers(trig_file, vetoes, ifos)
+_, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+                                    opts.veto_category)
 
 # Extract trigger data
-trig_data = PygrbFilterOutput(trigs, ifos,
-                              lsctables.MultiInspiralTable.loadcolumns,
-                              "triggers", opts)
+trig_data = load_triggers_data(trig_file, vetoes, opts)
 
-# Load injections
-injs = None
-if inj_file:
-    injs = load_injections(inj_file, vetoes)
-
-# Extract injection data
-inj_data = PygrbFilterOutput(injs, ifos,
-                             lsctables.MultiInspiralTable.loadcolumns,
-                             "injections", opts)
+# Extract (or initialize) injection data
+inj_data = load_injections_data(inj_file, vetoes, opts)
 
 # Generate plots
 logging.info("Plotting...")
@@ -210,7 +195,7 @@ y_max = axis_max_value(trig_veto_data, inj_veto_data, inj_file)
 
 # Determine contours for plots
 bank_conts, auto_conts, chi_conts, null_cont, snr_vals, cont_value, colors = \
-    calculate_contours(trigs, opts)
+    calculate_contours(trig_data, opts)
 conts = None
 cont_dict = {'standard': chi_conts,
              'bank': bank_conts,
