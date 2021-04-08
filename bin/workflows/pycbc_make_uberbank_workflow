@@ -36,7 +36,7 @@ from __future__ import division
 import os
 import argparse
 import logging
-from Pegasus import DAX3 as dax
+from Pegasus import api as dax
 import pycbc
 import pycbc.version
 import pycbc.workflow as wf
@@ -61,6 +61,7 @@ class GeomBankExecutable(wf.Executable):
                           '--sgburst-injection-file', '--gating-file']
 
     def create_node(self, analysis_time, geom_out_file, out_storage_path,
+                    pegasus_base_dir,
                     workflow_name='geom_bank'):
         node = wf.Executable.create_node(self)
         
@@ -85,9 +86,13 @@ class GeomBankExecutable(wf.Executable):
         node.new_output_file_opt(analysis_time, '.map',
                                  '--map-filename',
                                  tags=self.tags + ['MAP'])
-        node.new_output_file_opt(analysis_time, '.tc.txt',
+        node.new_output_file_opt(analysis_time, '.tc.yml',
                                  '--transformation-catalog-filename',
                                  tags=self.tags + ['TRANSFORMATION_CATALOG'])
+        node.new_output_file_opt(analysis_time, '.sc.yml',
+                                 '--site-catalog',
+                                 tags=self.tags + ['SITE_CATALOG'])
+        node.add_opt('--main-workflow-directory', pegasus_base_dir)
         return node
 
 class SbankDaxGenerator(wf.Executable):
@@ -100,7 +105,7 @@ class SbankDaxGenerator(wf.Executable):
     file_input_options = []
  
     def create_node(self, analysis_time, config_file, out_storage_path,
-                    output_file, seed_files=None,
+                    output_file, pegasus_base_dir, seed_files=None,
                     workflow_name='sbank_workflow', sub_wf_tags=None):
         """ Create a sbank dax generator node.
         """
@@ -143,6 +148,11 @@ class SbankDaxGenerator(wf.Executable):
                                  '--transformation-catalog-filename',
                                  tags=self.tags + sub_wf_tags +
                                  ['TRANSFORMATION_CATALOG'])
+        node.new_output_file_opt(analysis_time, '.sc.yml',
+                                 '--site-catalog',
+                                 tags=self.tags + sub_wf_tags +
+                                 ['SITE_CATALOG'])
+        node.add_opt('--main-workflow-directory', pegasus_base_dir)
 
         return node
 
@@ -190,7 +200,7 @@ geom_out_file = wf.File(geom_exe.ifo_list, geom_exe.name,
                         store_file=True, directory=geom_out_dir,
                         tags=[], use_tmp_subdirs=False)
 geom_node = geom_exe.create_node(workflow.analysis_time, geom_out_file,
-                                 geom_out_dir,
+                                 geom_out_dir, workflow.out_dir,
                                  workflow_name='initial_geom_bank')
 workflow += geom_node
 
@@ -204,27 +214,28 @@ assert(dax_file.name.endswith('.dax'))
 map_file = geom_node.output_files[3]
 assert(map_file.name.endswith('.map'))
 tc_file = geom_node.output_files[4]
-assert(tc_file.name.endswith('.tc.txt'))
+assert(tc_file.name.endswith('.tc.yml'))
+sc_file = geom_node.output_files[5]
+assert(sc_file.name.endswith('.sc.yml'))
 
 # NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
 #       the stuff done below, and does not consider file management
-dax_job = dax.DAX(dax_file)
-dax_job.addArguments('--basename %s' % \
-                     os.path.splitext(os.path.basename(dax_file.name))[0])
-wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
+# FIXME: This is now becoming common use case. Must sub-class SubWorkflow.
+dax_job = dax.SubWorkflow(dax_file, is_planned=False)
+dax_job.add_args('--basename %s' % \
+                 os.path.splitext(os.path.basename(dax_file.name))[0])
+set_subworkflow_properties(dax_job, map_file, tc_file, sc_file,
+                           workflow.out_dir,
+                           staging_site=workflow.staging_site)
 
 # Tell the dax job that it needs some input files
-dax_job.uses(metadata_file, link=dax.Link.INPUT, register=False, transfer=True)
-dax_job.uses(intermediate_file, link=dax.Link.INPUT, register=False,
-             transfer=True)
+dax_job.add_inputs(metadata_file, intermediate_file)
 
-# And this output is used again so declare it. See notes at bottom!!!
-#dax_job.uses(geom_out_file, link=dax.Link.OUTPUT, register=False,
-#             transfer=False)
+# And this output is used again so declare it.
+# Exact this doesn't work. See notes at bottom!!!
+#dax_job.add_output(geom_out_file)
 
-workflow._adag.addJob(dax_job)
-dep = dax.Dependency(parent=geom_node._dax_node, child=dax_job)
-workflow._adag.addDependency(dep)
+workflow._adag.add_jobs(dax_job)
 geom_dax_job = dax_job
 
 ###############################################
@@ -250,6 +261,7 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                        os.path.abspath('sbank_bbh'),
                                        sbank_out_file_bbh,
+                                       workflow.out_dir
                                        workflow_name='sbank_bbh',
                                        sub_wf_tags=['bbh'])
 
@@ -258,14 +270,16 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     dax_file = sbank_node.output_files[0]
     map_file = sbank_node.output_files[1]
     tc_file = sbank_node.output_files[2]
-    dax_job = dax.DAX(dax_file)
-    dax_job.addArguments('--basename %s' % \
-                         os.path.splitext(os.path.basename(dax_file.name))[0])
-    wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
+    sc_file = sbank_node.output_files[3]
+    dax_job = dax.SubWorkflow(dax_file, is_planned=False)
+    dax_job.add_args('--basename %s' % \
+                     os.path.splitext(os.path.basename(dax_file.name))[0])
+    set_subworkflow_properties(dax_job, map_file, tc_file, sc_file,
+                               workflow.out_dir,
+                               staging_site=workflow.staging_site)
 
-    workflow._adag.addJob(dax_job)
-    dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
-    workflow._adag.addDependency(dep)
+
+    workflow._adag.add_jobs(dax_job)
     sbank_bbh_dax_job = dax_job
 
 ###############################################
@@ -294,21 +308,22 @@ workflow += sbank_node
 dax_file = sbank_node.output_files[0]
 map_file = sbank_node.output_files[1]
 tc_file = sbank_node.output_files[2]
-dax_job = dax.DAX(dax_file)
-dax_job.addArguments('--basename %s' % \
-                     os.path.splitext(os.path.basename(dax_file.name))[0])
-wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
+sc_file = sbank_node.output_files[3]
+dax_job = dax.SubWorkflow(dax_file, is_planned=False)
+dax_job.add_args('--basename %s' % \
+                 os.path.splitext(os.path.basename(dax_file.name))[0])
+set_subworkflow_properties(dax_job, map_file, tc_file, sc_file,
+                           workflow.out_dir,
+                           staging_site=workflow.staging_site)
 
+workflow._adag.add_jobs(dax_job)
+sbank_bbh_dax_job = dax_job
 
-workflow._adag.addJob(dax_job)
-dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
-workflow._adag.addDependency(dep)
+# These dependencies must be added manually as no data linkage is known to
+# pegasus.
 if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-    dep = dax.Dependency(parent=sbank_bbh_dax_job, child=dax_job)
-    workflow._adag.addDependency(dep)
-dep = dax.Dependency(parent=geom_dax_job, child=dax_job)
-workflow._adag.addDependency(dep)
-
+    workflow._adag.add_dependency(dax_job, parents=[sbank_bbh_dax_job])
+workflow._adag.add_dependency(dax_job, parents=[geom_dax_job])
 
 workflow.save()
 
