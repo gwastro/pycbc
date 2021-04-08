@@ -463,11 +463,18 @@ def td_lm_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     elif pol is not None:
         xlm = numpy.exp(1j*pol)
     else:
-        xlm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, m)
+        #xlm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, m)
+        xlmplus, xlmcross = spher_harms(l, m, inclination)
     phase = 1j*(two_pi * f_0 * times + phi + m*azimuthal)
     hlm = amp * numpy.exp(-times/tau + phase)
-    hlm *= xlm
-    return hlm.real, -hlm.imag
+    if spheroidal or pol is not None:
+        hlm *= xlm
+        hplus = hlm.real
+        hcross = -hlm.imag
+    else:
+        hplus = xlmplus * hlm.real
+        hcross = -xlmcross * hlm.imag
+    return hplus, hcross
 
 
 def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
