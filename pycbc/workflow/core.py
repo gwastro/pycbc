@@ -796,10 +796,6 @@ class Workflow(pegasus_workflow.Workflow):
         for container in self._containers:
             self.add_container(container)
 
-        # add workflow input files pfns for local site to dax
-        for fil in self._inputs:
-            fil.insert_into_dax(self._rc)
-
         # save the configuration file
         ini_file = os.path.abspath(self.name + '.ini')
 

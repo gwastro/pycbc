@@ -179,8 +179,9 @@ class Executable(ProfileShortcuts):
 class Transformation(dax.Transformation):
 
     def is_same_as(self, other):
-        test_vals = ['namespace', 'version', 'arch', 'os_type', 'os_release',
-                     'os_version', 'is_stageable', 'container']
+        test_vals = ['namespace', 'version']
+        test_site_vals = ['arch', 'os_type', 'os_release',
+                          'os_version', 'bypass', 'container']
         # Check for logical name first
         if not self.pycbc_name == other.pycbc_name:
             return False
@@ -191,6 +192,19 @@ class Transformation(dax.Transformation):
             oattr = getattr(other, val)
             if not sattr == oattr:
                 return False
+        # Some properties are stored in the TransformationSite
+        self_site = list(self.sites.values())
+        assert(len(self_site) == 1)
+        self_site = self_site[0]
+        other_site = list(other.sites.values())
+        assert(len(other_site) == 1)
+        other_site = other_site[0]
+        for val in test_site_vals:
+            sattr = getattr(self_site, val)
+            oattr = getattr(other_site, val)
+            if not sattr == oattr:
+                return False
+
         # Also check the "profile". This is things like Universe, RAM/disk/CPU
         # requests, execution site, getenv=True, etc.
         for profile in self.profiles:
@@ -490,7 +504,7 @@ class Workflow(object):
                 # Check if transform is already in workflow
                 if node.transformation.is_same_as(tform):
                     node.transformation.in_workflow = True
-                    node._dax_node.name = tform.name
+                    node._dax_node.transformation = tform.name
                     node.transformation.name = tform.name
                     break
             else:
@@ -572,6 +586,11 @@ class Workflow(object):
 
         for sub in self.sub_workflows:
             sub.save()
+            red_inputs = [s for s in sub._inputs if s not in self._outputs]
+            self._inputs += red_inputs
+            # NOTE: This doesn't work within pegasus, and so workflow outputs
+            #       will not automatically be known at the next level up.
+            #self._outputs += sub._outputs
             sub.transformation_catalog_file.insert_into_dax(self._rc)
             sub.output_map_file.insert_into_dax(self._rc)
             sub.site_catalog_file.insert_into_dax(self._rc)
@@ -580,9 +599,19 @@ class Workflow(object):
             sub_workflow_file.add_pfn(pfn, site='local')
             sub_workflow_file.insert_into_dax(self._rc)
 
-        if is_subworkflow:
+
+        # add workflow input files pfns for local site to dax
+        for fil in self._inputs:
+            fil.insert_into_dax(self._rc)
+
+        if self._asdag is not None:
+            # Is a sub-workflow
             self._asdag.add_inputs(*self._inputs)
-            self._asdag.add_output(*self._outputs, stage_out=False)
+            # NOTE: This doesn't work within pegasus, and so workflow outputs
+            #       will not automatically be known at the next level up.
+            #for out in self._outputs:
+            #    stage_out = out.storage_path is not None
+            #    self._asdag.add_outputs(out, stage_out=stage_out)
 
         self._adag.add_replica_catalog(self._rc)
         # FIXME: Cannot add TC into workflow
