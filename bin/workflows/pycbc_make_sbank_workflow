@@ -217,7 +217,7 @@ args = parser.parse_args()
 
 # Create the workflow object
 workflow = wf.Workflow(args, args.workflow_name,
-                       directory=opts.main_workflow_directory)
+                       directory=args.main_workflow_directory)
 
 if not args.is_sub_workflow:
     wf.makedir(args.output_dir)
