@@ -40,6 +40,7 @@ from Pegasus import api as dax
 import pycbc
 import pycbc.version
 import pycbc.workflow as wf
+from pycbc.workflow.pegasus_workflow import set_subworkflow_properties
 
 # Boiler-plate stuff
 __author__  = "Ian Harry <ian.harry@ligo.org>"
@@ -261,7 +262,7 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                        os.path.abspath('sbank_bbh'),
                                        sbank_out_file_bbh,
-                                       workflow.out_dir
+                                       workflow.out_dir,
                                        workflow_name='sbank_bbh',
                                        sub_wf_tags=['bbh'])
 
@@ -299,6 +300,7 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                    os.path.abspath('sbank_final'),
                                    sbank_out_file_final,
+                                   workflow.out_dir,
                                    seed_files=seed_files,
                                    workflow_name='sbank_final',
                                    sub_wf_tags=['final'])
