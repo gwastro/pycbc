@@ -61,8 +61,8 @@ class GeomBankExecutable(wf.Executable):
                           '--fake-strain-from-file', '--injection-file',
                           '--sgburst-injection-file', '--gating-file']
 
-    def create_node(self, analysis_time, geom_out_file, out_storage_path,
-                    pegasus_base_dir,
+    def create_node(self, analysis_time, geom_out_file, config_file,
+                    out_storage_path, pegasus_base_dir,
                     workflow_name='geom_bank'):
         node = wf.Executable.create_node(self)
         
@@ -70,6 +70,7 @@ class GeomBankExecutable(wf.Executable):
         # actually produce this file, the resulting dax will do that.
         node.add_opt('--output-file', geom_out_file.storage_path)
       
+        node.add_input_opt('--supplement-config-file', config_file)
 
         node.add_opt('--storage-path-base', out_storage_path)      
         node.add_opt('--is-sub-workflow','')
@@ -186,6 +187,11 @@ wf.makedir('daxes')
 # Run the geom_bank workflow the first time  #
 ##############################################
 logging.info("Setting up the round of geometric bank jobs.")
+
+config_path = os.path.abspath('daxes' + '/' + 'geom_workflow.ini')
+workflow.cp.write(open(config_path, 'w'))
+config_file = wf.File.from_path(config_path)
+
 geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
                               ifos=workflow.ifos, out_dir='daxes')
 # This one's a bit weird as the dag generator names the final output file,
@@ -201,6 +207,7 @@ geom_out_file = wf.File(geom_exe.ifo_list, geom_exe.name,
                         store_file=True, directory=geom_out_dir,
                         tags=[], use_tmp_subdirs=False)
 geom_node = geom_exe.create_node(workflow.analysis_time, geom_out_file,
+                                 config_file,
                                  geom_out_dir, workflow.out_dir,
                                  workflow_name='initial_geom_bank')
 workflow += geom_node
