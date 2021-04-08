@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
 import pycbc.version
+from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
@@ -45,9 +46,6 @@ from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
 from pycbc.results.pygrb_postprocessing_utils import get_bestnr
 from glue.ligolw import lsctables
-
-# Deprecated
-from pylal.plotutils import CumulativeHistogramPlot
 
 plt.switch_backend('Agg')
 rc("image", cmap="cividis_r")
@@ -84,6 +82,11 @@ if opts.veto_directory and (opts.veto_category is None):
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
+
+if opts.x_variable not in ["bestnr", "snr", "snruncut"]:
+    err_msg = "--x-variable must be one of: bestnr, snr, snruncut."
+    logging.error(err_msg)
+    sys.exit()
 
 # Store options used multiple times in local variables
 trig_file = opts.offsource_file
@@ -134,6 +137,7 @@ logging.info(msg)
 
 # Extract basic trigger properties and store as dictionaries
 # TODO: the for's can be made more Pythonic probably.
+# TODO: use stat option also to determine the time_veto_max_* to calculate.
 trig_time = {}
 trig_snr = {}
 trig_bestnr = {}
@@ -186,9 +190,9 @@ for slide_id in range(num_slides):
 # This is the data that will be plotted
 full_time_veto_max_snr = sort_stat(time_veto_max_snr)
 full_time_veto_max_snr_uncut = sort_stat(time_veto_max_snr_uncut)
-max_bestnr, _, full_time_veto_max_bestnr =\
+_, _, full_time_veto_max_bestnr =\
     max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
-# The 0.'s here force the histograms to start at (0, 1) if not trial
+# The 0.'s here force the histograms to start at (0, 1) if no trial
 # returned a no-event (i.e., BestNR = 0)
 if full_time_veto_max_bestnr[0] != 0.:
     full_time_veto_max_snr.insert(0, 0.)
@@ -198,12 +202,9 @@ if full_time_veto_max_bestnr[0] != 0.:
 logging.info("SNR and bestNR maxima calculated.")
 
 
-# ==========
-# Make plots
-# ==========
-
-# TODO: use stat option also to determine the time_veto_max_* to calculate.
-# Plot cumulative histograms
+# =========
+# Make plot
+# =========
 x_label_dict = {"bestnr": "BestNR",
                 "snr": "SNR",
                 "snruncut": "SNR after signal based vetoes"}
@@ -212,20 +213,65 @@ data_dict = {"bestnr": full_time_veto_max_bestnr,
              "snruncut": full_time_veto_max_snr_uncut}
 fig = plt.figure()
 ax = fig.gca()
-cumplot = CumulativeHistogramPlot(x_label_dict[stat],
-                                  "False alarm probability",
-                                  "")
-cumplot.add_background([item] for item in data_dict[stat])
-# TODO: promote this to an option
-cumplot.finalize(num_bins=50)
-cumplot.ax.set_ylim(ymax=1.2)
-#cumplot.savefig('%s/%s_vs_fap.png' % (outdir, stat))
-cumplot.savefig(opts.output_file)
+ax.grid(True)
+ax.set_yscale("log")
+ax.set_xlabel(x_label_dict[stat])
+ax.set_ylabel("False alarm probability")
+# TODO: Turn these into options?
+ymax = 1.2
+normalization = 1.
+epsilon = 1e-8
+num_bins = 50
+# Figure out binning
+min_stat = min(data_dict[stat])
+max_stat = max(data_dict[stat])
+bins = np.linspace(min_stat, max_stat, num_bins + 1, endpoint=True)
+bins_bg = np.append(bins, float('Inf'))
+dx = bins[1] - bins[0]
+# Histogram each background instance separately and take stats
+hist_sum = np.zeros(len(bins), dtype=float)
+sq_hist_sum = np.zeros(len(bins), dtype=float)
+# Make histogram
+for instance in data_dict[stat]:
+    y, x = np.histogram(instance, bins=bins_bg)
+    x = np.delete(x, -1)
+    y = y[::-1].cumsum()[::-1]
+    hist_sum += y
+    sq_hist_sum += y*y
+# Get statistics
+N = len(data_dict[stat])
+means = hist_sum / N
+stds = np.sqrt((sq_hist_sum - hist_sum*means) / (N - 1))
+means[means <= epsilon] = epsilon
+upper = means + stds
+lower = means - stds
+lower[lower <= epsilon] = epsilon
+# Normalize
+means = means*normalization
+upper = upper*normalization
+lower = lower*normalization
+# Plot mean
+ax.plot(x + dx/2, means, 'r+', markersize=12)
+# 3 lines for aesthetic reasons: ensure that the width of the
+# bar on the far right right is the same as all the others
+x = np.append(x, x[-1]+dx/2)
+upper = np.append(upper, upper[-1])
+lower = np.append(lower, lower[-1])
+# Shade in the 1-standard deviation area
+ax.fill_between(x + dx/2, lower, upper, alpha=0.3, facecolor='y', step='mid')
+# Wrap up
+ax.set_xlim((0.9 * min_stat, 1.1 * max_stat))
+ax.set_ylim((0.6/N, ymax))
+plot_title = "Cumulative distribution of background triggers"
+plot_caption = "Background cumulative distribution of the %s " %x_label_dict[stat]
+fig_path = opts.output_file
+save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
+                       title=plot_title, caption=plot_caption)
 plt.close()
 
 logging.info("Plots complete.")
 
 # USE THIS TO CHECK NOTHING IS BREAKING
 # REMOVE ONCE DONE CODING UP THIS SCRIPT
-for stat in ["bestnr", "snr", "snruncut"]:
-    np.savetxt('%s/%s_vals.txt' % (outdir, stat), data_dict[stat])
+#for stat in ["bestnr", "snr", "snruncut"]:
+np.savetxt('%s/%s_vals.txt' % (outdir, stat), data_dict[stat])
