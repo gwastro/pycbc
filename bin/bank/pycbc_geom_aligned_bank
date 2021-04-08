@@ -205,6 +205,15 @@ parser.add_argument("--map-filename", type=str, default=None,
                          "work.")
 parser.add_argument("--transformation-catalog-filename", type=str, default=None,
                     help="See workflow/core.py")
+parser.add_argument('--site-catalog', type=str, required=False,
+                    help='Supply the location of the pegasus site '
+                         'catalog file. '
+                         'Only needed if running this job within a workflow.')
+parser.add_argument('--main-workflow-directory', default=None, required=False,
+                    help='Supply the location that the main workflow was '
+                         'generated in. Only needed if running this job '
+                         'within a workflow, and then identifies where the '
+                         'local-site-scratch is')
 parser.add_argument("--intermediate-data-file", type=str, required=True,
                     help="The HDF file to be used to store data to pass down "
                     "to the various worker jobs.")
@@ -531,7 +540,8 @@ opts.config_overrides = []
 opts.config_delete = []
 
 # Now setup the workflow
-workflow = wf.Workflow(opts, opts.workflow_name)
+workflow = wf.Workflow(opts, opts.workflow_name,
+                       directory=opts.main_workflow_directory)
 
 # Start with 2dstack jobs
 if opts.storage_path_base:
@@ -598,7 +608,8 @@ bankverify_node = bankverify_exe.create_node(out_bank, workflow.analysis_time)
 workflow += bankverify_node
 
 workflow.save(filename=opts.dax_filename, output_map_path=opts.map_filename,
-              transformation_catalog_path=opts.transformation_catalog_filename)
+              transformation_catalog_path=opts.transformation_catalog_filename,
+              site_catalog_path=args.site_catalog)
 
 logging.info("GENERATION SUCCESSFUL.")
 logging.info("Submit the resulting dax file to generate your template bank.")
