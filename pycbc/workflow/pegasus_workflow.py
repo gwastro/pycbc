@@ -590,7 +590,7 @@ class Workflow(object):
             self._inputs += red_inputs
             # NOTE: This doesn't work within pegasus, and so workflow outputs
             #       will not automatically be known at the next level up.
-            #self._outputs += sub._outputs
+            self._outputs += sub._outputs
             sub.transformation_catalog_file.insert_into_dax(self._rc)
             sub.output_map_file.insert_into_dax(self._rc)
             sub.site_catalog_file.insert_into_dax(self._rc)
@@ -609,9 +609,9 @@ class Workflow(object):
             self._asdag.add_inputs(*self._inputs)
             # NOTE: This doesn't work within pegasus, and so workflow outputs
             #       will not automatically be known at the next level up.
-            #for out in self._outputs:
-            #    stage_out = out.storage_path is not None
-            #    self._asdag.add_outputs(out, stage_out=stage_out)
+            for out in self._outputs:
+                stage_out = out.storage_path is not None
+                self._asdag.add_outputs(out, stage_out=stage_out)
 
         self._adag.add_replica_catalog(self._rc)
         # FIXME: Cannot add TC into workflow
