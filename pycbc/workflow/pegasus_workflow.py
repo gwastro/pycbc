@@ -686,5 +686,5 @@ class File(dax.File):
                 site = 'local'
 
         fil = File(os.path.basename(path))
-        fil.PFN(path, site)
+        fil.add_pfn(path, site=site)
         return fil
