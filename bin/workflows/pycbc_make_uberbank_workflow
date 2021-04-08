@@ -319,7 +319,6 @@ set_subworkflow_properties(dax_job, map_file, tc_file, sc_file,
                            staging_site=workflow.staging_site)
 
 workflow._adag.add_jobs(dax_job)
-sbank_bbh_dax_job = dax_job
 
 # These dependencies must be added manually as no data linkage is known to
 # pegasus.
