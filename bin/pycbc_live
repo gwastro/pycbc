@@ -576,7 +576,7 @@ parser.add_argument('--max-batch-size', type=int, default=2**27)
 parser.add_argument('--store-loudest-index', type=int, default=0)
 parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf,
                     help="Safety BNS horizon distance (in Mpc) above which a "
-                    "detector's data is discarded.".)
+                    "detector's data is discarded.")
 parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf,
                     help="Safety BNS horizon distance (in Mpc) below which a "
                     "detector's data is discarded.")
