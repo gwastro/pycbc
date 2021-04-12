@@ -47,7 +47,7 @@ from pycbc.results.pygrb_postprocessing_utils import construct_trials
 from pycbc.results.pygrb_postprocessing_utils import sort_trigs
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
-from pycbc.results.pygrb_postprocessing_utils import get_bestnr
+from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
 from glue.ligolw import lsctables
 
 plt.switch_backend('Agg')
@@ -193,15 +193,23 @@ trig_bestnr = {}
 for slide_id in range(num_slides):
     slide_trigs = sorted_trigs[slide_id]
     trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
-    trig_bestnr[slide_id] = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
-                                        null_thresh=null_thresh,\
-                                        snr_threshold=snr_thresh,\
-                                        sngl_snr_threshold=sngl_snr_thresh,\
-                                        chisq_threshold=new_snr_thresh,\
-                                        null_grad_thresh=null_grad_thresh,\
-                                        null_grad_val=null_grad_val) \
-                             for t in slide_trigs]
-    trig_bestnr[slide_id] = np.array(trig_bestnr[slide_id])
+    #trig_bestnr[slide_id] = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
+    #                                    null_thresh=null_thresh,\
+    #                                    snr_threshold=snr_thresh,\
+    #                                    sngl_snr_threshold=sngl_snr_thresh,\
+    #                                    chisq_threshold=new_snr_thresh,\
+    #                                    null_grad_thresh=null_grad_thresh,\
+    #                                    null_grad_val=null_grad_val) \
+    #                         for t in slide_trigs]
+    #trig_bestnr[slide_id] = np.array(trig_bestnr[slide_id])
+    trig_bestnr[slide_id] = get_bestnrs(slide_trigs, q=chisq_index,
+                                        n=chisq_nhigh,
+                                        null_thresh=null_thresh,
+                                        snr_threshold=snr_thresh,
+                                        sngl_snr_threshold=sngl_snr_thresh,
+                                        chisq_threshold=new_snr_thresh,
+                                        null_grad_thresh=null_grad_thresh,
+                                        null_grad_val=null_grad_val)
 logging.info("Time and BestNR of triggers extracted.")
 
 # Calculate SNR and BestNR values and maxima
@@ -275,14 +283,21 @@ if do_injections:
                                 (1 - np.cos(found_inj_ra - found_trig_ra)))
 
     # Grab values of detection statistic
-    found_trig_bestnr = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
-                             null_thresh=null_thresh,\
-                             snr_threshold=snr_thresh,\
-                             sngl_snr_threshold=sngl_snr_thresh,\
-                             chisq_threshold=new_snr_thresh,\
-                             null_grad_thresh=null_grad_thresh,\
-                             null_grad_val=null_grad_val) for t in found_trigs]
-    found_trig_bestnr = np.asarray(found_trig_bestnr)
+    #found_trig_bestnr = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
+    #                         null_thresh=null_thresh,\
+    #                         snr_threshold=snr_thresh,\
+    #                         sngl_snr_threshold=sngl_snr_thresh,\
+    #                         chisq_threshold=new_snr_thresh,\
+    #                         null_grad_thresh=null_grad_thresh,\
+    #                         null_grad_val=null_grad_val) for t in found_trigs]
+    #found_trig_bestnr = np.asarray(found_trig_bestnr)
+    found_trig_bestnr = get_bestnrs(found_trigs, q=chisq_index, n=chisq_nhigh,
+                             null_thresh=null_thresh,
+                             snr_threshold=snr_thresh,
+                             sngl_snr_threshold=sngl_snr_thresh,
+                             chisq_threshold=new_snr_thresh,
+                             null_grad_thresh=null_grad_thresh,
+                             null_grad_val=null_grad_val)
 
     # Construct conditions for injection:
     # 1) found louder than background,

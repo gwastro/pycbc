@@ -44,7 +44,7 @@ from pycbc.results.pygrb_postprocessing_utils import sort_trigs
 from pycbc.results.pygrb_postprocessing_utils import sort_stat
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
-from pycbc.results.pygrb_postprocessing_utils import get_bestnr
+from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
 from glue.ligolw import lsctables
 
 plt.switch_backend('Agg')
@@ -145,16 +145,14 @@ for slide_id in range(num_slides):
     slide_trigs = sorted_trigs[slide_id]
     trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
     trig_snr[slide_id] = np.asarray(slide_trigs.get_column('snr'))
-    trig_bestnr[slide_id] = [get_bestnr(t, q=opts.chisq_index,\
-                                        n=opts.chisq_nhigh,\
-                                        null_thresh=null_thresh,\
-                                        snr_threshold=opts.snr_threshold,\
-                                        sngl_snr_threshold=opts.sngl_snr_threshold,\
-                                        chisq_threshold=opts.newsnr_threshold,\
-                                        null_grad_thresh=opts.null_grad_thresh,\
-                                        null_grad_val=opts.null_grad_val) \
-                             for t in slide_trigs]
-    trig_bestnr[slide_id] = np.array(trig_bestnr[slide_id])
+    trig_bestnr[slide_id] = get_bestnrs(slide_trigs, q=opts.chisq_index,
+                                        n=opts.chisq_nhigh,
+                                        null_thresh=null_thresh,
+                                        snr_threshold=opts.snr_threshold,
+                                        sngl_snr_threshold=opts.sngl_snr_threshold,
+                                        chisq_threshold=opts.newsnr_threshold,
+                                        null_grad_thresh=opts.null_grad_thresh,
+                                        null_grad_val=opts.null_grad_val)
 logging.info("Time, SNR, and BestNR of triggers extracted.")
 
 # Calculate SNR and BestNR values and maxima
@@ -195,9 +193,9 @@ _, _, full_time_veto_max_bestnr =\
 # The 0.'s here force the histograms to start at (0, 1) if no trial
 # returned a no-event (i.e., BestNR = 0)
 if full_time_veto_max_bestnr[0] != 0.:
-    full_time_veto_max_snr.insert(0, 0.)
-    full_time_veto_max_snr_uncut.insert(0, 0.)
-    full_time_veto_max_bestnr.insert(0, 0.)
+    full_time_veto_max_snr = np.concatenate(([0.], full_time_veto_max_snr))
+    full_time_veto_max_snr_uncut = np.concatenate(([0.], full_time_veto_max_snr_uncut))
+    full_time_veto_max_bestnr = np.concatenate(([0.], full_time_veto_max_bestnr))
 
 logging.info("SNR and bestNR maxima calculated.")
 
