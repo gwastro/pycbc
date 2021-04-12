@@ -51,7 +51,7 @@ from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import efficiency_with_errs
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_responses
-from pycbc.results.pygrb_postprocessing_utils import get_bestnr
+from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
 from glue.ligolw import lsctables
 
 plt.switch_backend('Agg')
@@ -191,15 +191,14 @@ for slide_id in range(num_slides):
     slide_trigs = sorted_trigs[slide_id]
     trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
     trig_snr[slide_id] = np.asarray(slide_trigs.get_column('snr'))
-    trig_bestnr[slide_id] = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
-                                        null_thresh=null_thresh,\
-                                        snr_threshold=snr_thresh,\
-                                        sngl_snr_threshold=sngl_snr_thresh,\
-                                        chisq_threshold=new_snr_thresh,\
-                                        null_grad_thresh=null_grad_thresh,\
-                                        null_grad_val=null_grad_val) \
-                             for t in slide_trigs]
-    trig_bestnr[slide_id] = np.array(trig_bestnr[slide_id])
+    trig_bestnr[slide_id] = get_bestnrs(slide_trigs, q=chisq_index,
+                                        n=chisq_nhigh,
+                                        null_thresh=null_thresh,
+                                        snr_threshold=snr_thresh,
+                                        sngl_snr_threshold=sngl_snr_thresh,
+                                        chisq_threshold=new_snr_thresh,
+                                        null_grad_thresh=null_grad_thresh,
+                                        null_grad_val=null_grad_val)
 logging.info("Time, SNR, and BestNR of triggers extracted.")
 
 # Calculate SNR and BestNR values and maxima
@@ -270,25 +269,19 @@ if onsource_file:
     loud_on_bestnr = 0
     loud_on_fap = 1
 
-    # Record loudest trig by SNR and by BestNR
-    bin_trigs = sorted(np.asarray(on_trigs), key=lambda t: t.snr, reverse=True)
-    bin_trigs.sort(key=lambda t: get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
-                                            null_thresh=null_thresh,\
-                                            snr_threshold=snr_thresh,\
-                                            sngl_snr_threshold=sngl_snr_thresh,\
-                                            chisq_threshold=new_snr_thresh,\
-                                            null_grad_thresh=null_grad_thresh,\
-                                            null_grad_val=null_grad_val),\
-                                            reverse=True)
-    loud_on_bestnr_trigs = bin_trigs[0]
-    loud_on_bestnr = get_bestnr(bin_trigs[0], q=chisq_index,\
-                                null_thresh=null_thresh,\
-                                snr_threshold=snr_thresh,\
-                                sngl_snr_threshold=sngl_snr_thresh,\
-                                chisq_threshold=new_snr_thresh,
-                                n=chisq_nhigh,\
-                                null_grad_thresh=null_grad_thresh,\
-                                null_grad_val=null_grad_val)
+    # Calculate BestNRs and record loudest trig by BestNR
+    bin_trigs_bestnrs = get_bestnrs(on_trigs,
+                                    q=chisq_index, n=chisq_nhigh,
+                                    null_thresh=null_thresh,
+                                    snr_threshold=snr_thresh,
+                                    sngl_snr_threshold=sngl_snr_thresh,
+                                    chisq_threshold=new_snr_thresh,
+                                    null_grad_thresh=null_grad_thresh,
+                                    null_grad_val=null_grad_val)
+    bin_trigs = np.asarray([[x, y] for y, x in sorted(zip(bin_trigs_bestnrs, np.asarray(on_trigs)), reverse=True)])
+    loud_on_bestnr_trigs = bin_trigs[0, 0]
+    loud_on_bestnr = bin_trigs[0, 1]
+
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
@@ -343,14 +336,14 @@ if do_injections:
     found_trig_mchirp = np.asarray(found_trigs.get_column('mchirp'))
 
     # Grab values of detection statistic
-    found_trig_bestnr = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
-                             null_thresh=null_thresh,\
-                             snr_threshold=snr_thresh,\
-                             sngl_snr_threshold=sngl_snr_thresh,\
-                             chisq_threshold=new_snr_thresh,\
-                             null_grad_thresh=null_grad_thresh,\
-                             null_grad_val=null_grad_val) for t in found_trigs]
-    found_trig_bestnr = np.asarray(found_trig_bestnr)
+    found_trig_bestnr = get_bestnrs(found_trigs, q=chisq_index,
+                                    n=chisq_nhigh,
+                                    null_thresh=null_thresh,
+                                    snr_threshold=snr_thresh,
+                                    sngl_snr_threshold=sngl_snr_thresh,
+                                    chisq_threshold=new_snr_thresh,
+                                    null_grad_thresh=null_grad_thresh,
+                                    null_grad_val=null_grad_val)
 
     # Construct conditions for injection:
     # 1) found louder than background,

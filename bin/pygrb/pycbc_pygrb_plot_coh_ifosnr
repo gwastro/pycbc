@@ -128,7 +128,7 @@ logging.info("Plotting...")
 # Order the IFOs by sensitivity
 ifo_senstvty = {}
 for i_ifo in ifos:
-    senstvty = trig_data.f_resp[i_ifo]*trig_data.sigma_mean[i_ifo]
+    senstvty = trig_data.f_resp_mean[i_ifo]*trig_data.sigma_mean[i_ifo]
     ifo_senstvty.update({i_ifo: senstvty})
 ifo_senstvty = collections.OrderedDict(sorted(ifo_senstvty.items(),
                                               key=operator.itemgetter(1),
@@ -167,7 +167,7 @@ if inj_file:
 # Sigma-mean, min, max
 y_data = [trig_data.sigma_mean[ifo], trig_data.sigma_min[ifo], trig_data.sigma_max[ifo]]
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
-y_data = [zoom_snr*(trig_data.f_resp[ifo]*x)**0.5 for x in y_data]
+y_data = [zoom_snr*(trig_data.f_resp_mean[ifo]*x)**0.5 for x in y_data]
 for el in y_data:
     ax.plot(zoom_snr, el, 'g-')
 # ncx2: non-central chi-squared; ppf: percent point function

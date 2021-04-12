@@ -48,7 +48,7 @@ from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import mc_cal_wf_errs
 from pycbc.results.pygrb_postprocessing_utils import read_seg_files
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_responses
-from pycbc.results.pygrb_postprocessing_utils import get_bestnr
+from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
 from glue.ligolw import lsctables
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
@@ -181,21 +181,21 @@ ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                        opts.veto_category)
 
 # Set reweighted SNR function
-def reweighted_snr(trigger):
-    """Wrapper for calculating bestnr.
+def reweighted_snrs(triggers):
+    """Wrapper for calculating bestnrs of a list of triggers.
 
     Parameters
     ----------
-    trigger: glue.ligolw.lsctables.MultiInspiral
-        Trigger as a single row of MultiInspiral table.
+    triggers: glue.ligolw.lsctables.MultiInspiral
+        Triggers as a MultiInspiral table.
 
     Returns
     -------
-    trigger_bestnr: float
-        BestNR value of the trigger.
+    trigger_bestnrs: Numpy array
+        BestNR values of the triggers.
     """
-    trigger_bestnr = get_bestnr(
-        trigger, q=chisq_index, n=chisq_nhigh,
+    trigger_bestnrs = get_bestnrs(
+        triggers, q=chisq_index, n=chisq_nhigh,
         null_thresh=null_thresh,
         snr_threshold=snr_thresh,
         sngl_snr_threshold=sngl_snr_thresh,
@@ -203,7 +203,7 @@ def reweighted_snr(trigger):
         null_grad_thresh=null_grad_thresh,
         null_grad_val=null_grad_val
         )
-    return trigger_bestnr
+    return trigger_bestnrs
 
 def get_column(table, column_name):
     """Wrapper for glue.ligolw.lsctables.MultiInspiralTable.get_column
@@ -278,7 +278,7 @@ def lsctable_to_dict(inj_table, ifos, trig_table=None, background_bestnrs=None):
         for ifo in ifos:
             site = ifo.lower()
             inj_data['snr_{}'.format(site)] = trig_table.get_sngl_snr(site)
-        inj_data['bestnr'] = np.asarray([reweighted_snr(t) for t in trig_table])
+        inj_data['bestnr'] = reweighted_snrs(trig_table)
         if background_bestnrs is not None:
             inj_data['fap'] = np.array(
                 [sum(background_bestnrs > bestnr) for bestnr in inj_data['bestnr']],
@@ -355,7 +355,7 @@ for slide_id in range(num_slides):
     slide_trigs = sorted_trigs[slide_id]
     trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
     trig_snr[slide_id] = np.asarray(slide_trigs.get_column('snr'))
-    trig_bestnr[slide_id] = [reweighted_snr(t) for t in slide_trigs]
+    trig_bestnr[slide_id] = reweighted_snrs(slide_trigs)
     trig_bestnr[slide_id] = np.array(trig_bestnr[slide_id])
 logging.info("Time, SNR, and BestNR of triggers extracted.")
 
@@ -514,18 +514,20 @@ if onsource_file:
     # Separate off chirp mass column
     on_mchirp = on_trigs.get_column('mchirp')
 
-    # Record loudest trig by SNR and by BestNR
+    # Record loudest trig by SNR
     bin_trigs = sorted(np.asarray(on_trigs), key=lambda t: t.snr, reverse=True)
     loud_on_snr_trigs = bin_trigs[0]
     loud_on_snr = bin_trigs[0].snr
-    bin_trigs.sort(key=lambda t: reweighted_snr(t), reverse=True)
-    loud_on_bestnr_trigs = bin_trigs[0]
-    loud_on_bestnr = reweighted_snr(bin_trigs[0])
+
+    # Record loudest trig by BestNR
+    bin_trigs_bestnrs = reweighted_snrs(on_trigs)
+    bin_trigs = np.asarray([[x,y] for y, x in sorted(zip(bin_trigs_bestnrs, on_trigs), reverse=True)])
+    loud_on_bestnr_trigs = bin_trigs[0, 0]
+    loud_on_bestnr = bin_trigs[0,1]
 
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
-        #loud_on_bestnr = 0 # TODO: remove?
 
     logging.info("Onsource analysed.")
 

@@ -43,7 +43,6 @@ except ImportError:
 try:
     #TODO: Look at pycbc/io/hdf.py
     from pylal import MultiInspiralUtils
-    from pylal.coh_PTF_pyutils import get_bestnr as pylal_get_bestnr
 except ImportError:
     pass
 # Only if a backend is not already set ... This should really *not* be done
@@ -92,95 +91,75 @@ get_antenna_responses.excluded.add(0)
 
 
 # =============================================================================
-# Wrapper to avoid import pylal in executables: switch here from this pylal
-# function to PyCBC functions when ready.
-#
-# Function to calculate the detection statistic
+# Function to calculate the detection statistic of a list of triggers
 # =============================================================================
-def get_bestnr(trig, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,\
-               sngl_snr_threshold=4., chisq_threshold=None,\
-               null_grad_thresh=20., null_grad_val=0.2):
-    """Calculate the detection statistic of a trigger"""
+def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,\
+                sngl_snr_threshold=4., chisq_threshold=None,\
+                null_grad_thresh=20., null_grad_val=0.2):
+    """
+    Calculate BestNR (coh_PTF detection statistic) of triggers through signal
+    based vetoes.  The (default) signal based vetoes are:
+      * Coherent SNR < 6
+      * Bank chi-squared reduced (new) SNR < 6
+      * Auto veto reduced (new) SNR < 6
+      * Single-detector SNR (from two most sensitive IFOs) < 4
+      * Null SNR (CoincSNR^2 - CohSNR^2)^(1/2) < nullthresh
 
-    bestNR = pylal_get_bestnr(trig, q=q, n=n, null_thresh=null_thresh,\
-                              snr_threshold=snr_threshold,\
-                              sngl_snr_threshold=sngl_snr_threshold,\
-                              chisq_threshold=chisq_threshold,\
-                              null_grad_thresh=null_grad_thresh,\
-                              null_grad_val=null_grad_val)
+    Returns Numpy array of BestNR values.
+    """
 
-    return bestNR
+    if not len(trigs):
+        return numpy.array([])
 
+    snr = trigs.get_column('snr')
+    ra = trigs.get_column('ra')
+    dec = trigs.get_column('dec')
+    time = trigs.get_end()
 
-#def get_bestnr( trig, q=4.0, n=3.0, null_thresh=(4.25,6), snr_threshold=6.,\
-#                sngl_snr_threshold=4., chisq_threshold = None,\
-#                null_grad_thresh=20., null_grad_val = 1./5.):
-#    """
-#    Calculate BestNR (coh_PTF detection statistic) through signal based vetoes:
-#    The signal based vetoes are as follows:
-#      * Coherent SNR < 6
-#      * Bank chi-squared reduced (new) SNR < 6
-#      * Auto veto reduced (new) SNR < 6
-#      * Single-detector SNR (from two most sensitive IFOs) < 4
-#      * Null SNR (CoincSNR^2 - CohSNR^2)^(1/2) < nullthresh
-#    Returns BestNR as float
-#    """
-#
-#    snr = trig.snr
-#    if not chisq_threshold:
-#        chisq_threshold = snr_threshold
-#
-#    # coherent SNR and null SNR cut
-#    if (snr < snr_threshold) \
-#         or (trig.get_new_snr(index=q, nhigh=n, column='bank_chisq')\
-#                          < chisq_threshold) \
-#         or (trig.get_new_snr(index=q, nhigh=n, column='cont_chisq')\
-#                          < chisq_threshold):
-#        return 0
-#
-#    # define IFOs for sngl cut
-#    ifos = map(str,trig.get_ifos())
-#
-#    # single detector SNR cut
-#    sens = {}
-#    fPlus, fCross = get_det_response(numpy.degrees(trig.ra),\
-#                                     numpy.degrees(trig.dec),\
-#                                     trig.get_end())
-#    for ifo in ifos:
-#        if ifo.lower()[0] == 'h':
-#            i = ifo.lower()
-#        else:
-#            i = ifo[0].lower()
-##        sens[ifo] = getattr(trig, 'sigmasq_%s' % i.lower()) * \
-##                        sum(numpy.array([fPlus[ifo], fCross[ifo]])**2)
-#        sens[ifo] = getattr(trig, 'sigmasq_%s' % i.lower()) * \
-#                        get_antenna_single_response(ifo, self.ra[i],
-#                                                    self.dec[i], self.time[i])
-#    ifos.sort(key=lambda ifo: sens[ifo], reverse=True)
-#    if len(ifos) > 1:
-#        for i in xrange(0, 2):
-#            if ifos[i].lower()[0] == 'h':
-#                i = ifos[i].lower()
-#            else:
-#                i = ifos[i][0].lower()
-#            if getattr(trig, 'snr_%s' % i) < sngl_snr_threshold:
-#                return 0
-#
-#    # get chisq reduced (new) SNR
-#    bestNR = trig.get_bestnr(index=q, nhigh=n, \
-#             null_snr_threshold=null_thresh[0], \
-#             null_grad_thresh=null_grad_thresh, null_grad_val=null_grad_val)
-#
-#    # If we got this far, the bestNR is non-zero. Verify that chisq actually
-#    # was calculated for the trigger
-#    if trig.chisq == 0:
-#        # Some stuff for debugging
-#        print >> sys.stderr,\
-#            "Chisq not calculated for trigger with end time and snr:"
-#        print >> sys.stderr,  trig.get_end(),trig.snr
-#        raise ValueError("Chisq has not been calculated for trigger.")
-#
-#    return bestNR
+    bestnr = numpy.ones(len(snr))
+
+    # Coherent SNR and null SNR cut
+    bestnr[numpy.asarray(snr) < snr_threshold] = 0
+    if not chisq_threshold:
+        chisq_threshold = snr_threshold
+    bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n, column='bank_chisq')) < chisq_threshold] = 0
+    bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n, column='cont_chisq')) < chisq_threshold] = 0
+
+    # Define IFOs for sngl cut
+    ifos = map(str,trigs[0].get_ifos())
+
+    # Single detector SNR cut
+    sens = {}
+    sigmasqs = trigs.get_sigmasqs()
+    ifo_snr = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
+    for ifo in ifos:
+        antenna = Detector(ifo)
+        sens[ifo] = sigmasqs[ifo] * get_antenna_responses(antenna, ra, dec, time)
+    for i_trig, trig in enumerate(trigs):
+        # Apply only to triggers that were not already cut previously
+        if bestnr[i_trig] != 0:
+            ifos.sort(key=lambda ifo: sens[ifo][i_trig], reverse=True)
+            if len(ifos) > 1:
+                for i in xrange(0, 2):
+                    if ifo_snr[ifos[i]][i_trig] < sngl_snr_threshold:
+                        bestnr[i_trig] = 0
+        # Get chisq reduced (new) SNR for triggers that were not cut
+        # NOTE: this is in glue.ligolw.lsctables.MultiInspiralTable
+        if bestnr[i_trig] != 0:
+            bestnr[i_trig] = trig.get_bestnr(index=q, nhigh=n,
+                                             null_snr_threshold=null_thresh[0],
+                                             null_grad_thresh=null_grad_thresh,
+                                             null_grad_val=null_grad_val)
+        # If we got this far, the bestNR is non-zero. Verify that chisq was
+        # actually calculated for the trigger, otherwise print debugging info
+        if bestnr[i_trig] != 0:
+            if trig.chisq == 0:
+                err_msg = "Chisq not calculated for trigger with end time "
+                err_msg += "%s and snr %s" %(trig.get_end(),trig.snr)
+                logging.error(err_msg)
+                sys.exit()
+
+    return bestnr
 
 
 # =============================================================================
@@ -561,7 +540,18 @@ class PygrbFilterOutput(object):
             # Set basic data
             self.time = numpy.asarray(trigs_or_injs.get_end())
             self.snr = numpy.asarray(trigs_or_injs.get_column('snr'))
-            self.reweighted_snr = [get_bestnr(t, q=opts.chisq_index,
+            #self.reweighted_snr = [get_bestnr(t, q=opts.chisq_index,
+            #                                  n=opts.chisq_nhigh,
+            #                                  null_thresh=null_thresh,
+            #                                  snr_threshold=opts.snr_threshold,
+            #                                  sngl_snr_threshold=opts.sngl_snr_threshold,
+            #                                  chisq_threshold=opts.newsnr_threshold,
+            #                                  null_grad_thresh=opts.null_grad_thresh,
+            #                                  null_grad_val=opts.null_grad_val)
+            #                       for t in trigs_or_injs]
+            #self.reweighted_snr = numpy.array(self.reweighted_snr)
+            self.reweighted_snr = get_bestnrs(trigs_or_injs,
+                                              q=opts.chisq_index,
                                               n=opts.chisq_nhigh,
                                               null_thresh=null_thresh,
                                               snr_threshold=opts.snr_threshold,
@@ -569,8 +559,6 @@ class PygrbFilterOutput(object):
                                               chisq_threshold=opts.newsnr_threshold,
                                               null_grad_thresh=opts.null_grad_thresh,
                                               null_grad_val=opts.null_grad_val)
-                                   for t in trigs_or_injs]
-            self.reweighted_snr = numpy.array(self.reweighted_snr)
             self.null_snr = numpy.asarray(trigs_or_injs.get_null_snr())
             self.null_stat = numpy.asarray(trigs_or_injs.get_column(
                 'null_statistic'))
@@ -645,6 +633,7 @@ class PygrbFilterOutput(object):
                 self.dec = trigs_or_injs.get_column('dec')
                 self.latitude = numpy.degrees(self.dec)
                 self.f_resp = {}
+                self.f_resp_mean = {}
                 sigma = trigs_or_injs.get_sigmasqs()
                 self.sigma_tot = numpy.zeros(num_trigs_or_injs)
                 for ifo in ifos:
@@ -654,21 +643,17 @@ class PygrbFilterOutput(object):
                                                              self.dec,
                                                              self.time)
                     self.sigma_tot += (sigma[ifo] * self.f_resp[ifo])
-                    # After the detailed calculations, this only stores the mean responses
-                    self.f_resp[ifo] = self.f_resp[ifo].mean()
-
-                # Normalise trig_sigma
-                for ifo in ifos:
-                    sigma[ifo] /= self.sigma_tot
+                    self.f_resp_mean[ifo] = self.f_resp[ifo].mean()
 
                 self.sigma_mean = {}
                 self.sigma_max = {}
                 self.sigma_min = {}
                 for ifo in ifos:
                     try:
-                        self.sigma_mean[ifo] = sigma[ifo].mean()
-                        self.sigma_max[ifo] = sigma[ifo].max()
-                        self.sigma_min[ifo] = sigma[ifo].min()
+                        sigma_norm = sigma[ifo]/self.sigma_tot
+                        self.sigma_mean[ifo] = sigma_norm.mean()
+                        self.sigma_max[ifo] = sigma_norm.max()
+                        self.sigma_min[ifo] = sigma_norm.min()
                     except ValueError:
                         self.sigma_mean[ifo] = 0
                         self.sigma_max[ifo] = 0
@@ -1181,7 +1166,7 @@ def sort_stat(time_veto_max_stat):
 # Find max and median of loudest SNRs or BestNRs
 # =============================================================================
 def max_median_stat(num_slides, time_veto_max_stat, trig_stat, total_trials):
-    """Deterime the maximum and median of the loudest SNRs/BestNRs"""
+    """Deterine the maximum and median of the loudest SNRs/BestNRs"""
 
     max_stat = max([trig_stat[slide_id].max() if trig_stat[slide_id].size \
                    else 0 for slide_id in range(num_slides)])
