@@ -38,13 +38,12 @@ from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
 from pycbc.results.pygrb_postprocessing_utils import load_time_slides
-from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
+from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
+from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
 from pycbc.results.pygrb_postprocessing_utils import construct_trials
-from pycbc.results.pygrb_postprocessing_utils import sort_trigs
+from pycbc.results.pygrb_postprocessing_utils import extract_basic_trig_properties
 from pycbc.results.pygrb_postprocessing_utils import sort_stat
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
-from pycbc.results.pygrb_postprocessing_utils import read_seg_files
-from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
 from glue.ligolw import lsctables
 
 plt.switch_backend('Agg')
@@ -60,7 +59,18 @@ __program__ = "pycbc_pygrb_plot_stats_distribution"
 # =============================================================================
 description = 'Efficiency calculator for the triggered search (PyGRB).'
 usage = __program__ + ' [--options]'
-opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
+
+parser = pygrb_initialize_plot_parser(usage=usage, description=description,
+                                      version=__version__)
+parser.add_argument("-F", "--offsource-file", action="store", required=True,
+                    default=None, help="Location of off-source trigger file")
+parser.add_argument("-x", "--x-variable", default=None, required=True,
+                    help="Quantity to plot on the horizontal axis. Supported "+
+                    "choices are: bestnr, snr, or snruncut.")
+#parser.add_argument("-S", "--seed", action="store", type=int,
+#                    default=1234, help="Seed to initialize Monte Carlo.")
+parser = pygrb_add_bestnr_opts(parser)
+opts = parser.parse_args()
 
 if opts.verbose:
     level = logging.INFO
@@ -70,11 +80,6 @@ logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=level)
 
 # Check options
-if opts.offsource_file is None:
-    err_msg = "Please specify a path to the offsource trigger file."
-    logging.error(err_msg)
-    sys.exit()
-
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
     logging.error(err_msg)
@@ -93,10 +98,6 @@ trig_file = opts.offsource_file
 chisq_nhigh = opts.chisq_nhigh
 null_thresh = map(float, opts.null_snr_threshold.split(','))
 stat = opts.x_variable
-
-# Initialize random number generator
-np.random.seed(opts.seed)
-logging.info("Setting random seed to %d.", opts.seed)
 
 # Set output directory
 logging.info("Setting output directory.")
@@ -120,40 +121,15 @@ segment_dict = load_segment_dict(trig_file)
 # Identify the number of slides
 num_slides = len(slide_dict)
 
-# Get segments
-segs = read_seg_files(opts.segment_dir)
-
 # Construct trials
 logging.info("Constructing trials.")
-trial_dict = construct_trials(num_slides, segs, segment_dict, ifos, slide_dict, vetoes)
-
-# Sort the triggers into each slide
-sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
-
+trial_dict = construct_trials(num_slides, opts.segment_dir, segment_dict, ifos, slide_dict, vetoes)
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
-
-msg = "Segments loaded, triggers sorted, and %d trials generated." % (total_trials)
-logging.info(msg)
+logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
-# TODO: the for's can be made more Pythonic probably.
-# TODO: use stat option also to determine the time_veto_max_* to calculate.
-trig_time = {}
-trig_snr = {}
-trig_bestnr = {}
-for slide_id in range(num_slides):
-    slide_trigs = sorted_trigs[slide_id]
-    trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
-    trig_snr[slide_id] = np.asarray(slide_trigs.get_column('snr'))
-    trig_bestnr[slide_id] = get_bestnrs(slide_trigs, q=opts.chisq_index,
-                                        n=opts.chisq_nhigh,
-                                        null_thresh=null_thresh,
-                                        snr_threshold=opts.snr_threshold,
-                                        sngl_snr_threshold=opts.sngl_snr_threshold,
-                                        chisq_threshold=opts.newsnr_threshold,
-                                        null_grad_thresh=opts.null_grad_thresh,
-                                        null_grad_val=opts.null_grad_val)
-logging.info("Time, SNR, and BestNR of triggers extracted.")
+trig_time, trig_snr, trig_bestnr = \
+    extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}

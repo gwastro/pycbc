@@ -42,12 +42,14 @@ from pycbc.results.pygrb_postprocessing_utils import load_xml_table
 from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
 from pycbc.results.pygrb_postprocessing_utils import load_time_slides
 from pycbc.results.pygrb_postprocessing_utils import load_injections
-from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
+from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
+from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
+from pycbc.results.pygrb_postprocessing_utils import pygrb_add_fminjs_input_opts
 from pycbc.results.pygrb_postprocessing_utils import construct_trials
-from pycbc.results.pygrb_postprocessing_utils import sort_trigs
+from pycbc.results.pygrb_postprocessing_utils import extract_basic_trig_properties
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
-from pycbc.results.pygrb_postprocessing_utils import read_seg_files
 from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
+from pycbc.results.pygrb_postprocessing_utils import get_grb_time
 from glue.ligolw import lsctables
 
 plt.switch_backend('Agg')
@@ -73,7 +75,28 @@ def process_var_strings(qty):
 # =============================================================================
 description = 'Efficiency calculator for the triggered search (PyGRB).'
 usage = __program__ + ' [--options]'
-opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
+
+parser = pygrb_initialize_plot_parser(usage=usage, description=description,
+                                      version=__version__)
+parser.add_argument("-F", "--offsource-file", action="store", required=True,
+                    default=None, help="Location of off-source trigger file")
+parser.add_argument("-x", "--x-variable", default=None, required=True,
+                    help="Quantity to plot on the horizontal axis. Supported "+
+                    "choices are: mchirp, time, eff_dist, dist, "+
+                    "eff_site_dist, incl, cosincl, q, mtot, spin1, spin2, "
+                    "or sky_error.")
+parser.add_argument("-y", "--y-variable", default=None, required=True,
+                    help="Quantity to plot on the vertical axis. Supported "+
+                    "choices are: mchirp, time, eff_dist, dist, "+
+                    "eff_site_dist, incl, cosincl, q, mtot, spin1, spin2, "
+                    "or sky_error.")
+parser.add_argument("--found-missed-output-file", default=None, required=True,
+                    help="Found-missed injections output file.")
+parser.add_argument("--missed-found-output-file", default=None, required=True,
+                    help="Missed-found injections output file.")
+parser = pygrb_add_fminjs_input_opts(parser)
+parser = pygrb_add_bestnr_opts(parser)
+opts = parser.parse_args()
 
 if opts.verbose:
     level = logging.INFO
@@ -83,11 +106,6 @@ logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
                     level=level)
 
 # Check options
-if opts.offsource_file is None:
-    err_msg = "Please specify a path to the offsource trigger file."
-    logging.error(err_msg)
-    sys.exit()
-
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
     logging.error(err_msg)
@@ -104,29 +122,6 @@ else:
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
-
-if opts.found_missed_output_file is None:
-    msg = "Please specify a pathname with found-missed-ouptut-file option"
-    logging.error(msg)
-    sys.exit()
-if opts.missed_found_output_file is None:
-    msg = "Please specify a pathname with missed-found-ouptut-file option"
-    logging.error(msg)
-    sys.exit()
-
-if opts.x_variable is None:
-    msg = "Please specify the quantity to plot on the horizontal axis!"
-    logging.error(msg)
-    sys.exit()
-if opts.y_variable is None:
-    msg = "Please specify the quantity to plot on the vertical axis!"
-    logging.error(msg)
-    sys.exit()
-if opts.x_variable == 'effsitedist' or opts.y_variable == 'effsitedist':
-    if opts.ifo is None:
-        msg = "Please provide --ifo IFO to select the effective site distance!"
-        logging.error(msg)
-        sys.exit()
 
 # Store options used multiple times in local variables
 fm_outfile = opts.found_missed_output_file
@@ -145,8 +140,8 @@ null_grad_thresh = opts.null_grad_thresh
 null_grad_val = opts.null_grad_val
 null_thresh = map(float, opts.null_snr_threshold.split(','))
 # Initialize random number generator
-np.random.seed(opts.seed)
-logging.info("Setting random seed to %d.", opts.seed)
+#np.random.seed(opts.seed)
+#logging.info("Setting random seed to %d.", opts.seed)
 
 # Set output directory
 logging.info("Setting output directory.")
@@ -172,45 +167,15 @@ segment_dict = load_segment_dict(trig_file)
 # Identify the number of slides
 num_slides = len(slide_dict)
 
-# Get segments
-segs = read_seg_files(opts.segment_dir)
-
 # Construct trials
 logging.info("Constructing trials.")
-trial_dict = construct_trials(num_slides, segs, segment_dict, ifos, slide_dict, vetoes)
-
-# Sort the triggers into each slide
-sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
-
+trial_dict = construct_trials(num_slides, opts.segment_dir, segment_dict, ifos, slide_dict, vetoes)
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
-
-msg = "Segments loaded, triggers sorted, and %d trials generated." % (total_trials)
-logging.info(msg)
+logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
-trig_time = {}
-trig_bestnr = {}
-for slide_id in range(num_slides):
-    slide_trigs = sorted_trigs[slide_id]
-    trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
-    #trig_bestnr[slide_id] = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
-    #                                    null_thresh=null_thresh,\
-    #                                    snr_threshold=snr_thresh,\
-    #                                    sngl_snr_threshold=sngl_snr_thresh,\
-    #                                    chisq_threshold=new_snr_thresh,\
-    #                                    null_grad_thresh=null_grad_thresh,\
-    #                                    null_grad_val=null_grad_val) \
-    #                         for t in slide_trigs]
-    #trig_bestnr[slide_id] = np.array(trig_bestnr[slide_id])
-    trig_bestnr[slide_id] = get_bestnrs(slide_trigs, q=chisq_index,
-                                        n=chisq_nhigh,
-                                        null_thresh=null_thresh,
-                                        snr_threshold=snr_thresh,
-                                        sngl_snr_threshold=sngl_snr_thresh,
-                                        chisq_threshold=new_snr_thresh,
-                                        null_grad_thresh=null_grad_thresh,
-                                        null_grad_val=null_grad_val)
-logging.info("Time and BestNR of triggers extracted.")
+trig_time, _, trig_bestnr = \
+    extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_bestnr = {}
@@ -249,6 +214,7 @@ if do_injections:
 
     logging.info("Missed/found injections/triggers loaded.")
 
+    # TODO: switch to a dictionary rather than found_inj_time, etc.
     # Extract columns of found injections and triggers
     found_inj_time = np.asarray(found_injs.get_column('geocent_end_time')) +\
                      np.asarray(found_injs.get_column('geocent_end_time_ns')*\
@@ -283,21 +249,13 @@ if do_injections:
                                 (1 - np.cos(found_inj_ra - found_trig_ra)))
 
     # Grab values of detection statistic
-    #found_trig_bestnr = [get_bestnr(t, q=chisq_index, n=chisq_nhigh,\
-    #                         null_thresh=null_thresh,\
-    #                         snr_threshold=snr_thresh,\
-    #                         sngl_snr_threshold=sngl_snr_thresh,\
-    #                         chisq_threshold=new_snr_thresh,\
-    #                         null_grad_thresh=null_grad_thresh,\
-    #                         null_grad_val=null_grad_val) for t in found_trigs]
-    #found_trig_bestnr = np.asarray(found_trig_bestnr)
     found_trig_bestnr = get_bestnrs(found_trigs, q=chisq_index, n=chisq_nhigh,
-                             null_thresh=null_thresh,
-                             snr_threshold=snr_thresh,
-                             sngl_snr_threshold=sngl_snr_thresh,
-                             chisq_threshold=new_snr_thresh,
-                             null_grad_thresh=null_grad_thresh,
-                             null_grad_val=null_grad_val)
+                                    null_thresh=null_thresh,
+                                    snr_threshold=snr_thresh,
+                                    sngl_snr_threshold=sngl_snr_thresh,
+                                    chisq_threshold=new_snr_thresh,
+                                    null_grad_thresh=null_grad_thresh,
+                                    null_grad_val=null_grad_val)
 
     # Construct conditions for injection:
     # 1) found louder than background,
@@ -427,12 +385,12 @@ if do_injections:
 
     logging.info("%d missed injections analysed.", len(missed_injs))
 
+    # GRB start time
+    grb_time = get_grb_time(opts.segment_dir)
     # Get start and end times
     start = int(min(np.concatenate((found_inj_time, missed_inj_time))))
     end = int(max(np.concatenate((found_inj_time, missed_inj_time))))
     duration = end - start
-    # GRB start time
-    grb_time = segs['on'][1] - 1
     # Pad times and reset to centre on zero
     start = start - duration*0.05 - grb_time
     end = end + duration*0.05 - grb_time
