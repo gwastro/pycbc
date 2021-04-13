@@ -35,8 +35,9 @@ import pycbc.version
 from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_triggers_data
-from pycbc.results.pygrb_postprocessing_utils import pygrb_shared_plot_setups
-from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
+from pycbc.results.pygrb_plotting_utils import pygrb_shared_plot_setups
+from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
+from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
 
 plt.switch_backend('Agg')
 
@@ -52,7 +53,14 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 
 description = 'pycbc_pygrb_plot_skygrid will produce the sky grid plot.'
 usage = __program__ + ' [--options]'
-opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
+
+parser = pygrb_initialize_plot_parser(usage=usage, description=description,
+                                      version=__version__)
+parser.add_argument("-t", "--trig-file", action="store",
+                    default=None, required=True,
+                    help="The location of the trigger file")
+parser = pygrb_add_bestnr_opts(parser)
+opts = parser.parse_args()
 
 if opts.verbose:
     level = logging.INFO
@@ -61,6 +69,7 @@ else:
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=level)
 
+# Check options
 trig_file = os.path.abspath(opts.trig_file)
 inj_file = None
 if opts.inj_file:

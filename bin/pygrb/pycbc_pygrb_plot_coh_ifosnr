@@ -37,12 +37,13 @@ import numpy
 import scipy
 import pycbc.version
 from pycbc.results import save_fig_with_metadata
-from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
+from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
+from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_triggers_data
 from pycbc.results.pygrb_postprocessing_utils import load_injections_data
-from pycbc.results.pygrb_postprocessing_utils import axis_max_value
-from pycbc.results.pygrb_postprocessing_utils import pygrb_shared_plot_setups
+from pycbc.results.pygrb_plotting_utils import axis_max_value
+from pycbc.results.pygrb_plotting_utils import pygrb_shared_plot_setups
 
 plt.switch_backend('Agg')
 
@@ -58,7 +59,18 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 
 description = 'Produces coherent SNR versus single IFO SNR plots.'
 usage = __program__ + ' [--options]'
-opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
+
+parser = pygrb_initialize_plot_parser(usage=usage, description=description,
+                                      version=__version__)
+parser.add_argument("-t", "--trig-file", action="store",
+                    default=None, required=True,
+                    help="The location of the trigger file")
+# TODO: don't loop on the output files in the executables?
+parser.add_argument("-O", "--zoomed-output-file", default=None,
+                    required=True, help="Output file for a zoomed in " +
+                    "version of the plot.")
+parser = pygrb_add_bestnr_opts(parser)
+opts = parser.parse_args()
 
 if opts.verbose:
     level = logging.INFO
@@ -67,16 +79,13 @@ else:
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=level)
 
+# Check options
 trig_file = os.path.abspath(opts.trig_file)
 inj_file = None
 if opts.inj_file:
     inj_file = os.path.abspath(opts.inj_file)
 outfile = opts.output_file
 zoomedoutfile = opts.zoomed_output_file
-if zoomedoutfile is None:
-    msg = "Please specify a pathname with the zoomed-ouptut-file option"
-    logging.error(msg)
-    sys.exit()
 veto_files = []
 if opts.veto_directory:
     veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])

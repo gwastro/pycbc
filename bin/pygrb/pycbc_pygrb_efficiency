@@ -43,15 +43,18 @@ from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
 from pycbc.results.pygrb_postprocessing_utils import load_injections
 from pycbc.results.pygrb_postprocessing_utils import find_zero_lag_slide_id
 from pycbc.results.pygrb_postprocessing_utils import load_time_slides
-from pycbc.results.pygrb_postprocessing_utils import pygrb_plot_opts_parser
 from pycbc.results.pygrb_postprocessing_utils import construct_trials
+from pycbc.results.pygrb_postprocessing_utils import extract_basic_trig_properties
 from pycbc.results.pygrb_postprocessing_utils import sort_trigs
 from pycbc.results.pygrb_postprocessing_utils import sort_stat
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
-from pycbc.results.pygrb_postprocessing_utils import efficiency_with_errs
-from pycbc.results.pygrb_postprocessing_utils import read_seg_files
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_responses
 from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
+from pycbc.results.pygrb_postprocessing_utils import mc_cal_wf_errs
+from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
+from pycbc.results.pygrb_postprocessing_utils import pygrb_add_injmc_opts
+from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
+from pycbc.results.pygrb_postprocessing_utils import pygrb_add_fminjs_input_opts
 from glue.ligolw import lsctables
 
 plt.switch_backend('Agg')
@@ -63,11 +66,70 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_efficiency"
 
 # =============================================================================
+# Function to calculate the error bars and fraction of recovered injections
+# (used for efficiency/distance plots)
+# =============================================================================
+def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
+    """Calculates the fraction of recovered injections and its error bars"""
+
+    if not isinstance(num_mc_injs, int):
+        err_msg = "The parameter num_mc_injs is the number of Monte-Carlo "
+        err_msg += "injections.  It must be an integer."
+        logging.error(err_msg)
+        sys.exit()
+
+    only_found_injs = found_bestnr[:-1]
+    all_injs = num_injections[:-1]
+    fraction = only_found_injs / all_injs
+
+    # Divide by Monte-Carlo iterations
+    if num_mc_injs:
+        only_found_injs = only_found_injs / num_mc_injs
+        all_injs = all_injs / num_mc_injs
+
+    # TODO: optimize
+    err_common = all_injs * (2 * only_found_injs + 1)
+    err_denom = 2 * all_injs * (all_injs + 1)
+    err_vary = 4 * all_injs * only_found_injs * (all_injs - only_found_injs) \
+                + all_injs**2
+    err_vary = err_vary**0.5
+    err_low = (err_common - err_vary)/err_denom
+    err_low_mc = fraction - err_low
+    err_high = (err_common + err_vary)/err_denom
+    err_high_mc = err_high - fraction
+
+    return err_low_mc, err_high_mc, fraction
+
+
+# =============================================================================
 # Main script starts here
 # =============================================================================
 description = 'Efficiency calculator for the triggered search (PyGRB).'
 usage = __program__ + ' [--options]'
-opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
+
+parser = pygrb_initialize_plot_parser(usage=usage, description=description,
+                                      version=__version__)
+parser.add_argument("-F", "--offsource-file", action="store", required=True,
+                    default=None, help="Location of off-source trigger file.")
+# As opposed to offsource-file and trig-file, this only contains onsource
+parser.add_argument("--onsource-file", action="store", default=None,
+                    help="Location of on-source trigger file.")
+parser.add_argument("--background-output-file", default=None, required=True,
+                    help="Detection efficiency output file.")
+parser.add_argument("--onsource-output-file", default=None, required=True,
+                    help="Exclusion distance output file.")
+parser.add_argument("-g", "--glitch-check-factor", action="store",
+                    type=float, default=1.0, help="When deciding " +
+                    "exclusion efficiencies this value is multiplied " +
+                    "to the offsource around the injection trigger to " +
+                    "determine if it is just a loud glitch.")
+parser.add_argument("-C", "--cluster-window", action="store", type=float,
+                    default=0.1, help="The cluster window used " +
+                    "to cluster triggers in time.")
+parser = pygrb_add_fminjs_input_opts(parser)
+parser = pygrb_add_injmc_opts(parser)
+parser = pygrb_add_bestnr_opts(parser)
+opts = parser.parse_args()
 
 if opts.verbose:
     level = logging.INFO
@@ -77,11 +139,6 @@ logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=level)
 
 # Check options
-if opts.offsource_file is None:
-    err_msg = "Please specify a path to the offsource trigger file."
-    logging.error(err_msg)
-    sys.exit()
-
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
     logging.error(err_msg)
@@ -93,16 +150,6 @@ elif (opts.found_file) and opts.missed_file:
     do_injections = True
 else:
     err_msg = "Must provide both found and missed file if running injections."
-    logging.error(err_msg)
-    sys.exit()
-
-if opts.background_output_file is None:
-    err_msg = "Please specify a path to save the detection efficiency plot."
-    logging.error(err_msg)
-    sys.exit()
-
-if opts.onsource_output_file is None:
-    err_msg = "Please specify a path to save the exclusion distance plot."
     logging.error(err_msg)
     sys.exit()
 
@@ -168,38 +215,15 @@ segment_dict = load_segment_dict(trig_file)
 zero_lag_slide_id = find_zero_lag_slide_id(slide_dict)
 num_slides = len(slide_dict)
 
-# Get segments
-segs = read_seg_files(opts.segment_dir)
-
 # Construct trials
 logging.info("Constructing trials.")
-trial_dict = construct_trials(num_slides, segs, segment_dict, ifos, slide_dict, vetoes)
-
-# Sort the triggers into each slide
-sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
-
+trial_dict = construct_trials(num_slides, opts.segment_dir, segment_dict, ifos, slide_dict, vetoes)
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
-
-msg = "Segments loaded, triggers sorted, and %d trials generated." % (total_trials)
-logging.info(msg)
+logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
-trig_time = {}
-trig_snr = {}
-trig_bestnr = {}
-for slide_id in range(num_slides):
-    slide_trigs = sorted_trigs[slide_id]
-    trig_time[slide_id] = np.asarray(slide_trigs.get_end()).astype(float)
-    trig_snr[slide_id] = np.asarray(slide_trigs.get_column('snr'))
-    trig_bestnr[slide_id] = get_bestnrs(slide_trigs, q=chisq_index,
-                                        n=chisq_nhigh,
-                                        null_thresh=null_thresh,
-                                        snr_threshold=snr_thresh,
-                                        sngl_snr_threshold=sngl_snr_thresh,
-                                        chisq_threshold=new_snr_thresh,
-                                        null_grad_thresh=null_grad_thresh,
-                                        null_grad_val=null_grad_val)
-logging.info("Time, SNR, and BestNR of triggers extracted.")
+trig_time, trig_snr, trig_bestnr = \
+    extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
@@ -235,6 +259,7 @@ logging.info("SNR and bestNR maxima calculated.")
 
 # Output details of loudest offsouce triggers
 offsource_trigs = []
+sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
 for slide_id in range(num_slides):
     offsource_trigs.extend(zip(trig_bestnr[slide_id], sorted_trigs[slide_id]))
 offsource_trigs.sort(key=lambda element: element[0])
@@ -259,33 +284,35 @@ if onsource_file:
 
     # Get trigs
     on_trigs = load_xml_table(onsource_file, "multi_inspiral")
-    msg = "%d onsource triggers loaded." % (len(on_trigs))
+    logging.info("%d onsource triggers loaded.", len(on_trigs))
 
     # Separate off chirp mass column
     on_mchirp = on_trigs.get_column('mchirp')
 
     # Set loudest event arrays
-    loud_on_bestnr_trigs = None
+    #loud_on_bestnr_trigs = None
     loud_on_bestnr = 0
-    loud_on_fap = 1
+    #loud_on_fap = 1
 
     # Calculate BestNRs and record loudest trig by BestNR
-    bin_trigs_bestnrs = get_bestnrs(on_trigs,
-                                    q=chisq_index, n=chisq_nhigh,
-                                    null_thresh=null_thresh,
-                                    snr_threshold=snr_thresh,
-                                    sngl_snr_threshold=sngl_snr_thresh,
-                                    chisq_threshold=new_snr_thresh,
-                                    null_grad_thresh=null_grad_thresh,
-                                    null_grad_val=null_grad_val)
-    bin_trigs = np.asarray([[x, y] for y, x in sorted(zip(bin_trigs_bestnrs, np.asarray(on_trigs)), reverse=True)])
-    loud_on_bestnr_trigs = bin_trigs[0, 0]
-    loud_on_bestnr = bin_trigs[0, 1]
+    if on_trigs:
+        on_trigs_bestnrs = get_bestnrs(on_trigs,
+                                       q=chisq_index, n=chisq_nhigh,
+                                       null_thresh=null_thresh,
+                                       snr_threshold=snr_thresh,
+                                       sngl_snr_threshold=sngl_snr_thresh,
+                                       chisq_threshold=new_snr_thresh,
+                                       null_grad_thresh=null_grad_thresh,
+                                       null_grad_val=null_grad_val)
+        loud_on_bestnr_trigs, loud_on_bestnr = \
+            np.asarray([[x, y] for y, x in sorted(zip(on_trigs_bestnrs,
+                                                      np.asarray(on_trigs)),
+                                                  reverse=True)])[0]
 
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
-        loud_on_bestnr = 0
+        loud_on_fap = 1
 
     logging.info("Onsource analysed.")
 
@@ -298,10 +325,8 @@ if onsource_file:
                                      loud_on_bestnr)
             tot_off_snr = np.concatenate([tot_off_snr,\
                                           time_veto_max_bestnr[slide_id]])
-        fap = num_trials_louder/total_trials
-        fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
-        pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
-        loud_on_fap = fap
+        #fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
+        loud_on_fap = num_trials_louder/total_trials
 
 else:
     tot_off_snr = np.array([])
@@ -309,7 +334,7 @@ else:
         tot_off_snr = np.concatenate([tot_off_snr,\
                                       time_veto_max_bestnr[slide_id]])
     med_snr = np.median(tot_off_snr)
-    fap = sum(tot_off_snr > med_snr)/total_trials
+    #loud_on_fap = sum(tot_off_snr > med_snr)/total_trials
 
 # =======================
 # Post-process injections
@@ -449,26 +474,15 @@ if do_injections:
     # num_mc_injs times, where each time we draw a random value of distance
 
     # Distribute injections
-    found_inj_dist_mc = np.ndarray((num_mc_injs+1, len(found_injs)))
-    found_inj_dist_mc[0, :] = found_inj_dist
-    missed_inj_dist_mc = np.ndarray((num_mc_injs+1, len(missed_injs)))
-    missed_inj_dist_mc[0, :] = missed_inj_dist
-    long_inj_dist_mc = np.ndarray((num_mc_injs+1, total_injs))
-    long_inj_dist_mc[0, :] = long_inj_dist
-    for i in range(num_mc_injs):
-        # TODO: these is a copy and paste of 3 lines of code
-        cal_dist_red = stats.norm.rvs(size=len(found_injs)) * cal_error
-        wav_dist_red = np.abs(stats.norm.rvs(size=len(found_injs)) * wav_err)
-        found_inj_dist_mc[i+1, :] = found_inj_dist / (max_dc_cal_error * \
-                                     (1 + cal_dist_red) * (1 + wav_dist_red))
-        cal_dist_red = stats.norm.rvs(size=len(missed_injs)) * cal_error
-        wav_dist_red = np.abs(stats.norm.rvs(size=len(missed_injs)) * wav_err)
-        missed_inj_dist_mc[i+1, :] = missed_inj_dist / (max_dc_cal_error *\
-                                     (1 + cal_dist_red) * (1 + wav_dist_red))
-        cal_dist_red = stats.norm.rvs(size=total_injs) * cal_error
-        wav_dist_red = np.abs(stats.norm.rvs(size=total_injs) * wav_err)
-        long_inj_dist_mc[i+1, :] = long_inj_dist / (max_dc_cal_error *\
-                                     (1 + cal_dist_red) * (1 + wav_dist_red))
+    # NOTE: the loop on num_mc_injs would fill up the *_inj_dist_mc's at the
+    # same time, so filling them up sequentially will vary the numbers a little
+    # (this is an MC, order of operations matters!)
+    found_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, found_inj_dist,
+                                       cal_error, wav_err, max_dc_cal_error)
+    missed_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, missed_inj_dist,
+                                        cal_error, wav_err, max_dc_cal_error)
+    long_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, long_inj_dist,
+                                      cal_error, wav_err, max_dc_cal_error)
 
     logging.info("MC injection set distributed with %d iterations.",\
                  num_mc_injs)

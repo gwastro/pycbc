@@ -36,17 +36,9 @@ import pycbc.workflow as wf
 import pycbc.events
 from pycbc.results import layout
 from pycbc.results.pygrb_postprocessing_utils import get_grb_time
+from pycbc.results.pygrb_postprocessing_utils import extract_ifos
 from pycbc.workflow.plotting import PlotExecutable
 
-#def to_file(path, ifo=None):
-#    """
-#    Builds File class object from file path
-#    """
-#    fil = wdax.File(os.path.basename(path))
-#    fil.ifo = ifo
-#    path = os.path.abspath(path)
-#    fil.PFN(path, 'local')
-#    return fil
 
 def add_wiki_row(outfile, cols):
     """
@@ -56,8 +48,10 @@ def add_wiki_row(outfile, cols):
         f.write('||%s||\n' % '||'.join(map(str, cols)))
 
 def make_timeseries_plot(workflow, snr_type, central_time, shift_time, out_dir,
-                         ifo=None, tags=[]):
+                         ifo=None, tags=None):
     """Adds a node for a timeseries of PyGRB results to the workflow"""
+
+    tags = [] if tags is None else tags
 
     logging.info("Executable name: pycbc_pygrb_plot_snr_timeseries")
     # Initialize job node with its tags
@@ -131,29 +125,25 @@ parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
-# args.statistic_files might be a list of lists. This will flatten this to a single list.
+# args.statistic_files might be a list of lists. This will flatten it to a single list.
 #args.statistic_files = sum(args.statistic_files, [])
 
 logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s',
                     level=logging.INFO)
 
 workflow = wf.Workflow(args, args.workflow_name)
-#workflow.ifos = [args.instrument]
-#workflow.ifo_string = args.instrument
 
 wf.makedir(args.output_dir)
 
-# create a FileList that will contain all output files
+# Create a FileList that will contain all output files
 layouts = []
 
 # Read the file with the triggers/injections to follow up
 logging.info('Reading list of triggers/injections to followup')
-#followups_file = to_file(args.followups_file)
-#fp = h5py.File(followups_file, "r")
 fp = h5py.File(args.followups_file, "r")
-#followups_data = fp[list(fp.keys())[0]]
+
+# Initialize a wiki table and add the column headers
 if args.wiki_file:
-    # initialize a wiki table and add the column headers
     wiki_file = os.path.join(args.output_dir, args.wiki_file)
     add_wiki_row(wiki_file, fp.keys())
 
@@ -166,9 +156,9 @@ num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
                                           'num-events', ''))
 num_events = min(num_events, len(fp['BestNR'][:]))
 
-# TODO: get ifos in a better way
-ifos = args.followups_file.split('/')[-1].split('-PYGRB')[0]
-ifos = [ifo+'1' for ifo in ifos.split('1')[:-1]]
+# Determine ifos used in the analysis
+trig_file = workflow.cp.get('workflow', 'trig-file')
+ifos = extract_ifos(trig_file)
 num_ifos = len(ifos)
 
 # Loop over triggers/injections to be folloed up
