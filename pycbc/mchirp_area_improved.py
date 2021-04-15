@@ -96,36 +96,36 @@ def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
        of the region) and lim_v1, lim_v2 (right and left vertical limits
        of the region).
     """
-    mcb = trig_mc[0] + trig_mc[1]
-    mcs = trig_mc[0] - trig_mc[1]
+    mc_max = trig_mc[0] + trig_mc[1]
+    mc_min = trig_mc[0] - trig_mc[1]
     # The points where the equal mass line and a chirp mass
     # curve intersect is m1 = m2 = 2**0.2 * mchirp
-    mib = (2.**0.2) * mcb
-    mis = (2.**0.2) * mcs
+    mi_max = (2.**0.2) * mc_max
+    mi_min = (2.**0.2) * mc_min
 
     if lim_h1 == 'diagonal':
-        Pb_h1 = mib
-        Ps_h1 = mis
+        max_h1 = mi_max
+        min_h1 = mi_min
         fun_sup = lambda x: x
     else:
-        Pb_h1 = m2mcm1(mcb, lim_h1)
-        Ps_h1 = m2mcm1(mcs, lim_h1)
+        max_h1 = m2mcm1(mc_max, lim_h1)
+        min_h1 = m2mcm1(mc_min, lim_h1)
         fun_sup = lambda x: lim_h1
 
-    Pb_h2 = m2mcm1(mcb, lim_h2)
-    Ps_h2 = m2mcm1(mcs, lim_h2)
+    max_h2 = m2mcm1(mc_max, lim_h2)
+    min_h2 = m2mcm1(mc_min, lim_h2)
     fun_inf = lambda x: lim_h2
 
-    limb1 = np.clip(Pb_h1, lim_v1, lim_v2)
-    limb2 = np.clip(Pb_h2, lim_v1, lim_v2)
-    lims1 = np.clip(Ps_h1, lim_v1, lim_v2)
-    lims2 = np.clip(Ps_h2, lim_v1, lim_v2)
+    lim_max1 = np.clip(max_h1, lim_v1, lim_v2)
+    lim_max2 = np.clip(max_h2, lim_v1, lim_v2)
+    lim_min1 = np.clip(min_h1, lim_v1, lim_v2)
+    lim_min2 = np.clip(min_h2, lim_v1, lim_v2)
 
-    intb = intmc(mcb, limb1, limb2)
-    ints = intmc(mcs, lims1, lims2)
-    intline_sup = quad(fun_sup, lims1, limb1)[0]
-    intline_inf = quad(fun_inf, lims2, limb2)[0]
-    area = intb + intline_sup - ints - intline_inf
+    int_max = intmc(mc_max, lim_max1, lim_max2)
+    int_min = intmc(mc_min, lim_min1, lim_min2)
+    intline_sup = quad(fun_sup, lim_min1, lim_max1)[0]
+    intline_inf = quad(fun_inf, lim_min2, lim_max2)[0]
+    area = int_max + intline_sup - int_min - intline_inf
     return area
 
 
