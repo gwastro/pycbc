@@ -831,6 +831,11 @@ def _genqnmfreq(mass, spin, l, m, nmodes, qnmfreq=None):
     lal.COMPLEX16Vector
         LAL vector containing the complex QNM frequencies.
     """
+    # The function used here only supports modes 22, 21, 33, 44 and 55,
+    # but it doesn't raise an error if a different mode is selected.
+    # Raise error here to avoid returning wrong values
+    if (l,m) not in [(2,2), (2,1), (3,3), (4,4), (5,5)]:
+        raise ValueError('Selected (l,m) mode not supported')
     if qnmfreq is None:
         qnmfreq = lal.CreateCOMPLEX16Vector(int(nmodes))
     lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(
