@@ -81,8 +81,8 @@ def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
 
 
 def intmc(mc, x_min, x_max):
-    """Returns the integral of a component mass as a function of the mass of
-       the other component, taking mchirp as an argument.
+    """Returns the integral of m2 over m1 between x_min and x_max,
+       assuming that mchirp is fixed.
     """
     integral = quad(lambda x, mc: m2mcm1(mc, x), x_min, x_max, args=mc)
     return integral[0]
