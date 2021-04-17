@@ -89,12 +89,24 @@ def intmc(mc, x_min, x_max):
 
 
 def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
-    """Returns the area under the chirp mass contour in each region of the m1m2
-       plane taking as arguments: trig_mc (list of two values: first
-       represents central estimate of mchirp in source frame, and second
-       its uncertainty), lim_h1, lim_h2 (upper and bottom horizontal limits
-       of the region) and lim_v1, lim_v2 (right and left vertical limits
-       of the region).
+    """
+    Returns the area under the chirp mass contour in a region of the m1m2
+    plane (m1 > m2)
+
+    Parameters
+    ----------
+    trig_mc : sequence of two values
+        first represents central estimate of mchirp in source frame,
+        second its uncertainty
+    lim_h1, lim_h2 : floats or the string 'diagonal'
+        upper and lower horizontal limits of the region (limits on m2)
+    lim_v1, lim_v2 : floats
+        right and left vertical limits of the region (limits on m1)
+
+    Returns
+    -------
+    area : float
+
     """
     mc_max = trig_mc[0] + trig_mc[1]
     mc_min = trig_mc[0] - trig_mc[1]
@@ -172,9 +184,8 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
        each CBC source category taking as arguments the chirp mass, the
        coincident SNR and the effective distance, and estimating the
        chirp mass uncertainty, the luminosity distance (and its uncertainty)
-       and the redshift (and its uncertainty). Probability estimation is done
-       assuming it is directly proportional to the area laying in the
-       correspondent CBC region.
+       and the redshift (and its uncertainty). Probability is estimated to be
+       directly proportional to the area of the corresponding CBC region.
     """
     mass_limits = src_args['mass_limits']
     mass_bdary = src_args['mass_bdary']
