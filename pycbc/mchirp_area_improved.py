@@ -92,11 +92,11 @@ def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
     """
     Returns the area under the chirp mass contour in a region of the m1m2
     plane (m1 > m2)
-       
+
     Parameters
     ----------
     trig_mc : sequence of two values
-        first represents central estimate of mchirp in source frame, 
+        first represents central estimate of mchirp in source frame,
         second its uncertainty
     lim_h1, lim_h2 : floats or the string 'diagonal'
         upper and lower horizontal limits of the region (limits on m2)
