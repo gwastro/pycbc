@@ -232,16 +232,20 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
 
     def _cdfinv_param(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
-        """
+        Note that value should be uniform in [0,1]."""
+        if value > 1 or value < 0:
+            raise ValueError('{} is not in [0,1].'.format(value))
         if param in self._params:
             lower_bound = self._bounds[param][0]
             upper_bound = self._bounds[param][1]
-            q_array = numpy.linspace(lower_bound, upper_bound, 1000)
+            q_array = numpy.linspace(lower_bound,upper_bound,num=1000,endpoint=True)
             q_invcdf_interp = interp1d(self._cdf_param(param, q_array),
                                        q_array, kind='cubic',
-                                       bounds_error=False,
-                                       fill_value=(lower_bound, upper_bound))
-            return q_invcdf_interp(value)
+                                       bounds_error=True)
+
+            return q_invcdf_interp( ( self._cdf_param(param, upper_bound) - \
+                        self._cdf_param(param, lower_bound) ) * value + \
+                        self._cdf_param(param, lower_bound) )
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
 
@@ -270,11 +274,8 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
             dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
         for (p, _) in dtype:
-            uniformcdf = numpy.random.uniform(
-                self._cdf_param(p, self._bounds[p][0]),
-                self._cdf_param(p, self._bounds[p][1]),
-                size=size)
-            arr[p] = self._cdfinv_param(p, uniformcdf)
+            uniformcdfvalue = numpy.random.uniform(0,1,size=size)
+            arr[p] = self._cdfinv_param(p, uniformcdfvalue)
         return arr
 
     @classmethod
