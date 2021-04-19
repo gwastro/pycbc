@@ -19,7 +19,7 @@ import subprocess
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
-from pycbc.types import MultiDetOptionAction
+from pycbc.types import MultiDetOptionAction, MultiDetMultiColonOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
@@ -483,15 +483,16 @@ parser.add_argument('--snr-threshold', type=float,
                     help='SNR threshold for generating a trigger')
 parser.add_argument('--snr-abort-threshold', type=float)
 
-parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+',
+parser.add_argument('--channel-name', action=MultiDetMultiColonOptionAction,
                     required=True)
-parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+',
+parser.add_argument('--state-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel containing frame status information. Used "
                          "to determine when to analyze the hoft data. This somewhat "
                          "corresponds to CAT1 information")
 parser.add_argument('--analyze-flags', action=MultiDetOptionAction, nargs='+',
                     help='The flags that must be in the "good" state to analyze data')
-parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+',
+parser.add_argument('--data-quality-channel',
+                    action=MultiDetMultiColonOptionAction,
                     help="Channel containing data quality information. Used "
                          "to determine when hoft may be suspect and may be used to veto"
                          "triggers or not analyze a segment of data. This roughly "
@@ -574,8 +575,12 @@ parser.add_argument('--output-background-n-loudest', type=int, default=10000,
 parser.add_argument('--newsnr-threshold', type=float, default=0)
 parser.add_argument('--max-batch-size', type=int, default=2**27)
 parser.add_argument('--store-loudest-index', type=int, default=0)
-parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf)
-parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf)
+parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf,
+                    help="Safety BNS horizon distance (in Mpc) above which a "
+                    "detector's data is discarded.")
+parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf,
+                    help="Safety BNS horizon distance (in Mpc) below which a "
+                    "detector's data is discarded.")
 parser.add_argument('--max-triggers-in-batch', type=int)
 parser.add_argument('--max-length', type=float,
                     help='Maximum duration of templates, used to set the data buffer size')

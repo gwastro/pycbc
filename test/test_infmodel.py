@@ -45,7 +45,7 @@ class TestModels(unittest.TestCase):
 
         for ifo in ifos:
             print("Processing {} data".format(ifo))
-            
+
             # Download the gravitational wave data for GW170817
             url = "https://dcc.ligo.org/public/0146/P1700349/001/"
             url += "{}-{}1_LOSC_CLN_4_V1-1187007040-2048.gwf"
@@ -53,13 +53,13 @@ class TestModels(unittest.TestCase):
             ts = read_frame(fname, "{}:LOSC-STRAIN".format(ifo),
                             start_time=int(m.time - 260),
                             end_time=int(m.time + 40))
-            ts = highpass(ts, 15.0)                    
-            ts = resample_to_delta_t(ts, 1.0/2048)     
+            ts = highpass(ts, 15.0)
+            ts = resample_to_delta_t(ts, 1.0/2048)
             ts = ts.time_slice(m.time-112, m.time + 16)
             self.data[ifo] = ts.to_frequencyseries()
 
             psd = interpolate(ts.psd(4), ts.delta_f)
-            psd = inverse_spectrum_truncation(psd, int(4 * psd.sample_rate), 
+            psd = inverse_spectrum_truncation(psd, int(4 * psd.sample_rate),
                                               trunc_method='hann',
                                               low_frequency_cutoff=20.0)
             self.psds[ifo] = psd
@@ -88,7 +88,11 @@ class TestModels(unittest.TestCase):
         self.q1 = {'distance':42.0, 'inclination':2.5}
         self.a1 = 541.8235746138382
 
-    def test_marginlized_gaussian_noise(self):              
+        # answer taken from brute marginize pol + phase
+        self.a2 = 542.581
+        self.pol_samples = 200
+
+    def test_base_phase_marg(self):
         model = models.MarginalizedPhaseGaussianNoise(
                                 self.variable, copy.deepcopy(self.data),
                                 low_frequency_cutoff=self.flow,
@@ -99,7 +103,7 @@ class TestModels(unittest.TestCase):
         model.update(**self.q1)
         self.assertAlmostEqual(self.a1, model.loglr, delta=1e-3)
 
-    def test_relative(self):
+    def test_relative_phase_marg(self):
         model = models.Relative(self.variable, copy.deepcopy(self.data),
                                  low_frequency_cutoff=self.flow,
                                  psds = self.psds,
@@ -111,8 +115,8 @@ class TestModels(unittest.TestCase):
         model.update(**self.q1)
         self.assertAlmostEqual(self.a1, model.loglr, delta=0.002)
 
-    def test_single(self):
-        model = models.MarginalizedPhaseGaussianNoise(
+    def test_single_phase_marg(self):
+        model = models.SingleTemplate(
                         self.variable, copy.deepcopy(self.data),
                         low_frequency_cutoff=self.flow,
                         psds = self.psds,
@@ -121,6 +125,32 @@ class TestModels(unittest.TestCase):
                         )
         model.update(**self.q1)
         self.assertAlmostEqual(self.a1, model.loglr, delta=0.02)
+
+    def test_single_pol_phase_marg(self):
+        model = models.SingleTemplate(
+                        self.variable, copy.deepcopy(self.data),
+                        low_frequency_cutoff=self.flow,
+                        psds = self.psds,
+                        static_params = self.static,
+                        prior = self.prior,
+                        polarization_samples=1000,
+                        )
+        model.update(**self.q1)
+        self.assertAlmostEqual(self.a2, model.loglr, delta=0.04)
+
+    def test_brute_pol_phase_marg(self):
+        model = models.BruteParallelGaussianMarginalize(
+                        self.variable, data=copy.deepcopy(self.data),
+                        low_frequency_cutoff=self.flow,
+                        psds = self.psds,
+                        static_params = self.static,
+                        prior = self.prior,
+                        marginalize_phase=400,
+                        cores=1,
+                        base_model='marginalized_polarization',
+                        )
+        model.update(**self.q1)
+        self.assertAlmostEqual(self.a2, model.loglr, delta=0.002)
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestModels))
