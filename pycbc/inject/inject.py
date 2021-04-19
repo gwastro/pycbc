@@ -650,7 +650,8 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
     required_params = ('tc',)
 
     def apply(self, strain, detector_name, distance_scale=1,
-              simulation_ids=None, inj_filter_rejector=None):
+              simulation_ids=None, inj_filter_rejector=None,
+              injection_sample_rate=None):
         """Add injection (as seen by a particular detector) to a time series.
 
         Parameters
@@ -667,6 +668,8 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         inj_filter_rejector: InjFilterRejector instance, optional
             Not implemented. If not ``None``, a ``NotImplementedError`` will
             be raised.
+        injection_sample_rate: float, optional
+            The sample rate to generate the signal before injection
 
         Returns
         -------
@@ -691,14 +694,19 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
 
+        delta_t = strain.delta_t
+        if injection_sample_rate is not None:
+            delta_t = 1.0 / injection_sample_rate
+
         injections = self.table
         if simulation_ids:
             injections = injections[list(simulation_ids)]
         for ii in range(injections.size):
             injection = injections[ii]
             signal = self.make_strain_from_inj_object(
-                injection, strain.delta_t, detector_name,
+                injection, delta_t, detector_name,
                 distance_scale=distance_scale)
+            signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
