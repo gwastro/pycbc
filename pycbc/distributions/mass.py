@@ -233,8 +233,8 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     def _cdfinv_param(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         Note that value should be uniform in [0,1]."""
-        if value > 1 or value < 0:
-            raise ValueError('{} is not in [0,1].'.format(value))
+        if (numpy.array(value)<0).any() or (numpy.array(value)>1).any():
+            raise ValueError('q_from_uniform_m1_m2 cdfinv requires input in [0,1].')
         if param in self._params:
             lower_bound = self._bounds[param][0]
             upper_bound = self._bounds[param][1]
