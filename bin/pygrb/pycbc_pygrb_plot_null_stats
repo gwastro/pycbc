@@ -35,13 +35,13 @@ from matplotlib import rc
 import matplotlib.pyplot as plt
 import pycbc.version
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
-from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
+from pycbc.results.pygrb_postprocessing_utils import load_triggers
+from pycbc.results.pygrb_postprocessing_utils import load_injections
 from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
-from pycbc.results.pygrb_postprocessing_utils import load_triggers_data
-from pycbc.results.pygrb_postprocessing_utils import load_injections_data
+from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
 from pycbc.results.pygrb_plotting_utils import axis_max_value
-from pycbc.results.pygrb_plotting_utils import pygrb_plotter
 from pycbc.results.pygrb_plotting_utils import calculate_contours
+from pycbc.results.pygrb_plotting_utils import pygrb_plotter
 
 plt.switch_backend('Agg')
 
@@ -49,6 +49,106 @@ __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_null_stats"
+
+
+# Function to load necessary SNR data from a trigger/injection file
+def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
+    """Build a dictionary containing SNR data extracted from a
+    trigger/injection file"""
+
+    # Inizialize the dictionary
+    data = {}
+    data['snr'] = numpy.array(None)
+    null_stat_type = opts.y_variable
+    data[null_stat_type] = None
+
+    # Fill the dictionary in with required data
+    if input_file:
+        if not injections:
+            trigs_or_injs = load_triggers(input_file, vetoes)
+            data['chisq_dof'] = numpy.unique(trigs_or_injs.get_column('chisq_dof'))
+            data['bank_chisq_dof'] = numpy.unique(trigs_or_injs.get_column('bank_chisq_dof'))
+            data['cont_chisq_dof'] = numpy.unique(trigs_or_injs.get_column('cont_chisq_dof'))
+        else:
+            trigs_or_injs = load_injections(input_file, vetoes,
+                                            sim_table=sim_table)
+        data['snr'] = numpy.asarray(trigs_or_injs.get_column('snr'))
+        if null_stat_type == 'coincident':
+            data['coincident'] = (trigs_or_injs.get_column('coinc_snr'))
+        elif null_stat_type == 'nullstat':
+            data['nullstat'] = numpy.asarray(trigs_or_injs.get_column('null_statistic'))
+        elif null_stat_type == 'overwhitened':
+            data['overwhitened'] = numpy.asarray(trigs_or_injs.get_null_snr())
+
+    return data
+
+
+# Calculate square contours for diagnostic plots
+# TODO: move to postprocessing_utils.py
+#def calculate_contours(trig_data, opts, new_snrs=None):
+#    """Generate the plot contours for chisq variable plots"""
+#
+#    if new_snrs is None:
+#        new_snrs = [5.5, 6, 6.5, 7, 8, 9, 10, 11]
+#    chisq_index = opts.chisq_index
+#    chisq_nhigh = opts.chisq_nhigh
+#    new_snr_thresh = opts.newsnr_threshold
+#    null_thresh = []
+#    for val in map(float, opts.null_snr_threshold.split(',')):
+#        null_thresh.append(val)
+#    null_thresh = null_thresh[-1]
+#    null_grad_snr = opts.null_grad_thresh
+#    null_grad_val = opts.null_grad_val
+#    chisq_dof = trig_data['chisq_dof'][0]
+#    bank_chisq_dof = trig_data['bank_chisq_dof'][0]
+#    cont_chisq_dof = trig_data['cont_chisq_dof'][0]
+#
+#    # Add the new SNR threshold contour to the list if necessary
+#    # and keep track of where it is
+#    cont_value = None
+#    try:
+#        cont_value = new_snrs.index(new_snr_thresh)
+#    except ValueError:
+#        new_snrs.append(new_snr_thresh)
+#        cont_value = -1
+#
+#    # Initialise chisq contour values and colours
+#    colors = ["k-" if snr == new_snr_thresh else
+#              "y-" if snr == int(snr) else
+#              "y--" for snr in new_snrs]
+#
+#    # Get SNR values for contours
+#    snr_low_vals = numpy.arange(4, 30, 0.1)
+#    snr_high_vals = numpy.arange(30, 500, 1)
+#    snr_vals = numpy.asarray(list(snr_low_vals) + list(snr_high_vals))
+#
+#    # Initialise contours
+#    bank_conts = numpy.zeros([len(new_snrs), len(snr_vals)],
+#                             dtype=numpy.float64)
+#    auto_conts = numpy.zeros([len(new_snrs), len(snr_vals)],
+#                             dtype=numpy.float64)
+#    chi_conts = numpy.zeros([len(new_snrs), len(snr_vals)],
+#                            dtype=numpy.float64)
+#    null_cont = []
+#
+#    # Loop over each and calculate chisq variable needed for SNR contour
+#    for j, snr in enumerate(snr_vals):
+#        for i, new_snr in enumerate(new_snrs):
+#            bank_conts[i][j] = new_snr_chisq(snr, new_snr, bank_chisq_dof,
+#                                             chisq_index, chisq_nhigh)
+#            auto_conts[i][j] = new_snr_chisq(snr, new_snr, cont_chisq_dof,
+#                                             chisq_index, chisq_nhigh)
+#            chi_conts[i][j] = new_snr_chisq(snr, new_snr, chisq_dof,
+#                                            chisq_index, chisq_nhigh)
+#
+#        if snr > null_grad_snr:
+#            null_cont.append(null_thresh + (snr-null_grad_snr)*null_grad_val)
+#        else:
+#            null_cont.append(null_thresh)
+#    null_cont = numpy.asarray(null_cont)
+#
+#    return bank_conts, auto_conts, chi_conts, null_cont, snr_vals, \
+#        cont_value, colors
 
 
 # =============================================================================
@@ -77,7 +177,7 @@ if opts.verbose:
     level = logging.INFO
 else:
     level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
+logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
                     level=level)
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
@@ -91,8 +191,13 @@ if opts.veto_directory:
     veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
 
-# Check that the y-axis variable was specified
-null_stat_type = opts.y_variable
+# Check that the y-axis variable was specified correctly
+if opts.y_variable in ['coincident', 'nullstat', 'overwhitened']:
+    null_stat_type = opts.y_variable
+else:
+    logging.error('Unrecognized option given with --y-variable')
+    sys.exit()
+
 # Prepare plot title and caption
 y_labels = {'nullstat': "Null statistic",
             'overwhitened': "Overwhitened null statistic",
@@ -129,10 +234,10 @@ _, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                        opts.veto_category)
 
 # Extract trigger data
-trig_data = load_triggers_data(trig_file, vetoes, opts)
+trig_data = load_data(trig_file, vetoes, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_injections_data(inj_file, vetoes, opts)
+inj_data = load_data(inj_file, vetoes, opts, injections=True, sim_table=False)
 
 # Generate plots
 logging.info("Plotting...")
@@ -146,15 +251,14 @@ x_max = None
 # Coincident SNR plot case: we want a coinc=coh diagonal line on the plot
 if null_stat_type == 'coincident':
     cont_colors = ['g-']
-    x_max = axis_max_value(trig_data.snr, inj_data.snr, inj_file)
+    x_max = axis_max_value(trig_data['snr'], inj_data['snr'], inj_file)
     snr_vals = [4, x_max]
     conts = [[4, x_max]]
     null_stat_conts_list = [conts, conts]
 # Overwhitened null stat (null SNR) and null stat  cases: newSNR contours
 else:
     cont_colors = ['k-', 'g-', 'm-']
-    _, _, _, null_cont, snr_vals, _, _ = \
-        calculate_contours(trig_data, opts)
+    _, _, _, null_cont, snr_vals, _, _ = calculate_contours(trig_data, opts)
     null_stat_conts_1 = [null_cont]
     null_stat_conts_2 = [null_cont]
     null_thresh = map(float, opts.null_snr_threshold.split(','))
@@ -175,22 +279,12 @@ rc('font', size=14)
 # Set color for out-of-range values
 # Determine y-axis values of triggers and injections
 y_label = y_labels[null_stat_type]
-trig_null_data_dict = {'nullstat': trig_data.null_stat,
-                       'overwhitened': trig_data.null_snr,
-                       'coincident': trig_data.coinc_snr}
-trig_null_stat_data = trig_null_data_dict[null_stat_type]
-inj_null_stat_data = None
-if inj_file:
-    inj_null_data_dict = {'nullstat': inj_data.null_stat,
-                          'overwhitened': inj_data.null_snr,
-                          'coincident': inj_data.coinc_snr}
-    inj_null_stat_data = inj_null_data_dict[null_stat_type]
 
 for fig_path, null_stat_conts, xlims, ylims in zip(fig_path_list,
                                                    null_stat_conts_list,
                                                    xlims_list, ylims_list):
-    pygrb_plotter(trig_data.snr, trig_null_stat_data,
-                  inj_data.snr, inj_null_stat_data, inj_file,
+    pygrb_plotter(trig_data['snr'], trig_data[null_stat_type],
+                  inj_data['snr'], inj_data[null_stat_type], inj_file,
                   "Coherent SNR", y_label, fig_path,
                   snr_vals=snr_vals, conts=null_stat_conts,
                   shade_cont_value=shade_cont_value, colors=cont_colors,

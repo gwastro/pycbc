@@ -93,14 +93,17 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
         #trig_file = file_from_workflow(workflow, 'trig-file')
         #node.add_input_opt('--trig-file', trig_file)
         node.add_opt('--trig-file', workflow.cp.get('workflow', 'trig-file'))
-    # Veto directory and segments directory
+    # Veto directory and category and segments directory
     node.add_opt('--veto-directory', workflow.cp.get('workflow', 'veto-directory'))
+    node.add_opt('--veto-category', workflow.cp.get('workflow', 'veto-category'))
     node.add_opt('--segment-dir', workflow.cp.get('workflow', 'segment-dir'))
     # Other shared tuning values
-    for opt in ['chisq-index', 'chisq-nhigh', 'null-snr-threshold',
-                'veto-category', 'snr-threshold', 'newsnr-threshold',
-                'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
-        node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
+    if exec_name not in ['pygrb_plot_skygrid', 'pygrb_plot_coh_ifosnr']:
+        if not (exec_name == 'pygrb_plot_snr_timeseries' and tags[0] != 'reweighted'):
+            for opt in ['chisq-index', 'chisq-nhigh',
+                        'null-snr-threshold', 'snr-threshold', 'newsnr-threshold',
+                        'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
+                node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
     # Injection file
     if inj_set is not None:
         node.add_opt('--inj-file', workflow.cp.get('injections-'+inj_set, 'inj-file'))
