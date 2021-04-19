@@ -99,76 +99,6 @@ def axis_max_value(trig_values, inj_values, inj_file):
 
 
 # =============================================================================
-# Calculate all chi-square contours for diagnostic plots
-# =============================================================================
-# TODO: tailor to plot_null_stat and plot_chisq_veto
-def calculate_contours(trig_data, opts, new_snrs=None):
-    """Generate the plot contours for veto plots"""
-
-    if new_snrs is None:
-        new_snrs = [5.5, 6, 6.5, 7, 8, 9, 10, 11]
-    chisq_index = opts.chisq_index
-    chisq_nhigh = opts.chisq_nhigh
-    new_snr_thresh = opts.newsnr_threshold
-    null_thresh = []
-    for val in map(float, opts.null_snr_threshold.split(',')):
-        null_thresh.append(val)
-    null_thresh = null_thresh[-1]
-    null_grad_snr = opts.null_grad_thresh
-    null_grad_val = opts.null_grad_val
-    chisq_dof = trig_data['chisq_dof'][0]
-    bank_chisq_dof = trig_data['bank_chisq_dof'][0]
-    cont_chisq_dof = trig_data['cont_chisq_dof'][0]
-
-    # Add the new SNR threshold contour to the list if necessary
-    # and keep track of where it is
-    cont_value = None
-    try:
-        cont_value = new_snrs.index(new_snr_thresh)
-    except ValueError:
-        new_snrs.append(new_snr_thresh)
-        cont_value = -1
-
-    # Initialise chisq contour values and colours
-    colors = ["k-" if snr == new_snr_thresh else
-              "y-" if snr == int(snr) else
-              "y--" for snr in new_snrs]
-
-    # Get SNR values for contours
-    snr_low_vals = numpy.arange(4, 30, 0.1)
-    snr_high_vals = numpy.arange(30, 500, 1)
-    snr_vals = numpy.asarray(list(snr_low_vals) + list(snr_high_vals))
-
-    # Initialise contours
-    bank_conts = numpy.zeros([len(new_snrs), len(snr_vals)],
-                             dtype=numpy.float64)
-    auto_conts = numpy.zeros([len(new_snrs), len(snr_vals)],
-                             dtype=numpy.float64)
-    chi_conts = numpy.zeros([len(new_snrs), len(snr_vals)],
-                            dtype=numpy.float64)
-    null_cont = []
-
-    # Loop over each and calculate chisq variable needed for SNR contour
-    for j, snr in enumerate(snr_vals):
-        for i, new_snr in enumerate(new_snrs):
-            bank_conts[i][j] = new_snr_chisq(snr, new_snr, bank_chisq_dof,
-                                             chisq_index, chisq_nhigh)
-            auto_conts[i][j] = new_snr_chisq(snr, new_snr, cont_chisq_dof,
-                                             chisq_index, chisq_nhigh)
-            chi_conts[i][j] = new_snr_chisq(snr, new_snr, chisq_dof,
-                                            chisq_index, chisq_nhigh)
-
-        if snr > null_grad_snr:
-            null_cont.append(null_thresh + (snr-null_grad_snr)*null_grad_val)
-        else:
-            null_cont.append(null_thresh)
-    null_cont = numpy.asarray(null_cont)
-
-    return bank_conts, auto_conts, chi_conts, null_cont, snr_vals, \
-        cont_value, colors
-
-
-# =============================================================================
 # Contains plotting setups shared by PyGRB plots
 # =============================================================================
 def pygrb_shared_plot_setups():
@@ -190,8 +120,6 @@ def pygrb_plotter(trig_x, trig_y, inj_x, inj_y, inj_file, xlabel, ylabel,
                   cmd=None, plot_title=None, plot_caption=None):
     """Master function to plot PyGRB results"""
 
-    fig_name = os.path.split(os.path.abspath(fig_path))[1]
-    logging.info(" * %s (%s vs %s)...", fig_name, xlabel, ylabel)
     # Set up plot
     fig = plt.figure()
     cax = fig.gca()

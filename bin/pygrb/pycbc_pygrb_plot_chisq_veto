@@ -41,7 +41,7 @@ from pycbc.results.pygrb_postprocessing_utils import load_injections
 from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
 from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
 from pycbc.results.pygrb_plotting_utils import axis_max_value
-from pycbc.results.pygrb_plotting_utils import calculate_contours
+from pycbc.results.pygrb_plotting_utils import new_snr_chisq
 from pycbc.results.pygrb_plotting_utils import pygrb_plotter
 from pycbc.results.pygrb_plotting_utils import pygrb_shared_plot_setups
 
@@ -114,6 +114,59 @@ def load_data(input_file, vetoes, ifos, opts, injections=False, sim_table=False)
             data[dof] = numpy.unique(trigs_or_injs.get_column(dof))
 
     return data
+
+
+# Function that produces the contrours to be plotted
+def calculate_contours(trig_data, opts, veto_type, new_snrs=None):
+    """Generate the contours for the veto plots"""
+
+    # Read off the degrees of freedom
+    prefix_dict = {'standard': '', 'bank': 'bank_', 'auto': 'cont_'}
+    dof = trig_data[prefix_dict[veto_type]+'chisq_dof'][0]
+
+    # Add the new SNR threshold contour to the list if necessary
+    # and keep track of where it is
+    cont_value = None
+    if new_snrs is None:
+        new_snrs = [5.5, 6, 6.5, 7, 8, 9, 10, 11]
+    new_snr_thresh = opts.newsnr_threshold
+    try:
+        cont_value = new_snrs.index(new_snr_thresh)
+    except ValueError:
+        new_snrs.append(new_snr_thresh)
+        cont_value = -1
+
+    # Get SNR values for contours
+    snr_low_vals = numpy.arange(4, 30, 0.1)
+    snr_high_vals = numpy.arange(30, 500, 1)
+    snr_vals = numpy.asarray(list(snr_low_vals) + list(snr_high_vals))
+
+    # Initialise contours
+    contours = numpy.zeros([len(new_snrs), len(snr_vals)],
+                           dtype=numpy.float64)
+    # Loop over SNR values and calculate chisq variable needed
+    for j, snr in enumerate(snr_vals):
+        for i, new_snr in enumerate(new_snrs):
+            contours[i][j] = new_snr_chisq(snr, new_snr, dof,
+                                           opts.chisq_index, opts.chisq_nhigh)
+
+    return contours, snr_vals, cont_value
+
+
+# Function that produces the contrours to be plotted
+def contour_colors(opts, new_snrs=None):
+    """Define the colours with which contours are plotted"""
+
+    # Add the new SNR threshold contour to the list if necessary
+    # and keep track of where it is
+    if new_snrs is None:
+        new_snrs = [5.5, 6, 6.5, 7, 8, 9, 10, 11]
+    new_snr_thresh = opts.newsnr_threshold
+    colors = ["k-" if snr == new_snr_thresh else
+              "y-" if snr == int(snr) else
+              "y--" for snr in new_snrs]
+
+    return colors
 
 
 # =============================================================================
@@ -271,17 +324,14 @@ if opts.use_sngl_ifo_veto:
 y_max = axis_max_value(trig_data[veto_type], inj_data[veto_type], inj_file)
 
 # Determine contours for plots
-bank_conts, auto_conts, chi_conts, _, snr_vals, cont_value, colors = \
-    calculate_contours(trig_data, opts)
-cont_dict = {'standard': chi_conts,
-             'bank': bank_conts,
-             'auto': auto_conts}
-# Use contours and shading only when network vetoes are involved
-if not opts.use_sngl_ifo_veto:
-    conts = cont_dict[veto_type]
-else:
+if opts.use_sngl_ifo_veto:
     conts = None
     cont_value = None
+conts, snr_vals, cont_value = calculate_contours(trig_data, opts,
+                                                 veto_type, new_snrs=None)
+
+# Initialise chisq contour values and colours
+colors = contour_colors(opts, new_snrs=None)
 
 # Produce a non-zoomed and a zoomed veto vs. SNR plot
 fig_path_list = [outfile, zoomedoutfile]
