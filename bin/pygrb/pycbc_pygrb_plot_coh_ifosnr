@@ -62,7 +62,7 @@ def load_data(input_file, vetoes, ifos, injections=False, sim_table=False):
     # Inizialize the dictionary
     data = {}
     data['snr'] = numpy.array(None)
-    # TODO: no need to have all sngl_snrs..
+    # TODO: no need to have all sngl_snrs, sigmas, etc.
     data['ifo_snr'] = dict((ifo, None) for ifo in ifos)
 
     # Fill the dictionary in with required data
