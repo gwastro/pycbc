@@ -416,7 +416,6 @@ if lofft_outfile or lofft_h5_outfile:
     # td: table data
     td = []
 
-    # This is in PygrbFilterOutput
     # TODO: 'K1': 't'
     ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t'}
 

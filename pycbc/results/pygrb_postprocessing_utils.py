@@ -550,8 +550,10 @@ def get_grb_time(seg_dir):
 def get_start_end_times(data, central_time):
     """Determine padded start and end times of data relative to central_time"""
 
-    start = int(min(data.time)) - central_time
-    end = int(max(data.time)) - central_time
+    #start = int(min(data.time)) - central_time
+    #end = int(max(data.time)) - central_time
+    start = int(min(data['time'])) - central_time
+    end = int(max(data['time'])) - central_time
     duration = end-start
     start -= duration*0.05
     end += duration*0.05
@@ -562,163 +564,10 @@ def get_start_end_times(data, central_time):
 def reset_times(data, trig_time):
     """Reset times in data so that t=0 corresponds to the trigger time provided"""
 
-    data.time = [t-trig_time for t in data.time]
+    #data.time = [t-trig_time for t in data.time]
+    data['time'] = [t-trig_time for t in data['time']]
 
     return data
-
-
-# =============================================================================
-# Extract trigger/injection data produced by PyGRB
-# =============================================================================
-class PygrbFilterOutput(object):
-    """Extract trigger/injection data produced by PyGRB search"""
-
-    def __init__(self, trigs_or_injs, ifos, columns, output_type, opts):
-        logging.info("Extracting data from the %s just loaded...", output_type)
-        # Initialize all content of self
-        self.time = None
-        self.snr = numpy.array(None)
-        self.reweighted_snr = None
-        self.null_snr = None
-        self.null_stat = None
-        self.trace_snr = None
-        self.chi_square = numpy.array(None)
-        self.bank_veto = None
-        self.auto_veto = None
-        self.coinc_snr = None
-        self.ifo_snr = dict((ifo, None) for ifo in ifos)
-        self.ifo_bank_cs = dict((ifo, None) for ifo in ifos)
-        self.ifo_auto_cs = dict((ifo, None) for ifo in ifos)
-        self.ifo_stan_cs = dict((ifo, None) for ifo in ifos)
-        self.rel_amp_1 = None
-        self.norm_3 = None
-        self.rel_amp_2 = None
-        self.inclination = None
-        # Exctract data and fill in content of self
-        null_thresh = map(float, opts.null_snr_threshold.split(','))
-        #if trigs_or_injs is not None:
-        if trigs_or_injs:
-            # Work out if using sngl chisqs
-            ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l', 'V1': 'v',
-                       'T1': 't'}
-            i = ifo_att[ifos[0]]
-
-            self.sngl_chisq = 'chisq_%s' % i in columns
-            self.sngl_bank_chisq = 'bank_chisq_%s' % i in columns
-            self.sngl_cont_chisq = 'cont_chisq_%s' % i in columns
-
-            # Set basic data
-            self.time = numpy.asarray(trigs_or_injs.get_end())
-            self.snr = numpy.asarray(trigs_or_injs.get_column('snr'))
-            self.reweighted_snr = get_bestnrs(trigs_or_injs,
-                                              q=opts.chisq_index,
-                                              n=opts.chisq_nhigh,
-                                              null_thresh=null_thresh,
-                                              snr_threshold=opts.snr_threshold,
-                                              sngl_snr_threshold=opts.sngl_snr_threshold,
-                                              chisq_threshold=opts.newsnr_threshold,
-                                              null_grad_thresh=opts.null_grad_thresh,
-                                              null_grad_val=opts.null_grad_val)
-            self.null_snr = numpy.asarray(trigs_or_injs.get_null_snr())
-            self.null_stat = numpy.asarray(trigs_or_injs.get_column(
-                'null_statistic'))
-            self.trace_snr = numpy.asarray(trigs_or_injs.get_column(
-                'null_stat_degen'))
-
-            # Get chisq data
-            self.chi_square = numpy.asarray(trigs_or_injs.get_column('chisq'))
-            self.bank_veto = numpy.asarray(trigs_or_injs.get_column(
-                'bank_chisq'))
-            self.auto_veto = numpy.asarray(trigs_or_injs.get_column(
-                'cont_chisq'))
-            numpy.putmask(self.chi_square, self.chi_square == 0, 0.005)
-            numpy.putmask(self.bank_veto, self.bank_veto == 0, 0.005)
-            numpy.putmask(self.auto_veto, self.auto_veto == 0, 0.005)
-            self.chisq_dof = numpy.unique(trigs_or_injs.get_column('chisq_dof'))
-            self.bank_chisq_dof = numpy.unique(trigs_or_injs.get_column('bank_chisq_dof'))
-            self.cont_chisq_dof = numpy.unique(trigs_or_injs.get_column('cont_chisq_dof'))
-
-            # Get single detector data
-            self.coinc_snr = (trigs_or_injs.get_column('coinc_snr'))
-            self.ifo_snr = dict((ifo, trigs_or_injs.get_sngl_snr(ifo))
-                                for ifo in ifos)
-            if self.sngl_bank_chisq:
-                self.ifo_bank_cs = trigs_or_injs.get_sngl_bank_chisqs(ifos)
-                self.ifo_bank_cs = format_single_chisqs(self.ifo_bank_cs, ifos)
-            if self.sngl_cont_chisq:
-                self.ifo_auto_cs = trigs_or_injs.get_sngl_cont_chisqs(ifos)
-                self.ifo_auto_cs = format_single_chisqs(self.ifo_auto_cs, ifos)
-            if self.sngl_chisq:
-                self.ifo_stan_cs = trigs_or_injs.get_sngl_chisqs(ifos)
-                self.ifo_stan_cs = format_single_chisqs(self.ifo_stan_cs, ifos)
-
-            # Initiate amplitude generator
-            num_amp = 4
-            amplitudes = range(1, num_amp+1)
-
-            # Get amplitude terms
-            amp = dict((amplitude,
-                        numpy.asarray(trigs_or_injs.get_column(
-                            'amp_term_%d' % amplitude)))
-                       for amplitude in amplitudes)
-            #
-            # All 0, hence the 3 warnings
-            # for i in amplitudes:
-            #     print numpy.count_nonzero(amp[amplitudes])
-            #
-            self.rel_amp_1 = numpy.sqrt((amp[1]**2 + amp[2]**2) /
-                                        (amp[3]**2 + amp[4]**2))
-            gamma_r = amp[1] - amp[4]
-            gamma_i = amp[2] + amp[3]
-            delta_r = amp[1] + amp[4]
-            delta_i = amp[3] - amp[2]
-            norm_1 = delta_r*delta_r + delta_i*delta_i
-            norm_2 = gamma_r*gamma_r + gamma_i*gamma_i
-            self.norm_3 = ((norm_1**0.25) + (norm_2**0.25))**2
-            amp_plus = (norm_1)**0.5 + (norm_2)**0.5
-            amp_cross = abs((norm_1)**0.5 - (norm_2)**0.5)
-            self.rel_amp_2 = amp_plus/amp_cross
-            self.inclination = amp_cross/self.norm_3
-
-            num_trigs_or_injs = len(trigs_or_injs)
-            if num_trigs_or_injs < 1:
-                logging.warning("No %s found.", output_type)
-            elif num_trigs_or_injs >= 1:
-                logging.info("%d %s found.", num_trigs_or_injs, output_type)
-            # Deal with the sigma-squares (historically called sigmas here)
-            if output_type == "triggers":
-                # Get antenna response based parameters
-                self.ra = trigs_or_injs.get_column('ra')
-                self.longitude = numpy.degrees(self.ra)
-                self.dec = trigs_or_injs.get_column('dec')
-                self.latitude = numpy.degrees(self.dec)
-                self.f_resp = {}
-                self.f_resp_mean = {}
-                sigma = trigs_or_injs.get_sigmasqs()
-                self.sigma_tot = numpy.zeros(num_trigs_or_injs)
-                for ifo in ifos:
-                    antenna = Detector(ifo)
-                    self.f_resp[ifo] = get_antenna_responses(antenna,
-                                                             self.ra,
-                                                             self.dec,
-                                                             self.time)
-                    self.sigma_tot += (sigma[ifo] * self.f_resp[ifo])
-                    self.f_resp_mean[ifo] = self.f_resp[ifo].mean()
-
-                self.sigma_mean = {}
-                self.sigma_max = {}
-                self.sigma_min = {}
-                for ifo in ifos:
-                    try:
-                        sigma_norm = sigma[ifo]/self.sigma_tot
-                        self.sigma_mean[ifo] = sigma_norm.mean()
-                        self.sigma_max[ifo] = sigma_norm.max()
-                        self.sigma_min[ifo] = sigma_norm.min()
-                    except ValueError:
-                        self.sigma_mean[ifo] = 0
-                        self.sigma_max[ifo] = 0
-                        self.sigma_min[ifo] = 0
-        logging.info("%s parameters extracted", output_type)
 
 
 # =============================================================================
@@ -769,26 +618,6 @@ def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
     vetoes = extract_vetoes(veto_files, ifos)
 
     return ifos, vetoes
-
-
-# =============================================================================
-# Function to load data contained in a trigger file
-# =============================================================================
-def load_triggers_data(trig_file, vetoes, opts):
-    """Loads data from triggers in a PyGRB output file"""
-
-    # Load triggers
-    trigs = load_triggers(trig_file, vetoes)
-
-    # Determine ifos
-    ifos = vetoes.keys()
-
-    # Extract trigger data
-    trig_data = PygrbFilterOutput(trigs, ifos,
-                                  lsctables.MultiInspiralTable.loadcolumns,
-                                  "triggers", opts)
-
-    return trig_data
 
 
 # =============================================================================
@@ -856,28 +685,6 @@ def load_injections(inj_file, vetoes, sim_table=False):
     logging.info("%d injections found.", len(injs))
 
     return injs
-
-
-# =============================================================================
-# Function to load data contained in an injection file
-# =============================================================================
-def load_injections_data(inj_file, vetoes, opts, sim_table=False):
-    """Loads data contained in an injection file at non-vetoed times"""
-
-    # Load injections
-    injs = None
-    if inj_file:
-        injs = load_injections(inj_file, vetoes, sim_table)
-
-    # Determine ifos
-    ifos = vetoes.keys()
-
-    # Extract (or initialize) injection data
-    inj_data = PygrbFilterOutput(injs, ifos,
-                                 lsctables.MultiInspiralTable.loadcolumns,
-                                 "injections", opts)
-
-    return inj_data
 
 
 # =============================================================================
@@ -1076,6 +883,200 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
                                      (1 + cal_dist_red) * (1 + wf_dist_red))
 
     return inj_dist_mc
+
+
+# OBSOLETE but useful to know how to access and combine the various xml columns
+# =============================================================================
+# Extract trigger/injection data produced by PyGRB
+# =============================================================================
+#class PygrbFilterOutput(object):
+#    """Extract trigger/injection data produced by PyGRB search"""
+#
+#    def __init__(self, trigs_or_injs, ifos, columns, output_type, opts):
+#        logging.info("Extracting data from the %s just loaded...", output_type)
+#        # Initialize all content of self
+#        self.time = None
+#        self.snr = numpy.array(None)
+#        self.reweighted_snr = None
+#        self.null_snr = None
+#        self.null_stat = None
+#        self.trace_snr = None
+#        self.chi_square = numpy.array(None)
+#        self.bank_veto = None
+#        self.auto_veto = None
+#        self.coinc_snr = None
+#        self.ifo_snr = dict((ifo, None) for ifo in ifos)
+#        self.ifo_bank_cs = dict((ifo, None) for ifo in ifos)
+#        self.ifo_auto_cs = dict((ifo, None) for ifo in ifos)
+#        self.ifo_stan_cs = dict((ifo, None) for ifo in ifos)
+#        self.rel_amp_1 = None
+#        self.norm_3 = None
+#        self.rel_amp_2 = None
+#        self.inclination = None
+#        # Exctract data and fill in content of self
+#        null_thresh = map(float, opts.null_snr_threshold.split(','))
+#        #if trigs_or_injs is not None:
+#        if trigs_or_injs:
+#            # Work out if using sngl chisqs
+#            ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l', 'V1': 'v',
+#                       'T1': 't'}
+#            i = ifo_att[ifos[0]]
+#
+#            self.sngl_chisq = 'chisq_%s' % i in columns
+#            self.sngl_bank_chisq = 'bank_chisq_%s' % i in columns
+#            self.sngl_cont_chisq = 'cont_chisq_%s' % i in columns
+#
+#            # Set basic data
+#            self.time = numpy.asarray(trigs_or_injs.get_end())
+#            self.snr = numpy.asarray(trigs_or_injs.get_column('snr'))
+#            self.reweighted_snr = get_bestnrs(trigs_or_injs,
+#                                              q=opts.chisq_index,
+#                                              n=opts.chisq_nhigh,
+#                                              null_thresh=null_thresh,
+#                                              snr_threshold=opts.snr_threshold,
+#                                              sngl_snr_threshold=opts.sngl_snr_threshold,
+#                                              chisq_threshold=opts.newsnr_threshold,
+#                                              null_grad_thresh=opts.null_grad_thresh,
+#                                              null_grad_val=opts.null_grad_val)
+#            self.null_snr = numpy.asarray(trigs_or_injs.get_null_snr())
+#            self.null_stat = numpy.asarray(trigs_or_injs.get_column(
+#                'null_statistic'))
+#            self.trace_snr = numpy.asarray(trigs_or_injs.get_column(
+#                'null_stat_degen'))
+#
+#            # Get chisq data
+#            self.chi_square = numpy.asarray(trigs_or_injs.get_column('chisq'))
+#            self.bank_veto = numpy.asarray(trigs_or_injs.get_column(
+#                'bank_chisq'))
+#            self.auto_veto = numpy.asarray(trigs_or_injs.get_column(
+#                'cont_chisq'))
+#            numpy.putmask(self.chi_square, self.chi_square == 0, 0.005)
+#            numpy.putmask(self.bank_veto, self.bank_veto == 0, 0.005)
+#            numpy.putmask(self.auto_veto, self.auto_veto == 0, 0.005)
+#            self.chisq_dof = numpy.unique(trigs_or_injs.get_column('chisq_dof'))
+#            self.bank_chisq_dof = numpy.unique(trigs_or_injs.get_column('bank_chisq_dof'))
+#            self.cont_chisq_dof = numpy.unique(trigs_or_injs.get_column('cont_chisq_dof'))
+#
+#            # Get single detector data
+#            self.coinc_snr = (trigs_or_injs.get_column('coinc_snr'))
+#            self.ifo_snr = dict((ifo, trigs_or_injs.get_sngl_snr(ifo))
+#                                for ifo in ifos)
+#            if self.sngl_bank_chisq:
+#                self.ifo_bank_cs = trigs_or_injs.get_sngl_bank_chisqs(ifos)
+#                self.ifo_bank_cs = format_single_chisqs(self.ifo_bank_cs, ifos)
+#            if self.sngl_cont_chisq:
+#                self.ifo_auto_cs = trigs_or_injs.get_sngl_cont_chisqs(ifos)
+#                self.ifo_auto_cs = format_single_chisqs(self.ifo_auto_cs, ifos)
+#            if self.sngl_chisq:
+#                self.ifo_stan_cs = trigs_or_injs.get_sngl_chisqs(ifos)
+#                self.ifo_stan_cs = format_single_chisqs(self.ifo_stan_cs, ifos)
+#
+#            # Initiate amplitude generator
+#            num_amp = 4
+#            amplitudes = range(1, num_amp+1)
+#
+#            # Get amplitude terms
+#            amp = dict((amplitude,
+#                        numpy.asarray(trigs_or_injs.get_column(
+#                            'amp_term_%d' % amplitude)))
+#                       for amplitude in amplitudes)
+#            #
+#            # All 0, hence the 3 warnings
+#            # for i in amplitudes:
+#            #     print numpy.count_nonzero(amp[amplitudes])
+#            #
+#            self.rel_amp_1 = numpy.sqrt((amp[1]**2 + amp[2]**2) /
+#                                        (amp[3]**2 + amp[4]**2))
+#            gamma_r = amp[1] - amp[4]
+#            gamma_i = amp[2] + amp[3]
+#            delta_r = amp[1] + amp[4]
+#            delta_i = amp[3] - amp[2]
+#            norm_1 = delta_r*delta_r + delta_i*delta_i
+#            norm_2 = gamma_r*gamma_r + gamma_i*gamma_i
+#            self.norm_3 = ((norm_1**0.25) + (norm_2**0.25))**2
+#            amp_plus = (norm_1)**0.5 + (norm_2)**0.5
+#            amp_cross = abs((norm_1)**0.5 - (norm_2)**0.5)
+#            self.rel_amp_2 = amp_plus/amp_cross
+#            self.inclination = amp_cross/self.norm_3
+#
+#            num_trigs_or_injs = len(trigs_or_injs)
+#            if num_trigs_or_injs < 1:
+#                logging.warning("No %s found.", output_type)
+#            elif num_trigs_or_injs >= 1:
+#                logging.info("%d %s found.", num_trigs_or_injs, output_type)
+#            # Deal with the sigma-squares (historically called sigmas here)
+#            if output_type == "triggers":
+#                # Get antenna response based parameters
+#                self.ra = trigs_or_injs.get_column('ra')
+#                self.longitude = numpy.degrees(self.ra)
+#                self.dec = trigs_or_injs.get_column('dec')
+#                self.latitude = numpy.degrees(self.dec)
+#                self.f_resp = {}
+#                self.f_resp_mean = {}
+#                sigma = trigs_or_injs.get_sigmasqs()
+#                self.sigma_tot = numpy.zeros(num_trigs_or_injs)
+#                for ifo in ifos:
+#                    antenna = Detector(ifo)
+#                    self.f_resp[ifo] = get_antenna_responses(antenna,
+#                                                             self.ra,
+#                                                             self.dec,
+#                                                             self.time)
+#                    self.sigma_tot += (sigma[ifo] * self.f_resp[ifo])
+#                    self.f_resp_mean[ifo] = self.f_resp[ifo].mean()
+#                self.sigma_mean = {}
+#                self.sigma_max = {}
+#                self.sigma_min = {}
+#                for ifo in ifos:
+#                    try:
+#                        sigma_norm = sigma[ifo]/self.sigma_tot
+#                        self.sigma_mean[ifo] = sigma_norm.mean()
+#                        self.sigma_max[ifo] = sigma_norm.max()
+#                        self.sigma_min[ifo] = sigma_norm.min()
+#                    except ValueError:
+#                        self.sigma_mean[ifo] = 0
+#                        self.sigma_max[ifo] = 0
+#                        self.sigma_min[ifo] = 0
+#        logging.info("%s parameters extracted", output_type)
+
+# =============================================================================
+# Function to load data contained in a trigger file
+# =============================================================================
+#def load_triggers_data(trig_file, vetoes, opts):
+#    """Loads data from triggers in a PyGRB output file"""
+#
+#    # Load triggers
+#    trigs = load_triggers(trig_file, vetoes)
+#
+#    # Determine ifos
+#    ifos = vetoes.keys()
+#
+#    # Extract trigger data
+#    trig_data = PygrbFilterOutput(trigs, ifos,
+#                                  lsctables.MultiInspiralTable.loadcolumns,
+#                                  "triggers", opts)
+#
+#    return trig_data
+
+# =============================================================================
+# Function to load data contained in an injection file
+# =============================================================================
+#def load_injections_data(inj_file, vetoes, opts, sim_table=False):
+#    """Loads data contained in an injection file at non-vetoed times"""
+#
+#    # Load injections
+#    injs = None
+#    if inj_file:
+#        injs = load_injections(inj_file, vetoes, sim_table=sim_table)
+#
+#    # Determine ifos
+#    ifos = vetoes.keys()
+#
+#    # Extract (or initialize) injection data
+#    inj_data = PygrbFilterOutput(injs, ifos,
+#                                 lsctables.MultiInspiralTable.loadcolumns,
+#                                 "injections", opts)
+#
+#    return inj_data
 
 
 # =============================================================================

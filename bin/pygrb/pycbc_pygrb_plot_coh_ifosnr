@@ -36,12 +36,13 @@ from matplotlib import pyplot as plt
 import numpy
 import scipy
 import pycbc.version
+from pycbc.detector import Detector
 from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
-from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
-from pycbc.results.pygrb_postprocessing_utils import load_triggers_data
-from pycbc.results.pygrb_postprocessing_utils import load_injections_data
+from pycbc.results.pygrb_postprocessing_utils import load_injections
+from pycbc.results.pygrb_postprocessing_utils import load_triggers
+from pycbc.results.pygrb_postprocessing_utils import get_antenna_responses
 from pycbc.results.pygrb_plotting_utils import axis_max_value
 from pycbc.results.pygrb_plotting_utils import pygrb_shared_plot_setups
 
@@ -51,6 +52,55 @@ __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_coh_ifosnr"
+
+
+# Function to load necessary SNR data from a trigger/injection file
+def load_data(input_file, vetoes, ifos, injections=False, sim_table=False):
+    """Build a dictionary containing SNR and sensitivity data extracted
+    from a trigger/injection file"""
+
+    # Inizialize the dictionary
+    data = {}
+    data['snr'] = numpy.array(None)
+    # TODO: no need to have all sngl_snrs..
+    data['ifo_snr'] = dict((ifo, None) for ifo in ifos)
+
+    # Fill the dictionary in with required data
+    if input_file:
+        if not injections:
+            trigs_or_injs = load_triggers(input_file, vetoes)
+            data['f_resp_mean'] = {}
+            data['sigma_max'] = {}
+            data['sigma_mean'] = {}
+            data['sigma_min'] = {}
+            time = numpy.asarray(trigs_or_injs.get_end())
+            ra = trigs_or_injs.get_column('ra')
+            dec = trigs_or_injs.get_column('dec')
+            sigma = trigs_or_injs.get_sigmasqs()
+            sigma_tot = numpy.zeros(len(trigs_or_injs))
+            for ifo in ifos:
+                antenna = Detector(ifo)
+                ifo_f_resp = get_antenna_responses(antenna, ra, dec, time)
+                data['f_resp_mean'][ifo] = ifo_f_resp.mean()
+                sigma_tot += (sigma[ifo] * ifo_f_resp)
+            for ifo in ifos:
+                try:
+                    sigma_norm = sigma[ifo]/sigma_tot
+                    data['sigma_mean'][ifo] = sigma_norm.mean()
+                    data['sigma_max'][ifo] = sigma_norm.max()
+                    data['sigma_min'][ifo] = sigma_norm.min()
+                except ValueError:
+                    data['sigma_mean'][ifo] = 0
+                    data['sigma_max'][ifo] = 0
+                    data['sigma_min'][ifo] = 0
+        else:
+            trigs_or_injs = load_injections(input_file, vetoes,
+                                            sim_table=sim_table)
+        data['snr'] = numpy.asarray(trigs_or_injs.get_column('snr'))
+        data['ifo_snr'] = dict((ifo, trigs_or_injs.get_sngl_snr(ifo))
+                               for ifo in ifos)
+
+    return data
 
 
 # =============================================================================
@@ -69,7 +119,6 @@ parser.add_argument("-t", "--trig-file", action="store",
 parser.add_argument("-O", "--zoomed-output-file", default=None,
                     required=True, help="Output file for a zoomed in " +
                     "version of the plot.")
-parser = pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
 if opts.verbose:
@@ -126,10 +175,10 @@ ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                        opts.veto_category)
 
 # Extract trigger data
-trig_data = load_triggers_data(trig_file, vetoes, opts)
+trig_data = load_data(trig_file, vetoes, ifos)
 
 # Extract (or initialize) injection data
-inj_data = load_injections_data(inj_file, vetoes, opts)
+inj_data = load_data(inj_file, vetoes, ifos, injections=True, sim_table=False)
 
 # Generate plots
 logging.info("Plotting...")
@@ -137,7 +186,7 @@ logging.info("Plotting...")
 # Order the IFOs by sensitivity
 ifo_senstvty = {}
 for i_ifo in ifos:
-    senstvty = trig_data.f_resp_mean[i_ifo]*trig_data.sigma_mean[i_ifo]
+    senstvty = trig_data['f_resp_mean'][i_ifo]*trig_data['sigma_mean'][i_ifo]
     ifo_senstvty.update({i_ifo: senstvty})
 ifo_senstvty = collections.OrderedDict(sorted(ifo_senstvty.items(),
                                               key=operator.itemgetter(1),
@@ -145,7 +194,7 @@ ifo_senstvty = collections.OrderedDict(sorted(ifo_senstvty.items(),
 loudness_labels = ['Loudest', 'Second loudest', 'Third loudest']
 
 # Determine the maximum coherent SNR value we are dealing with
-x_max = axis_max_value(trig_data.snr, inj_data.snr, inj_file)
+x_max = axis_max_value(trig_data['snr'], inj_data['snr'], inj_file)
 max_snr = None
 if x_max < 50.:
     max_snr = 50.
@@ -153,7 +202,7 @@ else:
     max_snr = x_max
 
 # Determine the maximum auto veto value we are dealing with
-y_max = axis_max_value(trig_data.ifo_snr[ifo], inj_data.ifo_snr[ifo], inj_file)
+y_max = axis_max_value(trig_data['ifo_snr'][ifo], inj_data['ifo_snr'][ifo], inj_file)
 
 zoom_snr = numpy.arange(0.01, max_snr, 0.01)
 
@@ -168,15 +217,16 @@ logging.info(" * %s (%s vs %s)...", fig_name, x_label, y_label)
 fig = plt.figure()
 ax = fig.gca()
 # Plot trigger data
-ax.plot(trig_data.snr, trig_data.ifo_snr[ifo], 'bx')
+ax.plot(trig_data['snr'], trig_data['ifo_snr'][ifo], 'bx')
 ax.grid()
 # Plot injection data
 if inj_file:
-    ax.plot(inj_data.snr, inj_data.ifo_snr[ifo], 'r+')
+    ax.plot(inj_data['snr'], inj_data['ifo_snr'][ifo], 'r+')
 # Sigma-mean, min, max
-y_data = [trig_data.sigma_mean[ifo], trig_data.sigma_min[ifo], trig_data.sigma_max[ifo]]
+y_data = [trig_data['sigma_mean'][ifo], trig_data['sigma_min'][ifo],
+          trig_data['sigma_max'][ifo]]
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
-y_data = [zoom_snr*(trig_data.f_resp_mean[ifo]*x)**0.5 for x in y_data]
+y_data = [zoom_snr*(trig_data['f_resp_mean'][ifo]*x)**0.5 for x in y_data]
 for el in y_data:
     ax.plot(zoom_snr, el, 'g-')
 # ncx2: non-central chi-squared; ppf: percent point function

@@ -30,13 +30,15 @@ import sys
 import glob
 import os
 import logging
+import numpy
 import matplotlib.pyplot as plt
 import pycbc.version
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
-from pycbc.results.pygrb_postprocessing_utils import load_injections_data
-from pycbc.results.pygrb_postprocessing_utils import load_triggers_data
+from pycbc.results.pygrb_postprocessing_utils import load_injections
+from pycbc.results.pygrb_postprocessing_utils import load_triggers
 from pycbc.results.pygrb_postprocessing_utils import get_grb_time
 from pycbc.results.pygrb_postprocessing_utils import get_start_end_times
+from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
 from pycbc.results.pygrb_postprocessing_utils import reset_times
 from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
 from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
@@ -49,6 +51,46 @@ __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_snr_timeseries"
+
+
+# Function to load time and necessary SNR data from a trigger/injection file
+def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
+    """Build a dictionary containing time and SNR data extracted from
+    a trigger/injection file"""
+
+    # Inizialize the dictionary
+    data = {}
+    data['time'] = None
+    snr_type = opts.y_variable
+    data[snr_type] = None
+
+    # Fill the dictionary in with required data
+    if input_file:
+        if not injections:
+            trigs_or_injs = load_triggers(input_file, vetoes)
+        else:
+            trigs_or_injs = load_injections(input_file, vetoes,
+                                            sim_table=sim_table)
+        data['time'] = numpy.asarray(trigs_or_injs.get_end())
+        if snr_type == 'coherent':
+            data['coherent'] = numpy.asarray(trigs_or_injs.get_column('snr'))
+        elif snr_type == 'null':
+            data['null'] = numpy.asarray(trigs_or_injs.get_column('null_statistic'))
+        elif snr_type == 'reweighted':
+            null_thresh = map(float, opts.null_snr_threshold.split(','))
+            data['reweighted'] = get_bestnrs(trigs_or_injs,
+                                             q=opts.chisq_index,
+                                             n=opts.chisq_nhigh,
+                                             null_thresh=null_thresh,
+                                             snr_threshold=opts.snr_threshold,
+                                             sngl_snr_threshold=opts.sngl_snr_threshold,
+                                             chisq_threshold=opts.newsnr_threshold,
+                                             null_grad_thresh=opts.null_grad_thresh,
+                                             null_grad_val=opts.null_grad_val)
+        elif snr_type == 'single':
+            data['single'] = trigs_or_injs.get_sngl_snr(opts.ifo)
+
+    return data
 
 
 # =============================================================================
@@ -88,11 +130,14 @@ veto_files = []
 if opts.veto_directory:
     veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
-snr_type = opts.y_variable
+if opts.y_variable in ['coherent', 'single', 'reweighted', 'null']:
+    snr_type = opts.y_variable
+else:
+    logging.error('Unrecognized option given with --y-variable')
+    sys.exit()
 ifo = opts.ifo
 if snr_type == 'single' and ifo is None:
-    msg = "Please specify an interferometer for a single IFO plot"
-    logging.error(msg)
+    logging.error("Please specify an interferometer for a single IFO plot")
     sys.exit()
 
 logging.info("Imported and ready to go.")
@@ -107,11 +152,11 @@ for outdir in outdirs:
 _, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                     opts.veto_category)
 
-# Extract trigger data
-trig_data = load_triggers_data(trig_file, vetoes, opts)
+# Load trigger data
+trig_data = load_data(trig_file, vetoes, opts)
 
-# Extract (or initialize) injection data
-inj_data = load_injections_data(inj_file, vetoes, opts)
+# Load (or initialize) injection data
+inj_data = load_data(inj_file, vetoes, opts, injections=True, sim_table=False)
 
 # Determine the central time (t=0): default is the GRB trigger time
 if opts.central_time is not None:
@@ -136,20 +181,6 @@ y_labels = {'coherent': "Coherent SNR",
             'null': "Null SNR",
             'reweighted': "Reweighted SNR"}
 y_label = y_labels[snr_type]
-trig_snr_data_dict = {'coherent': trig_data.snr,
-                      'null': trig_data.null_stat,
-                      'reweighted': trig_data.reweighted_snr}
-if ifo:
-    trig_snr_data_dict.update({'single': trig_data.ifo_snr[ifo]})
-trig_snr_data = trig_snr_data_dict[snr_type]
-inj_snr_data = None
-if inj_file:
-    inj_snr_data_dict = {'coherent': inj_data.snr,
-                         'null': inj_data.null_stat,
-                         'reweighted': inj_data.reweighted_snr}
-    if ifo:
-        inj_snr_data_dict.update({'single': inj_data.ifo_snr[ifo]})
-    inj_snr_data = inj_snr_data_dict[snr_type]
 
 # Determine title and caption
 if opts.plot_title is None:
@@ -165,8 +196,8 @@ xlims = [start, end]
 if opts.x_lims:
     xlims = opts.x_lims
     xlims = map(float, xlims.split(','))
-pygrb_plotter(trig_data.time, trig_snr_data,
-              inj_data.time, inj_snr_data, inj_file,
+pygrb_plotter(trig_data['time'], trig_data[snr_type],
+              inj_data['time'], inj_data[snr_type], inj_file,
               "Time since %.3f (s)" % (central_time), y_label, outfile,
               xlims=xlims, use_logs=False, cmd=' '.join(sys.argv),
               plot_title=opts.plot_title, plot_caption=opts.plot_caption)

@@ -30,14 +30,14 @@ import sys
 import glob
 import os
 import logging
+import numpy
 import matplotlib.pyplot as plt
 import pycbc.version
 from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
-from pycbc.results.pygrb_postprocessing_utils import load_triggers_data
+from pycbc.results.pygrb_postprocessing_utils import load_triggers
 from pycbc.results.pygrb_plotting_utils import pygrb_shared_plot_setups
 from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
-from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
 
 plt.switch_backend('Agg')
 
@@ -50,7 +50,6 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 # =============================================================================
 # Main script starts here
 # =============================================================================
-
 description = 'pycbc_pygrb_plot_skygrid will produce the sky grid plot.'
 usage = __program__ + ' [--options]'
 
@@ -59,7 +58,6 @@ parser = pygrb_initialize_plot_parser(usage=usage, description=description,
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,
                     help="The location of the trigger file")
-parser = pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
 if opts.verbose:
@@ -93,8 +91,11 @@ logging.info("Imported and ready to go.")
 _, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                     opts.veto_category)
 
-# Extract trigger data
-trig_data = load_triggers_data(trig_file, vetoes, opts)
+# Load the longitude and latitude of points from a trigger file
+trigs = load_triggers(trig_file, vetoes)
+trig_data = {}
+trig_data['longitude'] = numpy.degrees(trigs.get_column('ra'))
+trig_data['latitude'] = numpy.degrees(trigs.get_column('dec'))
 
 #
 # Generate sky grid plot
@@ -103,17 +104,16 @@ trig_data = load_triggers_data(trig_file, vetoes, opts)
 xlabel = "Longitude (Degrees)"
 ylabel = "Latitude (Degrees)"
 
-if opts.verbose:
-    sys.stdout.write("\nPlotting...\n")
-    fig_name = os.path.split(os.path.abspath(outfile))[1]
-    sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
+logging.info("Plotting...")
+fig_name = os.path.split(os.path.abspath(outfile))[1]
+logging.info(" * %s (%s vs %s)...", fig_name, xlabel, ylabel)
 
 pygrb_shared_plot_setups()
 fig = plt.figure()
 ax = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
 ax.set_ylabel(ylabel)#, fontsize=16)
-ax.plot(trig_data.longitude, trig_data.latitude, 'ko', markerfacecolor='blue')
+ax.plot(trig_data['longitude'], trig_data['latitude'], 'ko', markerfacecolor='blue')
 # Wrap up
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=opts.plot_caption)
