@@ -246,8 +246,8 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
                                        bounds_error=True)
 
             return q_invcdf_interp((self._cdf_param(param, upper_bound) -
-                                    self._cdf_param(param, lower_bound)) * value +
-                                   self._cdf_param(param, lower_bound))
+                                self._cdf_param(param, lower_bound)) * value +
+                                self._cdf_param(param, lower_bound))
         else:
             raise ValueError('{} is not contructed yet.'.format(param))
 
