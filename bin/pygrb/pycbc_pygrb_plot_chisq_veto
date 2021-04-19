@@ -54,7 +54,7 @@ __program__ = "pycbc_pygrb_plot_chisq_veto"
 
 
 # Function to load necessary SNR and chi-squared data from a trigger/injection file
-def load_data(input_file, vetoes, ifos, opts, injections=False, sim_table=False):
+def load_data(input_file, vetoes, ifos, opts, injections=False):
     """Build a dictionary containing SNR and chi-squared data extracted from a
     trigger/injection file"""
 
@@ -76,8 +76,7 @@ def load_data(input_file, vetoes, ifos, opts, injections=False, sim_table=False)
         if not injections:
             trigs_or_injs = load_triggers(input_file, vetoes)
         else:
-            trigs_or_injs = load_injections(input_file, vetoes,
-                                            sim_table=sim_table)
+            trigs_or_injs = load_injections(input_file, vetoes)
         # Case with single SNR
         if snr_type == 'snr_sngl':
             data[snr_type] = trigs_or_injs.get_sngl_snr(opts.ifo)
@@ -126,14 +125,12 @@ def calculate_contours(trig_data, opts, veto_type, new_snrs=None):
 
     # Add the new SNR threshold contour to the list if necessary
     # and keep track of where it is
-    cont_value = None
     if new_snrs is None:
         new_snrs = [5.5, 6, 6.5, 7, 8, 9, 10, 11]
-    new_snr_thresh = opts.newsnr_threshold
     try:
-        cont_value = new_snrs.index(new_snr_thresh)
+        cont_value = new_snrs.index(opts.newsnr_threshold)
     except ValueError:
-        new_snrs.append(new_snr_thresh)
+        new_snrs.append(opts.newsnr_threshold)
         cont_value = -1
 
     # Get SNR values for contours
@@ -288,8 +285,7 @@ if ifo and ifo not in ifos:
 trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(inj_file, vetoes, ifos, opts, injections=True,
-                     sim_table=False)
+inj_data = load_data(inj_file, vetoes, ifos, opts, injections=True)
 
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:

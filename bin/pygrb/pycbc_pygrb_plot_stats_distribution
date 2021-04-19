@@ -191,7 +191,7 @@ ax.grid(True)
 ax.set_yscale("log")
 ax.set_xlabel(x_label_dict[stat])
 ax.set_ylabel("False alarm probability")
-# TODO: Turn these into options?
+# Some standard plot settings
 ymax = 1.2
 normalization = 1.
 epsilon = 1e-8

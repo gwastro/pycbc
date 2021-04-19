@@ -24,8 +24,6 @@ Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
 import sys
-import os
-import logging
 import copy
 import numpy
 from pycbc.results import save_fig_with_metadata

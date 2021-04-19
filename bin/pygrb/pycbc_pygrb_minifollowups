@@ -53,7 +53,6 @@ def make_timeseries_plot(workflow, snr_type, central_time, shift_time, out_dir,
 
     tags = [] if tags is None else tags
 
-    logging.info("Executable name: pycbc_pygrb_plot_snr_timeseries")
     # Initialize job node with its tags
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     extra_tags = ['GRB'+grb_name]
@@ -161,7 +160,7 @@ trig_file = workflow.cp.get('workflow', 'trig-file')
 ifos = extract_ifos(trig_file)
 num_ifos = len(ifos)
 
-# Loop over triggers/injections to be folloed up
+# Loop over triggers/injections to be followed up
 for num_event in range(num_events):
     files = wf.FileList([])
     logging.info('Processing event: %s', num_event)
@@ -172,8 +171,8 @@ for num_event in range(num_events):
         for key in fp.keys():
             row.append(fp[key][num_event])
         add_wiki_row(wiki_file, row)
-    # TODO: the following makes sense if injections are on unslid data.
-    #       [Loudest offsource events are on time-slid data.]
+    # (Loudest) offsource events are on time-slid data and handeled by the try,
+    # as it find the time shift columns.
     try:
         for ifo in ifos:
             time_shift = fp[ifo+' time shift (s)'][num_event]
@@ -184,6 +183,7 @@ for num_event in range(num_events):
             files += mini.make_qscan_plot(workflow, ifo, ifo_time,
                                           args.output_dir,
                                           tags=args.tags + [str(num_event)])
+    # The following then handles injections (which are on unslid data)
     except:
         for snr_type in ['reweighted', 'coherent']:
             files += make_timeseries_plot(workflow, snr_type, gps_time, gps_time,
