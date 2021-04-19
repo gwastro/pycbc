@@ -40,7 +40,6 @@ from pycbc.results.pygrb_postprocessing_utils import load_injections
 from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
 from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
 from pycbc.results.pygrb_plotting_utils import axis_max_value
-from pycbc.results.pygrb_plotting_utils import calculate_contours
 from pycbc.results.pygrb_plotting_utils import pygrb_plotter
 
 plt.switch_backend('Agg')
@@ -81,6 +80,40 @@ def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
             data['overwhitened'] = numpy.asarray(trigs_or_injs.get_null_snr())
 
     return data
+
+
+# Function that produces the contrours to be plotted
+def calculate_contours(opts, new_snrs=None):
+    """Generate the contours to plot"""
+
+    # Add the new SNR threshold contour to the list if necessary
+    if new_snrs is None:
+        new_snrs = [5.5, 6, 6.5, 7, 8, 9, 10, 11]
+    new_snr_thresh = opts.newsnr_threshold
+    if new_snr_thresh not in new_snrs:
+        new_snrs.append(new_snr_thresh)
+
+    # Get SNR values for contours
+    snr_low_vals = numpy.arange(4, 30, 0.1)
+    snr_high_vals = numpy.arange(30, 500, 1)
+    snr_vals = numpy.asarray(list(snr_low_vals) + list(snr_high_vals))
+
+    # Determine contour
+    null_cont = []
+    null_thresh = []
+    for val in map(float, opts.null_snr_threshold.split(',')):
+        null_thresh.append(val)
+    null_thresh = null_thresh[-1]
+    null_grad_snr = opts.null_grad_thresh
+    null_grad_val = opts.null_grad_val
+    for snr in snr_vals:
+        if snr > null_grad_snr:
+            null_cont.append(null_thresh + (snr-null_grad_snr)*null_grad_val)
+        else:
+            null_cont.append(null_thresh)
+    null_cont = numpy.asarray(null_cont)
+
+    return null_cont, snr_vals
 
 
 # =============================================================================
@@ -190,7 +223,7 @@ if null_stat_type == 'coincident':
 # Overwhitened null stat (null SNR) and null stat  cases: newSNR contours
 else:
     cont_colors = ['k-', 'g-', 'm-']
-    _, _, _, null_cont, snr_vals, _, _ = calculate_contours(trig_data, opts)
+    null_cont, snr_vals = calculate_contours(opts, new_snrs=None)
     null_stat_conts_1 = [null_cont]
     null_stat_conts_2 = [null_cont]
     null_thresh = map(float, opts.null_snr_threshold.split(','))
