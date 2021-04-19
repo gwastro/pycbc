@@ -55,7 +55,7 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 
 
 # Function to load necessary SNR data from a trigger/injection file
-def load_data(input_file, vetoes, ifos, injections=False, sim_table=False):
+def load_data(input_file, vetoes, ifos, injections=False):
     """Build a dictionary containing SNR and sensitivity data extracted
     from a trigger/injection file"""
 
@@ -94,8 +94,7 @@ def load_data(input_file, vetoes, ifos, injections=False, sim_table=False):
                     data['sigma_max'][ifo] = 0
                     data['sigma_min'][ifo] = 0
         else:
-            trigs_or_injs = load_injections(input_file, vetoes,
-                                            sim_table=sim_table)
+            trigs_or_injs = load_injections(input_file, vetoes)
         data['snr'] = numpy.asarray(trigs_or_injs.get_column('snr'))
         data['ifo_snr'] = dict((ifo, trigs_or_injs.get_sngl_snr(ifo))
                                for ifo in ifos)
@@ -178,7 +177,7 @@ ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
 trig_data = load_data(trig_file, vetoes, ifos)
 
 # Extract (or initialize) injection data
-inj_data = load_data(inj_file, vetoes, ifos, injections=True, sim_table=False)
+inj_data = load_data(inj_file, vetoes, ifos, injections=True)
 
 # Generate plots
 logging.info("Plotting...")
