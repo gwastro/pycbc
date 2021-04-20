@@ -53,7 +53,8 @@ class Uniform(bounded.BoundedDist):
     --------
     Create a 2 dimensional uniform distribution:
 
-    >>> dist = prior.Uniform(mass1=(10.,50.), mass2=(10.,50.))
+    >>> from pycbc import distributions
+    >>> dist = distributions.Uniform(mass1=(10.,50.), mass2=(10.,50.))
 
     Get the log of the pdf at a particular value:
 
