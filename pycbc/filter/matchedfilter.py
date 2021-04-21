@@ -64,8 +64,8 @@ class BatchCorrelator(object):
         self.zs = zs
 
         # Store each pointer as in integer array
-        self.x = Array([v.ptr for v in xs], dtype=numpy.int)
-        self.z = Array([v.ptr for v in zs], dtype=numpy.int)
+        self.x = Array([v.ptr for v in xs], dtype=int)
+        self.z = Array([v.ptr for v in zs], dtype=int)
 
     @pycbc.scheme.schemed(BACKEND_PREFIX)
     def batch_correlate_execute(self, y):

@@ -202,7 +202,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
     found_after_vetoes = numpy.array([i for i in found_within_time
                                       if i not in vetoed_all])
     missed_after_vetoes = numpy.array([i for i in missed_within_time
-                                      if i not in vetoed_all]).astype(numpy.int)
+                                      if i not in vetoed_all]).astype(int)
 
     logging.info('Found: %s, Missed: %s' %
                  (len(found_after_vetoes), len(missed_after_vetoes)))

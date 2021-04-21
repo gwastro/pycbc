@@ -123,7 +123,7 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
             weights = numpy.exp(logwt - logz)
             N = len(weights)
             positions = (numpy.random.random() + numpy.arange(N)) / N
-            idx = numpy.zeros(N, dtype=numpy.int)
+            idx = numpy.zeros(N, dtype=int)
             cumulative_sum = numpy.cumsum(weights)
             cumulative_sum /= cumulative_sum[-1]
             i, j = 0, 0
