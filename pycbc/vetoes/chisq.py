@@ -221,7 +221,7 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
     else:
         return chisq
 
-    
+
 def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
     """Calculate the chisq values for only selected points.
 
