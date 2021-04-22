@@ -186,9 +186,9 @@ for ifo0 in args.ifos:
             dt = (data[ifo0]['t'] - data[ifo1]['t'])
             dp = (data[ifo0]['p'] - data[ifo1]['p']) % (2. * np.pi)
             sr = (data[ifo1]['s'] / data[ifo0]['s'])
-            dtbin = (dt / twidth).astype(np.int)
-            dpbin = (dp / pwidth).astype(np.int)
-            srbin = (sr / swidth).astype(np.int)
+            dtbin = (dt / twidth).astype(int)
+            dpbin = (dp / pwidth).astype(int)
+            srbin = (sr / swidth).astype(int)
 
             # We'll only store a limited range of ratios
             if keep is None:

@@ -47,7 +47,7 @@ from pycbc.opt import LimitedSizeDict
 # we should restrict any functions that do not allow an
 # array of uint32 integers
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
-                   _numpy.complex128, _numpy.uint32, _numpy.int32, _numpy.int]
+                   _numpy.complex128, _numpy.uint32, _numpy.int32, int]
 try:
     _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
 except NameError:

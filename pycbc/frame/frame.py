@@ -589,7 +589,7 @@ class DataBuffer(object):
             self.dur = int(fname[3])
 
         fstart = int(self.ref + numpy.floor((start - self.ref) / float(self.dur)) * self.dur)
-        starts = numpy.arange(fstart, end, self.dur).astype(numpy.int)
+        starts = numpy.arange(fstart, end, self.dur).astype(int)
 
         keys = []
         for s in starts:
