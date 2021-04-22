@@ -233,6 +233,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     elif opt.fake_strain or opt.fake_strain_from_file:
         logging.info("Generating Fake Strain")
         duration = opt.gps_end_time - opt.gps_start_time
+        duration += 2 * opt.pad_data
         pdf = 1.0 / opt.fake_strain_filter_duration
         fake_flow = opt.fake_strain_flow
         fake_rate = opt.fake_strain_sample_rate
@@ -253,7 +254,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             logging.info("Making zero-noise time series")
             strain = TimeSeries(pycbc.types.zeros(duration * fake_rate),
                                 delta_t=1.0 / fake_rate,
-                                epoch=opt.gps_start_time)
+                                epoch=opt.gps_start_time - opt.pad_data)
         else:
             logging.info("Making colored noise")
             from pycbc.noise.reproduceable import colored_noise
