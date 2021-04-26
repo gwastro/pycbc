@@ -263,7 +263,8 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     logging.info("Setting up the (optional) first round of sbank jobs.")
     sbank_out_file_bbh = wf.File(sbank_exe.ifo_list, sbank_exe.name,
                                  workflow.analysis_time, extension='.h5',
-                                 store_file=True, directory=sbank_exe.out_dir,
+                                 store_file=True,
+                                 directory=os.path.abspath('sbank_bbh'),
                                  tags=['sbank_bbh'], use_tmp_subdirs=False)
     sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                        os.path.abspath('sbank_bbh'),
@@ -296,7 +297,8 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
 logging.info("Setting up the final round of sbank jobs.")
 sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
                          workflow.analysis_time, extension='.h5',
-                         store_file=True, directory='.',
+                         store_file=True,
+                         directory=os.path.abspath('sbank_final'),
                          tags=['sbank_final'], use_tmp_subdirs=False)
 
 # FIXME: As pegasus does not really support sub-workflows generating output
