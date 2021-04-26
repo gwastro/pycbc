@@ -111,28 +111,24 @@ def pygrb_shared_plot_setups():
 # =============================================================================
 # Master plotting function: fits all plotting needs in for PyGRB results
 # =============================================================================
-def pygrb_plotter(trig_x, trig_y, inj_x, inj_y, inj_file, xlabel, ylabel,
-                  fig_path, snr_vals=None, conts=None,
-                  shade_cont_value=None, colors=None, vert_spike=False,
-                  xlims=None, ylims=None, use_logs=True,
-                  cmd=None, plot_title=None, plot_caption=None):
+def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
+                  snr_vals=None, conts=None, shade_cont_value=None,
+                  colors=None, vert_spike=False, cmd=None):
     """Master function to plot PyGRB results"""
 
     # Set up plot
     fig = plt.figure()
     cax = fig.gca()
-    # Plot trigger-related quantities
-    if use_logs:
-        cax.loglog(trig_x, trig_y, 'bx')
+    # Plot trigger-related and (if present) injection-related quantities
+    if opts.use_logs:
+        cax.loglog(trigs[0], trigs[1], 'bx')
+        if not (injs[0] is None and injs[1] is None):
+            cax.loglog(injs[0], injs[1], 'r+')
     else:
-        cax.plot(trig_x, trig_y, 'bx')
+        cax.plot(trigs[0], trigs[1], 'bx')
+        if not (injs[0] is None and injs[1] is None):
+            cax.plot(injs[0], injs[1], 'r+')
     cax.grid()
-    # Plot injection-related quantities
-    if inj_file:
-        if use_logs:
-            cax.loglog(inj_x, inj_y, 'r+')
-        else:
-            cax.plot(inj_x, inj_y, 'r+')
     # Plot contours
     if conts is not None:
         contour_plotter(cax, snr_vals, conts, colors, vert_spike=vert_spike)
@@ -147,13 +143,14 @@ def pygrb_plotter(trig_x, trig_y, inj_x, inj_y, inj_file, xlabel, ylabel,
     # Axes: labels and limits
     cax.set_xlabel(xlabel)
     cax.set_ylabel(ylabel)
-    if xlims:
-        cax.set_xlim(xlims)
-    if ylims:
-        cax.set_ylim(ylims)
+    if opts.x_lims:
+        x_lims = map(float, opts.x_lims.split(','))
+        cax.set_xlim(x_lims)
+    if opts.y_lims:
+        y_lims = map(float, opts.y_lims.split(','))
+        cax.set_ylim(y_lims)
     # Wrap up
     plt.tight_layout()
-    save_fig_with_metadata(fig, fig_path, cmd=cmd, title=plot_title,
-                           caption=plot_caption)
-    # fig_kwds=fig_kwds,
+    save_fig_with_metadata(fig, opts.output_file, cmd=cmd, title=opts.plot_title,
+                           caption=opts.plot_caption) # fig_kwds=fig_kwds
     plt.close()

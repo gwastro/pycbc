@@ -173,6 +173,7 @@ for num_event in range(num_events):
         add_wiki_row(wiki_file, row)
     # (Loudest) offsource events are on time-slid data and handeled by the try,
     # as it find the time shift columns.
+    # TODO: avoid try except at each iteration
     try:
         for ifo in ifos:
             time_shift = fp[ifo+' time shift (s)'][num_event]

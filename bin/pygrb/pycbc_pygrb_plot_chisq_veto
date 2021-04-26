@@ -34,7 +34,6 @@ import numpy
 from matplotlib import pyplot as plt
 import pycbc.version
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
-from pycbc.results.pygrb_postprocessing_utils import format_single_chisqs
 from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
 from pycbc.results.pygrb_postprocessing_utils import load_triggers
 from pycbc.results.pygrb_postprocessing_utils import load_injections
@@ -53,6 +52,17 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_chisq_veto"
 
 
+# Format single detector chi-square data as numpy array and floor at 0.005
+def format_single_chisqs(trig_ifo_cs, ifos):
+    """Format single IFO chi-square data as numpy array and floor at 0.005"""
+
+    for ifo in ifos:
+        trig_ifo_cs[ifo] = numpy.asarray(trig_ifo_cs[ifo])
+        numpy.putmask(trig_ifo_cs[ifo], trig_ifo_cs[ifo] == 0, 0.005)
+
+    return trig_ifo_cs
+
+
 # Function to load necessary SNR and chi-squared data from a trigger/injection file
 def load_data(input_file, vetoes, ifos, opts, injections=False):
     """Build a dictionary containing SNR and chi-squared data extracted from a
@@ -68,8 +78,11 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
 
     # Inizialize the dictionary
     data = {}
-    data[snr_type] = numpy.array(None)
+    data[snr_type] = None
     data[veto_type] = None
+    data['chisq_dof'] = None
+    data['bank_chisq_dof'] = None
+    data['cont_chisq_dof'] = None
 
     # Fill the dictionary in with required data
     if input_file:
@@ -177,10 +190,8 @@ parser = pygrb_initialize_plot_parser(usage=usage, description=description,
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,
                     help="The location of the trigger file")
-# TODO: don't loop on the output files in the executables?
-parser.add_argument("-O", "--zoomed-output-file", default=None,
-                    required=True, help="Output file for a zoomed in " +
-                    "version of the plot.")
+parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
+                    help="Output file a zoomed in version of the plot.")
 parser.add_argument("-y", "--y-variable", required=True, help="Quantity " +
                     "to plot on the vertical axis. Supported choices " +
                     "are: standard, bank, or auto.")
@@ -205,8 +216,7 @@ trig_file = os.path.abspath(opts.trig_file)
 inj_file = None
 if opts.inj_file:
     inj_file = os.path.abspath(opts.inj_file)
-outfile = opts.output_file
-zoomedoutfile = opts.zoomed_output_file
+zoom_in = opts.zoom_in
 veto_files = []
 if opts.veto_directory:
     veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
@@ -265,12 +275,10 @@ if opts.plot_caption is None:
 
 logging.info("Imported and ready to go.")
 
-# Set output directories
-outdirs = [os.path.split(os.path.abspath(outfile))[0], \
-           os.path.split(os.path.abspath(zoomedoutfile))[0]]
-for outdir in outdirs:
-    if not os.path.isdir(outdir):
-        os.makedirs(outdir)
+# Set output directory
+outdir = os.path.split(os.path.abspath(opts.output_file))[0]
+if not os.path.isdir(outdir):
+    os.makedirs(outdir)
 
 # Extract IFOs and vetoes
 ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
@@ -329,16 +337,18 @@ conts, snr_vals, cont_value = calculate_contours(trig_data, opts,
 # Initialise chisq contour values and colours
 colors = contour_colors(opts, new_snrs=None)
 
-# Produce a non-zoomed and a zoomed veto vs. SNR plot
-fig_path_list = [outfile, zoomedoutfile]
-xlims_list = [[x_min, 50], [x_min, x_max]]
-ylims_list = [[y_min, 20000], [y_min, 10*y_max]]
+# Produce the veto vs. SNR plot
+if not opts.x_lims:
+    if zoom_in:
+        opts.x_lims = str(x_min)+',50'
+        opts.y_lims = str(y_min)+',20000'
+    else:
+        opts.x_lims = str(x_min)+','+str(x_max)
+        opts.y_lims = str(y_min)+','+str(10*y_max)
 pygrb_shared_plot_setups()
-for fig_path, xlims, ylims in zip(fig_path_list, xlims_list, ylims_list):
-    pygrb_plotter(trig_data[snr_type], trig_data[veto_type],
-                  inj_data[snr_type], inj_data[veto_type],
-                  inj_file, x_label, y_label, fig_path,
-                  snr_vals=snr_vals, conts=conts, colors=colors,
-                  shade_cont_value=cont_value, vert_spike=True,
-                  xlims=xlims, ylims=ylims, cmd=' '.join(sys.argv),
-                  plot_title=opts.plot_title, plot_caption=opts.plot_caption)
+trigs = [trig_data[snr_type], trig_data[veto_type]]
+injs = [inj_data[snr_type], inj_data[veto_type]]
+pygrb_plotter(trigs, injs, x_label, y_label, opts,
+              snr_vals=snr_vals, conts=conts, colors=colors,
+              shade_cont_value=cont_value, vert_spike=True,
+              cmd=' '.join(sys.argv))

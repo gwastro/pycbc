@@ -40,7 +40,6 @@ try:
 except ImportError:
     pass
 try:
-    #TODO: Look at pycbc/io/hdf.py
     from pylal import MultiInspiralUtils
 except ImportError:
     pass
@@ -53,6 +52,8 @@ except ImportError:
 # * Add to the parser object the arguments used for BestNR calculation
 # * Add to the parser object the arguments for found/missed injection files
 # =============================================================================
+# TODO: move to plotting_utils and do not use in non-plot executables
+# TODO: make required once pygrb_efficiency no longer uses this
 def pygrb_initialize_plot_parser(usage='', description=None, version=None):
     """Sets up a basic argument parser object for PyGRB plotting scripts"""
 
@@ -61,7 +62,7 @@ def pygrb_initialize_plot_parser(usage='', description=None, version=None):
                                      argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--version", action="version", version=version)
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
-                        help="verbose output")
+                        help="Verbose output")
     parser.add_argument("-o", "--output-file", default=None, #required=True,
                         help="Output file.")
     parser.add_argument("--x-lims", action="store", default=None,
@@ -72,12 +73,14 @@ def pygrb_initialize_plot_parser(usage='', description=None, version=None):
                         help="Comma separated minimum and maximum values "+
                         "for the vertical axis. When using negative values "+
                         "an equal sign after --y-lims is necessary.")
+    parser.add_argument("--use-logs", default=False, action="store_true",
+                        help="Produce a log-log plot")
     parser.add_argument("-i", "--ifo", default=None, help="IFO used for IFO " +
                         "specific plots")
     parser.add_argument("-I", "--inj-file", action="store", default=None,
                         help="The location of the injection file")
     parser.add_argument("-a", "--segment-dir", action="store",
-                        required=True, help="directory holding buffer, on " +
+                        required=True, help="Directory holding buffer, on " +
                         "and off source segment files.")
     parser.add_argument("-l", "--veto-directory", action="store", default=None,
                         help="The location of the CATX veto files")
@@ -169,7 +172,7 @@ def pygrb_add_bestnr_opts(parser):
                         "take the same value as snr-threshold.")
     parser.add_argument("-A", "--null-snr-threshold", action="store",
                         default="4.25,6",
-                        help="comma separated lower,higher null SNR " +
+                        help="Comma separated lower,higher null SNR " +
                         "threshold for null SNR cut")
     parser.add_argument("-T", "--null-grad-thresh", action="store", type=float,
                         default=20., help="Threshold above which to " +
@@ -195,10 +198,6 @@ def pygrb_add_fminjs_input_opts(parser):
     return parser
 
 
-#
-# Used locally
-#
-
 # =============================================================================
 # Wrapper to read segments files
 # =============================================================================
@@ -217,6 +216,19 @@ def read_seg_files(seg_dir):
         times[key] = segs[0]
 
     return times
+
+
+# =============================================================================
+# Function to load a table from an xml file
+# =============================================================================
+def load_xml_table(file_name, table_name):
+    """Load xml table from file."""
+
+    xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
+                                  contenthandler=lsctables.use_in(
+                                      ligolw.LIGOLWContentHandler))
+
+    return table.get_table(xml_doc, table_name)
 
 
 # ==============================================================================
@@ -276,6 +288,47 @@ def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
 
 
 # =============================================================================
+# Function to extract vetoes
+# =============================================================================
+def extract_vetoes(veto_files, ifos):
+    """Extracts vetoes from veto filelist"""
+
+    # Initialize veto containers
+    vetoes = segments.segmentlistdict()
+    for ifo in ifos:
+        vetoes[ifo] = segments.segmentlist()
+
+    # Construct veto list from veto filelist
+    if veto_files:
+        for veto_file in veto_files:
+            ifo = os.path.basename(veto_file)[:2]
+            if ifo in ifos:
+                # This returns a coalesced list of the vetoes
+                tmp_veto_segs = load_segments_from_xml(veto_file)
+                for entry in tmp_veto_segs:
+                    vetoes[ifo].append(entry)
+    for ifo in ifos:
+        vetoes[ifo].coalesce()
+
+    return vetoes
+
+
+# =============================================================================
+# Function to get the ID numbers from a LIGO-LW table
+# =============================================================================
+def get_id_numbers(ligolw_table, column):
+    """Grab the IDs of a LIGO-LW table"""
+
+    ids = [int(getattr(row, column)) for row in ligolw_table]
+
+    return ids
+
+
+#
+# Used (also) in executables
+#
+
+# =============================================================================
 # Function to load triggers
 # =============================================================================
 def load_triggers(trig_file, vetoes):
@@ -313,59 +366,6 @@ def load_triggers(trig_file, vetoes):
 
     return trigs
 
-
-# =============================================================================
-# Function to extract vetoes
-# =============================================================================
-def extract_vetoes(veto_files, ifos):
-    """Extracts vetoes from veto filelist"""
-
-    # Initialize veto containers
-    vetoes = segments.segmentlistdict()
-    for ifo in ifos:
-        vetoes[ifo] = segments.segmentlist()
-
-    # Construct veto list from veto filelist
-    if veto_files:
-        for veto_file in veto_files:
-            ifo = os.path.basename(veto_file)[:2]
-            if ifo in ifos:
-                # This returns a coalesced list of the vetoes
-                tmp_veto_segs = load_segments_from_xml(veto_file)
-                for entry in tmp_veto_segs:
-                    vetoes[ifo].append(entry)
-    for ifo in ifos:
-        vetoes[ifo].coalesce()
-
-    return vetoes
-
-
-# =============================================================================
-# Function to get the ID numbers from a LIGO-LW table
-# =============================================================================
-def get_id_numbers(ligolw_table, column):
-    """Grab the IDs of a LIGO-LW table"""
-
-    ids = [int(getattr(row, column)) for row in ligolw_table]
-
-    return ids
-
-
-# =============================================================================
-# Format single detector chi-square data as numpy array and floor at 0.005
-# =============================================================================
-def format_single_chisqs(trig_ifo_cs, ifos):
-    """Format single IFO chi-square data as numpy array and floor at 0.005"""
-
-    for ifo in ifos:
-        trig_ifo_cs[ifo] = numpy.asarray(trig_ifo_cs[ifo])
-        numpy.putmask(trig_ifo_cs[ifo], trig_ifo_cs[ifo] == 0, 0.005)
-
-    return trig_ifo_cs
-
-#
-# Used (also) in executables
-#
 
 # =============================================================================
 # Detector utils:
@@ -484,6 +484,49 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,\
 
 
 # =============================================================================
+# Construct sorted triggers from trials
+# =============================================================================
+def sort_trigs(trial_dict, trigs, num_slides, segment_dict):
+    """Constructs sorted triggers from a trials dictionary"""
+
+    sorted_trigs = {}
+
+    # Begin by sorting the triggers into each slide
+    # New seems pretty slow, so run it once and then use deepcopy
+    tmp_table = lsctables.New(lsctables.MultiInspiralTable)
+    for slide_id in range(num_slides):
+        sorted_trigs[slide_id] = copy.deepcopy(tmp_table)
+    for trig in trigs:
+        sorted_trigs[int(trig.time_slide_id)].append(trig)
+
+    for slide_id in range(num_slides):
+        # These can only *reduce* the analysis time
+        curr_seg_list = segment_dict[slide_id]
+
+        ###### TODO: below is a check we can possibly remove #####
+        # Check the triggers are all in the analysed segment lists
+        for trig in sorted_trigs[slide_id]:
+            if trig.end_time not in curr_seg_list:
+                # This can be raised if the trigger is on the segment boundary, so
+                # check if the trigger is within 1/100 of a second within the list
+                if trig.get_end() + 0.01 in curr_seg_list:
+                    continue
+                if trig.get_end() - 0.01 in curr_seg_list:
+                    continue
+                err_msg = "Triggers found in input files not in the list of "
+                err_msg += "analysed segments. This should not happen."
+                logging.error(err_msg)
+                sys.exit()
+        ###### end of check #####
+
+        # The below line works like the inverse of .veto and only returns trigs
+        # that are within the segment specified by trial_dict[slide_id]
+        sorted_trigs[slide_id] = sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
+
+    return sorted_trigs
+
+
+# =============================================================================
 # Extract basic trigger properties and store as dictionaries
 # TODO: the for's can be made more Pythonic probably.
 # TODO: use argument to determine which properties to calculate?
@@ -533,10 +576,7 @@ def extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, o
 
 
 # =============================================================================
-# Utilities for times:
-# * Find GRB trigger time
-# * Find start and end times of trigger/injecton data relative to a given time
-# * Reset times so that t=0 is corresponds to the given trigger time
+# Find GRB trigger time
 # =============================================================================
 def get_grb_time(seg_dir):
     """Determine GRB trigger time"""
@@ -545,42 +585,6 @@ def get_grb_time(seg_dir):
     grb_time = segs['on'][1] - 1
 
     return grb_time
-
-
-def get_start_end_times(data, central_time):
-    """Determine padded start and end times of data relative to central_time"""
-
-    #start = int(min(data.time)) - central_time
-    #end = int(max(data.time)) - central_time
-    start = int(min(data['time'])) - central_time
-    end = int(max(data['time'])) - central_time
-    duration = end-start
-    start -= duration*0.05
-    end += duration*0.05
-
-    return start, end
-
-
-def reset_times(data, trig_time):
-    """Reset times in data so that t=0 corresponds to the trigger time provided"""
-
-    #data.time = [t-trig_time for t in data.time]
-    data['time'] = [t-trig_time for t in data['time']]
-
-    return data
-
-
-# =============================================================================
-# Function to load a table from an xml file
-# =============================================================================
-def load_xml_table(file_name, table_name):
-    """Load xml table from file."""
-
-    xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
-                                  contenthandler=lsctables.use_in(
-                                      ligolw.LIGOLWContentHandler))
-
-    return table.get_table(xml_doc, table_name)
 
 
 # =============================================================================
@@ -621,55 +625,15 @@ def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
 
 
 # =============================================================================
-# Construct sorted triggers from trials
-# =============================================================================
-def sort_trigs(trial_dict, trigs, num_slides, segment_dict):
-    """Constructs sorted triggers from a trials dictionary"""
-
-    sorted_trigs = {}
-
-    # Begin by sorting the triggers into each slide
-    # New seems pretty slow, so run it once and then use deepcopy
-    tmp_table = lsctables.New(lsctables.MultiInspiralTable)
-    for slide_id in range(num_slides):
-        sorted_trigs[slide_id] = copy.deepcopy(tmp_table)
-    for trig in trigs:
-        sorted_trigs[int(trig.time_slide_id)].append(trig)
-
-    for slide_id in range(num_slides):
-        # These can only *reduce* the analysis time
-        curr_seg_list = segment_dict[slide_id]
-
-        ###### TODO: below is a check we can possibly remove #####
-        # Check the triggers are all in the analysed segment lists
-        for trig in sorted_trigs[slide_id]:
-            if trig.end_time not in curr_seg_list:
-                # This can be raised if the trigger is on the segment boundary, so
-                # check if the trigger is within 1/100 of a second within the list
-                if trig.get_end() + 0.01 in curr_seg_list:
-                    continue
-                if trig.get_end() - 0.01 in curr_seg_list:
-                    continue
-                err_msg = "Triggers found in input files not in the list of "
-                err_msg += "analysed segments. This should not happen."
-                logging.error(err_msg)
-                sys.exit()
-        ###### end of check #####
-
-        # The below line works like the inverse of .veto and only returns trigs
-        # that are within the segment specified by trial_dict[slide_id]
-        sorted_trigs[slide_id] = sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
-
-    return sorted_trigs
-
-
-# =============================================================================
 # Function to load injections
 # =============================================================================
-def load_injections(inj_file, vetoes, sim_table=False):
+def load_injections(inj_file, vetoes, sim_table=False, label=None):
     """Loads injections from PyGRB output file"""
 
-    logging.info("Loading injections...")
+    if label is None:
+        logging.info("Loading injections...")
+    else:
+        logging.info("Loading %s...", label)
 
     insp_table = lsctables.MultiInspiralTable
     if sim_table:
@@ -682,7 +646,10 @@ def load_injections(inj_file, vetoes, sim_table=False):
     injs = lsctables.New(insp_table, columns=insp_table.loadcolumns)
     injs.extend(t for t in table if t.get_end() not in vetoes)
 
-    logging.info("%d injections found.", len(injs))
+    if label is None:
+        logging.info("%d injections found.", len(injs))
+    else:
+        logging.info("%d %s found.", len(injs), label)
 
     return injs
 
@@ -886,90 +853,23 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
 
 
 # OBSOLETE but useful to know how to access and combine the various xml columns
-# =============================================================================
-# Extract trigger/injection data produced by PyGRB
-# =============================================================================
 #class PygrbFilterOutput(object):
-#    """Extract trigger/injection data produced by PyGRB search"""
-#
-#    def __init__(self, trigs_or_injs, ifos, columns, output_type, opts):
-#        logging.info("Extracting data from the %s just loaded...", output_type)
-#        # Initialize all content of self
-#        self.time = None
-#        self.snr = numpy.array(None)
-#        self.reweighted_snr = None
-#        self.null_snr = None
-#        self.null_stat = None
 #        self.trace_snr = None
-#        self.chi_square = numpy.array(None)
 #        self.bank_veto = None
 #        self.auto_veto = None
 #        self.coinc_snr = None
-#        self.ifo_snr = dict((ifo, None) for ifo in ifos)
-#        self.ifo_bank_cs = dict((ifo, None) for ifo in ifos)
-#        self.ifo_auto_cs = dict((ifo, None) for ifo in ifos)
-#        self.ifo_stan_cs = dict((ifo, None) for ifo in ifos)
 #        self.rel_amp_1 = None
 #        self.norm_3 = None
 #        self.rel_amp_2 = None
-#        self.inclination = None
-#        # Exctract data and fill in content of self
-#        null_thresh = map(float, opts.null_snr_threshold.split(','))
-#        #if trigs_or_injs is not None:
 #        if trigs_or_injs:
 #            # Work out if using sngl chisqs
-#            ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l', 'V1': 'v',
-#                       'T1': 't'}
-#            i = ifo_att[ifos[0]]
-#
-#            self.sngl_chisq = 'chisq_%s' % i in columns
-#            self.sngl_bank_chisq = 'bank_chisq_%s' % i in columns
-#            self.sngl_cont_chisq = 'cont_chisq_%s' % i in columns
-#
-#            # Set basic data
-#            self.time = numpy.asarray(trigs_or_injs.get_end())
-#            self.snr = numpy.asarray(trigs_or_injs.get_column('snr'))
-#            self.reweighted_snr = get_bestnrs(trigs_or_injs,
-#                                              q=opts.chisq_index,
-#                                              n=opts.chisq_nhigh,
-#                                              null_thresh=null_thresh,
-#                                              snr_threshold=opts.snr_threshold,
-#                                              sngl_snr_threshold=opts.sngl_snr_threshold,
-#                                              chisq_threshold=opts.newsnr_threshold,
-#                                              null_grad_thresh=opts.null_grad_thresh,
-#                                              null_grad_val=opts.null_grad_val)
-#            self.null_snr = numpy.asarray(trigs_or_injs.get_null_snr())
 #            self.null_stat = numpy.asarray(trigs_or_injs.get_column(
 #                'null_statistic'))
 #            self.trace_snr = numpy.asarray(trigs_or_injs.get_column(
 #                'null_stat_degen'))
 #
-#            # Get chisq data
-#            self.chi_square = numpy.asarray(trigs_or_injs.get_column('chisq'))
-#            self.bank_veto = numpy.asarray(trigs_or_injs.get_column(
-#                'bank_chisq'))
-#            self.auto_veto = numpy.asarray(trigs_or_injs.get_column(
-#                'cont_chisq'))
-#            numpy.putmask(self.chi_square, self.chi_square == 0, 0.005)
-#            numpy.putmask(self.bank_veto, self.bank_veto == 0, 0.005)
-#            numpy.putmask(self.auto_veto, self.auto_veto == 0, 0.005)
-#            self.chisq_dof = numpy.unique(trigs_or_injs.get_column('chisq_dof'))
-#            self.bank_chisq_dof = numpy.unique(trigs_or_injs.get_column('bank_chisq_dof'))
-#            self.cont_chisq_dof = numpy.unique(trigs_or_injs.get_column('cont_chisq_dof'))
-#
 #            # Get single detector data
 #            self.coinc_snr = (trigs_or_injs.get_column('coinc_snr'))
-#            self.ifo_snr = dict((ifo, trigs_or_injs.get_sngl_snr(ifo))
-#                                for ifo in ifos)
-#            if self.sngl_bank_chisq:
-#                self.ifo_bank_cs = trigs_or_injs.get_sngl_bank_chisqs(ifos)
-#                self.ifo_bank_cs = format_single_chisqs(self.ifo_bank_cs, ifos)
-#            if self.sngl_cont_chisq:
-#                self.ifo_auto_cs = trigs_or_injs.get_sngl_cont_chisqs(ifos)
-#                self.ifo_auto_cs = format_single_chisqs(self.ifo_auto_cs, ifos)
-#            if self.sngl_chisq:
-#                self.ifo_stan_cs = trigs_or_injs.get_sngl_chisqs(ifos)
-#                self.ifo_stan_cs = format_single_chisqs(self.ifo_stan_cs, ifos)
 #
 #            # Initiate amplitude generator
 #            num_amp = 4
@@ -999,11 +899,6 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
 #            self.rel_amp_2 = amp_plus/amp_cross
 #            self.inclination = amp_cross/self.norm_3
 #
-#            num_trigs_or_injs = len(trigs_or_injs)
-#            if num_trigs_or_injs < 1:
-#                logging.warning("No %s found.", output_type)
-#            elif num_trigs_or_injs >= 1:
-#                logging.info("%d %s found.", num_trigs_or_injs, output_type)
 #            # Deal with the sigma-squares (historically called sigmas here)
 #            if output_type == "triggers":
 #                # Get antenna response based parameters
@@ -1011,73 +906,6 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
 #                self.longitude = numpy.degrees(self.ra)
 #                self.dec = trigs_or_injs.get_column('dec')
 #                self.latitude = numpy.degrees(self.dec)
-#                self.f_resp = {}
-#                self.f_resp_mean = {}
-#                sigma = trigs_or_injs.get_sigmasqs()
-#                self.sigma_tot = numpy.zeros(num_trigs_or_injs)
-#                for ifo in ifos:
-#                    antenna = Detector(ifo)
-#                    self.f_resp[ifo] = get_antenna_responses(antenna,
-#                                                             self.ra,
-#                                                             self.dec,
-#                                                             self.time)
-#                    self.sigma_tot += (sigma[ifo] * self.f_resp[ifo])
-#                    self.f_resp_mean[ifo] = self.f_resp[ifo].mean()
-#                self.sigma_mean = {}
-#                self.sigma_max = {}
-#                self.sigma_min = {}
-#                for ifo in ifos:
-#                    try:
-#                        sigma_norm = sigma[ifo]/self.sigma_tot
-#                        self.sigma_mean[ifo] = sigma_norm.mean()
-#                        self.sigma_max[ifo] = sigma_norm.max()
-#                        self.sigma_min[ifo] = sigma_norm.min()
-#                    except ValueError:
-#                        self.sigma_mean[ifo] = 0
-#                        self.sigma_max[ifo] = 0
-#                        self.sigma_min[ifo] = 0
-#        logging.info("%s parameters extracted", output_type)
-
-# =============================================================================
-# Function to load data contained in a trigger file
-# =============================================================================
-#def load_triggers_data(trig_file, vetoes, opts):
-#    """Loads data from triggers in a PyGRB output file"""
-#
-#    # Load triggers
-#    trigs = load_triggers(trig_file, vetoes)
-#
-#    # Determine ifos
-#    ifos = vetoes.keys()
-#
-#    # Extract trigger data
-#    trig_data = PygrbFilterOutput(trigs, ifos,
-#                                  lsctables.MultiInspiralTable.loadcolumns,
-#                                  "triggers", opts)
-#
-#    return trig_data
-
-# =============================================================================
-# Function to load data contained in an injection file
-# =============================================================================
-#def load_injections_data(inj_file, vetoes, opts, sim_table=False):
-#    """Loads data contained in an injection file at non-vetoed times"""
-#
-#    # Load injections
-#    injs = None
-#    if inj_file:
-#        injs = load_injections(inj_file, vetoes, sim_table=sim_table)
-#
-#    # Determine ifos
-#    ifos = vetoes.keys()
-#
-#    # Extract (or initialize) injection data
-#    inj_data = PygrbFilterOutput(injs, ifos,
-#                                 lsctables.MultiInspiralTable.loadcolumns,
-#                                 "injections", opts)
-#
-#    return inj_data
-
 
 # =============================================================================
 # Dumping material from pycbc_pygrb_efficiency and pycbc_pygrb_page_tables
