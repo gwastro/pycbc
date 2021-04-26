@@ -307,9 +307,9 @@ sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
 #if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
 #    seed_files = [geom_out_file.name, sbank_out_file_bbh.name]
 # Here's what it does look like
-seed_files = [geom_out_file.name]
+seed_files = [geom_out_file.storage_path]
 if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-    seed_files = [geom_out_file.name, sbank_out_file_bbh.name]
+    seed_files += [sbank_out_file_bbh.storage_path]
 
 
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
