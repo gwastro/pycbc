@@ -132,7 +132,6 @@ class SbankDaxGenerator(wf.Executable):
         if seed_files is not None:
             sfs = []
             for seed_file in seed_files:
-                seed_file = os.path.basename(seed_file)
                 sfs.append(seed_file)
             config_overrides.append('workflow:seed-bank:"%s"' % ' '.join(sfs))
 
@@ -300,9 +299,18 @@ sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
                          store_file=True, directory='.',
                          tags=['sbank_final'], use_tmp_subdirs=False)
 
+# FIXME: As pegasus does not really support sub-workflows generating output
+#        files, we have to handle these carefully. We basically trick pegasus
+#        into thinking that these are separate files.
+# Here's what the code should really look like
+#seed_files = [geom_out_file.name]
+#if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
+#    seed_files = [geom_out_file.name, sbank_out_file_bbh.name]
+# Here's what it does look like
 seed_files = [geom_out_file.name]
 if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     seed_files = [geom_out_file.name, sbank_out_file_bbh.name]
+
 
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                    os.path.abspath('sbank_final'),
