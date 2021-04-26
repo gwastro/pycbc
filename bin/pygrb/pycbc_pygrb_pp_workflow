@@ -78,10 +78,17 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
 
     tags = [] if tags is None else tags
 
-    logging.info("Executable name: %s", (exec_name))
     # Initialize job node with its tags
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     extra_tags = ['GRB'+grb_name]
+    if inj_set is not None:
+        #if exec_name not in ['pygrb_plot_snr_timeseries', 'pygrb_plot_chisq_veto',
+        #                     'pygrb_plot_coh_ifosnr', 'pygrb_plot_null_stats',
+        #                     'pygrb_plot_injs_results',
+        #                     'pygrb_plot_stat_distribution', 'pygrb_efficiency']:
+        extra_tags.append(inj_set) # TODO: why is inj_set repeated twice in output files?
+    if ifo:
+        extra_tags.append(ifo)
     node = PlotExecutable(workflow.cp, exec_name, ifos=workflow.ifos,
                           out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
@@ -106,23 +113,17 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
                 node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
     # Injection file
     if inj_set is not None:
-        node.add_opt('--inj-file', workflow.cp.get('injections-'+inj_set, 'inj-file'))
-        extra_tags.append(inj_set)
+        if exec_name != 'pygrb_plot_injs_results':
+            node.add_opt('--inj-file', workflow.cp.get('injections-'+inj_set, 'inj-file'))
     # IFO option
     if ifo:
         node.add_opt('--ifo', ifo)
-        extra_tags.append(ifo)
     # Additional input files
     if exec_name in ['pygrb_plot_injs_results', 'pygrb_efficiency']:
         node.add_opt('--found-file', workflow.cp.get('injections-'+inj_set, 'found-file'))
         node.add_opt('--missed-file', workflow.cp.get('injections-'+inj_set, 'missed-file'))
     # Output files
-    if exec_name == 'pygrb_plot_injs_results':
-        node.new_output_file_opt(workflow.analysis_time, '.png', '--found-missed-output-file',
-                                 tags=['found_missed']+extra_tags)
-        node.new_output_file_opt(workflow.analysis_time, '.png', '--missed-found-output-file',
-                                 tags=['missed_found']+extra_tags)
-    elif exec_name == 'pygrb_efficiency':
+    if exec_name == 'pygrb_efficiency':
         # In this case tags[0] is the offtrial number
         node.add_opt('--onsource-file', workflow.cp.get('workflow', 'onsource-file'))
         node.new_output_file_opt(workflow.analysis_time, '.png',
@@ -132,11 +133,9 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
     else:
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--output-file', tags=extra_tags)
-        if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_coh_ifosnr',
-                         'pygrb_plot_null_stats']:
-            node.new_output_file_opt(workflow.analysis_time, '.png',
-                                     '--zoomed-output-file',
-                                     tags=extra_tags+['zoom'])
+        if exec_name in ['pygrb_plot_coh_ifosnr', 'pygrb_plot_null_stats']:
+            if 'zoomin' in tags:
+                node.add_opt('--zoom-in')
     # Quantity to be displayed on the y-axis of the plot
     if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_null_stats', 'pygrb_plot_snr_timeseries']:
         node.add_opt('--y-variable', tags[0])
@@ -147,6 +146,13 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
         # Variables to plot on x and y axes
         node.add_opt('--y-variable', tags[0])
         node.add_opt('--x-variable', tags[1])
+        # Flag to plot found over missed or missed over found
+        node.add_opt('--'+tags[2])
+        # Enable log axes
+        subsection = '_'.join(tags[0:2])
+        for log_flag in ['x-log', 'y-log']:
+            if workflow.cp.has_option_tags(exec_name, log_flag, tags=[subsection]):
+                node.add_opt('--'+log_flag)
 
     # Add job node to workflow
     workflow += node
@@ -162,13 +168,11 @@ def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
 
     # Exectuable
     exec_name = 'pygrb_page_tables'
-    logging.info("Executable name: %s", exec_name)
     # Initialize job node
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     extra_tags = ['GRB'+grb_name]
-    # Injection file
     if inj_set is not None:
-        extra_tags.append(inj_set) # TODO: are we getting this tag twice?
+        extra_tags.append(inj_set) # TODO: why is inj_set repeated twice in output files?
     node = PlotExecutable(workflow.cp, exec_name,
                           ifos=workflow.ifos, out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
@@ -181,16 +185,15 @@ def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
                 'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
         node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
     # Handle input/output for injections
-    #if inj_set is not None:
     if inj_set:
         # Found/missed injection files
-        for inj_file_type in ['found-file', 'missed-file']:
-            node.add_opt('--'+inj_file_type, workflow.cp.get('injections-'+inj_set, inj_file_type))
+        for f_or_m in ['found-file', 'missed-file']:
+            node.add_opt('--'+f_or_m, workflow.cp.get('injections-'+inj_set, f_or_m))
         # Missed-found and quiet-found injections html output files
-        for inj_sorting in ['missed-found', 'quiet-found']:
+        for mf_or_qf in ['missed-found', 'quiet-found']:
             node.new_output_file_opt(workflow.analysis_time, '.html',
-                                     '--'+inj_sorting+'-injs-output-file',
-                                     tags=extra_tags+[inj_sorting.upper().replace('-', '_')])
+                                     '--'+mf_or_qf+'-injs-output-file',
+                                     tags=extra_tags+[mf_or_qf.upper().replace('-', '_')])
         # Quiet-found injections h5 output file
         node.new_output_file_opt(workflow.analysis_time, '.h5',
                                  '--quiet-found-injs-h5-output-file',
@@ -423,56 +426,65 @@ for snr_type in timeseries:
 #
 out_dir = rdir['signal_consistency']
 _workflow.makedir(out_dir)
-# Bank/auto/chisq veto vs Coherent SNR plots: non-zoomed and zoomed
+# Bank/auto/chisq veto vs Coherent SNR plots
 out_dir = rdir['signal_consistency/chi_squared_tests']
 _workflow.makedir(out_dir)
 files = _workflow.FileList([])
 # Loop over vetoes request by the user
 vetoes = wflow.cp.get_subsections('pygrb_plot_chisq_veto')
 for veto in vetoes:
+    chisq_veto_plots = _workflow.FileList([])
     # Plots with and without injections
     for inj_set in [tuning_inj_set, None]:
         plot_node, output_files = \
             make_pygrb_plot(wflow, 'pygrb_plot_chisq_veto', out_dir,
                             inj_set=inj_set, tags=[veto])
         plotting_nodes.append(plot_node)
-        files.append(output_files)
+        # We want a File, not a 1-element list with a File
+        # pycbc_pygrb_plot_chisq_veto produces only one plot: take [0]
+        chisq_veto_plots.append(output_files[0])
+    files.append(chisq_veto_plots)
 layout.two_column_layout(out_dir, files)
 
-# Single detector chi-square plots: non-zoomed and zoomed
+# Single detector chi-square plots: zoomed in and zoomed out
 out_dir = rdir['signal_consistency/individual_detectors']
 _workflow.makedir(out_dir)
 files = _workflow.FileList([])
-# Single IFO SNR vs Coherent SNR plots: non-zoomed and zoomed
+# Single IFO SNR vs Coherent SNR plots: zoomed in and zoomed out
 # Requires looping over IFOs
 if wflow.cp.has_section('pygrb_plot_coh_ifosnr'):
     for ifo in ifos:
         # Plots with and without injections
         for inj_set in [tuning_inj_set, None]:
-            # Single IFO SNR vs Coherent SNR
-            plot_node, output_files = \
-                make_pygrb_plot(wflow, 'pygrb_plot_coh_ifosnr', out_dir,
-                                inj_set=inj_set, ifo=ifo)
-            plotting_nodes.append(plot_node)
-            files.append(output_files)
+            sngl_snr_plots = _workflow.FileList([])
+            for zoom_tag in [['zoomin'], None]:
+                # Single IFO SNR vs Coherent SNR
+                plot_node, output_files = \
+                    make_pygrb_plot(wflow, 'pygrb_plot_coh_ifosnr', out_dir,
+                                    inj_set=inj_set, ifo=ifo, tags=zoom_tag)
+                plotting_nodes.append(plot_node)
+                # We want a File, not a 1-element list with a File
+                # pycbc_pygrb_plot_cohifo_snr produces only one plot: take [0]
+                sngl_snr_plots.append(output_files[0])
+            files.append(sngl_snr_plots)
     layout.two_column_layout(out_dir, files)
 else:
     msg = 'No pygrb_plot_coh_ifosnr section found in the configuration file. '
     msg += 'No coherent vs single detector SNR plots will be generated.'
     logging.info(msg)
 
-# Null SNR/Overwhitened null stat vs Coherent SNR plots: non-zoomed and zoomed
+# Null SNR/Overwhitened null stat vs Coherent SNR plots
 null_snr_out_dir = rdir['signal_consistency/null_snrs']
 _workflow.makedir(null_snr_out_dir)
 null_snr_files = _workflow.FileList([])
-# Coincident SNR vs Coherent SNR plots: non-zoomed and zoomed
+# Coincident SNR vs Coherent SNR plots
 coinc_out_dir = rdir['signal_consistency/coincident_snr']
 _workflow.makedir(coinc_out_dir)
 coinc_files = _workflow.FileList([])
 # Loop over null statistics requested by the user (including coincident SNR)
 nstats = wflow.cp.get_subsections('pygrb_plot_null_stats')
 for nstat in nstats:
-    # Plots with and without injections
+    # Plots with and without injections, zoomed in and zoomed out
     for inj_set in [tuning_inj_set, None]:
         if nstat == 'coincident':
             out_dir = coinc_out_dir
@@ -480,11 +492,16 @@ for nstat in nstats:
         else:
             out_dir = null_snr_out_dir
             files = null_snr_files
-        plot_node, output_files = \
+        null_stats_plots = _workflow.FileList([])
+        for zoom_tag in [['zoomin'], []]:
+            plot_node, output_files = \
             make_pygrb_plot(wflow, 'pygrb_plot_null_stats', out_dir,
-                            inj_set=inj_set, tags=[nstat])
-        plotting_nodes.append(plot_node)
-        files.append(output_files)
+                            inj_set=inj_set, tags=[nstat]+zoom_tag)
+            plotting_nodes.append(plot_node)
+            # We want a File, not a 1-element list with a File
+            # pycbc_pygrb_plot_null_stats produces only one plot: take [0]
+            null_stats_plots.append(output_files[0])
+        files.append(null_stats_plots)
 layout.two_column_layout(null_snr_out_dir, null_snr_files)
 layout.two_column_layout(coinc_out_dir, coinc_files)
 
@@ -506,7 +523,7 @@ for inj_set in inj_sets:
     out_dir = rdir['injections/'+inj_set]
     _workflow.makedir(out_dir)
     files = _workflow.FileList([])
-    # Generate plots
+    # Generate plots: loop over inj_plots and found-missed/missed-found
     for inj_plot in inj_plots:
         y_qty, x_qty = inj_plot.split('_')
         ifos_to_loop = [None]
@@ -514,11 +531,14 @@ for inj_set in inj_sets:
         if y_qty == 'effsitedist':
             ifos_to_loop = ifos
         for ifo in ifos_to_loop:
-            plot_node, output_files = make_pygrb_plot(wflow, 'pygrb_plot_injs_results',
-                                                      out_dir, ifo=ifo, inj_set=inj_set,
-                                                      tags=[y_qty, x_qty])
-            plotting_nodes.append(plot_node)
-            files += output_files
+            for fm_or_mf in ['found-missed', 'missed-found']:
+                plot_node, output_files = make_pygrb_plot(wflow, 'pygrb_plot_injs_results',
+                                                          out_dir, ifo=ifo, inj_set=inj_set,
+                                                          tags=[y_qty, x_qty, fm_or_mf])
+                plotting_nodes.append(plot_node)
+                # We want a File, not a 1-element list with a File
+                # pycbc_pygrb_plot_injs_results produces only one plot: take [0]
+                files.append(output_files[0])
     # Generate quiet-found and missed-found html tables
     # TODO:  pass lont/lofft arguments if inj_set=None
     html_node, [mf_table, qf_table, qf_h5] =\

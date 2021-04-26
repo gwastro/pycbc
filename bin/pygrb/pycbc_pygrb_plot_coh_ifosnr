@@ -55,49 +55,50 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 
 
 # Function to load necessary SNR data from a trigger/injection file
-def load_data(input_file, vetoes, ifos, injections=False):
+def load_data(input_file, vetoes, ifos, opts, injections=False):
     """Build a dictionary containing SNR and sensitivity data extracted
     from a trigger/injection file"""
 
     # Inizialize the dictionary
     data = {}
-    data['snr'] = numpy.array(None)
-    # TODO: no need to have all sngl_snrs, sigmas, etc.
-    data['ifo_snr'] = dict((ifo, None) for ifo in ifos)
+    data['snr'] = None
+    data['ifo_snr'] = None
+    data['f_resp_mean'] = dict((ifo, None) for ifo in ifos)
+    data['sigma_mean'] = dict((ifo, None) for ifo in ifos)
+    data['sigma_max'] = None
+    data['sigma_min'] = None
 
-    # Fill the dictionary in with required data
+    # Fill in with required data
     if input_file:
         if not injections:
             trigs_or_injs = load_triggers(input_file, vetoes)
-            data['f_resp_mean'] = {}
-            data['sigma_max'] = {}
-            data['sigma_mean'] = {}
-            data['sigma_min'] = {}
-            time = numpy.asarray(trigs_or_injs.get_end())
-            ra = trigs_or_injs.get_column('ra')
-            dec = trigs_or_injs.get_column('dec')
             sigma = trigs_or_injs.get_sigmasqs()
             sigma_tot = numpy.zeros(len(trigs_or_injs))
             for ifo in ifos:
                 antenna = Detector(ifo)
-                ifo_f_resp = get_antenna_responses(antenna, ra, dec, time)
+                ifo_f_resp = \
+                    get_antenna_responses(antenna,
+                                          trigs_or_injs.get_column('ra'),
+                                          trigs_or_injs.get_column('dec'),
+                                          numpy.asarray(trigs_or_injs.get_end()))
                 data['f_resp_mean'][ifo] = ifo_f_resp.mean()
                 sigma_tot += (sigma[ifo] * ifo_f_resp)
             for ifo in ifos:
                 try:
                     sigma_norm = sigma[ifo]/sigma_tot
                     data['sigma_mean'][ifo] = sigma_norm.mean()
-                    data['sigma_max'][ifo] = sigma_norm.max()
-                    data['sigma_min'][ifo] = sigma_norm.min()
+                    if ifo == opts.ifo:
+                        data['sigma_max'] = sigma_norm.max()
+                        data['sigma_min'] = sigma_norm.min()
                 except ValueError:
                     data['sigma_mean'][ifo] = 0
-                    data['sigma_max'][ifo] = 0
-                    data['sigma_min'][ifo] = 0
+                    if ifo == opts.ifo:
+                        data['sigma_max'] = 0
+                        data['sigma_min'] = 0
         else:
             trigs_or_injs = load_injections(input_file, vetoes)
         data['snr'] = numpy.asarray(trigs_or_injs.get_column('snr'))
-        data['ifo_snr'] = dict((ifo, trigs_or_injs.get_sngl_snr(ifo))
-                               for ifo in ifos)
+        data['ifo_snr'] = trigs_or_injs.get_sngl_snr(opts.ifo)
 
     return data
 
@@ -114,10 +115,8 @@ parser = pygrb_initialize_plot_parser(usage=usage, description=description,
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,
                     help="The location of the trigger file")
-# TODO: don't loop on the output files in the executables?
-parser.add_argument("-O", "--zoomed-output-file", default=None,
-                    required=True, help="Output file for a zoomed in " +
-                    "version of the plot.")
+parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
+                    help="Output file a zoomed in version of the plot.")
 opts = parser.parse_args()
 
 if opts.verbose:
@@ -132,8 +131,7 @@ trig_file = os.path.abspath(opts.trig_file)
 inj_file = None
 if opts.inj_file:
     inj_file = os.path.abspath(opts.inj_file)
-outfile = opts.output_file
-zoomedoutfile = opts.zoomed_output_file
+zoom_in = opts.zoom_in
 veto_files = []
 if opts.veto_directory:
     veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
@@ -163,21 +161,19 @@ if opts.plot_caption is None:
 logging.info("Imported and ready to go.")
 
 # Set output directories
-outdirs = [os.path.split(os.path.abspath(outfile))[0], \
-           os.path.split(os.path.abspath(zoomedoutfile))[0]]
-for outdir in outdirs:
-    if not os.path.isdir(outdir):
-        os.makedirs(outdir)
+outdir = os.path.split(os.path.abspath(opts.output_file))[0]
+if not os.path.isdir(outdir):
+    os.makedirs(outdir)
 
 # Extract IFOs and vetoes
 ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
                                        opts.veto_category)
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, ifos)
+trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(inj_file, vetoes, ifos, injections=True)
+inj_data = load_data(inj_file, vetoes, ifos, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")
@@ -194,48 +190,44 @@ loudness_labels = ['Loudest', 'Second loudest', 'Third loudest']
 
 # Determine the maximum coherent SNR value we are dealing with
 x_max = axis_max_value(trig_data['snr'], inj_data['snr'], inj_file)
-max_snr = None
+max_snr = x_max
 if x_max < 50.:
     max_snr = 50.
-else:
-    max_snr = x_max
 
 # Determine the maximum auto veto value we are dealing with
-y_max = axis_max_value(trig_data['ifo_snr'][ifo], inj_data['ifo_snr'][ifo], inj_file)
-
-zoom_snr = numpy.arange(0.01, max_snr, 0.01)
+y_max = axis_max_value(trig_data['ifo_snr'], inj_data['ifo_snr'], inj_file)
 
 # Setup the plots
 pygrb_shared_plot_setups()
-fig_path_list = [outfile, zoomedoutfile]
 x_label = "Coherent SNR"
 y_label = "%s sngl SNR" % ifo
-fig_path = fig_path_list[0]
-fig_name = os.path.split(os.path.abspath(fig_path))[1]
-logging.info(" * %s (%s vs %s)...", fig_name, x_label, y_label)
 fig = plt.figure()
 ax = fig.gca()
 # Plot trigger data
-ax.plot(trig_data['snr'], trig_data['ifo_snr'][ifo], 'bx')
+ax.plot(trig_data['snr'], trig_data['ifo_snr'], 'bx')
 ax.grid()
 # Plot injection data
 if inj_file:
-    ax.plot(inj_data['snr'], inj_data['ifo_snr'][ifo], 'r+')
+    ax.plot(inj_data['snr'], inj_data['ifo_snr'], 'r+')
 # Sigma-mean, min, max
-y_data = [trig_data['sigma_mean'][ifo], trig_data['sigma_min'][ifo],
-          trig_data['sigma_max'][ifo]]
+y_data = [trig_data['sigma_mean'][ifo], trig_data['sigma_min'],
+          trig_data['sigma_max']]
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
+zoom_snr = numpy.arange(0.01, max_snr, 0.01)
 y_data = [zoom_snr*(trig_data['f_resp_mean'][ifo]*x)**0.5 for x in y_data]
 for el in y_data:
     ax.plot(zoom_snr, el, 'g-')
 # ncx2: non-central chi-squared; ppf: percent point function
+# TODO: originally the y-axis had the ppf. Is zoom_snr[-1]*0.01*ppf correct?
 # Plot these for sigma_min and sigma_max
 # 2 sigma (0.9545)
-ax.plot(zoom_snr, scipy.stats.ncx2.ppf(0.02275, 2, y_data[1]*y_data[1])**0.5, 'm-')
-ax.plot(zoom_snr, scipy.stats.ncx2.ppf(1.-0.02275, 2, y_data[2]*y_data[2])**0.5, 'm-')
+ax.plot(zoom_snr, zoom_snr[-1]*0.01*scipy.stats.ncx2.ppf(0.02275, 2, y_data[1]*y_data[1])**0.5, 'm-')
+ax.plot(zoom_snr, zoom_snr[-1]*0.01*scipy.stats.ncx2.ppf(1.-0.02275, 2, y_data[2]*y_data[2])**0.5, 'm-')
+#ax.plot(zoom_snr, scipy.stats.ncx2.ppf(0.02275, 2, y_data[1]*y_data[1])**0.5, 'm-')
+#ax.plot(zoom_snr, scipy.stats.ncx2.ppf(1.-0.02275, 2, y_data[2]*y_data[2])**0.5, 'm-')
 # 3 sigma (0.9973)
-ax.plot(zoom_snr, scipy.stats.ncx2.ppf(0.00135, 2, y_data[1]*y_data[1])**0.5, 'c-')
-ax.plot(zoom_snr, scipy.stats.ncx2.ppf(1.-0.00135, 2, y_data[2]*y_data[2])**0.5, 'c-')
+ax.plot(zoom_snr, zoom_snr[-1]*0.01*scipy.stats.ncx2.ppf(0.00135, 2, y_data[1]*y_data[1])**0.5, 'c-')
+ax.plot(zoom_snr, zoom_snr[-1]*0.01*scipy.stats.ncx2.ppf(1.-0.00135, 2, y_data[2]*y_data[2])**0.5, 'c-')
 # Non-zoomed plot
 ax.plot([0, max_snr], [4, 4], 'k-')
 ax.set_xlabel(x_label)
@@ -252,15 +244,11 @@ if loudness_index < 2:
     polyy.extend([limy, limy])
     ax.fill(polyx, polyy, color='#dddddd')
 opts.plot_title = opts.plot_title + " (%s SNR)" % loudness_labels[loudness_index]
-# Save non-zoomed plot
-save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
-                       title=opts.plot_title, caption=opts.plot_caption)
-# Save zoomed plot
-fig_path = fig_path_list[1]
-fig_name = os.path.split(os.path.abspath(fig_path))[1]
-logging.info(" * %s (%s vs %s)...", fig_name, x_label, y_label)
-ax.set_xlim([6, 50])
-ax.set_ylim([0, 20])
-save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
+# Zoom in if asked to do so
+if opts.zoom_in:
+    ax.set_xlim([6, 50])
+    ax.set_ylim([0, 20])
+# Save plot
+save_fig_with_metadata(fig, opts.output_file, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=opts.plot_caption)
 plt.close()

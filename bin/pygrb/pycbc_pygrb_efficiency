@@ -46,7 +46,6 @@ from pycbc.results.pygrb_postprocessing_utils import load_time_slides
 from pycbc.results.pygrb_postprocessing_utils import construct_trials
 from pycbc.results.pygrb_postprocessing_utils import extract_basic_trig_properties
 from pycbc.results.pygrb_postprocessing_utils import sort_trigs
-from pycbc.results.pygrb_postprocessing_utils import sort_stat
 from pycbc.results.pygrb_postprocessing_utils import max_median_stat
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_responses
 from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
@@ -87,7 +86,6 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
         only_found_injs = only_found_injs / num_mc_injs
         all_injs = all_injs / num_mc_injs
 
-    # TODO: optimize
     err_common = all_injs * (2 * only_found_injs + 1)
     err_denom = 2 * all_injs * (all_injs + 1)
     err_vary = 4 * all_injs * only_found_injs * (all_injs - only_found_injs) \
@@ -225,16 +223,12 @@ logging.info("%d trials generated.", total_trials)
 trig_time, trig_snr, trig_bestnr = \
     extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
 
-# Calculate SNR and BestNR values and maxima
-time_veto_max_snr = {}
+# Calculate BestNR values and maximum
 time_veto_max_bestnr = {}
-time_veto_max_snr_uncut = {}
 
 for slide_id in range(num_slides):
     num_slide_segs = len(trial_dict[slide_id])
-    time_veto_max_snr[slide_id] = np.zeros(num_slide_segs)
     time_veto_max_bestnr[slide_id] = np.zeros(num_slide_segs)
-    time_veto_max_snr_uncut[slide_id] = np.zeros(num_slide_segs)
 
 for slide_id in range(num_slides):
     for j, trial in enumerate(trial_dict[slide_id]):
@@ -242,18 +236,9 @@ for slide_id in range(num_slides):
                           & (trig_time[slide_id] < trial[1])
         if not trial_cut.any():
             continue
-        # Max SNR
-        time_veto_max_snr[slide_id][j] = \
-                        max(trig_snr[slide_id][trial_cut])
         # Max BestNR
         time_veto_max_bestnr[slide_id][j] = \
                         max(trig_bestnr[slide_id][trial_cut])
-        # Max SNR for triggers passing SBVs
-        sbv_cut = trig_bestnr[slide_id] != 0
-        if not (trial_cut&sbv_cut).any():
-            continue
-        time_veto_max_snr_uncut[slide_id][j] =\
-                          max(trig_snr[slide_id][trial_cut & sbv_cut])
 
 logging.info("SNR and bestNR maxima calculated.")
 
@@ -271,8 +256,6 @@ offsource_trigs.reverse()
 # Note: the only new info from above is the median SNR, bestnr
 # and loudest SNR, so could just add this to the above's caption.
 # ==========================
-full_time_veto_max_snr = sort_stat(time_veto_max_snr)
-full_time_veto_max_snr_uncut = sort_stat(time_veto_max_snr_uncut)
 max_bestnr, _, full_time_veto_max_bestnr =\
     max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
 
@@ -349,46 +332,47 @@ if do_injections:
 
     logging.info("Missed/found injections/triggers loaded.")
 
-    # Extract columns of found injections and triggers
-    found_inj_ra = np.asarray(found_injs.get_column('longitude'))
-    found_inj_dec = np.asarray(found_injs.get_column('latitude'))
-    found_inj_time = np.asarray(found_injs.get_column('geocent_end_time')) +\
-                     np.asarray(found_injs.get_column('geocent_end_time_ns')*\
-                                10**-9)
-    found_inj_dist = np.asarray(found_injs.get_column('distance'))
+    # Extract columns of found injections
+    found_inj = {}
+    found_inj['ra'] = np.asarray(found_injs.get_column('longitude'))
+    found_inj['dec'] = np.asarray(found_injs.get_column('latitude'))
+    found_inj['time'] = np.asarray(found_injs.get_column('geocent_end_time')) +\
+                        np.asarray(found_injs.get_column('geocent_end_time_ns')*\
+                                   10**-9)
+    found_inj['dist'] = np.asarray(found_injs.get_column('distance'))
 
-    # TODO: a lot of this is identical to all the stuff above
-    found_trig_mchirp = np.asarray(found_trigs.get_column('mchirp'))
-
-    # Grab values of detection statistic
-    found_trig_bestnr = get_bestnrs(found_trigs, q=chisq_index,
-                                    n=chisq_nhigh,
-                                    null_thresh=null_thresh,
-                                    snr_threshold=snr_thresh,
-                                    sngl_snr_threshold=sngl_snr_thresh,
-                                    chisq_threshold=new_snr_thresh,
-                                    null_grad_thresh=null_grad_thresh,
-                                    null_grad_val=null_grad_val)
+    # Extract columns of triggers
+    found_trig = {}
+    found_trig['mchirp'] = np.asarray(found_trigs.get_column('mchirp'))
+    found_trig['bestnr'] = get_bestnrs(found_trigs, q=chisq_index,
+                                       n=chisq_nhigh,
+                                       null_thresh=null_thresh,
+                                       snr_threshold=snr_thresh,
+                                       sngl_snr_threshold=sngl_snr_thresh,
+                                       chisq_threshold=new_snr_thresh,
+                                       null_grad_thresh=null_grad_thresh,
+                                       null_grad_val=null_grad_val)
 
     # Construct conditions for injection:
     # 1) found louder than background,
     zero_fap = np.zeros(len(found_injs)).astype(np.bool)
-    zero_fap_cut = found_trig_bestnr > max_bestnr
+    zero_fap_cut = found_trig['bestnr'] > max_bestnr
     zero_fap = zero_fap | (zero_fap_cut)
 
     # 2) found (bestnr > 0) but not louder than background (non-zero FAP)
-    nonzero_fap = ~zero_fap & (found_trig_bestnr != 0)
+    nonzero_fap = ~zero_fap & (found_trig['bestnr'] != 0)
 
     # 3) missed after being recovered (i.e., vetoed) are not used here
     # missed = (~zero_fap) & (~nonzero_fap)
 
     # Non-zero FAP triggers (g_ifar)
-    g_ifar_det_stat = found_trig_bestnr[nonzero_fap]
-    g_ifar_stat = np.zeros([len(g_ifar_det_stat)])
+    g_ifar = {}
+    g_ifar['bestnr'] = found_trig['bestnr'][nonzero_fap]
+    g_ifar['stat'] = np.zeros([len(g_ifar['bestnr'])])
     for ix, (mc, bestnr) in \
-                enumerate(zip(found_trig_mchirp[nonzero_fap], g_ifar_det_stat)):
-        g_ifar_stat[ix] = (full_time_veto_max_bestnr > bestnr).sum()
-    g_ifar_stat = g_ifar_stat / total_trials
+                enumerate(zip(found_trig['mchirp'][nonzero_fap], g_ifar['bestnr'])):
+        g_ifar['stat'][ix] = (full_time_veto_max_bestnr > bestnr).sum()
+    g_ifar['stat'] = g_ifar['stat'] / total_trials
 
     # Set the sigma values
     inj_sigma = found_trigs.get_sigmasqs()
@@ -408,8 +392,9 @@ if do_injections:
     f_resp = {}
     for ifo in ifos:
         antenna = Detector(ifo)
-        f_resp[ifo] = get_antenna_responses(antenna, found_inj_ra,
-                                            found_inj_dec, found_inj_time)
+        f_resp[ifo] = get_antenna_responses(antenna,
+                                            found_inj['ra'], found_inj['dec'],
+                                            found_inj['time'])
 
     inj_sigma_mult = (np.asarray(inj_sigma.values()) *\
                       np.asarray(f_resp.values()))
@@ -428,14 +413,16 @@ if do_injections:
     missed_injs = load_injections(missed_file, vetoes, sim_table=True)
 
     # Process missed injections 'missed_inj'
-    missed_inj_dist = np.asarray(missed_injs.get_column('distance'))
+    missed_inj = {}
+    missed_inj['dist'] = np.asarray(missed_injs.get_column('distance'))
 
     logging.info("%d missed injections analysed.", len(missed_injs))
 
     # Create new set of injections for efficiency calculations
     total_injs = len(found_injs) + len(missed_injs)
-    long_inj_dist = stats.uniform.rvs(size=total_injs) * (upper_dist-lower_dist) +\
-                  upper_dist
+    long_inj = {}
+    long_inj['dist'] = stats.uniform.rvs(size=total_injs) * (upper_dist-lower_dist) +\
+                       upper_dist
 
     logging.info("%d long distance injections created.", total_injs)
 
@@ -446,16 +433,20 @@ if do_injections:
                              (upper_dist-lower_dist)/num_bins) +\
                              (upper_dist-lower_dist)/num_bins)
 
-    num_injections = np.zeros([len(dist_bins)+1])
-    found_max_bestnr = np.zeros([len(dist_bins)+1])
-    found_on_bestnr = np.zeros([len(dist_bins)+1])
-    num_injections_no_mc = np.zeros([len(dist_bins)+1])
-    found_max_bestnr_no_mc = np.zeros([len(dist_bins)+1])
-    found_on_bestnr_no_mc = np.zeros([len(dist_bins)+1])
+    num_dist_bins_plus_one = len(dist_bins) + 1
+    num_injections = {}
+    found_max_bestnr = {}
+    found_on_bestnr = {}
+    num_injections['mc'] = np.zeros(num_dist_bins_plus_one)
+    found_max_bestnr['mc'] = np.zeros(num_dist_bins_plus_one)
+    found_on_bestnr['mc'] = np.zeros(num_dist_bins_plus_one)
+    num_injections['no_mc'] = np.zeros(num_dist_bins_plus_one)
+    found_max_bestnr['no_mc'] = np.zeros(num_dist_bins_plus_one)
+    found_on_bestnr['no_mc'] = np.zeros(num_dist_bins_plus_one)
 
     # Construct FAP list for all found injections
     inj_fap = np.zeros(len(found_injs))
-    inj_fap[nonzero_fap] = g_ifar_stat
+    inj_fap[nonzero_fap] = g_ifar['stat']
 
     # Calculate the amplitude error
     # Begin by calculating the components from each detector
@@ -474,15 +465,15 @@ if do_injections:
     # num_mc_injs times, where each time we draw a random value of distance
 
     # Distribute injections
-    # NOTE: the loop on num_mc_injs would fill up the *_inj_dist_mc's at the
+    # NOTE: the loop on num_mc_injs would fill up the *_inj['dist_mc']'s at the
     # same time, so filling them up sequentially will vary the numbers a little
     # (this is an MC, order of operations matters!)
-    found_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, found_inj_dist,
-                                       cal_error, wav_err, max_dc_cal_error)
-    missed_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, missed_inj_dist,
-                                        cal_error, wav_err, max_dc_cal_error)
-    long_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, long_inj_dist,
-                                      cal_error, wav_err, max_dc_cal_error)
+    found_inj['dist_mc'] = mc_cal_wf_errs(num_mc_injs, found_inj['dist'],
+                                          cal_error, wav_err, max_dc_cal_error)
+    missed_inj['dist_mc'] = mc_cal_wf_errs(num_mc_injs, missed_inj['dist'],
+                                           cal_error, wav_err, max_dc_cal_error)
+    long_inj['dist_mc'] = mc_cal_wf_errs(num_mc_injs, long_inj['dist'],
+                                         cal_error, wav_err, max_dc_cal_error)
 
     logging.info("MC injection set distributed with %d iterations.",\
                  num_mc_injs)
@@ -496,34 +487,29 @@ if do_injections:
 
     distance_count = np.zeros(len(dist_bins))
 
-    found_trig_max_bestnr = np.zeros([len(found_trig_mchirp)])
-    for ix, mc in enumerate(found_trig_mchirp):
-        found_trig_max_bestnr[ix] = max_bestnr
+    found_trig['max_bestnr'] = np.empty(len(found_trig['mchirp']))
+    found_trig['max_bestnr'].fill(max_bestnr)
 
-    max_bestnr_cut = (found_trig_bestnr > found_trig_max_bestnr)
+    max_bestnr_cut = (found_trig['bestnr'] > found_trig['max_bestnr'])
 
     # Check louder than on source
+    found_trig['loud_on_bestnr'] = np.empty(len(found_trig['mchirp']))
     if onsource_file:
-        # TODO: basically the same code as above
-        found_trig_loud_on_bestnr = np.zeros([len(found_trig_mchirp)])
-        for ix, mc in enumerate(found_trig_mchirp):
-            found_trig_loud_on_bestnr[ix] = loud_on_bestnr
+        found_trig['loud_on_bestnr'].fill(loud_on_bestnr)
     else:
-        found_trig_loud_on_bestnr = np.zeros([len(found_trig_mchirp)])
-        for ix, mc in enumerate(found_trig_mchirp):
-            found_trig_loud_on_bestnr[ix] = med_snr
-    on_bestnr_cut = found_trig_bestnr > found_trig_loud_on_bestnr
+        found_trig['loud_on_bestnr'].fill(med_snr)
+    on_bestnr_cut = found_trig['bestnr'] > found_trig['loud_on_bestnr']
 
     # Check whether injection is found for the purposes of exclusion
     # distance calculation.
     # Found: if louder than all on source
     # Missed: if not louder than loudest on source
     found_excl = on_bestnr_cut & (more_sig_than_onsource) & \
-                (found_trig_bestnr != 0)
+                (found_trig['bestnr'] != 0)
     # If not missed, double check bestnr against nearby triggers
     near_test = np.zeros((found_excl).sum()).astype(bool)
-    for j, (t, bestnr) in enumerate(zip(found_inj_time[found_excl],\
-                                        found_trig_bestnr[found_excl])):
+    for j, (t, bestnr) in enumerate(zip(found_inj['time'][found_excl],\
+                                        found_trig['bestnr'][found_excl])):
         near_bestnr = trig_bestnr[zero_lag_slide_id]\
                       [np.abs(trig_time[zero_lag_slide_id]-t) < cluster_window]
         near_test[j] = ~((near_bestnr * glitch_check_fac > bestnr).any())
@@ -541,12 +527,12 @@ if do_injections:
         # Loop over the distance bins
         for j, dist_bin in enumerate(dist_bins):
             # Construct distance cut
-            found_dist_cut = (dist_bin[0] <= found_inj_dist_mc[k, :]) &\
-                             (found_inj_dist_mc[k, :] < dist_bin[1])
-            missed_dist_cut = (dist_bin[0] <= missed_inj_dist_mc[k, :]) &\
-                              (missed_inj_dist_mc[k, :] < dist_bin[1])
-            long_dist_cut = (dist_bin[0] <= long_inj_dist_mc[k, :]) &\
-                            (long_inj_dist_mc[k, :] < dist_bin[1])
+            found_dist_cut = (dist_bin[0] <= found_inj['dist_mc'][k, :]) &\
+                             (found_inj['dist_mc'][k, :] < dist_bin[1])
+            missed_dist_cut = (dist_bin[0] <= missed_inj['dist_mc'][k, :]) &\
+                              (missed_inj['dist_mc'][k, :] < dist_bin[1])
+            long_dist_cut = (dist_bin[0] <= long_inj['dist_mc'][k, :]) &\
+                            (long_inj['dist_mc'][k, :] < dist_bin[1])
 
             # Count all injections in this distance bin
             num_found_pass = (found_dist_cut).sum()
@@ -559,25 +545,17 @@ if do_injections:
 
             # Record number of injections, number found for exclusion
             # and number of zero FAR
-            # TODO: serial coding (and redundant items?)
             if k == 0:
-                num_injections_no_mc[j] += num_found_pass + num_missed_pass +\
-                                           num_long_pass
-                num_injections_no_mc[-1] += num_found_pass + num_missed_pass +\
-                                            num_long_pass
-                found_max_bestnr_no_mc[j] += num_zero_far
-                found_max_bestnr_no_mc[-1] += num_zero_far
-                found_on_bestnr_no_mc[j] += num_excl
-                found_on_bestnr_no_mc[-1] += num_excl
+                key = 'no_mc'
             else:
-                num_injections[j] += num_found_pass + num_missed_pass +\
-                                     num_long_pass
-                num_injections[-1] += num_found_pass + num_missed_pass +\
-                                      num_long_pass
-                found_max_bestnr[j] += num_zero_far
-                found_max_bestnr[-1] += num_zero_far
-                found_on_bestnr[j] += num_excl
-                found_on_bestnr[-1] += num_excl
+                key = 'mc'
+            num_pass = num_found_pass + num_missed_pass + num_long_pass
+            num_injections[key][j] += num_pass
+            num_injections[key][-1] += num_pass
+            found_max_bestnr[key][j] += num_zero_far
+            found_max_bestnr[key][-1] += num_zero_far
+            found_on_bestnr[key][j] += num_excl
+            found_on_bestnr[key][-1] += num_excl
 
     logging.info("Found/missed injection efficiency calculations completed.")
 
@@ -594,9 +572,9 @@ if do_injections:
     # Calculate error bars for efficiency/distance plots and datafiles
     # using max BestNR of background
     yerr_low_mc, yerr_high_mc, fraction_mc = efficiency_with_errs(\
-         found_max_bestnr, num_injections, num_mc_injs=num_mc_injs)
+         found_max_bestnr['mc'], num_injections['mc'], num_mc_injs=num_mc_injs)
     yerr_low_no_mc, yerr_high_no_mc, fraction_no_mc = efficiency_with_errs(\
-                               found_max_bestnr_no_mc, num_injections_no_mc)
+                               found_max_bestnr['no_mc'], num_injections['no_mc'])
 
     # Calculate and save to disk the 50% sensitive distance
     eff_low = fraction_no_mc
@@ -648,9 +626,9 @@ if do_injections:
     # Calculate error bars for efficiency/distance plots and datafiles
     # using max BestNR of foreground
     yerr_low_no_mc, yerr_high_no_mc, fraction_no_mc = efficiency_with_errs(\
-                                found_on_bestnr_no_mc, num_injections_no_mc)
-    yerr_low, yerr_high, fraction_mc = efficiency_with_errs(found_on_bestnr,\
-                                     num_injections, num_mc_injs=num_mc_injs)
+                                found_on_bestnr['no_mc'], num_injections['no_mc'])
+    yerr_low, yerr_high, fraction_mc = efficiency_with_errs(found_on_bestnr['mc'],\
+                                     num_injections['mc'], num_mc_injs=num_mc_injs)
 
     # Marginalized efficiency (isf = inverse survival function)
     red_efficiency = (fraction_mc) - (yerr_low) * scipy.stats.norm.isf(0.1)

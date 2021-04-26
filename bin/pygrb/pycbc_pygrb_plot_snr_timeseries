@@ -37,9 +37,7 @@ from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_injections
 from pycbc.results.pygrb_postprocessing_utils import load_triggers
 from pycbc.results.pygrb_postprocessing_utils import get_grb_time
-from pycbc.results.pygrb_postprocessing_utils import get_start_end_times
 from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
-from pycbc.results.pygrb_postprocessing_utils import reset_times
 from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
 from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
 from pycbc.results.pygrb_plotting_utils import pygrb_plotter
@@ -93,6 +91,31 @@ def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
     return data
 
 
+# Find start and end times of trigger/injecton data relative to a given time
+def get_start_end_times(data, central_time):
+    """Determine padded start and end times of data relative to central_time"""
+
+    #start = int(min(data.time)) - central_time
+    #end = int(max(data.time)) - central_time
+    start = int(min(data['time'])) - central_time
+    end = int(max(data['time'])) - central_time
+    duration = end - start
+    start -= duration*0.05
+    end += duration*0.05
+
+    return start, end
+
+
+# Reset times so that t=0 is corresponds to the given trigger time
+def reset_times(data, trig_time):
+    """Reset times in data so that t=0 corresponds to the trigger time provided"""
+
+    #data.time = [t-trig_time for t in data.time]
+    data['time'] = [t-trig_time for t in data['time']]
+
+    return data
+
+
 # =============================================================================
 # Main script starts here
 # =============================================================================
@@ -124,7 +147,6 @@ trig_file = os.path.abspath(opts.trig_file)
 inj_file = None
 if opts.inj_file:
     inj_file = os.path.abspath(opts.inj_file)
-outfile = opts.output_file
 seg_dir = opts.segment_dir
 veto_files = []
 if opts.veto_directory:
@@ -143,10 +165,9 @@ if snr_type == 'single' and ifo is None:
 logging.info("Imported and ready to go.")
 
 # Set output directories
-outdirs = [os.path.split(os.path.abspath(outfile))[0]]
-for outdir in outdirs:
-    if not os.path.isdir(outdir):
-        os.makedirs(outdir)
+outdir = os.path.split(os.path.abspath(opts.output_file))[0]
+if not os.path.isdir(outdir):
+    os.makedirs(outdir)
 
 # Extract IFOs and vetoes
 _, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
@@ -196,8 +217,7 @@ xlims = [start, end]
 if opts.x_lims:
     xlims = opts.x_lims
     xlims = map(float, xlims.split(','))
-pygrb_plotter(trig_data['time'], trig_data[snr_type],
-              inj_data['time'], inj_data[snr_type], inj_file,
-              "Time since %.3f (s)" % (central_time), y_label, outfile,
-              xlims=xlims, use_logs=False, cmd=' '.join(sys.argv),
-              plot_title=opts.plot_title, plot_caption=opts.plot_caption)
+pygrb_plotter([trig_data['time'], trig_data[snr_type]],
+              [inj_data['time'], inj_data[snr_type]],
+              "Time since %.3f (s)" % (central_time), y_label,
+              opts, cmd=' '.join(sys.argv))
