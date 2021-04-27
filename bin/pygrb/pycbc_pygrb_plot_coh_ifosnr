@@ -103,6 +103,24 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
     return data
 
 
+# Plot lines representing deviations based on non-central chi-square
+def plot_deviation(percentile, snr_grid, y, ax, style):
+    """Plot deviations based on non-central chi-square"""
+
+    # ncx2: non-central chi-squared; ppf: percent point function
+    #ax.plot(snr_grid, scipy.stats.ncx2.ppf(percentile, 2, y*y)**0.5, style)
+
+    # Using interpolation to work around "saturation" given by the
+    # original code line (commented out above)
+    y_vals = scipy.stats.ncx2.ppf(percentile, 2, y*y)**0.5
+    y_vals = numpy.unique(y_vals)
+    x_vals = snr_grid[0:len(y_vals)]
+    n_vals = int(len(y_vals)/2)
+    f = scipy.interpolate.interp1d(x_vals[0:n_vals], y_vals[0:n_vals],
+                                   bounds_error=False, fill_value="extrapolate")
+    ax.plot(snr_grid, f(snr_grid), style)
+
+
 # =============================================================================
 # Main script starts here
 # =============================================================================
@@ -210,30 +228,28 @@ ax.grid()
 if inj_file:
     ax.plot(inj_data['snr'], inj_data['ifo_snr'], 'r+')
 # Sigma-mean, min, max
-y_data = [trig_data['sigma_mean'][ifo], trig_data['sigma_min'],
-          trig_data['sigma_max']]
+y_data = {'mean': trig_data['sigma_mean'][ifo],
+          'min': trig_data['sigma_min'],
+          'max': trig_data['sigma_max']}
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
-zoom_snr = numpy.arange(0.01, max_snr, 0.01)
-y_data = [zoom_snr*(trig_data['f_resp_mean'][ifo]*x)**0.5 for x in y_data]
-for el in y_data:
-    ax.plot(zoom_snr, el, 'g-')
-# ncx2: non-central chi-squared; ppf: percent point function
-# TODO: originally the y-axis had the ppf. Is zoom_snr[-1]*0.01*ppf correct?
-# Plot these for sigma_min and sigma_max
+#snr_grid = numpy.arange(0.01, max_snr, 0.01)
+snr_grid = numpy.arange(0.01, max_snr, 1)
+#y_data = [snr_grid*(trig_data['f_resp_mean'][ifo]*x)**0.5 for x in y_data]
+y_data = dict((key, snr_grid*(trig_data['f_resp_mean'][ifo]*y_data[key])**0.5) for key in y_data)
+for key in y_data:
+    ax.plot(snr_grid, y_data[key], 'g-')
 # 2 sigma (0.9545)
-ax.plot(zoom_snr, zoom_snr[-1]*0.01*scipy.stats.ncx2.ppf(0.02275, 2, y_data[1]*y_data[1])**0.5, 'm-')
-ax.plot(zoom_snr, zoom_snr[-1]*0.01*scipy.stats.ncx2.ppf(1.-0.02275, 2, y_data[2]*y_data[2])**0.5, 'm-')
-#ax.plot(zoom_snr, scipy.stats.ncx2.ppf(0.02275, 2, y_data[1]*y_data[1])**0.5, 'm-')
-#ax.plot(zoom_snr, scipy.stats.ncx2.ppf(1.-0.02275, 2, y_data[2]*y_data[2])**0.5, 'm-')
+plot_deviation(0.02275, snr_grid, y_data['min'], ax, 'm-')
+plot_deviation(1-0.02275, snr_grid, y_data['max'], ax, 'm-')
 # 3 sigma (0.9973)
-ax.plot(zoom_snr, zoom_snr[-1]*0.01*scipy.stats.ncx2.ppf(0.00135, 2, y_data[1]*y_data[1])**0.5, 'c-')
-ax.plot(zoom_snr, zoom_snr[-1]*0.01*scipy.stats.ncx2.ppf(1.-0.00135, 2, y_data[2]*y_data[2])**0.5, 'c-')
+plot_deviation(0.00135, snr_grid, y_data['min'], ax, 'c-')
+plot_deviation(1-0.00135, snr_grid, y_data['max'], ax, 'c-')
 # Non-zoomed plot
 ax.plot([0, max_snr], [4, 4], 'k-')
 ax.set_xlabel(x_label)
 ax.set_ylabel(y_label)
-ax.set_xlim([0, 1.1*x_max])
-ax.set_ylim([0, 1.1*y_max])
+ax.set_xlim([0, 1.01*x_max])
+ax.set_ylim([0, 1.20*y_max])
 # Veto applies to the two most sensitive IFOs, so shade them
 loudness_index = ifo_senstvty.keys().index(ifo)
 if loudness_index < 2:
