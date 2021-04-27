@@ -32,11 +32,12 @@ from pycbc.results import save_fig_with_metadata
 # This matches the check that matplotlib does internally, but this *may* be
 # version dependent. If this is a problem then remove this and control from
 # the executables directly.
-import matplotlib
+#import matplotlib
 if 'matplotlib.backends' not in sys.modules:  # nopep8
+    import matplotlib
     matplotlib.use('agg')
-from matplotlib import rc
-from matplotlib import pyplot as plt
+#from matplotlib import rc
+#from matplotlib import pyplot as plt
 
 #
 # Used locally
@@ -102,6 +103,9 @@ def axis_max_value(trig_values, inj_values, inj_file):
 def pygrb_shared_plot_setups():
     """Master function to plot PyGRB results"""
 
+    from matplotlib import rc
+    #from matplotlib import pyplot as plt
+
     # Get rcParams
     rc('font', size=14)
     # Set color for out-of-range values
@@ -115,6 +119,8 @@ def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
                   snr_vals=None, conts=None, shade_cont_value=None,
                   colors=None, vert_spike=False, cmd=None):
     """Master function to plot PyGRB results"""
+
+    from matplotlib import pyplot as plt
 
     # Set up plot
     fig = plt.figure()
