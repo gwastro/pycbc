@@ -193,7 +193,6 @@ elif options.output_file.endswith(('.h5','.hdf','.hdf5')):
                              phase_order=7)
         tmplt_durations.append(wfrm_length)
     out_fp['template_duration'] = tmplt_durations
-    out_fp['template_duration'] = tmplt_durations
     approx = numpy.zeros(len(temp_bank[:,0]),
                          dtype=h5py.string_dtype(encoding='utf-8'))
     approx[:] = ['TaylorF2']
