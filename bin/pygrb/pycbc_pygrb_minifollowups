@@ -160,6 +160,16 @@ trig_file = workflow.cp.get('workflow', 'trig-file')
 ifos = extract_ifos(trig_file)
 num_ifos = len(ifos)
 
+# (Loudest) off/on-source events are on time-slid data so the
+# try will succeed, as it finds the time shift columns.
+is_injection_followup = True
+try:
+    time_shift = fp[ifos[0]+' time shift (s)'][0]
+    is_injection_followup = False
+except:
+    pass
+
+
 # Loop over triggers/injections to be followed up
 for num_event in range(num_events):
     files = wf.FileList([])
@@ -171,10 +181,8 @@ for num_event in range(num_events):
         for key in fp.keys():
             row.append(fp[key][num_event])
         add_wiki_row(wiki_file, row)
-    # (Loudest) offsource events are on time-slid data and handeled by the try,
-    # as it find the time shift columns.
-    # TODO: avoid try except at each iteration
-    try:
+    # Handle off/on-source (loudest) triggers follow-up (which are on slid data)
+    if not is_injection_followup:
         for ifo in ifos:
             time_shift = fp[ifo+' time shift (s)'][num_event]
             ifo_time = gps_time - time_shift
@@ -184,8 +192,8 @@ for num_event in range(num_events):
             files += mini.make_qscan_plot(workflow, ifo, ifo_time,
                                           args.output_dir,
                                           tags=args.tags + [str(num_event)])
-    # The following then handles injections (which are on unslid data)
-    except:
+    # Handle injections (which are on unslid data)
+    else:
         for snr_type in ['reweighted', 'coherent']:
             files += make_timeseries_plot(workflow, snr_type, gps_time, gps_time,
                                           args.output_dir, ifo=None,

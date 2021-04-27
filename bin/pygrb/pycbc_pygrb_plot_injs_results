@@ -71,9 +71,9 @@ def process_var_strings(qty):
 
 
 # Function to extract desired data from a trigger/injection file
-def load_data(raw_data, x_qty, y_qty, opts, sites):
-    """Create a dictionary containing the data specified by x_qty and
-    y_qty extracted from a trigger/injection file"""
+def load_data(raw_data, keys, opts, sites):
+    """Create a dictionary containing the data specified by the
+    list of keys extracted from a trigger/injection file"""
 
     data_dict = {}
 
@@ -87,21 +87,9 @@ def load_data(raw_data, x_qty, y_qty, opts, sites):
                  'longitude', 'latitude']
     col_dict = dict(zip(easy_keys, col_names))
 
-    for qty in [x_qty, y_qty]:
+    for qty in keys:
         if qty in easy_keys:
             data_dict[qty] = np.asarray(raw_data.get_column(col_dict[qty]))
-        elif qty == 'incl':
-            data_dict[qty] = np.rad2deg(np.asarray(raw_data.get_column('inclination')))
-        elif qty == 'abs_incl':
-            data_dict[qty] = 0.5*np.pi - abs(np.asarray(raw_data.get_column('inclination'))
-                                             - 0.5*np.pi)
-            data_dict[qty] = np.rad2deg(data_dict[qty])
-        elif qty == 'cos_incl':
-            data_dict[qty] = np.cos(np.asarray(raw_data.get_column('inclination')))
-        elif qty == 'cos_abs_incl':
-            data_dict[qty] = 0.5*np.pi - abs(np.asarray(raw_data.get_column('inclination'))
-                                             - 0.5*np.pi)
-            data_dict[qty] = np.cos(data_dict[qty])
         elif qty == 'time':
             col_name = 'geocent_end_time'
             data_dict[qty] = np.asarray(raw_data.get_column(col_name)) +\
@@ -110,13 +98,14 @@ def load_data(raw_data, x_qty, y_qty, opts, sites):
             grb_time = get_grb_time(opts.segment_dir)
             data_dict[qty] -= grb_time
         elif qty in ['mtotal', 'q']:
-            for key in ['mass1', 'mass2']:
-                data_dict[key] = np.asarray(raw_data.get_column(key))
+            data_dict['mass1'] = np.asarray(raw_data.get_column('mass1'))
+            data_dict['mass2'] = np.asarray(raw_data.get_column('mass2'))
             if qty == 'mtotal':
                 data_dict[qty] = data_dict['mass1'] + data_dict['mass2']
             else:
                 data_dict[qty] = data_dict['mass2']/data_dict['mass1']
-                data_dict[qty] = np.where(data_dict[qty] > 1, 1. / data_dict[qty], data_dict[qty])
+                data_dict[qty] = np.where(data_dict[qty] > 1,
+                                          1. / data_dict[qty], data_dict[qty])
         elif qty == 'eff_site_dist':
             data_dict['eff_site_dist'] =\
                 raw_data.get_column('eff_dist_%s' % opts.ifo[0].lower())
@@ -128,14 +117,30 @@ def load_data(raw_data, x_qty, y_qty, opts, sites):
             data_dict[qty] = \
                 np.power(np.power(np.asarray(
                     data_dict['eff_site_dist'].values()), -1).sum(0), -1)
-            del data_dict['eff_site_dist']
-        elif qty in ['spin1', 'spin2']:
+        elif 'incl' in qty:
+            data_dict['incl'] = np.asarray(raw_data.get_column('inclination'))
+            # Requesting |incl| of cos(|incl|)
+            if 'abs_' in qty:
+                data_dict['abs_incl'] = 0.5*np.pi - abs(data_dict['incl'] - 0.5*np.pi)
+            # Requesting cos(incl) or cos(|incl|): take cosine
+            if 'cos_' in qty:
+                data_dict[qty] = np.cos(data_dict[qty.replace('cos_', '')])
+            # Requesting incl or abs_incl: convert to degrees
+            else:
+                data_dict[qty] = np.rad2deg(data_dict[qty])
+        # Requesting spin1 or spin2, as components are dealt with in easy_keys
+        elif 'spin' in qty:
             for component in ['x', 'y', 'z']:
                 key = qty+component
                 data_dict[key] = np.asarray(raw_data.get_column(key))
             data_dict[qty] = np.sqrt(data_dict[qty+'x']**2 +
                                      data_dict[qty+'y']**2 +
                                      data_dict[qty+'z']**2)
+
+    # Clean up possible unwanted intermediate entries
+    unwanted_keys = [item for item in data_dict if item not in keys]
+    for key in unwanted_keys:
+        del data_dict[key]
 
     return data_dict
 
@@ -335,11 +340,11 @@ found_trig['bestnr'] = get_bestnrs(found_trigs, q=chisq_index, n=chisq_nhigh,
 
 # Extract the necessary data from the missed injections for the plot
 sites = [ifo[0] for ifo in ifos]
-missed_inj = load_data(missed_injs, x_qty, y_qty, opts, sites)
+missed_inj = load_data(missed_injs, [x_qty, y_qty], opts, sites)
 logging.info("%d missed injections analysed.", len(missed_injs))
 
 # Extract the necessary data from the found injections for the plot
-found_inj = load_data(found_injs, x_qty, y_qty, opts, sites)
+found_inj = load_data(found_injs, [x_qty, y_qty], opts, sites)
 
 # Handle separately the special case of plotting the sky_error: this
 # quantity is not defined for *missed* injections
