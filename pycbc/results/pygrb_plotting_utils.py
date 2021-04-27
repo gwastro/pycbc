@@ -32,12 +32,9 @@ from pycbc.results import save_fig_with_metadata
 # This matches the check that matplotlib does internally, but this *may* be
 # version dependent. If this is a problem then remove this and control from
 # the executables directly.
-#import matplotlib
 if 'matplotlib.backends' not in sys.modules:  # nopep8
     import matplotlib
     matplotlib.use('agg')
-#from matplotlib import rc
-#from matplotlib import pyplot as plt
 
 #
 # Used locally
