@@ -75,6 +75,8 @@ def add_condorpool_symlink_site(sitecat, cp):
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="true")
+    site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
+                      value="False")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files", 
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output", 
@@ -99,6 +101,8 @@ def add_condorpool_copy_site(sitecat, cp):
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="true")
+    site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
+                      value="False")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
@@ -137,6 +141,8 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
                       value="true")
     site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
                       value="true")
+    site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
+                      value="False")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
