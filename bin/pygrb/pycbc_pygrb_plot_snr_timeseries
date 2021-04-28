@@ -33,6 +33,7 @@ import logging
 import numpy
 import matplotlib.pyplot as plt
 import pycbc.version
+from pycbc import init_logging
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_injections
 from pycbc.results.pygrb_postprocessing_utils import load_triggers
@@ -51,6 +52,9 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_snr_timeseries"
 
 
+# =============================================================================
+# Functions
+# =============================================================================
 # Function to load time and necessary SNR data from a trigger/injection file
 def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
     """Build a dictionary containing time and SNR data extracted from
@@ -135,12 +139,7 @@ parser.add_argument("-y", "--y-variable", default=None, help="Quantity " +
 parser = pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
-logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
-                    level=level)
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)

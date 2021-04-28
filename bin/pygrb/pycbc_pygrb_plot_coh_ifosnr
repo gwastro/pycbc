@@ -37,6 +37,7 @@ import numpy
 import scipy
 import pycbc.version
 from pycbc.detector import Detector
+from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
@@ -54,6 +55,9 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 
 
+# =============================================================================
+# Functions
+# =============================================================================
 # Function to load necessary SNR data from a trigger/injection file
 def load_data(input_file, vetoes, ifos, opts, injections=False):
     """Build a dictionary containing SNR and sensitivity data extracted
@@ -124,7 +128,6 @@ def plot_deviation(percentile, snr_grid, y, ax, style):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-
 description = 'Produces coherent SNR versus single IFO SNR plots.'
 usage = __program__ + ' [--options]'
 
@@ -137,12 +140,7 @@ parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
 opts = parser.parse_args()
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    level=level)
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)

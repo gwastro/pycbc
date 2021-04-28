@@ -34,6 +34,7 @@ from scipy import stats
 import h5py
 import pycbc.version
 from pycbc.detector import Detector
+from pycbc import init_logging
 import pycbc.results
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
@@ -60,6 +61,9 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_page_tables"
 
 
+# =============================================================================
+# Functions
+# =============================================================================
 def get_column(table, column_name):
     """Wrapper for glue.ligolw.lsctables.MultiInspiralTable.get_column
     method. Easier for h5py switch. Note: Must still replace
@@ -235,12 +239,7 @@ parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     "to cluster triggers in time.")
 opts = parser.parse_args()
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
-logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
-                    level=level)
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 if opts.veto_directory and (opts.veto_category is None):
