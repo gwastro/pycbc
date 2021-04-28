@@ -86,6 +86,7 @@ def add_condorpool_symlink_site(sitecat, cp):
                       value="'False'")
     site.add_profiles(Namespace.CONDOR, key="+flock_local", 
                       value="True")
+    site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     sitecat.add_sites(site)
 
 def add_condorpool_copy_site(sitecat, cp):
@@ -109,6 +110,7 @@ def add_condorpool_copy_site(sitecat, cp):
                       value="'False'")
     site.add_profiles(Namespace.CONDOR, key="+flock_local",
                       value="True")
+    site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     sitecat.add_sites(site)
 
 def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
@@ -146,6 +148,7 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
                       value="'False'")
     site.add_profiles(Namespace.CONDOR, key="+flock_local",
                       value="True")
+    site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     # Need to set PEGASUS_HOME
     peg_home = distutils.spawn.find_executable('pegasus-plan')
     assert(peg_home.endswith('bin/pegasus-plan'))
@@ -163,15 +166,26 @@ def add_osg_site(sitecat, cp):
     site = Site("osg", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    # FIXME: condorio or nonsharedfs? Here frame files must *not* be copied
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="nonsharedfs")
+    site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
+                      value="true")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
                       value="True")
+    site.add_profiles(Namespace.CONDOR, key="getenv",
+                      value="False")
+    site.add_profiles(Namespace.CONDOR, key="+InitializeModulesEnv",
+                      value="False")
+    site.add_profiles(Namespace.CONDOR, key="+SingularityCleanEnv",
+                      value="True")
+    site.add_profiles(Namespace.CONDOR, key="Requirements",
+                      value="(HAS_SINGULARITY =?= TRUE) && "
+                            "(HAS_LIGO_FRAMES =?= True) && "
+                            "(IS_GLIDEIN =?= True)")
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
     sitecat.add_sites(site)
