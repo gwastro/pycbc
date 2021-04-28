@@ -30,6 +30,7 @@ import logging
 import h5py
 #from lal import GPSToUTC
 import numpy as np
+from pycbc import init_logging
 import pycbc.workflow.minifollowups as mini
 import pycbc.version
 import pycbc.workflow as wf
@@ -39,7 +40,15 @@ from pycbc.results.pygrb_postprocessing_utils import get_grb_time
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos
 from pycbc.workflow.plotting import PlotExecutable
 
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__ = pycbc.version.date
+__program__ = "pycbc_pygrb_minifollowupss"
 
+
+# =============================================================================
+# Functions
+# =============================================================================
 def add_wiki_row(outfile, cols):
     """
     Adds a wiki-formatted row to an output file from a list or a numpy array.
@@ -98,11 +107,6 @@ def make_timeseries_plot(workflow, snr_type, central_time, shift_time, out_dir,
     return node.output_files
 
 
-__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
-__version__ = pycbc.version.git_verbose_msg
-__date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_minifollowupss"
-
 # =============================================================================
 # Main script starts here
 # =============================================================================
@@ -128,8 +132,7 @@ args = parser.parse_args()
 # args.statistic_files might be a list of lists. This will flatten it to a single list.
 #args.statistic_files = sum(args.statistic_files, [])
 
-logging.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s',
-                    level=logging.INFO)
+init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 workflow = wf.Workflow(args, args.workflow_name)
 

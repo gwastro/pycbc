@@ -33,6 +33,7 @@ import logging
 import numpy
 from matplotlib import pyplot as plt
 import pycbc.version
+from pycbc import init_logging
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
 from pycbc.results.pygrb_postprocessing_utils import load_triggers
@@ -52,6 +53,9 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_chisq_veto"
 
 
+# =============================================================================
+# Functions
+# =============================================================================
 # Format single detector chi-square data as numpy array and floor at 0.005
 def format_single_chisqs(trig_ifo_cs, ifos):
     """Format single IFO chi-square data as numpy array and floor at 0.005"""
@@ -204,12 +208,7 @@ parser.add_argument("--use-sngl-ifo-veto", default=False,
 parser = pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    level=level)
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)

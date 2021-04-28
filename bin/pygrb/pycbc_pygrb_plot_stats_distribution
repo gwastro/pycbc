@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
 import pycbc.version
+from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
@@ -54,6 +55,7 @@ __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_stats_distribution"
 
+
 # =============================================================================
 # Main script starts here
 # =============================================================================
@@ -72,12 +74,7 @@ parser.add_argument("-x", "--x-variable", default=None, required=True,
 parser = pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    level=level)
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 if opts.veto_directory and (opts.veto_category is None):

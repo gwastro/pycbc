@@ -32,6 +32,7 @@ import logging
 import argparse
 import os
 import pycbc.version
+from pycbc import init_logging
 import pycbc.workflow as _workflow
 from pycbc.workflow.plotting import PlotExecutable #, excludestr, requirestr
 from pycbc.results import create_versioning_page, layout, pygrb_postprocessing_utils
@@ -49,9 +50,9 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_pp_workflow"
 
 
-logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
-                    level=logging.INFO)
-
+# =============================================================================
+# Functions
+# =============================================================================
 def file_from_workflow(workflow, trig_or_inj_file, tags=None):
     """Function to create File object, here used for trigger/injection files"""
 
@@ -307,7 +308,9 @@ def setup_pygrb_minifollowups(workflow, followups_file, ifos,
     logging.info('Leaving minifollowups module')
 
 
-
+# =============================================================================
+# Main script
+# =============================================================================
 # Use the standard workflow command-line parsing routines.
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
@@ -318,6 +321,8 @@ parser.add_argument("-d", "--output-dir", default=None,
                     required=True, help="Path to output directory.")
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
+
+init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Create the workflow objects
 logging.info("Generating %s workflow", args.workflow_name)

@@ -34,6 +34,7 @@ import numpy
 from matplotlib import rc
 import matplotlib.pyplot as plt
 import pycbc.version
+from pycbc import init_logging
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_triggers
 from pycbc.results.pygrb_postprocessing_utils import load_injections
@@ -50,6 +51,9 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_null_stats"
 
 
+# =============================================================================
+# Functions
+# =============================================================================
 # Function to load necessary SNR data from a trigger/injection file
 def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
     """Build a dictionary containing SNR data extracted from a
@@ -115,7 +119,6 @@ def calculate_contours(opts, new_snrs=None):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-
 description = 'Plots null statistics or coincident SNR vs coherent SNR.'
 usage = __program__ + ' [--options]'
 
@@ -132,12 +135,8 @@ parser.add_argument("-y", "--y-variable", default=None, help="Quantity " +
 parser = pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
-logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
-                    level=level)
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
+
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
 inj_file = None

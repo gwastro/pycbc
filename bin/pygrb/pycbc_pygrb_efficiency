@@ -36,6 +36,7 @@ import scipy
 from scipy import stats
 import pycbc.version
 from pycbc.detector import Detector
+from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
 from pycbc.results.pygrb_postprocessing_utils import load_xml_table
@@ -63,6 +64,7 @@ __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_efficiency"
+
 
 # =============================================================================
 # Function to calculate the error bars and fraction of recovered injections
@@ -129,12 +131,7 @@ parser = pygrb_add_injmc_opts(parser)
 parser = pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    level=level)
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 if opts.veto_directory and (opts.veto_category is None):
@@ -437,12 +434,10 @@ if do_injections:
     num_injections = {}
     found_max_bestnr = {}
     found_on_bestnr = {}
-    num_injections['mc'] = np.zeros(num_dist_bins_plus_one)
-    found_max_bestnr['mc'] = np.zeros(num_dist_bins_plus_one)
-    found_on_bestnr['mc'] = np.zeros(num_dist_bins_plus_one)
-    num_injections['no_mc'] = np.zeros(num_dist_bins_plus_one)
-    found_max_bestnr['no_mc'] = np.zeros(num_dist_bins_plus_one)
-    found_on_bestnr['no_mc'] = np.zeros(num_dist_bins_plus_one)
+    for key in ['mc', 'no_mc']:
+        num_injections[key] = np.zeros(num_dist_bins_plus_one)
+        found_max_bestnr[key] = np.zeros(num_dist_bins_plus_one)
+        found_on_bestnr[key] = np.zeros(num_dist_bins_plus_one)
 
     # Construct FAP list for all found injections
     inj_fap = np.zeros(len(found_injs))
