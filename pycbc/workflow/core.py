@@ -684,6 +684,10 @@ class Workflow(pegasus_workflow.Workflow):
         return ','.join(['='.join(x) for x in self._staging_site.items()])
 
     def add_sites_from_config(self):
+        # FIXME: It would be nice to be able to override site properties here.
+        #        We do want a mechanism to change things from the command line.
+        #        Perhaps read options from some reserved config section to do
+        #        this, which can then be accessed through command line?
         add_site(self._sc, 'local', self.cp, out_dir=self.out_dir)
         if self.cp.has_option('pegasus_profile', 'pycbc|primary_site'):
             site = self.cp.get('pegasus_profile', 'pycbc|primary_site')

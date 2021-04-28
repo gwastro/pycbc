@@ -186,8 +186,12 @@ def add_osg_site(sitecat, cp):
                       value="(HAS_SINGULARITY =?= TRUE) && "
                             "(HAS_LIGO_FRAMES =?= True) && "
                             "(IS_GLIDEIN =?= True)")
+    site.add_profiles(Namespace.CONDOR, key="+SingularityImage",
+                      value="/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el7:v1.18.1")
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
+    site.add_profiles(Namespace.ENV, key="LAL_DATA_PATH",
+                      value="/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation")
     sitecat.add_sites(site)
 
 def add_site(sitecat, sitename, cp, out_dir=None):
