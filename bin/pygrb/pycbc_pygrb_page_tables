@@ -121,10 +121,8 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
     null_grad_val = opts.null_grad_val
 
     # Get inj params
-    inj_params = [
-        'mchirp', 'mass1', 'mass2', 'distance', 'inclination', 'spin1x',
-        'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z'
-    ]
+    inj_params = ['mchirp', 'mass1', 'mass2', 'distance', 'inclination',
+                  'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z']
     for param in inj_params:
         inj_data[param] = get_column(inj_table, param)
     inj_data['ra'] = get_column(inj_table, 'longitude')
@@ -134,18 +132,14 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
     for ifo in ifos:
         site = ifo.lower()
         inj_data['eff_dist_{}'.format(site)] = get_column(
-            inj_table, 'eff_dist_{}'.format(site)
-            )
+            inj_table, 'eff_dist_{}'.format(site))
     inj_data['eff_dist'] = np.asarray([
-        1.0 / sum(1.0 / inj_data['eff_dist_{}'.format(site)] for ifo in ifos)
-        ])
+        1.0 / sum(1.0 / inj_data['eff_dist_{}'.format(site)] for ifo in ifos)])
 
     if trig_table:
         # Get recovered parameters and statistic values
         rec_params = ['mchirp', 'mass1', 'mass2', 'ra', 'dec']
-        filter_stats = [
-            'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr'
-            ]
+        filter_stats = ['snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr']
         for param in rec_params:
             inj_data["rec_" + param] = get_column(trig_table, param)
         for stat in filter_stats:
@@ -165,8 +159,7 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
         if background_bestnrs is not None:
             inj_data['fap'] = np.array(
                 [sum(background_bestnrs > bestnr) for bestnr in inj_data['bestnr']],
-                dtype=float
-                ) / len(background_bestnrs)
+                dtype=float) / len(background_bestnrs)
 
         # Antenna responses
         f_resp = {}
@@ -194,8 +187,7 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
         inj_sigma_tot = np.sum(inj_sigma_mult, axis=0)
         for ifo in ifos:
             inj_data['inj_sigma_mean_%s' % ifo.lower()] = np.mean(
-                inj_sigma[ifo] * f_resp[ifo] / inj_sigma_tot
-            )
+                inj_sigma[ifo] * f_resp[ifo] / inj_sigma_tot)
 
     return inj_data
 
@@ -416,8 +408,10 @@ if lofft_outfile or lofft_h5_outfile:
     # td: table data
     td = []
 
-    # TODO: 'K1': 't'
-    ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t'}
+    # Rather than changing the xml table structures, it is easier to have KAGRA
+    # piggy back on the TAMA column.
+    ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'K1': 't',
+               'L1':'l', 'V1':'v', 'T1':'t'}
 
     # Gather properties of the loudest offsource triggers
     for i in range(min(len(offsource_trigs), opts.num_loudest_off_trigs)):
@@ -454,7 +448,7 @@ if lofft_outfile or lofft_h5_outfile:
         d.append(bestnr)
         td.append(d)
 
-    #TODO: we also want the template spin1z and spin2z. Do this after switch to hdf5
+    #FIXME: with switch to hdf5, include the template spin1z and spin2z.
     # th: table header
     th = ['Trial', 'Slide Num', 'p-value', 'GPS time',\
           'Rec. m1', 'Rec. m2', 'Rec. Mc',\
@@ -578,7 +572,7 @@ if onsource_file:
         td.append(["There are no events"] + [0 for number in xrange(11)] + \
                   [0 for ifo in ifos] + [0])
 
-    # TODO we will want the spins too (easier to deal with after move to hdf5)
+    #FIXME: with switch to hdf5, include the template spin1z and spin2z.
     # Table header
     th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
           'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
@@ -668,7 +662,8 @@ if do_injections:
     # Efficiency marginalization starts here
     # Create new set of injections for efficiency calculations
     total_injs = len(found_injs['mchirp']) + len(missed_injs['mchirp'])
-    long_inj_dist = stats.uniform.rvs(size=total_injs) * (upper_dist-lower_dist) +\
+    long_inj = {}
+    long_inj['dist'] = stats.uniform.rvs(size=total_injs) * (upper_dist-lower_dist) +\
                   upper_dist
 
     logging.info("%d long distance injections created.", total_injs)
@@ -680,12 +675,14 @@ if do_injections:
                              (upper_dist-lower_dist)/num_bins) +\
                              (upper_dist-lower_dist)/num_bins)
 
-    num_injections = np.zeros([len(dist_bins)+1])
-    found_max_bestnr = np.zeros([len(dist_bins)+1])
-    found_on_bestnr = np.zeros([len(dist_bins)+1])
-    num_injections_no_mc = np.zeros([len(dist_bins)+1])
-    found_max_bestnr_no_mc = np.zeros([len(dist_bins)+1])
-    found_on_bestnr_no_mc = np.zeros([len(dist_bins)+1])
+    num_dist_bins_plus_one = len(dist_bins) + 1
+    num_injections = {}
+    found_max_bestnr = {}
+    found_on_bestnr = {}
+    for key in ['mc', 'no_mc']:
+        num_injections[key] = np.zeros(num_dist_bins_plus_one)
+        found_max_bestnr[key] = np.zeros(num_dist_bins_plus_one)
+        found_on_bestnr[key] = np.zeros(num_dist_bins_plus_one)
 
     # Calculate the amplitude error
     # Begin by calculating the components from each detector
@@ -704,16 +701,16 @@ if do_injections:
     # times, where each time we draw a random value of distance.
 
     # Distribute injections
-    found_injs['distance_mc'] = mc_cal_wf_errs(num_mc_injs,
-                                               found_injs['distance'],
-                                               cal_error, wav_err,
-                                               max_dc_cal_error)
-    missed_injs['distance_mc'] = mc_cal_wf_errs(num_mc_injs,
-                                                missed_injs['distance'],
-                                                cal_error, wav_err,
-                                                max_dc_cal_error)
-    long_inj_dist_mc = mc_cal_wf_errs(num_mc_injs, long_inj_dist,
-                                      cal_error, wav_err, max_dc_cal_error)
+    found_injs['dist_mc'] = mc_cal_wf_errs(num_mc_injs,
+                                           found_injs['distance'],
+                                           cal_error, wav_err,
+                                           max_dc_cal_error)
+    missed_injs['dist_mc'] = mc_cal_wf_errs(num_mc_injs,
+                                            missed_injs['distance'],
+                                            cal_error, wav_err,
+                                            max_dc_cal_error)
+    long_inj['dist_mc'] = mc_cal_wf_errs(num_mc_injs, long_inj['dist'],
+                                         cal_error, wav_err, max_dc_cal_error)
     logging.info("MC injection set distributed with %d iterations.",\
                  num_mc_injs)
 
@@ -761,12 +758,12 @@ if do_injections:
         # Loop over the distance bins
         for j, dist_bin in enumerate(dist_bins):
             # Construct distance cut
-            found_dist_cut = (dist_bin[0] <= found_injs['distance_mc'][k, :]) &\
-                             (found_injs['distance_mc'][k, :] < dist_bin[1])
-            missed_dist_cut = (dist_bin[0] <= missed_injs['distance_mc'][k, :]) &\
-                              (missed_injs['distance_mc'][k, :] < dist_bin[1])
-            long_dist_cut = (dist_bin[0] <= long_inj_dist_mc[k, :]) &\
-                            (long_inj_dist_mc[k, :] < dist_bin[1])
+            found_dist_cut = (dist_bin[0] <= found_injs['dist_mc'][k, :]) &\
+                             (found_injs['dist_mc'][k, :] < dist_bin[1])
+            missed_dist_cut = (dist_bin[0] <= missed_injs['dist_mc'][k, :]) &\
+                              (missed_injs['dist_mc'][k, :] < dist_bin[1])
+            long_dist_cut = (dist_bin[0] <= long_inj['dist_mc'][k, :]) &\
+                            (long_inj['dist_mc'][k, :] < dist_bin[1])
 
             # Count all injections in this distance bin
             num_found_pass = (found_dist_cut).sum()
@@ -779,25 +776,17 @@ if do_injections:
 
             # Record number of injections, number found for exclusion
             # and number of zero FAR
-            # TODO: serial coding (and redundant items?)
             if k == 0:
-                num_injections_no_mc[j] += num_found_pass + num_missed_pass +\
-                                           num_long_pass
-                num_injections_no_mc[-1] += num_found_pass + num_missed_pass +\
-                                            num_long_pass
-                found_max_bestnr_no_mc[j] += num_zero_far
-                found_max_bestnr_no_mc[-1] += num_zero_far
-                found_on_bestnr_no_mc[j] += num_excl
-                found_on_bestnr_no_mc[-1] += num_excl
+                key = 'no_mc'
             else:
-                num_injections[j] += num_found_pass + num_missed_pass +\
-                                     num_long_pass
-                num_injections[-1] += num_found_pass + num_missed_pass +\
-                                      num_long_pass
-                found_max_bestnr[j] += num_zero_far
-                found_max_bestnr[-1] += num_zero_far
-                found_on_bestnr[j] += num_excl
-                found_on_bestnr[-1] += num_excl
+                key = 'mc'
+            num_pass = num_found_pass + num_missed_pass + num_long_pass
+            num_injections[key][j] += num_pass
+            num_injections[key][-1] += num_pass
+            found_max_bestnr[key][j] += num_zero_far
+            found_max_bestnr[key][-1] += num_zero_far
+            found_on_bestnr[key][j] += num_excl
+            found_on_bestnr[key][-1] += num_excl
 
     logging.info("Found/missed injection efficiency calculations completed.")
 

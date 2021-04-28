@@ -70,6 +70,90 @@ def process_var_strings(qty):
     return qty
 
 
+# Function to extract inclination related data from a trigger/injection file
+def load_incl_data(raw_data, qty):
+    """Extract data related to inclination from raw trigger/injection data"""
+
+    local_dict = {}
+
+    # Whether the user requests incl, |incl|, cos(incl), or cos(|incl|)
+    # the following information is needed
+    local_dict['incl'] = np.asarray(raw_data.get_column('inclination'))
+
+    # Requesting |incl| or cos(|incl|)
+    if 'abs_' in qty:
+        local_dict['abs_incl'] = 0.5*np.pi - abs(local_dict['incl'] - 0.5*np.pi)
+
+    # Requesting cos(incl) or cos(|incl|): take cosine
+    if 'cos_' in qty:
+        angle = qty.replace('cos_', '')
+        angle_data = local_dict[angle]
+        data = np.cos(angle_data)
+    # Requesting incl or abs_incl: convert to degrees
+    else:
+        data = np.rad2deg(local_dict[qty])
+
+    return data
+
+
+# Function to extract spin related data from a trigger/injection file
+def load_spin_data(raw_data, qty):
+    """Extract data related to spin from raw trigger/injection data"""
+
+    local_dict = {}
+
+    # Grab the components
+    for component in ['x', 'y', 'z']:
+        key = qty+component
+        local_dict[key] = np.asarray(raw_data.get_column(key))
+
+    # Calculate the modulus
+    data = np.sqrt(local_dict[qty+'x']**2 +
+                   local_dict[qty+'y']**2 +
+                   local_dict[qty+'z']**2)
+
+    return data
+
+
+# Function to extract mass ratio or total mass data from a trigger/injection file
+def load_mtot_q_data(raw_data, qty):
+    """Extract data related to mass ratio or total mass from raw
+    trigger/injection data"""
+
+    local_dict = {}
+
+    # Grab individual mass components
+    for mi in ['mass1', 'mass2']:
+        local_dict[mi] = np.asarray(raw_data.get_column(mi))
+
+    if qty == 'mtotal':
+        data = local_dict['mass1'] + local_dict['mass2']
+    else:
+        data = local_dict['mass2']/local_dict['mass1']
+        data = np.where(data > 1, 1./data, data)
+
+    return data
+
+
+# Function to extract mass ratio or total mass data from a trigger/injection file
+def load_effdist_data(raw_data, qty, opts, sites):
+    """Extract data related to effective distances from raw trigger/injection data"""
+
+    local_dict = {}
+
+    if qty == 'eff_site_dist':
+        data = raw_data.get_column('eff_dist_%s' % opts.ifo[0].lower())
+    else:
+        local_dict['eff_site_dist'] =\
+            dict((ifo, raw_data.get_column('eff_dist_%s' % ifo.lower()))
+                 for ifo in sites)
+        # Effective distance (inverse sum of inverse effective distances)
+        data = np.power(np.power(np.asarray(
+            local_dict['eff_site_dist'].values()), -1).sum(0), -1)
+
+    return data
+
+
 # Function to extract desired data from a trigger/injection file
 def load_data(raw_data, keys, opts, sites):
     """Create a dictionary containing the data specified by the
@@ -98,53 +182,21 @@ def load_data(raw_data, keys, opts, sites):
             grb_time = get_grb_time(opts.segment_dir)
             data_dict[qty] -= grb_time
         elif qty in ['mtotal', 'q']:
-            data_dict['mass1'] = np.asarray(raw_data.get_column('mass1'))
-            data_dict['mass2'] = np.asarray(raw_data.get_column('mass2'))
-            if qty == 'mtotal':
-                data_dict[qty] = data_dict['mass1'] + data_dict['mass2']
-            else:
-                data_dict[qty] = data_dict['mass2']/data_dict['mass1']
-                data_dict[qty] = np.where(data_dict[qty] > 1,
-                                          1. / data_dict[qty], data_dict[qty])
-        elif qty == 'eff_site_dist':
-            data_dict['eff_site_dist'] =\
-                raw_data.get_column('eff_dist_%s' % opts.ifo[0].lower())
-        elif qty == 'eff_dist':
-            data_dict['eff_site_dist'] =\
-                dict((ifo, raw_data.get_column('eff_dist_%s' % ifo.lower()))
-                     for ifo in sites)
-            # Effective distance (inverse sum of inverse effective distances)
-            data_dict[qty] = \
-                np.power(np.power(np.asarray(
-                    data_dict['eff_site_dist'].values()), -1).sum(0), -1)
+            data_dict[qty] = load_mtot_q_data(raw_data, qty)
+        elif qty in ['eff_site_dist', 'eff_dist']:
+            data_dict[qty] = load_effdist_data(raw_data, qty, opts, sites)
         elif 'incl' in qty:
-            data_dict['incl'] = np.asarray(raw_data.get_column('inclination'))
-            # Requesting |incl| of cos(|incl|)
-            if 'abs_' in qty:
-                data_dict['abs_incl'] = 0.5*np.pi - abs(data_dict['incl'] - 0.5*np.pi)
-            # Requesting cos(incl) or cos(|incl|): take cosine
-            if 'cos_' in qty:
-                data_dict[qty] = np.cos(data_dict[qty.replace('cos_', '')])
-            # Requesting incl or abs_incl: convert to degrees
-            else:
-                data_dict[qty] = np.rad2deg(data_dict[qty])
-        # Requesting spin1 or spin2, as components are dealt with in easy_keys
+            data_dict[qty] = load_incl_data(raw_data, qty)
+        # This handles spin1 and spin2, i.e. spin magnitudes, as components
+        # are dealt with in easy_keys (first if)
         elif 'spin' in qty:
-            for component in ['x', 'y', 'z']:
-                key = qty+component
-                data_dict[key] = np.asarray(raw_data.get_column(key))
-            data_dict[qty] = np.sqrt(data_dict[qty+'x']**2 +
-                                     data_dict[qty+'y']**2 +
-                                     data_dict[qty+'z']**2)
-
-    # Clean up possible unwanted intermediate entries
-    unwanted_keys = [item for item in data_dict if item not in keys]
-    for key in unwanted_keys:
-        del data_dict[key]
+            data_dict[qty] = load_spin_data(raw_data, qty)
 
     return data_dict
 
 
+# Function to cherry-pick a subset of full_data specified by fap_mask.
+# The BestNR values are also picked up.
 def grab_triggers_subset(full_data, fap_mask, found_trigs):
     """Separate out a subset of full_data based on fap_mask and include
     the detection statistics values"""

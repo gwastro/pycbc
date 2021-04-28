@@ -47,6 +47,7 @@ def add_wiki_row(outfile, cols):
     with open(outfile, 'a') as f:
         f.write('||%s||\n' % '||'.join(map(str, cols)))
 
+
 def make_timeseries_plot(workflow, snr_type, central_time, shift_time, out_dir,
                          ifo=None, tags=None):
     """Adds a node for a timeseries of PyGRB results to the workflow"""
