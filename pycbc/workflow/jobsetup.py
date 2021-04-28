@@ -493,7 +493,7 @@ class PyCBCInspiralExecutable(Executable):
     """ The class used to create jobs for pycbc_inspiral Executable. """
 
     current_retention_level = Executable.ALL_TRIGGERS
-    file_input_options = ['--gating-file']
+    file_input_options = ['--gating-file', '--frame-files']
     time_dependent_options = ['--channel-name']
 
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
