@@ -140,11 +140,11 @@ def parse_mode(lmn):
 
 
 def lm_amps_phases(**kwargs):
-    """Takes input_params and return dictionaries with amplitudes and phases
+    r"""Takes input_params and return dictionaries with amplitudes and phases
     of each overtone of a specific lm mode, checking that all of them are
-    given. Will also look for dbetas and dphis. If ``ref_(dphi|dbeta)`` are
-    provided, they will be used for all modes that don't explicitly set a
-    ``dphi|dbeta``.
+    given. Will also look for dbetas and dphis. If ``(dphi|dbeta)`` (i.e.,
+    without a mode suffix) are provided, they will be used for all modes that
+    don't explicitly set a ``(dphi|dbeta){lmn}``.
     """
     lmns = format_lmns(kwargs['lmns'])
     amps = {}
@@ -157,8 +157,8 @@ def lm_amps_phases(**kwargs):
         # default to the 220 mode
         ref_amp = 'amp220'
     # check for reference dphi and dbeta
-    ref_dbeta = kwargs.pop('ref_dbeta', None)
-    ref_dphi = kwargs.pop('ref_dphi', None)
+    ref_dbeta = kwargs.pop('dbeta', 0.)
+    ref_dphi = kwargs.pop('dphi', 0.)
     if isinstance(ref_amp, str) and ref_amp.startswith('amp'):
         # assume a mode was provided; check if the mode exists
         ref_mode = ref_amp.replace('amp', '')
@@ -436,14 +436,14 @@ def spher_harms(harmonics='spherical', l=None, m=None, n=0,
     -------
     xlm : complex
         The harmonic of the +m mode.
-    xlmnm : complex
+    xlnm : complex
         The harmonic of the -m mode.
     """
     if harmonics == 'spherical':
         xlm = lal.SpinWeightedSphericalHarmonic(inclination, azimuthal, -2,
                                                 l, m)
-        xlmnm = lal.SpinWeightedSphericalHarmonic(inclination, azimuthal, -2,
-                                                  l, -m)
+        xlnm = lal.SpinWeightedSphericalHarmonic(inclination, azimuthal, -2,
+                                                 l, -m)
     elif harmonics == 'spheroidal':
         if spin is None:
             raise ValueError("must provide a spin for spheroidal harmonics")
@@ -451,17 +451,17 @@ def spher_harms(harmonics='spherical', l=None, m=None, n=0,
             raise ImportError("pykerr must be installed for spheroidal "
                               "harmonics")
         xlm = pykerr.spheroidal(inclination, spin, l, m, n, phi=azimuthal)
-        xlmnm = pykerr.spheroidal(inclination, spin, l, -m, n, phi=azimuthal)
+        xlnm = pykerr.spheroidal(inclination, spin, l, -m, n, phi=azimuthal)
     elif harmonics == 'arbitrary':
         if pol is None or polnm is None:
             raise ValueError('must provide a pol and a polnm for arbitrary '
                              'harmonics')
         xlm = numpy.exp(1j*pol)
-        xlmnm = numpy.exp(1j*polnm)
+        xlnm = numpy.exp(1j*polnm)
     else:
         raise ValueError("harmonics must be either spherical, spheroidal, "
                          "or arbitrary")
-    return xlm, xlmnm
+    return xlm, xlnm
 
 
 def Kerr_factor(final_mass, distance):
@@ -606,7 +606,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
         inclination = 0.
     if azimuthal is None:
         azimuthal = 0.
-    xlm, xlmn = spher_harms(harmonics=harmonics, l=l, m=m, n=n,
+    xlm, xlnm = spher_harms(harmonics=harmonics, l=l, m=m, n=n,
                             inclination=inclination, azimuthal=azimuthal,
                             spin=final_spin, pol=pol, polnm=polnm)
     # generate the +/-m modes
@@ -622,11 +622,11 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
         beta = (-1)**l * pi/4 + dbeta
         rt2 = 2**0.5
         alm = rt2 * amp * numpy.cos(beta)
-        alnm = ret2 * amp * numpy.sin(beta)
+        alnm = rt2 * amp * numpy.sin(beta)
     damping = -times/tau
     hlm = xlm * alm * numpy.exp(damping + 1j*omegalm+phi) \
-         + xlmnm * alnm * numpy.exp(damping -1j*omegalm+phinm)
-    return hlm.real(), -hlm.imag()
+         + xlnm * alnm * numpy.exp(damping -1j*omegalm+phinm)
+    return hlm.real, -hlm.imag
 
 
 def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
