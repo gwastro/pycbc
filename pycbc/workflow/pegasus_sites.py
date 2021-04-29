@@ -83,9 +83,9 @@ def add_condorpool_symlink_site(sitecat, cp):
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
     site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites", 
-                      value="'nogrid'")
+                      value='"nogrid"')
     site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN", 
-                      value="'False'")
+                      value='"False"')
     site.add_profiles(Namespace.CONDOR, key="+flock_local", 
                       value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
@@ -109,9 +109,9 @@ def add_condorpool_copy_site(sitecat, cp):
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
     site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
-                      value="'nogrid'")
+                      value='"nogrid"')
     site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN",
-                      value="'False'")
+                      value='"False"')
     site.add_profiles(Namespace.CONDOR, key="+flock_local",
                       value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
@@ -149,9 +149,9 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
     site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
-                      value="'nogrid'")
+                      value='"nogrid"')
     site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN",
-                      value="'False'")
+                      value='"False"')
     site.add_profiles(Namespace.CONDOR, key="+flock_local",
                       value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
@@ -193,7 +193,7 @@ def add_osg_site(sitecat, cp):
                             "(HAS_LIGO_FRAMES =?= True) && "
                             "(IS_GLIDEIN =?= True)")
     site.add_profiles(Namespace.CONDOR, key="+SingularityImage",
-                      value="/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el7:v1.18.1")
+                      value="/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el7:v1.18.0")
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
     site.add_profiles(Namespace.ENV, key="LAL_DATA_PATH",
