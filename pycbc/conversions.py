@@ -36,6 +36,10 @@ import lalsimulation as lalsim
 from pycbc.detector import Detector
 import pycbc.cosmology
 from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
+try:
+    import pykerr
+except ImportError:
+    pykerr = None
 
 #
 # =============================================================================
@@ -812,43 +816,7 @@ def snr_from_loglr(loglr):
 MINUS_M_SUFFIX = 'nm'
 
 
-def _genqnmfreq(mass, spin, l, m, nmodes, qnmfreq=None):
-    """Convenience function to generate QNM frequencies from lalsimulation.
-
-    Parameters
-    ----------
-    mass : float
-        The mass of the black hole (in solar masses).
-    spin : float
-        The dimensionless spin of the black hole.
-    l : int
-        l-index of the harmonic.
-    m : int
-        m-index of the harmonic.
-    nmodes : int
-        The number of overtones to generate.
-    qnmfreq : lal.COMPLEX16Vector, optional
-        LAL vector to write the results into. Must be the same length as
-        ``nmodes``. If None, will create one.
-
-    Returns
-    -------
-    lal.COMPLEX16Vector
-        LAL vector containing the complex QNM frequencies.
-    """
-    # The function used here only supports modes 22, 21, 33, 44 and 55,
-    # but it doesn't raise an error if a different mode is selected.
-    # Raise error here to avoid returning wrong values
-    if (l,m) not in [(2,2), (2,1), (3,3), (4,4), (5,5)]:
-        raise ValueError('Selected (l,m) mode not supported')
-    if qnmfreq is None:
-        qnmfreq = lal.CreateCOMPLEX16Vector(int(nmodes))
-    lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(
-        qnmfreq, float(mass), float(spin), int(l), int(m), int(nmodes))
-    return qnmfreq
-
-
-def get_lm_f0tau(mass, spin, l, m, nmodes):
+def get_lm_f0tau(mass, spin, l, m, nmodes, which='both'):
     """Return the f0 and the tau of each overtone for a given l, m mode.
 
     Parameters
@@ -863,18 +831,26 @@ def get_lm_f0tau(mass, spin, l, m, nmodes):
         m-index of the harmonic.
     nmodes : int
         The number of overtones to generate.
+    which : {'both', 'f0', 'tau'}, optional
+        What to return; 'both' returns both frequency and tau, 'f0' just
+        frequency, 'tau' just tau. Default is 'both'.
+        
 
     Returns
     -------
     f0 : float or array
+        Returned if ``which`` is 'both' or 'f0'.
         The frequency of the QNM(s), in Hz. If only a single mode is requested
         (and mass, spin, l, and m are not arrays), this will be a float. If
         multiple modes requested, will be an array with shape
         ``[input shape x] nmodes``, where ``input shape`` is the broadcasted
         shape of the inputs.
     tau : float or array
+        Returned if ``which`` is 'both' or 'tau'.
         The damping time of the QNM(s), in seconds. Return type is same as f0.
     """
+    if pykerr is None:
+        raise ImportError("pykerr must be installed to get f0 or tau")
     # convert to arrays
     mass, spin, l, m, input_is_array = ensurearray(
         mass, spin, l, m)
@@ -883,27 +859,26 @@ def get_lm_f0tau(mass, spin, l, m, nmodes):
     origshape = mass.shape
     if nmodes < 1:
         raise ValueError("nmodes must be >= 1")
-    if nmodes > 1:
-        newshape = tuple(list(origshape)+[nmodes])
-    else:
-        newshape = origshape
-    f0s = numpy.zeros((mass.size, nmodes))
-    taus = numpy.zeros((mass.size, nmodes))
-    mass = mass.ravel()
-    spin = spin.ravel()
-    l = l.ravel()
-    m = m.ravel()
-    qnmfreq = None
-    modes = range(nmodes)
-    for ii in range(mass.size):
-        qnmfreq = _genqnmfreq(mass[ii], spin[ii], l[ii], m[ii], nmodes,
-                              qnmfreq=qnmfreq)
-        f0s[ii, :] = [qnmfreq.data[n].real/(2 * numpy.pi) for n in modes]
-        taus[ii, :] = [1./qnmfreq.data[n].imag for n in modes]
-    f0s = f0s.reshape(newshape)
-    taus = taus.reshape(newshape)
-    return (formatreturn(f0s, input_is_array),
-            formatreturn(taus, input_is_array))
+    newshape = tuple(list(origshape)+[nmodes])
+    getf0 = which == 'both' or which == 'f0'
+    gettau = which == 'both' or which == 'tau'
+    if getf0:
+        f0s = numpy.zeros(newshape)
+    if gettau:
+        taus = numpy.zeros(newshape)
+    for n in range(nmodes):
+        if getf0:
+            f0s[..., n] = pykerr.qnmfreq(mass, spin, l, m, n)
+        if gettau:
+            taus[..., n] = pykerr.qnmtau(mass, spin, l, m, n)
+    out = []
+    if getf0:
+        out.append(formatreturn(f0s, input_is_array))
+    if gettau:    
+        out.append(formatreturn(taus, input_is_array))
+    if not (getf0 and gettau):
+        out = out[0]
+    return out
 
 
 def get_lm_f0tau_allmodes(mass, spin, modes):
@@ -990,7 +965,7 @@ def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1,
     """
     if n is not None:
         nmodes = n + 1
-    out = get_lm_f0tau(final_mass, final_spin, l, m, nmodes)[0]
+    out = get_lm_f0tau(final_mass, final_spin, l, m, nmodes, which='f0')
     if n is not None:
         out = out[..., n]
     return out
@@ -1024,7 +999,7 @@ def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1,
     """
     if n is not None:
         nmodes = n + 1
-    out = get_lm_f0tau(final_mass, final_spin, l, m, nmodes)[1]
+    out = get_lm_f0tau(final_mass, final_spin, l, m, nmodes, which='tau')
     if n is not None:
         out = out[..., n]
     return out
@@ -1039,6 +1014,7 @@ _berti_spin_constants = {
     (2, -2): (1.6700, 0.4192, 1.4700),
     (2, 1): (-0.3, 2.3561, -0.2277),
     (2, -1): (2.0000, 0.1078, 5.0069),
+    (2, 0): (4.0000, 1.9550, 0.1420),
     (3, 3): (0.9, 2.343, -0.4810),
     (3, -3): (2.5500, 0.6576, 1.3378),
     (4, 4): (1.1929, 3.1191, -0.4825),
@@ -1048,9 +1024,10 @@ _berti_spin_constants = {
 _berti_mass_constants = {
     (2, 2): (1.5251, -1.1568, 0.1292),
     (2, -2): (0.2938, 0.0782, 1.3546),
+    (2, 1): (0.6, -0.2339, 0.4175),
+    (2, 0): (0.4437, 0.0739, 0.3350),
     (3, 3): (1.8956, -1.3043, 0.1818),
     (4, 4): (2.3, -1.5056, 0.2244),
-    (2, 1): (0.6, -0.2339, 0.4175)
     }
 
 

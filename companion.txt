@@ -8,6 +8,9 @@ healpy
 ligo-gracedb
 ligo.skymap; python_version >= '3.5'
 
+# Needed for ringdown
+pykerr
+
 # auxiliary samplers
 cpnest; python_version >= '3.5'
 pymultinest
