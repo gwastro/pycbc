@@ -26,6 +26,10 @@
 """
 
 import re, numpy, lal, lalsimulation
+try:
+    import pykerr
+except ImportError:
+    pykerr = None
 from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
 from pycbc.conversions import (get_lm_f0tau_allmodes, MINUS_M_SUFFIX)
@@ -57,7 +61,6 @@ def props(obj, required, domain_args, **kwargs):
     input_params = domain_args.copy()
     input_params.update(pr)
     input_params.update(kwargs)
-
     # Check if the required arguments are given
     for arg in required:
         if arg not in input_params:
@@ -139,15 +142,23 @@ def parse_mode(lmn):
 def lm_amps_phases(**kwargs):
     """Takes input_params and return dictionaries with amplitudes and phases
     of each overtone of a specific lm mode, checking that all of them are
-    given.
+    given. Will also look for dbetas and dphis. If ``ref_(dphi|dbeta)`` are
+    provided, they will be used for all modes that don't explicitly set a
+    ``dphi|dbeta``.
     """
     lmns = format_lmns(kwargs['lmns'])
-    amps, phis = {}, {}
+    amps = {}
+    phis = {}
+    dbetas = {}
+    dphis = {}
     # reference mode
     ref_amp = kwargs.pop('ref_amp', None)
     if ref_amp is None:
         # default to the 220 mode
         ref_amp = 'amp220'
+    # check for reference dphi and dbeta
+    ref_dbeta = kwargs.pop('ref_dbeta', None)
+    ref_dphi = kwargs.pop('ref_dphi', None)
     if isinstance(ref_amp, str) and ref_amp.startswith('amp'):
         # assume a mode was provided; check if the mode exists
         ref_mode = ref_amp.replace('amp', '')
@@ -173,7 +184,9 @@ def lm_amps_phases(**kwargs):
                 phis[mode] = kwargs['phi' + mode]
             except KeyError:
                 raise ValueError('phi{} is required'.format(mode))
-    return amps, phis
+            dphis[mode] = kwargs.pop('dphi'+mode, ref_dphi)
+            dbetas[mode] = kwargs.pop('dbeta'+mode, ref_dbeta)
+    return amps, phis, dbetas, dphis
 
 
 def lm_freqs_taus(**kwargs):
@@ -197,17 +210,20 @@ def lm_freqs_taus(**kwargs):
     return freqs, taus
 
 
-def lm_polarizations(**kwargs):
-    """Take input_params and return dictionaries with polarization for
-    each mode.
+def lm_arbitrary_harmonics(**kwargs):
+    """Take input_params and return dictionaries with arbitrary harmonics
+    for each mode.
     """
     lmns = format_lmns(kwargs['lmns'])
     pols = {}
+    polnms = {}
     for lmn in lmns:
         overtones = parse_mode(lmn)
         for mode in overtones:
             pols[mode] = kwargs.pop('pol{}'.format(mode), None)
-    return pols
+            polnms[mode] = kwargs.pop('polnm{}'.format(mode), None)
+    return pols, polnms
+
 
 # Functions to obtain t_final, f_final and output vector ######################
 
@@ -228,8 +244,8 @@ def qnm_time_decay(tau, decay):
         The time at which the amplitude of the time-domain
         ringdown falls to decay of the peak amplitude.
     """
+    return -tau * numpy.log(decay)
 
-    return - tau * numpy.log(decay)
 
 def qnm_freq_decay(f_0, tau, decay):
     """Return the frequency at which the amplitude of the
@@ -250,21 +266,19 @@ def qnm_freq_decay(f_0, tau, decay):
         The frequency at which the amplitude of the frequency-domain
         ringdown falls to decay of the peak amplitude.
     """
-
     q_0 = pi * f_0 * tau
     alpha = 1. / decay
     alpha_sq = 1. / decay / decay
-
     # Expression obtained analytically under the assumption
     # that 1./alpha_sq, q_0^2 >> 1
-    q_sq = (alpha_sq + 4*q_0*q_0 + alpha*numpy.sqrt(alpha_sq + 16*q_0*q_0)) / 4.
+    q_sq = (alpha_sq + 4*q_0*q_0 + alpha*numpy.sqrt(alpha_sq + 16*q_0*q_0))/4.
     return numpy.sqrt(q_sq) / pi / tau
+
 
 def lm_tfinal(damping_times):
     """Return the maximum t_final of the modes given, with t_final the time
     at which the amplitude falls to 1/1000 of the peak amplitude
     """
-
     if isinstance(damping_times, dict):
         t_max = {}
         for lmn in damping_times.keys():
@@ -272,15 +286,14 @@ def lm_tfinal(damping_times):
         t_final = max(t_max.values())
     else:
         t_final = qnm_time_decay(damping_times, 1./1000)
-
     return t_final
+
 
 def lm_deltat(freqs, damping_times):
     """Return the minimum delta_t of all the modes given, with delta_t given by
-    the inverse of the frequency at which the amplitude of the ringdown falls to
-    1/1000 of the peak amplitude.
+    the inverse of the frequency at which the amplitude of the ringdown falls
+    to 1/1000 of the peak amplitude.
     """
-
     if isinstance(freqs, dict) and isinstance(damping_times, dict):
         dt = {}
         for lmn in freqs.keys():
@@ -299,11 +312,11 @@ def lm_deltat(freqs, damping_times):
 
     return delta_t
 
-def lm_ffinal(freqs, damping_times):
-    """Return the maximum f_final of the modes given, with f_final the frequency
-    at which the amplitude falls to 1/1000 of the peak amplitude
-    """
 
+def lm_ffinal(freqs, damping_times):
+    """Return the maximum f_final of the modes given, with f_final the
+    frequency at which the amplitude falls to 1/1000 of the peak amplitude
+    """
     if isinstance(freqs, dict) and isinstance(damping_times, dict):
         f_max = {}
         for lmn in freqs.keys():
@@ -316,18 +329,16 @@ def lm_ffinal(freqs, damping_times):
         raise ValueError('Missing frequencies.')
     else:
         f_final = qnm_freq_decay(freqs, damping_times, 1./1000)
-
     if f_final > max_freq:
         f_final = max_freq
-
     return f_final
+
 
 def lm_deltaf(damping_times):
     """Return the minimum delta_f of all the modes given, with delta_f given by
     the inverse of the time at which the amplitude of the ringdown falls to
     1/1000 of the peak amplitude.
     """
-
     if isinstance(damping_times, dict):
         df = {}
         for lmn in damping_times.keys():
@@ -335,28 +346,25 @@ def lm_deltaf(damping_times):
         delta_f = min(df.values())
     else:
         delta_f = 1. / qnm_time_decay(damping_times, 1./1000)
-
     return delta_f
+
 
 def td_output_vector(freqs, damping_times, taper=False,
                      delta_t=None, t_final=None):
     """Return an empty TimeSeries with the appropriate size to fit all
     the quasi-normal modes present in freqs, damping_times
     """
-
     if not delta_t:
         delta_t = lm_deltat(freqs, damping_times)
     if not t_final:
         t_final = lm_tfinal(damping_times)
     kmax = int(t_final / delta_t) + 1
-
     # Different modes will have different tapering window-size
     # Find maximum window size to create long enough output vector
     if taper:
         max_tau = max(damping_times.values()) if \
                   isinstance(damping_times, dict) else damping_times
         kmax += int(max_tau/delta_t)
-
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     if taper:
@@ -365,58 +373,114 @@ def td_output_vector(freqs, damping_times, taper=False,
         # To ensure that t=0 is still in output vector
         start -= start % delta_t
         outplus._epoch, outcross._epoch = start, start
-
     return outplus, outcross
+
 
 def fd_output_vector(freqs, damping_times, delta_f=None, f_final=None):
     """Return an empty FrequencySeries with the appropriate size to fit all
     the quasi-normal modes present in freqs, damping_times
     """
-
     if not delta_f:
         delta_f = lm_deltaf(damping_times)
     if not f_final:
         f_final = lm_ffinal(freqs, damping_times)
     kmax = int(f_final / delta_f) + 1
-
     outplus = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
     outcross = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
-
     return outplus, outcross
+
 
 # Spherical harmonics and Kerr factor #########################################
 
-def spher_harms(l, m, inclination):
-    """Return spherical harmonic polarizations
+def spher_harms(harmonics='spherical', l=None, m=None, n=0,
+                inclination=0., azimuthal=0.,
+                spin=None, pol=None, polnm=None):
+    r"""Return the +/-m harmonic polarizations.
+
+    This will return either spherical, spheroidal, or an arbitrary complex
+    number depending on what ``harmonics`` is set to. If harmonics is set to
+    arbitrary, then the "(+/-)m" harmonic will be :math:`e^{i \psi_(+/-)}`,
+    where :math:`\psi_{+/-}` are arbitrary angles provided by the user (using
+    the ``pol(nm)`` arguments).
+
+    Parameters
+    ----------
+    harmonics : {'spherical', 'spheroidal', 'arbitrary'}, optional
+        The type of harmonic to generate. Default is spherical.
+    l : int, optional
+        The l index. Must be provided if harmonics is 'spherical' or
+        'spheroidal'.
+    m : int, optional
+        The m index. Must be provided if harmonics is 'spherical' or
+        'spheroidal'.
+    n : int, optional
+        The overtone number. Only used if harmonics is 'spheroidal'. Default
+        is 0.
+    inclination : float, optional
+        The inclination angle. Only used if harmonics is 'spherical' or
+        'spheroidal'. Default is 0.
+    azimuthal : float, optional
+        The azimuthal angle. Only used if harmonics is 'spherical' or
+        'spheroidal'. Default is 0.
+    spin : float, optional
+        The dimensionless spin of the black hole. Must be provided if
+        harmonics is 'spheroidal'. Ignored otherwise.
+    pol : float, optional
+        Angle (in radians) to use for arbitrary "+m" harmonic. Must be provided
+        if harmonics is 'arbitrary'. Ignored otherwise.
+    polnm : float, optional
+        Angle (in radians) to use for arbitrary "-m" harmonic. Must be provided
+        if harmonics is 'arbitrary'. Ignored otherwise.
+
+    Returns
+    -------
+    xlm : complex
+        The harmonic of the +m mode.
+    xlmnm : complex
+        The harmonic of the -m mode.
     """
+    if harmonics == 'spherical':
+        xlm = lal.SpinWeightedSphericalHarmonic(inclination, azimuthal, -2,
+                                                l, m)
+        xlmnm = lal.SpinWeightedSphericalHarmonic(inclination, azimuthal, -2,
+                                                  l, -m)
+    elif harmonics == 'spheroidal':
+        if spin is None:
+            raise ValueError("must provide a spin for spheroidal harmonics")
+        if pykerr is None:
+            raise ImportError("pykerr must be installed for spheroidal "
+                              "harmonics")
+        xlm = pykerr.spheroidal(inclination, spin, l, m, n, phi=azimuthal)
+        xlmnm = pykerr.spheroidal(inclination, spin, l, -m, n, phi=azimuthal)
+    elif harmonics == 'arbitrary':
+        if pol is None or polnm is None:
+            raise ValueError('must provide a pol and a polnm for arbitrary '
+                             'harmonics')
+        xlm = numpy.exp(1j*pol)
+        xlmnm = numpy.exp(1j*polnm)
+    else:
+        raise ValueError("harmonics must be either spherical, spheroidal, "
+                         "or arbitrary")
+    return xlm, xlmnm
 
-    # FIXME: we are using spin -2 weighted spherical harmonics for now,
-    # when possible switch to spheroidal harmonics.
-    Y_lm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, m).real
-    Y_lminusm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, -m).real
-    Y_plus = Y_lm + (-1)**l * Y_lminusm
-    Y_cross = Y_lm - (-1)**l * Y_lminusm
-
-    return Y_plus, Y_cross
 
 def Kerr_factor(final_mass, distance):
     """Return the factor final_mass/distance (in dimensionless units) for Kerr
     ringdowns
     """
-
     # Convert solar masses to meters
     mass = final_mass * lal.MSUN_SI * lal.G_SI / lal.C_SI**2
     # Convert Mpc to meters
     dist = distance * 1e6 * lal.PC_SI
-
     return mass / dist
+
 
 # Functions for tapering ######################################################
 
 def apply_taper(tau, amp, phi, delta_t, l=2, m=2, inclination=None, pol=None):
     """Return a tapering window of the form exp(10*t/tau).
     """
-
+    raise ValueError("FIX ME")
     taper_times = -numpy.arange(0, int(tau/delta_t))[::-1] * delta_t
     if pol is not None:
         Y_plus = numpy.cos(pol)
@@ -439,69 +503,131 @@ def apply_taper(tau, amp, phi, delta_t, l=2, m=2, inclination=None, pol=None):
 #### Basic functions to generate damped sinusoid
 ######################################################
 
-def td_lm_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
-                          l=2, m=2, inclination=None, azimuthal=None, pol=None,
-                          spheroidal=False, final_spin=None):
-    """Return a time domain damped sinusoid (plus and cross polarizations)
+def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
+                       l=2, m=2, n=0, inclination=0., azimuthal=0.,
+                       dphi=0., dbeta=0.,
+                       harmonics='spherical', final_spin=None,
+                       pol=None, polnm=None):
+    r"""Return a time domain damped sinusoid (plus and cross polarizations)
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
-    The l, m, and inclination parameters are used for the spherical harmonics.
-    """
 
+    This returns the plus and cross polarization of the QNM, defined as
+    :math:`h^{+,\times}_{l|m|n} = (\Re, -\Im) \{ h_{l|m|n}(t)\right}`, where
+
+    .. math::
+
+        h_{l|m|n}(t) &:= A_{lmn} X_{lmn}(\theta, \varphi) 
+            e^{-t/\tau_{lmn} + i(2\pi f_{lmn}t + \phi_{lmn})} \\
+            & + A_{l-mn} X_{l-mn}(\theta, \varphi)
+            e^{-t/\tau_{lmn} - i(2\pi f_{lmn}t + \phi_{l-mn})}
+
+    Here, the :math:`X_{lmn}(\theta, \varphi)` are either the spherical or
+    spheroidal harmonics, or an arbitrary complex number, depending on the
+    input arguments. This uses the convention that the +/-m modes are
+    related to each other via  :math:`f_{l-mn} = -f_{lmn}` and
+    :math:`\tau_{l-mn} = \tau_{lmn}`. The amplitudes :math:`A_{l(-)mn}` and
+    phases :math:`\phi_{l(-)mn}` of the +/-m modes are related to each other
+    by:
+
+    .. math::
+
+        \phi_{l-mn} = \Delta \phi_{lmn} - \phi_{lmn}
+
+    and
+
+    .. math::
+
+        A_{lmn} &= A^0_{lmn} \sqrt{2} \cos(\Delta \beta_{lmn} + (-1)^l \pi/4)\\
+        A_{lmn} &= A^0_{lmn} \sqrt{2} \sin(\Delta \beta_{lmn} + (-1)^l \pi/4)
+   
+    where :math:`A^0_{lmn}` is an overall fiducial amplitude (set by the
+    ``amp``) parameter. 
+    
+    If :math:`\Delta \phi_{lmn}` and :math:`\Delta \beta_{lmn}` are both set
+    to zero (the default), the resulting waveform will circularly polarized
+    (this is equivalent to assuming that :math:`h_{l-mn} = (-1)^l h_{lmn}^*`).
+
+    Parameters
+    ----------
+    f_0 : float
+        The central frequency of the damped sinusoid, in Hz.
+    tau : float
+        The damping time, in seconds.
+    amp : float
+        The intrinsic amplitude of the QNM (:math:`A^0_{lmn}` in the above).
+    phi : float
+        The reference phase of the QNM (:math:`\phi_{lmn}`) in the above.
+    delta_t: float
+        The time step (in seconds) to use for the returned waveforms.
+    t_final : float
+        The duration of the waveform (in seconds) to generate.
+    l : int, optional
+        The l index; default is 2.
+    m : int, optional
+        The m index; default is 2.
+    inclination : float, optional
+        The inclination angle (:math:`\theta` in the above). Ignored if
+        ``harmonics='arbitrary'``. Default is 0.
+    azimuthal : float, optional
+        The azimuthal angle (:math:`\varphi` in the above). Ignored if
+        ``harmonics='arbitrary'``. Default is 0.
+    dphi : float, optional
+        The difference in phase between the +m and -m mode
+        (:math:`\Delta \phi_{lmn}` in the above). Default is 0.
+    dbeta : float, optional
+        The angular difference in the amplitudes of the +m and -m mode
+        (:math:`\Delta \beta_{lmn}` in the above). Default is 0. If this and
+        dphi are both 0, will have circularly polarized waves.
+    harmonics : {'spherical', 'spheroidal', 'arbitrary'}, optional
+        Which harmonics to use. See :py:func:`spher_harms for details.
+        Default is spherical.
+    final_spin : float, optional
+        The dimensionless spin of the black hole. Only needed if
+        ``harmonics='spheroidal'``.
+    pol : float, optional
+        Angle to use for +m arbitrary harmonics. Only needed if
+        ``harmonics='arbitrary'``. See :py:func:`spher_harms for details.
+    polnm : float, optional
+        Angle to use for -m arbitrary harmonics. Only needed if
+        ``harmonics='arbitrary'``. See :py:func:`spher_harms for details.
+
+    Returns
+    -------
+    hplus : TimeSeries
+        The plus polarization.
+    hcross : TimeSeries
+        The cross polarization.
+    """
+    # create the times
     tlen = int(t_final/delta_t) + 1
     times = numpy.linspace(0, t_final, num=tlen)
-
+    # evaluate the harmonics
     if inclination is None:
         inclination = 0.
     if azimuthal is None:
         azimuthal = 0.
-    if spheroidal:
-        if final_spin is None:
-            raise ValueError("must provide a final_spin to use the "
-                             "spheroidal harmonics")
-        xlm = lalsimulation.SimBlackHoleRingdownSpheroidalWaveFunction(
-                inclination, final_spin, l, m, -2)
-    elif pol is not None:
-        xlm = numpy.exp(1j*pol)
+    xlm, xlmn = spher_harms(harmonics=harmonics, l=l, m=m, n=n,
+                            inclination=inclination, azimuthal=azimuthal,
+                            spin=final_spin, pol=pol, polnm=polnm)
+    # generate the +/-m modes
+    # we measure things as deviations from circular polarization, which occurs
+    # when h_{l-m} = (-1)^l h_{lm}^*; that implies that
+    # phi_{l-m} = - phi_{lm} and A_{l-m} = (-1)^l A_{lm}
+    omegalm = two_pi * f_0 * times
+    phinm = dphi - phi
+    if dbeta == 0:
+        alm = amp
+        alnm = (-1)**l * alm
     else:
-        #xlm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, m)
-        xlmplus, xlmcross = spher_harms(l, m, inclination)
-    phase = 1j*(two_pi * f_0 * times + phi + m*azimuthal)
-    hlm = amp * numpy.exp(-times/tau + phase)
-    if spheroidal or pol is not None:
-        hlm *= xlm
-        hplus = hlm.real
-        hcross = -hlm.imag
-    else:
-        hplus = xlmplus * hlm.real
-        hcross = -xlmcross * hlm.imag
-    return hplus, hcross
+        beta = (-1)**l * pi/4 + dbeta
+        rt2 = 2**0.5
+        alm = rt2 * amp * numpy.cos(beta)
+        alnm = ret2 * amp * numpy.sin(beta)
+    damping = -times/tau
+    hlm = xlm * alm * numpy.exp(damping + 1j*omegalm+phi) \
+         + xlmnm * alnm * numpy.exp(damping -1j*omegalm+phinm)
+    return hlm.real(), -hlm.imag()
 
-
-def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
-                       l=2, m=2, inclination=None, pol=None):
-    """Return a time domain damped sinusoid (plus and cross polarizations)
-    with central frequency f_0, damping time tau, amplitude amp and phase phi.
-    The l, m, and inclination parameters are used for the spherical harmonics.
-    """
-
-    tlen = int(t_final/delta_t) + 1
-    times = numpy.linspace(0, t_final, num=tlen)
-
-    if pol is not None:
-        Y_plus = numpy.cos(pol)
-        Y_cross = numpy.sin(pol)
-    elif inclination is not None:
-        Y_plus, Y_cross = spher_harms(l, m, inclination)
-    else:
-        Y_plus, Y_cross = 1, 1
-
-    common_factor = amp * numpy.exp(-times/tau)
-    common_angle = (two_pi * f_0 * times) + phi
-
-    hplus = Y_plus * common_factor * numpy.cos(common_angle)
-    hcross = Y_cross * common_factor * numpy.sin(common_angle)
-
-    return hplus, hcross
 
 def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
                        l=2, m=2, inclination=None, pol=None):
@@ -509,6 +635,7 @@ def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
     The l, m, and inclination parameters are used for the spherical harmonics.
     """
+    raise ValueError("FIX ME to be consistent with td")
 
     if not f_lower:
         f_lower = delta_f
@@ -574,8 +701,18 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
         n overtones in the chosen domain (time or frequency).
     """
     input_params['lmns'] = format_lmns(input_params['lmns'])
-    amps, phis = lm_amps_phases(**input_params)
-    pols = lm_polarizations(**input_params)
+    amps, phis, dbetas, dphis = lm_amps_phases(**input_params)
+    pols, polnms = lm_arbitrary_harmonics(**input_params)
+    # get harmonics argument
+    try:
+        harmonics = input_params['harmonics']
+    except KeyError:
+        harmonics = 'spherical'
+    # add inclination and azimuthal if they aren't provided
+    if 'inclination' not in input_params:
+        input_params['inclination'] = 0.
+    if 'azimuthal' not in input_params:
+        input_params['azimuthal'] = 0.
     if freq_tau_approximant:
         freqs, taus = lm_freqs_taus(**input_params)
         norm = 1.
@@ -591,11 +728,6 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
         for mode in taus:
             if 'delta_tau{}'.format(mode) in input_params:
                 taus[mode] += input_params['delta_tau{}'.format(mode)] * taus[mode]
-    # check if we're using spheroidal harmonics or not
-    spheroidal = 'spheroidal' in input_params and input_params['spheroidal']
-    if spheroidal and 'final_spin' not in input_params:
-        raise ValueError('spheroidal harmonics require final_spin to be '
-                         'provided')
     if domain == 'td':
         outplus, outcross = td_output_vector(freqs, taus,
                             input_params['taper'], input_params['delta_t'],
@@ -605,18 +737,22 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
             #                amps[lmn], phis[lmn], outplus.delta_t,
             #                outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
             #                input_params['inclination'], pols[lmn])
-            if spheroidal:
+            if harmonics == 'spheroidal':
                 final_spin = input_params['final_spin']
             else:
                 final_spin = None
             if amps[lmn] == 0.:
                 # skip
                 continue
-            hplus, hcross = td_lm_damped_sinusoid(
-                freqs[lmn], taus[lmn], amps[lmn], phis[lmn], outplus.delta_t,
-                outplus.sample_times[-1], l=int(lmn[0]), m=int(lmn[1]),
-                inclination=input_params['inclination'], pol=pols[lmn],
-                spheroidal=spheroidal, final_spin=final_spin)
+            hplus, hcross = td_damped_sinusoid(
+                freqs[lmn], taus[lmn], amps[lmn], phis[lmn],
+                outplus.delta_t, outplus.sample_times[-1],
+                l=int(lmn[0]), m=int(lmn[1]), n=int(lmn[2]),
+                inclination=input_params['inclination'],
+                azimuthal=input_params['azimuthal'],
+                dphi=dphis[lmn], dbeta=dbetas[lmn],
+                harmonics=harmonics, final_spin=final_spin,
+                pol=pols[lmn], polnm=polnms[lmn])
             if input_params['taper'] and outplus.delta_t < taus[lmn]:
                 taper_hp, taper_hc = apply_taper(taus[lmn], amps[lmn],
                                      phis[lmn], outplus.delta_t, int(lmn[0]),
