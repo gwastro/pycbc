@@ -512,7 +512,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
 
     This returns the plus and cross polarization of the QNM, defined as
-    :math:`h^{+,\times}_{l|m|n} = (\Re, -\Im) \{ h_{l|m|n}(t)\right}`, where
+    :math:`h^{+,\times}_{l|m|n} = (\Re, \Im) \{ h_{l|m|n}(t)\right}`, where
 
     .. math::
 
@@ -626,7 +626,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     damping = -times/tau
     hlm = xlm * alm * numpy.exp(damping + 1j*omegalm+phi) \
          + xlnm * alnm * numpy.exp(damping -1j*omegalm+phinm)
-    return hlm.real, -hlm.imag
+    return hlm.real, hlm.imag
 
 
 def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
