@@ -39,10 +39,11 @@ def get_run(time, ifo=None):
     # the same for all ifos
     if (1180911618 <= time <= 1180982427) and (ifo == 'H1'):
         return 'BKGW170608_16KHZ_R1'
-
-    if 1164556817 <= time <= 1187733618:
+    elif 1238166018 <= time <= 1253977218:
+        return 'O3_4KHZ_R1'
+    elif 1164556817 <= time <= 1187733618:
         return 'O2_16KHZ_R1'
-    if 1126051217 <= time <= 1137254417:
+    elif 1126051217 <= time <= 1137254417:
         return 'O1'
     elif 815011213 <= time <= 875318414:
         return 'S5'
