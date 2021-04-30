@@ -966,7 +966,9 @@ def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1,
     if n is not None:
         nmodes = n + 1
     out = get_lm_f0tau(final_mass, final_spin, l, m, nmodes, which='f0')
-    if n is not None:
+    if n is not None or nmodes == 1:
+        if n is None:
+            n = 0
         out = out[..., n]
     return out
 
@@ -1000,7 +1002,9 @@ def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1,
     if n is not None:
         nmodes = n + 1
     out = get_lm_f0tau(final_mass, final_spin, l, m, nmodes, which='tau')
-    if n is not None:
+    if n is not None or nmodes == 1:
+        if n is None:
+            n = 0
         out = out[..., n]
     return out
 
