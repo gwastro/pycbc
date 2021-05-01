@@ -620,18 +620,22 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     # when h_{l-m} = (-1)^l h_{lm}^*; that implies that
     # phi_{l-m} = - phi_{lm} and A_{l-m} = (-1)^l A_{lm}
     omegalm = two_pi * f_0 * times
-    # amplitude
-    if dbeta == 0:
-        alm = alnm = amp
-    else:
-        beta = pi/4 + dbeta
-        alm = 2**0.5 * amp * numpy.cos(beta)
-        alnm = 2**0.5 * amp * numpy.sin(beta)
-    # phase
-    phinm = l*pi + dphi - phi
     damping = -times/tau
-    hlm = xlm * alm * numpy.exp(damping + 1j*(omegalm + phi)) \
-         + xlnm * alnm * numpy.exp(damping - 1j*(omegalm - phinm))
+    if m == 0:
+        # no -m, just calculate
+        hlm = xlm * amp * numpy.exp(damping + 1j*(omegalm + phi))
+    else:
+        # amplitude
+        if dbeta == 0:
+            alm = alnm = amp
+        else:
+            beta = pi/4 + dbeta
+            alm = 2**0.5 * amp * numpy.cos(beta)
+            alnm = 2**0.5 * amp * numpy.sin(beta)
+        # phase
+        phinm = l*pi + dphi - phi
+        hlm = xlm * alm * numpy.exp(damping + 1j*(omegalm + phi)) \
+             + xlnm * alnm * numpy.exp(damping - 1j*(omegalm - phinm))
     return hlm.real, hlm.imag
 
 
