@@ -531,21 +531,27 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
 
     .. math::
 
-        \phi_{l-mn} = \Delta \phi_{lmn} - \phi_{lmn}
+        \phi_{l-mn} = l\pi + \Delta \phi_{lmn} - \phi_{lmn}
 
     and
 
     .. math::
 
-        A_{lmn} &= A^0_{lmn} \sqrt{2} \cos(\Delta \beta_{lmn} + (-1)^l \pi/4)\\
-        A_{lmn} &= A^0_{lmn} \sqrt{2} \sin(\Delta \beta_{lmn} + (-1)^l \pi/4)
+        A_{lmn} &= A^0_{lmn} \sqrt{2} \cos(\pi/4 + \Delta \beta_{lmn})\\
+        A_{lmn} &= A^0_{lmn} \sqrt{2} \sin(\pi/4 +  \Delta \beta_{lmn}).
    
-    where :math:`A^0_{lmn}` is an overall fiducial amplitude (set by the
-    ``amp``) parameter. 
+    Here, :math:`A^0_{lmn}` is an overall fiducial amplitude (set by the
+    ``amp``) parameter, and
+
+    .. math::
+
+        \Delta \beta_{lmn} &\in [-pi/4, pi/4], \\
+        \Delta \phi_{lmn}  &\in (-pi, pi)
     
-    If :math:`\Delta \phi_{lmn}` and :math:`\Delta \beta_{lmn}` are both set
-    to zero (the default), the resulting waveform will circularly polarized
-    (this is equivalent to assuming that :math:`h_{l-mn} = (-1)^l h_{lmn}^*`).
+    are parameters that define the deviation from circular polarization.
+    Circular polarization occurs when both :math:`\Delta \beta_{lmn}` and
+    :math:`\Delta \phi_{lmn}` are zero (this is equivalent to assuming that
+    :math:`h_{l-mn} = (-1)^l h_{lmn}^*`).
 
     Parameters
     ----------
@@ -614,18 +620,18 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     # when h_{l-m} = (-1)^l h_{lm}^*; that implies that
     # phi_{l-m} = - phi_{lm} and A_{l-m} = (-1)^l A_{lm}
     omegalm = two_pi * f_0 * times
-    phinm = dphi - phi
+    # amplitude
     if dbeta == 0:
-        alm = amp
-        alnm = (-1)**l * alm
+        alm = alnm = amp
     else:
-        beta = (-1)**l * pi/4 + dbeta
-        rt2 = 2**0.5
-        alm = rt2 * amp * numpy.cos(beta)
-        alnm = rt2 * amp * numpy.sin(beta)
+        beta = pi/4 + dbeta
+        alm = 2**0.5 * amp * numpy.cos(beta)
+        alnm = 2**0.5 * amp * numpy.sin(beta)
+    # phase
+    phinm = l*pi + dphi - phi
     damping = -times/tau
-    hlm = xlm * alm * numpy.exp(damping + 1j*omegalm+phi) \
-         + xlnm * alnm * numpy.exp(damping -1j*omegalm+phinm)
+    hlm = xlm * alm * numpy.exp(damping + 1j*(omegalm + phi)) \
+         + xlnm * alnm * numpy.exp(damping - 1j*(omegalm - phinm))
     return hlm.real, hlm.imag
 
 
