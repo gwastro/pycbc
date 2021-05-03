@@ -20,7 +20,26 @@ from pycbc.io import get_file
 
 _losc_url = "https://www.gw-openscience.org/archive/links/%s/%s/%s/%s/json/"
 
-def get_run(time):
+def get_run(time, ifo=None):
+    """ Return the run name for a given time
+
+    Parameters
+    ----------
+    time: int
+        The gps time
+    ifo: str
+        The ifo prefix string. Optional and normally unused,
+        except for some special times where data releases
+        were made for a single detector under
+        unusual circumstances. For example, to get the data around GW170608
+        in the Hanford detector.
+    """
+
+    # ifo is only needed in this special case, otherwise, the run name is
+    # the same for all ifos
+    if (1180911618 <= time <= 1180982427) and (ifo == 'H1'):
+        return 'BKGW170608_16KHZ_R1'
+
     if 1164556817 <= time <= 1187733618:
         return 'O2_16KHZ_R1'
     if 1126051217 <= time <= 1137254417:

@@ -174,7 +174,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
         duration = end_time - start_time
         try:
-            url = GWOSC_URL.format(get_run(start_time + duration/2),
+            url = GWOSC_URL.format(get_run(start_time + duration/2, ifo),
                                    ifo, segment_name,
                                    int(start_time), int(duration))
 
