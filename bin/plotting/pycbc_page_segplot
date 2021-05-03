@@ -197,7 +197,7 @@ fig.subplots_adjust(left=0.0, right=0.6, top=0.9, bottom=0.1)
 # add plugins to the plot
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10f'))
 mpld3.plugins.connect(fig, mpld3.plugins.BoxZoom())
-mpld3.plugins.connect(fig, MPLSlide())
+mpld3.plugins.connect(fig, mpld3.plugins.Zoom())
 mpld3.plugins.connect(fig, mpld3.plugins.Reset())
 
 # save the plot as an interactive HTML
