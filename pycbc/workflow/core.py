@@ -709,10 +709,11 @@ class Workflow(pegasus_workflow.Workflow):
         for subsec in subsections:
             if self.cp.has_option(subsec, 'pycbc|site'):
                 site = self.cp.get(subsec, 'pycbc|site')
-                add_site(self._sc, site, self.cp, out_dir=self.out_dir)
-                # NOTE: For now we *always* stage from local. This doesn't
-                #       have to always be true though.
-                self._staging_site[site] = 'local'
+                if not site in self._sc.sites:
+                    add_site(self._sc, site, self.cp, out_dir=self.out_dir)
+                    # NOTE: For now we *always* stage from local. This doesn't
+                    #       have to always be true though.
+                    self._staging_site[site] = 'local'
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
