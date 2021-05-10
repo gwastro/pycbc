@@ -371,6 +371,7 @@ def load_triggers(trig_file, vetoes):
 # Detector utils:
 # * Function to calculate the antenna factors F+ and Fx
 # * Function to calculate the antenna response F+^2 + Fx^2
+# * Function to calculate the antenna distance factor
 # =============================================================================
 # TODO: the call, e.g., Detector("H1", reference_time=None) will not always
 # work because we are on Python 2.7 and therefore on an old version of astropy
@@ -398,6 +399,18 @@ def get_antenna_single_response(antenna, ra, dec, geocent_time):
 get_antenna_responses = numpy.vectorize(get_antenna_single_response,\
                                     otypes=[float])
 get_antenna_responses.excluded.add(0)
+
+
+def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
+    """Returns the antenna factors (defined as eq. 4.3 on page 57 of 
+    Duncan Brown's Ph.D.) for an IFO (passed as pycbc Detector type) at 
+    a given sky location and time."""
+
+
+    fp, fc = get_antenna_factors(antenna, ra, dec, geocent_time)
+
+    return numpy.sqrt(fp ** 2 * (1 + numpy.cos(inc)) ** 2 / 4 + fc ** 2)
+
 
 
 # =============================================================================
