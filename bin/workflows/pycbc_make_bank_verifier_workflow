@@ -49,8 +49,6 @@ class BanksimExecutable(wf.Executable):
     # This can be altered if you don't always want to store output files
     current_retention_level = wf.Executable.ALL_TRIGGERS
 
-    file_input_options = ['--psd-file', '--asd-file']
-
     def create_node(self, analysis_time, inj_file, bank_file, extra_tags=None):
         if extra_tags is None:
             extra_tags = []
@@ -82,7 +80,8 @@ class BanksimMatchCombineExecutable(wf.Executable):
     # This can be altered if you don't always want to store output files
     current_retention_level = wf.Executable.FINAL_RESULT
 
-    file_input_options = ['--filter-func-file']
+    file_input_options = wf.Executable.file_input_options + \
+        ['--filter-func-file']
 
     def create_node(self, analysis_time, match_files, inj_files, bank_files,
                     extra_tags=None):

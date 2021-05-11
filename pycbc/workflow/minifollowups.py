@@ -372,27 +372,24 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 class SingleTemplateExecutable(PlotExecutable):
     """Class to be used for to create workflow.Executable instances for the
     pycbc_single_template executable. Basically inherits directly from
-    PlotExecutable but adds the file_input_options.
+    PlotExecutable.
     """
-    file_input_options = ['--gating-file']
     time_dependent_options = ['--channel-name', '--frame-type']
 
 
 class SingleTimeFreqExecutable(PlotExecutable):
     """Class to be used for to create workflow.Executable instances for the
     pycbc_plot_singles_timefreq executable. Basically inherits directly from
-    PlotExecutable but adds the file_input_options.
+    PlotExecutable.
     """
-    file_input_options = ['--gating-file']
     time_dependent_options = ['--channel-name', '--frame-type']
 
 
 class PlotQScanExecutable(PlotExecutable):
     """Class to be used for to create workflow.Executable instances for the
     pycbc_plot_qscan executable. Basically inherits directly from
-    PlotExecutable but adds the file_input_options.
+    PlotExecutable.
     """
-    file_input_options = ['--gating-file']
     time_dependent_options = ['--channel-name', '--frame-type']
 
 

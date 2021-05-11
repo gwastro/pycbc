@@ -23,7 +23,6 @@ from ligo.segments import segmentlist
 
 class CalcPSDExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
-    file_input_options = ['--gating-file']
 
 class MergePSDFiles(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS

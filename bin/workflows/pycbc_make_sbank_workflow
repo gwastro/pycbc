@@ -47,7 +47,7 @@ class SbankExecutable(wf.Executable):
     current_retention_level = wf.Executable.FINAL_RESULT
 
     # This tells us that reference-psd is a file option
-    file_input_options = ['--reference-psd']
+    file_input_options = wf.Executable.file_input_options + ['--reference-psd']
 
     sbank_job_seed = 0
 
