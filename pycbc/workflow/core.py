@@ -80,8 +80,13 @@ class Executable(pegasus_workflow.Executable):
     # file and is normally specified in an file, e.g. a PSD file. As files
     # need to be identified as such to pegasus, this attempts to catch this
     # case.
-    # file_input_options = ['--psd-file, '--bank-file'] (as an example)
-    file_input_options = []
+    # These are standard file input arguments used in PyCBC, so we declare
+    # these as files if given to any PyCBC job.
+    file_input_options = ['--gating-file', '--frame-files', '--injection-file',
+                          '--statistic-files', '--bank-file', '--config-files',
+                          '--psd-file', '--asd-file',
+                          '--fake-strain-from-file',
+                          '--sgburst-injection-file']
 
     # Set this parameter to indicate that this option should take different
     # values based on the time. E.g. something like

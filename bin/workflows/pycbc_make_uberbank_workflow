@@ -56,56 +56,6 @@ class GeomBankExecutable(wf.Executable):
     # This outputs a dax file.
     current_retention_level = wf.Executable.FINAL_RESULT
 
-    # This tells us about input file options
-    file_input_options = ['--psd-file', '--asd-file',
-                          '--fake-strain-from-file', '--injection-file',
-                          '--sgburst-injection-file', '--gating-file']
-
-    def create_node(self, analysis_time, geom_out_file, config_file,
-                    out_storage_path, pegasus_base_dir,
-                    workflow_name='geom_bank'):
-        node = wf.Executable.create_node(self)
-        
-        # Output file: This one is done weirdly because this job doesn't
-        # actually produce this file, the resulting dax will do that.
-        node.add_opt('--output-file', geom_out_file.storage_path)
-      
-        node.add_input_opt('--supplement-config-file', config_file)
-
-        node.add_opt('--storage-path-base', out_storage_path)      
-        node.add_opt('--is-sub-workflow','')
-
-        # Intermediate outputs and dax files
-        node.new_output_file_opt(analysis_time, '.hdf',
-                                 '--intermediate-data-file',
-                                 tags=self.tags + ['INTERMEDIATE'])
-        node.new_output_file_opt(analysis_time, '.xml',
-                                 '--metadata-file', 
-                                 tags=self.tags + ['METADATA'])
-        node.new_output_file_opt(analysis_time, '.dax',
-                                 '--dax-filename',
-                                 tags=self.tags + ['DAX'])
-        node.new_output_file_opt(analysis_time, '.map',
-                                 '--map-filename',
-                                 tags=self.tags + ['MAP'])
-        node.new_output_file_opt(analysis_time, '.tc.yml',
-                                 '--transformation-catalog-filename',
-                                 tags=self.tags + ['TRANSFORMATION_CATALOG'])
-        node.new_output_file_opt(analysis_time, '.sc.yml',
-                                 '--site-catalog',
-                                 tags=self.tags + ['SITE_CATALOG'])
-        node.add_opt('--main-workflow-directory', pegasus_base_dir)
-        return node
-
-class SbankDaxGenerator(wf.Executable):
-    """ Class for running pycbc_make_sbank_workflow.
-    """
-    # This outputs a dax file.
-    current_retention_level = wf.Executable.FINAL_RESULT
-
-    # This tells us about input file options
-    file_input_options = []
- 
     def create_node(self, analysis_time, config_file, out_storage_path,
                     output_file, pegasus_base_dir, seed_files=None,
                     workflow_name='sbank_workflow', sub_wf_tags=None):
