@@ -166,11 +166,37 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
     site.add_profiles(Namespace.ENV, key="PEGASUS_HOME", value=peg_home)
     sitecat.add_sites(site)
 
-# Would like to add this, but need to figure out some issues with copy
-# protocol. Probably condorio would be the ideal thing to use here, but that
-# doesn't work with our INSPIRAL 111111/FILENAME.xml LFN schem
+# FIXME: condorio doesn't work with our INSPIRAL 111111/FILENAME.xml LFN scheme
 
-# def add_condorpool_nonfs_site(sitecat, cp):
+def add_condorpool_condortransfer_site(sitecat, cp):
+
+    site = Site("condorpool_condortransfer", arch=Arch.X86_64,
+                os_type=OS.LINUX)
+    add_site_pegasus_profile(site, cp)
+
+    site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
+    site.add_profiles(Namespace.PEGASUS, key="data.configuration",
+                      value="condorio")
+    site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
+                      value="true")
+    site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
+                      value="true")
+    site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
+                      value="False")
+    site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
+                      value="Yes")
+    site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
+                      value="ON_EXIT_OR_EVICT")
+    site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
+    site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
+                      value='"nogrid"')
+    site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN",
+                      value='"False"')
+    site.add_profiles(Namespace.CONDOR, key="+flock_local",
+                      value="True")
+    site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
+    sitecat.add_sites(site)
+
 
 def add_osg_site(sitecat, cp):
     site = Site("osg", arch=Arch.X86_64, os_type=OS.LINUX)
