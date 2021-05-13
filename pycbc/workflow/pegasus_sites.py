@@ -242,6 +242,8 @@ def add_site(sitecat, sitename, cp, out_dir=None):
         add_condorpool_copy_site(sitecat, cp)
     elif sitename == 'condorpool_shared':
         add_condorpool_shared_site(sitecat, cp, out_dir, local_url)
+    elif sitename == 'condorpool_condortransfer':
+        add_condorpool_condortransfer_site(sitecat, cp, out_dir, local_url)
     elif sitename == 'osg':
         add_osg_site(sitecat, cp)
     else:
