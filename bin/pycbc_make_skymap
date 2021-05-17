@@ -97,6 +97,8 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         if ifo not in channel_names:
             channel_names[ifo] = default_channel_name(trig_time, ifo)
 
+    delta_t = 1. / sample_rate
+
     rough_time = int(np.round(trig_time))
 
     window = 1.
@@ -274,7 +276,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         coinc_results['foreground/'+ifo+'/delta_f'] = float(g[1][0])-float(g[0][0])
         coinc_results['foreground/'+ifo+'/event_id'] = 'sngl_inspiral:event_id:'+str(i)
         df = float(g[1][0])-float(g[0][0])
-        dt = 1.0/sample_rate
 
         snr_series_peak = np.argmax(np.absolute(coinc_results['foreground/'+ifo+'/snr_series']))
         SNR=abs(coinc_results['foreground/'+ifo+'/snr_series'][snr_series_peak])
@@ -301,7 +302,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     sumsq_snr = 0.0
     for i,ifo in enumerate(ifos):
         snr_series_peak = np.argmax(np.absolute(coinc_results['foreground/'+ifo+'/snr_series']))
-        coinc_results['foreground/'+ifo+'/end_time'] = start_time + dt*snr_series_peak
+        coinc_results['foreground/'+ifo+'/end_time'] = start_time + delta_t * snr_series_peak
         sumsq_snr += np.power(coinc_results['foreground/'+ifo+'/snr'],2)
 
     coinc_results['foreground/stat'] = np.sqrt(sumsq_snr)
@@ -334,9 +335,9 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             max_bin = peak_bin + window_bins + 1
             min_bin = peak_bin - window_bins
 
-        epoch = time - window_bins*dt
+        epoch = time - window_bins * delta_t
         series = TimeSeries(coinc_results['foreground/'+ifo+'/snr_series'][min_bin:max_bin].astype(np.complex64),
-                            delta_t=dt, epoch=epoch)
+                            delta_t=delta_t, epoch=epoch)
         followup_data[ifo]['snr_series'] = series
 
     kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos + follow_up},
