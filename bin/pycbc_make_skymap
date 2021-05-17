@@ -258,6 +258,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     for i, ifo in enumerate(ifos):
         f = h5py.File(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf",'r')
         g = np.loadtxt(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
+        delta_f = float(g[1][0]) - float(g[0][0])
 
         coinc_results['foreground/'+ifo+'/end_time'] = float(trig_time)
         coinc_results['foreground/'+ifo+'/mass1'] = mass1
@@ -272,9 +273,8 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         coinc_results['foreground/'+ifo+'/template_id'] = i
         coinc_results['foreground/'+ifo+'/snr_series'] = f['snr'][()]
         coinc_results['foreground/'+ifo+'/psd_series'] = g[:,1] * pycbc.DYN_RANGE_FAC ** 2.0
-        coinc_results['foreground/'+ifo+'/delta_f'] = float(g[1][0])-float(g[0][0])
+        coinc_results['foreground/'+ifo+'/delta_f'] = delta_f
         coinc_results['foreground/'+ifo+'/event_id'] = 'sngl_inspiral:event_id:'+str(i)
-        df = float(g[1][0])-float(g[0][0])
 
         snr_series_peak = np.argmax(np.absolute(coinc_results['foreground/'+ifo+'/snr_series']))
         SNR=abs(coinc_results['foreground/'+ifo+'/snr_series'][snr_series_peak])
@@ -288,8 +288,8 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
         coinc_results['foreground/'+ifo+'/snr'] = SNR
         coinc_results['foreground/'+ifo+'/sigmasq'] = \
-                sigmasq(FrequencySeries(np.complex128(f['template'][()]), delta_f=df),
-                        psd=FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'], delta_f=df))
+                sigmasq(FrequencySeries(np.complex128(f['template'][()]), delta_f=delta_f),
+                        psd=FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'], delta_f=delta_f))
         coinc_results['foreground/'+ifo+'/coa_phase'] = coa_phase
         coinc_results['foreground/'+ifo+'/chisq'] = chisq
 
@@ -316,9 +316,9 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
         time = coinc_results['foreground/'+ifo+'/end_time']
 
-        fseries = FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'], delta_f=df)
+        fseries = FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'],
+                                  delta_f=delta_f)
         fseries = interpolate(fseries, 0.25)
-
         followup_data[ifo]['psd'] = fseries
 
         peak_bin = int(sample_rate * (time - start_time))
