@@ -82,10 +82,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         raise RuntimeError('a GraceDB URL must be specified if not a test event.')
 
     tmpdir = tempfile.mkdtemp()
-    coinc_results = {}
-    follow_up = []
-    followup_data = {}
-    procs = []
 
     if frame_types is None:
         frame_types = {}
@@ -141,8 +137,8 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     highpass_frequency = int(f_low * 0.7)
     logging.info("Setting highpass: %s Hz", highpass_frequency)
 
+    procs = []
     for i, ifo in enumerate(ifos):
-        followup_data[ifo] = {}
         command = ["pycbc_single_template",
         "--verbose",
         "--segment-length", str(segment_length),
@@ -255,6 +251,8 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
     logging.info('Gathering info from pycbc_single_template results')
 
+    coinc_results = {}
+    follow_up = []
     for i, ifo in enumerate(ifos):
         f = h5py.File(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf",'r')
         g = np.loadtxt(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
@@ -309,6 +307,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
     subthreshold_sngl_time = np.mean([coinc_results['foreground/%s/end_time' % ifo] for ifo in ifos])
 
+    followup_data = {}
     for ifo in ifos + follow_up:
 
         if ifo in follow_up:
@@ -319,7 +318,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         fseries = FrequencySeries(coinc_results['foreground/'+ifo+'/psd_series'],
                                   delta_f=delta_f)
         fseries = interpolate(fseries, 0.25)
-        followup_data[ifo]['psd'] = fseries
+        followup_data[ifo] = {'psd': fseries}
 
         peak_bin = int(sample_rate * (time - start_time))
         max_bin = peak_bin + window_bins + 1
