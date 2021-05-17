@@ -164,18 +164,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         "--pad-data", "8",
         "--chisq-bins",'0.72*get_freq("fSEOBNRv4Peak",params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7']
 
-        coinc_results['foreground/'+ifo+'/end_time'] = float(trig_time)
-        coinc_results['foreground/'+ifo+'/mass1'] = mass1
-        coinc_results['foreground/'+ifo+'/mass2'] = mass2
-        coinc_results['foreground/'+ifo+'/spin1z'] = spin1z
-        coinc_results['foreground/'+ifo+'/spin2z'] = spin2z
-        coinc_results['foreground/'+ifo+'/f_lower'] = f_low
-        if f_upper:
-            coinc_results['foreground/'+ifo+'/f_final'] = f_upper
-        coinc_results['foreground/'+ifo+'/window'] = window
-        coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
-        coinc_results['foreground/'+ifo+'/template_id'] = i
-
         command.append("--approximant")
         for apx in approximant:
             command.append(apx)
@@ -271,6 +259,17 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         f = h5py.File(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf",'r')
         g = np.loadtxt(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
 
+        coinc_results['foreground/'+ifo+'/end_time'] = float(trig_time)
+        coinc_results['foreground/'+ifo+'/mass1'] = mass1
+        coinc_results['foreground/'+ifo+'/mass2'] = mass2
+        coinc_results['foreground/'+ifo+'/spin1z'] = spin1z
+        coinc_results['foreground/'+ifo+'/spin2z'] = spin2z
+        coinc_results['foreground/'+ifo+'/f_lower'] = f_low
+        if f_upper:
+            coinc_results['foreground/'+ifo+'/f_final'] = f_upper
+        coinc_results['foreground/'+ifo+'/window'] = window
+        coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
+        coinc_results['foreground/'+ifo+'/template_id'] = i
         coinc_results['foreground/'+ifo+'/snr_series'] = f['snr'][()]
         coinc_results['foreground/'+ifo+'/psd_series'] = g[:,1] * pycbc.DYN_RANGE_FAC ** 2.0
         coinc_results['foreground/'+ifo+'/delta_f'] = float(g[1][0])-float(g[0][0])
