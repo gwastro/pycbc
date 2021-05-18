@@ -252,7 +252,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     logging.info('Gathering info from pycbc_single_template results')
 
     coinc_results = {}
-    follow_up = []
+    subthreshold_ifos = []
     sumsq_snr = 0.
     for i, ifo in enumerate(ifos):
         strf_path = tmpdir + "/SNRTS_" + str(rough_time) + "_" + ifo + ".hdf"
@@ -291,7 +291,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         logging.info('%s SNR: %.2f', ifo, SNR)
 
         if SNR < thresh_SNR:
-            follow_up.append(ifo)
+            subthreshold_ifos.append(ifo)
             continue
 
         coinc_results[key + 'end_time'] = start_time + delta_t * snr_series_peak
@@ -301,7 +301,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
         sumsq_snr += SNR ** 2
 
-    ifos = [x for x in ifos if x not in follow_up]
+    ifos = sorted(set(ifos) - set(subthreshold_ifos))
     if not ifos:
         raise RuntimeError('all interferometers have SNR below threshold.'
                            ' Is this really a candidate event?')
@@ -312,10 +312,10 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     subthreshold_sngl_time = np.mean([coinc_results['foreground/%s/end_time' % ifo] for ifo in ifos])
 
     followup_data = {}
-    for ifo in ifos + follow_up:
+    for ifo in ifos + subthreshold_ifos:
         key = 'foreground/{}/'.format(ifo)
 
-        if ifo in follow_up:
+        if ifo in subthreshold_ifos:
             coinc_results[key + 'end_time'] = subthreshold_sngl_time
 
         time = coinc_results[key + 'end_time']
@@ -343,7 +343,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
                             delta_t=delta_t, epoch=epoch)
         followup_data[ifo]['snr_series'] = series
 
-    kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos + follow_up},
+    kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos + subthreshold_ifos},
               'low_frequency_cutoff': f_low,
               'high_frequency_cutoff': f_upper,
               'followup_data': followup_data,
