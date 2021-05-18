@@ -266,7 +266,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     coinc_results = {}
     subthreshold_ifos = []
     network_snr2 = 0.
-    for i, ifo in enumerate(ifos):
+    for ifo in ifos:
         with h5py.File(st_out_paths[ifo], 'r') as strf:
             snr_series = strf['snr'][()]
             chisq_series = strf['chisq'][:]
@@ -289,11 +289,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         coinc_results[key + 'sigmasq'] = sigmasq(
                 FrequencySeries(np.complex128(template_series), delta_f=delta_f),
                 FrequencySeries(coinc_results[key + 'psd_series'], delta_f=delta_f))
-        # FIXME are the following actually needed?
-        coinc_results[key + 'window'] = window
-        coinc_results[key + 'sample_rate'] = int(sample_rate)
-        coinc_results[key + 'delta_f'] = delta_f
-        coinc_results[key + 'event_id'] = 'sngl_inspiral:event_id:'+str(i)
 
         snr_series_peak = np.argmax(abs(snr_series))
         snr = abs(snr_series[snr_series_peak])
