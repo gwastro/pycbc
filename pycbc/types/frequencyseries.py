@@ -585,9 +585,9 @@ def load_frequencyseries(path, group=None):
     ones are assumed to contain the real and imaginary parts of a complex
     frequency series.
 
-    For HDF files, the dataset is assumed to contain the attributes `delta_f`
-    and `epoch`, which should contain respectively the frequency resolution in
-    Hz and the start GPS time of the data.
+    For HDF files, the dataset is assumed to contain the attribute `delta_f`
+    giving the frequency resolution in Hz. The attribute `epoch`, if present,
+    is taken as the start GPS time (epoch) of the data in the series.
 
     The default data types will be double precision floating point.
 
@@ -616,17 +616,19 @@ def load_frequencyseries(path, group=None):
         key = 'data' if group is None else group
         with h5py.File(path, 'r') as f:
             data = f[key][:]
-            series = FrequencySeries(data, delta_f=f[key].attrs['delta_f'],
-                                     epoch=f[key].attrs['epoch'])
+            delta_f = f[key].attrs['delta_f']
+            epoch = f[key].attrs['epoch'] if 'epoch' in f[key].attrs else None
+            series = FrequencySeries(data, delta_f=delta_f, epoch=epoch)
         return series
     else:
         raise ValueError('Path must end with .npy, .hdf, or .txt')
 
     delta_f = (data[-1][0] - data[0][0]) / (len(data) - 1)
     if data.ndim == 2:
-        return FrequencySeries(data[:,1], delta_f=delta_f)
+        return FrequencySeries(data[:,1], delta_f=delta_f, epoch=None)
     elif data.ndim == 3:
-        return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f)
+        return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f,
+                               epoch=None)
 
     raise ValueError('File has %s dimensions, cannot convert to FrequencySeries, \
                       must be 2 (real) or 3 (complex)' % data.ndim)
