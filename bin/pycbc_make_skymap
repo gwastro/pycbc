@@ -5,6 +5,7 @@ Runs a single-template matched filter on strain data from a number of detectors
 and calls BAYESTAR to produce a sky localization from the resulting set of SNR
 time series."""
 
+import os
 import argparse
 import logging
 import subprocess
@@ -138,6 +139,8 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     logging.info("Setting highpass: %s Hz", highpass_frequency)
 
     procs = []
+    st_psd_paths = {}
+    st_out_paths = {}
     for ifo in ifos:
         command = ["pycbc_single_template",
         "--verbose",
@@ -226,12 +229,17 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append("--channel-name")
         command.append(channel_names[ifo])
 
+        st_psd_paths[ifo] = os.path.join(
+                tmpdir, 'PSD_{}_{}.txt'.format(rough_time, ifo)
         command.append("--psd-output")
-        command.append(tmpdir+"/PSD_"+str(rough_time)+"_"+ifo+".txt")
+        command.append(st_psd_paths[ifo])
+        st_out_paths[ifo] = os.path.join(
+                tmpdir, 'SNRTS_{}_{}.hdf'.format(rough_time, ifo))
         command.append("--output-file")
-        command.append(tmpdir+"/SNRTS_"+str(rough_time)+"_"+ifo+".hdf")
+        command.append(st_out_paths[ifo])
 
-        log_path = tmpdir + '/pycbc_single_template_{}_{}_log.txt'.format(str(rough_time), ifo)
+        log_path = os.path.join(
+                tmpdir, 'pycbc_single_template_{}_{}_log.txt'.format(str(rough_time), ifo))
         log_file = open(log_path, 'w')
         log_file.write(' '.join(command) + '\n\n')
         log_file.flush()
@@ -259,13 +267,11 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     subthreshold_ifos = []
     network_snr2 = 0.
     for i, ifo in enumerate(ifos):
-        strf_path = tmpdir + "/SNRTS_" + str(rough_time) + "_" + ifo + ".hdf"
-        with h5py.File(strf_path, 'r') as strf:
+        with h5py.File(st_out_paths[ifo], 'r') as strf:
             snr_series = strf['snr'][()]
             chisq_series = strf['chisq'][:]
             template_series = strf['template'][()]
-        psd_path = tmpdir + "/PSD_" + str(rough_time) + "_" + ifo + ".txt"
-        psd = np.loadtxt(psd_path)
+        psd = np.loadtxt(st_psd_paths[ifo])
         delta_f = float(psd[1][0]) - float(psd[0][0])
 
         key = 'foreground/{}/'.format(ifo)
@@ -356,7 +362,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
     doc = live.SingleCoincForGraceDB(ifos, coinc_results, **kwargs)
 
-    ligolw_file_path = tmpdir + '/' + str(rough_time) + '.xml'
+    ligolw_file_path = os.path.join(tmpdir, str(rough_time) + '.xml')
 
     if gracedb_server:
         comments = ['Manual followup up from PyCBC']
@@ -376,38 +382,38 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         spin1z=spin1z,
         spin2z=spin2z)
 
-    approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0]
+    bs_approximant = waveform.bank.parse_approximant_arg(approximant, row)[0]
 
     # BAYESTAR uses TaylorF2 instead of SPAtmplt
-    if approximant == 'SPAtmplt':
-        approximant = 'TaylorF2'
+    if bs_approximant == 'SPAtmplt':
+        bs_approximant = 'TaylorF2'
 
     # run BAYESTAR to generate the skymap
 
     cmd = ['bayestar-localize-coincs',
            ligolw_file_path,
            ligolw_file_path, 
-           '--waveform', str(approximant),
+           '--waveform', str(bs_approximant),
            '--f-low', str(f_low),
            '-o', tmpdir]
     subprocess.call(cmd)
 
-    skymap_fits_name = tmpdir + '/0.fits'
+    skymap_fits_name = os.path.join(tmpdir, '0.fits')
 
     # plot the skymap
 
-    skymap_plot_name = tmpdir + '/' + str(rough_time) + '_skymap.png'
+    skymap_plot_path = os.path.join(ligolw_skymap_output,
+                                    str(rough_time) + '_skymap.png')
     cmd = ['ligo-skymap-plot',
            skymap_fits_name,
-           '-o', skymap_plot_name,
+           '-o', skymap_plot_path,
            '--contour', '50', '90',
            '--annotate']
     subprocess.call(cmd)
 
-    final_fits_dir = ligolw_skymap_output + '/' + str(rough_time) + '.fits'
-    final_png_dir = ligolw_skymap_output + '/' + str(rough_time) + '_skymap.png'
-    shutil.move(skymap_fits_name, final_fits_dir)
-    shutil.move(skymap_plot_name, final_png_dir)
+    final_fits_path = os.path.join(ligolw_skymap_output,
+                                   str(rough_time) + '.fits')
+    shutil.move(skymap_fits_name, final_fits_path)
 
     if gracedb_server:
         gracedb.writeLog(gid, 'Bayestar skymap FITS file upload',
