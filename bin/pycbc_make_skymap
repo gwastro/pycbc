@@ -230,7 +230,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append(channel_names[ifo])
 
         st_psd_paths[ifo] = os.path.join(
-                tmpdir, 'PSD_{}_{}.txt'.format(rough_time, ifo)
+                tmpdir, 'PSD_{}_{}.txt'.format(rough_time, ifo))
         command.append("--psd-output")
         command.append(st_psd_paths[ifo])
         st_out_paths[ifo] = os.path.join(
@@ -283,7 +283,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         if f_upper:
             coinc_results[key + 'f_final'] = f_upper
         # required by SingleCoincForGraceDB
-        coinc_results[key + 'template_id'] = None
+        coinc_results[key + 'template_id'] = 0
         coinc_results[key + 'snr_series'] = snr_series
         coinc_results[key + 'psd_series'] = psd[:,1] * pycbc.DYN_RANGE_FAC ** 2.0
         coinc_results[key + 'sigmasq'] = sigmasq(
