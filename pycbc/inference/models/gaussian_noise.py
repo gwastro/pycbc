@@ -124,7 +124,6 @@ class BaseGaussianNoise(BaseDataModel):
                                                 **kwargs)
         self.ignore_failed_waveforms = ignore_failed_waveforms
         self.no_save_data = no_save_data
-
         # check if low frequency cutoff has been provided for every IFO with
         # data
         for ifo in self.data:
@@ -175,6 +174,7 @@ class BaseGaussianNoise(BaseDataModel):
 
         # store the psds and calculate the inner product weight
         self._psds = {}
+        self._invpsds = {}
         self._weight = {}
         self._lognorm = {}
         self._det_lognls = {}
@@ -242,6 +242,7 @@ class BaseGaussianNoise(BaseDataModel):
             raise ValueError("high frequency cutoff not set")
         # make sure the relevant caches are cleared
         self._psds.clear()
+        self._invpsds.clear()
         self._weight.clear()
         self._lognorm.clear()
         self._det_lognls.clear()
@@ -256,14 +257,15 @@ class BaseGaussianNoise(BaseDataModel):
                 p = psds[det].copy()
             self._psds[det] = p
             # we'll store the weight to apply to the inner product
-            w = Array(numpy.zeros(len(p)))
             # only set weight in band we will analyze
             kmin = self._kmin[det]
             kmax = self._kmax[det]
-            w[kmin:kmax] = numpy.sqrt(4.*p.delta_f/p[kmin:kmax])
-            self._weight[det] = w
+            invp = FrequencySeries(numpy.zeros(len(p)), delta_f=p.delta_f)
+            invp[kmin:kmax] = 1./p[kmin:kmax]
+            self._invpsds[det] = invp
+            self._weight[det] = numpy.sqrt(4 * invp.delta_f * invp)
             self._whitened_data[det] = d.copy()
-            self._whitened_data[det][kmin:kmax] *= w[kmin:kmax]
+            self._whitened_data[det] *= self._weight[det]
         # set the lognl and lognorm; we'll get this by just calling lognl
         _ = self.lognl
 
@@ -562,6 +564,11 @@ class BaseGaussianNoise(BaseDataModel):
             # convert to frequency domain and get psds
             stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
                                                          psd_strain_dict)
+            logging.info('Calculating psds using filter psd')
+            psds = {}
+            for det, d in psd_strain_dict.items():
+                psds[det] = d.filter_psd(opts.psd_segment_length[det],
+                                         strain_dict[det].delta_f, 0.)
             # save the psd data segments if the psd was estimated from data
             if opts.psd_estimation is not None:
                 _tdict = psd_strain_dict or strain_dict
@@ -869,7 +876,7 @@ class GaussianNoise(BaseGaussianNoise):
                 # the inner products
                 cplx_hd = self._whitened_data[det][slc].inner(h[slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
-            cplx_loglr = cplx_hd - 0.5*hh
+            cplx_loglr = cplx_hd - 0.5 * hh
             # store
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh)
             setattr(self._current_stats, '{}_cplx_loglr'.format(det),
@@ -923,6 +930,7 @@ class GaussianNoise(BaseGaussianNoise):
             self._loglr()
             # now try returning again
             return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
+
 
 #
 # =============================================================================
