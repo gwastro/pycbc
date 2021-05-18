@@ -138,7 +138,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     logging.info("Setting highpass: %s Hz", highpass_frequency)
 
     procs = []
-    for i, ifo in enumerate(ifos):
+    for ifo in ifos:
         command = ["pycbc_single_template",
         "--verbose",
         "--segment-length", str(segment_length),
@@ -170,14 +170,16 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         command.append("--spin2z"),command.append(str(spin2z))
         command.append("--low-frequency-cutoff"),command.append(str(f_low))
         if f_upper:
-            command.append("--high-frequency-cutoff"),command.append(str(f_upper))
+            command.append("--high-frequency-cutoff")
+            command.append(str(f_upper))
         command.append("--gps-start-time"),command.append(str(gps_start_time))
         command.append("--gps-end-time"),command.append(str(gps_end_time))
         command.append("--trigger-time"),command.append(str(np.round(trig_time,5)))
         command.append("--window"),command.append(str(window))
 
         if injection_file:
-            command.append("--injection-file"),command.append(injection_file)
+            command.append("--injection-file")
+            command.append(injection_file)
 
         if fake_strain[ifo] is not None:
             command.append("--fake-strain")
@@ -185,7 +187,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             if fake_strain_seed[ifo] is not None:
                 command.append("--fake-strain-seed")
                 command.append(str(fake_strain_seed[ifo]))
-
         else:
             if custom_frame_files is None or ifo not in custom_frame_files:
                 command.append("--frame-type")
@@ -253,7 +254,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
     coinc_results = {}
     subthreshold_ifos = []
-    sumsq_snr = 0.
+    network_snr2 = 0.
     for i, ifo in enumerate(ifos):
         strf_path = tmpdir + "/SNRTS_" + str(rough_time) + "_" + ifo + ".hdf"
         with h5py.File(strf_path, 'r') as strf:
@@ -286,30 +287,32 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         coinc_results[key + 'event_id'] = 'sngl_inspiral:event_id:'+str(i)
 
         snr_series_peak = np.argmax(abs(snr_series))
-        SNR = abs(snr_series[snr_series_peak])
+        snr = abs(snr_series[snr_series_peak])
         coa_phase = np.angle(snr_series[snr_series_peak])
-        logging.info('%s SNR: %.2f', ifo, SNR)
+        logging.info('%s SNR: %.2f', ifo, snr)
 
-        if SNR < thresh_SNR:
+        if snr < thresh_SNR:
             subthreshold_ifos.append(ifo)
             continue
 
         coinc_results[key + 'end_time'] = start_time + delta_t * snr_series_peak
-        coinc_results[key + 'snr'] = SNR
+        coinc_results[key + 'snr'] = snr
         coinc_results[key + 'coa_phase'] = coa_phase
         coinc_results[key + 'chisq'] = chisq_series[snr_series_peak]
 
-        sumsq_snr += SNR ** 2
+        network_snr2 += snr ** 2
 
     ifos = sorted(set(ifos) - set(subthreshold_ifos))
     if not ifos:
         raise RuntimeError('all interferometers have SNR below threshold.'
                            ' Is this really a candidate event?')
 
-    coinc_results['foreground/stat'] = sumsq_snr ** 0.5
+    coinc_results['foreground/stat'] = network_snr2 ** 0.5
     coinc_results['foreground/ifar'] = ifar
 
-    subthreshold_sngl_time = np.mean([coinc_results['foreground/%s/end_time' % ifo] for ifo in ifos])
+    # BAYESTAR's convention for end time of subthreshold detectors
+    subthreshold_sngl_time = np.mean(
+            [coinc_results['foreground/%s/end_time' % ifo] for ifo in ifos])
 
     followup_data = {}
     for ifo in ifos + subthreshold_ifos:
@@ -318,13 +321,12 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         if ifo in subthreshold_ifos:
             coinc_results[key + 'end_time'] = subthreshold_sngl_time
 
-        time = coinc_results[key + 'end_time']
-
         fseries = FrequencySeries(coinc_results[key + 'psd_series'],
                                   delta_f=delta_f)
         fseries = interpolate(fseries, 0.25)
         followup_data[ifo] = {'psd': fseries}
 
+        time = coinc_results[key + 'end_time']
         peak_bin = int(sample_rate * (time - start_time))
         max_bin = peak_bin + window_bins + 1
         if max_bin > coinc_results[key + 'snr_series'].size:
