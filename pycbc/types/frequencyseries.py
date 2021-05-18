@@ -576,7 +576,8 @@ class FrequencySeries(Array):
 
 def load_frequencyseries(path, group=None):
     """Load a FrequencySeries from an HDF5, ASCII or Numpy file. The file type
-    is inferred from the file extension, which must be `.hdf`, `.txt` or `.npy`.
+    is inferred from the file extension, which must be `.hdf`, `.txt` or
+    `.npy`.
 
     For ASCII and Numpy files, the first column of the array is assumed to
     contain the frequency. If the array has two columns, a real frequency
