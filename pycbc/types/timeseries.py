@@ -1040,7 +1040,7 @@ def load_timeseries(path, group=None):
     series.
 
     For HDF files, the dataset is assumed to contain the attributes `delta_t`
-    and `epoch`, which should contain respectively the sampling period in
+    and `start_time`, which should contain respectively the sampling period in
     seconds and the start GPS time of the data.
 
     The default data types will be double precision floating point.
