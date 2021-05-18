@@ -50,8 +50,6 @@ def default_frame_type(time, ifo):
 def default_channel_name(time, ifo):
     """Sensible defaults for channel name based on interferometer and time.
     """
-    if opt.fake_strain:
-        return ifo + ':FAKE_DATA'
     if time < 1137254517:
         # O1
         if ifo in ['H1', 'L1']:
@@ -92,7 +90,10 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         if ifo not in frame_types:
             frame_types[ifo] = default_frame_type(trig_time, ifo)
         if ifo not in channel_names:
-            channel_names[ifo] = default_channel_name(trig_time, ifo)
+            if fake_strain[ifo] is not None:
+                channel_names[ifo] = ifo + ':FAKE_DATA'
+            else:
+                channel_names[ifo] = default_channel_name(trig_time, ifo)
 
     delta_t = 1. / sample_rate
 
@@ -197,7 +198,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             command.append(frame_types[ifo])
         else:
             # use custom frame files for this ifo
-            # FIXME assumes particular channel names in the custom frame files
             logging.info("Check if the segment in the custom frame file is safe")
             fr_start_times = []
             fr_end_times = []
