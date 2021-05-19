@@ -118,6 +118,19 @@ def _scheme_matches_base_array(array):
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
+def check_same_len_precision(a, b):
+    """Check that the two arguments have the same length and precision.
+    Raises ValueError if they do not.
+    """
+    if len(a) != len(b):
+        msg = 'lengths do not match ({} vs {})'.format(
+                len(a), len(b))
+        raise ValueError(msg)
+    if a.precision != b.precision:
+        msg = 'precisions do not match ({} vs {})'.format(
+                a.precision, b.precision)
+        raise TypeError(msg)
+
 class Array(object):
     """Array used to do numeric calculations on a various compute
     devices. It is a convience wrapper around numpy, and
@@ -249,13 +262,9 @@ class Array(object):
                 other = force_precision_to_match(other, self.precision)
                 nargs +=(other,)
             elif isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
-                    raise ValueError('lengths do not match')
-                if other.precision == self.precision:
-                    _convert_to_scheme(other)
-                    nargs += (other._data,)
-                else:
-                    raise TypeError('precisions do not match')
+                check_same_len_precision(self, other)
+                _convert_to_scheme(other)
+                nargs += (other._data,)
             else:
                 return NotImplemented
 
@@ -267,30 +276,22 @@ class Array(object):
         for other in args:
             self._typecheck(other)  
             if isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
-                    raise ValueError('lengths do not match')
-                if other.precision == self.precision:
-                    _convert_to_scheme(other)
-                    nargs += (other._data,)
-                else:
-                    raise TypeError('precisions do not match')
+                check_same_len_precision(self, other)
+                _convert_to_scheme(other)
+                nargs += (other._data,)
             else:
                 raise TypeError('array argument required')                    
 
         return fn(self,*nargs) # pylint:disable=not-callable
         
     @decorator  
-    def _vrcheckother(fn, self,*args):
+    def _vrcheckother(fn, self, *args):
         nargs = ()
         for other in args:
             if isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
-                    raise ValueError('lengths do not match')
-                if other.precision == self.precision:
-                    _convert_to_scheme(other)
-                    nargs += (other._data,)
-                else:
-                    raise TypeError('precisions do not match')
+                check_same_len_precision(self, other)
+                _convert_to_scheme(other)
+                nargs += (other._data,)
             else:
                 raise TypeError('array argument required')                    
 
@@ -305,15 +306,11 @@ class Array(object):
                 raise TypeError('dtypes are incompatible')
             other = force_precision_to_match(other, self.precision)
         elif isinstance(other, type(self)) or type(other) is Array:
-            if len(other) != len(self):
-                raise ValueError('lengths do not match')
+            check_same_len_precision(self, other)
             if self.kind == 'real' and other.kind == 'complex':
                 raise TypeError('dtypes are incompatible')
-            if other.precision == self.precision:
-                _convert_to_scheme(other)
-                other = other._data
-            else:
-                raise TypeError('precisions do not match')
+            _convert_to_scheme(other)
+            other = other._data
         else:
             return NotImplemented
 
