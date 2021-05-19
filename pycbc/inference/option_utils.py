@@ -170,7 +170,7 @@ def add_plot_posterior_option_group(parser):
                         help="Percentiles to draw lines at on the 1D "
                              "histograms.")
     pgroup.add_argument('--no-marginal-lines', action='store_true',
-                        default=True,
+                        default=False,
                         help="Do not add vertical lines in the 1D marginal "
                              "plots showing the marginal percentiles.")
     pgroup.add_argument("--plot-scatter", action='store_true', default=False,
