@@ -70,7 +70,7 @@ def default_channel_name(time, ifo):
 
 def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          ifar, ifos, thresh_SNR, ligolw_skymap_output='.',
-         ligolw_event_output=None, snr_series_duration=0.15,
+         ligolw_event_output=None, snr_series_duration=0.1465,
          frame_types=None, channel_names=None,
          segment_server=None,
          gracedb_server=None, test_event=True,
@@ -95,12 +95,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             else:
                 channel_names[ifo] = default_channel_name(trig_time, ifo)
 
-    delta_t = 1. / sample_rate
-
     rough_time = int(np.round(trig_time))
-
-    window = 1.
-    start_time = trig_time - window
 
     # parameters to fit a single-template inspiral job nicely
     # around the trigger time, without requiring too much data
@@ -143,6 +138,12 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     st_psd_paths = {}
     st_out_paths = {}
     for ifo in ifos:
+        # compose the command line for the single-template process
+        st_psd_paths[ifo] = os.path.join(
+                tmpdir, 'PSD_{}_{}.txt'.format(rough_time, ifo))
+        st_out_paths[ifo] = os.path.join(
+                tmpdir, 'SNRTS_{}_{}.hdf'.format(rough_time, ifo))
+
         command = ["pycbc_single_template",
         "--verbose",
         "--segment-length", str(segment_length),
@@ -162,24 +163,27 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         "--autogating-pad","16",
         "--strain-high-pass", str(highpass_frequency),
         "--pad-data", "8",
-        "--chisq-bins",'0.72*get_freq("fSEOBNRv4Peak",params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7']
+        "--chisq-bins",'0.72*get_freq("fSEOBNRv4Peak",params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7',
+        "--sample-rate", str(int(sample_rate)),
+        "--mass1", str(mass1),
+        "--mass2", str(mass2),
+        "--spin1z", str(spin1z),
+        "--spin2z", str(spin2z),
+        "--low-frequency-cutoff", str(f_low),
+        "--gps-start-time", str(gps_start_time),
+        "--gps-end-time", str(gps_end_time),
+        "--trigger-time", '{:.5f}'.format(trig_time),
+        "--window", '1',
+        "--channel-name", channel_names[ifo],
+        "--psd-output", st_psd_paths[ifo],
+        "--output-file", st_out_paths[ifo]]
 
         command.append("--approximant")
         for apx in approximant:
             command.append(apx)
-        command.append("--sample-rate"),command.append(str(int(sample_rate)))
-        command.append("--mass1"),command.append(str(mass1))
-        command.append("--mass2"),command.append(str(mass2))
-        command.append("--spin1z"),command.append(str(spin1z))
-        command.append("--spin2z"),command.append(str(spin2z))
-        command.append("--low-frequency-cutoff"),command.append(str(f_low))
         if f_upper:
             command.append("--high-frequency-cutoff")
             command.append(str(f_upper))
-        command.append("--gps-start-time"),command.append(str(gps_start_time))
-        command.append("--gps-end-time"),command.append(str(gps_end_time))
-        command.append("--trigger-time"),command.append(str(np.round(trig_time,5)))
-        command.append("--window"),command.append(str(window))
 
         if injection_file:
             command.append("--injection-file")
@@ -226,24 +230,15 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             for custom_frame in custom_frame_files[ifo]:
                 command.append(custom_frame)
 
-        command.append("--channel-name")
-        command.append(channel_names[ifo])
-
-        st_psd_paths[ifo] = os.path.join(
-                tmpdir, 'PSD_{}_{}.txt'.format(rough_time, ifo))
-        command.append("--psd-output")
-        command.append(st_psd_paths[ifo])
-        st_out_paths[ifo] = os.path.join(
-                tmpdir, 'SNRTS_{}_{}.hdf'.format(rough_time, ifo))
-        command.append("--output-file")
-        command.append(st_out_paths[ifo])
-
+        # create and open a file to record the
+        # single-template process' stdout and stderr
         log_path = os.path.join(
                 tmpdir, 'pycbc_single_template_{}_{}_log.txt'.format(str(rough_time), ifo))
         log_file = open(log_path, 'w')
         log_file.write(' '.join(command) + '\n\n')
         log_file.flush()
 
+        # start the single-template process
         proc = subprocess.Popen(command, stdout=log_file, stderr=log_file)
         procs.append((ifo, proc, log_path, log_file))
 
