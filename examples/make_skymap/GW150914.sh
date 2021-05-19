@@ -9,3 +9,4 @@ pycbc_make_skymap \
     --ifos H1 L1 \
     --ligolw-event-output coinc_GW150914.xml
 
+~/projects/o3a_final_pycbc_skymaps/plot_ligolw_snr_timeseries.py coinc_GW150914.xml snr_series_

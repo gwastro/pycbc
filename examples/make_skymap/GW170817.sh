@@ -19,3 +19,5 @@ ligo-skymap-plot \
     --annotate \
     --radec 197.4500 -23.3814 \
     1187008882.fits
+
+~/projects/o3a_final_pycbc_skymaps/plot_ligolw_snr_timeseries.py coinc_GW170817.xml snr_series_
