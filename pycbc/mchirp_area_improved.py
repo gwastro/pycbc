@@ -13,7 +13,7 @@ import numpy as np
 from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 from scipy.integrate import quad
 from pycbc.cosmology import _redshift
-
+from astropy.cosmology import FlatLambdaCDM
 
 def insert_args(parser):
     mchirp_group = parser.add_argument_group("Arguments for estimating the "
@@ -56,6 +56,11 @@ def insert_args(parser):
                               action='store_true',
                               help='Gives separate probabilities for each kind'
                                    ' of mass gap CBC sources: GNS, GG, BHG.')
+    mchirp_group.add_argument('--src-class-lal-cosmology',
+                              action='store_true',
+                              help='Uses the Planck15 cosmology defined in '
+                                   'lalsuite instead of the astropy Planck15 '
+                                   'default model.')
 
 
 def from_cli(args):
@@ -67,8 +72,27 @@ def from_cli(args):
                                  'b0': args.src_class_lum_distance_to_delta[0],
                                  'b1': args.src_class_lum_distance_to_delta[1],
                                  'm0': args.src_class_mchirp_to_delta},
-            'mass_gap': args.src_class_mass_gap_separate}
+            'mass_gap': args.src_class_mass_gap_separate,
+            'lal_cosmology': args.src_class_lal_cosmology}
 
+def redshift_estimation(distance, distance_std, lal_cosmology):
+    """Takes values of distance and its uncertainty and returns a
+       dictionary with estimates of the redshift and its uncertainty.
+       If the argument 'lal_cosmology' is True, it uses Planck15 cosmology
+       model as defined in lalsuite instead of the astropy default.
+    """
+    if lal_cosmology:
+        cosmology = FlatLambdaCDM(H0=67.90, Om0=0.3065)
+    else:
+        cosmology = None
+    z_estimation = _redshift(distance, cosmology=cosmology)
+    z_est_max = _redshift((distance + distance_std),
+                          cosmology=cosmology)
+    z_est_min = _redshift((distance - distance_std),
+                          cosmology=cosmology)
+    z_std_estimation = 0.5 * (z_est_max - z_est_min)
+    z = {'central': z_estimation, 'delta': z_std_estimation}
+    return z
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     """Takes values of redshift, redshift uncertainty, detector mass and its
@@ -92,7 +116,6 @@ def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
     """
     Returns the area under the chirp mass contour in a region of the m1m2
     plane (m1 > m2)
-
     Parameters
     ----------
     trig_mc : sequence of two values
@@ -102,11 +125,9 @@ def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
         upper and lower horizontal limits of the region (limits on m2)
     lim_v1, lim_v2 : floats
         right and left vertical limits of the region (limits on m1)
-
     Returns
     -------
     area : float
-
     """
     mc_max = trig_mc[0] + trig_mc[1]
     mc_min = trig_mc[0] - trig_mc[1]
@@ -194,11 +215,8 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     dist_estimation = coeff['a0'] * eff_distance
     dist_std_estimation = (dist_estimation * math.exp(coeff['b0']) *
                            snr ** coeff['b1'])
-    z_estimation = _redshift(dist_estimation)
-    z_est_max = _redshift(dist_estimation + dist_std_estimation)
-    z_est_min = _redshift(dist_estimation - dist_std_estimation)
-    z_std_estimation = 0.5 * (z_est_max - z_est_min)
-    z = {'central': z_estimation, 'delta': z_std_estimation}
+    z = redshift_estimation(dist_estimation, dist_std_estimation,
+                            src_args['lal_cosmology'])
     mass_gap = src_args['mass_gap']
 
     # If the mchirp is greater than the mchirp corresponding to two masses
@@ -216,4 +234,3 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
         total_area = sum(areas.values())
         probabilities = {key: areas[key]/total_area for key in areas}
     return probabilities
-
