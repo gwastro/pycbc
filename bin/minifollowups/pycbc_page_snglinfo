@@ -130,8 +130,8 @@ elif args.sngl_ranking == "newsnr_sgveto_psdvar":
 elif args.sngl_ranking == "snr":
     sngl_stat_name = "SNR"
 else:
-    sngl_stat_name = ranking_statistic
- 
+    sngl_stat_name = args.sngl_ranking
+
 if args.ranking_statistic in ["quadsum", "single_ranking_only"]:
     stat_name = sngl_stat_name
 else:
