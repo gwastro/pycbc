@@ -72,7 +72,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          ifar, ifos, thresh_SNR, ligolw_skymap_output='.',
          ligolw_event_output=None, snr_series_duration=0.1465,
          frame_types=None, channel_names=None,
-         segment_server=None,
+         segment_source=None, segment_server=None,
          gracedb_server=None, test_event=True,
          custom_frame_files=None, approximant=None, detector_state=None,
          veto_definer=None, injection_file=None, fake_strain=None,
@@ -113,8 +113,10 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     # parameters to fit a single-template inspiral job nicely
     # around the trigger time, without requiring too much data
 
+    pad_data = 8
+
     # Padding set by 16 * 2 for psd and buffer for other filtering
-    pad = 60
+    pad = 40
     template_duration = spa_length_in_time(mass1=mass1, mass2=mass2,
                                            f_lower=f_low, phase_order=-1)
     segment_length = int(nearest_larger_binary_number(template_duration + pad))
@@ -129,15 +131,16 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
     # if requested, remove detectors with missing/vetoed data
     # over the required segment
-    required_duration = gps_end_time - gps_start_time
+    required_duration = (gps_end_time + pad_data) - (gps_start_time - pad_data)
     unavailable_ifos = set()
     for ifo in ifos:
         if detector_state is None or ifo not in detector_state:
             continue
         on_segs = dq.query_str(ifo, detector_state[ifo],
-                               gps_start_time, gps_end_time,
+                               gps_start_time - pad_data,
+                               gps_end_time + pad_data,
                                veto_definer=veto_definer,
-                               source='dqsegdb',
+                               source=segment_source,
                                server=segment_server)
         if abs(on_segs) < required_duration:
             logging.info('Excluding %s due to missing or vetoed data', ifo)
@@ -178,7 +181,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         "--autogating-taper", "0.25",
         "--autogating-pad", "16",
         "--strain-high-pass", str(highpass_frequency),
-        "--pad-data", "8",
+        "--pad-data", str(pad_data),
         "--chisq-bins", '0.72*get_freq("fSEOBNRv4Peak",params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7',
         "--sample-rate", str(sample_rate),
         "--mass1", str(mass1),
@@ -508,9 +511,13 @@ if __name__ == '__main__':
     parser.add_argument('--veto-definer', type=str,
                         help='Optional path to a veto definer file to resolve '
                              'macro flags in --detector-state')
+    parser.add_argument('--segment-source', choices=['any', 'GWOSC', 'dqsegdb'],
+                        default='any',
+                        help='When using `--detector-state`, this controls '
+                             'whether to query the GWOSC or dqsegdb server')
     parser.add_argument('--segment-server', metavar='URL',
-                        help='URL of segment server to query regarding the '
-                             'detector state',
+                        help='URL of segment server to query when using '
+                             '`--detector-state`',
                         default='https://segments.ligo.org')
     parser.add_argument('--ligolw-skymap-output', type=str, default='.',
                         help='Option to output sky map files to directory')
@@ -552,6 +559,6 @@ if __name__ == '__main__':
          test_event=not opt.enable_production_gracedb_upload,
          custom_frame_files=opt.custom_frame_file,
          approximant=opt.approximant, detector_state=opt.detector_state,
-         segment_server=opt.segment_server,
+         segment_source=opt.segment_source, segment_server=opt.segment_server,
          veto_definer=opt.veto_definer, injection_file=opt.injection_file, 
          fake_strain=opt.fake_strain, fake_strain_seed=opt.fake_strain_seed)
