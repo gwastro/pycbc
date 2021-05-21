@@ -1084,41 +1084,48 @@ def empty(length, dtype=float64):
     raise ValueError(err_msg)
 
 def load_array(path, group=None):
-    """
-    Load an Array from a .hdf, .txt or .npy file. The
-    default data types will be double precision floating point.
+    """Load an Array from an HDF5, ASCII or Numpy file. The file type is
+    inferred from the file extension, which must be `.hdf`, `.txt` or `.npy`.
+
+    For ASCII and Numpy files with a single column, a real array is returned.
+    For files with two columns, the columns are assumed to contain the real
+    and imaginary parts of a complex array respectively.
+
+    The default data types will be double precision floating point.
 
     Parameters
     ----------
     path : string
-        source file path. Must end with either .npy or .txt.
+        Input file path. Must end with either `.npy`, `.txt` or `.hdf`.
 
-    group: string 
-        Additional name for internal storage use. Ex. hdf storage uses
-        this as the key value.
+    group: string
+        Additional name for internal storage use. When reading HDF files, this
+        is the path to the HDF dataset to read.
 
     Raises
     ------
     ValueError
-        If path does not end in .npy or .txt.
+        If path does not end with a supported extension. For Numpy and ASCII
+        input files, this is also raised if the array does not have 1 or 2
+        dimensions.
     """
     ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = _numpy.load(path)    
+        data = _numpy.load(path)
     elif ext == '.txt':
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        return Array(h5py.File(path)[key]) 
+        with h5py.File(path, 'r') as f:
+            array = Array(f[key])
+        return array
     else:
         raise ValueError('Path must end with .npy, .hdf, or .txt')
-        
+
     if data.ndim == 1:
         return Array(data)
     elif data.ndim == 2:
         return Array(data[:,0] + 1j*data[:,1])
-    else:
-        raise ValueError('File has %s dimensions, cannot convert to Array, \
-                          must be 1 (real) or 2 (complex)' % data.ndim)
-    
 
+    raise ValueError('File has %s dimensions, cannot convert to Array, \
+                      must be 1 (real) or 2 (complex)' % data.ndim)

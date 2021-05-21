@@ -1030,23 +1030,36 @@ class TimeSeries(Array):
             return plot1, plot2
 
 def load_timeseries(path, group=None):
-    """
-    Load a TimeSeries from a .hdf, .txt or .npy file. The
-    default data types will be double precision floating point.
+    """Load a TimeSeries from an HDF5, ASCII or Numpy file. The file type is
+    inferred from the file extension, which must be `.hdf`, `.txt` or `.npy`.
+
+    For ASCII and Numpy files, the first column of the array is assumed to
+    contain the sample times. If the array has two columns, a real-valued time
+    series is returned. If the array has three columns, the second and third
+    ones are assumed to contain the real and imaginary parts of a complex time
+    series.
+
+    For HDF files, the dataset is assumed to contain the attributes `delta_t`
+    and `start_time`, which should contain respectively the sampling period in
+    seconds and the start GPS time of the data.
+
+    The default data types will be double precision floating point.
 
     Parameters
     ----------
     path: string
-        source file path. Must end with either .npy or .txt.
+        Input file path. Must end with either `.npy`, `.txt` or `.hdf`.
 
     group: string
-        Additional name for internal storage use. Ex. hdf storage uses
-        this as the key value.
+        Additional name for internal storage use. When reading HDF files, this
+        is the path to the HDF dataset to read.
 
     Raises
     ------
     ValueError
-        If path does not end in .npy or .txt.
+        If path does not end in a supported extension.
+        For Numpy and ASCII input files, this is also raised if the array
+        does not have 2 or 3 dimensions.
     """
     ext = _os.path.splitext(path)[1]
     if ext == '.npy':
@@ -1055,24 +1068,21 @@ def load_timeseries(path, group=None):
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        f = h5py.File(path)
-        data = f[key][:]
-        series = TimeSeries(data, delta_t=f[key].attrs['delta_t'],
-                                  epoch=f[key].attrs['start_time'])
-        f.close()
+        with h5py.File(path, 'r') as f:
+            data = f[key][:]
+            series = TimeSeries(data, delta_t=f[key].attrs['delta_t'],
+                                epoch=f[key].attrs['start_time'])
         return series
     else:
         raise ValueError('Path must end with .npy, .hdf, or .txt')
 
+    delta_t = (data[-1][0] - data[0][0]) / (len(data) - 1)
+    epoch = _lal.LIGOTimeGPS(data[0][0])
     if data.ndim == 2:
-        delta_t = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = _lal.LIGOTimeGPS(data[0][0])
         return TimeSeries(data[:,1], delta_t=delta_t, epoch=epoch)
     elif data.ndim == 3:
-        delta_t = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = _lal.LIGOTimeGPS(data[0][0])
         return TimeSeries(data[:,1] + 1j*data[:,2],
                           delta_t=delta_t, epoch=epoch)
-    else:
-        raise ValueError('File has %s dimensions, cannot convert to Array, \
-                          must be 2 (real) or 3 (complex)' % data.ndim)
+
+    raise ValueError('File has %s dimensions, cannot convert to TimeSeries, \
+                      must be 2 (real) or 3 (complex)' % data.ndim)
