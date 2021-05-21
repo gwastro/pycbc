@@ -282,13 +282,9 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         chisq_series = load_timeseries(st_out_paths[ifo], group='chisq')
         psd_series = load_frequencyseries(st_psd_paths[ifo])
         psd_series *= pycbc.DYN_RANGE_FAC ** 2.0
-        # FIXME replace with
-        # template_series = load_frequencyseries(st_out_paths[ifo], group='template')
-        # once #3709 is merged
-        with h5py.File(st_out_paths[ifo], 'r') as f:
-            delta_f = f['template'].attrs['delta_f']
-            template_series = FrequencySeries(f['template'], delta_f=delta_f)
-            template_series = template_series.astype(np.complex128)
+        psd_series = psd_series.astype(np.float32)
+        template_series = load_frequencyseries(st_out_paths[ifo],
+                                               group='template')
 
         key = 'foreground/{}/'.format(ifo)
         coinc_results[key + 'mass1'] = mass1
