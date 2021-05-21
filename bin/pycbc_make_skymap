@@ -130,16 +130,19 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     # if requested, remove detectors with missing/vetoed data
     # over the required segment
     required_duration = gps_end_time - gps_start_time
+    unavailable_ifos = set()
     for ifo in ifos:
         if detector_state is None or ifo not in detector_state:
             continue
         on_segs = dq.query_str(ifo, detector_state[ifo],
                                gps_start_time, gps_end_time,
                                veto_definer=veto_definer,
+                               source='dqsegdb',
                                server=segment_server)
         if abs(on_segs) < required_duration:
             logging.info('Excluding %s due to missing or vetoed data', ifo)
-            ifos.remove(ifo)
+            unavailable_ifos.add(ifo)
+    ifos = sorted(set(ifos) - unavailable_ifos)
     if not ifos:
         raise RuntimeError('All detectors have been excluded due to '
                            'missing or vetoed data')
