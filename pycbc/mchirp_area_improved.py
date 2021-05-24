@@ -75,11 +75,15 @@ def from_cli(args):
             'mass_gap': args.src_class_mass_gap_separate,
             'lal_cosmology': args.src_class_lal_cosmology}
 
+
 def redshift_estimation(distance, distance_std, lal_cosmology):
     """Takes values of distance and its uncertainty and returns a
        dictionary with estimates of the redshift and its uncertainty.
        If the argument 'lal_cosmology' is True, it uses Planck15 cosmology
        model as defined in lalsuite instead of the astropy default.
+       Constants for lal_cosmology taken from Planck15_lal_cosmology() in
+       https://git.ligo.org/lscsoft/pesummary/-/blob/master/pesummary/gw/
+       cosmology.py.
     """
     if lal_cosmology:
         cosmology = FlatLambdaCDM(H0=67.90, Om0=0.3065)
@@ -93,6 +97,7 @@ def redshift_estimation(distance, distance_std, lal_cosmology):
     z_std_estimation = 0.5 * (z_est_max - z_est_min)
     z = {'central': z_estimation, 'delta': z_std_estimation}
     return z
+
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     """Takes values of redshift, redshift uncertainty, detector mass and its
