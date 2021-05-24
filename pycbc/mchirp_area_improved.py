@@ -15,6 +15,7 @@ from scipy.integrate import quad
 from pycbc.cosmology import _redshift
 from astropy.cosmology import FlatLambdaCDM
 
+
 def insert_args(parser):
     mchirp_group = parser.add_argument_group("Arguments for estimating the "
                                              "source probabilities of a "
