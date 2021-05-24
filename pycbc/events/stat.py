@@ -1189,8 +1189,8 @@ class ExpFitBgRateStatistic(ExpFitStatistic):
         """
 
         super(ExpFitBgRateStatistic, self).__init__(sngl_ranking,
-                                                      files=files, ifos=ifos,
-                                                      **kwargs)
+                                                    files=files, ifos=ifos,
+                                                    **kwargs)
         self.benchmark_lograte = benchmark_lograte
 
         # Reassign the rate to be number per time rather than an arbitrarily
@@ -1284,7 +1284,7 @@ class ExpFitBgRateStatistic(ExpFitStatistic):
 
 
 class ExpFitFgBgNormStatistic(PhaseTDStatistic,
-                                ExpFitBgRateStatistic):
+                              ExpFitBgRateStatistic):
     """
     Statistic combining PhaseTD, ExpFitBg and additional foreground info.
     """
@@ -1312,7 +1312,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         # read in background fit info and store it
         ExpFitBgRateStatistic.__init__(self, sngl_ranking, files=files,
-                                         ifos=ifos, **kwargs)
+                                       ifos=ifos, **kwargs)
         # if ifos not already set, determine via background fit info
         self.ifos = self.ifos or self.bg_ifos
         # PhaseTD statistic single_dtype plus network sensitivity benchmark
@@ -1631,7 +1631,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
             produce *all* the loudest background (and foreground) events.
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                           ifos=ifos, **kwargs)
+                                         ifos=ifos, **kwargs)
         self.mcm = max_chirp_mass
         self.curr_mchirp = None
 
