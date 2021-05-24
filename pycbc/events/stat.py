@@ -1159,7 +1159,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         return s1
 
 
-class ExpFitSGBgRateStatistic(ExpFitStatistic):
+class ExpFitBgRateStatistic(ExpFitStatistic):
     """
     Detection statistic using an exponential falloff noise model.
 
@@ -1188,11 +1188,10 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
             The default comes from H1L1 (O2) and is 4.5e-7 Hz.
         """
 
-        super(ExpFitSGBgRateStatistic, self).__init__(sngl_ranking,
-                                                      files=files, ifos=ifos,
-                                                      **kwargs)
+        super(ExpFitBgRateStatistic, self).__init__(sngl_ranking,
+                                                    files=files, ifos=ifos,
+                                                    **kwargs)
         self.benchmark_lograte = benchmark_lograte
-        self.get_newsnr = ranking.get_newsnr_sgveto
 
         # Reassign the rate to be number per time rather than an arbitrarily
         # normalised number
@@ -1273,7 +1272,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         """
 
         # Safety against subclassing and not rethinking this
-        allowed_names = ['ExpFitSGBgRateStatistic']
+        allowed_names = ['ExpFitBgRateStatistic']
         self._check_coinc_lim_subclass(allowed_names)
 
         sngl_dict = {sngl[0]: sngl[1] for sngl in s}
@@ -1284,10 +1283,10 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         return loglr
 
 
-class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
-                                ExpFitSGBgRateStatistic):
+class ExpFitFgBgNormStatistic(PhaseTDStatistic,
+                              ExpFitBgRateStatistic):
     """
-    Statistic combining PhaseTD, ExpFitSGBg and additional foreground info.
+    Statistic combining PhaseTD, ExpFitBg and additional foreground info.
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None,
@@ -1312,16 +1311,14 @@ class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
         """
 
         # read in background fit info and store it
-        ExpFitSGBgRateStatistic.__init__(self, sngl_ranking, files=files,
-                                         ifos=ifos, **kwargs)
+        ExpFitBgRateStatistic.__init__(self, sngl_ranking, files=files,
+                                       ifos=ifos, **kwargs)
         # if ifos not already set, determine via background fit info
         self.ifos = self.ifos or self.bg_ifos
         # PhaseTD statistic single_dtype plus network sensitivity benchmark
         PhaseTDStatistic.__init__(self, sngl_ranking, files=files,
                                   ifos=self.ifos, **kwargs)
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
-
-        self.get_newsnr = ranking.get_newsnr_sgveto
 
         for ifo in self.bg_ifos:
             self.assign_median_sigma(ifo)
@@ -1371,7 +1368,7 @@ class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
             Array of log noise rate density for each input trigger.
         """
         alphai, ratei, thresh = self.find_fits(trigs)
-        newsnr = self.get_newsnr(trigs)
+        newsnr = self.get_sngl_ranking(trigs)
         # Above the threshold we use the usual fit coefficient (alpha)
         # below threshold use specified alphabelow
         bt = newsnr < thresh
@@ -1546,7 +1543,8 @@ class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
         """
 
         # Safety against subclassing and not rethinking this
-        allowed_names = ['ExpFitSGFgBgNormStatistic']
+        allowed_names = ['ExpFitFgBgNormStatistic',
+                         'ExpFitFgBgNormBBHStatistic']
         self._check_coinc_lim_subclass(allowed_names)
 
         if not self.has_hist:
@@ -1597,11 +1595,11 @@ class ExpFitSGFgBgNormStatistic(PhaseTDStatistic,
         return loglr
 
 
-class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormStatistic):
+class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
     """
-    The ExpFitSGFgBgNormStatistic with a mass weighting factor.
+    The ExpFitFgBgNormStatistic with a mass weighting factor.
 
-    This is the same as the ExpFitSGFgBgNormStatistic except the likelihood
+    This is the same as the ExpFitFgBgNormStatistic except the likelihood
     is multiplied by a signal rate prior modelled as uniform over chirp mass.
     As templates are distributed roughly according to mchirp^(-11/3) we
     weight by the inverse of this. This ensures that loud events at high mass
@@ -1632,9 +1630,8 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormStatistic):
             and we can have a case where a single highest-mass template might
             produce *all* the loudest background (and foreground) events.
         """
-        ExpFitSGFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                           ifos=ifos, **kwargs)
-        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
+        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
+                                         ifos=ifos, **kwargs)
         self.mcm = max_chirp_mass
         self.curr_mchirp = None
 
@@ -1662,7 +1659,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormStatistic):
 
         # model signal rate as uniform over chirp mass, background rate is
         # proportional to mchirp^(-11/3) due to density of templates
-        logr_s = ExpFitSGFgBgNormStatistic.logsignalrate(
+        logr_s = ExpFitFgBgNormStatistic.logsignalrate(
                     self,
                     stats,
                     shift,
@@ -1696,7 +1693,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormStatistic):
         if self.mcm is not None:
             # Careful - input might be a str, so cast to float
             self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
-        return ExpFitSGFgBgNormStatistic.single(self, trigs)
+        return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
@@ -1723,7 +1720,7 @@ class ExpFitSGPSDFgBgNormBBHStatistic(ExpFitSGFgBgNormStatistic):
             exceed thresh.
         """
 
-        loglr = ExpFitSGFgBgNormStatistic.coinc_lim_for_thresh(
+        loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
         loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
         return loglr
@@ -1736,9 +1733,9 @@ statistic_dict = {
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
-    'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
-    'phasetd_exp_fit_sg_fgbg_norm': ExpFitSGFgBgNormStatistic,
-    'phasetd_exp_fit_sg_fgbg_bbh_norm': ExpFitSGPSDFgBgNormBBHStatistic,
+    'exp_fit_bg_rate': ExpFitBgRateStatistic,
+    'phasetd_exp_fit_fgbg_norm': ExpFitFgBgNormStatistic,
+    'phasetd_exp_fit_fgbg_bbh_norm': ExpFitFgBgNormBBHStatistic,
 }
 
 
@@ -1767,7 +1764,7 @@ def get_statistic(stat):
         raise RuntimeError('%s is not an available detection statistic' % stat)
 
 
-def insert_statistic_option_group(parser):
+def insert_statistic_option_group(parser, default_ranking_statistic=None):
     """
     Add ranking statistic options to the optparser object.
 
@@ -1777,6 +1774,9 @@ def insert_statistic_option_group(parser):
     -----------
     parser : object
         OptionParser instance.
+    default_ranking_statisic : str
+        Allows setting a default statistic for the '--ranking-statistic'
+        option. The option is no longer required if a default is provided.
 
     Returns
     --------
@@ -1791,8 +1791,9 @@ def insert_statistic_option_group(parser):
 
     statistic_opt_group.add_argument(
         "--ranking-statistic",
+        default=default_ranking_statistic,
         choices=statistic_dict.keys(),
-        required=True,
+        required=True if default_ranking_statistic is None else False,
         help="The coinc ranking statistic to calculate"
     )
 
