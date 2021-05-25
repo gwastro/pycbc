@@ -226,9 +226,9 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     mass_gap = src_args['mass_gap']
 
     # If the mchirp is greater than the mchirp corresponding to two masses
-    # equal to the maximum mass, the probability for BBH is 100%. If it is
-    # less than the mchirp corresponding to two masses equal to the minimum
-    # mass, the probability for BNS is 100%.
+    # equal to the maximum mass, the probability for BBH is 100%.
+    # If it is less than the mchirp corresponding to two masses equal to the
+    # minimum mass, the probability for BNS is 100%.
     mc_max = mass_limits['max_m1'] / (2 ** 0.2)
     mc_min = mass_limits['min_m2'] / (2 ** 0.2)
 
@@ -252,4 +252,5 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
         areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap)
         total_area = sum(areas.values())
         probabilities = {key: areas[key]/total_area for key in areas}
+
     return probabilities
