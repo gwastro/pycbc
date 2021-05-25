@@ -160,7 +160,6 @@ found_inj_idxes = f['found_after_vetoes/injection_index'][:]
 for num_event in range(num_events):
     files = wf.FileList([])
 
-    print(sorting, num_event)
     injection_index = missed[sorting][num_event]
     time = f['injections/tc'][injection_index]
     lon = f['injections/ra'][injection_index]
