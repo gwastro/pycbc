@@ -1,3 +1,5 @@
+set -e
+
 pycbc_make_skymap \
     --trig-time 1187008882.4457 \
     --thresh-SNR 5.5 \
