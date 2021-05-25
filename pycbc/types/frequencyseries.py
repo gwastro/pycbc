@@ -430,7 +430,8 @@ class FrequencySeries(Array):
                 ds = f.create_dataset(key, data=self.numpy(),
                                       compression='gzip',
                                       compression_opts=9, shuffle=True)
-                ds.attrs['epoch'] = float(self.epoch)
+                if self.epoch is not None:
+                    ds.attrs['epoch'] = float(self.epoch)
                 ds.attrs['delta_f'] = float(self.delta_f)
         else:
             raise ValueError('Path must end with .npy, .txt, .xml, .xml.gz '
