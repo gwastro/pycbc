@@ -131,7 +131,6 @@ try:
         dec_snr[dec_snr > args.maximum_decisive_snr] = 0
     sorting = dec_snr.argsort()
     sorting = sorting[::-1]  # descending order of dec opt SNR
-    print('SNR', sorting)
 except KeyError:
     # Fall back to effective distance if optimal SNR not available
     eff_dist = {}
@@ -152,8 +151,6 @@ except KeyError:
                                               f['injections/mass2'][:][missed])
     dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
     sorting = dec_chirp_dist.argsort()  # ascending order of dec chirp distance
-    print('dec', sorting)
-    print(dec_dist)
 
 if len(missed) < num_events:
     num_events = len(missed)
