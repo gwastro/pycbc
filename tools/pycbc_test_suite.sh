@@ -4,6 +4,8 @@ echo -e "\\n>> [`date`] Starting PyCBC test suite"
 
 PYTHON_VERSION=`python -c 'import sys; print(sys.version_info.major)'`
 echo -e "\\n>> [`date`] Python Major Version:" $PYTHON_VERSION
+PYTHON_MINOR_VERSION=`python -c 'import sys; print(sys.version_info.minor)'`
+echo -e "\\n>> [`date`] Python Minor Version:" $PYTHON_MINOR_VERSION
 
 LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
 
@@ -58,9 +60,8 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     fi
     popd
 
-
-    # run PyCBC Live test if running in Python 3
-    if [ "$PYTHON_VERSION" = "3" ]
+    # run PyCBC Live test if running in Python > 3.6
+    if [ "$PYTHON_VERSION" = "3" && "$PYTHON_MINOR_VERSION" -ge "7" ]
     then
         pushd examples/live
         bash -e run.sh
@@ -161,8 +162,8 @@ if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     fi
     popd
 
-    ## Run pycbc_make_skymap example (requires Python 3)
-    if [ "$PYTHON_VERSION" = "3" ]
+    ## Run pycbc_make_skymap example (requires Python > 3.6)
+    if [ "$PYTHON_VERSION" = "3" && "$PYTHON_MINOR_VERSION" -ge "7" ]
     then
         pushd examples/make_skymap
         bash -e simulated_data.sh
