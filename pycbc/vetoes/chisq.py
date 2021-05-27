@@ -319,7 +319,7 @@ class SingleDetPowerChisq(object):
 
     @staticmethod
     def parse_option(row, arg):
-        safe_dict = {}
+        safe_dict = {'max': max, 'min': min}
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
         safe_dict.update(pycbc.pnutils.__dict__)
