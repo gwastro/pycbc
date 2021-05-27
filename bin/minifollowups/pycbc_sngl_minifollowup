@@ -89,7 +89,8 @@ parser.add_argument('--transformation-catalog')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
-stat.insert_statistic_option_group(parser)
+stat.insert_statistic_option_group(parser,
+    default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',

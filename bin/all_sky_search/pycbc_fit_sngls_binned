@@ -26,17 +26,8 @@ import copy, numpy as np
 from pycbc import events, bin_utils, results
 from pycbc.events import triggers
 from pycbc.events import trigger_fits as trstats
-from pycbc.events import ranking
+from pycbc.events import stat as pystat
 import pycbc.version
-
-#### DEFINITIONS AND FUNCTIONS ####
-
-def get_stat(statchoice, trigs):
-    # For now this is using the single detector ranking. If we want, this
-    # could use the Stat classes in stat.py using similar code as in hdf/io.py
-    # This requires additional options, so only change this if it's useful!
-    return ranking.get_sngls_ranking_from_trigs(trigs, statchoice)
-
 
 #### MAIN ####
 
@@ -63,13 +54,6 @@ parser.add_argument("--ifo", required=True,
 parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
-parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=ranking.sngls_ranking_function_dict.keys(),
-                    help="Function of SNR and chisq to perform fits with")
-parser.add_argument("--stat-factor", type=float,
-                    help="Adjustable magic number used in some sngl "
-                    "statistics. Values commonly used: 6 for new_snr, 250 "
-                    "or 50 for effective_snr")
 parser.add_argument("--stat-threshold", nargs="+", type=float,
                     help="Only fit triggers with statistic value above this "
                     "threshold : can be a space-separated list, then a fit "
@@ -126,6 +110,8 @@ parser.add_argument("--user-tag", default="",
                     help="Put a possibly informative string in the names of "
                     "plot files")
 
+pystat.insert_statistic_option_group(parser,
+    default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 
 args.veto_segment_name = sum(args.veto_segment_name, [])
@@ -149,8 +135,8 @@ else:
     log_level = logging.WARN
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
-statname = "reweighted SNR" if args.sngl_stat == "new_snr" else \
-           args.sngl_stat.replace("_", " ").replace("snr", "SNR")
+statname = "reweighted SNR" if args.sngl_ranking == "new_snr" else \
+           args.sngl_ranking.replace("_", " ").replace("snr", "SNR")
 paramname = args.bin_param.replace("_", " ")
 paramtag = args.bin_param.replace("_", "")
 if args.plot_dir:
@@ -171,7 +157,8 @@ logging.info('Opening template file: %s' % args.bank_file)
 templatef = h5py.File(args.bank_file, 'r')
 
 # get the stat values
-stat = get_stat(args.sngl_stat, trigf[args.ifo])
+rank_method = pystat.get_statistic_from_opts(args, [args.ifo])
+stat = rank_method.get_sngl_ranking(trigf[args.ifo])
 
 # get the duration values if needed
 if args.bin_param == 'template_duration' and not args.f_lower:
