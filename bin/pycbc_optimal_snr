@@ -222,6 +222,8 @@ if __name__ == '__main__':
         return make_frequency_series(strain)
 
     def compute_optimal_snr(inj):
+        if not ligolw:
+            inj = inj.view(np.recarray)
         for det, column in opts.snr_columns.items():
             injection_time = get_gc_end_time(inj)
             psd = psds[det](injection_time)
@@ -242,7 +244,10 @@ if __name__ == '__main__':
                     raise
             logging.info('Injection %s at %s completed', inj.simulation_id, det)
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
-            setattr(inj, column, sval)
+            if ligolw:
+                setattr(inj, column, sval)
+            else:
+                inj[column] = sval
         return inj
 
     logging.info("Loading injections")
