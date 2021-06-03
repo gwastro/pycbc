@@ -53,7 +53,7 @@ as follows.
     cd pycbc
     pip install -r requirements.txt
     pip install -r companion.txt
-    python setup.py install
+    pip install .
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Other scenarios
