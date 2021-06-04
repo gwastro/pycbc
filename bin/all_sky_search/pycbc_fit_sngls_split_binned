@@ -401,7 +401,7 @@ axes[0,0].set_ylim(1, 5 * maxyval)
 axes[0,0].set_xlim(minplot, maxplot)
 
 for j in range(args.split_two_nbins):
-    axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_stat, size="large")
+    axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_ranking, size="large")
     if args.split_two_nbins == 1:
         break
     axes[0, j].set_xlabel(args.split_param_two + ': ' +
@@ -426,11 +426,11 @@ logging.info('saving to file ' + args.output_file)
 results.save_fig_with_metadata(
     fig, args.output_file,
     title="{}: {} histogram of single detector triggers split by"
-          " {} and {}".format(args.ifo, args.sngl_stat, args.split_param_one,
+          " {} and {}".format(args.ifo, args.sngl_ranking, args.split_param_one,
                               args.split_param_two),
     caption=(r"Histogram of {} single detector {} values binned by {}, split by "
              "{} and {}, with fitted {} distribution parameterized by"
-             " &alpha;".format(args.ifo, args.sngl_stat, args.bin_param,
+             " &alpha;".format(args.ifo, args.sngl_ranking, args.bin_param,
                                args.split_param_one, args.split_param_two,
                                args.fit_function)),
     cmd=" ".join(sys.argv)
