@@ -418,9 +418,8 @@ def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
     if explicit_dependencies is not None:
         import Pegasus.api as dax
         for dep in explicit_dependencies:
-            dax_dep = dax.Dependency(parent=dep._dax_node,
-                                     child=node._dax_node)
-            workflow._adag.addDependency(dax_dep)
+            workflow._adag.add_dependency(dep._dax_node,
+                                          children=[node._dax_node])
 
 def make_single_hist(workflow, trig_file, veto_file, veto_name,
                      out_dir, bank_file=None, exclude=None,
