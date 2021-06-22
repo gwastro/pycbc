@@ -560,6 +560,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         injections = self.table
         if simulation_ids:
             injections = injections[list(simulation_ids)]
+
+        injected_ids = []
         for ii, inj in enumerate(injections):
             f_l = inj.f_lower if f_lower is None else f_lower
             # roughly estimate if the injection may overlap with the segment
@@ -581,13 +583,14 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
+            injected_ids.append(ii)
             if inj_filter_rejector is not None:
                 inj_filter_rejector.generate_short_inj_from_inj(signal, ii)
 
         strain.data[:] = lalstrain.data.data[:]
 
         injected = copy.copy(self)
-        injected.table = injections
+        injected.table = injections[np.array(injected_ids).astype(int)]
         if inj_filter_rejector is not None:
             inj_filter_rejector.injection_params = injected
         return injected
