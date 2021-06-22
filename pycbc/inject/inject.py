@@ -627,10 +627,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             f_l = f_lower
 
         # compute the waveform time series
-        logging.info('before waveform')
         hp, hc = get_td_waveform(inj, delta_t=delta_t, f_lower=f_l,
                                  **self.extra_args)
-        logging.info('after waveform')
         return projector(detector_name,
                          inj, hp, hc, distance_scale=distance_scale)
 
