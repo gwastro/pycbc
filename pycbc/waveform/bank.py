@@ -475,14 +475,19 @@ class TemplateBank(object):
         tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
         indices = []
 
-        for inj in injection_parameters:
+        sort = tau0_temp.argsort()
+        tau0_temp = tau0_temp[sort]
+
+        for j, inj in enumerate(injection_parameters):
             tau0_inj, _ = \
                 pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
                                                        fref)
-            inj_indices = np.where(abs(tau0_temp - tau0_inj) <= threshold)[0]
+            lid = np.searchsorted(tau0_temp, tau0_inj - threshold)
+            rid = np.searchsorted(tau0_temp, tau0_inj + threshold)
+            inj_indices = sort[lid:rid]
             indices.append(inj_indices)
-            indices_combined = np.concatenate(indices)
 
+        indices_combined = np.concatenate(indices)
         indices_unique= np.unique(indices_combined)
         self.table = self.table[indices_unique]
 
