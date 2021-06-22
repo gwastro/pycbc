@@ -478,7 +478,7 @@ class TemplateBank(object):
         sort = tau0_temp.argsort()
         tau0_temp = tau0_temp[sort]
 
-        for j, inj in enumerate(injection_parameters):
+        for inj in injection_parameters:
             tau0_inj, _ = \
                 pycbc.pnutils.mass1_mass2_to_tau0_tau3(inj.mass1, inj.mass2,
                                                        fref)
