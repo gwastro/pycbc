@@ -346,6 +346,16 @@ for tag in sorted(output_pointinjs):
     layout.two_column_layout(rdir['point_injection_sets/{}'.format(tag)],
                              curr_outs)
 
+# save global config file to results directory
+conf_dir = rdir['workflow/configuration']
+wf.makedir(conf_dir)
+conf_path = os.path.join(conf_dir, 'configuration.ini')
+with open(conf_path, 'w') as conf_fh:
+    workflow.cp.write(conf_fh)
+conf_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
+                         file_url='file://' + conf_path)])
+layout.single_layout(conf_dir, conf_file)
+
 # Create versioning information
 create_versioning_page(rdir['workflow/version'], workflow.cp)
 
