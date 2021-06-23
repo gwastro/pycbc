@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import h5py, copy, argparse, logging, numpy, numpy.random, multiprocessing
-import shutil, uuid, os
+import shutil, uuid, os.path
 from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat, ranking
 import pycbc.version
@@ -58,8 +58,11 @@ parser.add_argument("--batch-singles", default=5000, type=int,
                     help="Number of single triggers to process at once")
 parser.add_argument('--nprocesses', type=int, default=1,
                     help="Number of processes to use")
-parser.add_argument('--use-shared-memory', action='store_true',
-                    help="Stage input files through shared memory to speed up"
+parser.add_argument('--stage-input', action='store_true',
+                    help="Stage input files through to speed up"
+                         "access by multiple processes")
+parser.add_argument('--stage-input-dir', type=str, default='/dev/shm',
+                    help="Stage input files through to speed up"
                          "access by multiple processes")
 stat.insert_statistic_option_group(parser)
 args = parser.parse_args()
@@ -96,8 +99,8 @@ class MultiifoTrigs(object):
 trigs = MultiifoTrigs()
 cleanup_files = []
 for i in range(len(args.trigger_files)):
-    if args.use_shared_memory:
-        dest = '/dev/shm/' + str(uuid.uuid4()) + '.hdf'
+    if args.stage_input:
+        dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + '.hdf')
         logging.info("Moving %s to shared memory as %s",
                      args.trigger_files[i], dest)
         shutil.copyfile(args.trigger_files[i], dest)
