@@ -381,11 +381,11 @@ plan_many_r2c_d.restype = ctypes.c_void_p
 # translate input and output dtypes into the correct planning function.
 
 _plan_funcs_dict = { ('complex64', 'complex64') : plan_many_c2c_f,
-                     ('complex64', 'float32') : plan_many_r2c_f,
-                     ('float32', 'complex64') : plan_many_c2r_f,
+                     ('float32', 'complex64') : plan_many_r2c_f,
+                     ('complex64', 'float32') : plan_many_c2r_f,
                      ('complex128', 'complex128') : plan_many_c2c_d,
-                     ('complex128', 'float64') : plan_many_r2c_d,
-                     ('float64', 'complex128') : plan_many_c2r_d }
+                     ('float64', 'complex128') : plan_many_r2c_d,
+                     ('complex128', 'float64') : plan_many_c2r_d }
 
 # To avoid multiple-inheritance, we set up a function that returns much
 # of the initialization that will need to be handled in __init__ of both
