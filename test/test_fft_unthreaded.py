@@ -33,6 +33,8 @@ from fft_base import _BaseTestFFTClass
 
 _scheme, _context = parse_args_all_schemes("FFT")
 
+print (_scheme, _context)
+
 # Most of the work is now done in fft_base.  Below are factories for
 # creating a test for each backend of each scheme.
 
@@ -42,6 +44,8 @@ backends = pycbc.fft.get_backend_names()
 
 FFTTestClasses = []
 for backend in backends:
+    if backend == 'numpy':
+        continue
     # This creates, for each backend, a new class derived from
     # both _BaseTestFFTClass and unittest.TestCase, and with
     # the additional property 'self.backend' set to the value
