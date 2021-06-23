@@ -406,18 +406,16 @@ def _fftw_setup(fftobj):
     plan_func = _plan_funcs_dict[ (str(fftobj.invec.dtype), str(fftobj.outvec.dtype)) ]
     tmpin = zeros(len(fftobj.invec), dtype = fftobj.invec.dtype)
     tmpout = zeros(len(fftobj.outvec), dtype = fftobj.outvec.dtype)
-    # C2C, forward
-    if fftobj.forward and (fftobj.outvec.dtype in [complex64, complex128]):
+    # C2C
+    if fftobj.outvec.kind == 'complex' and fftobj.invec.kind == 'complex':
+        if fftobj.forward:
+            ffd = FFTW_FORWARD
+        else:
+            ffd = FFTW_BACKWARD
         plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
                          tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
                          tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                         FFTW_FORWARD, flags)
-    # C2C, backward
-    elif not fftobj.forward and (fftobj.invec.dtype in [complex64, complex128]):
-        plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
-                         tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
-                         tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                         FFTW_BACKWARD, flags)
+                         ffd, flags)
     # R2C or C2R (hence no direction argument for plan creation)
     else:
         plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
