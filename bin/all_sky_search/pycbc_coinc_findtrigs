@@ -62,8 +62,7 @@ parser.add_argument('--stage-input', action='store_true',
                     help="Stage input files through to speed up"
                          "access by multiple processes")
 parser.add_argument('--stage-input-dir', type=str, default='/dev/shm',
-                    help="Stage input files through to speed up"
-                         "access by multiple processes")
+                    help="Directory to stage input files")
 stat.insert_statistic_option_group(parser)
 args = parser.parse_args()
 
