@@ -1379,10 +1379,8 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         middle = maxsnr
         right = abs(snr[0]) if max_id == (len(snr)-1) else abs(snr[max_id + 1])
         # Get derivatives
-        dy = 0.5 * (right - left)
-        d2y = 2. * middle - left - right
-        maxsnr = middle + 0.5 * dy * dy / d2y
-        max_id = max_id + 2 * dy / d2y
+        id_shift, maxsnr = quadratic_interpolate_peak(left, middle, right)
+        max_id = max_id + id_shift
 
     return maxsnr * snr_norm / sqrt(v2_norm), max_id
 
@@ -1480,7 +1478,7 @@ def quadratic_interpolate_peak(left, middle, right):
         Array of the estimated peak values at the interpolated offset
     """
     bin_offset = 1.0/2.0 * (left - right) / (left - 2 * middle + right)
-    peak_value = middle + 0.25 * (left - right) * bin_offset
+    peak_value = middle - 0.25 * (left - right) * bin_offset
     return bin_offset, peak_value
 
 
