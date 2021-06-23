@@ -319,7 +319,6 @@ def execute(plan, invec, outvec):
     f(plan, invec.ptr, outvec.ptr)
 
 def fft(invec, outvec, prec, itype, otype):
-    print ("FFTW FFT")
     theplan, destroy = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
                             get_measure_level(),(check_aligned(invec.data) and check_aligned(outvec.data)),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
@@ -424,7 +423,7 @@ def _fftw_setup(fftobj):
         plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
                          tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
                          tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                         FFTW_FORWARD, flags)
+                         flags)
     del tmpin
     del tmpout
     return plan
@@ -439,7 +438,6 @@ class FFT(_BaseFFT):
         self.plan = _fftw_setup(self)
 
     def execute(self):
-        print (self._efunc)
         self._efunc(self.plan, self.iptr, self.optr)
 
 class IFFT(_BaseIFFT):

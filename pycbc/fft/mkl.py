@@ -95,7 +95,6 @@ def create_descriptor(size, idtype, odtype, inplace):
     return desc
 
 def fft(invec, outvec, prec, itype, otype):
-    print ("MKL FFT")
     descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype,
                               outvec.dtype, (invec.ptr == outvec.ptr))
     f = lib.DftiComputeForward
@@ -133,8 +132,6 @@ def _get_desc(fftobj):
     # The following only matters if the transform is C2R or R2C
     status = lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE,
                               DFTI_COMPLEX_COMPLEX)
-    #status = lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE,
-    #                          DFTI_CCS_FORMAT)
     check_status(status)
 
     # In-place or out-of-place:
