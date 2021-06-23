@@ -29,6 +29,7 @@ for the PyCBC package.
 import numpy.fft
 
 def fft(invec,outvec,prec,itype,otype):
+    print ("NUMPY FFT")
     if invec.ptr == outvec.ptr:
         raise NotImplementedError("numpy backend of pycbc.fft does not support in-place transforms")
     if itype == 'complex' and otype == 'complex':
