@@ -133,6 +133,11 @@ def _test_fft(test_case,inarr,expec,tol):
         outarr.clear()
         fft_class = pycbc.fft.FFT(inarr, outarr)
         fft_class.execute()
+        if isinstance(inarr, ts):
+            outarr *= inarr._delta_t
+        elif isinstance(inarr, fs):
+            outarr *= inarr._delta_f
+
         # First, verify that the input hasn't been overwritten
         emsg = 'FFT overwrote input array'
         tc.assertEqual(inarr,in_pristine,emsg)
@@ -179,6 +184,10 @@ def _test_ifft(test_case,inarr,expec,tol):
 
         ifft_class = pycbc.fft.IFFT(inarr, outarr)
         ifft_class.execute()
+        if isinstance(inarr, ts):
+            outarr *= inarr._delta_t
+        elif isinstance(inarr, fs):
+            outarr *= inarr._delta_f
         # First, verify that the input hasn't been overwritten
         emsg = 'Inverse FFT overwrote input array'
         tc.assertEqual(inarr,in_pristine,emsg)
