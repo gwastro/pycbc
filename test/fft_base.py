@@ -165,8 +165,7 @@ def _test_ifft(test_case,inarr,expec,tol):
         outarr._delta_f *= 5*tol
     with tc.context:
         set_backend(tc.backends)
-        ifft_class = pycbc.fft.IFFT(inarr, outarr)
-        ifft_class.execute()
+        pycbc.fft.ifft(inarr, outarr)
         # First, verify that the input hasn't been overwritten
         emsg = 'Inverse FFT overwrote input array'
         tc.assertEqual(inarr,in_pristine,emsg)
@@ -178,7 +177,8 @@ def _test_ifft(test_case,inarr,expec,tol):
         else:
             tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol),msg=emsg)
 
-        pycbc.fft.ifft(inarr, outarr)
+        ifft_class = pycbc.fft.IFFT(inarr, outarr)
+        ifft_class.execute()
         # First, verify that the input hasn't been overwritten
         emsg = 'Inverse FFT overwrote input array'
         tc.assertEqual(inarr,in_pristine,emsg)
