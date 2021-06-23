@@ -73,6 +73,9 @@ option_utils.add_density_option_group(parser)
 parser.add_argument("--plot-maxl", action="store_true", default=False,
                     help="Put a marker on the 2D marginal where the maxL "
                          "point is.")
+parser.add_argument('--legend-location', default='upper right',
+                    help='Where to put the legend (if multiple files are '
+                         'provided). Default is "upper right".')
 parser.add_argument('--dpi', type=int, default=200,
                     help="Set the DPI of the plot. Default is 200.")
 # style option
@@ -339,7 +342,7 @@ if len(opts.input_file) > 1:
         addto = axis_dict[parameters[0], parameters[0]][0]
     else:
         addto = fig
-    addto.legend(loc="upper right", handles=handles,
+    addto.legend(loc=opts.legend_location, handles=handles,
                  labels=labels)
 
 # set DPI
