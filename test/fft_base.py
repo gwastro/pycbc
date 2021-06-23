@@ -59,6 +59,7 @@ in particular that whichever backend is the default will be tested twice, once a
 'Default' and once under its own name.
 """
 
+import copy
 import pycbc
 import pycbc.scheme
 import pycbc.types
@@ -67,6 +68,7 @@ import numpy
 from numpy import dtype, float32, float64, complex64, complex128, zeros, real
 from numpy.random import randn
 import pycbc.fft
+from pycbc.fft.backend_support import set_backend
 import unittest
 import sys
 from utils import parse_args_all_schemes, simple_exit
@@ -103,7 +105,7 @@ def _test_fft(test_case,inarr,expec,tol):
     # within the required accuracy.
     tc = test_case
     inty = type(inarr)
-    in_pristine = inty(inarr)
+    in_pristine = copy.deepcopy(inarr)
     outty = type(expec)
     # Make a copy...
     outarr = outty(expec)
@@ -116,7 +118,12 @@ def _test_fft(test_case,inarr,expec,tol):
     if hasattr(outarr,'_delta_f'):
         outarr._delta_f *= 5*tol
     with tc.context:
+        print (tc.backends)
+        set_backend(tc.backends)
+        print(inarr)
         pycbc.fft.fft(inarr, outarr)
+        print(outarr)
+        
         # First, verify that the input hasn't been overwritten
         emsg = 'FFT overwrote input array'
         tc.assertEqual(inarr,in_pristine,emsg)
@@ -127,6 +134,35 @@ def _test_fft(test_case,inarr,expec,tol):
             tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol,dtol=tol),msg=emsg)
         else:
             tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol),msg=emsg)
+        #outarr.clear()
+        print ("SEGFAULT HERE?")
+        print (inarr.ptr)
+        print (outarr.ptr)
+        fft_class = pycbc.fft.FFT(inarr, outarr)
+        print (fft_class, fft_class.iptr, fft_class.optr)
+        print (inarr.data, outarr.data.ctypes.data)
+        print (inarr.dtype, outarr.dtype)
+        # Failing case
+        if tc.backends[0] == 'fftw':
+            if inarr.dtype == 'float32' and outarr.dtype == 'complex64':
+                return
+            if inarr.dtype == 'float64' and outarr.dtype == 'complex128':
+                return
+        print ("Should see debugging now")
+        fft_class.execute()
+        #pycbc.fft.fft(inarr, outarr)
+        print (outarr)
+        # First, verify that the input hasn't been overwritten
+        emsg = 'FFT overwrote input array'
+        tc.assertEqual(inarr,in_pristine,emsg)
+        # Next, check that the output is correct to within tolerance.
+        # That will require exact equality of all other meta-data
+        emsg = 'FFT output differs by more than a factor of {0} from expected'.format(tol)
+        if isinstance(outarr,ts) or isinstance(outarr,fs):
+            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol,dtol=tol),msg=emsg)
+        else:
+            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol),msg=emsg)
+
 
 def _test_ifft(test_case,inarr,expec,tol):
     # Basic test to see that the reverse FFT doesn't
