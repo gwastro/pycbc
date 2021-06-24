@@ -31,24 +31,38 @@ import numpy.fft
 from .core import _check_fft_args
 from .core import _BaseFFT, _BaseIFFT
 
-def fft(invec,outvec,prec,itype,otype):
-    if invec.ptr == outvec.ptr:
-        raise NotImplementedError("numpy backend of pycbc.fft does not support in-place transforms")
-    if itype == 'complex' and otype == 'complex':
-        outvec.data = numpy.asarray(numpy.fft.fft(invec.data),dtype=outvec.dtype)
-    elif itype == 'real' and otype == 'complex':
-        outvec.data = numpy.asarray(numpy.fft.rfft(invec.data),dtype=outvec.dtype)
+_inv_fft_msg = ("I cannot perform an {} between data with an input type of "
+                "{} and an output type of {}")
 
-def ifft(invec,outvec,prec,itype,otype):
+def fft(invec, outvec, prec, itype, otype):
     if invec.ptr == outvec.ptr:
-        raise NotImplementedError("numpy backend of pycbc.fft does not support in-place transforms")
+        raise NotImplementedError("numpy backend of pycbc.fft does not "
+                                  "support in-place transforms")
     if itype == 'complex' and otype == 'complex':
-        outvec.data = numpy.asarray(numpy.fft.ifft(invec.data),dtype=outvec.dtype)
+        outvec.data = numpy.asarray(numpy.fft.fft(invec.data),
+                                    dtype=outvec.dtype)
+    elif itype == 'real' and otype == 'complex':
+        outvec.data = numpy.asarray(numpy.fft.rfft(invec.data),
+                                    dtype=outvec.dtype)
+    else:
+        raise ValueError(_inv_fft_msg.format("FFT", itype, otype))
+
+
+def ifft(invec, outvec, prec, itype, otype):
+    if invec.ptr == outvec.ptr:
+        raise NotImplementedError("numpy backend of pycbc.fft does not "
+                                  "support in-place transforms")
+    if itype == 'complex' and otype == 'complex':
+        outvec.data = numpy.asarray(numpy.fft.ifft(invec.data),
+                                    dtype=outvec.dtype)
         outvec *= len(outvec)
     elif itype == 'complex' and otype == 'real':
         outvec.data = numpy.asarray(numpy.fft.irfft(invec.data,len(outvec)),
                                     dtype=outvec.dtype)
         outvec *= len(outvec)
+    else:
+        raise ValueError(_inv_fft_msg.format("IFFT", itype, otype))
+
 
 warn_msg = ("You are using the class-based PyCBC FFT API, with the numpy "
             "backed. This is provided for convenience only. If performance is "
