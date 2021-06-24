@@ -105,10 +105,10 @@ class TestMatchedFilter(unittest.TestCase):
             self.assertEqual(0,i)
             o,i = match(self.filt,self.filt, subsample_interpolation=True)
             self.assertAlmostEqual(1,o,places=4)
-            self.assertAlmostEqual(0,i,places=4)
+            self.assertAlmostEqual(0,i,places=1)
             o,i = match(self.filtD,self.filtD, subsample_interpolation=True)
             self.assertAlmostEqual(1,o,places=4)
-            self.assertAlmostEqual(0,i,places=4)
+            self.assertAlmostEqual(0,i,places=1)
 
     def test_perfect_match_offset(self):
         with self.context:
@@ -123,12 +123,12 @@ class TestMatchedFilter(unittest.TestCase):
             o,i = match(self.filt, self.filt_offset,
                         subsample_interpolation=True)
             self.assertAlmostEqual(1, o, places=4)
-            self.assertAlmostEqual(4096*32, i, places=4)
+            self.assertAlmostEqual(4096*32, i, places=1)
 
             o,i = match(self.filtD, self.filt_offsetD,
                         subsample_interpolation=True)
             self.assertAlmostEqual(1, o, places=4)
-            self.assertAlmostEqual(4096*32, i, places=4)
+            self.assertAlmostEqual(4096*32, i, places=1)
 
 
     def test_imperfect_match(self):
