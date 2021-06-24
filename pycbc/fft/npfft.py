@@ -29,6 +29,7 @@ for the PyCBC package.
 import logging
 import numpy.fft
 from .core import _check_fft_args
+from .core import _BaseFFT, _BaseIFFT
 
 def fft(invec,outvec,prec,itype,otype):
     if invec.ptr == outvec.ptr:
