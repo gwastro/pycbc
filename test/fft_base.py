@@ -442,6 +442,10 @@ class _BaseTestFFTClass(unittest.TestCase):
         # Dictionary to convert a dtype to a relative precision to test
         self.tdict = { float32: 1e-6, float64: 1e-14,
                        complex64: 1e-6, complex128: 1e-14}
+        if self.backends[0] == 'mkl':
+            # MKL precision is not as high
+            self.tdict = { float32: 1e-4, float64: 1e-6,
+                           complex64: 1e-4, complex128: 1e-6}
         # Next we set up various lists that are used to build our 'known'
         # test, which are repeated for a variety of different precisions
         # and basic types. All of the lists should be consistent with a
