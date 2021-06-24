@@ -61,7 +61,7 @@ def ifft(invec, outvec, _, itype, otype):
                                     dtype=outvec.dtype)
         outvec *= len(outvec)
     else:
-        raise ValueError(_inv_fft_msg.format("IFFT", itype, otype))
+        raise ValueError(_INV_FFT_MSG.format("IFFT", itype, otype))
 
 
 WARN_MSG = ("You are using the class-based PyCBC FFT API, with the numpy "
