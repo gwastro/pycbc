@@ -299,7 +299,7 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
         args = [in_badtype, outarr]
         tc.assertRaises(TypeError,pycbc.fft.fft,*args)
 
-def _test_raise_excep_ifft(test_case,inarr,outarr,other_args=None):
+def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
     # As far as can be told from the unittest module documentation, the
     # 'assertRaises' tests do not permit a custom message.  So more
     # comments than usual here, to help diagnose and test failures.
@@ -314,18 +314,23 @@ def _test_raise_excep_ifft(test_case,inarr,outarr,other_args=None):
     with tc.context:
         outty = type(outarr)
         outzer = pycbc.types.zeros(len(outarr))
-        # If we give an output array that is wrong only in length, raise ValueError:
-        out_badlen = outty(pycbc.types.zeros(len(outarr)+1),dtype=outarr.dtype,**other_args)
+        # If we give an output array that is wrong only in length,
+        # raise ValueError:
+        out_badlen = outty(pycbc.types.zeros(len(outarr)+1), 
+                           dtype=outarr.dtype, **other_args)
         args = [inarr, out_badlen]
-        tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
-        # If we give an output array that has the wrong precision, raise ValueError:
-        out_badprec = outty(outzer,dtype=_other_prec[dtype(outarr).type],**other_args)
-        args = [inarr,out_badprec]
-        tc.assertRaises(ValueError,pycbc.fft.ifft,*args)
-        # If we give an output array that has the wrong kind (real or complex) but
-        # correct precision, then raise a ValueError.  Here we must adjust the kind
-        # of the *input* array, not output.  But that makes it hard, because the 'other_args'
-        # parameter will be wrong for that.  Very hacky, but oh well...
+        tc.assertRaises(ValueError, pycbc.fft.ifft, *args)
+        # If we give an output array that has the wrong precision,
+        # raise ValueError:
+        out_badprec = outty(outzer, dtype=_other_prec[dtype(outarr).type],
+                            **other_args)
+        args = [inarr, out_badprec]
+        tc.assertRaises(ValueError, pycbc.fft.ifft, *args)
+        # If we give an output array that has the wrong kind (real or complex)
+        # but correct precision, then raise a ValueError.  Here we must adjust
+        # the kind of the *input* array, not output.  But that makes it hard,
+        # because the 'other_args' parameter will be wrong for that.
+        # Very hacky, but oh well...
         new_args = other_args.copy()
         if new_args != {}:
             try:
@@ -338,7 +343,7 @@ def _test_raise_excep_ifft(test_case,inarr,outarr,other_args=None):
                                  dtype=_bad_dtype[dtype(outarr).type],
                                  **new_args)
         args = [in_badkind, outarr]
-        #pycbc.fft.ifft(in_badkind, outarr)
+        # This will run pycbc.fft.ifft(in_badkind, outarr)
         if str(outarr.dtype) not in ['complex64', 'complex128']:
             tc.assertRaises((ValueError, KeyError), pycbc.fft.ifft, *args)
         # If we give an output array that isn't a PyCBC type, raise TypeError:
