@@ -148,6 +148,7 @@ In addition we have some examples below.
    catalog
    dataquality
    frame
+   fft
    gw150914
    detector
    psd
