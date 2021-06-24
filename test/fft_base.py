@@ -200,66 +200,116 @@ def _test_ifft(test_case, inarr, expec, tol):
             outarr.clear()
 
 
-def _test_random(test_case,inarr,outarr,tol):
+def _test_random(test_case, inarr, outarr, tol):
     tc = test_case
     # Test that applying a transform and its inverse to reasonably long, random
-    # input gives back the (appropriately scaled) input. We must allow for numerical
-    # error, and it seems more reliable to check using normwise error (than elementwise).
+    # input gives back the (appropriately scaled) input. We must allow for
+    # numerical error, and it seems more reliable to check using normwise error
+    # (than elementwise).
     #
     # First test IFFT(FFT(random))
-    # The numpy randn(n) provides an array of n numbers drawn from standard normal
+    # The numpy randn(n) provides an array of n numbers drawn from standard
+    # normal
     if dtype(inarr).kind == 'c':
-        inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
-        # If we're going to do a HC2R transform we must worry about DC/Nyquist imaginary
+        inarr._data[:] = randn(len(inarr)) + 1j*randn(len(inarr))
+        # If we're going to do a HC2R transform we must worry about DC/Nyquist
+        # imaginary
         if dtype(outarr).kind == 'f':
             inarr._data[0] = real(inarr[0])
-            if (len(outarr)%2)==0:
+            if (len(outarr) % 2) == 0:
                 inarr._data[len(inarr)-1] = real(inarr[len(inarr)-1])
     else:
         inarr._data[:] = randn(len(inarr))
     incopy = type(inarr)(inarr)
     outarr.clear()
-    # An FFT followed by IFFT gives Array scaled by len(Array), but for
-    # Time/FrequencySeries there should be no scaling.
-    if type(inarr) == pycbc.types.Array:
-        incopy *= len(inarr)
     with tc.context:
-        pycbc.fft.fft(inarr, outarr)
-        pycbc.fft.ifft(outarr, inarr)
-        emsg="IFFT(FFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
-        if isinstance(incopy,ts) or isinstance(incopy,fs):
-            tc.assertTrue(incopy.almost_equal_norm(inarr,tol=tol,dtol=tol),
-                          msg=emsg)
-        else:
-            tc.assertTrue(incopy.almost_equal_norm(inarr,tol=tol),
-                          msg=emsg)
+        set_backend(tc.backends)
+        for api in ['func', 'class']:
+            if api == 'func':
+                pycbc.fft.fft(inarr, outarr)
+                pycbc.fft.ifft(outarr, inarr)
+            else:
+                fft_class = pycbc.fft.FFT(inarr, outarr)
+                fft_class.execute()
+                if isinstance(inarr, ts):
+                    outarr *= inarr._delta_t
+                elif isinstance(inarr, fs):
+                    outarr *= inarr._delta_f
+                ifft_class = pycbc.fft.IFFT(outarr, inarr)
+                ifft_class.execute()
+                if isinstance(outarr, ts):
+                    inarr *= outarr._delta_t
+                elif isinstance(outarr, fs):
+                    inarr *= outarr._delta_f
+            if type(inarr) == pycbc.types.Array:
+                # An Array FFTed and then IFFTEd will be scaled by its length
+                # Frequency and TimeSeries have no scaling
+                inarr /= len(inarr) 
+
+            emsg=("IFFT(FFT(random)) did not reproduce original array to "
+                  "within tolerance {0}".format(tol))
+            if isinstance(incopy, ts) or isinstance(incopy, fs):
+                tc.assertTrue(
+                    incopy.almost_equal_norm(inarr, tol=tol, dtol=tol),
+                    msg=emsg
+                )
+            else:
+                tc.assertTrue(
+                    incopy.almost_equal_norm(inarr, tol=tol),
+                    msg=emsg
+                )
     # Perform arithmetic on outarr and inarr to pull them off of the GPU:
     outarr *= 1.0
     inarr *= 1.0
     # Now the same for FFT(IFFT(random))
     if dtype(outarr).kind == 'c':
-        outarr._data[:] = randn(len(outarr))+1j*randn(len(outarr))
-        # If we're going to do a HC2R transform we must worry about DC/Nyquist imaginary
+        outarr._data[:] = randn(len(outarr)) + 1j*randn(len(outarr))
+        # If we're going to do a HC2R transform we must worry about
+        # DC/Nyquist imaginary
         if dtype(inarr).kind == 'f':
             outarr._data[0] = real(outarr[0])
-            if (len(inarr)%2)==0:
+            if (len(inarr) % 2) == 0:
                 outarr._data[len(outarr)-1] = real(outarr[len(outarr)-1])
     else:
         outarr._data[:] = randn(len(outarr))
     inarr.clear()
     outcopy = type(outarr)(outarr)
-    if type(outarr) == pycbc.types.Array:
-        outcopy *= len(inarr)
     with tc.context:
-        pycbc.fft.ifft(outarr, inarr)
-        pycbc.fft.fft(inarr, outarr)
-        emsg="FFT(IFFT(random)) did not reproduce original array to within tolerance {0}".format(tol)
-        if isinstance(outcopy,ts) or isinstance(outcopy,fs):
-            tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol,dtol=tol),
-                          msg=emsg)
+        set_backend(tc.backends)
+        for api in ['func', 'class']:
+            if api == 'func':
+                pycbc.fft.ifft(outarr, inarr)
+                pycbc.fft.fft(inarr, outarr)
+            else:
+                ifft_class = pycbc.fft.IFFT(outarr, inarr)
+                ifft_class.execute()
+                if isinstance(outarr, ts):
+                    inarr *= outarr._delta_t
+                elif isinstance(outarr, fs):
+                    inarr *= outarr._delta_f
+                fft_class = pycbc.fft.FFT(inarr, outarr)
+                fft_class.execute()
+                if isinstance(inarr, ts):
+                    outarr *= inarr._delta_t
+                elif isinstance(inarr, fs):
+                    outarr *= inarr._delta_f
+            if type(inarr) == pycbc.types.Array:
+                # An Array FFTed and then IFFTEd will be scaled by its length
+                # Frequency and TimeSeries have no scaling
+                outarr /= len(inarr)
+
+            emsg = ("FFT(IFFT(random)) did not reproduce original array to "
+                    "within tolerance {0}".format(tol))
+            if isinstance(outcopy, ts) or isinstance(outcopy, fs):
+                tc.assertTrue(
+                    outcopy.almost_equal_norm(outarr, tol=tol, dtol=tol),
+                    msg=emsg
+                )
         else:
-            tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol),
-                          msg=emsg)
+            tc.assertTrue(
+                outcopy.almost_equal_norm(outarr, tol=tol),
+                msg=emsg
+            )
 
 def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
     # As far as can be told from the unittest module documentation, the
@@ -274,30 +324,45 @@ def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
         other_args = {}
     tc = test_case
     with tc.context:
+        set_backend(tc.backends)
+
+        def class_fft(inarr, outarr):
+            fft_class = pycbc.fft.FFT(inarr, outarr)
+            fft_class.execute()
+
         outty = type(outarr)
         outzer = pycbc.types.zeros(len(outarr))
         # If we give an output array that is wrong only in length, raise ValueError:
-        out_badlen = outty(pycbc.types.zeros(len(outarr)+1),dtype=outarr.dtype,**other_args)
+        out_badlen = outty(pycbc.types.zeros(len(outarr)+1),
+                           dtype=outarr.dtype, **other_args)
         args = [inarr, out_badlen]
         tc.assertRaises(ValueError, pycbc.fft.fft, *args)
-        # If we give an output array that has the wrong precision, raise ValueError:
-        out_badprec = outty(outzer,dtype=_other_prec[dtype(outarr).type],**other_args)
+        tc.assertRaises(ValueError, class_fft, *args)
+        # If we give an output array that has the wrong precision,
+        # raise ValueError:
+        out_badprec = outty(outzer, dtype=_other_prec[dtype(outarr).type],
+                            **other_args)
         args = [inarr, out_badprec]
-        tc.assertRaises(ValueError,pycbc.fft.fft,*args)
-        # If we give an output array that has the wrong kind (real or complex) but
-        # correct precision, then raise a ValueError.  This only makes sense if we try
-        # to do either C2R or R2R.
-        out_badkind = outty(outzer,dtype=_bad_dtype[dtype(inarr).type],**other_args)
+        tc.assertRaises(ValueError, pycbc.fft.fft, *args)
+        tc.assertRaises(ValueError, class_fft, *args)
+        # If we give an output array that has the wrong kind (real or 
+        # complex) but correct precision, then raise a ValueError.  This only
+        # makes sense if we try to do either C2R or R2R.
+        out_badkind = outty(outzer, dtype=_bad_dtype[dtype(inarr).type],
+                            **other_args)
         args = [inarr, out_badkind]
-        tc.assertRaises(ValueError,pycbc.fft.fft,*args)
+        tc.assertRaises(ValueError, pycbc.fft.fft, *args)
+        tc.assertRaises(ValueError, class_fft, *args)
         # If we give an output array that isn't a PyCBC type, raise TypeError:
         out_badtype = numpy.zeros(len(outarr),dtype=outarr.dtype)
         args = [inarr, out_badtype]
-        tc.assertRaises(TypeError,pycbc.fft.fft,*args)
+        tc.assertRaises(TypeError, pycbc.fft.fft, *args)
+        tc.assertRaises(TypeError, class_fft, *args)
         # If we give an input array that isn't a PyCBC type, raise TypeError:
-        in_badtype = numpy.zeros(len(inarr),dtype=inarr.dtype)
+        in_badtype = numpy.zeros(len(inarr), dtype=inarr.dtype)
         args = [in_badtype, outarr]
-        tc.assertRaises(TypeError,pycbc.fft.fft,*args)
+        tc.assertRaises(TypeError, pycbc.fft.fft, *args)
+        tc.assertRaises(TypeError, class_fft, *args)
 
 def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
     # As far as can be told from the unittest module documentation, the
@@ -312,6 +377,12 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
         other_args = {}
     tc = test_case
     with tc.context:
+        set_backend(tc.backends)
+
+        def class_ifft(inarr, outarr):
+            ifft_class = pycbc.fft.IFFT(inarr, outarr)
+            ifft_class.execute()
+
         outty = type(outarr)
         outzer = pycbc.types.zeros(len(outarr))
         # If we give an output array that is wrong only in length,
@@ -320,12 +391,14 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
                            dtype=outarr.dtype, **other_args)
         args = [inarr, out_badlen]
         tc.assertRaises(ValueError, pycbc.fft.ifft, *args)
+        tc.assertRaises(ValueError, class_ifft, *args)
         # If we give an output array that has the wrong precision,
         # raise ValueError:
         out_badprec = outty(outzer, dtype=_other_prec[dtype(outarr).type],
                             **other_args)
         args = [inarr, out_badprec]
         tc.assertRaises(ValueError, pycbc.fft.ifft, *args)
+        tc.assertRaises(ValueError, class_ifft, *args)
         # If we give an output array that has the wrong kind (real or complex)
         # but correct precision, then raise a ValueError.  Here we must adjust
         # the kind of the *input* array, not output.  But that makes it hard,
@@ -346,14 +419,18 @@ def _test_raise_excep_ifft(test_case, inarr, outarr, other_args=None):
         # This will run pycbc.fft.ifft(in_badkind, outarr)
         if str(outarr.dtype) not in ['complex64', 'complex128']:
             tc.assertRaises((ValueError, KeyError), pycbc.fft.ifft, *args)
+            tc.assertRaises((ValueError, KeyError), class_ifft, *args)
+
         # If we give an output array that isn't a PyCBC type, raise TypeError:
-        out_badtype = numpy.zeros(len(outarr),dtype=outarr.dtype)
-        args = [inarr,out_badtype]
-        tc.assertRaises(TypeError,pycbc.fft.ifft,*args)
+        out_badtype = numpy.zeros(len(outarr), dtype=outarr.dtype)
+        args = [inarr, out_badtype]
+        tc.assertRaises(TypeError, pycbc.fft.ifft, *args)
+        tc.assertRaises(TypeError, class_ifft, *args)
         # If we give an input array that isn't a PyCBC type, raise TypeError:
-        in_badtype = numpy.zeros(len(inarr),dtype=inarr.dtype)
-        args = [in_badtype,outarr]
-        tc.assertRaises(TypeError,pycbc.fft.ifft,*args)
+        in_badtype = numpy.zeros(len(inarr), dtype=inarr.dtype)
+        args = [in_badtype, outarr]
+        tc.assertRaises(TypeError, pycbc.fft.ifft, *args)
+        tc.assertRaises(TypeError, class_ifft, *args)
 
 class _BaseTestFFTClass(unittest.TestCase):
     """
