@@ -26,7 +26,9 @@ This module provides the numpy backend of the fast Fourier transform
 for the PyCBC package.
 """
 
+import logging
 import numpy.fft
+from .core import _check_fft_args
 
 def fft(invec,outvec,prec,itype,otype):
     if invec.ptr == outvec.ptr:
@@ -47,3 +49,25 @@ def ifft(invec,outvec,prec,itype,otype):
                                     dtype=outvec.dtype)
         outvec *= len(outvec)
 
+warn_msg = ("You are using the class-based PyCBC FFT API, with the numpy "
+            "backed. This is provided for convenience only. If performance is "
+            "important use the class-based API with one of the other backends "
+            "(for e.g. MKL or FFTW)")
+
+class FFT(_BaseFFT):
+    def __init__(self, invec, outvec, nbatch=1, size=None):
+        super(FFT, self).__init__(invec, outvec, nbatch, size)
+        logging.warn(warn_msg)
+        self.prec, self.itype, self.otype = _check_fft_args(invec, outvec)
+
+    def execute(self):
+        fft(self.invec, self.outvec, self.prec, self.itype, self.otype) 
+
+class IFFT(_BaseIFFT):
+    def __init__(self, invec, outvec, nbatch=1, size=None):
+        super(IFFT, self).__init__(invec, outvec, nbatch, size)
+        logging.warn(warn_msg)
+        self.prec, self.itype, self.otype = _check_fft_args(invec, outvec)
+
+    def execute(self):
+        ifft(self.invec, self.outvec, self.prec, self.itype, self.otype)
