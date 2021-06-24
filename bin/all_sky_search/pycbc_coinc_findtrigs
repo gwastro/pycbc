@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import h5py, argparse, logging, numpy, numpy.random
+import h5py, copy, argparse, logging, numpy, numpy.random, multiprocessing
+import shutil, uuid, os.path
 from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat, ranking
 import pycbc.version
@@ -55,6 +56,13 @@ parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
 parser.add_argument("--batch-singles", default=5000, type=int,
                     help="Number of single triggers to process at once")
+parser.add_argument('--nprocesses', type=int, default=1,
+                    help="Number of processes to use")
+parser.add_argument('--stage-input', action='store_true',
+                    help="Stage input files through to speed up"
+                         "access by multiple processes")
+parser.add_argument('--stage-input-dir', type=str, default='/dev/shm',
+                    help="Directory to stage input files")
 stat.insert_statistic_option_group(parser)
 args = parser.parse_args()
 
@@ -88,9 +96,19 @@ class MultiifoTrigs(object):
         self.singles = []
 
 trigs = MultiifoTrigs()
+cleanup_files = []
 for i in range(len(args.trigger_files)):
-    logging.info('Opening trigger file %s: %s' % (i,args.trigger_files[i]))
-    reader = ReadByTemplate(args.trigger_files[i],
+    if args.stage_input:
+        dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + '.hdf')
+        logging.info("Moving %s to shared memory as %s",
+                     args.trigger_files[i], dest)
+        shutil.copyfile(args.trigger_files[i], dest)
+        cleanup_files.append(dest)
+    else:
+        dest = args.trigger_files[i]
+
+    logging.info('Opening trigger file %s: %s' % (i, dest))
+    reader = ReadByTemplate(dest,
                             args.template_bank,
                             args.segment_name,
                             args.veto_files,
@@ -152,7 +170,9 @@ for decstr in args.loudest_keep_values:
     # of an integer
     total_factors.append(total_factors[-1] * int(factor))
 
-for tnum in template_ids:
+# Gather the coincs from a single template
+def process_template(tnum):
+    local_data = copy.deepcopy(data)
     times_full = {}
     sds_full = {}
     tids_full = {}
@@ -164,12 +184,12 @@ for tnum in template_ids:
 
         # get single-detector statistic
         sds_full[i] = rank_method.single(sngl)
-         
+
     mintrigs = min([len(ti) for ti in tids_full.values()])
     if mintrigs == 0:
         logging.info('No triggers in at least one ifo for template %i, '
                      'skipping' % tnum)
-        continue
+        return local_data
 
     if type(rank_method.single_dtype) == list:
         entries = [e[0] for e in rank_method.single_dtype]
@@ -214,7 +234,7 @@ for tnum in template_ids:
 
         times = times_full.copy()
         times[args.fixed_ifo] = times_full[args.fixed_ifo][fixed_idxs]
-        
+
         sds = sds_full.copy()
         sds[args.fixed_ifo] = sds_full[args.fixed_ifo][fixed_idxs]
 
@@ -387,15 +407,26 @@ for tnum in template_ids:
             for ifo in trigs.ifos:
                 addtime = times[ifo][ids[ifo]]
                 addtriggerid = tids[ifo][ids[ifo]]
-                data['%s/time' % ifo] += [addtime]
-                data['%s/trigger_id' % ifo] += [addtriggerid]
-            data['stat'] += [cstat]
-            data['decimation_factor'] += [dec]
-            data['timeslide_id'] += [slide]
-            data['template_id'] += [numpy.repeat(tnum, len(slide))]
-
+                local_data['%s/time' % ifo] += [addtime]
+                local_data['%s/trigger_id' % ifo] += [addtriggerid]
+            local_data['stat'] += [cstat]
+            local_data['decimation_factor'] += [dec]
+            local_data['timeslide_id'] += [slide]
+            local_data['template_id'] += [numpy.repeat(tnum, len(slide))]
             start1 += args.batch_singles
         start0 += args.batch_singles
+    return local_data
+
+if args.nprocesses == 1:
+    ldatas = list(map(process_template, list(template_ids)))
+else:
+    p = multiprocessing.Pool(args.nprocesses)
+    ldatas = p.map(process_template, list(template_ids))
+
+logging.info('merging data from the templates')
+for ldata in ldatas:
+    for key in data:
+        data[key] += ldata[key]
 
 if len(data['stat']) > 0:
     for key in data:
@@ -438,5 +469,9 @@ if args.timeslide_interval:
 else:
     nslides = 0
 f.attrs['num_slides'] = nslides
+
+for fname in cleanup_files:
+    logging.info('cleaning up %s', fname)
+    os.remove(fname)
 
 logging.info('Done')
