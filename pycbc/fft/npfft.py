@@ -31,10 +31,10 @@ import numpy.fft
 from .core import _check_fft_args
 from .core import _BaseFFT, _BaseIFFT
 
-_inv_fft_msg = ("I cannot perform an {} between data with an input type of "
+_INV_FFT_MSG = ("I cannot perform an {} between data with an input type of "
                 "{} and an output type of {}")
 
-def fft(invec, outvec, prec, itype, otype):
+def fft(invec, outvec, _, itype, otype):
     if invec.ptr == outvec.ptr:
         raise NotImplementedError("numpy backend of pycbc.fft does not "
                                   "support in-place transforms")
@@ -45,10 +45,10 @@ def fft(invec, outvec, prec, itype, otype):
         outvec.data = numpy.asarray(numpy.fft.rfft(invec.data),
                                     dtype=outvec.dtype)
     else:
-        raise ValueError(_inv_fft_msg.format("FFT", itype, otype))
+        raise ValueError(_INV_FFT_MSG.format("FFT", itype, otype))
 
 
-def ifft(invec, outvec, prec, itype, otype):
+def ifft(invec, outvec, _, itype, otype):
     if invec.ptr == outvec.ptr:
         raise NotImplementedError("numpy backend of pycbc.fft does not "
                                   "support in-place transforms")
@@ -64,24 +64,32 @@ def ifft(invec, outvec, prec, itype, otype):
         raise ValueError(_inv_fft_msg.format("IFFT", itype, otype))
 
 
-warn_msg = ("You are using the class-based PyCBC FFT API, with the numpy "
+WARN_MSG = ("You are using the class-based PyCBC FFT API, with the numpy "
             "backed. This is provided for convenience only. If performance is "
             "important use the class-based API with one of the other backends "
             "(for e.g. MKL or FFTW)")
 
+
 class FFT(_BaseFFT):
+    """
+    Class for performing FFTs via the numpy interface.
+    """
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(FFT, self).__init__(invec, outvec, nbatch, size)
-        logging.warn(warn_msg)
+        logging.warning(warn_msg)
         self.prec, self.itype, self.otype = _check_fft_args(invec, outvec)
 
     def execute(self):
-        fft(self.invec, self.outvec, self.prec, self.itype, self.otype) 
+        fft(self.invec, self.outvec, self.prec, self.itype, self.otype)
+
 
 class IFFT(_BaseIFFT):
+    """
+    Class for performing IFFTs via the numpy interface.
+    """
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(IFFT, self).__init__(invec, outvec, nbatch, size)
-        logging.warn(warn_msg)
+        logging.warning(warn_msg)
         self.prec, self.itype, self.otype = _check_fft_args(invec, outvec)
 
     def execute(self):

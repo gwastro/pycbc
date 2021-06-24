@@ -1,4 +1,4 @@
-from pycbc.types import zeros, complex64, complex128
+from pycbc.types import zeros
 import numpy as _np
 import ctypes
 import pycbc.scheme as _scheme
