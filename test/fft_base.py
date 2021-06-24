@@ -98,7 +98,7 @@ _bad_dtype = {float32: float32, float64: float64,
 # within the appropriate context, so they should not themselves be called inside
 # of a context block.
 
-def _test_fft(test_case,inarr,expec,tol):
+def _test_fft(test_case, inarr, expec, tol):
     # Basic test to see that the forward FFT doesn't
     # overwrite its input and computes its output to
     # within the required accuracy.
@@ -118,39 +118,38 @@ def _test_fft(test_case,inarr,expec,tol):
         outarr._delta_f *= 5*tol
     with tc.context:
         set_backend(tc.backends)
-        pycbc.fft.fft(inarr, outarr)
-        
-        # First, verify that the input hasn't been overwritten
-        emsg = 'FFT overwrote input array'
-        tc.assertEqual(inarr,in_pristine,emsg)
-        # Next, check that the output is correct to within tolerance.
-        # That will require exact equality of all other meta-data
-        emsg = 'FFT output differs by more than a factor of {0} from expected'.format(tol)
-        if isinstance(outarr,ts) or isinstance(outarr,fs):
-            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol,dtol=tol),msg=emsg)
-        else:
-            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol),msg=emsg)
-        outarr.clear()
-        fft_class = pycbc.fft.FFT(inarr, outarr)
-        fft_class.execute()
-        if isinstance(inarr, ts):
-            outarr *= inarr._delta_t
-        elif isinstance(inarr, fs):
-            outarr *= inarr._delta_f
+        for api in ['func', 'class']:
+            if api == 'func':
+                pycbc.fft.fft(inarr, outarr)
+            else:
+                fft_class = pycbc.fft.FFT(inarr, outarr)
+                fft_class.execute()
+                if isinstance(inarr, ts):
+                    outarr *= inarr._delta_t
+                elif isinstance(inarr, fs):
+                    outarr *= inarr._delta_f
 
-        # First, verify that the input hasn't been overwritten
-        emsg = 'FFT overwrote input array'
-        tc.assertEqual(inarr,in_pristine,emsg)
-        # Next, check that the output is correct to within tolerance.
-        # That will require exact equality of all other meta-data
-        emsg = 'FFT output differs by more than a factor of {0} from expected'.format(tol)
-        if isinstance(outarr,ts) or isinstance(outarr,fs):
-            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol,dtol=tol),msg=emsg)
-        else:
-            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol),msg=emsg)
+            # First, verify that the input hasn't been overwritten
+            emsg = 'FFT overwrote input array'
+            tc.assertEqual(inarr, in_pristine,emsg)
+            # Next, check that the output is correct to within tolerance.
+            # That will require exact equality of all other meta-data
+            emsg = ('FFT output differs by more than a factor of '
+                    '{0} from expected'.format(tol))
+            if isinstance(outarr, ts) or isinstance(outarr, fs):
+                tc.assertTrue(
+                    outarr.almost_equal_norm(expec, tol=tol, dtol=tol),
+                    msg=emsg
+                )
+            else:
+                tc.assertTrue(
+                    outarr.almost_equal_norm(expec, tol=tol),
+                    msg=emsg
+                )
+            outarr.clear()
 
 
-def _test_ifft(test_case,inarr,expec,tol):
+def _test_ifft(test_case, inarr, expec, tol):
     # Basic test to see that the reverse FFT doesn't
     # overwrite its input and computes its output to
     # within the required accuracy.
@@ -170,34 +169,35 @@ def _test_ifft(test_case,inarr,expec,tol):
         outarr._delta_f *= 5*tol
     with tc.context:
         set_backend(tc.backends)
-        pycbc.fft.ifft(inarr, outarr)
-        # First, verify that the input hasn't been overwritten
-        emsg = 'Inverse FFT overwrote input array'
-        tc.assertEqual(inarr,in_pristine,emsg)
-        # Next, check that the output is correct to within tolerance.
-        # That will require exact equality of all other meta-data
-        emsg = 'Inverse FFT output differs by more than a factor of {0} from expected'.format(tol)
-        if isinstance(outarr,ts) or isinstance(outarr,fs):
-            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol,dtol=tol),msg=emsg)
-        else:
-            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol),msg=emsg)
+        for api in ['func', 'class']:
+            if api == 'func':
+                pycbc.fft.ifft(inarr, outarr)
+            else:
+                ifft_class = pycbc.fft.IFFT(inarr, outarr)
+                ifft_class.execute()
+                if isinstance(inarr, ts):
+                    outarr *= inarr._delta_t
+                elif isinstance(inarr, fs):
+                    outarr *= inarr._delta_f
 
-        ifft_class = pycbc.fft.IFFT(inarr, outarr)
-        ifft_class.execute()
-        if isinstance(inarr, ts):
-            outarr *= inarr._delta_t
-        elif isinstance(inarr, fs):
-            outarr *= inarr._delta_f
-        # First, verify that the input hasn't been overwritten
-        emsg = 'Inverse FFT overwrote input array'
-        tc.assertEqual(inarr,in_pristine,emsg)
-        # Next, check that the output is correct to within tolerance.
-        # That will require exact equality of all other meta-data
-        emsg = 'Inverse FFT output differs by more than a factor of {0} from expected'.format(tol)
-        if isinstance(outarr,ts) or isinstance(outarr,fs):
-            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol,dtol=tol),msg=emsg)
-        else:
-            tc.assertTrue(outarr.almost_equal_norm(expec,tol=tol),msg=emsg)
+            # First, verify that the input hasn't been overwritten
+            emsg = 'Inverse FFT overwrote input array'
+            tc.assertEqual(inarr, in_pristine, emsg)
+            # Next, check that the output is correct to within tolerance.
+            # That will require exact equality of all other meta-data
+            emsg = ('Inverse FFT output differs by more than a factor '
+                    'of {0} from expected'.format(tol))
+            if isinstance(outarr, ts) or isinstance(outarr, fs):
+                tc.assertTrue(
+                    outarr.almost_equal_norm(expec, tol=tol, dtol=tol),
+                    msg=emsg
+                )
+            else:
+                tc.assertTrue(
+                    outarr.almost_equal_norm(expec, tol=tol),
+                    msg=emsg
+                )
+            outarr.clear()
 
 
 def _test_random(test_case,inarr,outarr,tol):
