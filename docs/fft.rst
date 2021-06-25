@@ -151,7 +151,7 @@ If you want to choose a specific backend, you can see what is available with::
 and then do::
 
     >>> from pycbc.fft import backend_support
-    >>> backend_support.set_backend('mkl')
+    >>> backend_support.set_backend(['mkl'])
 
 to set a specific backend. Running::
 
