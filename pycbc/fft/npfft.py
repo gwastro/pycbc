@@ -39,11 +39,11 @@ def fft(invec, outvec, _, itype, otype):
         raise NotImplementedError("numpy backend of pycbc.fft does not "
                                   "support in-place transforms")
     if itype == 'complex' and otype == 'complex':
-        outvec.data = numpy.asarray(numpy.fft.fft(invec.data),
-                                    dtype=outvec.dtype)
+        outvec.data[:] = numpy.asarray(numpy.fft.fft(invec.data),
+                                       dtype=outvec.dtype)
     elif itype == 'real' and otype == 'complex':
-        outvec.data = numpy.asarray(numpy.fft.rfft(invec.data),
-                                    dtype=outvec.dtype)
+        outvec.data[:] = numpy.asarray(numpy.fft.rfft(invec.data),
+                                       dtype=outvec.dtype)
     else:
         raise ValueError(_INV_FFT_MSG.format("FFT", itype, otype))
 
@@ -53,12 +53,12 @@ def ifft(invec, outvec, _, itype, otype):
         raise NotImplementedError("numpy backend of pycbc.fft does not "
                                   "support in-place transforms")
     if itype == 'complex' and otype == 'complex':
-        outvec.data = numpy.asarray(numpy.fft.ifft(invec.data),
-                                    dtype=outvec.dtype)
+        outvec.data[:] = numpy.asarray(numpy.fft.ifft(invec.data),
+                                       dtype=outvec.dtype)
         outvec *= len(outvec)
     elif itype == 'complex' and otype == 'real':
-        outvec.data = numpy.asarray(numpy.fft.irfft(invec.data,len(outvec)),
-                                    dtype=outvec.dtype)
+        outvec.data[:] = numpy.asarray(numpy.fft.irfft(invec.data,len(outvec)),
+                                       dtype=outvec.dtype)
         outvec *= len(outvec)
     else:
         raise ValueError(_INV_FFT_MSG.format("IFFT", itype, otype))
