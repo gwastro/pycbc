@@ -76,7 +76,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          gracedb_server=None, test_event=True,
          custom_frame_files=None, approximant=None, detector_state=None,
          veto_definer=None, injection_file=None, fake_strain=None,
-         fake_strain_seed=None):
+         fake_strain_seed=None, fudge=None):
 
     if not test_event and not gracedb_server:
         raise RuntimeError('a GraceDB URL must be specified if not a test event.')
@@ -419,14 +419,23 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         bs_approximant = 'TaylorF2'
 
     # run BAYESTAR to generate the skymap
-
-    cmd = ['bayestar-localize-coincs',
-           ligolw_file_path,
-           ligolw_file_path, 
-           '--waveform', str(bs_approximant),
-           '--f-low', str(f_low),
-           '-o', tmpdir]
-    subprocess.call(cmd)
+    if fudge is None:
+        cmd = ['bayestar-localize-coincs',
+               ligolw_file_path,
+               ligolw_file_path, 
+               '--waveform', str(bs_approximant),
+               '--f-low', str(f_low),
+               '-o', tmpdir]
+        subprocess.call(cmd)
+    else:
+        cmd = ['bayestar-localize-coincs',
+               ligolw_file_path,
+               ligolw_file_path, 
+               '--waveform', str(bs_approximant),
+               '--rescale-loglikelihood', fudge,
+               '--f-low', str(f_low),
+               '-o', tmpdir]
+        subprocess.call(cmd) 
 
     skymap_fits_name = os.path.join(tmpdir, '0.fits')
 
@@ -542,6 +551,9 @@ if __name__ == '__main__':
     parser.add_argument('--fake-strain-seed', type=int,
                         action=MultiDetOptionAction, metavar="IFO:FAKE_STRAIN_SEED",
                         help="The set of fake-strains-seeds for each detector")
+    parser.add_argument('--fudge', type=float,
+                    default=None,
+                    help="SNR rescaling factor used in BAYESTAR")
 
     opt = parser.parse_args()
 
@@ -561,4 +573,5 @@ if __name__ == '__main__':
          approximant=opt.approximant, detector_state=opt.detector_state,
          segment_source=opt.segment_source, segment_server=opt.segment_server,
          veto_definer=opt.veto_definer, injection_file=opt.injection_file, 
-         fake_strain=opt.fake_strain, fake_strain_seed=opt.fake_strain_seed)
+         fake_strain=opt.fake_strain, fake_strain_seed=opt.fake_strain_seed,
+         fudge=opt.fudge)
