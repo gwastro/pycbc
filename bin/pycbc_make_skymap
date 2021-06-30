@@ -551,9 +551,9 @@ if __name__ == '__main__':
     parser.add_argument('--fake-strain-seed', type=int,
                         action=MultiDetOptionAction, metavar="IFO:FAKE_STRAIN_SEED",
                         help="The set of fake-strains-seeds for each detector")
-    parser.add_argument('--fudge', type=float,
-                    default=None,
-                    help="SNR rescaling factor used in BAYESTAR")
+    parser.add_argument('--fudge',
+                        default=None,
+                        help="SNR rescaling factor used in BAYESTAR")
 
     opt = parser.parse_args()
 
