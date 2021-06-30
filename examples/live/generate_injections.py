@@ -1,53 +1,40 @@
 #!/usr/bin/env python
 
-import os
 import sys
+import numpy as np
 from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
 
 
-if os.path.exists('./test_inj1.hdf'):
-    raise OSError("output-file 1 already exists")
-
-if os.path.exists('./test_inj2.hdf'):
-    raise OSError("output-file 2 already exists")
-
 dtype = [('mass1', float), ('mass2', float),
          ('spin1z', float), ('spin2z', float),
-         ('tc', float), ('distance', float)]
+         ('tc', float), ('distance', float),
+         ('ra', float), ('dec', float),
+         ('approximant', 'S32')]
 
-# injection 1
-static_params = {'f_lower': 18.0, 'f_ref': 18.0, 'approximant': 'SEOBNRv4',
-                 'taper': 'start', 'ra': 45.0, 'dec': 45.0,
-                 'inclination': 0.0, 'coa_phase': 0.0, 'polarization': 0.0}
+static_params = {'f_lower': 17.,
+                 'f_ref': 17.,
+                 'taper': 'start',
+                 'inclination': 0.,
+                 'coa_phase': 0.,
+                 'polarization': 0.}
 
-samples = FieldArray(1, dtype=dtype)
+samples = FieldArray(2, dtype=dtype)
 
-# The following 'magic numbers' are intended to match the highest
-# mass injection in the template bank
-samples['mass1'] = [290.929321]
-samples['mass2'] = [3.6755455]
-samples['spin1z'] = [0.9934847]
-samples['spin2z'] = [0.92713535]
-samples['tc'] = [1272790100.1]
-samples['distance'] = [301.5]
+# masses and spins are intended to match the highest
+# and lowest mass templates in the template bank
+samples['mass1'] = [290.929321, 1.1331687]
+samples['mass2'] = [3.6755455, 1.010624]
+samples['spin1z'] = [0.9934847, 0.029544285]
+samples['spin2z'] = [0.92713535, 0.020993788]
 
-InjectionSet.write('test_inj1.hdf', samples, static_args=static_params,
-                   injtype='cbc', cmd=" ".join(sys.argv))
+# distance and sky locations to have network SNRs ~15
+samples['tc'] = [1272790100.1, 1272790260.1]
+samples['distance'] = [178., 79.]
+samples['ra'] = [np.deg2rad(45), np.deg2rad(10)]
+samples['dec'] = [np.deg2rad(45), np.deg2rad(-45)]
 
-# injection 2
-static_params['approximant'] = 'SpinTaylorT4'
+samples['approximant'] = ['SEOBNRv4_opt', 'SpinTaylorT4']
 
-samples = FieldArray(1, dtype=dtype)
-
-# The following 'magic numbers' are intended to match the lowest
-# mass injection in the template bank
-samples['mass1'] = [1.1331687]
-samples['mass2'] = [1.010624]
-samples['spin1z'] = [0.029544285]
-samples['spin2z'] = [0.020993788]
-samples['tc'] = [1272790260.1]
-samples['distance'] = [36.0]
-
-InjectionSet.write('test_inj2.hdf', samples, static_args=static_params,
+InjectionSet.write('injections.hdf', samples, static_args=static_params,
                    injtype='cbc', cmd=" ".join(sys.argv))

@@ -243,7 +243,7 @@ with ctx:
                              flow, dyn_range_factor=pycbc.DYN_RANGE_FAC,
                              precision='single')
 
-    logging.info("Making template: %s" % opt.approximant)
+    logging.info("Making template: %s", opt.approximant)
     if opt.use_params_of_closest_injection:
         if not hasattr(gwstrain, 'injections') or not opt.trigger_time:
             err_msg = "To use --use-params-of-closest-injection you must "
@@ -259,12 +259,12 @@ with ctx:
         row = WaveformArray.from_kwargs(
             mass1=inj.mass1,
             mass2=inj.mass2,
-            spin1x=inj.spin1x,
-            spin1y=inj.spin1y,
-            spin1z=inj.spin1z,
-            spin2x=inj.spin2x,
-            spin2y=inj.spin2y,
-            spin2z=inj.spin2z)
+            spin1x=inj.spin1x if hasattr(inj, 'spin1x') else 0,
+            spin1y=inj.spin1y if hasattr(inj, 'spin1y') else 0,
+            spin1z=inj.spin1z if hasattr(inj, 'spin1z') else 0,
+            spin2x=inj.spin2x if hasattr(inj, 'spin2x') else 0,
+            spin2y=inj.spin2y if hasattr(inj, 'spin2y') else 0,
+            spin2z=inj.spin2z if hasattr(inj, 'spin2z') else 0)
         # FIXME: Don't like hardcoded 16384 here
         # NOTE: f_lower is set in strain.py as inj.f_lower, but this is a
         #       little unclear to see and caused me some problems! Stating
@@ -278,9 +278,12 @@ with ctx:
         # apply a time shift so that the merger is at time zero,
         # the usual convention for templates
         detector = Detector(opt.channel_name[:2])
-        ltt = detector.time_delay_from_earth_center(
-                inj.longitude, inj.latitude, float(inj.get_end()))
-        td_template._epoch -= inj.get_end() + ltt
+        if isinstance(inj, numpy.record):
+            ra, dec, time = inj.ra, inj.dec, inj.tc
+        else:
+            ra, dec, time = inj.longitude, inj.latitude, inj.get_end()
+        ltt = detector.time_delay_from_earth_center(ra, dec, time)
+        td_template._epoch -= time + ltt
         # Check if waveform is too long
         tlen = (flen-1) * 2
         # FIXME: Hardcoded 7./8. factor here, but I'm not too bothered by this.
@@ -289,7 +292,10 @@ with ctx:
             td_template = td_template[new_start_idx:]
             taper_func = pycbc.waveform.utils.taper_timeseries
             td_template = taper_func(td_template, tapermethod='TAPER_START')
-        approximant = inj.waveform
+        if hasattr(inj, 'waveform'):
+            approximant = inj.waveform
+        else:
+            approximant = inj.approximant
         template = waveform.td_waveform_to_fd_waveform(td_template, length=flen)
         template = template.astype(complex_same_precision_as(segments[0]))
     else:
@@ -317,7 +323,7 @@ with ctx:
                                     f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)
             template = tc.multiply_and_add(tp, opt.u_val)
-    
+
     if opt.high_frequency_cutoff:
         kmax = int(opt.high_frequency_cutoff / template.delta_f)
         if kmax < len(template):
@@ -339,8 +345,8 @@ with ctx:
         if opt.minimum_chisq_bins:
             chisq_bins = opt.minimum_chisq_bins
             logging.warning("Number of chisq bins is less than requested "
-                            "minimum or is NaN. Using %d bins." %
-                            (opt.minimum_chisq_bins))
+                            "minimum or is NaN. Using %d bins.",
+                            opt.minimum_chisq_bins)
         else:
             raise ValueError(
                 "Chisq bins is NaN or negative and no minimum is set.")
@@ -348,6 +354,7 @@ with ctx:
         chisq_bins = int(chisq_bins_float)
 
     f['template'] = template.numpy()
+    f['template'].attrs['delta_f'] = template.delta_f
     snrs, chisqs = [], []
     raw_bins = [[] for b in range(chisq_bins)]
 
@@ -433,4 +440,3 @@ with ctx:
     f.attrs['command_line'] = (' '.join(sys.argv)).encode()
 
 logging.info("Finished")
-

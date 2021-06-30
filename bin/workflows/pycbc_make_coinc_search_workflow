@@ -503,14 +503,16 @@ splitbank_files_inj = wf.setup_splittable_workflow(workflow, [hdfbank],
                                                    tags=['injections'])
 
 # setup the injection files
-inj_files, inj_tags = wf.setup_injection_workflow(workflow,
+inj_files_base, inj_tags = wf.setup_injection_workflow(workflow,
                                                   output_dir="inj_files")
+inj_files = []
+for inj_file, tag in zip(inj_files_base, inj_tags):
+    inj_files.append(wf.inj_to_hdf(workflow, inj_file, 'inj_files', [tag]))
 
 inj_coincs = wf.FileList()
 
 found_inj_dict ={}
 insps_dict = {}
-small_inj_file_dict = {}
 
 files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
@@ -525,27 +527,13 @@ for inj_file, tag in zip(inj_files, inj_tags):
     else:
         file_for_injfind = inj_file
 
-    if workflow.cp.has_option_tags('workflow-injections', 'inj-cut', tags=ctags):
-        file_for_vetoes = wf.cut_distant_injections(
-                workflow, file_for_injfind, 'inj_files', tags=ctags)
-    else:
-        file_for_vetoes = inj_file
-
     files_for_combined_injfind.append(file_for_injfind)
-
-    if workflow.cp.has_option_tags('workflow-injections', 'strip-injections',
-                                   tags=ctags):
-        small_inj_file = wf.veto_injections(workflow, file_for_vetoes,
-                             insp_files_seg_file, trig_generated_name,
-                             "inj_files", tags=ctags)
-    else:
-        small_inj_file = file_for_vetoes
 
     # setup the matchedfilter jobs
     insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
                                          datafind_files, splitbank_files_inj,
                                          output_dir, tags=ctags,
-                                         injection_file=small_inj_file)
+                                         injection_file=inj_file)
 
     insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
                                                insps, output_dir, tags=ctags)
@@ -581,7 +569,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
             hdfbank,
             output_dir,
             tags=ctagcomb,
-            injection_file=small_inj_file,
+            injection_file=inj_file,
             ranking_file=final_bg_files[ordered_ifo_list]
         )
 
@@ -611,7 +599,6 @@ for inj_file, tag in zip(inj_files, inj_tags):
     # Set files for plots
     found_inj_dict[tag] = found_inj
     insps_dict[tag] = insps
-    small_inj_file_dict[tag] = small_inj_file
 
 # And the combined INJFIND file
 if len(files_for_combined_injfind) > 0:
@@ -630,7 +617,6 @@ if len(files_for_combined_injfind) > 0:
 for inj_file, tag in zip(inj_files, inj_tags):
     found_inj = found_inj_dict[tag]
     insps = insps_dict[tag]
-    small_inj_file = small_inj_file_dict[tag]
     injdir = rdir['injections/%s' % tag]
     sensdir = rdir['search_sensitivity/%s' % tag]
 
@@ -674,7 +660,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                            'subsection-suffix', tags=[tag])
         curr_dir_nam += '_' + suf_str
     currdir = rdir[curr_dir_nam]
-    wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
+    wf.setup_injection_minifollowups(workflow, found_inj, inj_file,
                                      insps, hdfbank, insp_files_seg_file,
                                      data_analysed_name, trig_generated_name,
                                      'daxes', currdir, tags=[tag])

@@ -18,11 +18,16 @@ from pycbc.conversions import (
     mchirp_from_mass1_mass2, mtotal_from_mchirp_eta,
     mass1_from_mtotal_eta, mass2_from_mtotal_eta
 )
-from scipy.optimize import differential_evolution
+from scipy.optimize import differential_evolution, shgo
 from pycbc.io import live
 from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
+
+try: 
+    import pyswarms as ps
+except:
+    ps = None
 
 
 Nfeval = 0
@@ -97,8 +102,15 @@ def compute_network_snr_core(v, *argv):
     return (network_snrsq**0.5), snr_series_dict
 
 def compute_network_snr(v, *argv):
+    if len(argv) == 1:
+        argv = argv[0]
     nsnr, _ = compute_network_snr_core(v, *argv)
     return -nsnr
+ 
+def compute_network_snr_pso(v, *argv, **kwargs):
+    argv = kwargs['args']
+    nsnr_array = numpy.array([-compute_network_snr_core(v_i, *argv)[0] for v_i in v])
+    return nsnr_array
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -137,9 +149,43 @@ parser.add_argument('--output-path', required=True,
                     help='Path to a directory to store results in')
 parser.add_argument('--cores', type=int,
                     help='Restrict calculation to given number of CPU cores')
+parser.add_argument('--optimizer', type=str, default='differential_evolution',
+                    choices=['differential_evolution', 'shgo', 'pso'],
+                    help='The optimizer to use, differential_evolution, shgo or pso')
+parser.add_argument('--di-maxiter', type=int, default=50,
+                    help='Only relevant for --optimizer differential_evolution: '
+                    'The maximum number of generations over which the entire population is evolved.')
+parser.add_argument('--di-popsize', type=int, default=100,
+                    help='Only relevant for --optimizer differential_evolution: '
+                         'A multiplier for setting the total population size.')
+parser.add_argument('--shgo-samples', type=int, default=76,
+                    help='Only relevant for --optimizer shgo: '
+                    'Number of sampling points used in the construction of the simplicial complex. ')
+parser.add_argument('--shgo-iters', type=int, default=3,
+                    help='Only relevant for --optimizer shgo: '
+                    'Number of iterations used in the construction of the simplicial complex.')
+parser.add_argument('--pso-iters', type=int, default=5,
+                    help='Only relevant for --optimizer pso: '
+                    'Number of iterations used in the particle swarm optimization.')
+parser.add_argument('--pso-particles', type=int, default=250,
+                    help='Only relevant for --optimizer pso: '
+                    'Number of particles used in the swarm.')
+parser.add_argument('--pso-c1', type=float, default=0.5,
+                    help='Only relevant for --optimizer pso: '
+                    'The hyperparameter c1: the cognitive parameter.')
+parser.add_argument('--pso-c2', type=float, default=2.0,
+                    help='Only relevant for --optimizer pso: '
+                    'The hyperparameter c2: the social parameter.')
+parser.add_argument('--pso-w', type=float, default=0.01,
+                    help='Only relevant for --optimizer pso: '
+                    'The hyperparameter w: the intertia parameter.')
+                    
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
+
+if args.optimizer == 'pso' and ps == None:
+    parser.error('You need to install pyswarms to use the pso optimizer.')
 
 logging.info('Starting optimize SNR')
 
@@ -171,6 +217,8 @@ sample_rate = fp['sample_rate'][()]
 
 extra_args = [data, coinc_times, coinc_ifos, flen,
               approximant, flow, f_end, delta_f, sample_rate]
+extra_kwargs = {}
+extra_kwargs['args'] = extra_args
 
 mass1 = fp['mass1'][()]
 mass2 = fp['mass2'][()]
@@ -182,23 +230,48 @@ maxchirp = mchirp * (1 + mchirp / 50.0)
 minchirp = 1 if minchirp < 1 else minchirp
 maxchirp = 80 if maxchirp > 80 else maxchirp
 
-bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
+#Different optimizers have different bound definitions
+
+if args.optimizer == 'pso': 
+    min_bound = [minchirp, 0.01, -0.9, -0.9]
+    max_bound = [maxchirp, 0.2499, 0.9, 0.9] 
+    bounds = (min_bound, max_bound)
+else:
+    bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
 
 logging.info('Starting optimization')
 
-results = differential_evolution(compute_network_snr, bounds,
-                                 maxiter=100, workers=(args.cores or -1),
-                                 popsize=200, mutation=(0.5,1),
+if args.optimizer == 'differential_evolution':
+    results = differential_evolution(compute_network_snr, bounds,
+                                 maxiter=args.di_maxiter, workers=(args.cores or -1),
+                                 popsize=args.di_popsize, mutation=(0.5,1),
                                  recombination=0.7, callback=callback_func,
                                  args=extra_args)
 
+elif args.optimizer == 'shgo':
+    results = shgo(compute_network_snr, bounds=bounds, args=extra_args, 
+                iters=args.shgo_iters, n=args.shgo_samples, sampling_method="sobol")
+                
+elif args.optimizer == 'pso':
+    options = {'c1': args.pso_c1, 'c2': args.pso_c2, 'w':args.pso_w}
+    optimizer = ps.single.GlobalBestPSO(n_particles=args.pso_particles, 
+                                        dimensions=4, options=options, bounds=bounds)
+    cost, results = optimizer.optimize(compute_network_snr_pso, iters=args.pso_iters,
+                                       n_processes=args.cores, **extra_kwargs)
+                
 logging.info('Optimization complete')
 
-mtotal = mtotal_from_mchirp_eta(results.x[0], results.x[1])
-mass1 = mass1_from_mtotal_eta(mtotal, results.x[1])
-mass2 = mass2_from_mtotal_eta(mtotal, results.x[1])
-spin1z = results.x[2]
-spin2z = results.x[3]
+if args.optimizer == 'pso':
+    opt_params = results
+else:
+    opt_params = results.x
+
+mtotal = mtotal_from_mchirp_eta(opt_params[0], opt_params[1])
+mass1 = mass1_from_mtotal_eta(mtotal, opt_params[1])
+mass2 = mass2_from_mtotal_eta(mtotal, opt_params[1])
+spin1z = opt_params[2]
+spin2z = opt_params[3]
+
 
 fup_ifos = set(ifos) - set(coinc_ifos)
 
@@ -207,7 +280,7 @@ for ifo in fup_ifos:
 
 extra_args[2] = ifos
 
-_, snr_series_dict = compute_network_snr_core(results.x, *extra_args)
+_, snr_series_dict = compute_network_snr_core(opt_params, *extra_args)
 
 # Prepare for GraceDB upload
 coinc_results = {}

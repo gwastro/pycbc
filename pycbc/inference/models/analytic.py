@@ -18,7 +18,9 @@ This modules provides models that have analytic solutions for the
 log likelihood.
 """
 
+import logging
 import numpy
+import numpy.random
 from scipy import stats
 
 from .base import BaseModel
@@ -212,3 +214,48 @@ class TestPrior(BaseModel):
         """Returns zero.
         """
         return 0.
+
+
+class TestPosterior(BaseModel):
+    r"""Build a test posterior from a set of samples using a kde
+
+    Parameters
+    ----------
+    variable_params : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    posterior_file : hdf file
+        A compatible pycbc inference output file which posterior samples can
+        be read from.
+    nsamples : int
+        Number of samples to draw from posterior file to build KDE.
+    **kwargs :
+        All other keyword arguments are passed to ``BaseModel``.
+
+    """
+    name = "test_posterior"
+
+    def __init__(self, variable_params, posterior_file, nsamples, **kwargs):
+        super(TestPosterior, self).__init__(variable_params, **kwargs)
+
+        from pycbc.inference.io import loadfile  # avoid cyclic import
+        logging.info('loading test posterior model')
+        inf_file = loadfile(posterior_file)
+        logging.info('reading samples')
+        samples = inf_file.read_samples(variable_params)
+        samples = numpy.array([samples[v] for v in variable_params])
+
+        # choose only the requested amount of samples
+        idx = numpy.arange(0, samples.shape[-1])
+        idx = numpy.random.choice(idx, size=int(nsamples), replace=False)
+        samples = samples[:, idx]
+
+        logging.info('making kde with %s samples', samples.shape[-1])
+        self.kde = stats.gaussian_kde(samples)
+        logging.info('done initializing test posterior model')
+
+    def _loglikelihood(self):
+        """Returns the log pdf of the test posterior kde
+        """
+        p = numpy.array([self.current_params[p] for p in self.variable_params])
+        logpost = self.kde.logpdf(p)
+        return float(logpost[0])

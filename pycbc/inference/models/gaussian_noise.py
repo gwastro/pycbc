@@ -115,12 +115,16 @@ class BaseGaussianNoise(BaseDataModel):
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, ignore_failed_waveforms=False,
+                 no_save_data=False,
                  **kwargs):
         # set up the boiler-plate attributes
         super(BaseGaussianNoise, self).__init__(variable_params, data,
                                                 static_params=static_params,
+                                                no_save_data=no_save_data,
                                                 **kwargs)
         self.ignore_failed_waveforms = ignore_failed_waveforms
+        self.no_save_data = no_save_data
+
         # check if low frequency cutoff has been provided for every IFO with
         # data
         for ifo in self.data:
@@ -432,7 +436,7 @@ class BaseGaussianNoise(BaseDataModel):
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
             fp.attrs[key] = [float(data.start_time), float(data.end_time)]
-        if self._psds is not None:
+        if self._psds is not None and not self.no_save_data:
             fp.write_psd(self._psds)
         # write the times used for psd estimation (if they were provided)
         for det in self.psd_segments:
@@ -458,7 +462,8 @@ class BaseGaussianNoise(BaseDataModel):
                                                         self._f_upper[det]
 
     @classmethod
-    def from_config(cls, cp, data_section='data', **kwargs):
+    def from_config(cls, cp, data_section='data', data=None, psds=None,
+                    **kwargs):
         r"""Initializes an instance of this class from the given config file.
 
         In addition to ``[model]``, a ``data_section`` (default ``[data]``)
@@ -526,8 +531,11 @@ class BaseGaussianNoise(BaseDataModel):
             args['normalize'] = True
         if cp.has_option('model', 'ignore-failed-waveforms'):
             args['ignore_failed_waveforms'] = True
+        if cp.has_option('model', 'no-save-data'):
+            args['no_save_data'] = True
         # get any other keyword arguments provided in the model section
-        ignore_args = ['name', 'normalize', 'ignore-failed-waveforms']
+        ignore_args = ['name', 'normalize',
+                       'ignore-failed-waveforms', 'no-save-data']
         for option in cp.options("model"):
             if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)
@@ -549,20 +557,22 @@ class BaseGaussianNoise(BaseDataModel):
         # load the data
         opts = data_opts_from_config(cp, data_section,
                                      args['low_frequency_cutoff'])
-        strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
-        # convert to frequency domain and get psds
-        stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
-                                                     psd_strain_dict)
-        # save the psd data segments if the psd was estimated from data
-        if opts.psd_estimation is not None:
-            _tdict = psd_strain_dict or strain_dict
-            for det in psds:
-                psds[det].psd_segment = (_tdict[det].start_time,
-                                         _tdict[det].end_time)
-        # gate overwhitened if desired
-        if opts.gate_overwhitened and opts.gate is not None:
-            stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
-        args.update({'data': stilde_dict, 'psds': psds})
+        if data is None or psds is None:
+            strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
+            # convert to frequency domain and get psds
+            stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
+                                                         psd_strain_dict)
+            # save the psd data segments if the psd was estimated from data
+            if opts.psd_estimation is not None:
+                _tdict = psd_strain_dict or strain_dict
+                for det in psds:
+                    psds[det].psd_segment = (_tdict[det].start_time,
+                                             _tdict[det].end_time)
+            # gate overwhitened if desired
+            if opts.gate_overwhitened and opts.gate is not None:
+                stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
+            data = stilde_dict
+        args.update({'data': data, 'psds': psds})
         # any extra args
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
@@ -1038,7 +1048,7 @@ def create_waveform_generator(
                 recalibration=None, gates=None,
                 generator_class=generator.FDomainDetFrameGenerator,
                 **static_params):
-    """Creates a waveform generator for use with a model.
+    r"""Creates a waveform generator for use with a model.
 
     Parameters
     ----------
@@ -1058,6 +1068,12 @@ def create_waveform_generator(
     gates : dict of tuples, optional
         Dictionary of detectors -> tuples of specifying gate times. The
         sort of thing returned by :py:func:`pycbc.gate.gates_from_cli`.
+    generator_class : detector-frame fdomain generator, optional
+        Class to use for generating waveforms. Default is
+        :py:class:`waveform.generator.FDomainDetFrameGenerator`.
+    \**static_params :
+        All other keyword arguments are passed as static parameters to the
+        waveform generator.
 
     Returns
     -------
@@ -1079,7 +1095,7 @@ def create_waveform_generator(
     except KeyError:
         raise ValueError("no approximant provided in the static args")
 
-    generator_function = generator.select_waveform_generator(approximant)
+    generator_function = generator_class.select_rframe_generator(approximant)
     # get data parameters; we'll just use one of the data to get the
     # values, then check that all the others are the same
     delta_f = None

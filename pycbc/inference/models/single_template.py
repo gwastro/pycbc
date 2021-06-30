@@ -81,7 +81,8 @@ class SingleTemplate(BaseGaussianNoise):
         #polarization array to marginalize over if num_samples given
         self.pflag = 0
         if polarization_samples is not None:
-            self.polarization = numpy.linspace(0, 2*numpy.pi, polarization_samples)
+            self.polarization = numpy.linspace(0, 2*numpy.pi,
+                                               int(polarization_samples))
             self.pflag = 1
 
         # Calculate high sample rate SNR time series
@@ -134,8 +135,8 @@ class SingleTemplate(BaseGaussianNoise):
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
                                                             p['dec'],
                                                             self.time)
-            ip = numpy.cos(p['inclination'])
-            ic = 0.5 * (1.0 + ip * ip)
+            ic = numpy.cos(p['inclination'])
+            ip = 0.5 * (1.0 + ic * ic)
             htf = (fp * ip + 1.0j * fc * ic) / p['distance']
 
             sh = self.sh[ifo].at_time(p['tc'] + dt) * htf
@@ -146,4 +147,4 @@ class SingleTemplate(BaseGaussianNoise):
         if self.pflag == 0:
             return float(vloglr)
         else:
-            return float(logsumexp(vloglr))
+            return float(logsumexp(vloglr)) - numpy.log(len(vloglr))

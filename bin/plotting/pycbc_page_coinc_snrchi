@@ -7,6 +7,7 @@ matplotlib.use('Agg')
 import pylab, pycbc.results
 from pycbc.io import get_chisq_from_file_choice, chisq_choices
 from pycbc import conversions
+from pycbc.detector import Detector
 import pycbc.version
 
 def snr_from_chisq(chisq, newsnr, q=6.):
@@ -14,9 +15,6 @@ def snr_from_chisq(chisq, newsnr, q=6.):
     ind = numpy.where(chisq > 1.)[0]
     snr[ind] = float(newsnr) / ( 0.5 * (1. + chisq[ind] ** (q/2.)) ) ** (-1./q)
     return snr
-
-# FIXME: RECALCULATE THIS FROM DISTANCE AND ORIENTATION
-eff_map = {'H1':'eff_dist_h', 'L1':'eff_dist_l', 'V1':'eff_dist_v'} 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version",
@@ -77,9 +75,15 @@ inj_tids = {}
 for tmpifo in ifos:
     inj_tids[tmpifo] = f['found_after_vetoes/{}/trigger_id'.format(tmpifo)]
 
+eff_dists = Detector(ifo).effective_distance(f['injections/distance'][:],
+                                             f['injections/ra'][:],
+                                             f['injections/dec'][:],
+                                             f['injections/polarization'][:],
+                                             f['injections/tc'][:],
+                                             f['injections/inclination'][:])
 
 inj_idx = f['found_after_vetoes/injection_index'][:]
-eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
+eff_dist = eff_dists[inj_idx]
 m1, m2 = f['injections/mass1'][:][inj_idx], f['injections/mass2'][:][inj_idx]
 s1, s2 = f['injections/spin1z'][:][inj_idx], f['injections/spin2z'][:][inj_idx]
 mchirp = conversions.mchirp_from_mass1_mass2(m1, m2)

@@ -2,9 +2,12 @@
 
 """Reads in and vetoes single ifo triggers, cuts, reranks and clusters them"""
 
-import h5py, numpy, argparse, logging
-from pycbc.io import hdf
-from pycbc.events import stat, coinc, ranking
+import argparse
+import logging
+import numpy
+import h5py
+from pycbc.io import SingleDetTriggers
+from pycbc.events import stat, coinc, veto
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -54,16 +57,16 @@ else:
 if filter_func is not None:
     logging.info('Will filter trigs using %s', filter_func)
 # Filter will be stored as self.mask attribute of sngls instance
-sngls = hdf.SingleDetTriggers(args.single_trig_file, args.bank_file,
-                              args.veto_file, args.segment_name, filter_func,
-                              args.detector)
+sngls = SingleDetTriggers(args.single_trig_file, args.bank_file,
+                          args.veto_file, args.segment_name, filter_func,
+                          args.detector)
 
 logging.info('Calculating stat')
-rank_method = stat.get_statistic_from_opts(args, [args.instrument])
+rank_method = stat.get_statistic_from_opts(args, [args.detector])
 #  NOTE: inefficient, as we are calculating the stat on all
 #  triggers. Might need to do something complicated to fix this.
 #  Or just use files with fewer triggers :P
-sngl_info = ([args.instrument], sngls.trigs)
+sngl_info = ([args.detector], sngls.trigs)
 stat = rank_method.rank_stat_single(sngl_info)[sngls.mask]
 
 logging.info('%i stat values found', len(stat))
@@ -107,9 +110,23 @@ if args.store_bank_values:
             continue
         outgroup[n] = getattr(sngls, n)[out_idx]
 
-# copy the live time segments to enable the calculation of trigger rates
-outgroup['search/start_time'] = sngls.trigs['search/start_time'][:]
-outgroup['search/end_time'] = sngls.trigs['search/end_time'][:]
+# copy the live time segments to enable the calculation of trigger rates.
+# If a veto file has been used, subtract the vetoed time from the live time
+
+live_segs = veto.start_end_to_segments(sngls.trigs['search/start_time'][:],
+                                       sngls.trigs['search/end_time'][:])
+live_segs.coalesce()
+
+if args.veto_file is not None:
+    veto_segs = veto.select_segments_by_definer(args.veto_file,
+                                                args.segment_name,
+                                                args.detector)
+    veto_segs.coalesce()
+    live_segs -= veto_segs
+
+outgroup['search/start_time'], outgroup['search/end_time'] = \
+        veto.segments_to_start_end(live_segs)
+outgroup['search'].attrs['live_time'] = abs(live_segs)
 
 # cannot store None in a h5py attr
 outgroup.attrs['filter'] = filter_func or 'None'
@@ -117,7 +134,7 @@ outgroup.attrs['cluster_window'] = args.cluster_window or 'None'
 
 outgroup['stat'] = stat[out_idx]
 outgroup.attrs['ranking_statistic'] = args.ranking_statistic
-outgroup.arrgs['sngl_ranking'] = args.sngl_ranking
+outgroup.attrs['sngl_ranking'] = args.sngl_ranking
 outgroup.attrs['statistic_files'] = args.statistic_files
 
 outfile.close()

@@ -76,9 +76,11 @@ class DynestySampler(BaseSampler):
     def __init__(self, model, nlive, nprocesses=1,
                  checkpoint_time_interval=None, maxcall=None,
                  loglikelihood_function=None, use_mpi=False,
+                 no_save_state=False,
                  run_kwds=None, **kwargs):
 
         self.model = model
+        self.no_save_state = no_save_state
         log_likelihood_call, prior_call = setup_calls(
             model,
             loglikelihood_function=loglikelihood_function)
@@ -275,6 +277,8 @@ class DynestySampler(BaseSampler):
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
 
+        no_save_state = cp.has_option(section, 'no-save-state')
+
         # optional run_nested arguments for dynesty
         rargs = {'maxiter': int,
                  'dlogz': float,
@@ -319,6 +323,7 @@ class DynestySampler(BaseSampler):
 
         obj = cls(model, nlive=nlive, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
+                  no_save_state=no_save_state,
                   use_mpi=use_mpi, run_kwds=run_extra, **extra)
         setup_output(obj, output_file, check_nsamples=False)
 
@@ -344,13 +349,7 @@ class DynestySampler(BaseSampler):
                 # Write pickled data
                 fp.write_pickled_data_into_checkpoint_file(self._sampler)
 
-                # Write nested samples
-                fp.write_raw_samples(self.samples)
-
-                # Write logz and dlogz
-                logz = self._sampler.results.logz[-1:][0]
-                dlogz = self._sampler.results.logzerr[-1:][0]
-                fp.write_logevidence(logz, dlogz)
+            self.write_results(fn)
 
         # Restore properties that couldn't be pickled if we are continuing
         for key in saved:
@@ -389,12 +388,16 @@ class DynestySampler(BaseSampler):
         logz = self._sampler.results.logz[-1:][0]
         dlogz = self._sampler.results.logzerr[-1:][0]
         logging.info("log Z, dlog Z: {}, {}".format(logz, dlogz))
-        self.checkpoint()
-        logging.info("Validating checkpoint and backup files")
-        checkpoint_valid = validate_checkpoint_files(
-            self.checkpoint_file, self.backup_file, check_nsamples=False)
-        if not checkpoint_valid:
-            raise IOError("error writing to checkpoint file")
+
+        if self.no_save_state:
+            self.write_results(self.checkpoint_file)
+        else:
+            self.checkpoint()
+            logging.info("Validating checkpoint and backup files")
+            checkpoint_valid = validate_checkpoint_files(
+                self.checkpoint_file, self.backup_file, check_nsamples=False)
+            if not checkpoint_valid:
+                raise IOError("error writing to checkpoint file")
 
     @property
     def samples(self):
@@ -428,12 +431,13 @@ class DynestySampler(BaseSampler):
             in an an append state.
         """
         with self.io(filename, 'a') as fp:
-            # write samples
+            # Write nested samples
             fp.write_raw_samples(self.samples)
 
-            # write log evidence
-            fp.write_logevidence(self._sampler.results.logz[-1:][0],
-                                 self._sampler.results.logzerr[-1:][0])
+            # Write logz and dlogz
+            logz = self._sampler.results.logz[-1:][0]
+            dlogz = self._sampler.results.logzerr[-1:][0]
+            fp.write_logevidence(logz, dlogz)
 
     @property
     def model_stats(self):
@@ -525,7 +529,7 @@ def sample_rwalk_mod(args):
         # Check proposed point.
         v_prop = prior_transform(numpy.array(u_prop))
         logl_prop = loglikelihood(numpy.array(v_prop))
-        if logl_prop >= loglstar:
+        if logl_prop > loglstar:
             u = u_prop
             v = v_prop
             logl = logl_prop

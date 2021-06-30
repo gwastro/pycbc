@@ -142,7 +142,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     if timeseries.kind is not 'real':
         raise TypeError("Time series must be real")
 
-    if timeseries.delta_t == delta_t:
+    if timeseries.sample_rate_close(1.0 / delta_t):
         return timeseries * 1
 
     if method == 'butterworth':
@@ -151,7 +151,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
         data = lal_data.data.data
 
     elif method == 'ldas':
-        factor = int(delta_t / timeseries.delta_t)
+        factor = int(round(delta_t / timeseries.delta_t))
         numtaps = factor * 20 + 1
 
         # The kaiser window has been testing using the LDAS implementation

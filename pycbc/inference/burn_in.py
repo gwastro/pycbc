@@ -347,15 +347,8 @@ class BaseBurnInTests(object):
 
     def _getacls(self, filename, start_index):
         """Convenience function for calculating acls for the given filename.
-
-        Since we calculate the acls, this will also store it to the sampler.
         """
-        acls = self.sampler.compute_acl(filename, start_index=start_index)
-        # since we calculated it, save the acls to the sampler...
-        # but only do this if this is the only burn in test
-        if len(self.do_tests) == 1:
-            self.sampler.raw_acls = acls
-        return acls
+        return self.sampler.compute_acl(filename, start_index=start_index)
 
     def _getaux(self, test):
         """Convenience function for getting auxilary information.

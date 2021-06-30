@@ -831,6 +831,11 @@ def _genqnmfreq(mass, spin, l, m, nmodes, qnmfreq=None):
     lal.COMPLEX16Vector
         LAL vector containing the complex QNM frequencies.
     """
+    # The function used here only supports modes 22, 21, 33, 44 and 55,
+    # but it doesn't raise an error if a different mode is selected.
+    # Raise error here to avoid returning wrong values
+    if (l,m) not in [(2,2), (2,1), (3,3), (4,4), (5,5)]:
+        raise ValueError('Selected (l,m) mode not supported')
     if qnmfreq is None:
         qnmfreq = lal.CreateCOMPLEX16Vector(int(nmodes))
     lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(
@@ -1215,10 +1220,10 @@ def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
     final_mass = numpy.zeros(mass1.shape)
     final_spin = numpy.zeros(mass1.shape)
     for ii in range(final_mass.size):
-        m1 = mass1[ii]
-        m2 = mass2[ii]
-        spin1 = [spin1x[ii], spin1y[ii], spin1z[ii]]
-        spin2 = [spin2x[ii], spin2y[ii], spin2z[ii]]
+        m1 = numpy.float(mass1[ii])
+        m2 = numpy.float(mass2[ii])
+        spin1 = list(map(float, [spin1x[ii], spin1y[ii], spin1z[ii]]))
+        spin2 = list(map(float, [spin2x[ii], spin2y[ii], spin2z[ii]]))
         _, fm, fs = lalsim.SimIMREOBFinalMassSpin(m1, m2, spin1, spin2,
                                                   getattr(lalsim, approximant))
         final_mass[ii] = fm * (m1 + m2)

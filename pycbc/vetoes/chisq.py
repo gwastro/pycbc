@@ -51,13 +51,13 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
 
     bins: List of ints
         A list of the edges of the chisq bins is returned.
-
     """
     sigmasq = sigmasq_series[kmax - 1]
     edge_vec = numpy.arange(0, num_bins) * sigmasq / num_bins
     bins = numpy.searchsorted(sigmasq_series[kmin:kmax], edge_vec, side='right')
     bins += kmin
     return numpy.append(bins, kmax)
+
 
 def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
                      high_frequency_cutoff=None):
@@ -92,6 +92,7 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
                                     (len(htilde)-1)*2)
     return power_chisq_bins_from_sigmasq_series(sigma_vec, num_bins, kmin, kmax)
 
+
 @schemed(BACKEND_PREFIX)
 def chisq_accum_bin(chisq, q):
     err_msg = "This function is a stub that should be overridden using the "
@@ -105,6 +106,7 @@ def shift_sum(v1, shifts, bins):
     err_msg = "This function is a stub that should be overridden using the "
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
+
 
 def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     """Calculate the chisq timeseries from precomputed values for only select points.
@@ -219,6 +221,7 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
     else:
         return chisq
 
+
 def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
     """Calculate the chisq values for only selected points.
 
@@ -271,7 +274,8 @@ def power_chisq(template, data, num_bins, psd,
         must be commensurate with the template.
         (EXPLAINME - does this mean 'the same as' or something else?)
     num_bins: int
-        The number of bins in the chisq. Note that the dof goes as 2*num_bins-2.
+        The number of frequency bins used for chisq. The number of statistical
+        degrees of freedom ('dof') is 2*num_bins-2.
     psd: FrequencySeries
         The psd of the data.
     low_frequency_cutoff: {None, float}, optional
@@ -291,7 +295,7 @@ def power_chisq(template, data, num_bins, psd,
 
     bins = power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff,
                             high_frequency_cutoff)
-    corra = zeros((len(htilde)-1)*2, dtype=htilde.dtype)
+    corra = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
     total_snr, corr, tnorm = matched_filter_core(htilde, stilde, psd,
                            low_frequency_cutoff, high_frequency_cutoff,
                            corr_out=corra)
@@ -315,7 +319,7 @@ class SingleDetPowerChisq(object):
 
     @staticmethod
     def parse_option(row, arg):
-        safe_dict = {}
+        safe_dict = {'max': max, 'min': min}
         safe_dict.update(row.__dict__)
         safe_dict.update(math.__dict__)
         safe_dict.update(pycbc.pnutils.__dict__)
@@ -329,7 +333,7 @@ class SingleDetPowerChisq(object):
             psd._chisq_cached_key = {}
 
         if not hasattr(template, '_bin_cache'):
-            template._bin_cache = LimitedSizeDict(size_limite=2**2)
+            template._bin_cache = LimitedSizeDict(size_limit=2**2)
 
         if key not in template._bin_cache or id(template.params) not in psd._chisq_cached_key:
             psd._chisq_cached_key[id(template.params)] = True
@@ -357,13 +361,13 @@ class SingleDetPowerChisq(object):
         Returns
         -------
         chisq: Array
-            Chisq values, one for each sample index
+            Chisq values, one for each sample index, or zero for points below
+            the specified SNR threshold
 
         chisq_dof: Array
             Number of statistical degrees of freedom for the chisq test
-            in the given template
+            in the given template, equal to 2 * num_bins - 2
         """
-
         if self.do:
             num_above = len(indices)
             if self.snr_threshold:
@@ -372,7 +376,7 @@ class SingleDetPowerChisq(object):
                 logging.info('%s above chisq activation threshold' % num_above)
                 above_indices = indices[above]
                 above_snrv = snrv[above]
-                rchisq = numpy.zeros(len(indices), dtype=numpy.float32)
+                chisq_out = numpy.zeros(len(indices), dtype=numpy.float32)
                 dof = -100
             else:
                 above_indices = indices
@@ -380,19 +384,21 @@ class SingleDetPowerChisq(object):
 
             if num_above > 0:
                 bins = self.cached_chisq_bins(template, psd)
+                # len(bins) is number of bin edges, num_bins = len(bins) - 1
                 dof = (len(bins) - 1) * 2 - 2
-                chisq = power_chisq_at_points_from_precomputed(corr,
+                _chisq = power_chisq_at_points_from_precomputed(corr,
                                      above_snrv, snr_norm, bins, above_indices)
 
             if self.snr_threshold:
                 if num_above > 0:
-                    rchisq[above] = chisq
+                    chisq_out[above] = _chisq
             else:
-                rchisq = chisq
+                chisq_out = _chisq
 
-            return rchisq, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
+            return chisq_out, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
         else:
             return None, None
+
 
 class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
     """Class that handles precomputation and memory management for efficiently
@@ -418,7 +424,6 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
             bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
         return bins
 
-
     def values(self, corr_plus, corr_cross, snrv, psd,
                indices, template_plus, template_cross, u_vals,
                hplus_cross_corr, hpnorm, hcnorm):
@@ -441,6 +446,7 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
                 logging.info('%s above chisq activation threshold' % num_above)
                 above_indices = indices[above]
                 above_snrv = snrv[above]
+                u_vals = u_vals[above]
                 rchisq = numpy.zeros(len(indices), dtype=numpy.float32)
                 dof = -100
             else:

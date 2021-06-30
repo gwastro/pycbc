@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import argparse
 import glob
 import logging as log
 import numpy as np
@@ -18,20 +19,21 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 def close(a, b, c):
     return abs(a - b) <= c
 
-def check_single_results(tested_detectors):
+def check_single_results(args):
     single_fail = False
-    with h5py.File('template_bank.hdf', 'r') as bankf:
+    with h5py.File(args.bank, 'r') as bankf:
         temp_mass1 = bankf['mass1'][:]
         temp_mass2 = bankf['mass2'][:]
         temp_s1z = bankf['spin1z'][:]
         temp_s2z = bankf['spin2z'][:]
 
+    detectors = set(args.detectors)
     detectors_with_trigs = set()
 
     trig_paths = sorted(glob.glob('output/????_??_??/*.hdf'))
     for trigfp in trig_paths:
         with h5py.File(trigfp, 'r') as trigf:
-            for detector in tested_detectors:
+            for detector in detectors:
                 if detector not in trigf:
                     continue
                 group = trigf[detector]
@@ -44,11 +46,11 @@ def check_single_results(tested_detectors):
                 psd_df = group['psd'].attrs['delta_f']
                 psd_f = np.arange(len(psd)) * psd_df
                 psd_epoch = group['psd'].attrs['epoch']
-                in_band_asd = psd[psd_f > sim_f_lower] ** 0.5
+                in_band_asd = psd[psd_f > args.f_min] ** 0.5
                 if len(in_band_asd) == 0 or (in_band_asd < 1e-24).any() \
                         or (in_band_asd > 1e-20).any() \
                         or not np.isfinite(in_band_asd).all() \
-                        or psd_epoch < sim_gps_start or psd_epoch > sim_gps_end:
+                        or psd_epoch < args.gps_start or psd_epoch > args.gps_end:
                     log.info('Invalid PSD in %s %s', trigfp, detector)
                     single_fail = True
 
@@ -73,7 +75,7 @@ def check_single_results(tested_detectors):
 
                 # check that merger time is within the simulated time range
                 end_time = group['end_time'][:]
-                if (end_time < sim_gps_start).any() or (end_time > sim_gps_end).any():
+                if (end_time < args.gps_start).any() or (end_time > args.gps_end).any():
                     log.error('Invalid merger time in %s %s', trigfp, detector)
                     single_fail = True
 
@@ -95,8 +97,8 @@ def check_single_results(tested_detectors):
                     single_fail = True
 
     # check that triggers were produced in all detectors
-    if detectors_with_trigs != tested_detectors:
-        missing = sorted(tested_detectors - detectors_with_trigs)
+    missing = sorted(detectors - detectors_with_trigs)
+    if missing:
         log.error('No triggers found in %s', ', '.join(missing))
         single_fail = True
 
@@ -105,7 +107,7 @@ def check_single_results(tested_detectors):
     return single_fail
 
 
-def check_coinc_results():
+def check_coinc_results(args):
     coinc_fail = False
     # gather coincident triggers
     coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
@@ -119,23 +121,14 @@ def check_coinc_results():
     else:
         log.info('%d coincident trigger(s) detected', n_coincs)
 
-    injs = sorted(glob.glob('test_inj*.hdf'))
-    n_injs = len(injs)
-    inj_mass1 = np.empty(n_injs)
-    inj_mass2 = np.empty(n_injs)
-    inj_spin1z = np.empty(n_injs)
-    inj_spin2z = np.empty(n_injs)
-    inj_time = np.empty(n_injs)
+    with h5py.File(args.injections, 'r') as injfile:
+        inj_mass1 = injfile['mass1'][:]
+        inj_mass2 = injfile['mass2'][:]
+        inj_spin1z = injfile['spin1z'][:]
+        inj_spin2z = injfile['spin2z'][:]
+        inj_time = injfile['tc'][:]
 
-    for idx, inj_path in enumerate(injs):
-        with h5py.File(inj_path, 'r') as inj:
-            inj_mass1[idx] = inj['mass1'][0]
-            inj_mass2[idx] = inj['mass2'][0]
-            inj_spin1z[idx] = inj['spin1z'][0]
-            inj_spin2z[idx] = inj['spin2z'][0]
-            inj_time[idx] = inj['tc'][0]
-
-    if n_injs > n_coincs:
+    if len(inj_mass1) > n_coincs:
         log.error('More injections than coincident triggers')
         coinc_fail = True
 
@@ -170,15 +163,17 @@ def check_coinc_results():
         log.info('Spin2z: %f', trig_props['spin2z'][x])
 
     # check if injections match trigger params
-    for i in range(n_injs):
+    for i in range(len(inj_mass1)):
         has_match = False
         for j in range(n_coincs):
+            # FIXME should calculate the optimal SNRs of the injections
+            # and use those for checking net_snr
             if (close(inj_time[i], trig_props['tc'][j], 1.0)
                     and close(inj_mass1[i], trig_props['mass1'][j], 5e-7)
                     and close(inj_mass2[i], trig_props['mass2'][j], 5e-7)
                     and close(inj_spin1z[i], trig_props['spin1z'][j], 5e-7)
                     and close(inj_spin2z[i], trig_props['spin2z'][j], 5e-7)
-                    and close(15.0, trig_props['net_snr'][j], 1.0)):
+                    and close(15.0, trig_props['net_snr'][j], 2.0)):
                 has_match = True
                 break
 
@@ -191,21 +186,21 @@ def check_coinc_results():
     return coinc_fail
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--gps-start', type=float, required=True)
+parser.add_argument('--gps-end', type=float, required=True)
+parser.add_argument('--f-min', type=float, required=True)
+parser.add_argument('--bank', type=str, required=True)
+parser.add_argument('--injections', type=str, required=True)
+parser.add_argument('--detectors', type=str, required=True, nargs='+')
+args = parser.parse_args()
+
 log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
-
-# gps times need to match those found in run.sh
-sim_gps_start = 1272790000
-sim_gps_end = 1272790500
-
-# sim f lower needs to match the value in generate_injection.sh
-sim_f_lower = 18
 
 lsctables.use_in(LIGOLWContentHandler)
 
-tested_detectors = {'H1', 'L1', 'V1'}
-
-single_fail = check_single_results(tested_detectors)
-coinc_fail = check_coinc_results()
+single_fail = check_single_results(args)
+coinc_fail = check_coinc_results(args)
 fail = single_fail or coinc_fail
 
 if fail:

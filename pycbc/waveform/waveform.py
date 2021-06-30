@@ -433,6 +433,30 @@ def props_sgburst(obj, **kwargs):
     return input_params
 
 # Waveform generation ########################################################
+fd_sequence = {}
+
+def _lalsim_fd_sequence(**p):
+    """ Shim to interface to lalsimulation SimInspiralChooseFDWaveformSequence
+    """
+    lal_pars = _check_lal_pars(p)
+    hp, hc = lalsimulation.SimInspiralChooseFDWaveformSequence(
+               float(p['coa_phase']),
+               float(pnutils.solar_mass_to_kg(p['mass1'])),
+               float(pnutils.solar_mass_to_kg(p['mass2'])),
+               float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
+               float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
+               float(p['f_ref']),
+               pnutils.megaparsecs_to_meters(float(p['distance'])),
+               float(p['inclination']),
+               lal_pars,
+               _lalsim_enum[p['approximant']],
+               p['sample_points'].lal())
+    return Array(hp.data.data), Array(hc.data.data)
+_lalsim_fd_sequence.required = parameters.cbc_fd_required
+
+for apx in _lalsim_enum:
+    fd_sequence[apx] = _lalsim_fd_sequence
+
 def get_fd_waveform_sequence(template=None, **kwds):
     """Return values of the waveform evaluated at the sequence of frequency
     points.
@@ -453,23 +477,20 @@ def get_fd_waveform_sequence(template=None, **kwds):
         The cross phase of the waveform in frequency domain evaluated at the
     frequency points.
     """
-    kwds['delta_f'] = -1
-    kwds['f_lower'] = -1
-    p = props(template, required_args=parameters.cbc_fd_required, **kwds)
-    lal_pars = _check_lal_pars(p)
+    input_params = props(template, **kwds)
+    input_params['delta_f'] = -1
+    input_params['f_lower'] = -1
+    if input_params['approximant'] not in fd_sequence:
+        raise ValueError("Approximant %s not available" %
+                            (input_params['approximant']))
+    wav_gen = fd_sequence[input_params['approximant']]
+    if hasattr(wav_gen, 'required'):
+        required = wav_gen.required
+    else:
+        required = parameters.fd_required
+    check_args(input_params, required)
+    return wav_gen(**input_params)
 
-    hp, hc = lalsimulation.SimInspiralChooseFDWaveformSequence(float(p['coa_phase']),
-               float(pnutils.solar_mass_to_kg(p['mass1'])),
-               float(pnutils.solar_mass_to_kg(p['mass2'])),
-               float(p['spin1x']), float(p['spin1y']), float(p['spin1z']),
-               float(p['spin2x']), float(p['spin2y']), float(p['spin2z']),
-               float(p['f_ref']),
-               pnutils.megaparsecs_to_meters(float(p['distance'])),
-               float(p['inclination']),
-               lal_pars,
-               _lalsim_enum[p['approximant']],
-               p['sample_points'].lal())
-    return Array(hp.data.data), Array(hc.data.data)
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
@@ -647,14 +668,13 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     hc: pycbc.types.TimeSeries
         Cross polarization time series
     """
-
     # determine the duration to use
     full_duration = duration = get_waveform_filter_length_in_time(**params)
     nparams = params.copy()
 
     while full_duration < duration * 1.5:
         full_duration = get_waveform_filter_length_in_time(**nparams)
-        nparams['f_lower'] -= 1
+        nparams['f_lower'] *= 0.99
 
     if 'f_ref' not in nparams:
         nparams['f_ref'] = params['f_lower']
@@ -840,18 +860,28 @@ def imrphenomd_length_in_time(**kwds):
 def imrphenomhm_length_in_time(**kwargs):
     """Estimates the duration of IMRPhenom waveforms that include higher modes.
     """
+    # Default maximum node number for IMRPhenomHM is 4
+    # The relevant lower order approximant here is IMRPhenomD
+    return get_hm_length_in_time("IMRPhenomD", 4, **kwargs)
+
+def seobnrv4hm_length_in_time(**kwargs):
+    """ Estimates the duration of SEOBNRv4HM waveforms that include higher modes.
+    """
+    # Default maximum node number for SEOBNRv4HM is 5
+    # The relevant lower order approximant here is SEOBNRv4
+    return get_hm_length_in_time('SEOBNRv4', 5, **kwargs)
+
+def get_hm_length_in_time(lor_approx, maxm_default, **kwargs):
     if 'mode_array' in kwargs and kwargs['mode_array'] is not None:
         maxm = max(m for _, m in kwargs['mode_array'])
     else:
-        # the highest m for all of these is 4 (from the 4,4 mode)
-        maxm = 4
-    # we'll use the PhenomD length, with the frequency scaled by 2/m
+        maxm = maxm_default
     try:
         flow = kwargs['f_lower']
     except KeyError:
         raise ValueError("must provide a f_lower")
     kwargs['f_lower'] = flow * 2./maxm
-    return get_imr_length("IMRPhenomD", **kwargs)
+    return get_imr_length(lor_approx, **kwargs)
 
 _filter_norms["SPAtmplt"] = spa_tmplt_norm
 _filter_preconditions["SPAtmplt"] = spa_tmplt_precondition
@@ -870,6 +900,7 @@ _filter_ends["TaylorF2"] = spa_tmplt_end
 _template_amplitude_norms["SPAtmplt"] = spa_amplitude_factor
 _filter_time_lengths["SPAtmplt"] = spa_length_in_time
 _filter_time_lengths["TaylorF2"] = spa_length_in_time
+_filter_time_lengths["SpinTaylorT5"] = spa_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_EffectiveSpin"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv1_ROM_DoubleSpin"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_EffectiveSpin"] = seobnrv2_length_in_time
@@ -878,7 +909,9 @@ _filter_time_lengths["EOBNRv2_ROM"] = seobnrv2_length_in_time
 _filter_time_lengths["EOBNRv2HM_ROM"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv4_ROM"] = seobnrv4_length_in_time
+_filter_time_lengths["SEOBNRv4HM_ROM"] = seobnrv4hm_length_in_time
 _filter_time_lengths["SEOBNRv4"] = seobnrv4_length_in_time
+_filter_time_lengths["SEOBNRv4P"] = seobnrv4_length_in_time
 _filter_time_lengths["IMRPhenomC"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
@@ -1174,4 +1207,4 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
            "NoWaveformError", "FailedWaveformError", "get_td_waveform_from_fd",
-           'cpu_fd', 'cpu_td', '_filter_time_lengths']
+           'cpu_fd', 'cpu_td', 'fd_sequence', '_filter_time_lengths']

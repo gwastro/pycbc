@@ -1,5 +1,5 @@
 strain/
-temp_strain/
 template_bank.hdf
-test_inj1.hdf
-test_inj2.hdf
+injections.hdf
+stat*.hdf
+output/

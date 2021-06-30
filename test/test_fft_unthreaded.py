@@ -26,6 +26,7 @@ These are the unit-tests for the pycbc.fft subpackage, testing only unthreaded
 backends for the various schemes.
 """
 
+import logging
 import pycbc.fft
 import unittest
 from utils import parse_args_all_schemes, simple_exit
@@ -40,6 +41,9 @@ _scheme, _context = parse_args_all_schemes("FFT")
 
 backends = pycbc.fft.get_backend_names()
 
+# Numpy will warn not to use its class interface, silence it.
+logging.disable(logging.WARNING) 
+
 FFTTestClasses = []
 for backend in backends:
     # This creates, for each backend, a new class derived from
@@ -50,7 +54,10 @@ for backend in backends:
     kdict = {'backends' : [backend], 'scheme' : _scheme, 'context' : _context}
     klass = type('{0}_{1}_test'.format(_scheme,backend),
                  (_BaseTestFFTClass,),kdict)
+    klass.__test__ = True
+    vars()[klass.__name__] = klass
     FFTTestClasses.append(klass)
+    del klass
 
 # Finally, we create suites and run them
 

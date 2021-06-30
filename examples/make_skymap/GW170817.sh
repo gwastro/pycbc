@@ -1,3 +1,5 @@
+set -e
+
 pycbc_make_skymap \
     --trig-time 1187008882.4457 \
     --thresh-SNR 5.5 \
@@ -17,4 +19,5 @@ ligo-skymap-plot \
     --zoom-radius 10deg \
     --contour 50 90 \
     --annotate \
+    --radec 197.4500 -23.3814 \
     1187008882.fits

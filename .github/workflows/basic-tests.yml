@@ -9,19 +9,20 @@ jobs:
       max-parallel: 60
       matrix:
         os: [ubuntu-20.04]
-        python-version: [2.7, 3.6, 3.7, 3.8]
+        python-version: [2.7, 3.6, 3.7, 3.8, 3.9]
         test-type: [help, unittest, search, inference, docs]
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.python-version }} 
-    - run: sudo apt-get install *fftw3* mpi intel-mkl* git-lfs
-      if: matrix.os == 'ubuntu-20.04'
-    - run: brew install fftw
-      if: matrix.os == 'macos-latest'
-    - name: Install dependencies
+        python-version: ${{ matrix.python-version }}
+    - name: installing system packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install *fftw3* mpi intel-mkl* git-lfs
+        pip install tox pip setuptools --upgrade
+    - name: installing auxiliary data files
       run: |
         GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
         cd lalsuite-extra
@@ -30,17 +31,10 @@ jobs:
         git lfs pull -I "data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5"
         mv data/lalsimulation/* ../
         cd ../
-        python -m pip install --upgrade pip setuptools
-        pip install -r requirements.txt
-        pip install -r companion.txt
-        pip install mpi4py
-        pip install .
     - name: run pycbc test suite
-      env:
-        PYCBC_TEST_TYPE: ${{matrix.test-type}}
       run: |
         export LAL_DATA_PATH=$PWD
-        bash tools/pycbc_test_suite.sh
+        tox -e py-${{matrix.test-type}}
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
       uses: actions/upload-artifact@v2
@@ -64,30 +58,6 @@ jobs:
       uses: JamesIves/github-pages-deploy-action@3.7.1
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages 
+        BRANCH: gh-pages
         FOLDER: _gh-pages
         SINGLE_COMMIT: true
-  deploy_pypi:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
-    needs: build
-    runs-on: ubuntu-20.04
-    if: github.event_name == 'push'
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.7
-    - name: build pycbc for pypi
-      run: python setup.py sdist
-    - name: Publish distribution 📦 to Test PyPI
-      if: github.ref == 'refs/heads/master'
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        password: ${{ secrets.test_pypi_password }}
-        repository_url: https://test.pypi.org/legacy/
-    - name: Publish distribution 📦 to PyPI
-      if: startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        password: ${{ secrets.pypi_password }}

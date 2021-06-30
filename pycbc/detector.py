@@ -28,14 +28,16 @@
 """This module provides utilities for calculating detector responses and timing
 between observatories.
 """
-import lalsimulation
+import os
 import numpy as np
 import lal
 from pycbc.types import TimeSeries
+from pycbc.types.config import InterpolatingConfigParser
 from astropy.time import Time
 from astropy import constants, coordinates, units
-from astropy.units.si import sday
-from numpy import cos, sin
+from astropy.coordinates.matrix_utilities import rotation_matrix
+from astropy.units.si import sday, meter
+from numpy import cos, sin, pi
 
 # Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
@@ -64,6 +66,98 @@ def get_available_detectors():
     return list(zip(known_prefixes, known_names))
 
 
+_custom_ground_detectors = {}
+def add_detector_on_earth(name, longitude, latitude,
+                          yangle=0, xangle=None, height=0):
+    """ Add a new detector on the earth
+
+    Parameters
+    ----------
+
+    name: str
+        two-letter name to identify the detector
+    longitude: float
+        Longitude in radians using geodetic coordinates of the detector
+    latitude: float
+        Latitude in radians using geodetic coordinates of the detector
+    yangle: float
+        Azimuthal angle of the y-arm (angle drawn from pointing north)
+    xangle: float
+        Azimuthal angle of the x-arm (angle drawn from point north). If not set
+        we assume a right angle detector following the right-hand rule.
+    height: float
+        The height in meters of the detector above the standard
+        reference ellipsoidal earth
+    """
+    if xangle is None:
+        # assume right angle detector if no separate xarm direction given
+        xangle = yangle + np.pi / 2.0
+
+    # Calculate response in earth centered coordinates
+    # by rotation of response in coordinates aligned
+    # with the detector arms
+    a, b = cos(2*xangle), sin(2*xangle)
+    xresp = np.array([[-a, b, 0], [b, a, 0], [0, 0, 0]])
+    a, b = cos(2*yangle), sin(2*yangle)
+    yresp = np.array([[-a, b, 0], [b, a, 0], [0, 0, 0]])
+    resp = (yresp - xresp) / 4.0
+
+    rm1 = rotation_matrix(longitude * units.rad, 'z')
+    rm2 = rotation_matrix((np.pi / 2.0 - latitude) * units.rad, 'y')
+    rm = np.matmul(rm2, rm1)
+
+    resp = np.matmul(resp, rm)
+    resp = np.matmul(rm.T, resp)
+
+    loc = coordinates.EarthLocation.from_geodetic(longitude * units.rad,
+                                                  latitude * units.rad,
+                                                  height=height*units.meter)
+    loc = np.array([loc.x.value,
+                    loc.y.value,
+                    loc.z.value])
+    _custom_ground_detectors[name] = {'location': loc,
+                                      'response': resp,
+                                      'yangle': yangle,
+                                      'xangle': xangle,
+                                      'height': height,
+                                      'xaltitude': 0.0,
+                                      'yaltitude': 0.0,
+                                      }
+
+def load_detector_config(config_files):
+    """ Add custom detectors from a configuration file
+
+    Parameters
+    ----------
+    config_files: str or list of strs
+        The config file(s) which specify new detectors
+    """
+    methods = {'earth_normal': (add_detector_on_earth,
+                                ['longitude', 'latitude'])}
+    conf = InterpolatingConfigParser(config_files)
+    dets = conf.get_subsections('detector')
+    for det in dets:
+        kwds = dict(conf.items('detector-{}'.format(det)))
+        try:
+            method, arg_names = methods[kwds.pop('method')]
+        except KeyError:
+            raise ValueError("Missing or unkown method, "
+                             "options are {}".format(methods.keys()))
+        for k in kwds:
+            kwds[k] = float(kwds[k])
+        try:
+            args = [kwds.pop(arg) for arg in arg_names]
+        except KeyError as e:
+            raise ValueError("missing required detector argument"
+                             " {} are required".format(arg_names))
+        method(det.upper(), *args, **kwds)
+
+
+# autoload detector config files
+if 'PYCBC_DETECTOR_CONFIG' in os.environ:
+    load_detector_config(os.environ['PYCBC_DETECTOR_CONFIG'].split(':'))
+
+
 class Detector(object):
     """A gravitational wave detector
     """
@@ -80,11 +174,25 @@ class Detector(object):
         using a slower but higher precision method.
         """
         self.name = str(detector_name)
-        self.frDetector = lalsimulation.DetectorPrefixToLALDetector(self.name)
-        self.response = self.frDetector.response
-        self.location = self.frDetector.location
-        self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
-        self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
+
+        if detector_name in [pfx for pfx, name in get_available_detectors()]:
+            import lalsimulation as lalsim
+            self._lal = lalsim.DetectorPrefixToLALDetector(self.name)
+            self.response = self._lal.response
+            self.location = self._lal.location
+        elif detector_name in _custom_ground_detectors:
+            self.info = _custom_ground_detectors[detector_name]
+            self.response = self.info['response']
+            self.location = self.info['location']
+        else:
+            raise ValueError("Unkown detector {}".format(detector_name))
+
+        loc = coordinates.EarthLocation(self.location[0],
+                                        self.location[1],
+                                        self.location[2],
+                                        unit=meter)
+        self.latitude = loc.lat.rad
+        self.longitude = loc.lon.rad
 
         self.reference_time = reference_time
         self.sday = None
@@ -97,6 +205,32 @@ class Detector(object):
         else:
             raise RuntimeError("Can't get accurate sidereal time without GPS "
                                "reference time!")
+
+    def lal(self):
+        """ Return lal data type detector instance """
+        if hasattr(self, '_lal'):
+            return self._lal
+        else:
+            import lal
+            d = lal.FrDetector()
+            d.vertexLongitudeRadians = self.longitude
+            d.vertexLatitudeRadians = self.latitude
+            d.vertexElevation = self.info['height']
+            d.xArmAzimuthRadians = self.info['xangle']
+            d.yArmAzimuthRadians = self.info['yangle']
+            d.xArmAltitudeRadians = self.info['yaltitude']
+            d.xArmAltitudeRadians = self.info['xaltitude']
+
+            # This is somewhat abused by lalsimulation at the moment
+            # to determine a filter kernel size. We set this only so that
+            # value gets a similar number of samples as other detectors
+            # it is used for nothing else
+            d.yArmMidpoint = 4000.0
+
+            x = lal.Detector()
+            r = lal.CreateDetector(x, d, lal.LALDETECTORTYPE_IFODIFF)
+            self._lal = r
+            return r
 
     def gmst_estimate(self, gps_time):
         if self.reference_time is None:
@@ -157,28 +291,28 @@ class Detector(object):
         x0 = -cospsi * singha - sinpsi * cosgha * sindec
         x1 = -cospsi * cosgha + sinpsi * singha * sindec
         x2 =  sinpsi * cosdec
-        x = np.array([x0, x1, x2])
 
+        x = np.array([x0, x1, x2], dtype=object)
         dx = self.response.dot(x)
 
         y0 =  sinpsi * singha - cospsi * cosgha * sindec
         y1 =  sinpsi * cosgha + cospsi * singha * sindec
         y2 =  cospsi * cosdec
-        y = np.array([y0, y1, y2])
 
+        y = np.array([y0, y1, y2], dtype=object)
         dy = self.response.dot(y)
 
-        z0 = -cosdec * cosgha
-        z1 = cosdec * singha
-        z2 = -sindec
-        z = np.array([z0, z1, z2])
-
-        dz = self.response.dot(z)
+        if polarization_type != 'tensor':
+            z0 = -cosdec * cosgha
+            z1 = cosdec * singha
+            z2 = -sindec
+            z = np.array([z0, z1, z2], dtype=object)
+            dz = self.response.dot(z)
 
         if polarization_type == 'tensor':
             if hasattr(dx, 'shape'):
-                fplus = (x * dx - y * dy).sum(axis=0)
-                fcross = (x * dy + y * dx).sum(axis=0)
+                fplus = (x * dx - y * dy).sum(axis=0).astype(np.float64)
+                fcross = (x * dy + y * dx).sum(axis=0).astype(np.float64)
             else:
                 fplus = (x * dx - y * dy).sum()
                 fcross = (x * dy + y * dx).sum()
@@ -186,8 +320,8 @@ class Detector(object):
 
         elif polarization_type == 'vector':
             if hasattr(dx, 'shape'):
-                fx = (z * dx + x * dz).sum(axis=0)
-                fy = (z * dy + y * dz).sum(axis=0)
+                fx = (z * dx + x * dz).sum(axis=0).astype(np.float64)
+                fy = (z * dy + y * dz).sum(axis=0).astype(np.float64)
             else:
                 fx = (z * dx + x * dz).sum()
                 fy = (z * dy + y * dz).sum()
@@ -195,7 +329,7 @@ class Detector(object):
 
         elif polarization_type == 'scalar':
             if hasattr(dx, 'shape'):
-                fb = (x * dx + y * dy).sum(axis=0)
+                fb = (x * dx + y * dy).sum(axis=0).astype(np.float64)
                 fl = (z * dz).sum(axis=0)
             else:
                 fb = (x * dx + y * dy).sum()
@@ -217,6 +351,7 @@ class Detector(object):
         In other words return `t1 - t2` where `t1` is the
         arrival time in this detector and `t2` is the arrival time in the
         other location.
+
         Parameters
         ----------
         other_location : numpy.ndarray of coordinates
@@ -227,6 +362,7 @@ class Detector(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
+
         Returns
         -------
         float
@@ -239,9 +375,9 @@ class Detector(object):
         e1 = cosd * -sin(ra_angle)
         e2 = sin(declination)
 
-        ehat = np.array([e0, e1, e2])
+        ehat = np.array([e0, e1, e2], dtype=object)
         dx = other_location - self.location
-        return dx.dot(ehat) / constants.c.value
+        return dx.dot(ehat).astype(np.float64) / constants.c.value
 
     def time_delay_from_detector(self, other_detector, right_ascension,
                                  declination, t_gps):
@@ -302,9 +438,10 @@ class Detector(object):
         # time changing antenna patterns and doppler shifts due to the
         # earth rotation and orbit
         if method == 'lal':
+            import lalsimulation
             h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
                     hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
-                    ra, dec, polarization, self.frDetector)
+                    ra, dec, polarization, self.lal())
             ts = TimeSeries(
                     h_lal.data.data, delta_t=h_lal.deltaT, epoch=h_lal.epoch,
                     dtype=np.float64, copy=False)
@@ -350,10 +487,12 @@ class Detector(object):
     def optimal_orientation(self, t_gps):
         """Return the optimal orientation in right ascension and declination
            for a given GPS time.
+
         Parameters
         ----------
         t_gps: float
             Time in gps seconds
+
         Returns
         -------
         ra: float
@@ -367,6 +506,7 @@ class Detector(object):
 
     def get_icrs_pos(self):
         """ Transforms GCRS frame to ICRS frame
+
         Returns
         ----------
         loc: numpy.ndarray shape (3,1) units: AU
@@ -380,6 +520,40 @@ class Detector(object):
         loc = np.array([np.float32(loc.x), np.float32(loc.y),
                         np.float32(loc.z)])*conv
         return loc
+
+    def effective_distance(self, distance, ra, dec, pol, time, inclination):
+        """ Distance scaled to account for amplitude factors
+
+        The effective distance of the source. This scales the distance so that
+        the amplitude is equal to a source which is optimally oriented with
+        respect to the detector. For fixed detector-frame intrinsic parameters
+        this is a measure of the expected signal strength.
+
+        Parameters
+        ----------
+        distance: float
+            Source luminosity distance in megaparsecs
+        ra: float
+            The right ascension in radians
+        dec: float
+            The declination in radians
+        pol: float
+            Polarization angle of the gravitational wave in radians
+        time: float
+            GPS time in seconds
+        inclination:
+            The inclination of the binary's orbital plane
+
+        Returns
+        -------
+        eff_dist: float
+            The effective distance of the source
+        """
+        fp, fc = self.antenna_pattern(ra, dec, pol, time)
+        ic = np.cos(inclination)
+        ip = 0.5 * (1. + ic * ic)
+        scale = ((fp * ip) ** 2.0 + (fc * ic) ** 2.0) ** 0.5
+        return distance / scale
 
 def overhead_antenna_pattern(right_ascension, declination, polarization):
     """Return the antenna pattern factors F+ and Fx as a function of sky
@@ -411,9 +585,6 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 
     return f_plus, f_cross
 
-def effective_distance(distance, inclination, f_plus, f_cross):
-    return distance / np.sqrt( ( 1 + np.cos( inclination )**2 )**2 / 4 * f_plus**2 + np.cos( inclination )**2 * f_cross**2 )
-
 
 """     LISA class      """
 
@@ -429,6 +600,7 @@ class LISA(object):
         Parameters
         ----------
         ref_time : numpy.ScalarType
+
         Returns
         -------
         location : numpy.ndarray of shape (3,3)
@@ -452,11 +624,13 @@ class LISA(object):
 
     def get_gcrs_pos(self, location):
         """ Transforms ICRS frame to GCRS frame
+
         Parameters
         ----------
         loc : numpy.ndarray shape (3,1) units: AU
               Cartesian Coordinates of the location
               in ICRS frame
+
         Returns
         ----------
         loc : numpy.ndarray shape (3,1) units: meters
@@ -477,6 +651,7 @@ class LISA(object):
         a signal with the given sky location. In other words return
         `t1 - t2` where `t1` is the arrival time in this detector and
         `t2` is the arrival time in the other location. Units(AU)
+
         Parameters
         ----------
         other_location : numpy.ndarray of coordinates in ICRS frame
@@ -487,14 +662,13 @@ class LISA(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
+
         Returns
         -------
         numpy.ndarray
             The arrival time difference between the detectors.
         """
-        dx = np.array([self.location[0] - other_location[0],
-                       self.location[1] - other_location[1],
-                       self.location[2] - other_location[2]])
+        dx = self.location - other_location
         cosd = cos(declination)
         e0 = cosd * cos(right_ascension)
         e1 = cosd * -sin(right_ascension)
@@ -508,6 +682,7 @@ class LISA(object):
         the given sky location in ICRS frame; i.e. return `t1 - t2` where
         `t1` is the arrival time in this detector and `t2` is the arrival
         time in the other detector.
+
         Parameters
         ----------
         other_detector : detector.Detector
@@ -518,6 +693,7 @@ class LISA(object):
             The declination (in rad) of the signal.
         t_gps : float
             The GPS time (in s) of the signal.
+
         Returns
         -------
         numpy.ndarray

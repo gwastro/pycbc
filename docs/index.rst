@@ -53,9 +53,7 @@ Getting Started
 
  - Use the PyCBC Library within your Browser
 
-   We have interactive jupyter notebooks on azure where you can try some of our
-   examples, and use the pycbc library. All from within the browser.
-   `Give it a try <https://notebooks.azure.com/nitz/libraries/pycbc>`_
+   `Try out our tutorials <https://github.com/gwastro/PyCBC-Tutorials>`_.
 
 =====================
 Installation
@@ -90,7 +88,7 @@ documentation at:
    :maxdepth: 2
 
    inference
-   
+
 ==========================================
 Searching for Gravitational-wave Signals
 ==========================================
@@ -128,19 +126,19 @@ Extending PyCBC with external plugins
 
 Would you like to use a waveform model that PyCBC doesn't have? Or maybe
 you have your own waveform you'd like to use for a search, parameter estimation
-, etc. PyCBC supports a plug-in archictecture for external waveform models. 
+, etc. PyCBC supports a plug-in archictecture for external waveform models.
 
 .. toctree::
    :maxdepth: 1
-    
+
    waveform_plugin
 
 ==========================================
 Library Examples and Interactive Tutorials
 ==========================================
 
-We have interactive tutorials and examples of using the pycbc library hosted
-on azure jupyter notebooks. `Please give them a try. <https://notebooks.azure.com/nitz/libraries/pycbc>`_
+We have interactive tutorials and examples of using the pycbc.
+`Please give them a try! <https://github.com/gwastro/PyCBC-Tutorials>`_.
 
 In addition we have some examples below.
 
@@ -150,6 +148,7 @@ In addition we have some examples below.
    catalog
    dataquality
    frame
+   fft
    gw150914
    detector
    psd

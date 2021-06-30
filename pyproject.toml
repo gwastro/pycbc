@@ -1,5 +1,14 @@
 [build-system]
 requires = ["setuptools",
             "wheel",
-            "cython>=0.29",
-            "numpy>=1.16.0,!=1.19.0"]
+            "cython>=0.29.21",
+            "numpy==1.16.0; python_version <= '3.7'",
+            "numpy==1.17.3; python_version == '3.8'",
+            "numpy==1.19.3; python_version == '3.9'",
+            "numpy; python_version >= '3.10'",
+            ]
+
+# To ensure the best compatibility, try to match the numpy reqs
+# where possible to the following used by scipy and the minimum
+# of our normal numpy requirements in setup.py
+# https://github.com/scipy/oldest-supported-numpy/blob/master/setup.cfg

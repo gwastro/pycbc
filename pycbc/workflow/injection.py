@@ -30,12 +30,14 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 import logging
+import os.path
 from six.moves import configparser as ConfigParser
 from pycbc.workflow.core import FileList, make_analysis_dir, Node
 from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
-        PycbcDarkVsBrightInjectionsExecutable, LigolwAddExecutable)
+        PycbcDarkVsBrightInjectionsExecutable, LigolwAddExecutable,
+        select_generic_executable)
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -58,13 +60,13 @@ class PyCBCOptimalSNRExecutable(Executable):
 
     def create_node(self, workflow, inj_file, precalc_psd_files, group_str):
         node = Node(self)
+        _, ext = os.path.splitext(inj_file.name)
         node.add_input_opt('--input-file', inj_file)
         node.add_opt('--injection-fraction-range', group_str)
         node.add_input_list_opt('--time-varying-psds', precalc_psd_files)
-        node.new_output_file_opt(workflow.analysis_time, '.xml',
+        node.new_output_file_opt(workflow.analysis_time, ext,
                                  '--output-file')
         return node
-
 
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
@@ -127,6 +129,23 @@ def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     workflow += node
     return node.output_files[0]
 
+def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
+    """ Convert injection file to hdf format if not already one
+    """
+    _, ext = os.path.splitext(inj_file.name)
+    if ext == '.hdf':
+        return inj_file
+
+    if tags is None:
+        tags = []
+
+    node = Executable(workflow.cp, 'inj2hdf', ifos=workflow.ifos,
+                      out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--injection-file', inj_file)
+    node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
+    workflow += node
+    return node.output_file
+
 def setup_injection_workflow(workflow, output_dir=None,
                              inj_section_name='injections', exttrig_file=None,
                              tags =None):
@@ -185,10 +204,10 @@ def setup_injection_workflow(workflow, output_dir=None,
                                                     curr_tags)
 
         if injection_method in ["IN_WORKFLOW", "AT_RUNTIME"]:
-            # FIXME: Add ability to specify different exes
-            inj_job = LalappsInspinjExecutable(workflow.cp, inj_section_name,
-                                               out_dir=output_dir, ifos='HL',
-                                               tags=curr_tags)
+            exe = select_generic_executable(workflow, 'injections')
+            inj_job = exe(workflow.cp, inj_section_name,
+                          out_dir=output_dir, ifos='HL',
+                          tags=curr_tags)
             node = inj_job.create_node(full_segment)
             if injection_method == "AT_RUNTIME":
                 workflow.execute_node(node)
@@ -273,4 +292,3 @@ def setup_injection_workflow(workflow, output_dir=None,
 
     logging.info("Leaving injection module.")
     return inj_files, inj_tags
-

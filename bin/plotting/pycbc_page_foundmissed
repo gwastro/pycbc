@@ -7,6 +7,7 @@ import matplotlib.pyplot as plot
 import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
 import pycbc.pnutils
 from pycbc import init_logging
+from pycbc.detector import Detector
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
@@ -47,7 +48,7 @@ init_logging(args.verbose)
 
 logging.info('Read in the data')
 f = h5py.File(args.injection_file, 'r')
-time = f['injections/end_time'][:]
+time = f['injections/tc'][:]
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
 
@@ -82,12 +83,18 @@ else:
 
 # NOTE: Effective distance is hardcoded to these values. It's also normally
 #       meaningless for precessing injections.
-eff_dist_map = {ifo: 'eff_dist_%s' % ifo[0].lower() for ifo in ifos}
-
 try:
-    eff_dists = [f['injections/{}'.format(eff_dist_map[ifo])][:]\
-                 for ifo in ifos]
+    eff_dists = []
+    for ifo in ['H1', 'L1', 'V1']:
+        eff_dists.append(Detector(ifo).effective_distance(
+                             f['injections/distance'][:],
+                             f['injections/ra'][:],
+                             f['injections/dec'][:],
+                             f['injections/polarization'][:],
+                             f['injections/tc'][:],
+                             f['injections/inclination'][:]))
     eff_dists = numpy.array(eff_dists).T
+
     # "Decisive" distance is the second smallest effective distance
     dvals['decisive_distance'] = numpy.sort(eff_dists)[:,1]
     dvals['dec_chirp_distance'] = \

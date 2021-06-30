@@ -96,6 +96,6 @@ else:
 
 mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10.1f'))
 mpld3.plugins.connect(fig, mpld3.plugins.BoxZoom())
-mpld3.plugins.connect(fig, MPLSlide())
+mpld3.plugins.connect(fig, mpld3.plugins.Zoom())
 mpld3.plugins.connect(fig, mpld3.plugins.Reset())
 mpld3.save_html(fig, open(args.output_file, 'w'))

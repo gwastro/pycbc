@@ -38,6 +38,7 @@ from utils import parse_args_cpu_only, simple_exit
 parse_args_cpu_only("Frame I/O")
 
 class FrameTestBase(unittest.TestCase):
+    __test__ = False
     def setUp(self):
         numpy.random.seed(1023)
         self.size = pow(2,12)
@@ -136,7 +137,10 @@ types = [numpy.float32, numpy.float64, numpy.complex64, numpy.complex128]
 
 for ty in types:
     klass = type('{0}_Test'.format(ty.__name__),(FrameTestBase,),{'dtype': ty})
+    klass.__test__ = True
+    vars()[klass.__name__] = klass
     TestClasses.append(klass)
+    del klass
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()

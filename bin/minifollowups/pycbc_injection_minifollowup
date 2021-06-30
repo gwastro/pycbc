@@ -119,19 +119,13 @@ if args.ifar_threshold is not None:
 num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
 
 try:
-    if 'optimal_snr_1' in f['injections'].keys():  # 2-ifo pipeline case
-        optimal_snr = [f['injections/optimal_snr_1'][:][missed],
-                       f['injections/optimal_snr_2'][:][missed]]
-        # 'decisive' opt SNR is 2nd largest
-        dec_snr = numpy.minimum(optimal_snr[0], optimal_snr[1])
-    else:
-        optstrings = [os for os in f['injections'].keys() if \
-                      os.startswith('optimal_snr_')]
-        optimal_snr = [f['injections/%s' % os][:][missed] for os in optstrings]
-        # 2nd largest opt SNR
-        dec_snr = [sorted(snrs)[-2] for snrs in zip(*optimal_snr)]
-        dec_snr = numpy.array(dec_snr)
-    
+    optstrings = [os for os in f['injections'].keys() if \
+                  os.startswith('optimal_snr_')]
+    optimal_snr = [f['injections/%s' % os][:][missed] for os in optstrings]
+    # 2nd largest opt SNR
+    dec_snr = [sorted(snrs)[-2] for snrs in zip(*optimal_snr)]
+    dec_snr = numpy.array(dec_snr)
+
     if args.maximum_decisive_snr is not None:
         # By setting to 0, these injections will not be considered
         dec_snr[dec_snr > args.maximum_decisive_snr] = 0
@@ -139,10 +133,17 @@ try:
     sorting = sorting[::-1]  # descending order of dec opt SNR
 except KeyError:
     # Fall back to effective distance if optimal SNR not available
-    eff_dist = {'H1': f['injections/eff_dist_h'][:][missed],
-                'L1': f['injections/eff_dist_l'][:][missed],
-                'V1': f['injections/eff_dist_v'][:][missed]
-                }
+    eff_dist = {}
+    for trig in single_triggers:
+        ifo = trig.ifo
+        eff_dist[ifo] = Detector(ifo).effective_distance(
+                             f['injections/distance'][:][missed],
+                             f['injections/ra'][:][missed],
+                             f['injections/dec'][:][missed],
+                             f['injections/polarization'][:][missed],
+                             f['injections/tc'][:][missed],
+                             f['injections/inclination'][:][missed])
+
     dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo],
                              eff_dist[single_triggers[1].ifo])
     mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(\
@@ -160,18 +161,18 @@ for num_event in range(num_events):
     files = wf.FileList([])
 
     injection_index = missed[sorting][num_event]
-    time = f['injections/end_time'][injection_index]
-    lon = f['injections/longitude'][injection_index]
-    lat = f['injections/latitude'][injection_index]
-    
+    time = f['injections/tc'][injection_index]
+    lon = f['injections/ra'][injection_index]
+    lat = f['injections/dec'][injection_index]
+
     ifo_times = ''
     inj_params = {}
-    for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'end_time']:
+    for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'tc']:
         inj_params[val] = f['injections/%s' %(val,)][injection_index]
     for single in single_triggers:
         ifo = single.ifo
         det = Detector(ifo)
-        ifo_time = time + det.time_delay_from_earth_center(lon, lat, time) 
+        ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
         for seg in insp_analysed_seglists[ifo]:
             if ifo_time in seg:
                 break
@@ -252,7 +253,7 @@ for num_event in range(num_events):
         end_times = hd_sngl.end_time
         # Use SNR here or NewSNR??
         snr = hd_sngl.snr
-        lgc_mask = abs(end_times - inj_params['end_time']) < args.inj_window
+        lgc_mask = abs(end_times - inj_params['tc']) < args.inj_window
 
         if len(snr[lgc_mask]) == 0:
             continue

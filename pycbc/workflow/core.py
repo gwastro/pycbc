@@ -655,7 +655,7 @@ class Workflow(pegasus_workflow.Workflow):
         if self.cp.has_section('workflow-ifos'):
             for ifo in self.cp.options('workflow-ifos'):
                 ifos.append(ifo.upper())
-   
+
         self.ifos = ifos
         self.ifos.sort(key=str.lower)
         self.ifo_string = ''.join(self.ifos)

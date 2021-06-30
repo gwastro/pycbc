@@ -1,3 +1,4 @@
+import logging
 from astropy.utils.data import download_file
 from .hdf import *
 from .record import *
@@ -10,12 +11,12 @@ def get_file(url, retry=5, **args):
     connections. See astropy for full options
     """
     i = 0
-    while 1:
+    while True:
         i += 1
         try:
             return download_file(url, **args)
         except Exception as e:
-            print("Failed on attempt {} to download {}".format(i, url))
+            logging.warning("Failed on attempt %d to download %s", i, url)
             if i >= retry:
-                print("Giving up on {}".format(url))
+                logging.error("Giving up on %s", url)
                 raise e

@@ -141,6 +141,13 @@ except ImportError:
 # platforms (mac) that are silly and don't use the standard gcc.
 if sys.platform == 'darwin':
     HAVE_OMP = False
+
+    # MacosX after python3.7 switched to 'spawn', however, this does not
+    # preserve common state information which we have relied on when using
+    # multiprocessing based pools.
+    import multiprocessing
+    if hasattr(multiprocessing, 'set_start_method'):
+        multiprocessing.set_start_method('fork')
 else:
     HAVE_OMP = True
 
@@ -149,3 +156,10 @@ def random_string(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
+
+def gps_now():
+    """Return the current GPS time as a float using Astropy.
+    """
+    from astropy.time import Time
+
+    return float(Time.now().gps)

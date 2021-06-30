@@ -177,5 +177,5 @@ if 'analysis_time' in fits.attrs:
     outfile.attrs['analysis_time'] = fits.attrs['analysis_time']
 
 # add a magic file attribute so that coinc_findtrigs can parse it
-outfile.attrs['stat'] = ifo + b'-fit_coeffs'
+outfile.attrs['stat'] = ifo + '-fit_coeffs'
 logging.info('Done!')

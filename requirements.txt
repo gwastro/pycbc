@@ -1,6 +1,6 @@
 # requirements for most basic library use
 astropy>=2.0.3,<3.0.0; python_version <= '2.7'
-astropy>=2.0.3; python_version >= '3.0'
+astropy>=2.0.3,!=4.2.1,!=4.0.5; python_version >= '3.0'
 Mako>=1.0.1
 decorator>=3.4.2
 scipy>=0.16.0; python_version >= '3.5'
@@ -9,7 +9,8 @@ matplotlib>=2.0.0
 numpy>=1.16.0,!=1.19.0; python_version >= '3.5'
 numpy>=1.16.0,<1.17.0; python_version <= '3.4'
 pillow
-h5py<2.10.0
+h5py>=2.5,<=3.1.0; python_version <= '3.6'
+h5py>=2.5; python_version > '3.6'
 jinja2
 mpld3>=0.3
 requests>=1.2.1
@@ -35,8 +36,15 @@ dqsegdb
 dqsegdb2>=1.0.1
 https://github.com/ahnitz/pegasus-wms-python3/archive/master.tar.gz
 amqplib
+htchirp >= 2.0
 
 # For building documentation
 Sphinx>=1.5.0,<2.0.0
 sphinx-rtd-theme
 sphinxcontrib-programoutput>=0.11
+
+# required due to ecosystem incompatibility with 2.7
+# and several samplers which do depend on it
+# REMOVE when we drop 2.7 support or corner has a new release
+# and 2.2.0 is taken removed or samplers exclude its version
+corner < 2.2.0; python_version < '3.6'

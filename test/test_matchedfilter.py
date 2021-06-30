@@ -36,8 +36,8 @@ import numpy
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Matched Filter")
-import pycbc.fft.fftw
-pycbc.fft.fftw.set_measure_level(0)
+#import pycbc.fft.fftw
+#pycbc.fft.fftw.set_measure_level(0)
 
 class TestMatchedFilter(unittest.TestCase):
     def setUp(self,*args):
@@ -103,6 +103,12 @@ class TestMatchedFilter(unittest.TestCase):
             o,i = match(self.filtD,self.filtD)
             self.assertAlmostEqual(1,o,places=4)
             self.assertEqual(0,i)
+            o,i = match(self.filt,self.filt, subsample_interpolation=True)
+            self.assertAlmostEqual(1,o,places=4)
+            self.assertAlmostEqual(0,i,places=1)
+            o,i = match(self.filtD,self.filtD, subsample_interpolation=True)
+            self.assertAlmostEqual(1,o,places=4)
+            self.assertAlmostEqual(0,i,places=1)
 
     def test_perfect_match_offset(self):
         with self.context:
@@ -113,6 +119,17 @@ class TestMatchedFilter(unittest.TestCase):
             o,i = match(self.filtD,self.filt_offsetD)
             self.assertAlmostEqual(1,o,places=4)
             self.assertEqual(4096*32,i)
+
+            o,i = match(self.filt, self.filt_offset,
+                        subsample_interpolation=True)
+            self.assertAlmostEqual(1, o, places=4)
+            self.assertAlmostEqual(4096*32, i, places=1)
+
+            o,i = match(self.filtD, self.filt_offsetD,
+                        subsample_interpolation=True)
+            self.assertAlmostEqual(1, o, places=4)
+            self.assertAlmostEqual(4096*32, i, places=1)
+
 
     def test_imperfect_match(self):
         with self.context:
@@ -125,6 +142,17 @@ class TestMatchedFilter(unittest.TestCase):
             f2 = make_frequency_series(self.filt2D)
             o,i = match(self.filtD,self.filt2D)
             self.assertAlmostEqual(sqrt(0.5),o,places=3)
+
+            f = make_frequency_series(self.filt)
+            f2 = make_frequency_series(self.filt2)
+            o,i = match(self.filt, self.filt2, subsample_interpolation=True)
+            self.assertAlmostEqual(sqrt(0.5), o, places=3)
+
+            f = make_frequency_series(self.filtD)
+            f2 = make_frequency_series(self.filt2D)
+            o,i = match(self.filtD, self.filt2D, subsample_interpolation=True)
+            self.assertAlmostEqual(sqrt(0.5), o, places=3)
+            self.assertAlmostEqual(132327.27060, i, places=2)
 
     def test_errors(self):
         with self.context:

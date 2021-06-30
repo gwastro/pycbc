@@ -374,9 +374,9 @@ sep_fg_data = {}
 sep_bg_data = {}
 final_fg_data = {}
 for combo in all_ifo_combos:
-    idx_fg_ct = np.nonzero(fg_coinc_type == combo)
+    idx_fg_ct = np.nonzero(fg_coinc_type == combo.encode('utf8'))
     sep_fg_data[combo] = combined_fg_data.select(idx_fg_ct)
-    idx_bg_ct = np.nonzero(bg_coinc_type == combo)
+    idx_bg_ct = np.nonzero(bg_coinc_type == combo.encode('utf8'))
     sep_bg_data[combo] = combined_bg_data.select(idx_bg_ct)
     final_fg_data[combo] = pycbc.io.DictArray(
         data={k: np.array([], sep_fg_data[combo].data[k].dtype)
@@ -503,7 +503,7 @@ while True:
                 times = sep_bg_data[combo].data['%s/time' % ifo]
                 hred_ids = np.nonzero(abs(times - maxtime) <
                                       args.hierarchical_removal_window)[0]
-            all_hred_idx += list(hred_ids)
+                all_hred_idx += list(hred_ids)
         logging.info('Removing {} background triggers from {}'.format(
                         len(all_hred_idx), combo))
         sep_bg_data[combo] = sep_bg_data[combo].remove(all_hred_idx)

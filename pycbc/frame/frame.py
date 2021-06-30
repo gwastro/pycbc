@@ -23,6 +23,7 @@ import numpy
 import math
 import os.path, glob, time
 import gwdatafind
+import pycbc
 from six.moves.urllib.parse import urlparse
 from pycbc.types import TimeSeries, zeros
 
@@ -588,7 +589,7 @@ class DataBuffer(object):
             self.dur = int(fname[3])
 
         fstart = int(self.ref + numpy.floor((start - self.ref) / float(self.dur)) * self.dur)
-        starts = numpy.arange(fstart, end, self.dur).astype(numpy.int)
+        starts = numpy.arange(fstart, end, self.dur).astype(int)
 
         keys = []
         for s in starts:
@@ -635,7 +636,7 @@ class DataBuffer(object):
             return DataBuffer.advance(self, blocksize)
 
         except RuntimeError:
-            if lal.GPSTimeNow() > timeout + self.raw_buffer.end_time:
+            if pycbc.gps_now() > timeout + self.raw_buffer.end_time:
                 # The frame is not there and it should be by now, so we give up
                 # and treat it as zeros
                 DataBuffer.null_advance(self, blocksize)

@@ -64,8 +64,8 @@ class BatchCorrelator(object):
         self.zs = zs
 
         # Store each pointer as in integer array
-        self.x = Array([v.ptr for v in xs], dtype=numpy.int)
-        self.z = Array([v.ptr for v in zs], dtype=numpy.int)
+        self.x = Array([v.ptr for v in xs], dtype=int)
+        self.z = Array([v.ptr for v in zs], dtype=int)
 
     @pycbc.scheme.schemed(BACKEND_PREFIX)
     def batch_correlate_execute(self, y):
@@ -1315,7 +1315,8 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
 
 _snr = None
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
-          high_frequency_cutoff=None, v1_norm=None, v2_norm=None):
+          high_frequency_cutoff=None, v1_norm=None, v2_norm=None,
+          subsample_interpolation=False):
     """ Return the match between the two TimeSeries or FrequencySeries.
 
     Return the match between two waveforms. This is equivalent to the overlap
@@ -1339,6 +1340,11 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     v2_norm : {None, float}, optional
         The normalization of the second waveform. This is equivalent to its
         sigmasq value. If None, it is internally calculated.
+    subsample_interpolation : {False, bool}, optional
+        If True the peak will be interpolated between samples using a simple
+        quadratic fit. This can be important if measuring matches very close to
+        1 and can cause discontinuities if you don't use it as matches move
+        between discrete samples. If True the index returned will be a float.
 
     Returns
     -------
@@ -1355,11 +1361,27 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     global _snr
     if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != N:
         _snr = zeros(N,dtype=complex_same_precision_as(vec1))
-    snr, _, snr_norm = matched_filter_core(htilde,stilde,psd,low_frequency_cutoff,
-                             high_frequency_cutoff, v1_norm, out=_snr)
+    snr, _, snr_norm = matched_filter_core(htilde, stilde, psd,
+                                           low_frequency_cutoff,
+                                           high_frequency_cutoff,
+                                           v1_norm, out=_snr)
     maxsnr, max_id = snr.abs_max_loc()
     if v2_norm is None:
-        v2_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
+        v2_norm = sigmasq(stilde, psd, low_frequency_cutoff,
+                          high_frequency_cutoff)
+
+    if subsample_interpolation:
+        # This uses the implementation coded up in sbank. Thanks Nick!
+        # The maths for this is well summarized here:
+        # https://ccrma.stanford.edu/~jos/sasp/Quadratic_Interpolation_Spectral_Peaks.html
+        # We use adjacent points to interpolate, but wrap off the end if needed
+        left = abs(snr[-1]) if max_id == 0 else abs(snr[max_id - 1])
+        middle = maxsnr
+        right = abs(snr[0]) if max_id == (len(snr)-1) else abs(snr[max_id + 1])
+        # Get derivatives
+        id_shift, maxsnr = quadratic_interpolate_peak(left, middle, right)
+        max_id = max_id + id_shift
+
     return maxsnr * snr_norm / sqrt(v2_norm), max_id
 
 def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
@@ -1456,7 +1478,7 @@ def quadratic_interpolate_peak(left, middle, right):
         Array of the estimated peak values at the interpolated offset
     """
     bin_offset = 1.0/2.0 * (left - right) / (left - 2 * middle + right)
-    peak_value = middle + 0.25 * (left - right) * bin_offset
+    peak_value = middle - 0.25 * (left - right) * bin_offset
     return bin_offset, peak_value
 
 
@@ -1812,8 +1834,11 @@ def followup_event_significance(ifo, data_reader, bank,
     pvalue = (1 + (peaks >= peak_value).sum()) / float(1 + nsamples)
 
     # Return recentered source SNR for bayestar, along with p-value, and trig
-    baysnr = snr.time_slice(peak_time - duration / 2.0,
-                            peak_time + duration / 2.0)
+    peak_full = int((peak_time - snr.start_time) / snr.delta_t)
+    half_dur_samples = int(snr.sample_rate * duration / 2)
+    snr_slice = slice(peak_full - half_dur_samples,
+                      peak_full + half_dur_samples + 1)
+    baysnr = snr[snr_slice]
 
     logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
                  pvalue, nsamples)
