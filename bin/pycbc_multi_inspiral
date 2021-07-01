@@ -63,8 +63,11 @@ parser.add_argument("--cluster-window", type=float, default = -1,
 parser.add_argument("--bank-veto-bank-file", type=str)
 
 parser.add_argument("--chisq-bins", default=0)
-parser.add_argument("--chisq-threshold", type=float, default=0)
-parser.add_argument("--chisq-delta", type=float, default=0)
+# Chisq threshold is not implemented, as event_mgr.consolidate_events() is not 
+#  called; also, it's not clear how it should be implemented for coherent events.
+# As the option does nothing, remove it for now.
+# parser.add_argument("--chisq-threshold", type=float, default=0) 
+# parser.add_argument("--chisq-delta", type=float, default=0)
 
 parser.add_argument("--autochi-number-points", type=int, default=0)
 parser.add_argument("--autochi-stride", type=int, default=0)
@@ -156,7 +159,7 @@ def network_chisq(chisq, chisq_dof, snr_dict):
 def pycbc_reweight_snr(network_snr, network_chisq, a = 3, b = 1. / 6.):
     """
     Output: reweighted_snr: Reweighted SNR for each trigger
-    Input:  network_snr:  Dictoinary of coincident or coherent SNR for each
+    Input:  network_snr:  Dictionary of coincident or coherent SNR for each
                           trigger
             network_chisq: A chisq value for each trigger 
     """
@@ -167,7 +170,7 @@ def pycbc_reweight_snr(network_snr, network_chisq, a = 3, b = 1. / 6.):
 def reweight_snr_by_null(network_snr, nullsnr):
     """
     Output: reweighted_snr: Reweighted SNR for each trigger
-    Input:  network_snr:  Dictoinary of coincident, coherent, or reweighted
+    Input:  network_snr:  Dictionary of coincident, coherent, or reweighted
                           SNR for each trigger
             null: Null snr for each trigger
     """
