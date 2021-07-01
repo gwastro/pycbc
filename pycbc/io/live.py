@@ -9,7 +9,8 @@ from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw import param as ligolw_param
+from glue.ligolw.param import Param as LIGOLWParam
+from glue.ligolw.array import Array as LIGOLWArray
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
@@ -21,15 +22,13 @@ from pycbc.mchirp_area import calc_probabilities
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
-    from glue.ligolw import array as ligolw_array
     Attributes = ligolw.sax.xmlreader.AttributesImpl
     elem = ligolw.LIGO_LW(
             Attributes({u"Name": unicode(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
-    elem.appendChild(ligolw_param.Param.from_pyvalue(u"f0", series.f0,
-                                                     unit=u"s^-1"))
+    elem.appendChild(LIGOLWParam.from_pyvalue(u'f0', series.f0, unit=u's^-1'))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
@@ -37,7 +36,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     else:
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
                                 series.data.data))
-    a = ligolw_array.Array.build(series.name, data, dim_names=dim_names)
+    a = LIGOLWArray.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -56,8 +55,7 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     snr_xml = _build_series(snr_lal, (u'Time', u'Time,Real,Imaginary'), None,
                             'deltaT', 's')
     snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = ligolw_param.Param.build(u'event_id', u'ilwd:char',
-                                         sngl_inspiral_id)
+    eid_param = LIGOLWParam.from_pyvalue(u'event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
 def make_psd_xmldoc(psddict, xmldoc=None):
@@ -76,8 +74,7 @@ def make_psd_xmldoc(psddict, xmldoc=None):
         xmlseries = _build_series(psd, (u"Frequency,Real", u"Frequency"),
                                   None, 'deltaF', 's^-1')
         fs = lw.appendChild(xmlseries)
-        fs.appendChild(ligolw_param.Param.from_pyvalue(u"instrument",
-                                                       instrument))
+        fs.appendChild(LIGOLWParam.from_pyvalue(u'instrument', instrument))
     return xmldoc
 
 class SingleCoincForGraceDB(object):
@@ -246,7 +243,7 @@ class SingleCoincForGraceDB(object):
         # This seems to be used as FAP, which should not be in gracedb
         coinc_inspiral_row.false_alarm_rate = 0
         coinc_inspiral_row.minimum_duration = 0.
-        coinc_inspiral_row.set_ifos(usable_ifos)
+        coinc_inspiral_row.instruments = tuple(usable_ifos)
         coinc_inspiral_row.coinc_event_id = coinc_id
         coinc_inspiral_row.mchirp = sngl_populated.mchirp
         coinc_inspiral_row.mass = sngl_populated.mtotal
