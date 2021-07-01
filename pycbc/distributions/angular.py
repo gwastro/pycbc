@@ -254,6 +254,7 @@ class SinAngle(UniformAngle):
             numpy.log(self._dfunc(
                 numpy.array([kwargs[p] for p in self._params]))).sum()
 
+
 class CosAngle(SinAngle):
     r"""A cosine distribution. This is the same thing as a sine distribution,
     but with the domain shifted to `[-pi/2, pi/2]`. See SinAngle for more
