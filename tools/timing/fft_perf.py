@@ -33,6 +33,8 @@ parser.add_option('--export-float-wisdom', type=str, help='export an FFTW float 
 _options = vars(options)
 
 if _options['scheme'] == 'cpu':
+    from pycbc.fft.backend_cpu import set_backend
+    set_backend([options.backend])
     ctx = CPUScheme(num_threads=options.num_threads)
     if options.backend == 'fftw':
         from pycbc.fft.fftw import set_measure_level, set_threads_backend
@@ -67,7 +69,7 @@ if options.import_float_wisdom:
 
 print("Making the plan")
 with ctx:
-    ifft(vecin, vecout, backend=options.backend)
+    ifft(vecin, vecout)
 print("Planning done")
 
 if options.export_float_wisdom:
@@ -77,7 +79,7 @@ if options.export_float_wisdom:
 def tifft():
     with ctx:
 	    for i in range(0, niter):
-	        ifft(vecin, vecout, backend=options.backend)
+	        ifft(vecin, vecout)
 	    sync = vecout[0]
 
 import timeit
