@@ -170,10 +170,10 @@ def set_measure_level(mlvl):
         raise ValueError("Measure level can only be one of 0, 1, 2, or 3")
     _default_measurelvl = mlvl
 
-_flag_dict = {0: FFTW_ESTIMATE,
-              1: FFTW_MEASURE,
-              2: FFTW_MEASURE|FFTW_PATIENT,
-              3: FFTW_MEASURE|FFTW_PATIENT|FFTW_EXHAUSTIVE}
+_flag_dict = {0: FFTW_ESTIMATE|FFTW_PRESERVE_INPUT,
+              1: FFTW_MEASURE|FFTW_PRESERVE_INPUT,
+              2: FFTW_MEASURE|FFTW_PATIENT|FFTW_PRESERVE_INPUT,
+              3: FFTW_MEASURE|FFTW_PATIENT|FFTW_EXHAUSTIVE|FFTW_PRESERVE_INPUT}
 def get_flag(mlvl,aligned):
     if aligned:
         return _flag_dict[mlvl]
@@ -302,7 +302,7 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     if idtype.char in ['f', 'F']:
         destroy = float_lib.fftwf_destroy_plan
     else:
-        destroy = double_lib.fftw_destroy_plan 
+        destroy = double_lib.fftw_destroy_plan
 
     destroy.argtypes = [ctypes.c_void_p]
 
