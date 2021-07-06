@@ -127,7 +127,7 @@ logging.info("loading bank")
 # cast to single when saving the waveforms
 dtype = numpy.complex128
 
-bank = waveform.FilterBank(args.bank_file, N/2+1, df, dtype,
+bank = waveform.FilterBank(args.bank_file, N//2+1, df, dtype,
                            low_frequency_cutoff=args.low_frequency_cutoff,
                            approximant=args.approximant,
                            enable_compressed_waveforms=False)
@@ -144,7 +144,7 @@ output = bank.write_to_hdf(args.output, force=args.force,
 
 # get the psd
 logging.info("getting psd")
-psd = pycbc.psd.from_cli(args, length=N/2+1, delta_f=df,
+psd = pycbc.psd.from_cli(args, length=N//2+1, delta_f=df,
                          low_frequency_cutoff=templates.f_lower.min(),
                          dyn_range_factor=pycbc.DYN_RANGE_FAC,
                          precision='double')

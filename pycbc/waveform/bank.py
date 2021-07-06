@@ -25,6 +25,7 @@
 """
 This module provides classes that describe banks of waveforms
 """
+import sys
 import types
 import logging
 import os.path
@@ -337,7 +338,13 @@ class TemplateBank(object):
         # (if anything was in the file)
         if approximant is not None:
             # get the approximant for each template
-            apprxs = self.parse_approximant(approximant)
+            # FIXME: Remove if block once python2 is retired
+            if sys.version_info >= (3, 0):
+                dtype = h5py.string_dtype(encoding='utf-8')
+                apprxs = np.array(self.parse_approximant(approximant),
+                                  dtype=dtype)
+            else:
+                apprxs = self.parse_approximant(approximant)
             if 'approximant' not in self.table.fieldnames:
                 self.table = self.table.add_fields(apprxs, 'approximant')
             else:
@@ -418,6 +425,7 @@ class TemplateBank(object):
         f.attrs['parameters'] = parameters
         write_tbl = self.table[start_index:stop_index]
         for p in parameters:
+            print (write_tbl[p].dtype)
             f[p] = write_tbl[p]
         if write_compressed_waveforms and self.has_compressed_waveforms:
             for tmplt_hash in write_tbl.template_hash:
