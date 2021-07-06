@@ -18,7 +18,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - run: |
         brew install fftw
-        sudo conda install mkl
+        pip install mkl
         pip install --upgrade pip setuptools tox
     - name: run basic pycbc test suite
       run: |
