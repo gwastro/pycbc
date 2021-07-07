@@ -167,7 +167,7 @@ def get_ctypes_library(libname, packages, mode=None):
     except ValueError:
         pass
     # We might be using conda/pip/virtualenv or some combination. This can
-    # leave lib files in a directory that LD_LIBRARY_PATH or pkg_config 
+    # leave lib files in a directory that LD_LIBRARY_PATH or pkg_config
     # can miss.
     libdirs.append(os.path.join(sys.base_prefix, "lib"))
 
