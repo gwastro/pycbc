@@ -425,7 +425,6 @@ class TemplateBank(object):
         f.attrs['parameters'] = parameters
         write_tbl = self.table[start_index:stop_index]
         for p in parameters:
-            print (write_tbl[p].dtype)
             f[p] = write_tbl[p]
         if write_compressed_waveforms and self.has_compressed_waveforms:
             for tmplt_hash in write_tbl.template_hash:
