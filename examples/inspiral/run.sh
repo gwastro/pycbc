@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 function inspiral_run {
 echo -e "\\n\\n>> [`date`] Running pycbc inspiral $1:$3 with $2 threads"
