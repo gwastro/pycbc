@@ -46,8 +46,9 @@ parser.add_argument("-o", "--output-file", required=True,
 
 options = parser.parse_args()
 
-dtypef={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'),
-        'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
+dtypem = dtype([('match', float64), ('bank', unicode_, 256),
+                ('bank_i', int32), ('sim', unicode_, 256),
+                ('sim_i', int32), ('sigmasq', float64)])
 
 matches=[]
 maxmatch = []
