@@ -216,8 +216,9 @@ wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
 # Create the workflow object
+wflow_dir = args.main_workflow_directory or args.output_dir
 workflow = wf.Workflow(args, args.workflow_name,
-                       directory=args.main_workflow_directory)
+                       directory=wflow_dir)
 
 if not args.is_sub_workflow:
     wf.makedir(args.output_dir)
