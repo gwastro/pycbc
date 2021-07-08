@@ -610,7 +610,89 @@ class ChirpDistanceToDistance(BaseTransform):
         ref_mass=1.4
         mchirp = maps['mchirp']
         return (2.**(-1./5) * self.ref_mass / mchirp)**(5./6)
+    
+######################################################################################################### TEST ################################################################################################################################################
 
+from pycbc.waveform.waveform_modes import jframe_to_l0frame
+
+class alignTotalSpin(BaseTransform):
+    
+    """Parameters
+    ----------
+    iota =
+    
+    s1 =
+    
+    s2 =
+    
+    m1 =
+    
+    m2 =
+    
+    f_lower =
+    
+    phi_ref =
+    """
+    name = "Align_total_spin"
+    
+    def __init__(self, iota, s1, s2, m1, m2, f_lower, phi_ref):
+        self.iota = iota
+        self.s1 = s1
+        self.s2 = s2
+        self.m1 = m1
+        self.m2 = m2
+        self.f_lower = f_lower
+        self.phi_ref = phi_ref
+        self.newIota = newIota
+        self.news1 = news1
+        self.news2 = news2
+        self._inputs = [self.iota, self.s1, self.s2, self.m1, self.m1. self.f_lower, self.phi_ref]
+        self._outputs = [self.newIota, self.news1, self.news2]
+        super(alignTotalSpin, self).__init__()   ############################################## what??????
+
+    def transform(self, maps):
+        """
+        Rigidly rotate binary so that the total angular momentum has the given
+        inclination (iota) instead of the orbital angular momentum. Return
+        the new inclination, s1, and s2. s1 and s2 are dimensionless spin.
+        Note: the spins are assumed to be given in the frame defined by the orbital
+        angular momentum.  
+        """
+        
+        iota = self.iota
+        s1 = self.s1
+        s2 = self.s2
+        m1 = self.m1
+        m2 = self.m2
+        f_lower = self.f_lower
+        phi_ref = self.phi_ref
+
+        # Calculate the quantities required by jframe_to_l0frame
+        if np.linalg.norm(s1[:2]) != 0 or np.linalg.norm(s1[:2]) != 0:
+            thetaJN = iota
+            phiJL = np.pi
+            l = np.array([0,0,1.])
+            theta1 = np.arccos(np.dot(s1, l)/np.linalg.norm(s1))
+            theta2 = np.arccos(np.dot(s2, l)/np.linalg.norm(s2))
+            phi12 = np.arccos(np.dot(s1[:2], s2[:2]) / np.linalg.norm(s1[:2]) / \
+                              np.linalg.norm(s2[:2]))
+
+            news1 = np.zeros(3)
+            news2 = np.zeros(3)
+            
+            newIota, news1[0], news1[1], news1[2], news2[0], news2[1], news2[2] = \
+            jframe_to_l0frame(m1, m2, f_lower, phi_ref, thetaJN, phiJL,
+                      np.linalg.norm(s1), np.linalg.norm(s2),
+                      theta1, theta2,
+                      phi12)                                                           ### WIP!!!!
+            
+            out = {self.newIota: newIota, self.news1: news1, self.news2: news2}
+            return self.format_output(maps, out)
+        else:
+            out = {self.newIota: iota, self.news1: s1, self.news2: s2}
+            return self.format_output(maps, out)
+        
+######################################################################################################### TEST ################################################################################################################################################
 
 class SphericalToCartesian(BaseTransform):
     """Converts spherical coordinates to cartesian.
