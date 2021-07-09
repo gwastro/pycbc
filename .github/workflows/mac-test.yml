@@ -18,7 +18,6 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - run: |
         brew install fftw
-        pip install mkl
         pip install --upgrade pip setuptools tox
     - name: run basic pycbc test suite
       run: |
