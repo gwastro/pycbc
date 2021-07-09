@@ -169,7 +169,7 @@ def get_ctypes_library(libname, packages, mode=None):
     # We might be using conda/pip/virtualenv or some combination. This can
     # leave lib files in a directory that LD_LIBRARY_PATH or pkg_config
     # can miss.
-    libdirs.append(os.path.join(sys.base_prefix, "lib"))
+    libdirs.append(os.path.join(sys.prefix, "lib"))
 
     # Note that the function below can accept an empty list for libdirs, in
     # which case it will return None
