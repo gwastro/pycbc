@@ -46,7 +46,7 @@ parser.add_argument("-o", "--output-file", required=True,
 
 options = parser.parse_args()
 
-dtypem = dtype([('match', float64), ('bank', unicode_, 256),
+dtypef = dtype([('match', float64), ('bank', unicode_, 256),
                 ('bank_i', int32), ('sim', unicode_, 256),
                 ('sim_i', int32), ('sigmasq', float64)])
 
