@@ -89,9 +89,15 @@ def create_descriptor(size, idtype, odtype, inplace):
         lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_INPLACE)
     else:
         lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_NOT_INPLACE)
+
+    nthreads = _scheme.mgr.state.num_threads
+    status = lib.DftiSetValue(desc, DFTI_THREAD_LIMIT, nthreads)
+    check_status(status)
+
     lib.DftiSetValue(desc, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_CCS_FORMAT)
     lib.DftiCommitDescriptor(desc)
     check_status(status)
+
     return desc
 
 def fft(invec, outvec, prec, itype, otype):
