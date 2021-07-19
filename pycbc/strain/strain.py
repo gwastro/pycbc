@@ -796,6 +796,11 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                                     help='Ignore the given length of whitened '
                                          'strain at the ends of a segment, to '
                                          'avoid filters ringing.')
+    data_reading_group_multi.add_argument('--gating-method', type=str,
+                                    default='taper',
+                                    help='Choose the method for gating. '
+                                         'Default: `taper`',
+                                    choices=['hard', 'taper', 'paint'])
 
     # Optional
     data_reading_group_multi.add_argument("--normalize-strain", type=float,
