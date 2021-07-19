@@ -992,6 +992,158 @@ class MatchedFilterSkyMaxControlNoPhase(MatchedFilterSkyMaxControl):
         return compute_u_val_for_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
                                                        **kwargs)
 
+
+class MatchedFilterTHAControl(object):
+    def __init__(self, low_frequency_cutoff, high_frequency_cutoff,
+                 snr_threshold, tlen, delta_f, dtype, segment_list,
+                 template_output1, template_output2, template_output3,
+                 template_output4, template_output5):
+        """ Create a matched filter engine.
+
+        Parameters
+        ----------
+        low_frequency_cutoff : {None, float}, optional
+            The frequency to begin the filter calculation. If None, begin at the
+            first frequency after DC.
+        high_frequency_cutoff : {None, float}, optional
+            The frequency to stop the filter calculation. If None, continue to the
+            the nyquist frequency.
+        snr_threshold : float
+            The minimum snr to return when filtering
+        segment_list : list
+            List of FrequencySeries that are the Fourier-transformed data segments
+        template_output : complex64
+            Array of memory given as the 'out' parameter to waveform.FilterBank
+        """
+        # Assuming analysis time is constant across templates and segments, also
+        # delta_f is constant across segments.
+        self.tlen = tlen
+        self.flen = self.tlen / 2 + 1
+        self.delta_f = delta_f
+        self.delta_t = 1.0/(self.delta_f * self.tlen)
+        self.dtype = dtype
+        self.snr_threshold = snr_threshold
+        self.flow = low_frequency_cutoff
+        self.fhigh = high_frequency_cutoff
+        if cluster_function not in ['symmetric', 'findchirp']:
+            raise ValueError("MatchedFilter: 'cluster_function' must be either 'symmetric' or 'findchirp'")
+        self.segments = segment_list
+        self.hcomp1 = template_output1
+        self.hcomp2 = template_output2
+        self.hcomp3 = template_output3
+        self.hcomp4 = template_output4
+        self.hcomp5 = template_output5
+        self.hcomps = [self.hcomp1, self.hcomp2, self.hcomp3, self.hcomp4,
+                       self.hcomp5]
+
+        self.snr_mem = zeros(self.tlen, dtype=self.dtype)
+        self.snr_mem1 = zeros(self.tlen, dtype=self.dtype)
+        self.snr_mem2 = zeros(self.tlen, dtype=self.dtype)
+        self.snr_mem3 = zeros(self.tlen, dtype=self.dtype)
+        self.snr_mem4 = zeros(self.tlen, dtype=self.dtype)
+        self.snr_mem5 = zeros(self.tlen, dtype=self.dtype)
+        self.snr_mem_comps = [self.snr_mem1, self.snr_mem2, self.snr_mem3,
+                              self.snr_mem4, self.snr_mem5]
+
+        self.corr_mem1 = zeros(self.tlen, dtype=self.dtype)
+        self.corr_mem2 = zeros(self.tlen, dtype=self.dtype)
+        self.corr_mem3 = zeros(self.tlen, dtype=self.dtype)
+        self.corr_mem4 = zeros(self.tlen, dtype=self.dtype)
+        self.corr_mem5 = zeros(self.tlen, dtype=self.dtype)
+        self.corr_mem_comps = [self.corr_mem1, self.corr_mem2, self.corr_mem3,
+                               self.corr_mem4, self.corr_mem5]
+
+        self.matched_filter_and_cluster = self.full_matched_filter_and_cluster_symm
+        # setup the threasholding/clustering operations for each segment
+        self.threshold_and_clusterers = []
+        for seg in self.segments:
+            thresh = events.ThresholdCluster(self.snr_mem[seg.analyze])
+            thresh.mem_slice = seg.analyze
+            self.threshold_and_clusterers.append(thresh)
+
+        # Assuming analysis time is constant across templates and segments, also
+        # delta_f is constant across segments.
+        self.kmin, self.kmax = get_cutoff_indices(self.flow, self.fhigh,
+                                                  self.delta_f, self.tlen)
+
+        # Set up the correlation operations for each analysis segment
+        corr_slice = slice(self.kmin, self.kmax)
+        self.correlators = []
+        for seg in self.segments:
+            self.correlators.append([])
+            for i in range(5):
+                corr = Correlator(self.hcomps[i][corr_slice],
+                                  seg[corr_slice],
+                                  self.corr_mem_comps[i][corr_slice])
+                self.correlators[-1].append(corr)
+
+        # setup up the ifft we will do
+        self.iffts = []
+        for i in range(5):
+            self.ifft.append(IFFT(self.corr_mem_comps[i],
+                                  self.snr_mem_comps[i]))
+
+    def full_matched_filter_and_cluster_symm(self, segnum, template_norm, window, epoch=None):
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
+
+        Calculated the matched filter, threshold, and cluster.
+
+        Parameters
+        ----------
+        segnum : int
+            Index into the list of segments at MatchedFilterControl construction
+            against which to filter.
+        template_norm : float
+            The htilde, template normalization factor.
+        window : int
+            Size of the window over which to cluster triggers, in samples
+
+        Returns
+        -------
+        snr : TimeSeries
+            A time series containing the complex snr.
+        norm : float
+            The normalization of the complex snr.
+        corrrelation: FrequencySeries
+            A frequency series containing the correlation vector.
+        idx : Array
+            List of indices of the triggers.
+        snrv : Array
+            The snr values at the trigger locations.
+        """
+        norm = (4.0 * self.delta_f)
+        for i in range(5):
+            self.correlators[segnum][i].correlate()
+            self.iffts[i].execute()
+
+        # FIXME: This will be inefficient. Can be optimized if needed, but
+        #        let's get something working first.
+        # FIXME: Also want to implement using < 5 components here!
+        self.snr_mem = (abs(self.snr_mem1)**2 +
+                        abs(self.snr_mem2)**2 +
+                        abs(self.snr_mem3)**2 +
+                        abs(self.snr_mem4)**2 +
+                        abs(self.snr_mem5)**2)**0.5
+
+
+        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+
+        if len(idx) == 0:
+            return [], [], [], [], []
+
+        logging.info("%s points above threshold" % str(len(idx)))
+
+        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
+        snr1 = TimeSeries(self.snr_mem1, epoch=epoch, delta_t=self.delta_t, copy=False)
+        corr = FrequencySeries(self.corr_mem1, delta_f=self.delta_f, copy=False)
+        offset = self.threshold_and_clusterers[segnum].mem_slice.start
+        snrv_for_chisq = [snr_full[offset+cidx] for cidx in idx]
+        return snr_full, snr_for_chisq, norm, corr, idx, snrv, snrv_for_chisq
+
+
 def make_frequency_series(vec):
     """Return a frequency series of the input vector.
 
@@ -1239,7 +1391,11 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     else:
         raise TypeError('Invalid Output Vector: wrong length or dtype')
 
-    correlate(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
+    def correlate_numpy(x, y, z):
+        z.data[:] = numpy.conjugate(x.data)[:]
+        z *= y
+
+    correlate_numpy(htilde[kmin:kmax], stilde[kmin:kmax], qtilde[kmin:kmax])
 
     if psd is not None:
         if isinstance(psd, FrequencySeries):

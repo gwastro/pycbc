@@ -996,7 +996,362 @@ class FilterBankSkyMax(TemplateBank):
         return hplus, hcross
 
 
+class FilterBankTHA(TemplateBank):
+    def __init__(self, filename, filter_length, delta_f,
+                 dtype, out_comp1=None, out_comp2=None,
+                 out_comp3=None, out_comp4=None, out_comp5=None,
+                 max_template_length=None, parameters=None,
+                 low_frequency_cutoff=None, **kwds):
+        self.out_comp1 = out_comp1
+        self.out_comp2 = out_comp2
+        self.out_comp3 = out_comp3
+        self.out_comp4 = out_comp4
+        self.out_comp5 = out_comp5
+        self.dtype = dtype
+        self.f_lower = low_frequency_cutoff
+        self.filename = filename
+        self.delta_f = delta_f
+        self.N = (filter_length - 1 ) * 2
+        self.delta_t = 1.0 / (self.N * self.delta_f)
+        self.filter_length = filter_length
+        self.max_template_length = max_template_length
+
+        super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,
+              **kwds)
+
+        self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
+
+    def get(self, index, psd):
+        # Make new memory for templates if we aren't given output memory
+        if self.out_comp1 is None:
+            tempoutcomp1 = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempoutcomp1 = self.out_comp1
+        if self.out_comp2 is None:
+            tempoutcomp2 = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempoutcomp2 = self.out_comp2
+        if self.out_comp3 is None:
+            tempoutcomp3 = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempoutcomp3 = self.out_comp3
+        if self.out_comp4 is None:
+            tempoutcomp4 = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempoutcomp4 = self.out_comp4
+        if self.out_comp5 is None:
+            tempoutcomp5 = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempoutcomp5 = self.out_comp5
+
+        approximant = self.approximant(index)
+        assert(approximant == 'IMRPhenomPv2')
+
+        # Get the end of the waveform if applicable (only for SPAtmplt atm)
+        f_end = self.end_frequency(index)
+        if f_end is None or f_end >= (self.filter_length * self.delta_f):
+            f_end = (self.filter_length-1) * self.delta_f
+
+        # Find the start frequency, if variable
+        f_low = self.f_lower
+        logging.info('%s: generating %s from %s Hz', index, approximant, f_low)
+
+        # What does this do???
+        poke1 = tempoutcomp1.data # pylint:disable=unused-variable
+        poke2 = tempoutcomp2.data # pylint:disable=unused-variable
+        poke3 = tempoutcomp3.data # pylint:disable=unused-variable
+        poke4 = tempoutcomp4.data # pylint:disable=unused-variable
+        poke5 = tempoutcomp5.data # pylint:disable=unused-variable
+
+        # Clear the storage memory
+        tempoutcomp1.clear()
+        tempoutcomp2.clear()
+        tempoutcomp3.clear()
+        tempoutcomp4.clear()
+        tempoutcomp5.clear()
+
+        # Get the waveform filter
+        distance = 1.0 / DYN_RANGE_FAC
+        curr_tmp = PhenomTemplate(self.table[index], 1./self.delta_t,
+                                  self.f_lower)
+        hcomps = curr_tmp.get_whitened_normalized_comps(self.delta_f, psd)
+        tempoutcomp1.data[:] = hcomps[0][:]
+        tempoutcomp2.data[:] = hcomps[1][:]
+        tempoutcomp3.data[:] = hcomps[2][:]
+        tempoutcomp4.data[:] = hcomps[3][:]
+        tempoutcomp5.data[:] = hcomps[4][:]
+
+        if hasattr(hplus, 'chirp_length') and \
+                hcomps[0].chirp_length is not None:
+            self.table[index].template_duration = hcomps[0].chirp_length
+
+        hcomps[0] = hcomps[0].astype(self.dtype)
+        hcomps[1] = hcomps[1].astype(self.dtype)
+        hcomps[2] = hcomps[2].astype(self.dtype)
+        hcomps[3] = hcomps[3].astype(self.dtype)
+        hcomps[4] = hcomps[4].astype(self.dtype)
+
+        hcomps[0].f_lower = f_low
+        hcomps[1].f_lower = f_low
+        hcomps[2].f_lower = f_low
+        hcomps[3].f_lower = f_low
+        hcomps[4].f_lower = f_low
+        hcomps[0].min_f_lower = f_low
+        hcomps[1].min_f_lower = f_low
+        hcomps[2].min_f_lower = f_low
+        hcomps[3].min_f_lower = f_low
+        hcomps[4].min_f_lower = f_low
+        hcomps[0].end_frequency = f_end
+        hcomps[1].end_frequency = f_end
+        hcomps[2].end_frequency = f_end
+        hcomps[3].end_frequency = f_end
+        hcomps[4].end_frequency = f_end
+        hcomps[0].end_idx = int(hcomps[0].end_frequency / hcomps[0].delta_f)
+        hcomps[1].end_idx = int(hcomps[0].end_frequency / hcomps[0].delta_f)
+        hcomps[2].end_idx = int(hcomps[0].end_frequency / hcomps[0].delta_f)
+        hcomps[3].end_idx = int(hcomps[0].end_frequency / hcomps[0].delta_f)
+        hcomps[4].end_idx = int(hcomps[0].end_frequency / hcomps[0].delta_f)
+        hcomps[0].params = self.table[index]
+        hcomps[1].params = self.table[index]
+        hcomps[2].params = self.table[index]
+        hcomps[3].params = self.table[index]
+        hcomps[4].params = self.table[index]
+        hcomps[0].approximant = approximant
+        hcomps[1].approximant = approximant
+        hcomps[2].approximant = approximant
+        hcomps[3].approximant = approximant
+        hcomps[4].approximant = approximant
+
+        return hcomps
+
+
+class PhenomTemplate():
+
+    def __init__(self, template_params, sample_rate, f_lower):
+        self.flow = f_lower
+        self.f_final = sample_rate / 2.
+
+        self.mass1 = template_params.mass1
+        self.mass2 = template_params.mass2
+        self.spin1x = template_params.spin1x
+        self.spin1y = template_params.spin1y
+        self.spin1z = template_params.spin1z
+        self.spin2x = template_params.spin2x
+        self.spin2y = template_params.spin2y
+        self.spin2z = template_params.spin2z
+
+        self.theta = template_params.latitude
+        self.phi = template_params.longitude
+        self.iota = template_params.inclination
+        self.psi = template_params.polarization
+        self.orb_phase = template_params.orbital_phase
+
+        outs = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
+            self.mass1,
+            self.mass2,
+            self.flow,
+            self.orb_phase,
+            self.iota,
+            self.spin1x,
+            self.spin1y,
+            self.spin1z,
+            self.spin2x,
+            self.spin2y,
+            self.spin2z,
+            lalsim.IMRPhenomPv2_V
+        )
+        chi1_l, chi2_l, chip, thetaJN, alpha0, phi_aligned, zeta_polariz = outs
+
+        self.chi1_l = float(chi1_l)
+        self.chi2_l = float(chi2_l)
+        self.chip = float(chip)
+        self.thetaJN = float(thetaJN)
+        self.alpha0 = float(alpha0)
+        self.phi0 = float(phi_aligned)
+        self.theta = float(theta)
+        self.phi = float(phi)
+        self.psi = float(psi)
+        # This is a correction on psi, currently unused
+        self.psi_corr = zeta_polariz
+
+        self.comps = {}
+
+    def gen_phenom_p_comp(self, thetaJN, alpha0, phi0, df):
+        return lalsim.SimIMRPhenomP(
+            self.chi1_l,
+            self.chi2_l,
+            self.chip,
+            thetaJN,
+            self.mass1*lal.MSUN_SI,
+            self.mass2*lal.MSUN_SI,
+            1.e6*lal.PC_SI,
+            alpha0,
+            phi0,
+            df,
+            self.flow,
+            self.f_final,
+            self.flow,
+            lalsim.IMRPhenomPv2_V,
+            lalsim.NoNRT_V,
+            None
+        )
+
+    def compute_waveform_five_comps(self, df, f_final):
+
+        hgen1a, _  = self.gen_phenom_p_comp(0., 0., 0., df)
+        # hgen1b is negative w.r.t. 1908.05707
+        _, hgen1b = self.gen_phenom_p_comp(0., 0., np.pi/4., df)
+        # These are both negative w.r.t 1908.05707
+        _, hgen2a = self.gen_phenom_p_comp(np.pi/2., 0., np.pi/4., df)
+        _, hgen2b = self.gen_phenom_p_comp(np.pi/2., np.pi/2., 0., df)
+        hgen3a, _ = self.gen_phenom_p_comp(np.pi/2., 0., 0., df)
+        hgen3b, _ = self.gen_phenom_p_comp(np.pi/2., np.pi/2., 0., df)
+
+        # Edit these arrays in place to avoid defining new LAL arrays
+        tmp = hgen1a.data.data[:] + hgen1b.data.data[:]
+        hgen1b.data.data[:] = (hgen1a.data.data[:] - hgen1b.data.data[:])/2.
+        hgen1a.data.data[:] = tmp / 2.
+        h1 = hgen1a
+        h5 = hgen1b
+
+        tmp = hgen2a.data.data[:] + hgen2b.data.data[:]
+        hgen2b.data.data[:] = 0.25 * (hgen2a.data.data[:] - hgen2b.data.data[:])
+        hgen2a.data.data[:] = 0.25 * tmp
+        h2 = hgen2a
+        h4 = hgen2b
+        hgen3a.data.data[:] = \
+            1./6. * (hgen3a.data.data[:] + hgen3b.data.data[:])
+        h3 = hgen3a
+
+        return h1, h2, h3, h4, h5
+
+    def get_whitened_normalized_comps(self, df, psd):
+        """
+        Return a COMPLEX8FrequencySeries of h+ and hx, whitened by the
+        given ASD and normalized. The waveform is not zero-padded to
+        match the length of the ASD, so its normalization depends on
+        its own length.
+        """
+        if df in self.comps:
+            return self.comps[df]
+
+
+        # Generate a new wf
+        h1, h2, h3, h4, h5 = self.compute_waveform_five_comps(df, self.f_final)
+        flen = h1.data.length
+        ASD = psd.data**0.5
+
+        if h1.data.length > len(ASD):
+            err_msg = "waveform has length greater than ASD; cannot whiten"
+            raise ValueError(err_msg)
+        arr_view_h1 = h1.data.data
+        arr_view_h2 = h2.data.data
+        arr_view_h3 = h3.data.data
+        arr_view_h4 = h4.data.data
+        arr_view_h5 = h5.data.data
+
+        # Whiten
+        arr_view_h1[:] /= ASD[:h1.data.length]
+        arr_view_h1[:int(self.flow / df)] = 0.
+        arr_view_h1[int(self.f_final/df):h1.data.length] = 0.
+
+        arr_view_h2[:] /= ASD[:h2.data.length]
+        arr_view_h2[:int(self.flow / df)] = 0.
+        arr_view_h2[int(self.f_final/df):h2.data.length] = 0.
+
+        arr_view_h3[:] /= ASD[:h3.data.length]
+        arr_view_h3[:int(self.flow / df)] = 0.
+        arr_view_h3[int(self.f_final/df):h3.data.length] = 0.
+
+        arr_view_h4[:] /= ASD[:h4.data.length]
+        arr_view_h4[:int(self.flow / df)] = 0.
+        arr_view_h4[int(self.f_final/df):h4.data.length] = 0.
+
+        arr_view_h5[:] /= ASD[:h5.data.length]
+        arr_view_h5[:int(self.flow / df)] = 0.
+        arr_view_h5[int(self.f_final/df):h5.data.length] = 0.
+
+
+        # Get normalization factors and normalize
+        h1sigmasq = compute_sigmasq(arr_view_h1, df)
+        h2sigmasq = compute_sigmasq(arr_view_h2, df)
+        h3sigmasq = compute_sigmasq(arr_view_h3, df)
+        h4sigmasq = compute_sigmasq(arr_view_h4, df)
+        h5sigmasq = compute_sigmasq(arr_view_h5, df)
+        arr_view_h1[:] /= h1sigmasq**0.5
+        arr_view_h2[:] /= h2sigmasq**0.5
+        arr_view_h3[:] /= h3sigmasq**0.5
+        arr_view_h4[:] /= h4sigmasq**0.5
+        arr_view_h5[:] /= h5sigmasq**0.5
+
+        h1h2corr = compute_complex_correlation(arr_view_h1, arr_view_h2, df)
+        h1h3corr = compute_complex_correlation(arr_view_h1, arr_view_h3, df)
+        h1h4corr = compute_complex_correlation(arr_view_h1, arr_view_h4, df)
+        h1h5corr = compute_complex_correlation(arr_view_h1, arr_view_h5, df)
+
+        arr_view_h2[:] = \
+            arr_view_h2[:] - h1h2corr * arr_view_h1[:]
+        arr_view_h3[:] = \
+            arr_view_h3[:] - h1h3corr * arr_view_h1[:]
+        arr_view_h4[:] = \
+            arr_view_h4[:] - h1h4corr * arr_view_h1[:]
+        arr_view_h5[:] = \
+            arr_view_h5[:] - h1h5corr * arr_view_h1[:]
+
+        h2sigmasq = compute_sigmasq(arr_view_h2, df)
+        h3sigmasq = compute_sigmasq(arr_view_h3, df)
+        h4sigmasq = compute_sigmasq(arr_view_h4, df)
+        h5sigmasq = compute_sigmasq(arr_view_h5, df)
+        arr_view_h2[:] /= h2sigmasq**0.5
+        arr_view_h3[:] /= h3sigmasq**0.5
+        arr_view_h4[:] /= h4sigmasq**0.5
+        arr_view_h5[:] /= h5sigmasq*0.5
+
+        h2h3corr = compute_complex_correlation(arr_view_h2, arr_view_h3, df)
+        h2h4corr = compute_complex_correlation(arr_view_h2, arr_view_h4, df)
+        h2h5corr = compute_complex_correlation(arr_view_h2, arr_view_h5, df)
+        arr_view_h3[:] = \
+            arr_view_h3[:] - h2h3corr * arr_view_h2[:]
+        arr_view_h4[:] = \
+            arr_view_h4[:] - h2h4corr * arr_view_h2[:]
+        arr_view_h5[:] = \
+            arr_view_h5[:] - h2h5corr * arr_view_h2[:]
+        h3sigmasq = compute_sigmasq(arr_view_h3, df)
+        h4sigmasq = compute_sigmasq(arr_view_h4, df)
+        h5sigmasq = compute_sigmasq(arr_view_h5, df)
+        arr_view_h3[:] /= h3sigmasq**0.5
+        arr_view_h4[:] /= h4sigmasq**0.5
+        arr_view_h5[:] /= h5sigmasq**0.5
+
+        h3h4corr = compute_complex_correlation(arr_view_h3, arr_view_h4, df)
+        h3h5corr = compute_complex_correlation(arr_view_h3, arr_view_h5, df)
+        arr_view_h4[:] = \
+            arr_view_h4[:] - h3h4corr * arr_view_h3[:]
+        arr_view_h5[:] = \
+            arr_view_h5[:] - h3h5corr * arr_view_h3[:]
+        h4sigmasq = compute_sigmasq(arr_view_h4, df)
+        h5sigmasq = compute_sigmasq(arr_view_h5, df)
+        arr_view_h4[:] /= h4sigmasq**0.5
+        arr_view_h5[:] /= h5sigmasq**0.5
+
+        h4h5corr = compute_complex_correlation(arr_view_h4, arr_view_h5, df)
+        arr_view_h5[:] = \
+            arr_view_h5[:] - h4h5corr * arr_view_h4[:]
+        h5sigmasq = compute_sigmasq(arr_view_h5, df)
+        arr_view_h5[:] /= h5sigmasq**0.5
+
+        h1P = FrequencySeries(h1.data.data[:], delta_f=h1.deltaF, epoch=h1.epoch)
+        h2P = FrequencySeries(h2.data.data[:], delta_f=h2.deltaF, epoch=h2.epoch)
+        h3P = FrequencySeries(h3.data.data[:], delta_f=h1.deltaF, epoch=h3.epoch)
+        h4P = FrequencySeries(h4.data.data[:], delta_f=h2.deltaF, epoch=h4.epoch)
+        h5P = FrequencySeries(h5.data.data[:], delta_f=h1.deltaF, epoch=h5.epoch)
+
+        self.comps[df] = [h1P, h2P, h3P, h4P, h5P]
+
+        return h1P, h2P, h3P, h4P, h5P
+
 __all__ = ('sigma_cached', 'boolargs_from_apprxstr', 'add_approximant_arg',
            'parse_approximant_arg', 'tuple_to_hash', 'TemplateBank',
            'LiveFilterBank', 'FilterBank', 'find_variable_start_frequency',
-           'FilterBankSkyMax')
+           'FilterBankSkyMax', 'FilterBankTHA')
+
