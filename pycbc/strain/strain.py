@@ -797,6 +797,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                                          'strain at the ends of a segment, to '
                                          'avoid filters ringing.')
     data_reading_group_multi.add_argument('--gating-method', type=str,
+                                    nargs='+', action=MultiDetOptionAction,
                                     default='taper',
                                     help='Choose the method for gating. '
                                          'Default: `taper`',
