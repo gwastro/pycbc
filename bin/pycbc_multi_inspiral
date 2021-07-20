@@ -216,8 +216,8 @@ def circular_projection_matrix(wp, wc):
     Eq 21: arXiv:1712.04724v1
     """
     denom = np.dot(wp, wp) + np.dot(wc, wc)
-    Lp = (np.outer(wp, wp) +np.outer(wc, wc) +((np.outer(wp, wc)) - np.outer(wc, wp)) *1j)/denom 
-    Rp = (np.outer(wp, wp) +np.outer(wc, wc) +((np.outer(wc, wp)) - np.outer(wp, wc)) *1j)/denom 
+    Lp = (np.outer(wp, wp) + np.outer(wc, wc) + (np.outer(wp, wc) - np.outer(wc, wp)) *1j)/denom 
+    Rp = (np.outer(wp, wp) + np.outer(wc, wc) + (np.outer(wc, wp) - np.outer(wp, wc)) *1j)/denom 
     return Lp, Rp
 
 
