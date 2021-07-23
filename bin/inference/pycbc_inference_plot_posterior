@@ -293,6 +293,7 @@ for (i, s) in enumerate(samples):
                     plot_marginal_lines=not opts.no_marginal_lines,
                     plot_maxl=opts.plot_maxl,
                     marginal_percentiles=opts.marginal_percentiles,
+                    marginal_title=not opts.no_marginal_titles,
                     plot_scatter=opts.plot_scatter,
                     zvals=zvals[i] if zvals is not None else None,
                     show_colorbar=opts.z_arg is not None,

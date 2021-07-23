@@ -658,9 +658,25 @@ def create_multidim_plot(parameters, samples, labels=None,
             if plot_contours and contour_color is None:
                 contour_color = 'navy'
 
+    # create the axis grid
+    if fig is None and axis_dict is None:
+        fig, axis_dict = create_axes_grid(
+            parameters, labels=labels,
+            width_ratios=width_ratios, height_ratios=height_ratios,
+            no_diagonals=not plot_marginal)
+
     # convert samples to a dictionary to avoid re-computing derived parameters
     # every time they are needed
-    samples = dict([[p, samples[p]] for p in parameters])
+    # only try to plot what's available
+    sd = {}
+    for p in parameters:
+        try:
+            sd[p] = samples[p]
+        except (ValueError, TypeError, IndexError):
+            continue
+    samples = sd
+    parameters = list(sd.keys())
+    #samples = dict([[p, samples[p]] for p in parameters])
 
     # values for axis bounds
     if mins is None:
@@ -673,13 +689,6 @@ def create_multidim_plot(parameters, samples, labels=None,
     else:
         # copy the dict
         maxs = {p: val for p, val in maxs.items()}
-
-    # create the axis grid
-    if fig is None and axis_dict is None:
-        fig, axis_dict = create_axes_grid(
-            parameters, labels=labels,
-            width_ratios=width_ratios, height_ratios=height_ratios,
-            no_diagonals=not plot_marginal)
 
     # Diagonals...
     if plot_marginal:
@@ -708,7 +717,7 @@ def create_multidim_plot(parameters, samples, labels=None,
 
     # Off-diagonals...
     for px, py in axis_dict:
-        if px == py:
+        if px == py or px not in parameters or py not in parameters:
             continue
         ax, _, _ = axis_dict[px, py]
         if plot_scatter:

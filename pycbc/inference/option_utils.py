@@ -173,6 +173,10 @@ def add_plot_posterior_option_group(parser):
                         default=False,
                         help="Do not add vertical lines in the 1D marginal "
                              "plots showing the marginal percentiles.")
+    pgroup.add_argument('--no-marginal-titles', action='store_true',
+                        default=False,
+                        help="Do not add titles giving the 1D credible range "
+                             "over the 1D marginal plots.")
     pgroup.add_argument("--plot-scatter", action='store_true', default=False,
                         help="Plot each sample point as a scatter plot.")
     pgroup.add_argument("--plot-density", action="store_true", default=False,
