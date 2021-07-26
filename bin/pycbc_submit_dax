@@ -489,7 +489,7 @@ if [ \${RESULT} -eq 0 ] ; then
     grid-proxy-info
   else
     cp /tmp/x509up_u\`id -u\` /tmp/x509up_u\`id -u\`.orig
-    grid-proxy-init -cert /tmp/x509up_u\`id -u\`.orig -key /tmp/x509up_u\`id -u\`.orig
+    grid-proxy-init -hours 276 -cert /tmp/x509up_u\`id -u\`.orig -key /tmp/x509up_u\`id -u\`.orig
     rm -f /tmp/x509up_u\`id -u\`.orig
     grid-proxy-info
   fi
