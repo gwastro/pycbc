@@ -612,7 +612,7 @@ class ChirpDistanceToDistance(BaseTransform):
         return (2.**(-1./5) * self.ref_mass / mchirp)**(5./6)
     
 ######################################################################################################### TEST ################################################################################################################################################
-
+import numpy as np
 from pycbc.waveform.waveform_modes import jframe_to_l0frame
 
 class alignTotalSpin(BaseTransform):
@@ -635,7 +635,7 @@ class alignTotalSpin(BaseTransform):
     """
     name = "Align_total_spin"
     
-    def __init__(self, iota, s1, s2, m1, m2, f_lower, phi_ref):
+    def __init__(self, iota, s1, s2, m1, m2, f_lower, phi_ref, newIota, news1, news2):
         self.iota = iota
         self.s1 = s1
         self.s2 = s2
@@ -646,7 +646,7 @@ class alignTotalSpin(BaseTransform):
         self.newIota = newIota
         self.news1 = news1
         self.news2 = news2
-        self._inputs = [self.iota, self.s1, self.s2, self.m1, self.m1. self.f_lower, self.phi_ref]
+        self._inputs = [self.iota, self.s1, self.s2, self.m1, self.m2, self.f_lower, self.phi_ref]
         self._outputs = [self.newIota, self.news1, self.news2]
         super(alignTotalSpin, self).__init__()   ############################################## what??????
 
@@ -668,23 +668,35 @@ class alignTotalSpin(BaseTransform):
         phi_ref = self.phi_ref
 
         # Calculate the quantities required by jframe_to_l0frame
-        if np.linalg.norm(s1[:2]) != 0 or np.linalg.norm(s1[:2]) != 0:
-            thetaJN = iota
+        if np.linalg.norm(maps[s1][:2]) != 0 or np.linalg.norm(maps[s1][:2]) != 0:
+            thetaJN = maps[iota]
             phiJL = np.pi
             l = np.array([0,0,1.])
-            theta1 = np.arccos(np.dot(s1, l)/np.linalg.norm(s1))
-            theta2 = np.arccos(np.dot(s2, l)/np.linalg.norm(s2))
-            phi12 = np.arccos(np.dot(s1[:2], s2[:2]) / np.linalg.norm(s1[:2]) / \
-                              np.linalg.norm(s2[:2]))
+            theta1 = np.arccos(np.dot(maps[s1], l)/np.linalg.norm(maps[s1]))
+            theta2 = np.arccos(np.dot(maps[s2], l)/np.linalg.norm(maps[s2]))
+            phi12 = np.arccos(np.dot(maps[s1][:2], maps[s2][:2]) / np.linalg.norm(maps[s1][:2]) / \
+                              np.linalg.norm(maps[s2][:2]))
+            
+            #print(maps[s1])
 
             news1 = np.zeros(3)
             news2 = np.zeros(3)
             
-            newIota, news1[0], news1[1], news1[2], news2[0], news2[1], news2[2] = \
-            jframe_to_l0frame(m1, m2, f_lower, phi_ref, thetaJN, phiJL,
-                      np.linalg.norm(s1), np.linalg.norm(s2),
+            output = \
+            jframe_to_l0frame(maps[m1], maps[m2], maps[f_lower], maps[phi_ref], thetaJN, phiJL,
+                      np.linalg.norm(maps[s1]), np.linalg.norm(maps[s2]),
                       theta1, theta2,
-                      phi12)                                                           ### WIP!!!!
+                      phi12)
+            
+            newIota = output['inclination']      #not elegant, just quickly done for testing
+            news1[0] = output['spin1x']
+            news1[1] = output['spin1y']
+            news1[2] = output['spin1z']
+            news2[0] = output['spin2x']
+            news2[1] = output['spin2y']
+            news2[2] = output['spin2z']
+            
+            #print(output['spin1x'])   ### WIP!!!!
             
             out = {self.newIota: newIota, self.news1: news1, self.news2: news2}
             return self.format_output(maps, out)
