@@ -247,9 +247,10 @@ def coincident_snr(snr_dict, index, threshold, time_delay):
             index    : The subset of input index that survive the cuts
             coinc_triggers: Dictionary of individual detector SNRs at
                             indexes that survive cuts
-    Input: snr_dict: Dictionary of individual detector SNRs in geocent time
+    Input: snr_dict: Dictionary of individual detector SNRs
            index   : Geocent indexes you want to find coinc SNR for
            threshold: Indexes with coinc SNR below this threshold are cut
+           time_delay: Dictionary of time delay for each detector
     """
     #Restrict the snr timeseries to just the interesting points
     coinc_triggers = {ifo : snr_dict[ifo][index+time_delay[ifo]] for ifo in snr_dict.keys()}
@@ -588,7 +589,8 @@ with ctx:
             # If there is only one ifo, then coinc_triggers is just the
             # triggers from ifo
             elif len(coinc_idx) != 0 and nifo==1:
-                coinc_triggers = {opt.instruments[0] : snr[opt.instruments[0]][coinc_idx]}
+                coinc_triggers = {opt.instruments[0] :
+                                      snr[opt.instruments[0]][coinc_idx+time_delay_idx[opt.instruments[0]]]}
             else:
                 coinc_triggers = {}
                 logging.info("No triggers above coincident SNR threshold")
@@ -619,7 +621,7 @@ with ctx:
             if len(coinc_idx) != 0:
                 coinc_idx_det_frame = {ifo : coinc_idx + time_delay_idx[ifo]
                                       for ifo in opt.instruments}
-                coherent_ifo_triggers = {ifo : snr[ifo][coinc_idx]
+                coherent_ifo_triggers = {ifo : snr[ifo][coinc_idx_det_frame[ifo]]
                                         for ifo in opt.instruments}
 
                 # Calculate the power and autochi2 values for the coinc indexes
@@ -633,7 +635,7 @@ with ctx:
                         coherent_ifo_triggers[ifo] / norm_dict[ifo],
                         norm_dict[ifo],
                         stilde[ifo].psd,
-                        coinc_idx + stilde[ifo].analyze.start,
+                        coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start,
                         template)
 
                 # Calculate network chisq value
