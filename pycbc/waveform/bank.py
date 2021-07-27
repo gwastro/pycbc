@@ -41,6 +41,8 @@ import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
 import hashlib
 import warnings
+import lal
+import lalsimulation as lalsim
 
 
 def sigma_cached(self, psd):
@@ -1016,12 +1018,19 @@ class FilterBankTHA(TemplateBank):
         self.filter_length = filter_length
         self.max_template_length = max_template_length
 
-        super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,
+        super(FilterBankTHA, self).__init__(filename, parameters=parameters,
               **kwds)
 
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
+        self.last_index = None
+
     def get(self, index, psd):
+        if index == self.last_index:
+             need_new_comps = False
+        else:
+             need_new_comps = True
+        self.last_index = index
         # Make new memory for templates if we aren't given output memory
         if self.out_comp1 is None:
             tempoutcomp1 = zeros(self.filter_length, dtype=self.dtype)
@@ -1072,16 +1081,21 @@ class FilterBankTHA(TemplateBank):
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
-        curr_tmp = PhenomTemplate(self.table[index], 1./self.delta_t,
-                                  self.f_lower)
+        if need_new_comps:
+            curr_tmp = PhenomTemplate(self.table[index], 1./self.delta_t,
+                                      self.f_lower)
+            self.curr_tmp = curr_tmp
+        else:
+            curr_tmp = self.curr_tmp
         hcomps = curr_tmp.get_whitened_normalized_comps(self.delta_f, psd)
+        hcomps =  [hcmp for hcmp in hcomps]
         tempoutcomp1.data[:] = hcomps[0][:]
         tempoutcomp2.data[:] = hcomps[1][:]
         tempoutcomp3.data[:] = hcomps[2][:]
         tempoutcomp4.data[:] = hcomps[3][:]
         tempoutcomp5.data[:] = hcomps[4][:]
 
-        if hasattr(hplus, 'chirp_length') and \
+        if hasattr(hcomps[0], 'chirp_length') and \
                 hcomps[0].chirp_length is not None:
             self.table[index].template_duration = hcomps[0].chirp_length
 
@@ -1124,27 +1138,53 @@ class FilterBankTHA(TemplateBank):
 
         return hcomps
 
+def compute_sigmasq(htilde, deltaF):
+    """
+    Find norm of whitened h(f) array.
+    """
+    # vdot is dot with complex conjugation
+    return float(np.vdot(htilde, htilde).real * 4 * deltaF)
+
+
+def compute_correlation(htilde1, htilde2, deltaF):
+    """
+    Find the real component of correlation between htilde1 and htilde2.
+    """
+    # vdot is dot with complex conjugation
+    return float(np.vdot(htilde1, htilde2).real * 4 * deltaF)
+
+def compute_complex_correlation(htilde1, htilde2, deltaF):
+    """
+    Find the complex correlation between htilde1 and htilde2.
+    """
+    # vdot is dot with complex conjugation
+    return np.vdot(htilde1, htilde2) * 4 * deltaF
+
 
 class PhenomTemplate():
 
     def __init__(self, template_params, sample_rate, f_lower):
-        self.flow = f_lower
-        self.f_final = sample_rate / 2.
+        from pycbc.pnutils import get_imr_duration
+        self.flow = float(f_lower)
+        self.f_final = float(sample_rate / 2.)
 
-        self.mass1 = template_params.mass1
-        self.mass2 = template_params.mass2
-        self.spin1x = template_params.spin1x
-        self.spin1y = template_params.spin1y
-        self.spin1z = template_params.spin1z
-        self.spin2x = template_params.spin2x
-        self.spin2y = template_params.spin2y
-        self.spin2z = template_params.spin2z
+        self.mass1 = float(template_params.mass1)
+        self.mass2 = float(template_params.mass2)
+        self.spin1x = float(template_params.spin1x)
+        self.spin1y = float(template_params.spin1y)
+        self.spin1z = float(template_params.spin1z)
+        self.spin2x = float(template_params.spin2x)
+        self.spin2y = float(template_params.spin2y)
+        self.spin2z = float(template_params.spin2z)
 
-        self.theta = template_params.latitude
-        self.phi = template_params.longitude
-        self.iota = template_params.inclination
-        self.psi = template_params.polarization
-        self.orb_phase = template_params.orbital_phase
+        self.theta = float(template_params.latitude)
+        self.phi = float(template_params.longitude)
+        self.iota = float(template_params.inclination)
+        self.psi = float(template_params.polarization)
+        self.orb_phase = float(template_params.orbital_phase)
+
+        self.duration = get_imr_duration(self.mass1, self.mass2, self.spin1z,
+                                         self.spin2z, self.flow, "IMRPhenomD")
 
         outs = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
             self.mass1,
@@ -1168,13 +1208,11 @@ class PhenomTemplate():
         self.thetaJN = float(thetaJN)
         self.alpha0 = float(alpha0)
         self.phi0 = float(phi_aligned)
-        self.theta = float(theta)
-        self.phi = float(phi)
-        self.psi = float(psi)
         # This is a correction on psi, currently unused
         self.psi_corr = zeta_polariz
 
         self.comps = {}
+        self.has_comps = False
 
     def gen_phenom_p_comp(self, thetaJN, alpha0, phi0, df):
         return lalsim.SimIMRPhenomP(
@@ -1196,31 +1234,70 @@ class PhenomTemplate():
             None
         )
 
+    def get_interpolated_phenomp_comp(self, thetaJN, alpha0, phi0, df,
+                                      comp):
+        # Waveform generation is a problem.
+        # Compressed waveforms would be an option, but the file size will be
+        # challenging. I'm trying out the idea of "INTERP" waveforms instead,
+        # where we generate waveforms at much larger frequency spacing and then
+        # upsample. (Technically these don't actually interpolate, but it's a
+        # good way to explain the idea of what it's doing ..).
+        from pycbc.filter import interpolate_complex_frequency
+
+        def rulog2(val):
+            return 2.0 ** np.ceil(np.log2(float(val)))
+
+
+        # FIXME: THIS ONE IS IMPORTANT!!
+        extra_padding = 5
+        df_min = 1.0 / rulog2(self.duration + extra_padding)
+
+        hp_l, hc_l = self.gen_phenom_p_comp(thetaJN, alpha0, phi0, df_min)
+
+        if comp == 'plus':
+            small = hp_l
+        elif comp == 'cross':
+            small = hc_l
+        else:
+            raise ValueError("Need comp=plus or comp=cross")
+
+        offset = int(extra_padding * (small.data.length-1)*2 * small.deltaF)
+
+        small = FrequencySeries(small.data.data[:], delta_f=small.deltaF,
+                              epoch=small.epoch)
+
+        large = interpolate_complex_frequency(small, df, zeros_offset=offset,
+                                              side='left')
+        return large
+
+        
+
+
     def compute_waveform_five_comps(self, df, f_final):
 
-        hgen1a, _  = self.gen_phenom_p_comp(0., 0., 0., df)
+        hgen1a  = self.get_interpolated_phenomp_comp(0., 0., 0., df, 'plus')
         # hgen1b is negative w.r.t. 1908.05707
-        _, hgen1b = self.gen_phenom_p_comp(0., 0., np.pi/4., df)
+        hgen1b = self.get_interpolated_phenomp_comp(0., 0., np.pi/4., df, 'cross')
         # These are both negative w.r.t 1908.05707
-        _, hgen2a = self.gen_phenom_p_comp(np.pi/2., 0., np.pi/4., df)
-        _, hgen2b = self.gen_phenom_p_comp(np.pi/2., np.pi/2., 0., df)
-        hgen3a, _ = self.gen_phenom_p_comp(np.pi/2., 0., 0., df)
-        hgen3b, _ = self.gen_phenom_p_comp(np.pi/2., np.pi/2., 0., df)
+        hgen2a = self.get_interpolated_phenomp_comp(np.pi/2., 0., np.pi/4., df, 'cross')
+        hgen2b = self.get_interpolated_phenomp_comp(np.pi/2., np.pi/2., 0., df, 'cross')
+        hgen3a = self.get_interpolated_phenomp_comp(np.pi/2., 0., 0., df, 'plus')
+        hgen3b = self.get_interpolated_phenomp_comp(np.pi/2., np.pi/2., 0., df, 'plus')
 
         # Edit these arrays in place to avoid defining new LAL arrays
-        tmp = hgen1a.data.data[:] + hgen1b.data.data[:]
-        hgen1b.data.data[:] = (hgen1a.data.data[:] - hgen1b.data.data[:])/2.
-        hgen1a.data.data[:] = tmp / 2.
+        tmp = hgen1a.data[:] + hgen1b.data[:]
+        hgen1b.data[:] = (hgen1a.data[:] - hgen1b.data[:])/2.
+        hgen1a.data[:] = tmp / 2.
         h1 = hgen1a
         h5 = hgen1b
 
-        tmp = hgen2a.data.data[:] + hgen2b.data.data[:]
-        hgen2b.data.data[:] = 0.25 * (hgen2a.data.data[:] - hgen2b.data.data[:])
-        hgen2a.data.data[:] = 0.25 * tmp
+        tmp = hgen2a.data[:] + hgen2b.data[:]
+        hgen2b.data[:] = 0.25 * (hgen2a.data[:] - hgen2b.data[:])
+        hgen2a.data[:] = 0.25 * tmp
         h2 = hgen2a
         h4 = hgen2b
-        hgen3a.data.data[:] = \
-            1./6. * (hgen3a.data.data[:] + hgen3b.data.data[:])
+        hgen3a.data[:] = \
+            1./6. * (hgen3a.data[:] + hgen3b.data[:])
         h3 = hgen3a
 
         return h1, h2, h3, h4, h5
@@ -1232,44 +1309,56 @@ class PhenomTemplate():
         match the length of the ASD, so its normalization depends on
         its own length.
         """
-        if df in self.comps:
-            return self.comps[df]
 
 
         # Generate a new wf
-        h1, h2, h3, h4, h5 = self.compute_waveform_five_comps(df, self.f_final)
-        flen = h1.data.length
+        if not self.has_comps:
+            h1, h2, h3, h4, h5 = self.compute_waveform_five_comps(df, self.f_final)
+            self.h1 = h1
+            self.h2 = h2
+            self.h3 = h3
+            self.h4 = h4
+            self.h5 = h5
+            self.has_comps = True
+        else:
+            h1 = self.h1
+            h2 = self.h2
+            h3 = self.h3
+            h4 = self.h4
+            h5 = self.h5
+        arr_view_h1 = np.copy(h1.data)
+        arr_view_h2 = np.copy(h2.data)
+        arr_view_h3 = np.copy(h3.data)
+        arr_view_h4 = np.copy(h4.data)
+        arr_view_h5 = np.copy(h5.data)
+
+        flen = len(h1)
         ASD = psd.data**0.5
 
-        if h1.data.length > len(ASD):
+        if len(h1) > len(ASD):
             err_msg = "waveform has length greater than ASD; cannot whiten"
             raise ValueError(err_msg)
-        arr_view_h1 = h1.data.data
-        arr_view_h2 = h2.data.data
-        arr_view_h3 = h3.data.data
-        arr_view_h4 = h4.data.data
-        arr_view_h5 = h5.data.data
 
         # Whiten
-        arr_view_h1[:] /= ASD[:h1.data.length]
+        arr_view_h1[:] /= ASD[:len(h1)]
         arr_view_h1[:int(self.flow / df)] = 0.
-        arr_view_h1[int(self.f_final/df):h1.data.length] = 0.
+        arr_view_h1[int(self.f_final/df):len(h1)] = 0.
 
-        arr_view_h2[:] /= ASD[:h2.data.length]
+        arr_view_h2[:] /= ASD[:len(h2)]
         arr_view_h2[:int(self.flow / df)] = 0.
-        arr_view_h2[int(self.f_final/df):h2.data.length] = 0.
+        arr_view_h2[int(self.f_final/df):len(h2)] = 0.
 
-        arr_view_h3[:] /= ASD[:h3.data.length]
+        arr_view_h3[:] /= ASD[:len(h3)]
         arr_view_h3[:int(self.flow / df)] = 0.
-        arr_view_h3[int(self.f_final/df):h3.data.length] = 0.
+        arr_view_h3[int(self.f_final/df):len(h3)] = 0.
 
-        arr_view_h4[:] /= ASD[:h4.data.length]
+        arr_view_h4[:] /= ASD[:len(h4)]
         arr_view_h4[:int(self.flow / df)] = 0.
-        arr_view_h4[int(self.f_final/df):h4.data.length] = 0.
+        arr_view_h4[int(self.f_final/df):len(h4)] = 0.
 
-        arr_view_h5[:] /= ASD[:h5.data.length]
+        arr_view_h5[:] /= ASD[:len(h5)]
         arr_view_h5[:int(self.flow / df)] = 0.
-        arr_view_h5[int(self.f_final/df):h5.data.length] = 0.
+        arr_view_h5[int(self.f_final/df):len(h5)] = 0.
 
 
         # Get normalization factors and normalize
@@ -1340,13 +1429,11 @@ class PhenomTemplate():
         h5sigmasq = compute_sigmasq(arr_view_h5, df)
         arr_view_h5[:] /= h5sigmasq**0.5
 
-        h1P = FrequencySeries(h1.data.data[:], delta_f=h1.deltaF, epoch=h1.epoch)
-        h2P = FrequencySeries(h2.data.data[:], delta_f=h2.deltaF, epoch=h2.epoch)
-        h3P = FrequencySeries(h3.data.data[:], delta_f=h1.deltaF, epoch=h3.epoch)
-        h4P = FrequencySeries(h4.data.data[:], delta_f=h2.deltaF, epoch=h4.epoch)
-        h5P = FrequencySeries(h5.data.data[:], delta_f=h1.deltaF, epoch=h5.epoch)
-
-        self.comps[df] = [h1P, h2P, h3P, h4P, h5P]
+        h1P = FrequencySeries(arr_view_h1[:], delta_f=h1.delta_f, epoch=h1.epoch)
+        h2P = FrequencySeries(arr_view_h2[:], delta_f=h2.delta_f, epoch=h2.epoch)
+        h3P = FrequencySeries(arr_view_h3[:], delta_f=h3.delta_f, epoch=h3.epoch)
+        h4P = FrequencySeries(arr_view_h4[:], delta_f=h4.delta_f, epoch=h4.epoch)
+        h5P = FrequencySeries(arr_view_h5[:], delta_f=h5.delta_f, epoch=h5.epoch)
 
         return h1P, h2P, h3P, h4P, h5P
 
