@@ -274,7 +274,7 @@ class Executable(pegasus_workflow.Executable):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
 
         # This sets up the sub-directory to use in the submit directory
-        self.add_profile('pegasus', 'dir.submit.mapper', self.pegasus_name)
+        self.add_profile('pegasus', 'relative.submit.dir', self.pegasus_name)
 
         self.execution_site = exe_site
         self.executable_url = exe_path
