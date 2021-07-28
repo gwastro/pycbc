@@ -1282,7 +1282,7 @@ class PhenomTemplate():
         
 
 
-    def compute_waveform_five_comps(self, df, f_final, num_comps=num_comps):
+    def compute_waveform_five_comps(self, df, f_final, num_comps=5):
 
 
         hgen1a  = self.get_interpolated_phenomp_comp(0., 0., 0., df, 'plus')
@@ -1417,7 +1417,7 @@ class PhenomTemplate():
         h3P = FrequencySeries(arr_view_h3[:], delta_f=h3.delta_f, epoch=h3.epoch)
 
         if h4 is None:
-            h1P, h2P, h3P, None, None
+            return h1P, h2P, h3P, None, None
 
         arr_view_h4[:] /= ASD[:len(h4)]
         arr_view_h4[:int(self.flow / df)] = 0.
@@ -1446,7 +1446,7 @@ class PhenomTemplate():
         h4P = FrequencySeries(arr_view_h4[:], delta_f=h4.delta_f, epoch=h4.epoch)
 
         if h5 is None:
-            h1P, h2P, h3P, h4P, None
+            return h1P, h2P, h3P, h4P, None
 
         arr_view_h5[:] /= ASD[:len(h5)]
         arr_view_h5[:int(self.flow / df)] = 0.
