@@ -162,7 +162,9 @@ class DynestySampler(BaseSampler):
                           'propose_point',
                           'update_proposal',
                           '_UPDATE', '_PROPOSE',
-                          'evolve_point']
+                          'evolve_point', 'use_pool', 'queue_size',
+                          'use_pool_ptform', 'use_pool_logl',
+                          'use_pool_evolve']
 
     def run(self):
         diff_niter = 1
