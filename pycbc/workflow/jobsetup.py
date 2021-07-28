@@ -555,7 +555,7 @@ class PyCBCInspiralExecutable(Executable):
         # attribute to avoid too many files in one sub-directory
         curr_rel_dir = fil.name.split('/')[0]
         node.add_profile('pegasus', 'relative.submit.dir',
-                         self.pegasus_name + '_' + curr_rel_dir, force=True)
+                         self.pegasus_name + '_' + curr_rel_dir)
 
         # Must ensure this is not a LIGOGPS as JSON won't understand it
         data_seg = segments.segment([int(data_seg[0]), int(data_seg[1])])
