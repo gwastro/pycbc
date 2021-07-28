@@ -664,11 +664,8 @@ with ctx:
                                          coherent_ifo_triggers[ifo] /
                                          norm_dict[ifo], norm_dict[ifo],
                                          coinc_idx_det_frame[ifo]+stilde[ifo].analyze.start)
-                    # snr_ts[ifo] (the SNR timeseries directly from matched filtering)
-                    # is used here because autochisq runs into index error with snr[ifo] padded
-                    # by segment padding options
                     ifo_out_vals['cont_chisq'] = autochisq.values(
-                        snr_ts[ifo], coinc_idx_det_frame[ifo]+stilde[ifo].analyze.start,
+                        snr[ifo] / norm_dict[ifo], coinc_idx_det_frame[ifo],
                         template, stilde[ifo].psd, norm_dict[ifo],
                         stilde=stilde[ifo], low_frequency_cutoff=flow)
                     ifo_out_vals['chisq'] = chisq[ifo]
