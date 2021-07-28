@@ -1081,7 +1081,7 @@ class MatchedFilterTHAControl(object):
             self.iffts.append(IFFT(self.corr_mem_comps[i],
                                   self.snr_mem_comps[i]))
 
-    def tha_matched_filter_and_cluster(self, segnum, template_norm, window, epoch=None):
+    def tha_matched_filter_and_cluster(self, segnum, template_norm, window, epoch=None, num_comps=5):
         """ Returns the complex snr timeseries, normalization of the complex snr,
         the correlation vector frequency series, the list of indices of the
         triggers, and the snr values at the trigger locations. Returns empty
@@ -1112,19 +1112,15 @@ class MatchedFilterTHAControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
+        logging.info("Using %d comps" % num_comps)
         norm = (4.0 * self.delta_f)
-        for i in range(5):
+        for i in range(num_comps):
             self.correlators[segnum][i].correlate()
             self.iffts[i].execute()
-
-        # FIXME: This will be inefficient. Can be optimized if needed, but
-        #        let's get something working first.
-        # FIXME: Also want to implement using < 5 components here!
-        self.snr_mem[:] = (abs(self.snr_mem1)**2 +
-                           abs(self.snr_mem2)**2 +
-                           abs(self.snr_mem3)**2 +
-                           abs(self.snr_mem4)**2 +
-                           abs(self.snr_mem5)**2)**0.5
+            if i == 0:
+                self.snr_mem[:] = abs(self.snr_mem_comps[i])**2
+            else:
+                self.snr_mem[:] += abs(self.snr_mem_comps[i])**2
 
         snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
 
