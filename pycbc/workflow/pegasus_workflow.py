@@ -350,24 +350,14 @@ class Node(ProfileShortcuts):
         return fil
 
     # functions to describe properties of this node
-    def add_profile(self, namespace, key, value, force=False):
+    def add_profile(self, namespace, key, value):
         """ Add profile information to this node at the DAX level
         """
-        try:
-            self._dax_node.add_profiles(
-                dax.Namespace(namespace),
-                key=key,
-                value=value
-            )
-        except dax.errors.DuplicateError:
-            if force:
-                # FIXME: This definitely won't work. Not sure how to fix yet!
-                raise
-                # Replace with the new key
-                self._dax_node.removeProfile(entry)
-                self._dax_node.addProfile(entry)
-            else:
-                raise
+        self._dax_node.add_profiles(
+            dax.Namespace(namespace),
+            key=key,
+            value=value
+        )
 
     def _finalize(self):
         if len(self._raw_options):
