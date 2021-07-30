@@ -551,6 +551,13 @@ class Workflow(object):
             sub.save()
             red_inputs = [s for s in sub._inputs if s not in self._outputs]
             self._inputs += red_inputs
+            # FIXME: If I'm now putting output_map here, all output_map stuff
+            #        should move here.
+            sub.output_map_file.insert_into_dax(self._rc)
+            sub_workflow_file = File(sub.filename)
+            pfn = os.path.join(os.getcwd(), sub.filename)
+            sub_workflow_file.add_pfn(pfn, site='local')
+            sub_workflow_file.insert_into_dax(self._rc)
 
 
         # add workflow input files pfns for local site to dax
