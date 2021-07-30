@@ -55,6 +55,42 @@ class GeomBankExecutable(wf.Executable):
     """
     # This outputs a dax file.
     current_retention_level = wf.Executable.FINAL_RESULT
+ 
+    def create_node(self, analysis_time, geom_out_file, config_file,
+                    out_storage_path, pegasus_base_dir,
+                    workflow_name='geom_bank'):
+        node = wf.Executable.create_node(self)
+        
+        # Output file: This one is done weirdly because this job doesn't
+        # actually produce this file, the resulting dax will do that.
+        node.add_opt('--output-file', geom_out_file.storage_path)
+      
+        node.add_input_opt('--supplement-config-file', config_file)
+
+        node.add_opt('--storage-path-base', out_storage_path)      
+        node.add_opt('--is-sub-workflow','')
+
+        # Intermediate outputs and dax files
+        node.new_output_file_opt(analysis_time, '.hdf',
+                                 '--intermediate-data-file',
+                                 tags=self.tags + ['INTERMEDIATE'])
+        node.new_output_file_opt(analysis_time, '.xml',
+                                 '--metadata-file', 
+                                 tags=self.tags + ['METADATA'])
+        node.new_output_file_opt(analysis_time, '.dax',
+                                 '--dax-filename',
+                                 tags=self.tags + ['DAX'])
+        node.new_output_file_opt(analysis_time, '.map',
+                                 '--map-filename',
+                                 tags=self.tags + ['MAP'])
+        node.add_opt('--main-workflow-directory', pegasus_base_dir)
+        return node
+
+class SbankDaxGenerator(wf.Executable):
+    """ Class for running pycbc_make_sbank_workflow.
+    """
+    # This outputs a dax file.
+    current_retention_level = wf.Executable.FINAL_RESULT
 
     def create_node(self, analysis_time, config_file, out_storage_path,
                     output_file, pegasus_base_dir, seed_files=None,
@@ -95,14 +131,6 @@ class GeomBankExecutable(wf.Executable):
         node.new_output_file_opt(analysis_time, '.map',
                                  '--map-filename',
                                  tags=self.tags + sub_wf_tags + ['MAP'])
-        node.new_output_file_opt(analysis_time, '.tc.txt',
-                                 '--transformation-catalog-filename',
-                                 tags=self.tags + sub_wf_tags +
-                                 ['TRANSFORMATION_CATALOG'])
-        node.new_output_file_opt(analysis_time, '.sc.yml',
-                                 '--site-catalog',
-                                 tags=self.tags + sub_wf_tags +
-                                 ['SITE_CATALOG'])
         node.add_opt('--main-workflow-directory', pegasus_base_dir)
 
         return node
@@ -170,10 +198,6 @@ dax_file = geom_node.output_files[2]
 assert(dax_file.name.endswith('.dax'))
 map_file = geom_node.output_files[3]
 assert(map_file.name.endswith('.map'))
-tc_file = geom_node.output_files[4]
-assert(tc_file.name.endswith('.tc.yml'))
-sc_file = geom_node.output_files[5]
-assert(sc_file.name.endswith('.sc.yml'))
 
 # NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
 #       the stuff done below, and does not consider file management
@@ -190,7 +214,8 @@ dax_job.add_inputs(metadata_file, intermediate_file)
 
 # And this output is used again so declare it.
 # Exact this doesn't work. See notes at bottom!!!
-#dax_job.add_output(geom_out_file)
+dax_job.add_outputs(geom_out_file, stage_out=True)
+workflow._outputs.append(geom_out_file)
 
 workflow._adag.add_jobs(dax_job)
 geom_dax_job = dax_job
@@ -227,17 +252,17 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
 
     dax_file = sbank_node.output_files[0]
     map_file = sbank_node.output_files[1]
-    tc_file = sbank_node.output_files[2]
-    sc_file = sbank_node.output_files[3]
     dax_job = dax.SubWorkflow(dax_file, is_planned=False)
     dax_job.add_args('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
-    set_subworkflow_properties(dax_job, map_file, tc_file, sc_file,
+    set_subworkflow_properties(dax_job, map_file,
                                workflow.out_dir,
                                staging_site=workflow.staging_site)
 
 
     workflow._adag.add_jobs(dax_job)
+    dax_job.add_outputs(sbank_out_file_bbh, stage_out=True)
+    workflow._outputs.append(sbank_out_file_bbh)
     sbank_bbh_dax_job = dax_job
 
 ###############################################
@@ -255,13 +280,13 @@ sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
 #        files, we have to handle these carefully. We basically trick pegasus
 #        into thinking that these are separate files.
 # Here's what the code should really look like
-#seed_files = [geom_out_file.name]
-#if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-#    seed_files = [geom_out_file.name, sbank_out_file_bbh.name]
-# Here's what it does look like
-seed_files = [geom_out_file.storage_path]
+seed_files = [geom_out_file.name]
 if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-    seed_files += [sbank_out_file_bbh.storage_path]
+    seed_files = [geom_out_file.name, sbank_out_file_bbh.name]
+# Here's what it does look like
+#seed_files = [geom_out_file.storage_path]
+#if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
+#    seed_files += [sbank_out_file_bbh.storage_path]
 
 
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
@@ -276,12 +301,10 @@ workflow += sbank_node
 
 dax_file = sbank_node.output_files[0]
 map_file = sbank_node.output_files[1]
-tc_file = sbank_node.output_files[2]
-sc_file = sbank_node.output_files[3]
 dax_job = dax.SubWorkflow(dax_file, is_planned=False)
 dax_job.add_args('--basename %s' % \
                  os.path.splitext(os.path.basename(dax_file.name))[0])
-set_subworkflow_properties(dax_job, map_file, tc_file, sc_file,
+set_subworkflow_properties(dax_job, map_file,
                            workflow.out_dir,
                            staging_site=workflow.staging_site)
 

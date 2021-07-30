@@ -33,20 +33,15 @@ import Pegasus.api as dax
 from .pegasus_sites import add_site
 
 def set_subworkflow_properties(job, output_map_file,
-                               transformation_catalog_file,
-                               site_catalog_file,
                                out_dir,
                                staging_site):
 
     # FIXME: Does this need to be tied to some form of SubWorkflow object?
+    job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
+                 os.path.basename(output_map_file.name))
+    job.add_inputs(output_map_file)
+    job.add_args('-Dpegasus.dir.storage.mapper.replica=File')
 
-    #job.add_args('-Dpegasus.catalog.site.file=%s' %
-    #             os.path.basename(site_catalog_file.name))
-    #job.add_inputs(site_catalog_file)
-
-    #job.add_args('-Dpegasus.catalog.transformation.file=%s' %
-    #             os.path.basename(transformation_catalog_file.name))
-    #job.add_inputs(transformation_catalog_file)
     #job.add_args('--output-site local')
     job.add_args('--cleanup inplace')
     job.add_args('--cluster label,horizontal')
