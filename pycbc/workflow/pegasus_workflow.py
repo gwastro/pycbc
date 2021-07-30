@@ -39,19 +39,15 @@ def set_subworkflow_properties(job, output_map_file,
                                staging_site):
 
     # FIXME: Does this need to be tied to some form of SubWorkflow object?
-    job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
-                 os.path.basename(output_map_file.name))
-    job.add_inputs(output_map_file)
-    job.add_args('-Dpegasus.dir.storage.mapper.replica=File')
 
-    job.add_args('-Dpegasus.catalog.site.file=%s' %
-                 os.path.basename(site_catalog_file.name))
-    job.add_inputs(site_catalog_file)
+    #job.add_args('-Dpegasus.catalog.site.file=%s' %
+    #             os.path.basename(site_catalog_file.name))
+    #job.add_inputs(site_catalog_file)
 
-    job.add_args('-Dpegasus.catalog.transformation.file=%s' %
-                 os.path.basename(transformation_catalog_file.name))
-    job.add_inputs(transformation_catalog_file)
-    job.add_args('--output-site local')
+    #job.add_args('-Dpegasus.catalog.transformation.file=%s' %
+    #             os.path.basename(transformation_catalog_file.name))
+    #job.add_inputs(transformation_catalog_file)
+    #job.add_args('--output-site local')
     job.add_args('--cleanup inplace')
     job.add_args('--cluster label,horizontal')
     job.add_args('-vvv')
@@ -65,7 +61,7 @@ def set_subworkflow_properties(job, output_map_file,
     #       file created differently. Note that all other inputs might be
     #       generated within the workflow, and then pegasus data transfer is
     #       needed, so these must be File objects.
-    job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
+    #job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
 
     if staging_site:
         job.add_args('--staging-site %s' % staging_site)
@@ -393,7 +389,7 @@ class Workflow(object):
         self._adag = dax.Workflow(self.filename)
         if is_subworkflow:
             self._asdag = dax.SubWorkflow(self.filename, is_planned=False,
-                                          node_label=self.name)
+                                          _id=self.name)
         else:
             self._asdag = None
 
@@ -581,13 +577,13 @@ class Workflow(object):
             # NOTE: This doesn't work within pegasus, and so workflow outputs
             #       will not automatically be known at the next level up.
             #self._outputs += sub._outputs
-            sub.transformation_catalog_file.insert_into_dax(self._rc)
-            sub.output_map_file.insert_into_dax(self._rc)
-            sub.site_catalog_file.insert_into_dax(self._rc)
-            sub_workflow_file = File(sub.filename)
-            pfn = os.path.join(os.getcwd(), sub.filename)
-            sub_workflow_file.add_pfn(pfn, site='local')
-            sub_workflow_file.insert_into_dax(self._rc)
+            #sub.transformation_catalog_file.insert_into_dax(self._rc)
+            #sub.output_map_file.insert_into_dax(self._rc)
+            #sub.site_catalog_file.insert_into_dax(self._rc)
+            #sub_workflow_file = File(sub.filename)
+            #pfn = os.path.join(os.getcwd(), sub.filename)
+            #sub_workflow_file.add_pfn(pfn, site='local')
+            #sub_workflow_file.insert_into_dax(self._rc)
 
 
         # add workflow input files pfns for local site to dax
@@ -605,11 +601,12 @@ class Workflow(object):
 
         self._adag.add_replica_catalog(self._rc)
         # FIXME: Cannot add TC into workflow
-        #self._adag.add_transformation_catalog(self._tc)
+        self._adag.add_transformation_catalog(self._tc)
+        self._adag.add_site_catalog(self._sc)
 
         self._adag.write(filename)
-        self._tc.write(transformation_catalog_path)
-        self._sc.write(site_catalog_path)
+        #self._tc.write(transformation_catalog_path)
+        #self._sc.write(site_catalog_path)
 
 
 class File(dax.File):

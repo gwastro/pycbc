@@ -108,7 +108,7 @@ class Executable(pegasus_workflow.Executable):
     current_retention_level = KEEP_BUT_RAISE_WARNING
     def __init__(self, cp, name,
                  universe=None, ifos=None, out_dir=None, tags=None,
-                 reuse_executable=True):
+                 reuse_executable=True, set_submit_subdir=True):
         """
         Initialize the Executable class.
 
@@ -274,7 +274,9 @@ class Executable(pegasus_workflow.Executable):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
 
         # This sets up the sub-directory to use in the submit directory
-        self.add_profile('pegasus', 'relative.submit.dir', self.pegasus_name)
+        if set_submit_subdir:
+            self.add_profile('pegasus', 'relative.submit.dir',
+                             self.pegasus_name)
 
         self.execution_site = exe_site
         self.executable_url = exe_path

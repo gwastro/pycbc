@@ -506,7 +506,8 @@ class PyCBCInspiralExecutable(Executable):
             ifo,
             out_dir,
             tags=tags,
-            reuse_executable=reuse_executable
+            reuse_executable=reuse_executable,
+            set_submit_subdir=False
         )
         self.cp = cp
         self.set_memory(2000)
