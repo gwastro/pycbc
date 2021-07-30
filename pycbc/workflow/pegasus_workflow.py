@@ -40,7 +40,6 @@ def set_subworkflow_properties(job, output_map_file,
     job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
                  os.path.basename(output_map_file.name))
     job.add_inputs(output_map_file)
-    job.add_args('-Dpegasus.dir.storage.mapper.replica=File')
 
     #job.add_args('--output-site local')
     job.add_args('--cleanup inplace')
@@ -56,7 +55,7 @@ def set_subworkflow_properties(job, output_map_file,
     #       file created differently. Note that all other inputs might be
     #       generated within the workflow, and then pegasus data transfer is
     #       needed, so these must be File objects.
-    #job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
+    job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
 
     if staging_site:
         job.add_args('--staging-site %s' % staging_site)
