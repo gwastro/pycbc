@@ -675,20 +675,6 @@ class Workflow(pegasus_workflow.Workflow):
         path =  os.path.join(self.out_dir, name)
         return path
 
-    # FIXME: Shouldn't this be in pegasus_workflow?
-    @property
-    def transformation_catalog(self):
-        name = self.name + '.tc.yml'
-        path =  os.path.join(self.out_dir, name)
-        return path
-
-    # FIXME: Shouldn't this be in pegasus_workflow?
-    @property
-    def site_catalog(self):
-        name = self.name + '.sc.yml'
-        path =  os.path.join(self.out_dir, name)
-        return path
-
     @property
     def staging_site(self):
         return ','.join(['='.join(x) for x in self._staging_site.items()])
@@ -767,9 +753,7 @@ class Workflow(pegasus_workflow.Workflow):
             fil.add_pfn(urljoin('file:', pathname2url(fil.storage_path)),
                         site='local')
 
-    def save(self, filename=None, output_map_path=None,
-             transformation_catalog_path=None,
-             site_catalog_path=None):
+    def save(self, filename=None, output_map_path=None):
 
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
 
@@ -779,27 +763,10 @@ class Workflow(pegasus_workflow.Workflow):
         output_map_file.add_pfn(output_map_path, site='local')
         self.output_map_file = output_map_file
 
-        if transformation_catalog_path is None:
-            transformation_catalog_path = self.transformation_catalog
-        tcpath = os.path.basename(transformation_catalog_path)
-        transformation_catalog_file = pegasus_workflow.File(tcpath)
-        transformation_catalog_file.add_pfn(transformation_catalog_path,
-                                            site='local')
-        self.transformation_catalog_file = transformation_catalog_file
-
-        if site_catalog_path is None:
-            site_catalog_path = self.site_catalog
-        scpath = os.path.basename(site_catalog_path)
-        site_catalog_file = pegasus_workflow.File(scpath)
-        site_catalog_file.add_pfn(site_catalog_path, site='local')
-        self.site_catalog_file = site_catalog_file
-
         if self._asdag is not None:
             pegasus_workflow.set_subworkflow_properties(
                 self._asdag,
                 output_map_file,
-                transformation_catalog_file,
-                site_catalog_file,
                 self.out_dir,
                 staging_site=self.staging_site
             )
@@ -826,11 +793,7 @@ class Workflow(pegasus_workflow.Workflow):
         fp.close()
 
         # save the dax file
-        super(Workflow, self).save(
-            filename=filename,
-            transformation_catalog_path=transformation_catalog_path,
-            site_catalog_path=site_catalog_path
-        )
+        super(Workflow, self).save(filename=filename)
 
         # FIXME: This belongs in pegasus_workflow.py
         # add workflow storage locations to the output mapper

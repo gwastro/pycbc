@@ -387,18 +387,6 @@ class Workflow(object):
         else:
             self._asdag = None
 
-        # HACK as pegasus cannot handle an empty transformation catalog
-        keg = dax.Transformation(
-            "keg",
-            namespace="example",
-            version="1.0",
-            site="isi",
-            pfn="/path/to/keg",
-            is_stageable=False,
-        )
-        keg.pycbc_name = 'keg'
-        self._tc.add_transformations(keg)
-
     def add_workflow(self, workflow):
         """ Add a sub-workflow to this workflow
 
@@ -553,31 +541,16 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, filename=None, transformation_catalog_path=None,
-             site_catalog_path=None):
+    def save(self, filename=None):
         """ Write this workflow to DAX file
         """
         if filename is None: 
             filename = self.filename
-        if transformation_catalog_path is None:
-            transformation_catalog_path = self.transformation_catalog
-        if site_catalog_path is None:
-            site_catalog_path = self.site_catalog
 
         for sub in self.sub_workflows:
             sub.save()
             red_inputs = [s for s in sub._inputs if s not in self._outputs]
             self._inputs += red_inputs
-            # NOTE: This doesn't work within pegasus, and so workflow outputs
-            #       will not automatically be known at the next level up.
-            #self._outputs += sub._outputs
-            #sub.transformation_catalog_file.insert_into_dax(self._rc)
-            #sub.output_map_file.insert_into_dax(self._rc)
-            #sub.site_catalog_file.insert_into_dax(self._rc)
-            #sub_workflow_file = File(sub.filename)
-            #pfn = os.path.join(os.getcwd(), sub.filename)
-            #sub_workflow_file.add_pfn(pfn, site='local')
-            #sub_workflow_file.insert_into_dax(self._rc)
 
 
         # add workflow input files pfns for local site to dax
@@ -587,20 +560,13 @@ class Workflow(object):
         if self._asdag is not None:
             # Is a sub-workflow
             self._asdag.add_inputs(*self._inputs)
-            # NOTE: This doesn't work within pegasus, and so workflow outputs
-            #       will not automatically be known at the next level up.
-            #for out in self._outputs:
-            #    stage_out = out.storage_path is not None
-            #    self._asdag.add_outputs(out, stage_out=stage_out)
 
         self._adag.add_replica_catalog(self._rc)
-        # FIXME: Cannot add TC into workflow
+        # Add TC and SC into workflow
         self._adag.add_transformation_catalog(self._tc)
         self._adag.add_site_catalog(self._sc)
 
         self._adag.write(filename)
-        #self._tc.write(transformation_catalog_path)
-        #self._sc.write(site_catalog_path)
 
 
 class File(dax.File):
