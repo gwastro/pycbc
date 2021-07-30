@@ -205,7 +205,7 @@ assert(map_file.name.endswith('.map'))
 dax_job = dax.SubWorkflow(dax_file, is_planned=False)
 dax_job.add_args('--basename %s' % \
                  os.path.splitext(os.path.basename(dax_file.name))[0])
-set_subworkflow_properties(dax_job, map_file, tc_file, sc_file,
+set_subworkflow_properties(dax_job, map_file,
                            workflow.out_dir,
                            staging_site=workflow.staging_site)
 
