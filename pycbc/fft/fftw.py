@@ -170,15 +170,23 @@ def set_measure_level(mlvl):
         raise ValueError("Measure level can only be one of 0, 1, 2, or 3")
     _default_measurelvl = mlvl
 
-_flag_dict = {0: FFTW_ESTIMATE|FFTW_PRESERVE_INPUT,
-              1: FFTW_MEASURE|FFTW_PRESERVE_INPUT,
-              2: FFTW_MEASURE|FFTW_PATIENT|FFTW_PRESERVE_INPUT,
-              3: FFTW_MEASURE|FFTW_PATIENT|FFTW_EXHAUSTIVE|FFTW_PRESERVE_INPUT}
-def get_flag(mlvl,aligned):
+_flag_dict = {0: FFTW_ESTIMATE,
+              1: FFTW_MEASURE,
+              2: FFTW_MEASURE|FFTW_PATIENT,
+              3: FFTW_MEASURE|FFTW_PATIENT|FFTW_EXHAUSTIVE}
+
+_default_flags = FFTW_PRESERVE_INPUT
+def set_default_flags(flags):
+    """ Set default flags for fftw plans
+    """
+    global _default_flags
+    _default_flags = flags
+
+def get_flag(mlvl, aligned):
     if aligned:
-        return _flag_dict[mlvl]
+        return _flag_dict[mlvl] | _default_flags
     else:
-        return (_flag_dict[mlvl]|FFTW_UNALIGNED)
+        return (_flag_dict[mlvl]|FFTW_UNALIGNED|_default_flags)
 
 # Add the ability to read/store wisdom to filenames
 
