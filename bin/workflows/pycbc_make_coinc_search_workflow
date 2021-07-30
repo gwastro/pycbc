@@ -65,11 +65,11 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+# FIXME: opts.tags is currently unused here.
 
 wf.makedir(args.output_dir)
 
@@ -81,8 +81,6 @@ workflow = wf.Workflow(args, args.workflow_name + '-main', is_subworkflow=True,
 finalize_workflow = wf.Workflow(args, args.workflow_name + '-finalization',
                                 is_subworkflow=True, 
                                 directory=args.output_dir)
-workflow._adag._id = None # HACK!
-finalize_workflow._adag._id = None # HACK!
 
 os.chdir(args.output_dir)
 

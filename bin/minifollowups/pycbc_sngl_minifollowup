@@ -52,9 +52,6 @@ def add_wiki_row(outfile, cols):
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
 parser.add_argument('--single-detector-file',
@@ -89,20 +86,13 @@ parser.add_argument('--maximum-duration', default=None, type=float,
                          "with template duration smaller than this.")
 parser.add_argument('--wiki-file',
                     help="Name of file to save wiki-formatted table in")
-parser.add_argument('--output-map')
-parser.add_argument('--transformation-catalog')
-parser.add_argument('--site-catalog', type=str, required=False,
-                    help='Supply the location of the pegasus site '
-                         'catalog file. '
-                         'Only needed if running this job within a workflow.')
 parser.add_argument('--main-workflow-directory', default=None, required=False,
                     help='Supply the location that the main workflow was '
                          'generated in. Only needed if running this job '
                          'within a workflow, and then identifies where the '
                          'local-site-scratch is')
-parser.add_argument('--output-file')
-parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 stat.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
@@ -275,7 +265,5 @@ for rank, num_event in enumerate(order):
 
     layouts += list(layout.grouper(files, 2))
 
-workflow.save(filename=args.output_file, output_map_path=args.output_map,
-              transformation_catalog_path=args.transformation_catalog,
-              site_catalog_path=args.site_catalog)
+workflow.save(filename=args.dax_file, output_map_path=args.output_map)
 layout.two_column_layout(args.output_dir, layouts)

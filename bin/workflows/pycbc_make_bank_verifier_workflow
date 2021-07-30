@@ -153,12 +153,11 @@ class BanksimTablePointInjsExecutable(wf.Executable):
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("--workflow-name", type=str, default='bank_verifier',
-                    help="Descriptive name of the analysis.")
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+# FIXME: opts.tags is currently unused here.
 
 # Create the workflow object
 workflow = wf.Workflow(args, args.workflow_name, directory=args.output_dir)

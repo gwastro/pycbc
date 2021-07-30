@@ -2210,8 +2210,6 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
         wfgrp.add_argument("--output-map", default="output.map",
                            help="Path to an output map file. Default is "
                                 "output.map.")
-        wfgrp.add_argument("--transformation-catalog", default=None,
-                           help="Path to transformation catalog file.")
         wfgrp.add_argument("--dax-file", default=None,
                            help="Path to DAX file. Default is to write to the "
                                 "output directory with name "

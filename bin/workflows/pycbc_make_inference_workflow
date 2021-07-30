@@ -331,8 +331,7 @@ dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
 
 # write dax
-container.save(filename=dax_file, output_map_path=opts.output_map,
-               transformation_catalog_path=opts.transformation_catalog)
+container.save(filename=dax_file, output_map_path=opts.output_map)
 
 # save workflow configuration file
 base = rdir["workflow/configuration"]

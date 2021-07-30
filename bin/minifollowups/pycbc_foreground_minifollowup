@@ -39,9 +39,6 @@ def to_file(path, ifo=None, is_sub_workflow=True):
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
 parser.add_argument('--statmap-file',
@@ -69,27 +66,14 @@ parser.add_argument('--sort-order', default='descending',
                     choices=['ascending','descending'],
                     help='Which direction to use when sorting on '
                          '--sort-variable. Default=descending')
-parser.add_argument('--output-map', type=str, required=False,
-                    help='Supply the location of the pegasus output map file. '
-                         'Only needed if running this job within a workflow.')
-parser.add_argument('--output-file', type=str, required=True,
-                    help='Name of the output dax file to be generated.')
-parser.add_argument('--transformation-catalog', type=str, required=False,
-                    help='Supply the location of the pegasus executable '
-                         'transformation catalog file. '
-                         'Only needed if running this job within a workflow.')
-parser.add_argument('--site-catalog', type=str, required=False,
-                    help='Supply the location of the pegasus site '
-                         'catalog file. '
-                         'Only needed if running this job within a workflow.')
 parser.add_argument('--main-workflow-directory', default=None, required=False,
                     help='Supply the location that the main workflow was '
                          'generated in. Only needed if running this job '
                          'within a workflow, and then identifies where the '
                          'local-site-scratch is')
 
-parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
@@ -277,7 +261,5 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
 
     layouts += list(layout.grouper(files, 2))
 
-workflow.save(filename=args.output_file, output_map_path=args.output_map,
-              transformation_catalog_path=args.transformation_catalog,
-              site_catalog_path=args.site_catalog)
+workflow.save(filename=args.dax_file, output_map_path=args.output_map)
 layout.two_column_layout(args.output_dir, layouts)

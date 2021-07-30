@@ -193,23 +193,6 @@ parser.add_argument("--print-chi-points", action="store", default=None,
                     "using pycbc_tmpltbank_to_chi_params. This will be "
                     "written to FILENAME. If this argument is not given, no "
                     "chi points file will be written.")
-parser.add_argument("--workflow-name", type=str, default='bank_gen',
-                    help="Name to use for the produced .dax file.")
-parser.add_argument("--dax-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the dax filename.")
-parser.add_argument("--map-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the output map filename. "
-                         "WARNING: Giving this if not running as a "
-                         "sub-workflow will cause pycbc_submit_dax to not "
-                         "work.")
-parser.add_argument("--transformation-catalog-filename", type=str, default=None,
-                    help="See workflow/core.py")
-parser.add_argument('--site-catalog', type=str, required=False,
-                    help='Supply the location of the pegasus site '
-                         'catalog file. '
-                         'Only needed if running this job within a workflow.')
 parser.add_argument('--main-workflow-directory', default=None, required=False,
                     help='Supply the location that the main workflow was '
                          'generated in. Only needed if running this job '
@@ -249,6 +232,9 @@ data_opts = pycbc.strain.insert_strain_option_group(parser)
 
 # Add the ethinca calculation options - applied in the combiner
 ethinca_opts = pycbc.tmpltbank.insert_ethinca_metric_options(parser)
+
+# Workflow options
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 
 opts = parser.parse_args()
 # Going to need this for setting up the dag later
@@ -641,9 +627,7 @@ bankverify_exe = BankVerification(workflow.cp, 'bankverify',
 bankverify_node = bankverify_exe.create_node(out_bank, workflow.analysis_time)
 workflow += bankverify_node
 
-workflow.save(filename=opts.dax_filename, output_map_path=opts.map_filename,
-              transformation_catalog_path=opts.transformation_catalog_filename,
-              site_catalog_path=opts.site_catalog)
+workflow.save(filename=opts.dax_file, output_map_path=opts.output_map)
 
 logging.info("GENERATION SUCCESSFUL.")
 logging.info("Submit the resulting dax file to generate your template bank.")

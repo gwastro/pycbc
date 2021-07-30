@@ -36,11 +36,11 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--workflow-name', required=True)
-parser.add_argument("-d", "--output-dir", required=True,
-                    help="Path to output directory.")
 pycbc.workflow.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+# FIXME: opts.tags is currently unused here.
 
 container = pycbc.workflow.Workflow(args, args.workflow_name)
 workflow = pycbc.workflow.Workflow(args, args.workflow_name + '-main')

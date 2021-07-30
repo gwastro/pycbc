@@ -171,30 +171,10 @@ class CombineHDFBanksExecutable(wf.Executable):
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("--workflow-name", type=str, default='sbank_workflow',
-                    help="Descriptive name of the analysis.")
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 parser.add_argument("--output-file", type=str, default=None,
                     help="Specify the output file name. Either a name can be "
                          "provided or a full path to file. Is this is not "
                          "given a filename and location is chosen "
-                         "automatically.")
-parser.add_argument("--dax-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the dax filename.")
-parser.add_argument("--map-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the output map filename. "
-                         "WARNING: Giving this if not running as a "
-                         "sub-workflow will cause pycbc_submit_dax to not "
-                         "work.")
-parser.add_argument("--transformation-catalog-filename", type=str, default=None,
-                    help="See workflow/core.py")
-parser.add_argument('--site-catalog', type=str, required=False,
-                    help='Supply the location of the pegasus site '
-                         'catalog file. '
-                         'Only needed if running this job within a workflow.')
 parser.add_argument('--main-workflow-directory', default=None, required=False,
                     help='Supply the location that the main workflow was '
                          'generated in. Only needed if running this job '
@@ -204,15 +184,10 @@ parser.add_argument("--is-sub-workflow", default=False, action="store_true",
                     help="Only give this option if this code is being run "
                     "as a sub-workflow within pegasus. If this means nothing "
                     "to you, do not give this option.")
-parser.add_argument("--tags", default=[], nargs="*", action="store",
-                    help="If this option is given all jobs, and all workflow "
-                          "configuration options, will use the tags given "
-                          "here. This can be used if running this as a "
-                          "sub-workflow to give two sets of options to two "
-                          "different invocations of the sbank workflow.")
 
 
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 # Create the workflow object
@@ -433,6 +408,4 @@ for cycle_idx in range(num_cycles):
     seed_file = h5add_node.output_files[0]
     bins_inp_file = seed_file
 
-workflow.save(filename=args.dax_filename, output_map_path=args.map_filename,
-              transformation_catalog_path=args.transformation_catalog_filename,
-              site_catalog_path=args.site_catalog)
+workflow.save(filename=args.dax_file, output_map_path=args.output_map)
