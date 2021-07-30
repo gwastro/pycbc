@@ -21,8 +21,6 @@ LOCAL_PEGASUS_DIR=""
 PEGASUS_PROPERTIES=""
 SITE_LIST=""
 STAGING_SITES=""
-TRANSFORMATION_CATALOG=""
-SITE_CATALOG=""
 LOCAL_STAGING_SERVER="file://"
 REMOTE_STAGING_SERVER="file://"
 NO_CREATE_PROXY=0
@@ -123,16 +121,6 @@ EOF`
       case "$2" in
         "") shift 2 ;;
         *) STAGING_SITES="--staging-site $2" ; shift 2 ;;
-      esac ;;
-    -t|--transformation-catalog)
-      case "$2" in
-        "") shift 2 ;;
-        *) TRANSFORMATION_CATALOG=$2 ; shift 2 ;;
-      esac ;;
-    -C|--site-catalog)
-      case "$2" in
-        "") shift 2 ;;
-        *) SITE_CATALOG=$2 ; shift 2 ;;
       esac ;;
     -K|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
     -Q|--no-query-db) NO_QUERY_DB=1 ; shift ;;
@@ -276,17 +264,6 @@ else
   cp ${PEGASUS_PROPERTIES} ./pegasus-properties.conf
 fi
 
-# add a transformation catalog, if not given
-if [ -z ${TRANSFORMATION_CATALOG} ] ; then
-  TRANSFORMATION_CATALOG="${DAX_FILE%.dax}.tc.yml"
-fi
-
-# add a site catalog, if not give
-if [ -z ${SITE_CATALOG} ] ; then
-  SITE_CATALOG="${DAX_FILE%.dax}.sc.yml"
-fi
-
-
 echo >> pegasus-properties.conf
 cat extra-properties.conf >> pegasus-properties.conf
 
@@ -296,7 +273,7 @@ else
   CACHE_OPTION='--cache _reuse.cache'
 fi
 
-pegasus-plan -Dpegasus.catalog.site.file=${SITE_CATALOG} -Dpegasus.catalog.transformation.file=${TRANSFORMATION_CATALOG} --conf ./pegasus-properties.conf --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace ${CACHE_OPTION} --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID $DAX_FILE
+pegasus-plan --conf ./pegasus-properties.conf --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace ${CACHE_OPTION} --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID $DAX_FILE
 
 echo
 
