@@ -202,7 +202,7 @@ assert(map_file.name.endswith('.map'))
 # NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
 #       the stuff done below, and does not consider file management
 # FIXME: This is now becoming common use case. Must sub-class SubWorkflow.
-dax_job = dax.SubWorkflow(dax_file, is_planned=False)
+dax_job = dax.SubWorkflow(dax_file, is_planned=False, _id='geom')
 dax_job.add_args('--basename %s' % \
                  os.path.splitext(os.path.basename(dax_file.name))[0])
 set_subworkflow_properties(dax_job, map_file,
@@ -252,7 +252,7 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
 
     dax_file = sbank_node.output_files[0]
     map_file = sbank_node.output_files[1]
-    dax_job = dax.SubWorkflow(dax_file, is_planned=False)
+    dax_job = dax.SubWorkflow(dax_file, is_planned=False, _id='sbank_bbh')
     dax_job.add_args('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
     set_subworkflow_properties(dax_job, map_file,
@@ -301,7 +301,7 @@ workflow += sbank_node
 
 dax_file = sbank_node.output_files[0]
 map_file = sbank_node.output_files[1]
-dax_job = dax.SubWorkflow(dax_file, is_planned=False)
+dax_job = dax.SubWorkflow(dax_file, is_planned=False, _id='sbank_final')
 dax_job.add_args('--basename %s' % \
                  os.path.splitext(os.path.basename(dax_file.name))[0])
 set_subworkflow_properties(dax_job, map_file,
