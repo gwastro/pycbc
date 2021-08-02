@@ -571,13 +571,13 @@ class SubWorkflow(dax.SubWorkflow):
                                    out_dir,
                                    staging_site):
 
-        job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
+        self.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
                      os.path.basename(output_map_file.name))
-        job.add_inputs(output_map_file)
+        self.add_inputs(output_map_file)
 
-        job.add_args('--cleanup inplace')
-        job.add_args('--cluster label,horizontal')
-        job.add_args('-vvv')
+        self.add_args('--cleanup inplace')
+        self.add_args('--cluster label,horizontal')
+        self.add_args('-vvv')
 
         # NOTE: The _reuse.cache file is produced during submit_dax and would
         #       be sent to all sub-workflows. Currently we do not declare this
@@ -588,10 +588,10 @@ class SubWorkflow(dax.SubWorkflow):
         #       having this file created differently. Note that all other
         #       inputs might be generated within the workflow, and then pegasus
         #       data transfer is needed, so these must be File objects.
-        job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
+        self.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
 
         if staging_site:
-            job.add_args('--staging-site %s' % staging_site)
+            self.add_args('--staging-site %s' % staging_site)
 
 
 class File(dax.File):
