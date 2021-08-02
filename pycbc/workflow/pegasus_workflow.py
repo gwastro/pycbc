@@ -577,7 +577,7 @@ class SubWorkflow(dax.SubWorkflow):
 
         # I think this is needed to deal with cases where the subworkflow file
         # does not exist at submission time.
-        bname = os.path.splitext(os.path.basename(self.name))[0]
+        bname = os.path.splitext(os.path.basename(self.file))[0]
         self.add_args('--basename {}'.format(bname))
 
         self.add_args('--cleanup inplace')
