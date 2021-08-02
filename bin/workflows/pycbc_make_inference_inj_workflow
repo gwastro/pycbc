@@ -23,7 +23,6 @@ import logging
 import os
 import shlex
 import numpy
-import Pegasus.DAX3 as dax
 import pycbc.version
 import socket
 import sys
@@ -373,13 +372,9 @@ plotting.make_results_web_page(finalize_workflow,
 # add finalize workflow to workflow and make it depend on the others
 workflow += finalize_workflow
 for sub_workflow in sub_workflows:
-    dep = dax.Dependency(parent=sub_workflow.as_job,
-                         child=finalize_workflow.as_job)
-    workflow._adag.addDependency(dep)
+    workflow.add_subworkflow_dependancy(sub_workflow, finalize_workflow)
 if do_pp_test:
-    dep = dax.Dependency(parent=pp_workflow.as_job,
-                         child=finalize_workflow.as_job)
-    workflow._adag.addDependency(dep)
+    workflow.add_subworkflow_dependancy(pp_workflow, finalize_workflow)
 
 # write dax
 workflow.save(filename=dax_file, output_map_path=opts.output_map)

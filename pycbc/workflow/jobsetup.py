@@ -1332,11 +1332,14 @@ class PycbcInferenceExecutable(Executable):
                                                   tags=tags)
         if self.cp.has_option("pegasus_profile-inference",
                               "condor|+CheckpointSig"):
-            ckpt_file_name = "{}.checkpoint".format(inference_file.name)
-            ckpt_file = dax.File(ckpt_file_name)
-            # FIXME: Please don't call pegasus API stuff outside of
-            #        pegasus_workflow.py.
-            node._dax_node.uses(ckpt_file, link=dax.Link.OUTPUT,
-                                register=False, transfer=False)
+            err_msg = "This is not yet supported/tested with pegasus 5. "
+            err_msg += "Please reimplement this (with unittest :-) )."
+            raise ValueError(err_msg)
+            #ckpt_file_name = "{}.checkpoint".format(inference_file.name)
+            #ckpt_file = dax.File(ckpt_file_name)
+            # DO NOT call pegasus API stuff outside of
+            # pegasus_workflow.py.
+            #node._dax_node.uses(ckpt_file, link=dax.Link.OUTPUT,
+            #                    register=False, transfer=False)
 
         return node, inference_file

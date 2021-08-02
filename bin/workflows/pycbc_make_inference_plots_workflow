@@ -23,10 +23,8 @@ import argparse
 import h5py
 import logging
 import os
-import Pegasus.DAX3 as dax
 import pycbc
 import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
 import socket
 import sys
 import shlex
@@ -265,8 +263,7 @@ container += workflow
 container += finalize_workflow
 
 # make finalize sub-workflow depend on main sub-workflow
-dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
-container._adag.addDependency(dep)
+container.add_subworkflow_dependancy(workflow, finalize_workflow)
 
 # write dax
 container.save(filename=dax_file, output_map_path=opts.output_map)

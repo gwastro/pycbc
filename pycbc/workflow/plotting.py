@@ -405,6 +405,7 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
     workflow += node
     return node.output_files[0]
 
+
 def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
     template_path = 'templates/orange.html'
 
@@ -416,10 +417,9 @@ def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
     node.add_opt('--template-file', template_path)
     workflow += node
     if explicit_dependencies is not None:
-        import Pegasus.api as dax
         for dep in explicit_dependencies:
-            workflow._adag.add_dependency(dep._dax_node,
-                                          children=[node._dax_node])
+            workflow.add_explicit_dependancy(dep, node)
+
 
 def make_single_hist(workflow, trig_file, veto_file, veto_name,
                      out_dir, bank_file=None, exclude=None,

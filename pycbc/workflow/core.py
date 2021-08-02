@@ -173,9 +173,11 @@ class Executable(pegasus_workflow.Executable):
 
         exe_url = urllib.parse.urlparse(exe_path)
 
-        # FIXME: Make sure this is tied in to transformation stuff ... Is it
-        #        really needed at all??
         # See if the user specified a list of sites for the executable
+        # Ordering is:
+        #  1) Check if a specific site for this Executable is set.
+        #  2) Check is primary_site is set globally.
+        #  3) Use condorpool_symlink as a fallback.
         self.exe_pfns = {}
         if cp.has_option_tags('pegasus_profile-%s' % name, 'pycbc|site', tags):
             exe_site = cp.get_opt_tags('pegasus_profile-%s' % name,
@@ -764,8 +766,7 @@ class Workflow(pegasus_workflow.Workflow):
         self.output_map_file = output_map_file
 
         if self._asdag is not None:
-            pegasus_workflow.set_subworkflow_properties(
-                self._asdag,
+            self._asdag.set_subworkflow_properties(
                 output_map_file,
                 self.out_dir,
                 staging_site=self.staging_site

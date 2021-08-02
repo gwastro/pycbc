@@ -32,35 +32,6 @@ from six.moves.urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
 from .pegasus_sites import add_site
 
-def set_subworkflow_properties(job, output_map_file,
-                               out_dir,
-                               staging_site):
-
-    # FIXME: Does this need to be tied to some form of SubWorkflow object?
-    job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
-                 os.path.basename(output_map_file.name))
-    job.add_inputs(output_map_file)
-
-    #job.add_args('--output-site local')
-    job.add_args('--cleanup inplace')
-    job.add_args('--cluster label,horizontal')
-    job.add_args('-vvv')
-
-    # NOTE: The _reuse.cache file is produced during submit_dax and would be
-    #       sent to all sub-workflows. Currently we do not declare this as a
-    #       proper File, as this is a special case. While the use-case is that
-    #       this is always created during submit_dax then this is the right
-    #       thing to do. pegasus-plan must run on local site, and this is
-    #       guaranteed to be visible. However, we could consider having this
-    #       file created differently. Note that all other inputs might be
-    #       generated within the workflow, and then pegasus data transfer is
-    #       needed, so these must be File objects.
-    job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
-
-    if staging_site:
-        job.add_args('--staging-site %s' % staging_site)
-
-
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
     on Executables and nodes. This class expects to be inherited from
@@ -359,8 +330,8 @@ class Workflow(object):
         self.filename = self.name + '.dax'
         self._adag = dax.Workflow(self.filename)
         if is_subworkflow:
-            self._asdag = dax.SubWorkflow(self.filename, is_planned=False,
-                                          _id=self.name)
+            self._asdag = SubWorkflow(self.filename, is_planned=False,
+                                      _id=self.name)
         else:
             self._asdag = None
 
@@ -382,9 +353,33 @@ class Workflow(object):
 
         return self
 
+    def add_explicit_dependancy(self, parent, child):
+        """
+        Add an explicit dependancy between two Nodes in this workflow.
+
+        Most dependencies (in PyCBC and Pegasus thinking) are added by
+        declaring file linkages. However, there are some cases where you might
+        want to override that and add an explicit dependancy.
+
+        Parameters
+        ----------
+        parent : Node instance
+            The parent Node.
+        child : Node instance
+            The child Node
+        """
+        self._adag.add_dependency(parent._dax_node, children=[child._dax_node])
+
+
     def add_subworkflow_dependancy(self, parent_workflow, child_workflow):
         """
         Add a dependency between two sub-workflows in this workflow
+
+        This is done if those subworkflows are themselves declared as Workflows
+        which are sub-workflows and not explicit SubWorkflows. (These Workflows
+        contain SubWorkflows inside them .... Yes, the relationship between
+        PyCBC and Pegasus becomes confusing here). If you are working with
+        explicit SubWorkflows these can be added normally using File relations.
 
         Parameters
         ----------
@@ -547,6 +542,56 @@ class Workflow(object):
         self._adag.add_site_catalog(self._sc)
 
         self._adag.write(filename)
+
+
+class SubWorkflow(dax.SubWorkflow):
+    """Workflow representation of a SubWorkflow.
+
+    This follows the Pegasus nomenclature where there are Workflows, Jobs and
+    SubWorkflows. Be careful though! A SubWorkflow is actually a Job, not a
+    Workflow. If creating a sub-workflow you would create a Workflow as normal
+    and write out the necessary dax files. Then you would create a SubWorkflow
+    object, which acts as the Job in the top-level workflow. Most of the
+    special linkages that are needed for sub-workflows are then handled at that
+    stage. We do add a little bit of functionality here.
+    """
+
+    def add_into_workflow(self, container_wflow, parents=None):
+        """Add this Job into a container Workflow
+        """
+        if parents is None:
+            parents = []
+        else:
+            # Get Pegasus objects from PyCBC objects for parent Nodes
+            parents = [n._dax_node for n in parents]
+        container_wflow._adag.add_jobs(self)
+        container_wflow._adag.add_dependency(job, parents=parents)
+
+    def set_subworkflow_properties(self, output_map_file,
+                                   out_dir,
+                                   staging_site):
+
+        job.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
+                     os.path.basename(output_map_file.name))
+        job.add_inputs(output_map_file)
+
+        job.add_args('--cleanup inplace')
+        job.add_args('--cluster label,horizontal')
+        job.add_args('-vvv')
+
+        # NOTE: The _reuse.cache file is produced during submit_dax and would
+        #       be sent to all sub-workflows. Currently we do not declare this
+        #       as a proper File, as this is a special case. While the use-case
+        #       is that this is always created during submit_dax then this is
+        #       the right thing to do. pegasus-plan must run on local site, and
+        #       this is guaranteed to be visible. However, we could consider
+        #       having this file created differently. Note that all other
+        #       inputs might be generated within the workflow, and then pegasus
+        #       data transfer is needed, so these must be File objects.
+        job.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
+
+        if staging_site:
+            job.add_args('--staging-site %s' % staging_site)
 
 
 class File(dax.File):

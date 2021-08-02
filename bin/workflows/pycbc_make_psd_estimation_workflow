@@ -192,9 +192,7 @@ pycbc.workflow.make_results_web_page(finalize_workflow,
 container += workflow
 container += finalize_workflow
 
-import Pegasus.DAX3 as dax
-dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
-container._adag.addDependency(dep)
+container.add_subworkflow_dependancy(workflow, finalize_workflow)
 
 container.save()
 

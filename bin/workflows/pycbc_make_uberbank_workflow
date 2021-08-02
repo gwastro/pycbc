@@ -36,11 +36,10 @@ from __future__ import division
 import os
 import argparse
 import logging
-from Pegasus import api as dax
 import pycbc
 import pycbc.version
 import pycbc.workflow as wf
-from pycbc.workflow.pegasus_workflow import set_subworkflow_properties
+from pycbc.workflow.pegasus_workflow import SubWorkflow
 
 # Boiler-plate stuff
 __author__  = "Ian Harry <ian.harry@ligo.org>"
@@ -202,12 +201,10 @@ assert(map_file.name.endswith('.map'))
 # NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
 #       the stuff done below, and does not consider file management
 # FIXME: This is now becoming common use case. Must sub-class SubWorkflow.
-dax_job = dax.SubWorkflow(dax_file, is_planned=False, _id='geom')
-dax_job.add_args('--basename %s' % \
-                 os.path.splitext(os.path.basename(dax_file.name))[0])
-set_subworkflow_properties(dax_job, map_file,
-                           workflow.out_dir,
-                           staging_site=workflow.staging_site)
+dax_job = SubWorkflow(dax_file, is_planned=False, _id='geom')
+dax_job.set_subworkflow_properties(map_file,
+                                   workflow.out_dir,
+                                   staging_site=workflow.staging_site)
 
 # Tell the dax job that it needs some input files
 dax_job.add_inputs(metadata_file, intermediate_file)
@@ -217,7 +214,7 @@ dax_job.add_inputs(metadata_file, intermediate_file)
 dax_job.add_outputs(geom_out_file, stage_out=True)
 workflow._outputs.append(geom_out_file)
 
-workflow._adag.add_jobs(dax_job)
+dax_job.add_into_workflow(workflow)
 geom_dax_job = dax_job
 
 ###############################################
@@ -252,17 +249,14 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
 
     dax_file = sbank_node.output_files[0]
     map_file = sbank_node.output_files[1]
-    dax_job = dax.SubWorkflow(dax_file, is_planned=False, _id='sbank_bbh')
-    dax_job.add_args('--basename %s' % \
-                     os.path.splitext(os.path.basename(dax_file.name))[0])
-    set_subworkflow_properties(dax_job, map_file,
-                               workflow.out_dir,
-                               staging_site=workflow.staging_site)
+    dax_job = SubWorkflow(dax_file, is_planned=False, _id='sbank_bbh')
+    dax_job.set_subworkflow_properties(map_file,
+                                       workflow.out_dir,
+                                       staging_site=workflow.staging_site)
 
-
-    workflow._adag.add_jobs(dax_job)
     dax_job.add_outputs(sbank_out_file_bbh, stage_out=True)
     workflow._outputs.append(sbank_out_file_bbh)
+    dax_job.add_into_workflow(workflow)
     sbank_bbh_dax_job = dax_job
 
 ###############################################
@@ -301,15 +295,14 @@ workflow += sbank_node
 
 dax_file = sbank_node.output_files[0]
 map_file = sbank_node.output_files[1]
-dax_job = dax.SubWorkflow(dax_file, is_planned=False, _id='sbank_final')
-dax_job.add_args('--basename %s' % \
-                 os.path.splitext(os.path.basename(dax_file.name))[0])
-set_subworkflow_properties(dax_job, map_file,
-                           workflow.out_dir,
-                           staging_site=workflow.staging_site)
+dax_job = SubWorkflow(dax_file, is_planned=False, _id='sbank_final')
+dax_job.set_subworkflow_properties(map_file,
+                                   workflow.out_dir,
+                                   staging_site=workflow.staging_site)
+dax_job.add_into_workflow(workflow)
 
-workflow._adag.add_jobs(dax_job)
-
+# FIXME: This bit needs resolving without calling to _adag here.
+#        For now I'm waiting on discussions with pegasus about subworkflows.
 # These dependencies must be added manually as no data linkage is known to
 # pegasus.
 if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
