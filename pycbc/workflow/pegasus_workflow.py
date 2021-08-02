@@ -565,7 +565,7 @@ class SubWorkflow(dax.SubWorkflow):
             # Get Pegasus objects from PyCBC objects for parent Nodes
             parents = [n._dax_node for n in parents]
         container_wflow._adag.add_jobs(self)
-        container_wflow._adag.add_dependency(job, parents=parents)
+        container_wflow._adag.add_dependency(self, parents=parents)
 
     def set_subworkflow_properties(self, output_map_file,
                                    out_dir,
