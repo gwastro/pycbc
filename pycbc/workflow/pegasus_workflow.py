@@ -575,9 +575,15 @@ class SubWorkflow(dax.SubWorkflow):
                      os.path.basename(output_map_file.name))
         self.add_inputs(output_map_file)
 
+        # I think this is needed to deal with cases where the subworkflow file
+        # does not exist at submission time.
+        bname = os.path.splitext(os.path.basename(self.name))[0]
+        self.add_args('--basename {}'.format(bname))
+
         self.add_args('--cleanup inplace')
         self.add_args('--cluster label,horizontal')
         self.add_args('-vvv')
+
 
         # NOTE: The _reuse.cache file is produced during submit_dax and would
         #       be sent to all sub-workflows. Currently we do not declare this
