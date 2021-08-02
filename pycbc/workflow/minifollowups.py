@@ -221,7 +221,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         node.add_input_list_opt('--statistic-files', statfiles)
     if tags:
         node.add_list_opt('--tags', tags)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--sax-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map',
                              '--output-map')
 

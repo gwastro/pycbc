@@ -97,6 +97,7 @@ class ProfileShortcuts(object):
     def set_execution_site(self, site):
         self.add_profile("selector", "execution_site", site)
 
+
 class Executable(ProfileShortcuts):
     """ The workflow representation of an Executable
     """
@@ -140,30 +141,6 @@ class Executable(ProfileShortcuts):
         if self.transformations:
             raise ValueError("Need code changes to be able to add profiles after transformations are created.")
         self.profiles[(namespace,key)] = value
-
-    def is_same_as(self, other):
-        test_vals = ['namespace', 'version', 'arch', 'os', 'osrelease',
-                     'osversion', 'glibc', 'installed', 'container']
-        # Check for logical name first
-        if not self.pegasus_name == other.pegasus_name:
-            return False
-
-        # Check the properties of the executable
-        for val in test_vals:
-            sattr = getattr(self._dax_executable, val)
-            oattr = getattr(other._dax_executable, val)
-            if not sattr == oattr:
-                return False
-        # Also check the "profile". This is things like Universe, RAM/disk/CPU
-        # requests, execution site, getenv=True, etc.
-        for profile in self._dax_executable.profiles:
-            if profile not in other._dax_executable.profiles:
-                return False
-        for profile in other._dax_executable.profiles:
-            if profile not in self._dax_executable.profiles:
-                return False
-
-        return True
 
 
 class Transformation(dax.Transformation):
@@ -403,13 +380,6 @@ class Workflow(object):
 
         self._adag.add_jobs(workflow._asdag)
 
-        #for inp in workflow._external_workflow_inputs:
-            # FIXME: This won't work is inp.node is not in the same workflow as
-            # workflow._asdag. In pegasus5 I think this isn't the right way of
-            # handling this anyway. We need to declare such files as inputs and
-            # outputs of the various jobs, and not add explicit dependencies.
-            #self._adag.add_dependency(inp.node, children=[workflow._asdag])
-
         return self
 
     def add_subworkflow_dependancy(self, parent_workflow, child_workflow):
@@ -494,7 +464,10 @@ class Workflow(object):
                         self._staging_site[tform_site] = 'local'
 
                 self._transformations += [node.transformation]
-                if hasattr(node, 'executable') and node.executable.container is not None and node.executable.container not in self._containers:
+                lgc = (hasattr(node, 'executable')
+                       and node.executable.container is not None
+                       and node.executable.container not in self._containers)
+                if lgc:
                     self._containers.append(node.executable.container)
 
         # Add the node itself
