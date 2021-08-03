@@ -446,12 +446,12 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         # expand executable which statements
         self.perform_exe_expansion()
 
-        # Check for any substitutions that can be made
-        self.perform_extended_interpolation()
-
         # Resolve any URLs needing resolving
         self.curr_resolved_files = {}
         self.resolve_urls()
+
+        # Check for any substitutions that can be made
+        self.perform_extended_interpolation()
 
     def perform_exe_expansion(self):
         """
@@ -604,7 +604,9 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         for section in self.sections():
             for option, value in self.items(section):
                 # Check the value
-                new_str = self.resolve_file_url(value)
+                value_l = value.split(' ')
+                new_str_l = [self.resolve_file_url(val) for val in value_l]
+                new_str = ' '.join(new_str_l)
                 if new_str is not None and new_str != value:
                     self.set(section, option, new_str)
 
