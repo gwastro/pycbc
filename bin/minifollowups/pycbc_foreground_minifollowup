@@ -22,20 +22,8 @@ from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
 from pycbc.io import get_all_subkeys
 import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
+from pycbc.workflow.core import resolve_url_to_file
 import pycbc.version
-
-# FIXME: Move to workflow
-def to_file(path, ifo=None, is_sub_workflow=True):
-    fil = wdax.File(os.path.basename(path))
-    fil.ifo = ifo
-    # If this is a sub-workflow, pegasus will handle getting the input files
-    # to the job. If it is *not* a sub-workflow, we need to know where to get
-    # the inputs from!
-    if not is_sub_workflow:
-        path = os.path.abspath(path)
-        fil.add_pfn(path, 'local')
-    return fil
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -87,9 +75,9 @@ wf.makedir(args.output_dir)
 # create a FileList that will contain all output files
 layouts = []
 
-tmpltbank_file = to_file(args.bank_file)
-coinc_file = to_file(args.statmap_file)
-insp_segs = to_file(args.inspiral_segments)
+tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
+coinc_file = resolve_url_to_file(os.path.abspath(args.statmap_file))
+insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 
 single_triggers = []
 fsdt = {}
@@ -97,7 +85,8 @@ insp_data_seglists = {}
 insp_analysed_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
-    single_triggers.append(to_file(fname, ifo=ifo))
+    strig_file = resolve_url_to_file(os.path.abspath(fname),
+                                     attrs={'ifos': ifo})
     fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
     insp_data_seglists[ifo] = select_segments_by_definer(
         args.inspiral_segments,

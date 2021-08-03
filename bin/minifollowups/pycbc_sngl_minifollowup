@@ -24,24 +24,12 @@ from glue.ligolw import utils as ligolw_utils
 from pycbc.results import layout
 from pycbc.events import select_segments_by_definer
 import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
 import pycbc.workflow as wf
 import pycbc.events
+from pycbc.workflow.core import resolve_url_to_file
 from pycbc.events import stat
 from pycbc.io import hdf
-
-#FIXME: Move to workflow module and default to False
-def to_file(path, ifo=None, is_sub_workflow=True):
-    fil = wdax.File(os.path.basename(path))
-    fil.ifo = ifo
-    # If this is a sub-workflow, pegasus will handle getting the input files
-    # to the job. If it is *not* a sub-workflow, we need to know where to get
-    # the inputs from!
-    if not is_sub_workflow:
-        path = os.path.abspath(path)
-        fil.add_pfn(path, 'local')
-    return fil
 
 def add_wiki_row(outfile, cols):
     """
@@ -119,13 +107,20 @@ else:
 # create a FileList that will contain all output files
 layouts = []
 
-tmpltbank_file = to_file(args.bank_file)
-sngl_file = to_file(args.single_detector_file, ifo=args.instrument)
+tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
+sngl_file = resolve_url_to_file(
+    os.path.abspath(args.single_detector_file),
+    attrs={'ifos': args.instrument}
+)
+
 if args.veto_file is not None:
-    veto_file = to_file(args.veto_file, ifo=args.instrument)
+    veto_file = resolve_url_to_file(
+        os.path.abspath(args.veto_file),
+        attrs={'ifos': args.instrument}
+    )
 else:
     veto_file = None
-insp_segs = to_file(args.inspiral_segments)
+insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 insp_data_seglists = select_segments_by_definer\
         (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
          ifo=args.instrument)
