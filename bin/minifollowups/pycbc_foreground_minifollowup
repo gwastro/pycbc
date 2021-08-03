@@ -125,8 +125,8 @@ if args.sort_variable not in f[file_val]:
                                         ', '.join(all_datasets)))
 
 # Empty workflow cause failures, so add a "do nothing" (/bin/true) job.
-noop_node = mini.create_noop_node()
-workflow += noop_node
+#noop_node = mini.create_noop_node()
+#workflow += noop_node
 
 events_to_read = num_events * 100
 
