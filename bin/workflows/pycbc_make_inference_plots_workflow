@@ -36,7 +36,6 @@ from pycbc.types import MultiDetOptionAction
 from pycbc.types import MultiDetOptionAppendAction
 from pycbc.workflow import configuration
 from pycbc.workflow import core
-from pycbc.workflow import pegasus_workflow
 from pycbc.workflow import datafind
 from pycbc.workflow import plotting
 from pycbc import __version__
@@ -216,10 +215,10 @@ for num_event, event in enumerate(events):
 
     # convert the samples files to workflow File types
     for ii, fname in enumerate(samples_filelist):
-        pfile = pegasus_workflow.File(fname)
-        pfile.PFN(fname, "local")
-        # set the storage path to be the same
-        pfile.storage_path = fname
+        # FIXME: This was using code that says "This is an input file" and
+        #        "This is an output file". I think it's an input and changed
+        #        it accordingly. Please delete this if correct.
+        pfile = core.resolve_url_to_file(fname)
         samples_filelist[ii] = pfile
     samples_filelist = core.FileList(samples_filelist)
 

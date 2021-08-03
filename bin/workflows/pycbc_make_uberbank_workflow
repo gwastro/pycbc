@@ -166,7 +166,7 @@ logging.info("Setting up the round of geometric bank jobs.")
 
 config_path = os.path.abspath('daxes' + '/' + 'geom_workflow.ini')
 workflow.cp.write(open(config_path, 'w'))
-config_file = wf.File.from_path(config_path)
+config_file = wf.resolve_url_to_file(config_path)
 
 geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
                               ifos=workflow.ifos, out_dir='daxes')
@@ -200,7 +200,6 @@ assert(map_file.name.endswith('.map'))
 
 # NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
 #       the stuff done below, and does not consider file management
-# FIXME: This is now becoming common use case. Must sub-class SubWorkflow.
 dax_job = SubWorkflow(dax_file, is_planned=False, _id='geom')
 dax_job.set_subworkflow_properties(map_file,
                                    workflow.out_dir,
@@ -226,7 +225,7 @@ sbank_exe = SbankDaxGenerator(workflow.cp, 'sbank_workflow',
 
 config_path = os.path.abspath('daxes' + '/' + 'sbank_workflow.ini')
 workflow.cp.write(open(config_path, 'w'))
-config_file = wf.File.from_path(config_path)
+config_file = wf.resolve_url_to_file(config_path)
 
 # This first round of sbank is used for BBHs for the standard uberbank;
 # a PyGRB uberbank covers only potentially EM-bright systems and therfore

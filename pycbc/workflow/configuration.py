@@ -641,9 +641,9 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         # ${ ... } form I may not have to do anything
 
         # Strip the ${ and }
-        test_string = test_string[2:-1]
+        test_string_strip = test_string[2:-1]
 
-        test_list = test_string.split(":", 1)
+        test_list = test_string_strip.split(":", 1)
 
         if len(test_list) == 2:
             if test_list[0] == "resolve":
@@ -654,4 +654,4 @@ class WorkflowConfigParser(InterpolatingConfigParser):
                 self.curr_resolved_files[curr_lfn] = local_url
                 return local_url
 
-        return None
+        return test_string

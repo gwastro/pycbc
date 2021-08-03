@@ -112,7 +112,7 @@ class LigolwAddExecutable(wf.LigolwAddExecutable):
                     use_tmp_subdirs=True, tags=None):
         if output is not None:
             # Convert path to file
-            out_file = wf.File.from_path(output)
+            out_file = wf.resolve_url_to_file(output)
             if self.retain_files:
                 if not os.path.isabs(output):
                     out_file.storage_path = os.path.join(self.out_dir,
@@ -145,7 +145,7 @@ class CombineHDFBanksExecutable(wf.Executable):
         # Output file
         if output is not None:
             # Convert path to file
-            out_file = wf.File.from_path(output)
+            out_file = wf.resolve_url_to_file(output)
             if self.retain_files:
                 if not os.path.isabs(output):
                     out_file.storage_path = os.path.join(self.out_dir,
@@ -222,11 +222,11 @@ if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
         #        dax file is generated. Don't run anything that assumes it will
         #        be there
         #if not args.is_sub_workflow:
-        #    seed_file = wf.File.from_path(seed_bank)
+        #    seed_file = wf.resolve_url_to_file(seed_bank)
         #else:
         #    seed_file = pwf.File(os.path.basename(seed_bank))
         # For now we then use:
-        seed_file = wf.File.from_path(seed_bank)
+        seed_file = wf.resolve_url_to_file(seed_bank)
         seed_files.append(seed_file)
     if len(seed_files) == 1:
         seed_file = seed_files[0]

@@ -19,7 +19,8 @@ from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
 import distutils.spawn
 from ligo import segments
-from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
+from pycbc.workflow.core import Executable, FileList, Node, File, Workflow
+from pycbc.workflow.core import makedir, resolve_url_to_file
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 try:
     # Python 3
@@ -84,11 +85,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'foreground_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
 
-    config_file = wdax.File(os.path.basename(config_path))
-    config_file.add_pfn(
-        urljoin('file:', pathname2url(config_path)),
-        site='local'
-    )
+    config_file = resolve_url_to_file(config_path)
 
     exe = Executable(workflow.cp, 'foreground_minifollowup',
                      ifos=workflow.ifos, out_dir=dax_output, tags=tags)
@@ -183,18 +180,10 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
                                    '_'.join(tags) + 'singles_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
 
-    config_file = wdax.File(os.path.basename(config_path))
-    config_file.add_pfn(
-        urljoin('file:', pathname2url(config_path)),
-        site='local'
-    )
+    config_file = resolve_url_to_file(config_path)
 
     exe = Executable(workflow.cp, 'singles_minifollowup',
                      ifos=curr_ifo, out_dir=dax_output, tags=tags)
-
-    # FIXME: This should not have been added in this way (pegasus does not know
-    #        it's a file). Do we still want it?
-    #wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
 
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
@@ -204,7 +193,6 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     node.add_opt('--instrument', curr_ifo)
-    #node.add_opt('--wiki-file', wikifile)
     if veto_file is not None:
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
@@ -291,11 +279,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'injection_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
 
-    config_file = wdax.File(os.path.basename(config_path))
-    config_file.add_pfn(
-        urljoin('file:', pathname2url(config_path)),
-        site='local'
-    )
+    config_file = resolve_url_to_file(config_path)
 
     exe = Executable(workflow.cp, 'injection_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 

@@ -156,7 +156,7 @@ if opts.injection_file:
                  write_params=[k for k in injections.table.fieldnames 
                                if k not in injections._injhandler.static_args],
                  static_args=st_args)
-            injection_files.append(core.File.from_path(outfile))
+            injection_files.append(core.resolve_url_to_file(outfile))
             n_injections += 1
 else:
     n_injections = opts.num_injections

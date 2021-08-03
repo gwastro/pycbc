@@ -711,7 +711,10 @@ class Workflow(pegasus_workflow.Workflow):
                     add_site(self._sc, site, self.cp, out_dir=self.out_dir)
                     # NOTE: For now we *always* stage from local. This doesn't
                     #       have to always be true though.
-                    self._staging_site[site] = 'local'
+                    if site in ['condorpool_shared']:
+                        self._staging_site[site] = site
+                    else:
+                        self._staging_site[site] = 'local'
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
@@ -1983,7 +1986,6 @@ class CalledProcessErrorMod(Exception):
         return msg
 
 
-# FIXME: Is this duplicated (in a few places?)
 def resolve_url_to_file(curr_pfn, attrs=None):
     """
     Resolves a PFN into a workflow.File object.

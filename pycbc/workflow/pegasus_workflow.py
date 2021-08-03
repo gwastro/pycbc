@@ -455,8 +455,6 @@ class Workflow(object):
                     # FIXME: Don't want to hardcode this!
                     if tform_site in ['condorpool_shared']:
                         self._staging_site[tform_site] = tform_site
-                    else:
-                        self._staging_site[tform_site] = 'local'
 
                 self._transformations += [node.transformation]
                 lgc = (hasattr(node, 'executable')
