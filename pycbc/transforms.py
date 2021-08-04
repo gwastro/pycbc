@@ -639,13 +639,13 @@ class AlignTotalSpin(BaseTransform):
 
     name = "align_total_spin"
 
-    def __init__(self, iota, s1, s2, m1, m2, f_lower, phi_ref, newIota, news1, news2):
+    def __init__(self, iota, s1, s2, m1, m2, f_ref, phi_ref, newIota, news1, news2):
         self.iota = iota
         self.s1 = s1
         self.s2 = s2
         self.m1 = m1
         self.m2 = m2
-        self.f_lower = f_lower
+        self.f_ref = f_ref
         self.phi_ref = phi_ref
         self.newIota = newIota
         self.news1 = news1
@@ -656,7 +656,7 @@ class AlignTotalSpin(BaseTransform):
             self.s2,
             self.m1,
             self.m2,
-            self.f_lower,
+            self.f_ref,
             self.phi_ref,
         ]
         self._outputs = [self.newIota, self.news1, self.news2]
@@ -671,26 +671,23 @@ class AlignTotalSpin(BaseTransform):
         angular momentum.
         """
 
-        iota = self.iota
-        s1 = self.s1
-        s2 = self.s2
-        m1 = self.m1
-        m2 = self.m2
-        f_lower = self.f_lower
-        phi_ref = self.phi_ref
-
-        if not all(s == 0.0 for s in s1[:2]) or not all(s == 0.0 for s in s2[:2]):
+        s1 = maps[self.s1]
+        s2 = maps[self.s2]
+        if not all(s == 0.0 for s in s1[:2]) or \
+                not all(s == 0.0 for s in s2[:2]):
             # Calculate the quantities required by jframe_to_l0frame
-            s1_a, s1_az, s1_pol = coordinates.cartesian_to_spherical(s1[0], s1[1], s1[2])
-            s2_a, s2_az, s2_pol = coordinates.cartesian_to_spherical(s2[0], s2[1], s2[2])
+            s1_a, s1_az, s1_pol = coordinates.cartesian_to_spherical(
+                    s1[0], s1[1], s1[2])
+            s2_a, s2_az, s2_pol = coordinates.cartesian_to_spherical(
+                    s2[0], s2[1], s2[2])
             
             output = jframe_to_l0frame(
-                maps[m1],
-                maps[m2],
-                maps[f_ref],
-                phiref=maps[phi_ref],
-                thetajn=maps[iota],
-                phijl=np.pi,
+                maps[self.m1],
+                maps[self.m2],
+                maps[self.f_ref],
+                phiref=maps[self.phi_ref],
+                thetajn=maps[self.iota],
+                phijl=numpy.pi,
                 spin1_a=s1_a,
                 spin2_a=s2_a,
                 spin1_polar=s1_pol,
