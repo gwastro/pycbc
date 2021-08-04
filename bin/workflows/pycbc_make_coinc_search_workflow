@@ -1,4 +1,4 @@
-#!/home/ian.harry/virtualenvs/pycbc_python3/bin/python3
+#!/usr/bin/env python
 
 # Copyright (C) 2013-2019 Ian W. Harry, Alex Nitz, Marton Tapai,
 #     Gareth Davies
