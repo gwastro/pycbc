@@ -2048,16 +2048,13 @@ def resolve_url_to_file(curr_pfn, attrs=None):
             tags = []
 
         curr_file = File(ifos, exe_name, segs, local_file_path, tags=tags)
-        pfn_local = urljoin('file:', pathname2url(local_file_path))
-        curr_file.add_pfn(pfn_local, 'local')
-        # Add other PFNs for nonlocal sites as needed.
-        # This block could be extended as needed
         if curr_pfn.startswith(cvmfsstrs):
-            # FIXME: Can we set a "all sites" variable?
-            curr_file.add_pfn(curr_pfn, site='condorpool_symlink')
-            curr_file.add_pfn(curr_pfn, site='condorpool_copy')
-            curr_file.add_pfn(curr_pfn, site='condorpool_shared')
-            curr_file.add_pfn(curr_pfn, site='osg')
+            # Add PFNs for nonlocal sites for special cases (e.g. CVMFS).
+            # This block could be extended as needed
+            curr_file.add_pfn(curr_pfn, site='all')
+        else:
+            pfn_local = urljoin('file:', pathname2url(local_file_path))
+            curr_file.add_pfn(pfn_local, 'local')
         # Store the file to avoid later duplication
         tuple_val = (local_file_path, curr_file, curr_pfn)
         file_input_from_config_dict[curr_lfn] = tuple_val

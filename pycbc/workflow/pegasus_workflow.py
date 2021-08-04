@@ -447,14 +447,7 @@ class Workflow(object):
                     # This block should never be accessed in the way things
                     # are set up. However, it might be possible to hit this if
                     # certain overrides are allowed.
-                    add_site(self._sc, tform_site, self.cp,
-                             out_dir=self.out_dir)
-                    # NOTE: For now we *always* stage from local. This doesn't
-                    #       have to always be true though.
-                    self._staging_site[tform_site] = 'local'
-                    # FIXME: Don't want to hardcode this!
-                    if tform_site in ['condorpool_shared']:
-                        self._staging_site[tform_site] = tform_site
+                    raise ValueError("Do not know site {}".format(tform_site))
 
                 self._transformations += [node.transformation]
                 lgc = (hasattr(node, 'executable')
@@ -528,7 +521,7 @@ class Workflow(object):
 
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:
-            fil.insert_into_dax(self._rc)
+            fil.insert_into_dax(self._rc, self._tc)
 
         if self._asdag is not None:
             # Is a sub-workflow
@@ -644,11 +637,16 @@ class File(dax.File):
         Check if the url, site is already associated to this File. If site is
         not provided, we will assume it is 'local'.
         """
-        return (url,site) in self.input_pfns
+        return (((url, site) in self.input_pfns)
+                or ((url, 'all') in self.input_pfns))
 
-    def insert_into_dax(self, rep_cat):
+    def insert_into_dax(self, rep_cat, site_cat):
         for (url, site) in self.input_pfns: 
-            rep_cat.add_replica(site, self, url)
+            if site == 'all':
+                for curr_site in site_cat.sites:
+                    rep_cat.add_replica(curr_site, self, url)
+            else:
+                rep_cat.add_replica(site, self, url)
 
     @classmethod
     def from_path(cls, path):
