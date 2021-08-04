@@ -679,7 +679,7 @@ class AlignTotalSpin(BaseTransform):
         f_lower = self.f_lower
         phi_ref = self.phi_ref
 
-        if numpy.linalg.norm(maps[s1][:2]) != 0 or numpy.linalg.norm(maps[s1][:2]) != 0:
+        if not all(s == 0.0 for s in s1[:2]) or not all(s == 0.0 for s in s2[:2]):
             # Calculate the quantities required by jframe_to_l0frame
             s1_a, s1_az, s1_pol = coordinates.cartesian_to_spherical(s1[0], s1[1], s1[2])
             s2_a, s2_az, s2_pol = coordinates.cartesian_to_spherical(s2[0], s2[1], s2[2])
