@@ -38,7 +38,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 pycbc.workflow.add_workflow_command_line_group(parser)
-pycbc.workflow..add_workflow_settings_cli(parser)
+pycbc.workflow.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
 # FIXME: opts.tags is currently unused here.
