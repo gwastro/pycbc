@@ -18,7 +18,9 @@ lscsoft-glue>=1.59.3
 ligo-segments
 tqdm
 gwdatafind
-pegasus-wms.api
+# Until 5.0.1 is released we do something weird ...
+# pegasus-wms.api
+git+https://github.com/pegasus-isi/pegasus#egg=pegasus-wms.api&subdirectory=packages/pegasus-api
 
 # Requirements for ligoxml access needed by some workflows
 python-ligo-lw
