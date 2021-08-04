@@ -230,6 +230,9 @@ class Executable(pegasus_workflow.Executable):
             logging.info("%s executable will run as %s universe"
                          % (name, self.universe))
 
+        # FIXME: This hasn't yet been ported to pegasus5 and won't work.
+        #        Pegasus describes two ways to work with containers, and I need
+        #        to figure out which is most appropriate and use that.
         # Determine if this executables should be run in a container
         try:
             self.container_type = cp.get('pegasus_profile-%s' % name,
