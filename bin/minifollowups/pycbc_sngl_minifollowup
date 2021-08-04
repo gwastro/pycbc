@@ -1,4 +1,4 @@
-#!/home/ian.harry/virtualenvs/pycbc_python3/bin/python3
+#!/bin/env python
 # Copyright (C) 2015 Alexander Harvey Nitz, Ian Harry
 #
 # This program is free software; you can redistribute it and/or modify it
