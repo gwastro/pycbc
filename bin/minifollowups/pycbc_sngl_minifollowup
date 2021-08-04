@@ -176,10 +176,6 @@ if args.maximum_duration is not None:
     trigs.apply_mask(lgc_mask)
     logging.info('remaining triggers: %s', trigs.mask.sum())
 
-# Empty workflow cause failures, so add a "do nothing" (/bin/true) job.
-#noop_node = mini.create_noop_node()
-#workflow += noop_node
-
 logging.info('finding loudest clustered events')
 rank_method = stat.get_statistic_from_opts(args, [args.instrument])
 trigs.mask_to_n_loudest_clustered_events(rank_method, n_loudest=num_events)

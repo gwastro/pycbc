@@ -287,9 +287,5 @@ for num_event in range(num_events):
     layouts += list(layout.grouper(files, 2))
     num_event += 1
 
-# Empty workflow cause failures, so add a "do nothing" (/bin/true) job.
-#noop_node = mini.create_noop_node()
-#workflow += noop_node
-
 workflow.save(filename=args.dax_file, output_map_path=args.output_map)
 layout.two_column_layout(args.output_dir, layouts)
