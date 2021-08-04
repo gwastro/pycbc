@@ -681,33 +681,25 @@ class AlignTotalSpin(BaseTransform):
 
         if numpy.linalg.norm(maps[s1][:2]) != 0 or numpy.linalg.norm(maps[s1][:2]) != 0:
             # Calculate the quantities required by jframe_to_l0frame
-            thetaJN = maps[iota]
-            phiJL = numpy.pi
-            l = numpy.array([0, 0, 1.0])
-            theta1 = numpy.arccos(numpy.dot(maps[s1], l) / numpy.linalg.norm(maps[s1]))
-            theta2 = numpy.arccos(numpy.dot(maps[s2], l) / numpy.linalg.norm(maps[s2]))
-            phi12 = numpy.arccos(
-                numpy.dot(maps[s1][:2], maps[s2][:2])
-                / numpy.linalg.norm(maps[s1][:2])
-                / numpy.linalg.norm(maps[s2][:2])
+            s1_a, s1_az, s1_pol = coordinates.cartesian_to_spherical(s1[0], s1[1], s1[2])
+            s2_a, s2_az, s2_pol = coordinates.cartesian_to_spherical(s2[0], s2[1], s2[2])
+            
+            output = jframe_to_l0frame(
+                maps[m1],
+                maps[m2],
+                maps[f_ref],
+                phiref=maps[phi_ref],
+                thetajn=maps[iota],
+                phijl=np.pi,
+                spin1_a=s1_a,
+                spin2_a=s2_a,
+                spin1_polar=s1_pol,
+                spin2_polar=s2_pol,
+                spin12_deltaphi=s1_az-s2_az
             )
 
             news1 = numpy.zeros(3)
             news2 = numpy.zeros(3)
-
-            output = jframe_to_l0frame(
-                maps[m1],
-                maps[m2],
-                maps[f_lower],
-                maps[phi_ref],
-                thetaJN,
-                phiJL,
-                numpy.linalg.norm(maps[s1]),
-                numpy.linalg.norm(maps[s2]),
-                theta1,
-                theta2,
-                phi12,
-            )
 
             newIota = output["inclination"]
             news1[0] = output["spin1x"]
