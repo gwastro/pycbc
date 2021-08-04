@@ -87,6 +87,7 @@ for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     strig_file = resolve_url_to_file(os.path.abspath(fname),
                                      attrs={'ifos': ifo})
+    single_triggers.append(strig_file)
     fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
     insp_data_seglists[ifo] = select_segments_by_definer(
         args.inspiral_segments,
