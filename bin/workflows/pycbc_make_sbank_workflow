@@ -174,7 +174,7 @@ parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("--output-file", type=str, default=None,
                     help="Specify the output file name. Either a name can be "
                          "provided or a full path to file. Is this is not "
-                         "given a filename and location is chosen "
+                         "given a filename and location is chosen ")
 parser.add_argument('--main-workflow-directory', default=None, required=False,
                     help='Supply the location that the main workflow was '
                          'generated in. Only needed if running this job '

@@ -29,6 +29,7 @@ from ligo import segments as _segments
 import datetime
 import lal, sys
 from pycbc.results import save_fig_with_metadata, two_column_layout
+import pycbc.workflow
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -37,7 +38,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 pycbc.workflow.add_workflow_command_line_group(parser)
-wf.add_workflow_settings_cli(parser)
+pycbc.workflow..add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
 # FIXME: opts.tags is currently unused here.
