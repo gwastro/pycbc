@@ -181,6 +181,7 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
 
 # def add_condorpool_nonfs_site(sitecat, cp):
 
+
 def add_osg_site(sitecat, cp):
     """Add osg site to site catalog"""
     site = Site("osg", arch=Arch.X86_64, os_type=OS.LINUX)
