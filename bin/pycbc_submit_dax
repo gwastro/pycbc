@@ -21,8 +21,6 @@ LOCAL_PEGASUS_DIR=""
 PEGASUS_PROPERTIES=""
 SITE_LIST=""
 STAGING_SITES=""
-LOCAL_STAGING_SERVER="file://"
-REMOTE_STAGING_SERVER="file://"
 NO_CREATE_PROXY=0
 NO_QUERY_DB=0
 NO_GRID=""
@@ -45,7 +43,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:C:g:r:p:P:es:S:t:nl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,pegasus-properties:,append-pegasus-property:,execution-sites:,staging-sites:,transformation-catalog:,site-catalog:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:C:p:P:es:S:t:nl:Gh --long dax:,cache-file:,pegasus-properties:,append-pegasus-property:,execution-sites:,staging-sites:,transformation-catalog:,site-catalog:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -91,16 +89,6 @@ EOF`
            done
            set -e
            shift 2 ;;
-      esac ;;
-    -g|--local-staging-server)
-      case "$2" in
-        "") shift 2 ;;
-        *) LOCAL_STAGING_SERVER=$2 ; shift 2 ;;
-      esac ;;
-    -r|--remote-staging-server)
-      case "$2" in
-        "") shift 2 ;;
-        *) REMOTE_STAGING_SERVER=$2 ; shift 2 ;;
       esac ;;
     -p|--pegasus-properties)
       case "$2" in
@@ -197,9 +185,8 @@ if [ $NO_CREATE_PROXY == 0 ]; then
       break
     fi
   done
-  # HACK FOR SPEED: PUT THIS BACK!!
-  #unset X509_USER_PROXY
-  #ligo-proxy-init -p $LIGO_USER_NAME || exit 1
+  unset X509_USER_PROXY
+  ligo-proxy-init -p $LIGO_USER_NAME || exit 1
 else
   if [ ! -z ${X509_USER_PROXY} ] ; then
     if [ -f ${X509_USER_PROXY} ] ; then
