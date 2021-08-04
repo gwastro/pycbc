@@ -29,7 +29,6 @@ except ImportError:
     # Python 2
     from itertools import izip_longest as zip_longest
 from pycbc.workflow.pegasus_workflow import SubWorkflow
-from pycbc.workflow import pegasus_workflow as wdax
 
 def grouper(iterable, n, fillvalue=None):
     """ Create a list of n length tuples
@@ -844,21 +843,3 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
     workflow += node
     files = node.output_files
     return files
-
-# FIXME: Is there a better way to do this? This should work for all use cases
-#        we use, but there are edge cases where this could be problematic.
-# FIXME: Check if this still causes failures.
-def create_noop_node(site='local'):
-    """
-    Creates a noop node that can be added to a DAX doing nothing. The reason
-    for using this is if a minifollowups dax contains no triggers currently
-    the dax will contain no jobs and be invalid. By adding a noop node we
-    ensure that such daxes will actually run if one adds one such noop node.
-    Adding such a noop node into a workflow *more than once* will cause a
-    failure.
-    """
-    exe = wdax.Executable('NOOP', installed=True)
-    pfn = distutils.spawn.find_executable('true')
-    exe.create_transformation(site, url=pfn)
-    node = wdax.Node(exe.transformations[site])
-    return node
