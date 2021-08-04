@@ -26,7 +26,9 @@ from Pegasus.api import Arch, OS
 urllib.parse.uses_relative.append('gsiftp')
 urllib.parse.uses_netloc.append('gsiftp')
 
+
 def add_site_pegasus_profile(site, cp):
+    """Add options from [pegasus_profile] in configparser to site"""
     # Add global profile information
     if cp.has_section('pegasus_profile'):
         add_ini_site_profile(site, cp, 'pegasus_profile')
@@ -34,17 +36,21 @@ def add_site_pegasus_profile(site, cp):
     if cp.has_section('pegasus_profile-{}'.format(site.name)):
         add_ini_site_profile(site, cp, 'pegasus_profile-{}'.format(site.name))
 
+
 def add_ini_site_profile(site, cp, sec):
+    """Add options from sec in configparser to site"""
     for opt in cp.options(sec):
         namespace = opt.split('|')[0]
-        if namespace == 'pycbc' or namespace == 'container':
+        if namespace in ('pycbc', 'container'):
             continue
 
         value = cp.get(sec, opt).strip()
         key = opt.split('|')[1]
         site.add_profiles(Namespace(namespace), key=key, value=value)
 
-def add_local_site(sitecat, cp, local_path, local_url): 
+
+def add_local_site(sitecat, cp, local_path, local_url):
+    """Add the local site to sitecatalog"""
     # local_url must end with a '/'
     if not local_url.endswith('/'):
         local_url = local_url + '/'
@@ -63,8 +69,9 @@ def add_local_site(sitecat, cp, local_path, local_url):
     local.add_profiles(Namespace.CONDOR, key="getenv", value="True")
     sitecat.add_sites(local)
 
-def add_condorpool_symlink_site(sitecat, cp):
 
+def add_condorpool_symlink_site(sitecat, cp):
+    """Add condorpool_symlink site to site catalog"""
     site = Site("condorpool_symlink", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
 
@@ -79,22 +86,23 @@ def add_condorpool_symlink_site(sitecat, cp):
                       value="true")
     site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
                       value="False")
-    site.add_profiles(Namespace.CONDOR, key="should_transfer_files", 
+    site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
-    site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output", 
+    site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
-    site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites", 
+    site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
                       value='"nogrid"')
-    site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN", 
+    site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN",
                       value='"False"')
-    site.add_profiles(Namespace.CONDOR, key="+flock_local", 
+    site.add_profiles(Namespace.CONDOR, key="+flock_local",
                       value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     sitecat.add_sites(site)
 
-def add_condorpool_copy_site(sitecat, cp):
 
+def add_condorpool_copy_site(sitecat, cp):
+    """Add condorpool_copy site to site catalog"""
     site = Site("condorpool_copy", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
 
@@ -121,7 +129,9 @@ def add_condorpool_copy_site(sitecat, cp):
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     sitecat.add_sites(site)
 
+
 def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
+    """Add condorpool_shared site to site catalog"""
     # local_url must end with a '/'
     if not local_url.endswith('/'):
         local_url = local_url + '/'
@@ -137,7 +147,6 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
     local_dir.add_file_servers(local_file_serv)
     site.add_directories(local_dir)
 
-    
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="sharedfs")
@@ -161,7 +170,7 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     # Need to set PEGASUS_HOME
     peg_home = distutils.spawn.find_executable('pegasus-plan')
-    assert(peg_home.endswith('bin/pegasus-plan'))
+    assert peg_home.endswith('bin/pegasus-plan')
     peg_home = peg_home.replace('bin/pegasus-plan', '')
     site.add_profiles(Namespace.ENV, key="PEGASUS_HOME", value=peg_home)
     sitecat.add_sites(site)
@@ -173,6 +182,7 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
 # def add_condorpool_nonfs_site(sitecat, cp):
 
 def add_osg_site(sitecat, cp):
+    """Add osg site to site catalog"""
     site = Site("osg", arch=Arch.X86_64, os_type=OS.LINUX)
     add_site_pegasus_profile(site, cp)
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
@@ -196,6 +206,8 @@ def add_osg_site(sitecat, cp):
                       value="(HAS_SINGULARITY =?= TRUE) && "
                             "(HAS_LIGO_FRAMES =?= True) && "
                             "(IS_GLIDEIN =?= True)")
+    # FIXME: This one should be moved to be latest release and/or chosen in the
+    #        config file.
     site.add_profiles(Namespace.CONDOR, key="+SingularityImage",
                       value='"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el7:v1.18.0"')
     # On OSG failure rate is high
@@ -204,12 +216,14 @@ def add_osg_site(sitecat, cp):
                       value="/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation")
     sitecat.add_sites(site)
 
+
 def add_site(sitecat, sitename, cp, out_dir=None):
+    """Add site sitename to sitecatalog"""
     if out_dir is None:
         out_dir = os.getcwd()
     local_url = urljoin('file://', pathname2url(out_dir))
     if sitename == 'local':
-        add_local_site(sitecat, cp, out_dir, local_url)   
+        add_local_site(sitecat, cp, out_dir, local_url)
     elif sitename == 'condorpool_symlink':
         add_condorpool_symlink_site(sitecat, cp)
     elif sitename == 'condorpool_copy':
@@ -220,4 +234,3 @@ def add_site(sitecat, sitename, cp, out_dir=None):
         add_osg_site(sitecat, cp)
     else:
         raise ValueError("Do not recognize site {}".format(sitename))
-

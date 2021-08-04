@@ -38,7 +38,7 @@ from itertools import combinations, groupby, permutations
 from operator import attrgetter
 import lal
 import lal.utils
-import Pegasus.api # Try and move this into pegasus_workflow
+import Pegasus.api  # Try and move this into pegasus_workflow
 from glue import lal as gluelal
 from ligo import segments
 from glue.ligolw import table, lsctables, ligolw
@@ -226,7 +226,7 @@ class Executable(pegasus_workflow.Executable):
         if self.universe is None:
             self.universe = 'vanilla'
 
-        if not self.universe == 'vanilla':
+        if self.universe != 'vanilla':
             logging.info("%s executable will run as %s universe"
                          % (name, self.universe))
 
@@ -286,7 +286,6 @@ class Executable(pegasus_workflow.Executable):
         self.execution_site = exe_site
         self.executable_url = exe_path
 
-
     @property
     def ifo(self):
         """Return the ifo.
@@ -327,7 +326,6 @@ class Executable(pegasus_workflow.Executable):
             value = cp.get(sec, opt).strip()
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
-
 
     def add_ini_opts(self, cp, sec):
         """Add job-specific options from configuration file.
@@ -531,7 +529,7 @@ class Executable(pegasus_workflow.Executable):
         if tags is None:
             tags = []
         if '' in tags:
-            logging.warn('DO NOT GIVE ME EMPTY TAGS (in {})'.format(self.name))
+            logging.warn('DO NOT GIVE ME EMPTY TAGS (in %s)', self.name)
             tags.remove('')
         tags = [tag.upper() for tag in tags]
         self.tags = tags
@@ -710,7 +708,7 @@ class Workflow(pegasus_workflow.Workflow):
         for subsec in subsections:
             if self.cp.has_option(subsec, 'pycbc|site'):
                 site = self.cp.get(subsec, 'pycbc|site')
-                if not site in self._sc.sites:
+                if site not in self._sc.sites:
                     add_site(self._sc, site, self.cp, out_dir=self.out_dir)
                     # NOTE: For now we *always* stage from local. This doesn't
                     #       have to always be true though.
@@ -1100,7 +1098,7 @@ class File(pegasus_workflow.File):
         if tags is None:
             tags = []
         if '' in tags:
-            logging.warn('DO NOT GIVE EMPTY TAGS (from {})'.format(exe_name))
+            logging.warn('DO NOT GIVE EMPTY TAGS (from %s)', exe_name)
             tags.remove('')
         self.tags = tags
 

@@ -30,7 +30,6 @@ import os
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
-from .pegasus_sites import add_site
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -98,7 +97,7 @@ class Executable(ProfileShortcuts):
             container=self.container
         )
         transform.pycbc_name = self.pegasus_name
-        for (namespace,key), value in self.profiles.items():
+        for (namespace, key), value in self.profiles.items():
             transform.add_profiles(
                 dax.Namespace(namespace),
                 key=key,
@@ -110,8 +109,10 @@ class Executable(ProfileShortcuts):
         """ Add profile information to this executable
         """
         if self.transformations:
-            raise ValueError("Need code changes to be able to add profiles after transformations are created.")
-        self.profiles[(namespace,key)] = value
+            err_msg = "Need code changes to be able to add profiles "
+            err_msg += "after transformations are created."
+            raise ValueError(err_msg)
+        self.profiles[(namespace, key)] = value
 
 
 class Transformation(dax.Transformation):
@@ -132,10 +133,10 @@ class Transformation(dax.Transformation):
                 return False
         # Some properties are stored in the TransformationSite
         self_site = list(self.sites.values())
-        assert(len(self_site) == 1)
+        assert len(self_site) == 1
         self_site = self_site[0]
         other_site = list(other.sites.values())
-        assert(len(other_site) == 1)
+        assert len(other_site) == 1
         other_site = other_site[0]
         for val in test_site_vals:
             sattr = getattr(self_site, val)
@@ -202,11 +203,6 @@ class Node(ProfileShortcuts):
         else:
             self._options += [opt]
 
-    def add_input(self, inp):
-        """Declares an input file without adding it as a command-line option.
-        """
-        self._add_input(inp)
-
     #private functions to add input and output data sources/sinks
     def _add_input(self, inp):
         """ Add as source of input data
@@ -219,7 +215,7 @@ class Node(ProfileShortcuts):
         """
         self._outputs += [out]
         out.node = self
-        stage_out = out.storage_path is not None 
+        stage_out = out.storage_path is not None
         self._dax_node.add_outputs(out, stage_out=stage_out)
 
     # public functions to add options, arguments with or without data sources
@@ -432,7 +428,7 @@ class Workflow(object):
         node.in_workflow = self
 
         # Record the executable that this node uses
-        if not node.transformation in self._transformations:
+        if node.transformation not in self._transformations:
             for tform in self._transformations:
                 # Check if transform is already in workflow
                 if node.transformation.is_same_as(tform):
@@ -443,7 +439,7 @@ class Workflow(object):
             else:
                 #node.executable.in_workflow = True
                 tform_site = list(node.transformation.sites.keys())[0]
-                if not tform_site in self._sc.sites:
+                if tform_site not in self._sc.sites:
                     # This block should never be accessed in the way things
                     # are set up. However, it might be possible to hit this if
                     # certain overrides are allowed.
@@ -462,7 +458,7 @@ class Workflow(object):
         # Determine the parent child relationships based on the inputs that
         # this node requires.
         # In Pegasus5 this is mostly handled by pegasus, we just need to
-        # connect files correctly if dealing with file management between 
+        # connect files correctly if dealing with file management between
         # workflows/subworkflows
         for inp in node._inputs:
             if inp.node is not None and inp.node.in_workflow == self:
@@ -470,15 +466,15 @@ class Workflow(object):
                 # Don't need to do anything here.
                 continue
 
-            elif inp.node is not None and not inp.node.in_workflow:
+            if inp.node is not None and not inp.node.in_workflow:
                 # This error should be rare, but can happen. If a Node hasn't
                 # yet been added to a workflow, this logic breaks. Always add
                 # nodes in order that files will be produced.
                 raise ValueError('Parents of this node must be added to the '
                                  'workflow first.')
 
-            elif inp.node is None or inp.node.in_workflow != self:
-                # File is external to the workflow (e.g. a pregenerated 
+            if inp.node is None or inp.node.in_workflow != self:
+                # File is external to the workflow (e.g. a pregenerated
                 # template bank). (if inp.node is None)
                 # OR
                 # File is generated in a different Workflow/Subworkflow that is
@@ -503,7 +499,7 @@ class Workflow(object):
     def save(self, filename=None):
         """ Write this workflow to DAX file
         """
-        if filename is None: 
+        if filename is None:
             filename = self.filename
 
         for sub in self.sub_workflows:
@@ -517,7 +513,6 @@ class Workflow(object):
             pfn = os.path.join(os.getcwd(), sub.filename)
             sub_workflow_file.add_pfn(pfn, site='local')
             sub_workflow_file.insert_into_dax(self._rc, self._tc)
-
 
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:
@@ -563,7 +558,7 @@ class SubWorkflow(dax.SubWorkflow):
                                    staging_site):
 
         self.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
-                     os.path.basename(output_map_file.name))
+                      os.path.basename(output_map_file.name))
         self.add_inputs(output_map_file)
 
         # I think this is needed to deal with cases where the subworkflow file
@@ -574,7 +569,6 @@ class SubWorkflow(dax.SubWorkflow):
         self.add_args('--cleanup inplace')
         self.add_args('--cluster label,horizontal')
         self.add_args('-vvv')
-
 
         # NOTE: The _reuse.cache file is produced during submit_dax and would
         #       be sent to all sub-workflows. Currently we do not declare this
@@ -630,10 +624,10 @@ class File(dax.File):
         """
         Associate a PFN with this file. Takes a URL and associated site.
         """
-        self.input_pfns.append((url,site))
+        self.input_pfns.append((url, site))
 
     def has_pfn(self, url, site='local'):
-        """ 
+        """
         Check if the url, site is already associated to this File. If site is
         not provided, we will assume it is 'local'.
         """
@@ -641,7 +635,7 @@ class File(dax.File):
                 or ((url, 'all') in self.input_pfns))
 
     def insert_into_dax(self, rep_cat, site_cat):
-        for (url, site) in self.input_pfns: 
+        for (url, site) in self.input_pfns:
             if site == 'all':
                 for curr_site in site_cat.sites:
                     rep_cat.add_replica(curr_site, self, url)

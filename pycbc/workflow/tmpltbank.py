@@ -36,7 +36,7 @@ from six.moves import configparser as ConfigParser
 import pycbc
 from pycbc.workflow.core import FileList
 from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
-from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
+from pycbc.workflow.jobsetup import select_tmpltbank_class, sngl_ifo_job_setup
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
                              output_dir=None, psd_files=None, tags=None,

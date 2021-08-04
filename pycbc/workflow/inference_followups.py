@@ -24,6 +24,7 @@ from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.results import layout
 
+
 def make_inference_plot(workflow, input_file, output_dir,
                         name, analysis_seg=None,
                         tags=None, input_file_opt='input-file',

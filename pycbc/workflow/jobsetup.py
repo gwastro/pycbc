@@ -28,11 +28,9 @@ and add jobs/nodes to a pycbc workflow. For details about pycbc.workflow see:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
-import logging
 import math, os
 import lal
 from ligo import segments
-import Pegasus.api as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
 
 def int_gps_time_to_str(t):
@@ -461,7 +459,6 @@ class JobSegmenter(object):
             job_valid_seg = segments.segment([lower_boundary,
                                               upper_boundary])
         return job_valid_seg
-
 
     def get_data_times_for_job(self, num_job):
         """ Get the data that this job will read in. """
