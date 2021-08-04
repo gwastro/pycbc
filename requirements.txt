@@ -18,6 +18,7 @@ lscsoft-glue>=1.59.3
 ligo-segments
 tqdm
 gwdatafind
+pegasus-wms.api
 
 # Requirements for ligoxml access needed by some workflows
 python-ligo-lw
