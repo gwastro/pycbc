@@ -655,8 +655,8 @@ class AlignTotalSpin(BaseTransform):
                     maps[parameters.spin1x], maps[parameters.spin1y],
                     maps[parameters.spin1z])
             s2_a, s2_az, s2_pol = coordinates.cartesian_to_spherical(
-                    maps[parameters.spin1x], maps[parameters.spin1y],
-                    maps[parameters.spin1z])
+                    maps[parameters.spin2x], maps[parameters.spin2y],
+                    maps[parameters.spin2z])
  
             output = jframe_to_l0frame(
                 maps[parameters.mass1],
