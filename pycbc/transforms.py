@@ -2223,6 +2223,7 @@ transforms = {
     Logistic.name: Logistic,
     LambdaFromTOVFile.name: LambdaFromTOVFile,
     LambdaFromMultipleTOVFiles.name: LambdaFromMultipleTOVFiles,
+    AlignTotalSpin.name: AlignTotalSpin,
 }
 
 # standard CBC transforms: these are transforms that do not require input
