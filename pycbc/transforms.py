@@ -619,47 +619,21 @@ class ChirpDistanceToDistance(BaseTransform):
 
 class AlignTotalSpin(BaseTransform):
 
-    """Parameters
-    ----------
-    iota : str
-        The name of the iota parameter
-    s1 : str
-        The name of the s1 parameter
-    s2 : str
-        The name of the s2 parameter
-    m1 : str
-        The name of the m1 parameter
-    m2 : str
-        The name of the m2 parameter
-    f_lower : str
-        The name of the f_lower parameter
-    phi_ref : str
-        The name of the phi_ref parameter
-    """
+    """Converts angles from total angular momentum J frame to orbital angular
+     momentum L (waveform) frame"""
 
     name = "align_total_spin"
+    _inputs = [parameters.thetajn, parameters.spin1x, parameters.spin1y,
+               parameters.spin1z, parameters.spin2x, parameters.spin2y,
+               parameters.spin2z, parameters.mass1, parameters.mass2,
+               parameters.f_ref, "phi_ref"]
+    _outputs = [parameters.inclination, parameters.spin1x, parameters.spin1y,
+               parameters.spin1z, parameters.spin2x, parameters.spin2y,
+               parameters.spin2z]
 
-    def __init__(self, iota, s1, s2, m1, m2, f_ref, phi_ref, newIota, news1, news2):
-        self.iota = iota
-        self.s1 = s1
-        self.s2 = s2
-        self.m1 = m1
-        self.m2 = m2
-        self.f_ref = f_ref
-        self.phi_ref = phi_ref
-        self.newIota = newIota
-        self.news1 = news1
-        self.news2 = news2
-        self._inputs = [
-            self.iota,
-            self.s1,
-            self.s2,
-            self.m1,
-            self.m2,
-            self.f_ref,
-            self.phi_ref,
-        ]
-        self._outputs = [self.newIota, self.news1, self.news2]
+    def __init__(self):
+        self.inputs = set(self._inputs)
+        self.outputs = set(self._outputs)
         super(AlignTotalSpin, self).__init__()
 
     def transform(self, maps):
@@ -671,22 +645,25 @@ class AlignTotalSpin(BaseTransform):
         angular momentum.
         """
 
-        s1 = maps[self.s1]
-        s2 = maps[self.s2]
-        if not all(s == 0.0 for s in s1[:2]) or \
-                not all(s == 0.0 for s in s2[:2]):
+        if not all(s == 0.0 for s in
+                [maps[parameters.spin1x], maps[parameters.spin1y],
+                 maps[parameters.spin1z], maps[parameters.spin2x],
+                 maps[parameters.spin2y], maps[parameters.spin2z]]):
+
             # Calculate the quantities required by jframe_to_l0frame
             s1_a, s1_az, s1_pol = coordinates.cartesian_to_spherical(
-                    s1[0], s1[1], s1[2])
+                    maps[parameters.spin1x], maps[parameters.spin1y],
+                    maps[parameters.spin1z])
             s2_a, s2_az, s2_pol = coordinates.cartesian_to_spherical(
-                    s2[0], s2[1], s2[2])
-            
+                    maps[parameters.spin1x], maps[parameters.spin1y],
+                    maps[parameters.spin1z])
+ 
             output = jframe_to_l0frame(
-                maps[self.m1],
-                maps[self.m2],
-                maps[self.f_ref],
-                phiref=maps[self.phi_ref],
-                thetajn=maps[self.iota],
+                maps[parameters.mass1],
+                maps[parameters.mass2],
+                maps[parameters.f_ref],
+                phiref=maps["phi_ref"],
+                thetajn=maps[parameters.thetajn],
                 phijl=numpy.pi,
                 spin1_a=s1_a,
                 spin2_a=s2_a,
@@ -695,23 +672,10 @@ class AlignTotalSpin(BaseTransform):
                 spin12_deltaphi=s1_az-s2_az
             )
 
-            news1 = numpy.zeros(3)
-            news2 = numpy.zeros(3)
-
-            newIota = output["inclination"]
-            news1[0] = output["spin1x"]
-            news1[1] = output["spin1y"]
-            news1[2] = output["spin1z"]
-            news2[0] = output["spin2x"]
-            news2[1] = output["spin2y"]
-            news2[2] = output["spin2z"]
-
-            out = {self.newIota: newIota, self.news1: news1, self.news2: news2}
-            return self.format_output(maps, out)
+            return self.format_output(maps, output)
         else:
-            out = {self.newIota: maps[self.iota], self.news1: s1,
-                   self.news2: s2}
-            return self.format_output(maps, out)
+            output = {parameters.inclination: maps[parameters.thetajn]}
+            return self.format_output(maps, output)
 
 
 class SphericalToCartesian(BaseTransform):
