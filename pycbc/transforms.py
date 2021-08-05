@@ -709,7 +709,8 @@ class AlignTotalSpin(BaseTransform):
             out = {self.newIota: newIota, self.news1: news1, self.news2: news2}
             return self.format_output(maps, out)
         else:
-            out = {self.newIota: iota, self.news1: s1, self.news2: s2}
+            out = {self.newIota: maps[self.iota], self.news1: s1,
+                   self.news2: s2}
             return self.format_output(maps, out)
 
 
