@@ -78,7 +78,8 @@ def cartesian_to_spherical_polar(x, y, z):
     theta : {numpy.array, float}
         The polar angle.
     """
-    return numpy.arccos(z / cartesian_to_spherical_rho(x, y, z))
+    rho = cartesian_to_spherical_rho(x, y, z)
+    return numpy.arccos(z / rho) if rho else 0.0
 
 
 def cartesian_to_spherical(x, y, z):
