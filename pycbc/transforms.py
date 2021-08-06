@@ -618,7 +618,6 @@ class ChirpDistanceToDistance(BaseTransform):
 
 
 class AlignTotalSpin(BaseTransform):
-
     """Converts angles from total angular momentum J frame to orbital angular
      momentum L (waveform) frame"""
 
@@ -645,37 +644,44 @@ class AlignTotalSpin(BaseTransform):
         angular momentum.
         """
 
-        if not all(s == 0.0 for s in
-                [maps[parameters.spin1x], maps[parameters.spin1y],
-                 maps[parameters.spin1z], maps[parameters.spin2x],
-                 maps[parameters.spin2y], maps[parameters.spin2z]]):
+        if isinstance(maps, dict):
+            maps = record.FieldArray.from_kwargs(**maps)
+        newfields = [n for n in self._outputs if n not in maps.fieldnames]
+        newmaps = maps.add_fields([numpy.zeros(len(maps))]*len(newfields),
+                                  names=newfields)
+        for item in newmaps:
+            if not all(s == 0.0 for s in
+                    [item[parameters.spin1x], item[parameters.spin1y],
+                     item[parameters.spin2x], item[parameters.spin2y]]):
 
-            # Calculate the quantities required by jframe_to_l0frame
-            s1_a, s1_az, s1_pol = coordinates.cartesian_to_spherical(
-                    maps[parameters.spin1x], maps[parameters.spin1y],
-                    maps[parameters.spin1z])
-            s2_a, s2_az, s2_pol = coordinates.cartesian_to_spherical(
-                    maps[parameters.spin2x], maps[parameters.spin2y],
-                    maps[parameters.spin2z])
- 
-            output = jframe_to_l0frame(
-                maps[parameters.mass1],
-                maps[parameters.mass2],
-                maps[parameters.f_ref],
-                phiref=maps["phi_ref"],
-                thetajn=maps[parameters.thetajn],
-                phijl=numpy.pi,
-                spin1_a=s1_a,
-                spin2_a=s2_a,
-                spin1_polar=s1_pol,
-                spin2_polar=s2_pol,
-                spin12_deltaphi=s1_az-s2_az
-            )
+                # Calculate the quantities required by jframe_to_l0frame
+                s1_a, s1_az, s1_pol = coordinates.cartesian_to_spherical(
+                        item[parameters.spin1x], item[parameters.spin1y],
+                        item[parameters.spin1z])
+                s2_a, s2_az, s2_pol = coordinates.cartesian_to_spherical(
+                        item[parameters.spin2x], item[parameters.spin2y],
+                        item[parameters.spin2z])
 
-            return self.format_output(maps, output)
-        else:
-            output = {parameters.inclination: maps[parameters.thetajn]}
-            return self.format_output(maps, output)
+                out = jframe_to_l0frame(
+                    item[parameters.mass1],
+                    item[parameters.mass2],
+                    item[parameters.f_ref],
+                    phiref=item["phi_ref"],
+                    thetajn=item[parameters.thetajn],
+                    phijl=numpy.pi,
+                    spin1_a=s1_a,
+                    spin2_a=s2_a,
+                    spin1_polar=s1_pol,
+                    spin2_polar=s2_pol,
+                    spin12_deltaphi=s1_az-s2_az
+                )
+
+                for key in out:
+                    item[key] = out[key]
+            else:
+                item[parameters.inclination] = item[parameters.thetajn]
+
+        return newmaps
 
 
 class SphericalToCartesian(BaseTransform):
