@@ -140,15 +140,18 @@ class BaseGaussianNoise(BaseDataModel):
                     "which will be used for all detectors")
 
         # check that the data sets all have the same delta fs and delta ts
-        dts = numpy.array([d.delta_t for d in self.data.values()])
-        dfs = numpy.array([d.delta_f for d in self.data.values()])
-        if not all(dts == dts[0]):
-            raise ValueError("all data must have the same sample rate")
-        if not all(dfs == dfs[0]):
-            raise ValueError("all data must have the same segment length")
+        #dts = numpy.array([d.delta_t for d in self.data.values()])
+        #dfs = numpy.array([d.delta_f for d in self.data.values()])
+        #if not all(dts == dts[0]):
+        #    raise ValueError("all data must have the same sample rate")
+        #if not all(dfs == dfs[0]):
+        #    raise ValueError("all data must have the same segment length")
 
         # store the number of samples in the time domain
-        self._N = int(1./(dts[0]*dfs[0]))
+        # self._N = int(1./(dts[0]*dfs[0]))
+        self._N = {}
+        for (det, d) in self._data.items():
+            self._N[det] = int(1./(d.delta_f*d.delta_t)) 
 
         # set lower/upper frequency cutoff
         if high_frequency_cutoff is None:
@@ -163,7 +166,7 @@ class BaseGaussianNoise(BaseDataModel):
         for (det, d) in self._data.items():
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
                                                      self._f_upper[det],
-                                                     d.delta_f, self._N)
+                                                     d.delta_f, self._N[det])
             self._kmin[det] = kmin
             self._kmax[det] = kmax
 
@@ -250,7 +253,7 @@ class BaseGaussianNoise(BaseDataModel):
         for det, d in self._data.items():
             if psds is None:
                 # No psd means assume white PSD
-                p = FrequencySeries(numpy.ones(int(self._N/2+1)),
+                p = FrequencySeries(numpy.ones(int(self._N[det]/2+1)),
                                     delta_f=d.delta_f)
             else:
                 # copy for storage
@@ -333,7 +336,7 @@ class BaseGaussianNoise(BaseDataModel):
             dt = self._whitened_data[det].delta_t
             kmin = self._kmin[det]
             kmax = self._kmax[det]
-            lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
+            lognorm = -float(self._N[det]*numpy.log(numpy.pi*self._N[det]*dt)/2.
                              + numpy.log(p[kmin:kmax]).sum())
             self._lognorm[det] = lognorm
             return self._lognorm[det]
