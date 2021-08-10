@@ -1119,8 +1119,12 @@ class MatchedFilterTHAControl(object):
             self.iffts[i].execute()
             if i == 0:
                 self.snr_mem[:] = abs(self.snr_mem_comps[i])**2
+                curr_lgc = self.snr_mem.data[:] > -1
             else:
                 self.snr_mem[:] += abs(self.snr_mem_comps[i])**2
+                curr_lgc = curr_lgc & (abs(self.snr_mem_comps[0].data)**2 > abs(self.snr_mem_comps[i].data)**2) 
+        self.snr_mem[:] = self.snr_mem[:]**0.5
+        self.snr_mem.data[~curr_lgc] = 0
 
         snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
 
@@ -1133,7 +1137,7 @@ class MatchedFilterTHAControl(object):
         snr_for_chisq = TimeSeries(self.snr_mem1, epoch=epoch, delta_t=self.delta_t, copy=False)
         corr = FrequencySeries(self.corr_mem1, delta_f=self.delta_f, copy=False)
         offset = self.threshold_and_clusterers[segnum].mem_slice.start
-        snrv_for_chisq = numpy.array([snr_full[offset+cidx] for cidx in idx])
+        snrv_for_chisq = numpy.array([snr_for_chisq[offset+cidx] for cidx in idx])
         return snr_full, snr_for_chisq, norm, corr, idx, snrv, snrv_for_chisq
 
 
