@@ -47,7 +47,11 @@ xinj = InjectionSet(args.injection_file)
 
 data = {}
 for key in xinj.table[0].__slots__:
-    data[str(key)] = numpy.array([getattr(t, key) for t in xinj.table])
+    # Some XML files can have empty columns which are read as None in python.
+    # For these cases we ignore the columns so they do not appear in the output
+    # HDF file. I note that such XML files are invalid in C.
+    if getattr(xinj.table[0], key) is not None:
+        data[str(key)] = numpy.array([getattr(t, key) for t in xinj.table])
 
 for k in ['simulation_id', 'process_id']:
     a = data.pop(k)
