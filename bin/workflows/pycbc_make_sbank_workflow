@@ -215,18 +215,14 @@ if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
         raise ValueError("No seed bank actually provided!")
     seed_files = []
     for seed_bank in seed_banks:
-        # FIXME: This block should look something like this. However, pegasus
-        #        doesn't really handle output files from sub-workflows well.
-        #        Therefore we must basically treat these as separate files.
-        #        Just be careful that the file probably won't exist when the
-        #        dax file is generated. Don't run anything that assumes it will
-        #        be there
-        #if not args.is_sub_workflow:
-        #    seed_file = wf.resolve_url_to_file(seed_bank)
-        #else:
-        #    seed_file = pwf.File(os.path.basename(seed_bank))
-        # For now we then use:
-        seed_file = wf.resolve_url_to_file(seed_bank)
+        # NOTE: Be careful that the seed-file will not exist when the
+        #       dax file is generated if this is a sub-workflow.
+        #       Don't run anything that assumes it will be there
+        if not args.is_sub_workflow:
+            seed_file = wf.resolve_url_to_file(seed_bank)
+        else:
+            seed_file = wf.from_path(os.path.basename(seed_bank),
+                                     store_file=False)
         seed_files.append(seed_file)
     if len(seed_files) == 1:
         seed_file = seed_files[0]
