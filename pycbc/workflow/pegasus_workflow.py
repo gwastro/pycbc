@@ -649,6 +649,10 @@ class File(dax.File):
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
+        logging.warn("The from_path method in pegasus_workflow is deprecated. "
+                     "Please use File.from_path (for output files) in core.py "
+                     "or resolve_url_to_file in core.py (for input files) "
+                     "instead.")
         urlparts = urlsplit(path)
         site = 'nonlocal'
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
@@ -657,6 +661,6 @@ class File(dax.File):
                 path = urljoin('file:', pathname2url(path)) 
                 site = 'local'
 
-        fil = File(os.path.basename(path))
+        fil = cls(os.path.basename(path))
         fil.add_pfn(path, site=site)
         return fil

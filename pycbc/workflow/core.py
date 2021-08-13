@@ -1218,6 +1218,33 @@ class File(pegasus_workflow.File):
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start,
                                    duration, extension)
 
+    @classmethod
+    def from_path(cls, path, attrs=None):
+        """
+        Create an output File object from path, with optional attributes.
+        """
+        if attrs is None:
+            attrs = {}
+        if attrs and 'ifos' in attrs:
+            ifos = attrs['ifos']
+        else:
+            ifos = ['H1', 'K1', 'L1', 'V1']
+        if attrs and 'exe_name' in attrs:
+            exe_name = attrs['exe_name']
+        else:
+            exe_name = 'INPUT'
+        if attrs and 'segs' in attrs:
+            segs = attrs['segs']
+        else:
+            segs = segments.segment([1, 2000000000])
+        if attrs and 'tags' in attrs:
+            tags = attrs['tags']
+        else:
+            tags = []
+
+        curr_file = cls(ifos, exe_name, segs, local_file_path, tags=tags)
+        return curr_file
+
 class FileList(list):
     '''
     This class holds a list of File objects. It inherits from the
@@ -2030,25 +2057,8 @@ def resolve_url_to_file(curr_pfn, attrs=None):
         # Use resolve_url to download file/symlink as appropriate
         local_file_path = resolve_url(curr_pfn)
         # Create File object with default local path
-        # To do this we first need to check the attributes
-        if attrs and 'ifos' in attrs:
-            ifos = attrs['ifos']
-        else:
-            ifos = ['H1', 'K1', 'L1', 'V1']
-        if attrs and 'exe_name' in attrs:
-            exe_name = attrs['exe_name']
-        else:
-            exe_name = 'INPUT'
-        if attrs and 'segs' in attrs:
-            segs = attrs['segs']
-        else:
-            segs = segments.segment([1, 2000000000])
-        if attrs and 'tags' in attrs:
-            tags = attrs['tags']
-        else:
-            tags = []
+        curr_file = File.from_path(local_file_path, attrs=attrs)
 
-        curr_file = File(ifos, exe_name, segs, local_file_path, tags=tags)
         if curr_pfn.startswith(cvmfsstrs):
             # Add PFNs for nonlocal sites for special cases (e.g. CVMFS).
             # This block could be extended as needed
