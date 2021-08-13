@@ -66,6 +66,7 @@ class GeomBankExecutable(wf.Executable):
       
         node.add_input_opt('--supplement-config-file', config_file)
 
+        node.add_opt('--workflow-name', workflow_name)
         node.add_opt('--storage-path-base', out_storage_path)      
         node.add_opt('--is-sub-workflow','')
 
@@ -77,10 +78,10 @@ class GeomBankExecutable(wf.Executable):
                                  '--metadata-file', 
                                  tags=self.tags + ['METADATA'])
         node.new_output_file_opt(analysis_time, '.dax',
-                                 '--dax-filename',
+                                 '--dax-file',
                                  tags=self.tags + ['DAX'])
         node.new_output_file_opt(analysis_time, '.map',
-                                 '--map-filename',
+                                 '--output-map',
                                  tags=self.tags + ['MAP'])
         node.add_opt('--main-workflow-directory', pegasus_base_dir)
         return node
@@ -117,7 +118,7 @@ class SbankDaxGenerator(wf.Executable):
         if seed_files is not None:
             sfs = []
             for seed_file in seed_files:
-                sfs.append(seed_file)
+                sfs.append(seed_file.name)
             config_overrides.append('workflow:seed-bank:"%s"' % ' '.join(sfs))
 
         if len(config_overrides):
@@ -125,10 +126,10 @@ class SbankDaxGenerator(wf.Executable):
                                        
 
         node.new_output_file_opt(analysis_time, '.dax',
-                                 '--dax-filename',
+                                 '--dax-file',
                                  tags=self.tags + sub_wf_tags + ['DAX'])
         node.new_output_file_opt(analysis_time, '.map',
-                                 '--map-filename',
+                                 '--output-map',
                                  tags=self.tags + sub_wf_tags + ['MAP'])
         node.add_opt('--main-workflow-directory', pegasus_base_dir)
 
@@ -172,11 +173,6 @@ geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
                               ifos=workflow.ifos, out_dir='daxes')
 # This one's a bit weird as the dag generator names the final output file,
 # but that job doesn't *generate* it, so we create this file first.
-# However, this file must *not* appear in the output mapper, as then the 
-# sub-workflow will think that it already exists. So for now we are setting
-# store_file=False and relying on the sub-workflow to specify the PFN for this
-# file. Hopefully this will work if we need to add this file as a dependancy
-# for a later sub-workflow.
 geom_out_dir = os.path.abspath('initial_geom_bank')
 geom_out_file = wf.File(geom_exe.ifo_list, geom_exe.name,
                         workflow.analysis_time, extension='.h5',
@@ -209,7 +205,6 @@ dax_job.set_subworkflow_properties(map_file,
 dax_job.add_inputs(metadata_file, intermediate_file)
 
 # And this output is used again so declare it.
-# Exact this doesn't work. See notes at bottom!!!
 dax_job.add_outputs(geom_out_file, stage_out=True)
 workflow._outputs.append(geom_out_file)
 
@@ -269,19 +264,13 @@ sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
                          directory=os.path.abspath('sbank_final'),
                          tags=['sbank_final'], use_tmp_subdirs=False)
 
-# FIXME: As pegasus does not really support sub-workflows generating output
-#        files, we have to handle these carefully. We basically trick pegasus
-#        into thinking that these are separate files.
-# Here's what the code should really look like
-seed_files = [geom_out_file.name]
+seed_files = [geom_out_file]
 if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-    seed_files = [geom_out_file.name, sbank_out_file_bbh.name]
-# Here's what it does look like
-#seed_files = [geom_out_file.storage_path]
-#if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-#    seed_files += [sbank_out_file_bbh.storage_path]
+    seed_files = [geom_out_file, sbank_out_file_bbh]
 
-
+# NOTE: The call to generate this workflow actually doesn't depend on the input
+#       seed banks being generated. It will only pass the name of these files
+#       along, and not do anything with them.
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                    os.path.abspath('sbank_final'),
                                    sbank_out_file_final,
@@ -298,15 +287,16 @@ dax_job = SubWorkflow(dax_file, is_planned=False, _id='sbank_final')
 dax_job.set_subworkflow_properties(map_file,
                                    workflow.out_dir,
                                    staging_site=workflow.staging_site)
+dax_job.add_inputs(*seed_files)
 dax_job.add_into_workflow(workflow)
 
 # FIXME: This bit needs resolving without calling to _adag here.
 #        For now I'm waiting on discussions with pegasus about subworkflows.
 # These dependencies must be added manually as no data linkage is known to
 # pegasus.
-if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-    workflow._adag.add_dependency(dax_job, parents=[sbank_bbh_dax_job])
-workflow._adag.add_dependency(dax_job, parents=[geom_dax_job])
+#if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
+#    workflow._adag.add_dependency(dax_job, parents=[sbank_bbh_dax_job])
+#workflow._adag.add_dependency(dax_job, parents=[geom_dax_job])
 
 workflow.save()
 
