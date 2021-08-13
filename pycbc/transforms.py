@@ -2265,7 +2265,7 @@ def order_transforms(transforms):
         out without error.
     """
     # get a set of all inputs and all outputs
-    outputs = set().union(*[t.outputs for t in transforms])
+    outputs = set().union(*[set(t.outputs)-set(t.inputs) for t in transforms])
     out = []
     remaining = [t for t in transforms]
     while remaining:
