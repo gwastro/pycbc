@@ -557,6 +557,10 @@ class SubWorkflow(dax.SubWorkflow):
                                    out_dir,
                                    staging_site):
 
+        # FIXME: Pegasus added a add_planner_args for SubWorkflows. We should
+        #        use this, but it can only be called once, so we'd have to
+        #        store options at PyCBC level and then call this once when
+        #        saving the workflow.
         self.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
                       os.path.basename(output_map_file.name))
         self.add_inputs(output_map_file)
@@ -565,7 +569,7 @@ class SubWorkflow(dax.SubWorkflow):
         # does not exist at submission time.
         bname = os.path.splitext(os.path.basename(self.file))[0]
         self.add_args('--basename {}'.format(bname))
-
+        self.add_args('--output-sites local')
         self.add_args('--cleanup inplace')
         self.add_args('--cluster label,horizontal')
         self.add_args('-vvv')
