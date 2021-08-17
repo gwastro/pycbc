@@ -340,10 +340,10 @@ class ComovingVolInterpolator(object):
         What parameter to interpolate.
     default_maxz : float, optional
         The maximum z to interpolate up to before falling back to calling
-        astropy directly. Default is 1000.
+        astropy directly. Default is 10.
     numpoints : int, optional
         The number of points to use in the linear interpolation between 0 to 1
-        and 1 to ``default_maxz``. Default is 10000.
+        and 1 to ``default_maxz``. Default is 1000.
     \**kwargs :
         All other keyword args are passed to :py:func:`get_cosmology` to
         select a cosmology. If none provided, will use
@@ -359,14 +359,14 @@ class ComovingVolInterpolator(object):
         self.nearby_interp = None
         self.faraway_interp = None
         self.default_maxvol = None
+        self.vol_func = self.cosmology.comoving_volume
+        self.vol_units = units.Mpc**3
 
     def _create_interpolant(self, minz, maxz):
-        minlogv = numpy.log(self.cosmology.comoving_volume(minz).value)
-        maxlogv = numpy.log(self.cosmology.comoving_volume(maxz).value)
-        # for computing nearby (z < 1) redshifts
+        minlogv = numpy.log(self.vol_func.value)
+        maxlogv = numpy.log(self.vol_func.value)
         logvs = numpy.linspace(minlogv, maxlogv, num=self.numpoints)
-        zs = z_at_value(self.cosmology.comoving_volume, numpy.exp(logvs),
-                        units.Mpc**3)
+        zs = z_at_value(self.vol_func, numpy.exp(logvs), self.vol_units)
         if self.parameter != 'redshift':
             ys = cosmological_quantity_from_redshift(zs, self.parameter)
         else:
@@ -411,8 +411,8 @@ class ComovingVolInterpolator(object):
             # well... check that the logv is finite first
             if not numpy.isfinite(logv).all():
                 raise ValueError("comoving volume must be finite and > 0")
-            zs = z_at_value(self.cosmology.comoving_volume,
-                            numpy.exp(logv[replacemask]), units.Mpc**3)
+            zs = z_at_value(self.vol_func,
+                            numpy.exp(logv[replacemask]), self.vol_units)
             if self.parameter == 'redshift':
                 vals[replacemask] = zs
             else:
