@@ -31,7 +31,7 @@ Any other distance measure is explicitly named; e.g., ``comoving_distance``.
 
 import logging
 import numpy
-from scipy import interpolate
+from scipy import interpolate, integrate
 import astropy.cosmology
 from astropy import units
 from astropy.cosmology.core import CosmologyError
@@ -352,8 +352,7 @@ class ComovingVolInterpolator(object):
         :py:attr:`DEFAULT_COSMOLOGY`.
     """
     def __init__(self, parameter, default_maxz=10., numpoints=1000,
-                 vol_func = self.cosmology.comoving_volume,
-                 **kwargs):
+                 vol_func=None, **kwargs):
         self.parameter = parameter
         self.numpoints = int(numpoints)
         self.default_maxz = default_maxz
@@ -363,14 +362,18 @@ class ComovingVolInterpolator(object):
         self.nearby_interp = None
         self.faraway_interp = None
         self.default_maxvol = None
-        self.vol_func = vol_func
-        self.vol_units = vol_fun(0.5).unit
+        if vol_func is not None:
+            self.vol_func = vol_func
+        else:
+            self.vol_func = self.cosmology.comoving_volume
+        self.vol_units = self.vol_func(0.5).unit
 
     def _create_interpolant(self, minz, maxz):
-        minlogv = numpy.log(self.vol_func.value)
-        maxlogv = numpy.log(self.vol_func.value)
+        minlogv = numpy.log(self.vol_func(minz).value)
+        maxlogv = numpy.log(self.vol_func(maxz).value)
         logvs = numpy.linspace(minlogv, maxlogv, num=self.numpoints)
         zs = z_at_value(self.vol_func, numpy.exp(logvs), self.vol_units)
+
         if self.parameter != 'redshift':
             ys = cosmological_quantity_from_redshift(zs, self.parameter)
         else:
@@ -390,7 +393,7 @@ class ComovingVolInterpolator(object):
         maxz = self.default_maxz
         self.faraway_interp = self._create_interpolant(minz, maxz)
         # store the default maximum volume
-        self.default_maxvol = numpy.log(self.vol_func.value)
+        self.default_maxvol = numpy.log(self.vol_func(maxz).value)
 
     def get_value_from_logv(self, logv):
         """Returns the redshift for the given distance.
@@ -475,7 +478,6 @@ def redshift_from_comoving_volume(vc, interp=True, **kwargs):
         z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
     return z
 
-
 def distance_from_comoving_volume(vc, interp=True, **kwargs):
     r"""Returns the luminosity distance from the given comoving volume.
 
@@ -513,6 +515,69 @@ def distance_from_comoving_volume(vc, interp=True, **kwargs):
         dist = cosmology.luminosity_distance(z).value
     return dist
 
+def madau_dickinson_2014(z):
+    """ The madau-dickinson 2014 stellar-formation rate
+    """
+    # stellar-formation rate density from https://arxiv.org/pdf/1403.0007.pdf
+    # units are M⊙ year−1 Mpc−3
+    val = 0.015 * (1 + z) ** 2.7 / (1 + ((1 + z) / 2.9) ** 5.6)
+    return val * units.year ** -1 * units.Mpc**3 * units.solMass
+
+def rate_from_redshift(z, rate_density, **kwargs):
+    """Total rate of occurances out to some redshift
+
+    Parameters
+    ----------
+    z : float
+        The redshift.
+    rate_density : function
+        The rate density per unit volume as a function of redshift.
+    \**kwargs :
+        All other keyword args are passed to :py:func:`get_cosmology` to
+        select a cosmology. If none provided, will use
+        :py:attr:`DEFAULT_COSMOLOGY`.
+
+    Returns
+    -------
+    rate: float
+        The total rate of occurances out to some redshift
+    """
+    cosmology = get_cosmology(**kwargs)
+    def diff_rate(z):
+        dr = cosmology.differential_comoving_volume(z) / (1 + z)
+        return (dr * 4 * numpy.pi * rate_density(z)).value
+    return integrate.quad(diff_rate, 0, z)[0]
+
+def distance_from_rate(vc, rate_density, **kwargs):
+    r"""Returns the luminosity distance from the given total rate value
+
+    Parameters
+    ----------
+    vc : float
+        The total rate
+    \**kwargs :
+        All other keyword args are passed to :py:func:`get_cosmology` to
+        select a cosmology. If none provided, will use
+        :py:attr:`DEFAULT_COSMOLOGY`.
+
+    Returns
+    -------
+    float :
+        The luminosity distance at the given comoving volume.
+    """
+    cosmology = get_cosmology(**kwargs)
+    if not hasattr(rate_density, 'dist_interp'):
+        rate_density.dist_interp = {}
+
+    if cosmology.name not in rate_density.dist_interp:
+        def rate_func(z):
+            return rate_from_redshift(z, rate_density) * rate_density(0.5).unit
+
+        rate_density.dist_interp[cosmology.name] = ComovingVolInterpolator(
+                                        'luminosity_distance',
+                                        vol_func=rate_func,
+                                        cosmology=cosmology)
+    return rate_density.dist_interp[cosmology.name](vc)
 
 def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
                                         **kwargs):
@@ -546,7 +611,7 @@ def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
     return val
 
 
-__all__ = ['redshift', 'redshift_from_comoving_volume',
-           'distance_from_comoving_volume',
+__all__ = ['rate_from_redshift', 'redshift', 'redshift_from_comoving_volume',
+           'distance_from_comoving_volume', 'distance_from_rate',
            'cosmological_quantity_from_redshift',
            ]
