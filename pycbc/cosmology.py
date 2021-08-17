@@ -344,12 +344,16 @@ class ComovingVolInterpolator(object):
     numpoints : int, optional
         The number of points to use in the linear interpolation between 0 to 1
         and 1 to ``default_maxz``. Default is 1000.
+    vol_func: function, optional
+        Optionally set how the volume is calculated by providing a function
     \**kwargs :
         All other keyword args are passed to :py:func:`get_cosmology` to
         select a cosmology. If none provided, will use
         :py:attr:`DEFAULT_COSMOLOGY`.
     """
-    def __init__(self, parameter, default_maxz=10., numpoints=1000, **kwargs):
+    def __init__(self, parameter, default_maxz=10., numpoints=1000,
+                 vol_func = self.cosmology.comoving_volume,
+                 **kwargs):
         self.parameter = parameter
         self.numpoints = int(numpoints)
         self.default_maxz = default_maxz
@@ -359,8 +363,8 @@ class ComovingVolInterpolator(object):
         self.nearby_interp = None
         self.faraway_interp = None
         self.default_maxvol = None
-        self.vol_func = self.cosmology.comoving_volume
-        self.vol_units = units.Mpc**3
+        self.vol_func = vol_func
+        self.vol_units = vol_fun(0.5).unit
 
     def _create_interpolant(self, minz, maxz):
         minlogv = numpy.log(self.vol_func.value)
@@ -386,8 +390,7 @@ class ComovingVolInterpolator(object):
         maxz = self.default_maxz
         self.faraway_interp = self._create_interpolant(minz, maxz)
         # store the default maximum volume
-        self.default_maxvol = \
-            numpy.log(self.cosmology.comoving_volume(maxz).value)
+        self.default_maxvol = numpy.log(self.vol_func.value)
 
     def get_value_from_logv(self, logv):
         """Returns the redshift for the given distance.
