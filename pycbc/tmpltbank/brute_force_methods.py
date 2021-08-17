@@ -320,10 +320,10 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
     # larger than any thresholds used in the functions in brute_force_utils.py
     # and will always be rejected. An unphysical value cannot be used as it
     # would result in unphysical metric distances and cause failures.
-    totmass[mass1 < massRangeParams.minMass1] = 0.0001
-    totmass[mass1 > massRangeParams.maxMass1] = 0.0001
-    totmass[mass2 < massRangeParams.minMass2] = 0.0001
-    totmass[mass2 > massRangeParams.maxMass2] = 0.0001
+    totmass[mass1 < massRangeParams.minMass1*0.9999] = 0.0001
+    totmass[mass1 > massRangeParams.maxMass1*1.0001] = 0.0001
+    totmass[mass2 < massRangeParams.minMass2*0.9999] = 0.0001
+    totmass[mass2 > massRangeParams.maxMass2*1.0001] = 0.0001
     # There is some numerical error which can push this a bit higher. We do
     # *not* want to reject the initial guide point. This error comes from
     # Masses -> totmass, eta -> masses conversion, we will have points pushing
