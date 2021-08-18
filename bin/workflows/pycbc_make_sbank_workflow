@@ -221,8 +221,8 @@ if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
         if not args.is_sub_workflow:
             seed_file = wf.resolve_url_to_file(seed_bank)
         else:
-            seed_file = wf.from_path(os.path.basename(seed_bank),
-                                     store_file=False)
+            seed_file = wf.File.from_path(os.path.basename(seed_bank),
+                                          store_file=False)
         seed_files.append(seed_file)
     if len(seed_files) == 1:
         seed_file = seed_files[0]
