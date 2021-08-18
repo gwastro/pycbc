@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Make table of the foreground coincident events. Also includes ability to 
+Make table of the foreground coincident events. Also includes ability to
 write FARs and p-values for intermediary hierarchical removal steps.
 """
 import argparse
@@ -80,7 +80,7 @@ if h_num_rm is not None and h_iterations is not None \
                                       sngl_files=args.single_detector_triggers,
                                       n_loudest=args.num_coincs_to_write,
                                       group='foreground_h%s' % h_num_rm)
-    # read in the regular triggers to get the exclusive ifar which is 
+    # read in the regular triggers to get the exclusive ifar which is
     # independent of any removal
     fortrigs_exclusive = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                            sngl_files=args.single_detector_triggers,
@@ -110,7 +110,7 @@ if args.output_file.endswith('.html'):
 
         # This information is not stored at all levels of the coinc trigger file
         # so grab from the top level and populate the variables for output later
- 
+
         ifar_exc_orig = fortrigs_exclusive.get_coincfile_array('ifar_exc')
         fap_exc_orig = fortrigs_exclusive.get_coincfile_array('fap_exc')
 
@@ -172,13 +172,64 @@ if args.output_file.endswith('.html'):
             format_strings.append("##.##")
 
     logging.info('Making table of foreground triggers')
-    html_table = pycbc.results.html_table(columns, names, 
+    html_table = pycbc.results.html_table(columns, names,
                                    format_strings=format_strings, page_size=10)
 
-    kwds = { 'title' : 'Loudest Event Table', 
+    kwds = { 'title' : 'Loudest Event Table',
         'cmd' :' '.join(sys.argv), }
     save_fig_with_metadata(str(html_table), args.output_file, **kwds)
 
 elif args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
     fortrigs.to_coinc_xml_object(args.output_file)
 
+elif args.output_file.endswith('.hdf'):
+    ofd = h5py.File(args.output_file,'w')
+
+    # Some fields are special cases:
+
+    time = fortrigs.get_end_time()
+    ofd.create_dataset('end_time', data=time, dtype=numpy.float32)
+
+    far = 1. / fortrigs.get_coincfile_array('ifar')
+    ofd.create_dataset('false_alarm_rate', data=far, dtype=numpy.float32)
+
+    far_exc = 1. / fortrigs.get_coincfile_array('ifar_exc')
+    ofd.create_dataset('false_alarm_rate_exclusive', data=far_exc,
+                       dtype=numpy.float32)
+
+    fap = fortrigs.get_coincfile_array('fap')
+    ofd.create_dataset('p_value', data=fap,
+                       dtype=numpy.float32)
+
+    fap_exc = fortrigs.get_coincfile_array('fap_exc')
+    ofd.create_dataset('p_value_exclusive', data=fap_exc,
+                       dtype=numpy.float32)
+
+    # Coinc fields
+    for field in ['stat']:
+        vals = fortrigs.get_coincfile_array(field)
+        ofd.create_dataset(field, data=vals, dtype=numpy.float32)
+
+    # Bank fields
+    for field in ['mass1','mass2','spin1z','spin2z']:
+        vals = fortrigs.get_bankfile_array(field)
+        ofd.create_dataset(field, data=vals, dtype=numpy.float32)
+
+    mass1 = fortrigs.get_bankfile_array('mass1')
+    mass2 = fortrigs.get_bankfile_array('mass2')
+    mchirp, _ = mass1_mass2_to_mchirp_eta(mass1, mass2)
+
+    ofd.create_dataset('chirp_mass', data=mchirp, dtype=numpy.float32)
+
+    # Single-detector fields
+    for field in ['chisq', 'chisq_dof', 'coa_phase', 'end_time',
+                  'sg_chisq', 'sigmasq', 'snr']:
+        vals_valid = fortrigs.get_snglfile_array_dict(field)
+        for ifo in fortrigs.ifos:
+            vals = vals_valid[ifo][0]
+            valid = vals_valid[ifo][1]
+            vals[numpy.logical_not(valid)] = -1.
+            ofd.create_dataset(ifo + '_'+field, data=vals,
+                               dtype=numpy.float32)
+else:
+    raise NotImplementedError("Output file format not recognised")

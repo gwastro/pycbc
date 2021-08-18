@@ -25,6 +25,7 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
+from pycbc.events import mean_if_greater_than_zero
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -802,13 +803,10 @@ class ForegroundTriggers(object):
     def get_end_time(self):
         try:  # First try new-style format
             ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
-            ref_times = None
-            for ifo in ifos:
-                times = self.get_coincfile_array('{}/time'.format(ifo))
-                if ref_times is None:
-                    ref_times = times
-                else:
-                    ref_times[ref_times < 0] = times[ref_times < 0]
+            times_gen = (self.get_coincfile_array('{}/time'.format(ifo))
+                         for ifo in ifos)
+            ref_times = np.array([mean_if_greater_than_zero(t)[0]
+                                  for t in zip(*times_gen)])
         except KeyError:  # Else fall back on old two-det format
             ref_times = self.get_coincfile_array('time1')
         return ref_times
