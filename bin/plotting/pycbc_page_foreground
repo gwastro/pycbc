@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Make table of the foreground coincident events. Also includes ability to 
+Make table of the foreground coincident events. Also includes ability to
 write FARs and p-values for intermediary hierarchical removal steps.
 """
 import argparse
@@ -80,7 +80,7 @@ if h_num_rm is not None and h_iterations is not None \
                                       sngl_files=args.single_detector_triggers,
                                       n_loudest=args.num_coincs_to_write,
                                       group='foreground_h%s' % h_num_rm)
-    # read in the regular triggers to get the exclusive ifar which is 
+    # read in the regular triggers to get the exclusive ifar which is
     # independent of any removal
     fortrigs_exclusive = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                            sngl_files=args.single_detector_triggers,
@@ -110,7 +110,7 @@ if args.output_file.endswith('.html'):
 
         # This information is not stored at all levels of the coinc trigger file
         # so grab from the top level and populate the variables for output later
- 
+
         ifar_exc_orig = fortrigs_exclusive.get_coincfile_array('ifar_exc')
         fap_exc_orig = fortrigs_exclusive.get_coincfile_array('fap_exc')
 
@@ -172,13 +172,18 @@ if args.output_file.endswith('.html'):
             format_strings.append("##.##")
 
     logging.info('Making table of foreground triggers')
-    html_table = pycbc.results.html_table(columns, names, 
+    html_table = pycbc.results.html_table(columns, names,
                                    format_strings=format_strings, page_size=10)
 
-    kwds = { 'title' : 'Loudest Event Table', 
+    kwds = { 'title' : 'Loudest Event Table',
         'cmd' :' '.join(sys.argv), }
     save_fig_with_metadata(str(html_table), args.output_file, **kwds)
 
 elif args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
     fortrigs.to_coinc_xml_object(args.output_file)
 
+elif args.output_file.endswith('.hdf'):
+    fortrigs.to_coinc_hdf_object(args.output_file)
+
+else:
+    raise NotImplementedError("Output file format not recognised")
