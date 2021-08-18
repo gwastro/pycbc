@@ -523,7 +523,7 @@ class SingleDetTHAPowerChisq(SingleDetPowerChisq):
     maximizing analytically over sky location.
     """
     def __init__(self, **kwds):
-        super(SingleDetSkyMaxPowerChisq, self).__init__(**kwds)
+        super(SingleDetTHAPowerChisq, self).__init__(**kwds)
         self.template_mem = None
         self.corr_mem = None
 

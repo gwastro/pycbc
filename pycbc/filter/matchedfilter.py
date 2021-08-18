@@ -1134,11 +1134,26 @@ class MatchedFilterTHAControl(object):
         logging.info("%s points above threshold" % str(len(idx)))
 
         snr_full = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
-        snr_for_chisq = TimeSeries(self.snr_mem1, epoch=epoch, delta_t=self.delta_t, copy=False)
-        corr = FrequencySeries(self.corr_mem1, delta_f=self.delta_f, copy=False)
+
+        snr1 = TimeSeries(self.snr_mem1, epoch=epoch, delta_t=self.delta_t,
+                          copy=False)
+        snr2 = TimeSeries(self.snr_mem2, epoch=epoch, delta_t=self.delta_t, 
+                          copy=False)
+        snr3 = TimeSeries(self.snr_mem3, epoch=epoch, delta_t=self.delta_t, 
+                          copy=False)
+        snr4 = TimeSeries(self.snr_mem4, epoch=epoch, delta_t=self.delta_t, 
+                          copy=False)
+        snr5 = TimeSeries(self.snr_mem5, epoch=epoch, delta_t=self.delta_t, 
+                          copy=False)
+        snrs = [snr1, snr2, snr3, snr4, snr5]
+        crr1 = FrequencySeries(self.corr_mem1, delta_f=self.delta_f, copy=False)
+        crr2 = FrequencySeries(self.corr_mem2, delta_f=self.delta_f, copy=False)
+        crr3 = FrequencySeries(self.corr_mem3, delta_f=self.delta_f, copy=False)
+        crr4 = FrequencySeries(self.corr_mem4, delta_f=self.delta_f, copy=False)
+        crr5 = FrequencySeries(self.corr_mem5, delta_f=self.delta_f, copy=False)
+        corrs = [crr1, crr2, crr3, crr4, crr5]
         offset = self.threshold_and_clusterers[segnum].mem_slice.start
-        snrv_for_chisq = numpy.array([snr_for_chisq[offset+cidx] for cidx in idx])
-        return snr_full, snr_for_chisq, norm, corr, idx, snrv, snrv_for_chisq
+        return snr_full, norm, corrs, snrs, idx, snrv
 
 
 def make_frequency_series(vec):
