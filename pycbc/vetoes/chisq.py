@@ -515,3 +515,97 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
             return rchisq, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
         else:
             return None, None
+
+
+class SingleDetTHAPowerChisq(SingleDetPowerChisq):
+    """Class that handles precomputation and memory management for efficiently
+    running the power chisq in a single detector inspiral analysis when
+    maximizing analytically over sky location.
+    """
+    def __init__(self, **kwds):
+        super(SingleDetSkyMaxPowerChisq, self).__init__(**kwds)
+        self.template_mem = None
+        self.corr_mem = None
+
+    def calculate_chisq_bins(self, template):
+        """ Obtain the chisq bins for this template and PSD.
+        """
+        num_bins = int(self.parse_option(template, self.num_bins))
+        # Here template must be whitened, so psd=None implies a flat PSD.
+        bins = power_chisq_bins(template, num_bins, None, template.f_lower)
+        return bins
+
+    def values(self, corrs, snrs, snrv, psd, indices, templates):
+        """ Calculate the chisq at points given by indices.
+
+        Returns
+        -------
+        chisq: Array
+            Chisq values, one for each sample index
+
+        chisq_dof: Array
+            Number of statistical degrees of freedom for the chisq test
+            in the given template
+        """
+        if self.do:
+            num_above = len(indices)
+            if self.snr_threshold:
+                above = abs(snrv) > self.snr_threshold
+                num_above = above.sum()
+                logging.info('%s above chisq activation threshold' % num_above)
+                above_indices = indices[above]
+                above_snrv = snrv[above]
+                rchisq = numpy.zeros(len(indices), dtype=numpy.float32)
+                dof = -100
+            else:
+                above_indices = indices
+                above_snrv = snrv
+
+            if num_above > 0:
+                chisq = []
+                #if self.template_mem is None or \
+                #        (not len(self.template_mem) == len(template_plus)):
+                #    self.template_mem = zeros(len(template_plus),
+                #                dtype=complex_same_precision_as(corr_plus))
+                #if self.corr_mem is None or \
+                #                (not len(self.corr_mem) == len(corr_plus)):
+                #    self.corr_mem = zeros(len(corr_plus),
+                #                dtype=complex_same_precision_as(corr_plus))
+
+                for lidx, index in enumerate(above_indices):
+                    above_local_indices = numpy.array([index])
+                    above_local_snr = numpy.array([above_snrv[lidx]])
+                    local_snrs = [s[index] for s in snrs]
+                    local_phases = [np.angle(s) for s in local_snrs]
+                    print(sum([abs(s)**2 for s in local_snrs])**0.5, above_local_snr)
+                    # Construct template from templates and phases
+                    # Initially making no attempt to optimize ...
+                    template = sum([t * np.exp(1j * - phase) 
+                                    for t, phase in
+                                    zip(templates, local_phases)])
+                    corrs = sum([c * np.exp(1j * - phase)
+                                 for c, phase in
+                                 zip(corrs, local_phases)])
+                    # Re-normalize
+                    template = template / len(templates)**0.5
+
+                    template.f_lower = templates[0].f_lower
+                    template.params = templates[0].params
+
+                    bins = self.calculate_chisq_bins(template)
+                    dof = (len(bins) - 1) * 2 - 2
+                    curr_chisq = power_chisq_at_points_from_precomputed(corr,
+                                          above_local_snr, 1.,
+                                          bins, above_local_indices)
+                    chisq.append(curr_chisq[0])
+                chisq = numpy.array(chisq)
+
+            if self.snr_threshold:
+                if num_above > 0:
+                    rchisq[above] = chisq
+            else:
+                rchisq = chisq
+
+            return rchisq, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
+        else:
+            return None, None
