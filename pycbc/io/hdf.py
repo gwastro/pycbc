@@ -1044,7 +1044,7 @@ class ForegroundTriggers(object):
             vals[np.logical_not(valid)] = -1.
             ofd.create_dataset(ifo + '_snr', data=vals,
                                dtype=np.float32)
-            network_snr_sq[valid] += vals[valid]
+            network_snr_sq[valid] += vals[valid] ** 2.0
         network_snr = np.sqrt(network_snr_sq)
         ofd.create_dataset('network_snr', data=network_snr, dtype=np.float32)
 
