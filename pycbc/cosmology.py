@@ -478,6 +478,7 @@ def redshift_from_comoving_volume(vc, interp=True, **kwargs):
         z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
     return z
 
+
 def distance_from_comoving_volume(vc, interp=True, **kwargs):
     r"""Returns the luminosity distance from the given comoving volume.
 
@@ -515,6 +516,7 @@ def distance_from_comoving_volume(vc, interp=True, **kwargs):
         dist = cosmology.luminosity_distance(z).value
     return dist
 
+
 def madau_dickinson_2014(z):
     """ The madau-dickinson 2014 stellar-formation rate
     """
@@ -522,6 +524,7 @@ def madau_dickinson_2014(z):
     # units are M⊙ year−1 Mpc−3
     val = 0.015 * (1 + z) ** 2.7 / (1 + ((1 + z) / 2.9) ** 5.6)
     return val * units.year ** -1 * units.Mpc**3 * units.solMass
+
 
 def rate_from_redshift(z, rate_density, **kwargs):
     """Total rate of occurances out to some redshift
@@ -547,6 +550,7 @@ def rate_from_redshift(z, rate_density, **kwargs):
         dr = cosmology.differential_comoving_volume(z) / (1 + z)
         return (dr * 4 * numpy.pi * rate_density(z)).value
     return integrate.quad(diff_rate, 0, z)[0]
+
 
 def distance_from_rate(vc, rate_density, **kwargs):
     r"""Returns the luminosity distance from the given total rate value
@@ -578,6 +582,7 @@ def distance_from_rate(vc, rate_density, **kwargs):
                                         vol_func=rate_func,
                                         cosmology=cosmology)
     return rate_density.dist_interp[cosmology.name](vc)
+
 
 def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
                                         **kwargs):
