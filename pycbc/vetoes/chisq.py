@@ -578,7 +578,6 @@ class SingleDetTHAPowerChisq(SingleDetPowerChisq):
                     above_local_snr = numpy.array([above_snrv[lidx]])
                     local_snrs = [s[index] for s in snrs[:num_comps]]
                     local_phases = [numpy.angle(s) for s in local_snrs]
-                    print(sum([abs(s)**2 for s in local_snrs])**0.5, above_local_snr)
                     # Construct template from templates and phases
                     # Initially making no attempt to optimize ...
                     template = sum([t * numpy.exp(1j * - phase) 
