@@ -584,7 +584,7 @@ class SingleDetTHAPowerChisq(SingleDetPowerChisq):
                     template = sum([t * numpy.exp(1j * - phase) 
                                     for t, phase in
                                     zip(templates[:num_comps], local_phases)])
-                    corrs = sum([c * numpy.exp(1j * - phase)
+                    corr = sum([c * numpy.exp(1j * - phase)
                                  for c, phase in
                                  zip(corrs[:num_comps], local_phases)])
                     # Re-normalize

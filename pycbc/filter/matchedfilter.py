@@ -1129,7 +1129,7 @@ class MatchedFilterTHAControl(object):
         snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
 
         if len(idx) == 0:
-            return [], [], [], [], [], [], []
+            return [], [], [], [], [], []
 
         logging.info("%s points above threshold" % str(len(idx)))
 
