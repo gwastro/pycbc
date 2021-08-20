@@ -535,7 +535,7 @@ class SingleDetTHAPowerChisq(SingleDetPowerChisq):
         bins = power_chisq_bins(template, num_bins, None, template.f_lower)
         return bins
 
-    def values(self, corrs, snrs, snrv, psd, indices, templates):
+    def values(self, corrs, snrs, snrv, snr_norm, psd, indices, templates):
         """ Calculate the chisq at points given by indices.
 
         Returns
@@ -595,7 +595,7 @@ class SingleDetTHAPowerChisq(SingleDetPowerChisq):
                     bins = self.calculate_chisq_bins(template)
                     dof = (len(bins) - 1) * 2 - 2
                     curr_chisq = power_chisq_at_points_from_precomputed(corr,
-                                          above_local_snr, 1.,
+                                          above_local_snr, snr_norm,
                                           bins, above_local_indices)
                     chisq.append(curr_chisq[0])
                 chisq = numpy.array(chisq)
