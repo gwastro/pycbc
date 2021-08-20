@@ -144,38 +144,6 @@ class UniformPowerLaw(bounded.BoundedDist):
     def lognorm(self):
         return self._lognorm
 
-    def rvs(self, size=1, param=None):
-        """Gives a set of random values drawn from this distribution.
-
-        Parameters
-        ----------
-        size : {1, int}
-            The number of values to generate; default is 1.
-        param : {None, string}
-            If provided, will just return values for the given parameter.
-            Otherwise, returns random values for each parameter.
-
-        Returns
-        -------
-        structured array
-            The random values in a numpy structured array. If a param was
-            specified, the array will only have an element corresponding to the
-            given parameter. Otherwise, the array will have an element for each
-            parameter in self's params.
-        """
-        if param is not None:
-            dtype = [(param, float)]
-        else:
-            dtype = [(p, float) for p in self.params]
-        arr = numpy.zeros(size, dtype=dtype)
-        for (p,_) in dtype:
-            offset = numpy.power(self._bounds[p][0], self.dim)
-            factor = numpy.power(self._bounds[p][1], self.dim) - \
-                                      numpy.power(self._bounds[p][0], self.dim)
-            arr[p] = numpy.random.uniform(0.0, 1.0, size=size)
-            arr[p] = numpy.power(factor * arr[p] + offset, 1.0 / self.dim)
-        return arr
-
     def _cdfinv_param(self, param, value):
         """Return inverse of cdf to map unit interval to parameter bounds.
         """

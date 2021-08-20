@@ -255,38 +255,6 @@ class SinAngle(UniformAngle):
                 numpy.array([kwargs[p] for p in self._params]))).sum()
 
 
-    def rvs(self, size=1, param=None):
-        """Gives a set of random values drawn from this distribution.
-
-        Parameters
-        ----------
-        size : {1, int}
-            The number of values to generate; default is 1.
-        param : {None, string}
-            If provided, will just return values for the given parameter.
-            Otherwise, returns random values for each parameter.
-
-        Returns
-        -------
-        structured array
-            The random values in a numpy structured array. If a param was
-            specified, the array will only have an element corresponding to the
-            given parameter. Otherwise, the array will have an element for each
-            parameter in self's params.
-        """
-        if param is not None:
-            dtype = [(param, float)]
-        else:
-            dtype = [(p, float) for p in self.params]
-        arr = numpy.zeros(size, dtype=dtype)
-        for (p,_) in dtype:
-            arr[p] = self._arcfunc(numpy.random.uniform(
-                                    self._func(self._bounds[p][0]),
-                                    self._func(self._bounds[p][1]),
-                                    size=size))
-        return arr
-
-
 class CosAngle(SinAngle):
     r"""A cosine distribution. This is the same thing as a sine distribution,
     but with the domain shifted to `[-pi/2, pi/2]`. See SinAngle for more
@@ -475,40 +443,6 @@ class UniformSolidAngle(bounded.BoundedDist):
         """
         return self._polardist._logpdf(**kwargs) +\
             self._azimuthaldist._logpdf(**kwargs)
-
-
-    def rvs(self, size=1, param=None):
-        """Gives a set of random values drawn from this distribution.
-
-        Parameters
-        ----------
-        size : {1, int}
-            The number of values to generate; default is 1.
-        param : {None, string}
-            If provided, will just return values for the given parameter.
-            Otherwise, returns random values for each parameter.
-
-        Returns
-        -------
-        structured array
-            The random values in a numpy structured array. If a param was
-            specified, the array will only have an element corresponding to the
-            given parameter. Otherwise, the array will have an element for each
-            parameter in self's params.
-        """
-        if param is not None:
-            dtype = [(param, float)]
-        else:
-            dtype = [(p, float) for p in self.params]
-        arr = numpy.zeros(size, dtype=dtype)
-        for (p,_) in dtype:
-            if p == self._polar_angle:
-                arr[p] = self._polardist.rvs(size=size)
-            elif p == self._azimuthal_angle:
-                arr[p] = self._azimuthaldist.rvs(size=size)
-            else:
-                raise ValueError("unrecognized parameter %s" %(p))
-        return arr
 
     @classmethod
     def from_config(cls, cp, section, variable_args):
