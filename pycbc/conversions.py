@@ -816,8 +816,8 @@ def snr_from_loglr(loglr):
 MINUS_M_SUFFIX = 'nm'
 
 
-def get_lm_f0tau(mass, spin, l, m, nmodes, which='both'):
-    """Return the f0 and the tau of each overtone for a given l, m mode.
+def get_lm_f0tau(mass, spin, l, m, n=0, which='both'):
+    """Return the f0 and the tau for one or more overtones of an l, m mode.
 
     Parameters
     ----------
@@ -829,52 +829,37 @@ def get_lm_f0tau(mass, spin, l, m, nmodes, which='both'):
         l-index of the harmonic.
     m : int or array
         m-index of the harmonic.
-    nmodes : int
-        The number of overtones to generate.
+    n : int or array
+        Overtone(s) to generate, where n=0 is the fundamental mode.
+        Default is 0.
     which : {'both', 'f0', 'tau'}, optional
         What to return; 'both' returns both frequency and tau, 'f0' just
         frequency, 'tau' just tau. Default is 'both'.
-        
 
     Returns
     -------
     f0 : float or array
         Returned if ``which`` is 'both' or 'f0'.
-        The frequency of the QNM(s), in Hz. If only a single mode is requested
-        (and mass, spin, l, and m are not arrays), this will be a float. If
-        multiple modes requested, will be an array with shape
-        ``[input shape x] nmodes``, where ``input shape`` is the broadcasted
-        shape of the inputs.
+        The frequency of the QNM(s), in Hz.
     tau : float or array
         Returned if ``which`` is 'both' or 'tau'.
-        The damping time of the QNM(s), in seconds. Return type is same as f0.
+        The damping time of the QNM(s), in seconds.
     """
     if pykerr is None:
         raise ImportError("pykerr must be installed to get f0 or tau")
     # convert to arrays
-    mass, spin, l, m, input_is_array = ensurearray(
-        mass, spin, l, m)
+    mass, spin, l, m, n, input_is_array = ensurearray(
+        mass, spin, l, m, n)
     # we'll ravel the arrays so we can evaluate each parameter combination
     # one at a a time
-    origshape = mass.shape
-    if nmodes < 1:
-        raise ValueError("nmodes must be >= 1")
-    newshape = tuple(list(origshape)+[nmodes])
     getf0 = which == 'both' or which == 'f0'
     gettau = which == 'both' or which == 'tau'
-    if getf0:
-        f0s = numpy.zeros(newshape)
-    if gettau:
-        taus = numpy.zeros(newshape)
-    for n in range(nmodes):
-        if getf0:
-            f0s[..., n] = pykerr.qnmfreq(mass, spin, l, m, n)
-        if gettau:
-            taus[..., n] = pykerr.qnmtau(mass, spin, l, m, n)
     out = []
     if getf0:
+        f0s = pykerr.qnmfreq(mass, spin, l, m, n)
         out.append(formatreturn(f0s, input_is_array))
-    if gettau:    
+    if gettau:
+        taus = pykerr.qnmtau(mass, spin, l, m, n)
         out.append(formatreturn(taus, input_is_array))
     if not (getf0 and gettau):
         out = out[0]
@@ -920,23 +905,14 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
             msign = 1
             key = '{}{}{}'
         l, m, nmodes = int(lmn[0]), msign*int(lmn[1]), int(lmn[2])
-        tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, nmodes)
-        if nmodes == 1:
-            # in this case, tmp_f0 and tmp_tau will just be floats
-            f0[key.format(l, abs(m), '0')] = tmp_f0
-            tau[key.format(l, abs(m), '0')] = tmp_tau
-        else:
-            for n in range(nmodes):
-                # we need to wrap tmp_f0 with formatreturn to ensure that if
-                # only a mass, spin pair was requested, the value stored to
-                # the dict is a float
-                f0[key.format(l, abs(m), n)] = formatreturn(tmp_f0[..., n])
-                tau[key.format(l, abs(m), n)] = formatreturn(tmp_tau[..., n])
+        for n in range(nmodes):
+            tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, n)
+            f0[key.format(l, abs(m), n)] = tmp_f0
+            tau[key.format(l, abs(m), n)] = tmp_tau
     return f0, tau
 
 
-def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1,
-                              n=None):
+def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, n=0):
     """Returns QNM frequency for the given mass and spin and mode.
 
     Parameters
@@ -949,33 +925,19 @@ def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1,
         l-index of the harmonic. Default is 2.
     m : int or array, optional
         m-index of the harmonic. Default is 2.
-    nmodes : int, optional
-        The number of overtones to generate. Default is 1.
-    n : int, optional
-        Only retrieve the specified overtone. Overrides the ``nmodes``.
+    n : int or array
+        Overtone(s) to generate, where n=0 is the fundamental mode.
+        Default is 0.
 
     Returns
     -------
     float or array
-        The frequency of the QNM(s), in Hz. If only a single mode is requested
-        (and mass, spin, l, and m are not arrays), this will be a float. If
-        multiple modes requested, will be an array with shape
-        ``[input shape x] nmodes``, where ``input shape`` is the broadcasted
-        shape of the inputs.
+        The frequency of the QNM(s), in Hz.
     """
-    if n is not None:
-        nmodes = n + 1
-    out = get_lm_f0tau(final_mass, final_spin, l, m, nmodes, which='f0')
-    if (n is not None or nmodes == 1) and (
-        isinstance(out, numpy.ndarray) and out.ndim > 0):
-        if n is None:
-            n = 0
-        out = out[..., n]
-    return out
+    return get_lm_f0tau(final_mass, final_spin, l, m, n=n, which='f0')
 
 
-def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1,
-                             n=None):
+def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, n=0):
     """Returns QNM damping time for the given mass and spin and mode.
 
     Parameters
@@ -988,27 +950,16 @@ def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1,
         l-index of the harmonic. Default is 2.
     m : int or array, optional
         m-index of the harmonic. Default is 2.
-    nmodes : int, optional
-        The number of overtones to generate. Default is 1.
+    n : int or array
+        Overtone(s) to generate, where n=0 is the fundamental mode.
+        Default is 0.
 
     Returns
     -------
     float or array
-        The damping time of the QNM(s), in seconds. If only a single mode is
-        requested (and mass, spin, l, and m are not arrays), this will be a
-        float. If multiple modes requested, will be an array with shape
-        ``[input shape x] nmodes``, where ``input shape`` is the broadcasted
-        shape of the inputs.
+        The damping time of the QNM(s), in seconds.
     """
-    if n is not None:
-        nmodes = n + 1
-    out = get_lm_f0tau(final_mass, final_spin, l, m, nmodes, which='tau')
-    if (n is not None or nmodes == 1) and (
-        isinstance(out, numpy.ndarray) and out.ndim > 0):
-        if n is None:
-            n = 0
-        out = out[..., n]
-    return out
+    return get_lm_f0tau(final_mass, final_spin, l, m, n=n, which='tau')
 
 
 # The following are from Table VIII, IX, X of Berti et al.,
@@ -1146,7 +1097,7 @@ def freqlmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     mass[mass < 0] = numpy.nan
     spin[numpy.abs(spin) > 0.9996] = numpy.nan
 
-    new_f0 = freq_from_final_mass_spin(mass, spin, l=new_l, m=new_m, nmodes=1)
+    new_f0 = freq_from_final_mass_spin(mass, spin, l=new_l, m=new_m)
     return formatreturn(new_f0, input_is_array)
 
 
@@ -1184,7 +1135,7 @@ def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     mass[mass < 0] = numpy.nan
     spin[numpy.abs(spin) > 0.9996] = numpy.nan
 
-    new_tau = tau_from_final_mass_spin(mass, spin, l=new_l, m=new_m, nmodes=1)
+    new_tau = tau_from_final_mass_spin(mass, spin, l=new_l, m=new_m)
     return formatreturn(new_tau, input_is_array)
 
 def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
