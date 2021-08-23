@@ -32,7 +32,7 @@ except ImportError:
     pykerr = None
 from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
-from pycbc.conversions import (get_lm_f0tau_allmodes, MINUS_M_SUFFIX)
+from pycbc.conversions import get_lm_f0tau_allmodes
 
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
 mass_spin_required_args = ['final_mass','final_spin', 'lmns', 'inclination']
@@ -69,8 +69,9 @@ def props(obj, required, domain_args, **kwargs):
     return input_params
 
 def format_lmns(lmns):
-    """ Checks if the format of the parameter lmns is correct, returning the
+    """Checks if the format of the parameter lmns is correct, returning the
     appropriate format if not, and raise an error if nmodes=0.
+
     The required format for the ringdown approximants is a list of lmn modes
     as a single whitespace-separated string, with n the number
     of overtones desired. Alternatively, a list object may be used,
@@ -86,10 +87,7 @@ def format_lmns(lmns):
     # Catch case of lmns given as float (as int injection values are cast
     # to float by pycbc_create_injections), cast to int, then string
     if isinstance(lmns, float):
-        if lmns < 0:
-            lmns = str(abs(int(lmns))) + MINUS_M_SUFFIX
-        else:
-            lmns = str(int(lmns))
+        lmns = str(int(lmns))
     # Case 1: the lmns are given as a string, e.g. '221 331'
     if isinstance(lmns, str):
         lmns = lmns.split(' ')
@@ -109,9 +107,6 @@ def format_lmns(lmns):
         # to a string
         # lmn = lmn.strip(" b'")
         # Try to convert to int and then str, to ensure the right format
-        minusm = lmn.endswith(MINUS_M_SUFFIX)
-        if minusm:
-            lmn = lmn.replace(MINUS_M_SUFFIX, '')
         lmn = str(int(lmn))
         if len(lmn) != 3:
             raise ValueError('Format of parameter lmns not recognized. See '
@@ -119,8 +114,6 @@ def format_lmns(lmns):
         elif int(lmn[2]) == 0:
             raise ValueError('Number of overtones (nmodes) must be greater '
                              'than zero in lmn={}.'.format(lmn))
-        if minusm:
-            lmn = lmn + MINUS_M_SUFFIX
         out.append(lmn)
 
     return out
@@ -129,12 +122,9 @@ def parse_mode(lmn):
     """Extracts overtones from an lmn.
     """
     lm, nmodes = lmn[0:2], int(lmn[2])
-    minusm = lmn.endswith(MINUS_M_SUFFIX)
     overtones = []
     for n in range(nmodes):
         mode = lm + '{}'.format(n)
-        if minusm:
-            mode += MINUS_M_SUFFIX
         overtones.append(mode)
     return overtones
 
@@ -769,18 +759,18 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
                                      int(lmn[1]), input_params['inclination'],
                                      pols[lmn])
                 t0 = -int(outplus.start_time * outplus.sample_rate)
-                outplus[t0-len(taper_hp):t0].data += taper_hp
-                outplus[t0:].data += hplus
-                outcross[t0-len(taper_hc):t0].data += taper_hc
-                outcross[t0:].data += hcross
+                outplus[t0-len(taper_hp):t0] += taper_hp
+                outplus[t0:] += hplus
+                outcross[t0-len(taper_hc):t0] += taper_hc
+                outcross[t0:] += hcross
             elif input_params['taper'] and outplus.delta_t > taus[lmn]:
                 # This mode has taper duration < delta_t, do not apply taper
                 t0 = -int(outplus.start_time * outplus.sample_rate)
-                outplus[t0:].data += hplus
-                outcross[t0:].data += hcross
+                outplus[t0:] += hplus
+                outcross[t0:] += hcross
             else:
-                outplus.data += hplus
-                outcross.data += hcross
+                outplus += hplus
+                outcross += hcross
     elif domain == 'fd':
         outplus, outcross = fd_output_vector(freqs, taus,
                             input_params['delta_f'], input_params['f_final'])

@@ -812,9 +812,6 @@ def snr_from_loglr(loglr):
 # =============================================================================
 #
 
-# suffix used for specifying negative modes
-MINUS_M_SUFFIX = 'nm'
-
 
 def get_lm_f0tau(mass, spin, l, m, n=0, which='both'):
     """Return the f0 and the tau for one or more overtones of an l, m mode.
@@ -878,12 +875,9 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
         Dimensionless spin of the final black hole.
     modes : list of str
         The modes to get. Each string in the list should be formatted
-        'lmN[nm]', where l (m) is the l (m) index of the harmonic and N is the
+        'lmN', where l (m) is the l (m) index of the harmonic and N is the
         number of overtones to generate (note, N is not the index of the
-        overtone). If a mode has the string "nm" added to the end of it (for
-        negative m), the -m mode will be used. For example, '221' will generate
-        the 0th overtone of the l = m = 2 mode; '221nm' will generate the 0th
-        overtone of the l = 2, m = -2 mode.
+        overtone).
 
     Returns
     -------
@@ -898,13 +892,8 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
     """
     f0, tau = {}, {}
     for lmn in modes:
-        if lmn.endswith(MINUS_M_SUFFIX):
-            msign = -1
-            key = '{}{}{}' + MINUS_M_SUFFIX
-        else:
-            msign = 1
-            key = '{}{}{}'
-        l, m, nmodes = int(lmn[0]), msign*int(lmn[1]), int(lmn[2])
+        key = '{}{}{}'
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
         for n in range(nmodes):
             tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, n)
             f0[key.format(l, abs(m), n)] = tmp_f0
