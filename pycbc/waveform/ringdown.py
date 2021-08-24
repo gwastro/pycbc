@@ -574,10 +574,6 @@ def td_damped_sinusoid(f_0, tau, amp, phi, times,
         The cross polarization.
     """
     # evaluate the harmonics
-    if inclination is None:
-        inclination = 0.
-    if azimuthal is None:
-        azimuthal = 0.
     xlm, xlnm = spher_harms(harmonics=harmonics, l=l, m=m, n=n,
                             inclination=inclination, azimuthal=azimuthal,
                             spin=final_spin, pol=pol, polnm=polnm)
