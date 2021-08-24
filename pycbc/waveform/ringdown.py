@@ -483,7 +483,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, times,
 
     .. math::
 
-        h_{l|m|n}(t) &:= A_{lmn} X_{lmn}(\theta, \varphi) 
+        h_{l|m|n}(t) &:= A_{lmn} X_{lmn}(\theta, \varphi)
             e^{-t/\tau_{lmn} + i(2\pi f_{lmn}t + \phi_{lmn})} \\
             & + A_{l-mn} X_{l-mn}(\theta, \varphi)
             e^{-t/\tau_{lmn} - i(2\pi f_{lmn}t + \phi_{l-mn})}
@@ -506,7 +506,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, times,
 
         A_{lmn} &= A^0_{lmn} \sqrt{2} \cos(\pi/4 + \Delta \beta_{lmn})\\
         A_{lmn} &= A^0_{lmn} \sqrt{2} \sin(\pi/4 +  \Delta \beta_{lmn}).
-   
+
     Here, :math:`A^0_{lmn}` is an overall fiducial amplitude (set by the
     ``amp``) parameter, and
 
@@ -514,7 +514,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, times,
 
         \Delta \beta_{lmn} &\in [-pi/4, pi/4], \\
         \Delta \phi_{lmn}  &\in (-pi, pi)
-    
+
     are parameters that define the deviation from circular polarization.
     Circular polarization occurs when both :math:`\Delta \beta_{lmn}` and
     :math:`\Delta \phi_{lmn}` are zero (this is equivalent to assuming that
@@ -601,7 +601,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, times,
         # phase
         phinm = l*pi + dphi - phi
         hlm = xlm * alm * numpy.exp(damping + 1j*(omegalm + phi)) \
-             + xlnm * alnm * numpy.exp(damping - 1j*(omegalm - phinm))
+            + xlnm * alnm * numpy.exp(damping - 1j*(omegalm - phinm))
     return hlm.real, hlm.imag
 
 
@@ -772,7 +772,7 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
     elif domain == 'fd':
         outplus, outcross = fd_output_vector(freqs, taus,
                             input_params['delta_f'], input_params['f_final'])
-        kmin = int(input_params['f_lower'] / input_params['delta_f']) 
+        kmin = int(input_params['f_lower'] / input_params['delta_f'])
         sample_freqs = outplus.sample_frequencies.numpy()[kmin:]
     else:
         raise ValueError('unrecognised domain argument {}; '
