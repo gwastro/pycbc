@@ -464,9 +464,9 @@ class BaseGaussianNoise(BaseDataModel):
                                                         self._f_upper[det]
 
     @staticmethod
-    def _fd_data_from_strain_data(opts, strain_dict, psd_strain_dict):
+    def _fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict):
         """Wrapper around :py:func:`data_utils.fd_data_from_strain_dict`."""
-        return fd_data_from_strain_data(opts, strain_dict, psd_strain_dict)
+        return fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
 
     @classmethod
     def from_config(cls, cp, data_section='data', data=None, psds=None,

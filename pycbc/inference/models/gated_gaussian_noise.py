@@ -18,6 +18,7 @@ introduces a gate to remove given times from the data, using the inpainting
 method to fill the removed part such that it does not enter the likelihood.
 """
 
+import logging
 import numpy
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 from pycbc.waveform import (NoWaveformError, FailedWaveformError)
@@ -444,7 +445,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
         return out
 
     @staticmethod
-    def _fd_data_from_strain_data(opts, strain_dict, psd_strain_dict):
+    def _fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict):
         """Wrapper around :py:func:`data_utils.fd_data_from_strain_dict`.
 
         Ensures that if the PSD is estimated from data, the inverse spectrum
@@ -461,7 +462,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
             logging.info("Setting low frequency cutoff of PSD to 0")
             lfs = opts.low_frequency_cutoff.copy()
             opts.low_frequency_cutoff = {d: 0. for d in lfs}
-        out = fd_data_from_strain_data(opts, strain_dict, psd_strain_dict)
+        out = fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
         # set back
         if lfs is not None:
             opts.low_frequency_cutoff = lfs
