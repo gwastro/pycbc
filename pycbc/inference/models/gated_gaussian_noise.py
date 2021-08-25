@@ -80,15 +80,8 @@ class GatedGaussianNoise(BaseGaussianNoise):
 
     @property
     def td_data(self):
+        """The data in the time domain."""
         return self._td_data
-
-    @property
-    def psds(self):
-        """Dictionary of detectors -> PSD frequency series.
-        If no PSD was provided for a detector, this will just be a frequency
-        series of ones.
-        """
-        return self._psds
 
     @BaseGaussianNoise.psds.setter
     def psds(self, psds):
@@ -146,7 +139,8 @@ class GatedGaussianNoise(BaseGaussianNoise):
         detector."""
         return []
 
-    def _nowaveform_logl(self):
+    @staticmethod
+    def _nowaveform_logl():
         """Convenience function to set logl values if no waveform generated.
         """
         return -numpy.inf
@@ -342,7 +336,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
 
     def get_waveforms(self, whiten=False):
         """Generates waveforms for using current parameters.
-        
+
         Parameters
         ----------
         whiten : bool, optional
@@ -367,7 +361,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
 
     def get_gated_waveforms(self, whiten=False):
         """Generates and gates waveforms using the current parameters.
-        
+
         Parameters
         ----------
         whiten : bool, optional
@@ -398,7 +392,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
 
     def get_residuals(self, whiten=False):
         """Generates the residuals ``d-h`` using the current parameters.
-        
+
         Parameters
         ----------
         whiten : bool, optional
@@ -425,7 +419,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
 
     def get_gated_residuals(self, whiten=False):
         """Generates the gated residuals ``d-h`` using the current parameters.
-        
+
         Parameters
         ----------
         whiten : bool, optional
@@ -459,7 +453,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
 
     def get_data(self, whiten=False):
         """Return a copy of the data.
-        
+
         Parameters
         ----------
         whiten : bool, optional
@@ -483,7 +477,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
 
     def get_gated_data(self, whiten=False):
         """Return a copy of the gated data.
-        
+
         Parameters
         ----------
         whiten : bool, optional
