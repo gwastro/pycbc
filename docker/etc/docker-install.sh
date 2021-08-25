@@ -1,8 +1,8 @@
 #!/bin/bash -v
 set -e
 cd /scratch
-pip install -r requirements.txt
-pip install .
+python3.8 -m pip install -r requirements.txt
+python3.8 -m pip install .
 cd /
 mkdir -p /opt/pycbc/src
 cp -a /scratch /opt/pycbc/src/pycbc
