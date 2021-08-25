@@ -463,6 +463,11 @@ class BaseGaussianNoise(BaseDataModel):
                 fp.attrs['{}_likelihood_high_freq'.format(det)] = \
                                                         self._f_upper[det]
 
+    @staticmethod
+    def _fd_data_from_strain_data(opts, strain_dict, psd_strain_dict):
+        """Wrapper around :py:func:`data_utils.fd_data_from_strain_dict`."""
+        return fd_data_from_strain_data(opts, strain_dict, psd_strain_dict)
+
     @classmethod
     def from_config(cls, cp, data_section='data', data=None, psds=None,
                     **kwargs):
@@ -562,15 +567,10 @@ class BaseGaussianNoise(BaseDataModel):
         if data is None or psds is None:
             strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
             # convert to frequency domain and get psds
-            stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
-                                                         psd_strain_dict)
-            logging.info('Calculating psds using filter psd')
-            psds = {}
-            for det, d in psd_strain_dict.items():
-                psds[det] = d.filter_psd(opts.psd_segment_length[det],
-                                         strain_dict[det].delta_f, 0.)
+            stilde_dict, psds = cls._fd_data_from_strain_dict(
+                opts, strain_dict, psd_strain_dict)
             # save the psd data segments if the psd was estimated from data
-            if opts.psd_estimation is not None:
+            if opts.psd_estimation:
                 _tdict = psd_strain_dict or strain_dict
                 for det in psds:
                     psds[det].psd_segment = (_tdict[det].start_time,
