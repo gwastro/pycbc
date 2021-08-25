@@ -8,8 +8,7 @@ ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.o
 
 # Set up extra repositories
 RUN yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && yum install -y cvmfs cvmfs-config-default && yum -y install http://repo.opensciencegrid.org/osg/3.6/osg-3.6-el8-release-latest.rpm && yum clean all && yum makecache && \
-    yum -y groupinstall "Compatibility Libraries" \
-                        "Development Tools" \
+    yum -y groupinstall "Development Tools" \
                         "Scientific Support" && \
     rpm -e --nodeps git perl-Git && yum -y install @python38 zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel openssl-devel git2u-all fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel libframe-utils libframe-devel libframe libmetaio libmetaio-devel libmetaio-utils hdf5 hdf5-devel python38-devel which osg-wn-client osg-ca-certs && python3.8 -m pip install --upgrade pip setuptools && python3.8 -m pip install mkl ipython jupyter
 
