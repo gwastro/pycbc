@@ -39,12 +39,9 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   ENV_OS="x86_64_rhel_8"
   yum -y install python3.8
   yum -y install which
-  yum -y install curl
-  curl http://download.pegasus.isi.edu/wms/download/rhel/8/pegasus.repo > /etc/yum.repos.d/pegasus.repo
   yum clean all
   yum makecache
   yum -y install openssl-devel
-  yum -y install pegasus-4.9.3
   yum -y install ligo-proxy-utils
   yum -y install ecp-cookie-init
   yum -y install python3-virtualenv
