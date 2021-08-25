@@ -122,7 +122,8 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     if opt.psd_inverse_length:
         psd = inverse_spectrum_truncation(psd,
             int(opt.psd_inverse_length * sample_rate),
-            low_frequency_cutoff=f_low)
+            low_frequency_cutoff=f_low,
+            trunc_method=opt.invpsd_trunc_method)
 
     if hasattr(opt, 'psd_output') and opt.psd_output:
         (psd.astype(float64) / (dyn_range_factor ** 2)).save(opt.psd_output)
@@ -190,6 +191,11 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              help="(Optional) The maximum length of the "
                              "impulse response of the overwhitening "
                              "filter (s)")
+    psd_options.add_argument("--invpsd-trunc-method", default=None,
+                             choices=["hann"],
+                             help="(Optional) What truncation method to use "
+                                  "when applying psd-inverse-length. If not "
+                                  "provided, a hard truncation will be used.")
     # Options specific to XML PSD files
     psd_options.add_argument("--psd-file-xml-ifo-string",
                              help="If using an XML PSD file, use the PSD in "
@@ -306,6 +312,11 @@ def insert_psd_option_group_multi_ifo(parser):
                           action=MultiDetOptionAction, metavar='IFO:LENGTH',
                           help="(Optional) The maximum length of the impulse"
                           " response of the overwhitening filter (s)")
+    psd_options.add_argument("--invpsd-trunc-method", default=None,
+                             choices=["hann"],
+                             help="(Optional) What truncation method to use "
+                                  "when applying psd-inverse-length. If not "
+                                  "provided, a hard truncation will be used.")
     psd_options.add_argument("--psd-output", nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:FILE',
                           help="(Optional) Write PSD to specified file")
