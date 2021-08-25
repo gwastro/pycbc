@@ -36,8 +36,9 @@ fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
-  ENV_OS="x86_64_rhel_7"
-  yum -y install python2-pip python-setuptools which
+  ENV_OS="x86_64_rhel_8"
+  yum -y install python3.8
+  yum -y install python3-pip python-setuptools which
   yum -y install curl
   curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
   yum clean all
@@ -46,14 +47,14 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum -y install pegasus-4.9.3
   yum -y install ligo-proxy-utils
   yum -y install ecp-cookie-init
-  yum -y install python-virtualenv
+  yum -y install python3-virtualenv
   yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static fftw-static gsl-static --skip-broken
 
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
 
   VENV_PATH=${CVMFS_PATH}/pycbc-${SOURCE_TAG}
-  virtualenv ${VENV_PATH}
+  virtualenv -p python3.8 ${VENV_PATH}
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
   echo "export XDG_CACHE_HOME=\${HOME}/cvmfs-pycbc-${SOURCE_TAG}/.cache" >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate
@@ -75,7 +76,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   echo -e "\\n>> [`date`] Installing ipython and jupyter"
   pip install jupyter
-
   cat << EOF >> $VIRTUAL_ENV/bin/activate
 
 # if a suitable MKL exists, set it up
