@@ -398,7 +398,7 @@ def parse_mode_array(input_params):
     the modes (e.g., ``22 33 44``), or an array of ints or floats (e.g.,
     ``[22., 33., 44.]``.
     """
-    if 'mode_array' in input_params:
+    if 'mode_array' in input_params and input_params['mode_array'] is not None:
         mode_array = input_params['mode_array']
         if isinstance(mode_array, str):
             mode_array = mode_array.split()
