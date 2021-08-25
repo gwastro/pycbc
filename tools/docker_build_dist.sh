@@ -40,7 +40,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum -y install python3.8
   yum -y install which
   yum -y install curl
-  curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
+  curl http://download.pegasus.isi.edu/wms/download/rhel/8/pegasus.repo > /etc/yum.repos.d/pegasus.repo
   yum clean all
   yum makecache
   yum -y install openssl-devel
