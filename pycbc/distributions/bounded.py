@@ -318,10 +318,15 @@ class BoundedDist(object):
 
     def rvs(self, size=1, **kwds):
         "Draw random value"
+        dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
         draw = {}
         for param in self.params:
             draw[param] = numpy.random.uniform(0, 1, size=size)
-        return self.cdfinv(**draw)
+        exp = self.cdfinv(**draw)
+        for param in self.params:
+            arr[param] = exp[param]
+        return arr
 
     @classmethod
     def from_config(cls, cp, section, variable_args, bounds_required=False):
