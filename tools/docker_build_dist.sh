@@ -37,7 +37,7 @@ fi
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   ENV_OS="x86_64_rhel_8"
-  yum -y install python3.8 python3.8-devel
+  yum -y install python38 python38-devel
   yum -y install which
   yum clean all
   yum makecache
