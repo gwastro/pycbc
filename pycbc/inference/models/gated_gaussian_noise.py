@@ -20,14 +20,15 @@ method to fill the removed part such that it does not enter the likelihood.
 
 import logging
 import numpy
-from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
+
 from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.types import FrequencySeries
-from .base_data import BaseDataModel
-from .data_utils import fd_data_from_strain_dict
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
 from pycbc.waveform.utils import time_from_frequencyseries
+from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
+from .base_data import BaseDataModel
+from .data_utils import fd_data_from_strain_dict
 
 
 class GatedGaussianNoise(BaseGaussianNoise):
@@ -62,6 +63,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
             static_params=static_params, **kwargs)
         # cache the current projection for debugging
         self.current_proj = {}
+        self.current_nproj = {}
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
@@ -188,12 +190,11 @@ class GatedGaussianNoise(BaseGaussianNoise):
         # and an end time
         gatestart = params['t_gate_start']
         gateend = params['t_gate_end']
-        dgate = gateend-gatestart
         # we'll need the sky location for determining time shifts
         ra = self.current_params['ra']
         dec = self.current_params['dec']
         gatetimes = {}
-        for det, invpsd in self._invpsds.items():
+        for det in self._invpsds:
             thisdet = Detector(det)
             # account for the time delay between the waveforms of the
             # different detectors
@@ -216,8 +217,6 @@ class GatedGaussianNoise(BaseGaussianNoise):
         # gate input for ringdown analysis which consideres a start time
         # and an end time
         dgate = params['gate_window']
-        gatestart = params['t_gate_start']
-
         # generate the template waveform
         try:
             wfs = self.waveform_generator.generate(**params)
@@ -226,8 +225,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
         except FailedWaveformError as e:
             if self.ignore_failed_waveforms:
                 return self._nowaveform_logl()
-            else:
-                raise e
+            raise e
 
         spin1 = params['spin1z']
         spin2 = params['spin2z']
@@ -244,25 +242,23 @@ class GatedGaussianNoise(BaseGaussianNoise):
             # find time corresponding to meco frequency
             t_from_freq = time_from_frequencyseries(
                 h[f_low:], sample_frequencies=sample_freqs)
-            if t_from_freq[f_idx]>0:
-                Gatestartdelay = t_from_freq[f_idx] + float(t_from_freq.epoch)
+            if t_from_freq[f_idx] > 0:
+                gatestartdelay = t_from_freq[f_idx] + float(t_from_freq.epoch)
             else:
-                Gatestartdelay = t_from_freq[f_idx] + ht.sample_times[-1]
-            gatestartdelay = min(Gatestartdelay, params['t_gate_start'])
+                gatestartdelay = t_from_freq[f_idx] + ht.sample_times[-1]
+            gatestartdelay = min(gatestartdelay, params['t_gate_start'])
             gatetimes[det] = (gatestartdelay, dgate)
         return gatetimes
-
 
     def _lognl(self):
         """Calculates the log of the noise likelihood.
         """
-        params = self.current_params
         # clear variables
         lognl = 0.
         self._det_lognls.clear()
         # get the times of the gates
         gate_times = self.get_gate_times()
-        self.current_nproj = {}
+        self.current_nproj.clear()
         for det, invpsd in self._invpsds.items():
             norm = self.det_lognorm(det)
             gatestartdelay, dgatedelay = gate_times[det]
@@ -281,7 +277,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
             gated_d *= invpsd
             d = self.data[det]
             # inner product
-            ip = 4 * invpsd.delta_f * d[slc].inner(gated_d[slc]).real # <d, d>
+            ip = 4 * invpsd.delta_f * d[slc].inner(gated_d[slc]).real  # <d, d>
             dd = norm - 0.5*ip
             # store
             self._det_lognls[det] = dd
@@ -315,8 +311,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
         except FailedWaveformError as e:
             if self.ignore_failed_waveforms:
                 return self._nowaveform_logl()
-            else:
-                raise e
+            raise e
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
@@ -346,6 +341,18 @@ class GatedGaussianNoise(BaseGaussianNoise):
         return float(logl)
 
     def get_waveforms(self, whiten=False):
+        """Generates waveforms for using current parameters.
+        
+        Parameters
+        ----------
+        whiten : bool, optional
+            Whiten the waveforms before returning. Default is False.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
         params = self.current_params
         wfs = self.waveform_generator.generate(**params)
         if whiten:
@@ -359,13 +366,24 @@ class GatedGaussianNoise(BaseGaussianNoise):
         return wfs
 
     def get_gated_waveforms(self, whiten=False):
+        """Generates and gates waveforms using the current parameters.
+        
+        Parameters
+        ----------
+        whiten : bool, optional
+            Whiten the waveforms before returning. Default is False.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
         params = self.current_params
         wfs = self.waveform_generator.generate(**params)
         gate_times = self.get_gate_times()
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
-            data = self.td_data[det]
             ht = h.to_timeseries()
             ht = ht.gate(gatestartdelay + dgatedelay/2,
                          window=dgatedelay/2, copy=False,
@@ -378,7 +396,19 @@ class GatedGaussianNoise(BaseGaussianNoise):
             wfs[det] = h
         return wfs
 
-    def get_residual(self, whiten=False):
+    def get_residuals(self, whiten=False):
+        """Generates the residuals ``d-h`` using the current parameters.
+        
+        Parameters
+        ----------
+        whiten : bool, optional
+            Whiten the residuals before returning. Default is False.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
         params = self.current_params
         wfs = self.waveform_generator.generate(**params)
         out = {}
@@ -393,7 +423,19 @@ class GatedGaussianNoise(BaseGaussianNoise):
             out[det] = res
         return out
 
-    def get_gated_residual(self, whiten=False):
+    def get_gated_residuals(self, whiten=False):
+        """Generates the gated residuals ``d-h`` using the current parameters.
+        
+        Parameters
+        ----------
+        whiten : bool, optional
+            Whiten the residuals before returning. Default is False.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
         params = self.current_params
         wfs = self.waveform_generator.generate(**params)
         gate_times = self.get_gate_times()
@@ -416,6 +458,18 @@ class GatedGaussianNoise(BaseGaussianNoise):
         return out
 
     def get_data(self, whiten=False):
+        """Return a copy of the data.
+        
+        Parameters
+        ----------
+        whiten : bool, optional
+            Whiten the data before returning. Default is False.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
         data = {det: d.copy() for det, d in self.data.items()}
         if whiten:
             for det, dtilde in data.items():
@@ -428,6 +482,18 @@ class GatedGaussianNoise(BaseGaussianNoise):
         return data
 
     def get_gated_data(self, whiten=False):
+        """Return a copy of the gated data.
+        
+        Parameters
+        ----------
+        whiten : bool, optional
+            Whiten the data before returning. Default is False.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
         gate_times = self.get_gate_times()
         out = {}
         for det, d in self.td_data.items():
@@ -470,16 +536,18 @@ class GatedGaussianNoise(BaseGaussianNoise):
 
     def write_metadata(self, fp):
         """Adds writing the psds.
+
         The analyzed detectors, their analysis segments, and the segments
         used for psd estimation are written to the file's ``attrs``, as
         ``analyzed_detectors``, ``{{detector}}_analysis_segment``, and
         ``{{detector}}_psd_segment``, respectively.
+
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
         """
-        super(BaseGaussianNoise, self).write_metadata(fp)
+        BaseDataModel.write_metadata(self, fp)
         # write the analyzed detectors and times
         fp.attrs['analyzed_detectors'] = self.detectors
         for det, data in self.data.items():
@@ -491,12 +559,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
         for det in self.psd_segments:
             key = '{}_psd_segment'.format(det)
             fp.attrs[key] = list(map(float, self.psd_segments[det]))
-        try:
-            attrs = fp[fp.samples_group].attrs
-        except KeyError:
-            # group doesn't exist, create it
-            fp.create_group(fp.samples_group)
-            attrs = fp[fp.samples_group].attrs
+        # write frequency cutoffs
         for det in self.detectors:
             # Save each IFO's low frequency cutoff used in the likelihood
             # computation as an attribute

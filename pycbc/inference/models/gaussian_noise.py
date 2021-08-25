@@ -25,7 +25,7 @@ import numpy
 from pycbc import filter as pyfilter
 from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.waveform import generator
-from pycbc.types import Array, FrequencySeries
+from pycbc.types import FrequencySeries
 from pycbc.strain import gates_from_cli
 from pycbc.strain.calibration import Recalibrate
 from pycbc.inject import InjectionSet
