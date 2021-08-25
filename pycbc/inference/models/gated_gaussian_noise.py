@@ -1,4 +1,4 @@
-# Copyright (C) 2018  Collin Capano
+# Copyright (C) 2020  Collin Capano and Shilpa Kastha
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -32,6 +32,20 @@ from pycbc.waveform.utils import time_from_frequencyseries
 class GatedGaussianNoise(BaseGaussianNoise):
     r"""Model that applies a time domain gate, assuming stationary Gaussian
     noise.
+
+    The gate start and end times are set by providing ``t_gate_start`` and
+    ``t_gate_end`` parameters, respectively. This will cause the gated times
+    to be excised from the analysis. For more details on the likelihood
+    function and its derivation, see
+    `arXiv:2105.05238 <https://arxiv.org/abs/2105.05238>`_.
+
+    .. warning::
+        The normalization of the likelihood depends on the gate times. However,
+        at the moment, the normalization is not calculated, as it depends on
+        the determinant of the truncated covariance matrix (see Eq. 4 of
+        arXiv:2105.05238). For this reason it is recommended that you only
+        use this model for fixed gate times.
+
     """
     name = 'gated_gaussian_noise'
 
@@ -45,10 +59,8 @@ class GatedGaussianNoise(BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
-        # caches for debuging
-        self.current_wfs = {}
-        self.current_gated_wfs = {}
-        self.current_gated_data = {}
+        # cache the current projection for debugging
+        self.current_proj = {}
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
@@ -147,6 +159,18 @@ class GatedGaussianNoise(BaseGaussianNoise):
 
     def get_gate_times(self):
         """Gets the time to apply a gate based on the current sky position.
+
+        If the parameter ``gatefunc`` is set to ``'hmeco'``, the gate times
+        will be calculated based on the hybrid MECO of the given set of
+        parameters; see ``get_gate_times_hmeco`` for details. Otherwise, the
+        gate times will just be retrieved from the ``t_gate_start`` and
+        ``t_gate_end`` parameters.
+
+        .. warning::
+            Since the normalization of the likelihood is currently not
+            being calculated, it is recommended that you do not use
+            ``gatefunc``, instead using fixed gate times.
+
         Returns
         -------
         dict :
@@ -207,7 +231,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
         spin1 = params['spin1z']
         spin2 = params['spin2z']
         meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'],
-                                       spin1, spin2, qm1=None, qm2=None)
+                                       spin1, spin2)
         gatetimes = {}
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
@@ -294,12 +318,8 @@ class GatedGaussianNoise(BaseGaussianNoise):
                 raise e
         # get the times of the gates
         gate_times = self.get_gate_times()
-        # clear variables
         logl = 0.
-        self.current_wfs = wfs
-        self.current_gated_wfs.clear()
-        self.current_gated_data.clear()
-        self.current_proj = {}
+        self.current_proj.clear()
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             norm = self.det_lognorm(det)
