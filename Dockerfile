@@ -18,24 +18,17 @@ RUN cd / && \
     groupadd -g 1000 pycbc && useradd -u 1000 -g 1000 -d /opt/pycbc -k /etc/skel -m -s /bin/bash pycbc
 
 # Install MPI software needed for pycbc_inference
-# DISABLED AFTER THE FIRST SET OF dnf installs
-# curl http://mvapich.cse.ohio-state.edu/download/mvapich/mv2/mvapich2-2.1.tar.gz | tar -C /tmp -zxf - && \
-#    cd /tmp/mvapich2-2.1 && ./configure --prefix=/opt/mvapich2-2.1 && make install && \
-#    cd / && rm -rf /tmp/mvapich2-2.1 && \
-# AND
-# MPICC=/opt/mvapich2-2.1/bin CFLAGS='-I /opt/mvapich2-2.1/include -L /opt/mvapich2-2.1/lib -lmpi' python3.8 -m pip install --no-cache-dir mpi4py
 # at the end.
-RUN dnf -y install libibverbs libibverbs-devel libibmad libibmad-devel libibumad libibumad-devel librdmacm librdmacm-devel libmlx5 libmlx4 && \
+RUN dnf -y install libibverbs libibverbs-devel libibmad libibmad-devel libibumad libibumad-devel librdmacm librdmacm-devel libmlx5 libmlx4 openmpi openmpi-devel && \
     python3.8 -m pip install schwimmbad && \
-    python3.8 -m pip install --no-cache-dir mpi4py
-#RUN echo "/opt/mvapich2-2.1/lib" > /etc/ld.so.conf.d/mvapich2-2.1.conf
+    MPICC=/lib64/openmpi/bin/mpicc CFLAGS='-I /usr/include/openmpi-x86_64/ -L /usr/lib64/openmpi/lib/ -lmpi' python3.8 -m pip install --no-cache-dir mpi4py
+RUN echo "/usr/lib64/openmpi/lib/" > /etc/ld.so.conf.d/openmpi.conf
 
 # Now update all of our library installations
 RUN rm -f /etc/ld.so.cache && /sbin/ldconfig
 
 # Explicitly set the path so that it is not inherited from build the environment
-ENV PATH "/usr/local/bin:/usr/bin:/bin:
-#/opt/mvapich2-2.1/bin"
+ENV PATH "/usr/local/bin:/usr/bin:/bin:/lib64/openmpi/bin/bin"
 
 # Make python be what we want
 RUN alternatives --set python /usr/bin/python3.8
