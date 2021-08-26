@@ -10,7 +10,7 @@ ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.o
 RUN dnf -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && dnf -y install cvmfs cvmfs-config-default && dnf -y install http://repo.opensciencegrid.org/osg/3.6/osg-3.6-el8-release-latest.rpm && dnf clean all && dnf makecache && \
     dnf -y groupinstall "Development Tools" \
                         "Scientific Support" && \
-    rpm -e --nodeps git perl-Git && dnf -y install @python38 zlib-devel libpng-devel libjpeg-devel sqlite-devel openssl-devel fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel hdf5 hdf5-devel python38-devel which osg-wn-client osg-ca-certs && python3.8 -m pip install --upgrade pip setuptools && python3.8 -m pip install mkl ipython jupyter lalsuite && dnf clean all
+    rpm -e --nodeps git perl-Git && dnf -y install @python38 rsync zlib-devel libpng-devel libjpeg-devel sqlite-devel openssl-devel fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel hdf5 hdf5-devel python38-devel which osg-wn-client osg-ca-certs && python3.8 -m pip install --upgrade pip setuptools wheel cython && python3.8 -m pip install mkl ipython jupyter lalsuite && dnf clean all
 
 # set up environment
 RUN cd / && \
