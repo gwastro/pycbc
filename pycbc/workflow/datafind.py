@@ -749,19 +749,19 @@ def convert_cachelist_to_filelist(datafindcache_list):
 
             # Populate the PFNs for the File() we just created
             if frame.url.startswith('file://'):
-                currFile.PFN(frame.url, site='local')
+                currFile.add_pfn(frame.url, site='local')
                 if frame.url.startswith(
                     'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'):
                     # Datafind returned a URL valid on the osg as well
                     # so add the additional PFNs to allow OSG access.
-                    currFile.PFN(frame.url, site='osg')
-                    currFile.PFN(frame.url.replace(
+                    currFile.add_pfn(frame.url, site='osg')
+                    currFile.add_pfn(frame.url.replace(
                         'file:///cvmfs/oasis.opensciencegrid.org/',
                         'root://xrootd-local.unl.edu/user/'), site='osg')
-                    currFile.PFN(frame.url.replace(
+                    currFile.add_pfn(frame.url.replace(
                         'file:///cvmfs/oasis.opensciencegrid.org/',
                         'gsiftp://red-gridftp.unl.edu/user/'), site='osg')
-                    currFile.PFN(frame.url.replace(
+                    currFile.add_pfn(frame.url.replace(
                         'file:///cvmfs/oasis.opensciencegrid.org/',
                         'gsiftp://ldas-grid.ligo.caltech.edu/hdfs/'), site='osg')
                 elif frame.url.startswith(
@@ -769,10 +769,10 @@ def convert_cachelist_to_filelist(datafindcache_list):
                     # Datafind returned a URL valid on the osg as well
                     # so add the additional PFNs to allow OSG access.
                     for s in ['osg', 'orangegrid', 'osgconnect']:
-                        currFile.PFN(frame.url, site=s)
-                        currFile.PFN(frame.url, site="{}-scratch".format(s))
+                        currFile.add_pfn(frame.url, site=s)
+                        currFile.add_pfn(frame.url, site="{}-scratch".format(s))
             else:
-                currFile.PFN(frame.url, site='notlocal')
+                currFile.add_pfn(frame.url, site='notlocal')
 
     return datafind_filelist
 
@@ -1006,7 +1006,7 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     # workflow format output file
     cache_file = File(ifo, 'DATAFIND', seg, extension='lcf',
                       directory=outputDir, tags=tags)
-    cache_file.PFN(cache_file.cache_entry.path, site='local')
+    cache_file.add_pfn(cache_file.cache_entry.path, site='local')
 
     dfCache.ifo = ifo
     # Dump output to file
@@ -1098,6 +1098,6 @@ def datafind_keep_unique_backups(backup_outs, orig_outs):
             pfns = list(file.pfns)
             # This shouldn't happen, but catch if it does
             assert(len(pfns) == 1)
-            orig_out.PFN(pfns[0].url, site='notlocal')
+            orig_out.add_pfn(pfns[0].url, site='notlocal')
 
     return return_list
