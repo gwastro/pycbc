@@ -7,10 +7,10 @@ ADD docker/etc/cvmfs/60-osg.conf /etc/cvmfs/60-osg.conf
 ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.opensciencegrid.org.conf
 
 # Set up extra repositories
-RUN yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && yum install -y cvmfs cvmfs-config-default && yum -y install http://repo.opensciencegrid.org/osg/3.6/osg-3.6-el8-release-latest.rpm && yum clean all && yum makecache && \
-    yum -y groupinstall "Development Tools" \
+RUN dnf -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && dnf -y install cvmfs cvmfs-config-default && dnf -y install http://repo.opensciencegrid.org/osg/3.6/osg-3.6-el8-release-latest.rpm && dnf clean all && dnf makecache && \
+    dnf -y groupinstall "Development Tools" \
                         "Scientific Support" && \
-    rpm -e --nodeps git perl-Git && yum -y install @python38 zlib-devel libpng-devel libjpeg-devel sqlite-devel openssl-devel fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel hdf5 hdf5-devel python38-devel which osg-wn-client osg-ca-certs && python3.8 -m pip install --upgrade pip setuptools && python3.8 -m pip install mkl ipython jupyter lalsuite
+    rpm -e --nodeps git perl-Git && dnf -y install @python38 zlib-devel libpng-devel libjpeg-devel sqlite-devel openssl-devel fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel hdf5 hdf5-devel python38-devel which osg-wn-client osg-ca-certs && python3.8 -m pip install --upgrade pip setuptools && python3.8 -m pip install mkl ipython jupyter lalsuite && dnf clean all
 
 # set up environment
 RUN cd / && \
@@ -18,18 +18,24 @@ RUN cd / && \
     groupadd -g 1000 pycbc && useradd -u 1000 -g 1000 -d /opt/pycbc -k /etc/skel -m -s /bin/bash pycbc
 
 # Install MPI software needed for pycbc_inference
-RUN yum install -y libibverbs libibverbs-devel libibmad libibmad-devel libibumad libibumad-devel librdmacm librdmacm-devel libmlx5 libmlx4 && curl http://mvapich.cse.ohio-state.edu/download/mvapich/mv2/mvapich2-2.1.tar.gz | tar -C /tmp -zxf - && \
-    cd /tmp/mvapich2-2.1 && ./configure --prefix=/opt/mvapich2-2.1 && make install && \
-    cd / && rm -rf /tmp/mvapich2-2.1 && \
+# DISABLED AFTER THE FIRST SET OF dnf installs
+# curl http://mvapich.cse.ohio-state.edu/download/mvapich/mv2/mvapich2-2.1.tar.gz | tar -C /tmp -zxf - && \
+#    cd /tmp/mvapich2-2.1 && ./configure --prefix=/opt/mvapich2-2.1 && make install && \
+#    cd / && rm -rf /tmp/mvapich2-2.1 && \
+# AND
+# MPICC=/opt/mvapich2-2.1/bin CFLAGS='-I /opt/mvapich2-2.1/include -L /opt/mvapich2-2.1/lib -lmpi' python3.8 -m pip install --no-cache-dir mpi4py
+# at the end.
+RUN dnf -y install libibverbs libibverbs-devel libibmad libibmad-devel libibumad libibumad-devel librdmacm librdmacm-devel libmlx5 libmlx4 && \
     python3.8 -m pip install schwimmbad && \
-    MPICC=/opt/mvapich2-2.1/bin CFLAGS='-I /opt/mvapich2-2.1/include -L /opt/mvapich2-2.1/lib -lmpi' python3.8 -m pip install --no-cache-dir mpi4py
-RUN echo "/opt/mvapich2-2.1/lib" > /etc/ld.so.conf.d/mvapich2-2.1.conf
+    python3.8 -m pip install --no-cache-dir mpi4py
+#RUN echo "/opt/mvapich2-2.1/lib" > /etc/ld.so.conf.d/mvapich2-2.1.conf
 
 # Now update all of our library installations
 RUN rm -f /etc/ld.so.cache && /sbin/ldconfig
 
 # Explicitly set the path so that it is not inherited from build the environment
-ENV PATH "/usr/local/bin:/usr/bin:/bin:/opt/mvapich2-2.1/bin"
+ENV PATH "/usr/local/bin:/usr/bin:/bin:
+#/opt/mvapich2-2.1/bin"
 
 # Make python be what we want
 RUN alternatives --set python /usr/bin/python3.8
