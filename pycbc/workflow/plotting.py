@@ -250,7 +250,7 @@ def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
         file_url = urljoin('file:', pathname2url(vetodef_file))
         vdf_file = File(workflow.ifos, 'VETO_DEFINER',
                         workflow.analysis_time, file_url=file_url)
-        vdf_file.PFN(file_url, site='local')
+        vdf_file.add_pfn(file_url, site='local')
     else:
         vdf_file = vetodef_file
 
