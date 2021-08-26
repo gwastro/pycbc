@@ -27,11 +27,11 @@ RUN echo "/usr/lib64/openmpi/lib/" > /etc/ld.so.conf.d/openmpi.conf
 # Now update all of our library installations
 RUN rm -f /etc/ld.so.cache && /sbin/ldconfig
 
-# Explicitly set the path so that it is not inherited from build the environment
-ENV PATH "/usr/local/bin:/usr/bin:/bin:/lib64/openmpi/bin/bin"
-
 # Make python be what we want
 RUN alternatives --set python /usr/bin/python3.8
+
+# Explicitly set the path so that it is not inherited from build the environment
+ENV PATH "/usr/local/bin:/usr/bin:/bin:/lib64/openmpi/bin/bin"
 
 # Set the default LAL_DATA_PATH to point at CVMFS first, then the container.
 # Users wanting it to point elsewhere should start docker using:
