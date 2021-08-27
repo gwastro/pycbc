@@ -122,7 +122,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
                                    workflow.out_dir,
-                                   staging_site=workflow.staging_site)
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
     job.add_into_workflow(workflow, parents=[node])
     logging.info('Leaving minifollowups module')
 
@@ -226,7 +227,8 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
                                    workflow.out_dir,
-                                   staging_site=workflow.staging_site)
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
     job.add_into_workflow(workflow, parents=[node])
     logging.info('Leaving minifollowups module')
 
@@ -314,7 +316,8 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
                                    workflow.out_dir,
-                                   staging_site=workflow.staging_site)
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
     job.add_into_workflow(workflow, parents=[node])
 
     logging.info('Leaving injection minifollowups module')

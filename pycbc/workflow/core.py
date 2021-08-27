@@ -639,12 +639,12 @@ class Workflow(pegasus_workflow.Workflow):
         self.cp = WorkflowConfigParser.from_cli(args)
         self.args = args
 
-        if hasattr(args, workflow_name):
+        if hasattr(args, 'main_workflow_directory'):
             wflow_dir = args.main_workflow_directory or args.output_dir
         else:
             wflow_dir = args.output_dir
 
-        if hasattr(args, dax_file):
+        if hasattr(args, 'dax_file'):
             dax_file = args.dax_file or None
         else:
             dax_file = None

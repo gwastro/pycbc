@@ -29,7 +29,6 @@ provides additional abstraction and argument handling.
 import os
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
-from pycbc.workflow import PEGASUS_FILE_DIRECTORY
 import Pegasus.api as dax
 
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'pegasus_files')
@@ -333,8 +332,10 @@ class Workflow(object):
         self._containers = []
         self.in_workflow = False
         self.sub_workflows = []
-        if dax_file_name is not None:
+        if dax_file_name is None:
             self.filename = self.name + '.dax'
+        else:
+            self.filename = dax_file_name
         self._adag = dax.Workflow(self.filename)
         if is_subworkflow:
             self._asdag = SubWorkflow(self.filename, is_planned=False,
