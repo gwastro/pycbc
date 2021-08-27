@@ -49,7 +49,7 @@ data = {}
 for key in xinj.table[0].__slots__:
     # Some XML files can have empty columns which are read as None in python.
     # For these cases we ignore the columns so they do not appear in the output
-    # HDF file. I note that such XML files are invalid in C.
+    # HDF file. (Such XML files cannot currently be read by LALSuite C code.)
     if getattr(xinj.table[0], key) is not None:
         data[str(key)] = numpy.array([getattr(t, key) for t in xinj.table])
 
