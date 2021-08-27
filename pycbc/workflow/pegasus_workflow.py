@@ -328,8 +328,10 @@ class Workflow(object):
         if is_subworkflow:
             self._asdag = SubWorkflow(self.filename, is_planned=False,
                                       _id=self.name)
+            self._swinputs = []
         else:
             self._asdag = None
+            self._swinputs = None
 
     def add_workflow(self, workflow):
         """ Add a sub-workflow to this workflow
@@ -466,21 +468,32 @@ class Workflow(object):
                 # Don't need to do anything here.
                 continue
 
-            if inp.node is not None and not inp.node.in_workflow:
+            elif inp.node is not None and not inp.node.in_workflow:
                 # This error should be rare, but can happen. If a Node hasn't
                 # yet been added to a workflow, this logic breaks. Always add
                 # nodes in order that files will be produced.
                 raise ValueError('Parents of this node must be added to the '
                                  'workflow first.')
 
-            if inp.node is None or inp.node.in_workflow != self:
+            elif inp.node is None:
                 # File is external to the workflow (e.g. a pregenerated
                 # template bank). (if inp.node is None)
-                # OR
-                # File is generated in a different Workflow/Subworkflow that is
-                # also being constructed here.
                 if inp not in self._inputs:
                     self._inputs += [inp]
+
+            elif inp.node.in_workflow != self:
+                # File is coming from a parent workflow, or other workflow
+                # These needs a few extra hooks later, use _swinputs for this.
+                if inp not in self._inputs:
+                    self._inputs += [inp]
+                    self._swinputs += [inp]
+
+            else:
+                err_msg = "I don't understand how to deal with an input file "
+                          "here. Ian doesn't think this message should be "
+                          "possible, but if you get here something has gone "
+                          "wrong and will need debugging!"
+                raise ValueError(err_msg)
 
         # Record the outputs that this node generates
         self._outputs += node._outputs
@@ -504,8 +517,6 @@ class Workflow(object):
 
         for sub in self.sub_workflows:
             sub.save()
-            red_inputs = [s for s in sub._inputs if s not in self._outputs]
-            self._inputs += red_inputs
             # FIXME: If I'm now putting output_map here, all output_map stuff
             #        should move here.
             sub.output_map_file.insert_into_dax(self._rc, self._tc)
@@ -519,8 +530,8 @@ class Workflow(object):
             fil.insert_into_dax(self._rc, self._tc)
 
         if self._asdag is not None:
-            # Is a sub-workflow
-            self._asdag.add_inputs(*self._inputs)
+            # Is a sub-workflow, add the _swinputs as needed.
+            self._asdag.add_inputs(*self._swinputs)
 
         self._adag.add_replica_catalog(self._rc)
         # Add TC and SC into workflow
