@@ -800,6 +800,7 @@ class Workflow(pegasus_workflow.Workflow):
                 staging_site=self.staging_site,
                 cache_file=self.cache_file
             )
+            self._asdag.add_planner_args(**self._asdag.pycbc_planner_args)
 
         # add transformations to dax
         for transform in self._transformations:
