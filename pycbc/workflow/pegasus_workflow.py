@@ -558,7 +558,7 @@ class Workflow(object):
                 # There was no storage path
                 pass
 
-        if submit_now:
+        if submit_now and self._asdag is None:
             self.plan_and_submit()
         else:
             self._adag.write(filename)
