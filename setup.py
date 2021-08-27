@@ -38,18 +38,14 @@ setup_requires = ['numpy>=1.16.0']
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'cython>=0.29',
                       'decorator>=3.4.2',
-                      'numpy>=1.16.0,!=1.19.0; python_version >= "3.5"',
-                      'numpy>=1.16.0,<1.17.0; python_version <= "2.7"',
-                      'scipy>=0.16.0; python_version >= "3.5"',
-                      'scipy>=0.16.0,<1.3.0; python_version <= "3.4"',
+                      'numpy>=1.16.0,!=1.19.0',
+                      'scipy>=0.16.0',
                       'matplotlib>=1.5.1',
                       'pillow',
-                      'h5py>=2.5,<=3.1.0; python_version <= "3.6"',
-                      'h5py>=2.5; python_version > "3.6"',
+                      'h5py>=2.5',
                       'jinja2',
                       'lalsuite',
-                      'astropy>=2.0.3,<3.0.0; python_version <= "2.7"',
-                      'astropy>=2.0.3,!=4.2.1,!=4.0.5; python_version > "3.0"',
+                      'astropy>=2.0.3,!=4.2.1,!=4.0.5',
                       'mpld3>=0.3',
                       'lscsoft-glue>=1.59.3',
                       'requests>=1.2.1',
@@ -125,7 +121,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.18.dev4'
+        vinfo.version = '2.0.dev0'
         vinfo.release = 'False'
 
     with open('pycbc/version.py', 'wb') as f:
@@ -301,11 +297,9 @@ setup (
                     'pycbc.results': find_files('pycbc/results'),
                     'pycbc.tmpltbank': find_files('pycbc/tmpltbank')},
     ext_modules = ext,
-    python_requires='>=2.7',
+    python_requires='>=3.7',
     classifiers=[
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
