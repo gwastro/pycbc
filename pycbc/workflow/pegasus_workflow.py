@@ -306,8 +306,11 @@ class Workflow(object):
     """
     """
     def __init__(self, name='my_workflow', is_subworkflow=False,
-                 directory=None):
+                 subworkflow_name='swflow', directory=None, cache_file=None,
+                 dax_file_name=None):
         self.name = name
+        if is_subworkflow:
+            self.name += '_' + subworkflow_name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
         self._sc = dax.SiteCatalog()
@@ -317,13 +320,18 @@ class Workflow(object):
         else:
             self.out_dir = os.path.abspath(directory)
 
+        if cache_file is not None:
+            cache_file = os.path.abspath(cache_file)
+        self.cache_file = cache_file
+
         self._inputs = []
         self._outputs = []
         self._transformations = []
         self._containers = []
         self.in_workflow = False
         self.sub_workflows = []
-        self.filename = self.name + '.dax'
+        if dax_file_name is not None:
+            self.filename = self.name + '.dax'
         self._adag = dax.Workflow(self.filename)
         if is_subworkflow:
             self._asdag = SubWorkflow(self.filename, is_planned=False,
@@ -553,6 +561,10 @@ class SubWorkflow(dax.SubWorkflow):
     stage. We do add a little bit of functionality here.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pycbc_planner_args = {}
+
     def add_into_workflow(self, container_wflow, parents=None):
         """Add this Job into a container Workflow
         """
@@ -561,29 +573,37 @@ class SubWorkflow(dax.SubWorkflow):
         else:
             # Get Pegasus objects from PyCBC objects for parent Nodes
             parents = [n._dax_node for n in parents]
+        self.add_planner_args(**self.pycbc_planner_args)
+        # Set this to None so code will fail if more planner args are added
+        self.pycbc_planner_args = None
         container_wflow._adag.add_jobs(self)
         container_wflow._adag.add_dependency(self, parents=parents)
 
+    def add_planner_arg(self, value, option):
+        if self.pycbc_planner_args is None:
+           err_msg = ("We cannot add arguments to the SubWorkflow planning "
+                      "stage after this is added to the parent workflow.")
+           raise ValueError(err_msg)
+
+        self.pycbc_planner_args[value] = option
+
     def set_subworkflow_properties(self, output_map_file,
                                    out_dir,
-                                   staging_site):
+                                   staging_site,
+                                   cache_file):
 
-        # FIXME: Pegasus added a add_planner_args for SubWorkflows. We should
-        #        use this, but it can only be called once, so we'd have to
-        #        store options at PyCBC level and then call this once when
-        #        saving the workflow.
-        self.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
-                      os.path.basename(output_map_file.name))
+        self.add_planner_arg('pegasus.dir.storage.mapper.replica.file',
+                             os.path.basename(output_map_file.name))
         self.add_inputs(output_map_file)
 
         # I think this is needed to deal with cases where the subworkflow file
         # does not exist at submission time.
         bname = os.path.splitext(os.path.basename(self.file))[0]
-        self.add_args('--basename {}'.format(bname))
-        self.add_args('--output-sites local')
-        self.add_args('--cleanup inplace')
-        self.add_args('--cluster label,horizontal')
-        self.add_args('-vvv')
+        self.add_planner_arg('basename',  bname)
+        self.add_planner_arg('output-sites', 'local')
+        self.add_planner_arg('cleanup', 'inplace')
+        self.add_planner_arg('cluster', 'label,horizontal')
+        self.add_planner_arg('verbose', 3)
 
         # NOTE: The _reuse.cache file is produced during submit_dax and would
         #       be sent to all sub-workflows. Currently we do not declare this
@@ -594,10 +614,11 @@ class SubWorkflow(dax.SubWorkflow):
         #       having this file created differently. Note that all other
         #       inputs might be generated within the workflow, and then pegasus
         #       data transfer is needed, so these must be File objects.
-        self.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
+        if cache_file:
+            self.add_planner_arg('cache', cache_file)
 
         if staging_site:
-            self.add_args('--staging-site %s' % staging_site)
+            self.add_planner_arg('staging-site', staging_site)
 
 
 class File(dax.File):

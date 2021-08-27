@@ -626,7 +626,7 @@ class Workflow(pegasus_workflow.Workflow):
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs.
     """
-    def __init__(self, args, name, **kwargs):
+    def __init__(self, args, **kwargs):
         """
         Create a pycbc workflow
 
@@ -637,8 +637,25 @@ class Workflow(pegasus_workflow.Workflow):
         """
         # Parse ini file
         self.cp = WorkflowConfigParser.from_cli(args)
+        self.args = args
 
-        super(Workflow, self).__init__(name, **kwargs)
+        if hasattr(args, workflow_name):
+            wflow_dir = args.main_workflow_directory or args.output_dir
+        else:
+            wflow_dir = args.output_dir
+
+        if hasattr(args, dax_file):
+            dax_file = args.dax_file or None
+        else:
+            dax_file = None
+
+        super(Workflow, self).__init__(
+            name=args.workflow_name,
+            directory=wflow_dir,
+            cache_file=args.cache_file,
+            dax_file_name=dax_file,
+            **kwargs
+        )
 
         # Set global values
         start_time = end_time = 0
@@ -670,6 +687,13 @@ class Workflow(pegasus_workflow.Workflow):
     # FIXME: Should this be in pegasus_workflow?
     @property
     def output_map(self):
+        args = self.args
+        if hasattr(args, 'output_map') args.output_map is not None:
+            if not os.path.isabs(args.output_map):
+                err_msg = "--output-map argument must give a full path"
+                raise ValueError(err_msg)
+            return args.output_map
+
         if self.in_workflow is not False:
             name = self.name + '.map'
         else:
@@ -773,7 +797,8 @@ class Workflow(pegasus_workflow.Workflow):
             self._asdag.set_subworkflow_properties(
                 output_map_file,
                 self.out_dir,
-                staging_site=self.staging_site
+                staging_site=self.staging_site,
+                cache_file=self.cache_file
             )
 
         # add transformations to dax
@@ -2180,6 +2205,13 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
                        help="Path to directory where the workflow will be "
                             "written. Default is to use "
                             "{workflow-name}_output.")
+    wfgrp.add_argument("--cache-file", default=None,
+                       help="Path to input file containing list of files to "
+                            "be reused (the 'input_map' file)")
+    wfgrp.add_argument("--submit-now", default=False, action='store_true',
+                       help="If given, workflow will immediately be submitted "
+                            "on completion of workflow generation")
+
     if include_subdax_opts:
         wfgrp.add_argument("--output-map", default="output.map",
                            help="Path to an output map file. Default is "
@@ -2188,3 +2220,16 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
                            help="Path to DAX file. Default is to write to the "
                                 "output directory with name "
                                 "{workflow-name}.dax.")
+        wfgrp.add_argument('--main-workflow-directory', default=None,
+                           required=False,
+                            help="Supply the location that the main workflow "
+                                 "was generated in. Only needed if running "
+                                 "this job within a workflow, and then "
+                                 "identifies where the local-site-scratch is")
+        wfgrp.add_argument("--is-sub-workflow", default=False,
+                            action="store_true",
+                            help="Only give this option if this code is being "
+                                 "run as a sub-workflow within pegasus. If "
+                                 "this means nothing to you, do not give this "
+                                 "option.")
+

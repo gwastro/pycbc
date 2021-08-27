@@ -43,9 +43,12 @@ args = parser.parse_args()
 
 # FIXME: opts.tags is currently unused here.
 
-container = pycbc.workflow.Workflow(args, args.workflow_name)
-workflow = pycbc.workflow.Workflow(args, args.workflow_name + '-main')
-finalize_workflow = pycbc.workflow.Workflow(args, args.workflow_name + '-finalization')
+container = pycbc.workflow.Workflow(args)
+workflow = pycbc.workflow.Workflow(args, subworkflow_name='main',
+                                   is_subworkflow=True)
+finalize_workflow = pycbc.workflow.Workflow(args,
+                                            subworkflow_name='finalization',
+                                            is_subworkflow=True)
 
 pycbc.workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
