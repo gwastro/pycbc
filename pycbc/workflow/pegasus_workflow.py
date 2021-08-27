@@ -667,7 +667,7 @@ class SubWorkflow(dax.SubWorkflow):
         # does not exist at submission time.
         bname = os.path.splitext(os.path.basename(self.file))[0]
         self.add_planner_arg('basename',  bname)
-        self.add_planner_arg('output-sites', 'local')
+        self.add_planner_arg('output_sites', 'local')
         self.add_planner_arg('cleanup', 'inplace')
         self.add_planner_arg('cluster', ['label', 'horizontal'])
         self.add_planner_arg('verbose', 3)
@@ -685,7 +685,7 @@ class SubWorkflow(dax.SubWorkflow):
             self.add_planner_arg('cache', cache_file)
 
         if staging_site:
-            self.add_planner_arg('staging-site', staging_site)
+            self.add_planner_arg('staging_sites', staging_site)
 
 
 class File(dax.File):
