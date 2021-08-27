@@ -27,7 +27,7 @@ from .marginalized_gaussian_noise import MarginalizedPhaseGaussianNoise
 from .marginalized_gaussian_noise import MarginalizedPolarization
 from .marginalized_gaussian_noise import MarginalizedHMPolPhase
 from .brute_marg import BruteParallelGaussianMarginalize
-from .gated_gaussian_noise import GatedGaussianNoise
+from .gated_gaussian_noise import (GatedGaussianNoise, GatedGaussianMargPol)
 from .single_template import SingleTemplate
 from .relbin import Relative
 
@@ -191,6 +191,7 @@ models = {_cls.name: _cls for _cls in (
     MarginalizedHMPolPhase,
     BruteParallelGaussianMarginalize,
     GatedGaussianNoise,
+    GatedGaussianMargPol,
     SingleTemplate,
     Relative
 )}

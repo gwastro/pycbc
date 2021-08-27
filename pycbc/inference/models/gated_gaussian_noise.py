@@ -20,60 +20,45 @@ method to fill the removed part such that it does not enter the likelihood.
 
 import logging
 import numpy
+from abc import abstractmethod
+from scipy import special
 
 from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
 from pycbc.waveform.utils import time_from_frequencyseries
+from pycbc.waveform import generator
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
 
 
-class GatedGaussianNoise(BaseGaussianNoise):
-    r"""Model that applies a time domain gate, assuming stationary Gaussian
-    noise.
+class BaseGatedGaussian(BaseGaussianNoise):
+    r"""Base model for gated gaussian.
 
-    The gate start and end times are set by providing ``t_gate_start`` and
-    ``t_gate_end`` parameters, respectively. This will cause the gated times
-    to be excised from the analysis. For more details on the likelihood
-    function and its derivation, see
-    `arXiv:2105.05238 <https://arxiv.org/abs/2105.05238>`_.
-
-    .. warning::
-        The normalization of the likelihood depends on the gate times. However,
-        at the moment, the normalization is not calculated, as it depends on
-        the determinant of the truncated covariance matrix (see Eq. 4 of
-        arXiv:2105.05238). For this reason it is recommended that you only
-        use this model for fixed gate times.
-
+    Provides additional routines for applying a time-domain gate to data.
+    See :py:class:`GatedGaussianNoise` for more details.
     """
-    name = 'gated_gaussian_noise'
-
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
-        # set up the boiler-plate attributes
-        super(GatedGaussianNoise, self).__init__(
-            variable_params, data, low_frequency_cutoff, psds=psds,
-            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
-            static_params=static_params, **kwargs)
         # cache the current projection for debugging
         self.current_proj = {}
         self.current_nproj = {}
+        # cache the overwhitened data
+        self._overwhitened_data = {}
         # cache the current gated data
         self._gated_data = {}
         # attribute for storing the current waveforms
         self._current_wfs = None
-        # create the waveform generator
-        self.waveform_generator = create_waveform_generator(
-            self.variable_params, self.data,
-            waveform_transforms=self.waveform_transforms,
-            recalibration=self.recalibration,
-            gates=self.gates, **self.static_params)
+        # set up the boiler-plate attributes
+        super().__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
 
     def update(self, **params):
         # update
@@ -108,9 +93,8 @@ class GatedGaussianNoise(BaseGaussianNoise):
         # make sure the relevant caches are cleared
         self._psds.clear()
         self._invpsds.clear()
-        self._weight.clear()
-        self._whitened_data.clear()
         self._gated_data.clear()
+        # store the psds
         for det, d in self._data.items():
             if psds is None:
                 # No psd means assume white PSD
@@ -123,9 +107,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
             # we'll store the weight to apply to the inner product
             invp = 1./p
             self._invpsds[det] = invp
-            self._weight[det] = numpy.sqrt(4 * invp.delta_f * invp)
-            self._whitened_data[det] = d.copy()
-            self._whitened_data[det] *= self._weight[det]
+        self._overwhitened_data = self.whiten(self.data, 2, inplace=False)
 
     def det_lognorm(self, det):
         # FIXME: just returning 0 for now, but should be the determinant
@@ -144,12 +126,6 @@ class GatedGaussianNoise(BaseGaussianNoise):
         """
         self._normalize = normalize
 
-    @property
-    def _extra_stats(self):
-        """Adds ``lognl``, plus ```optimal_snrsq`` in each
-        detector."""
-        return []
-
     @staticmethod
     def _nowaveform_logl():
         """Convenience function to set logl values if no waveform generated.
@@ -164,6 +140,128 @@ class GatedGaussianNoise(BaseGaussianNoise):
             The value of the log likelihood ratio evaluated at the given point.
         """
         return self.loglikelihood - self.lognl
+
+    def whiten(self, data, whiten, inplace=False):
+        """Whitens the given data.
+
+        Parameters
+        ----------
+        data : dict
+            Dictionary of detector names -> FrequencySeries.
+        whiten : {0, 1, 2}
+            Integer indicating what level of whitening to apply. Levels are:
+            0: no whitening; 1: whiten; 2: overwhiten.
+        inplace : bool, optional
+            If True, modify the data in place. Otherwise, a copy will be
+            created for whitening.
+
+
+        Returns
+        -------
+        dict :
+            Dictionary of FrequencySeries after the requested whitening has
+            been applied.
+        """
+        if not inplace:
+            data = {det: d.copy() for det, d in data.items()}
+        if whiten:
+            for det, dtilde in data.items():
+                invpsd = self._invpsds[det]
+                if whiten == 1:
+                    dtilde *= invpsd**0.5
+                elif whiten == 2:
+                    dtilde *= invpsd
+                else:
+                    raise ValueError("whiten must be either 0, 1, or 2")
+        return data
+
+    def get_waveforms(self):
+        """The waveforms generated using the current parameters.
+
+        If the waveforms haven't been generated yet, they will be generated
+        and cached.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
+        if self._current_wfs is None:
+            params = self.current_params
+            self._current_wfs = self.waveform_generator.generate(**params)
+        return self._current_wfs
+
+
+    @abstractmethod
+    def get_gated_waveforms(self):
+        """Generates and gates waveforms using the current parameters.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
+        pass
+
+    def get_residuals(self):
+        """Generates the residuals ``d-h`` using the current parameters.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
+        wfs = self.get_waveforms()
+        out = {}
+        for det, h in wfs.items():
+            invpsd = self._invpsds[det]
+            d = self.data[det]
+            out[det] = d - h
+        return out
+
+    def get_data(self):
+        """Return a copy of the data.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
+        return {det: d.copy() for det, d in self.data.items()}
+
+    def get_gated_data(self):
+        """Return a copy of the gated data.
+
+        The gated data will be cached for faster retrieval.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
+        gate_times = self.get_gate_times()
+        out = {}
+        for det, d in self.td_data.items():
+            # make sure the cache at least has the detectors in it
+            try:
+                cache = self._gated_data[det]
+            except KeyError:
+                cache = self._gated_data[det] = {}
+            invpsd = self._invpsds[det]
+            gatestartdelay, dgatedelay = gate_times[det]
+            try:
+                dtilde = cache[gatestartdelay, dgatedelay]
+            except KeyError:
+                # doesn't exist yet, or the gate times changed
+                cache.clear()
+                d = d.gate(gatestartdelay + dgatedelay/2,
+                           window=dgatedelay/2, copy=True,
+                           invpsd=invpsd, method='paint')
+                dtilde = d.to_frequencyseries()
+                # save for next time
+                cache[gatestartdelay, dgatedelay] = dtilde
+            out[det] = dtilde
+        return out
 
     def get_gate_times(self):
         """Gets the time to apply a gate based on the current sky position.
@@ -218,24 +316,25 @@ class GatedGaussianNoise(BaseGaussianNoise):
         dict :
             Dictionary of detector names -> (gate start, gate width)
         """
-        params = self.current_params
-        # gate input for ringdown analysis which consideres a start time
-        # and an end time
-        dgate = params['gate_window']
         # generate the template waveform
         try:
-            wfs = self.waveform_generator.generate(**params)
+            wfs = self.get_waveforms()
         except NoWaveformError:
             return self._nowaveform_logl()
         except FailedWaveformError as e:
             if self.ignore_failed_waveforms:
                 return self._nowaveform_logl()
             raise e
-
+        # gate input for ringdown analysis which consideres a start time
+        # and an end time
+        dgate = params['gate_window']
+        # get waveform parameters
+        params = self.current_params
         spin1 = params['spin1z']
         spin2 = params['spin2z']
         meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'],
                                        spin1, spin2)
+        # figure out the gate times
         gatetimes = {}
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
@@ -294,209 +393,6 @@ class GatedGaussianNoise(BaseGaussianNoise):
         _ = self._trytoget('lognl', self._lognl)
         # the det_lognls dict should have been updated, so can call it now
         return self._det_lognls[det]
-
-    def _loglikelihood(self):
-        r"""Computes the log likelihood after removing the power within the
-        given time window,
-
-        .. math::
-            \log p(d|\Theta) = -\frac{1}{2} \sum_i
-             \left< d_i - h_i(\Theta) | d_i - h_i(\Theta) \right>,
-
-        at the current parameter values :math:`\Theta`.
-        Returns
-        -------
-        float
-            The value of the log likelihood.
-        """
-        # generate the template waveform
-        try:
-            wfs = self.get_waveforms()
-        except NoWaveformError:
-            return self._nowaveform_logl()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_logl()
-            raise e
-        # get the times of the gates
-        gate_times = self.get_gate_times()
-        logl = 0.
-        self.current_proj.clear()
-        for det, h in wfs.items():
-            invpsd = self._invpsds[det]
-            norm = self.det_lognorm(det)
-            gatestartdelay, dgatedelay = gate_times[det]
-            # we always filter the entire segment starting from kmin, since the
-            # gated series may have high frequency components
-            slc = slice(self._kmin[det], self._kmax[det])
-            # calculate the residual
-            data = self.td_data[det]
-            h.resize(len(self.data[det]))
-            ht = h.to_timeseries()
-            res = data - ht
-            rtilde = res.to_frequencyseries()
-            gated_res = res.gate(gatestartdelay + dgatedelay/2,
-                                 window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint')
-            self.current_proj[det] = (gated_res.proj, gated_res.projslc)
-            gated_rtilde = gated_res.to_frequencyseries()
-            # overwhiten
-            gated_rtilde *= invpsd
-            rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
-            logl += norm - 0.5*rr
-        return float(logl)
-
-    def whiten(self, data, whiten, inplace=False):
-        """Whitens the given data.
-
-        Parameters
-        ----------
-        data : dict
-            Dictionary of detector names -> FrequencySeries.
-        whiten : {0, 1, 2}
-            Integer indicating what level of whitening to apply. Levels are:
-            0: no whitening; 1: whiten; 2: overwhiten.
-        inplace : bool, optional
-            If True, modify the data in place. Otherwise, a copy will be
-            created for whitening.
-
-
-        Returns
-        -------
-        dict :
-            Dictionary of FrequencySeries after the requested whitening has
-            been applied.
-        """
-        if not inplace:
-            data = {det: d.copy() for det, d in data.items()}
-        if whiten:
-            for det, dtilde in data.items():
-                invpsd = self._invpsds[det]
-                dtilde *= invpsd**(whiten/2.)
-        return data
-            
-    def get_waveforms(self):
-        """The waveforms generated using the current parameters.
-
-        If the waveforms haven't been generated yet, they will be generated
-        and cached.
-
-        Returns
-        -------
-        dict :
-            Dictionary of detector names -> FrequencySeries.
-        """
-        if self._current_wfs is None:
-            params = self.current_params
-            self._current_wfs = self.waveform_generator.generate(**params)
-        return self._current_wfs
-
-    def get_gated_waveforms(self):
-        """Generates and gates waveforms using the current parameters.
-
-        Returns
-        -------
-        dict :
-            Dictionary of detector names -> FrequencySeries.
-        """
-        wfs = self.get_waveforms()
-        gate_times = self.get_gate_times()
-        for det, h in wfs.items():
-            invpsd = self._invpsds[det]
-            gatestartdelay, dgatedelay = gate_times[det]
-            h.resize(len(self.data[det]))
-            ht = h.to_timeseries()
-            ht = ht.gate(gatestartdelay + dgatedelay/2,
-                         window=dgatedelay/2, copy=False,
-                         invpsd=invpsd, method='paint')
-            h = ht.to_frequencyseries()
-            wfs[det] = h
-        return wfs
-
-    def get_residuals(self):
-        """Generates the residuals ``d-h`` using the current parameters.
-
-        Returns
-        -------
-        dict :
-            Dictionary of detector names -> FrequencySeries.
-        """
-        wfs = self.get_waveforms()
-        out = {}
-        for det, h in wfs.items():
-            invpsd = self._invpsds[det]
-            d = self.data[det]
-            out[det] = d - h
-        return out
-
-    def get_gated_residuals(self):
-        """Generates the gated residuals ``d-h`` using the current parameters.
-
-        Returns
-        -------
-        dict :
-            Dictionary of detector names -> FrequencySeries.
-        """
-        params = self.current_params
-        wfs = self.waveform_generator.generate(**params)
-        gate_times = self.get_gate_times()
-        out = {}
-        for det, h in wfs.items():
-            invpsd = self._invpsds[det]
-            gatestartdelay, dgatedelay = gate_times[det]
-            data = self.td_data[det]
-            ht = h.to_timeseries()
-            res = data - ht
-            res = res.gate(gatestartdelay + dgatedelay/2,
-                           window=dgatedelay/2, copy=True,
-                           invpsd=invpsd, method='paint')
-            res = res.to_frequencyseries()
-            out[det] = res
-        return out
-
-    def get_data(self):
-        """Return a copy of the data.
-
-        Returns
-        -------
-        dict :
-            Dictionary of detector names -> FrequencySeries.
-        """
-        return {det: d.copy() for det, d in self.data.items()}
-
-    def get_gated_data(self):
-        """Return a copy of the gated data.
-
-        The gated data will be cached for faster retrieval.
-
-        Returns
-        -------
-        dict :
-            Dictionary of detector names -> FrequencySeries.
-        """
-        gate_times = self.get_gate_times()
-        out = {}
-        for det, d in self.td_data.items():
-            # make sure the cache at least has the detectors in it
-            try:
-                cache = self._gated_data[det]
-            except KeyError:
-                cache = self._gated_data[det] = {}
-            invpsd = self._invpsds[det]
-            gatestartdelay, dgatedelay = gate_times[det]
-            try:
-                dtilde = cache[gatestartdelay, dgatedelay]
-            except KeyError:
-                # doesn't exist yet, or the gate times changed
-                cache.clear()
-                d = d.gate(gatestartdelay + dgatedelay/2,
-                           window=dgatedelay/2, copy=True,
-                           invpsd=invpsd, method='paint')
-                dtilde = d.to_frequencyseries()
-                # save for next time
-                cache[gatestartdelay, dgatedelay] = dtilde
-            out[det] = dtilde
-        return out
 
     @staticmethod
     def _fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict):
@@ -557,3 +453,278 @@ class GatedGaussianNoise(BaseGaussianNoise):
             if self._f_upper[det] is not None:
                 fp.attrs['{}_likelihood_high_freq'.format(det)] = \
                                                         self._f_upper[det]
+
+
+class GatedGaussianNoise(BaseGatedGaussian):
+    r"""Model that applies a time domain gate, assuming stationary Gaussian
+    noise.
+
+    The gate start and end times are set by providing ``t_gate_start`` and
+    ``t_gate_end`` parameters, respectively. This will cause the gated times
+    to be excised from the analysis. For more details on the likelihood
+    function and its derivation, see
+    `arXiv:2105.05238 <https://arxiv.org/abs/2105.05238>`_.
+
+    .. warning::
+        The normalization of the likelihood depends on the gate times. However,
+        at the moment, the normalization is not calculated, as it depends on
+        the determinant of the truncated covariance matrix (see Eq. 4 of
+        arXiv:2105.05238). For this reason it is recommended that you only
+        use this model for fixed gate times.
+
+    """
+    name = 'gated_gaussian_noise'
+
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 static_params=None, **kwargs):
+        # set up the boiler-plate attributes
+        super().__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
+        # create the waveform generator
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data,
+            waveform_transforms=self.waveform_transforms,
+            recalibration=self.recalibration,
+            gates=self.gates, **self.static_params)
+
+    @property
+    def _extra_stats(self):
+        """No extra stats are stored."""
+        return []
+
+    def _loglikelihood(self):
+        r"""Computes the log likelihood after removing the power within the
+        given time window,
+
+        .. math::
+            \log p(d|\Theta) = -\frac{1}{2} \sum_i
+             \left< d_i - h_i(\Theta) | d_i - h_i(\Theta) \right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood.
+        """
+        # generate the template waveform
+        try:
+            wfs = self.get_waveforms()
+        except NoWaveformError:
+            return self._nowaveform_logl()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_logl()
+            raise e
+        # get the times of the gates
+        gate_times = self.get_gate_times()
+        logl = 0.
+        self.current_proj.clear()
+        for det, h in wfs.items():
+            invpsd = self._invpsds[det]
+            norm = self.det_lognorm(det)
+            gatestartdelay, dgatedelay = gate_times[det]
+            # we always filter the entire segment starting from kmin, since the
+            # gated series may have high frequency components
+            slc = slice(self._kmin[det], self._kmax[det])
+            # calculate the residual
+            data = self.td_data[det]
+            h.resize(len(self.data[det]))
+            ht = h.to_timeseries()
+            res = data - ht
+            rtilde = res.to_frequencyseries()
+            gated_res = res.gate(gatestartdelay + dgatedelay/2,
+                                 window=dgatedelay/2, copy=True,
+                                 invpsd=invpsd, method='paint')
+            self.current_proj[det] = (gated_res.proj, gated_res.projslc)
+            gated_rtilde = gated_res.to_frequencyseries()
+            # overwhiten
+            gated_rtilde *= invpsd
+            rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
+            logl += norm - 0.5*rr
+        return float(logl)
+
+    def get_gated_waveforms(self):
+        wfs = self.get_waveforms()
+        gate_times = self.get_gate_times()
+        out = {}
+        for det, h in wfs.items():
+            invpsd = self._invpsds[det]
+            gatestartdelay, dgatedelay = gate_times[det]
+            h.resize(len(self.data[det]))
+            ht = h.to_timeseries()
+            ht = ht.gate(gatestartdelay + dgatedelay/2,
+                         window=dgatedelay/2, copy=False,
+                         invpsd=invpsd, method='paint')
+            h = ht.to_frequencyseries()
+            out[det] = h
+        return out
+
+    def get_gated_residuals(self):
+        """Generates the gated residuals ``d-h`` using the current parameters.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
+        params = self.current_params
+        wfs = self.waveform_generator.generate(**params)
+        gate_times = self.get_gate_times()
+        out = {}
+        for det, h in wfs.items():
+            invpsd = self._invpsds[det]
+            gatestartdelay, dgatedelay = gate_times[det]
+            data = self.td_data[det]
+            ht = h.to_timeseries()
+            res = data - ht
+            res = res.gate(gatestartdelay + dgatedelay/2,
+                           window=dgatedelay/2, copy=True,
+                           invpsd=invpsd, method='paint')
+            res = res.to_frequencyseries()
+            out[det] = res
+        return out
+
+
+class GatedGaussianMargPol(BaseGatedGaussian):
+    r"""Gated gaussian model with numerical marginalization over polarization.
+
+    This implements the GatedGaussian likelihood with an explicit numerical
+    marginalization over polarization angle. This is accomplished using
+    a fixed set of integration points distribution uniformation between
+    0 and 2pi. By default, 1000 integration points are used.
+    The 'polarization_samples' argument can be passed to set an alternate
+    number of integration points.
+    """
+    name = 'gated_gaussian_margpol'
+
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 static_params=None,
+                 polarization_samples=1000, **kwargs):
+        # set up the boiler-plate attributes
+        super().__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
+        # the polarization parameters
+        self.polarization_samples = polarization_samples
+        self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
+        self.dets = {}
+        # create the waveform generator
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data,
+            waveform_transforms=self.waveform_transforms,
+            recalibration=self.recalibration,
+            generator_class=generator.FDomainDetFrameTwoPolGenerator,
+            **self.static_params)
+
+    def get_gated_waveforms(self):
+        wfs = self.get_waveforms()
+        gate_times = self.get_gate_times()
+        out = {}
+        for det in wfs:
+            invpsd = self._invpsds[det]
+            gatestartdelay, dgatedelay = gate_times[det]
+            # the waveforms are a dictionary of (hp, hc)
+            pols = []
+            for h in wfs[det]:
+                h.resize(len(self.data[det]))
+                ht = h.to_timeseries()
+                ht = ht.gate(gatestartdelay + dgatedelay/2,
+                             window=dgatedelay/2, copy=False,
+                             invpsd=invpsd, method='paint')
+                h = ht.to_frequencyseries()
+                pols.append(h)
+            out[det] = tuple(pols)
+        return out
+
+    @property
+    def _extra_stats(self):
+        """Adds the maxL polarization and corresponding likelihood."""
+        return ['maxl_polarization', 'maxl_logl']
+
+    def _loglikelihood(self):
+        r"""Computes the log likelihood after removing the power within the
+        given time window,
+
+        .. math::
+            \log p(d|\Theta) = -\frac{1}{2} \sum_i
+             \left< d_i - h_i(\Theta) | d_i - h_i(\Theta) \right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood.
+        """
+        # generate the template waveform
+        try:
+            wfs = self.get_waveforms()
+        except NoWaveformError:
+            return self._nowaveform_logl()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_logl()
+            raise e
+        # get the gated waveforms and data
+        gated_wfs = self.get_gated_waveforms()
+        gated_data = self.get_gated_data()
+        # cycle over
+        loglr = 0.
+        lognl = 0.
+        for det, (hp, hc) in wfs.items():
+            # get the antenna patterns
+            if det not in self.dets:
+                self.dets[det] = Detector(det)
+            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
+                                                    self.current_params['dec'],
+                                                    self.pol,
+                                                    self.current_params['tc'])
+            norm = self.det_lognorm(det)
+            # we always filter the entire segment starting from kmin, since the
+            # gated series may have high frequency components
+            slc = slice(self._kmin[det], self._kmax[det])
+            # get the gated values
+            gated_hp, gated_hc = gated_wfs[det]
+            gated_d = gated_data[det]
+            # we'll overwhiten the ungated data and waveforms for computing
+            # inner products
+            d = self._overwhitened_data[det]
+            # overwhiten the hp and hc
+            invpsd = self._invpsds[det]
+            hp *= invpsd
+            hc *= invpsd
+            # get the various gated inner products
+            hpd = hp[slc].inner(gated_d[slc]).real  # <hp, d>
+            hcd = hc[slc].inner(gated_d[slc]).real  # <hc, d>
+            dhp = d[slc].inner(gated_hp[slc]).real  # <d, hp>
+            dhc = d[slc].inner(gated_hc[slc]).real  # <d, hc>
+            hphp = hp[slc].inner(gated_hp[slc]).real  # <hp, hp>
+            hchc = hc[slc].inner(gated_hc[slc]).real  # <hc, hc>
+            hphc = hp[slc].inner(gated_hc[slc]).real  # <hp, hc>
+            hchp = hc[slc].inner(gated_hp[slc]).real  # <hc, hp>
+            dd = d[slc].inner(gated_d[slc]).real  # <d, d>
+            # since the antenna patterns are real,
+            # <h, d>/2 + <d, h>/2 = fp*(<hp, d>/2 + <d, hp>/2)
+            #                     + fc*(<hc, d>/2 + <d, hc>/2)
+            hd = fp*(hpd + dhp) + fc*(hcd + dhc)
+            # <h, h>/2 = <fp*hp + fc*hc, fp*hp + fc*hc>/2
+            #          = fp*fp*<hp, hp>/2 + fc*fc*<hc, hc>/2
+            #            + fp*fc*<hp, hc>/2 + fc*fp*<hc, hp>/2
+            hh = fp*fp*hphp + fc*fc*hchc + fp*fc*(hphc + hchp)
+            # sum up; note that the factor is 2df instead of 4df to account
+            # for the factor of 1/2
+            loglr += norm + 2*invpsd.delta_f*(hd - hh)
+            lognl += -2 * invpsd.delta_f * dd
+        # store the maxl polarization
+        idx = loglr.argmax()
+        setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
+        setattr(self._current_stats, 'maxl_logl', loglr[idx] + lognl)
+        # compute the marginalized log likelihood
+        marglogl = special.logsumexp(loglr) + lognl - numpy.log(len(self.pol))
+        return float(marglogl)
