@@ -64,12 +64,22 @@ class GatedGaussianNoise(BaseGaussianNoise):
         # cache the current projection for debugging
         self.current_proj = {}
         self.current_nproj = {}
+        # cache the current gated data
+        self._gated_data = {}
+        # attribute for storing the current waveforms
+        self._current_wfs = None
         # create the waveform generator
         self.waveform_generator = create_waveform_generator(
             self.variable_params, self.data,
             waveform_transforms=self.waveform_transforms,
             recalibration=self.recalibration,
             gates=self.gates, **self.static_params)
+
+    def update(self, **params):
+        # update
+        super().update(**params)
+        # reset current waveforms
+        self._current_wfs = None
 
     @BaseDataModel.data.setter
     def data(self, data):
@@ -100,6 +110,7 @@ class GatedGaussianNoise(BaseGaussianNoise):
         self._invpsds.clear()
         self._weight.clear()
         self._whitened_data.clear()
+        self._gated_data.clear()
         for det, d in self._data.items():
             if psds is None:
                 # No psd means assume white PSD
@@ -287,19 +298,20 @@ class GatedGaussianNoise(BaseGaussianNoise):
     def _loglikelihood(self):
         r"""Computes the log likelihood after removing the power within the
         given time window,
+
         .. math::
             \log p(d|\Theta) = -\frac{1}{2} \sum_i
              \left< d_i - h_i(\Theta) | d_i - h_i(\Theta) \right>,
+
         at the current parameter values :math:`\Theta`.
         Returns
         -------
         float
             The value of the log likelihood.
         """
-        params = self.current_params
         # generate the template waveform
         try:
-            wfs = self.waveform_generator.generate(**params)
+            wfs = self.get_waveforms()
         except NoWaveformError:
             return self._nowaveform_logl()
         except FailedWaveformError as e:
@@ -334,96 +346,91 @@ class GatedGaussianNoise(BaseGaussianNoise):
             logl += norm - 0.5*rr
         return float(logl)
 
-    def get_waveforms(self, whiten=False):
-        """Generates waveforms for using current parameters.
+    def whiten(self, data, whiten, inplace=False):
+        """Whitens the given data.
 
         Parameters
         ----------
-        whiten : bool, optional
-            Whiten the waveforms before returning. Default is False.
+        data : dict
+            Dictionary of detector names -> FrequencySeries.
+        whiten : {0, 1, 2}
+            Integer indicating what level of whitening to apply. Levels are:
+            0: no whitening; 1: whiten; 2: overwhiten.
+        inplace : bool, optional
+            If True, modify the data in place. Otherwise, a copy will be
+            created for whitening.
+
+
+        Returns
+        -------
+        dict :
+            Dictionary of FrequencySeries after the requested whitening has
+            been applied.
+        """
+        if not inplace:
+            data = {det: d.copy() for det, d in data.items()}
+        if whiten:
+            for det, dtilde in data.items():
+                invpsd = self._invpsds[det]
+                dtilde *= invpsd**(whiten/2.)
+        return data
+            
+    def get_waveforms(self):
+        """The waveforms generated using the current parameters.
+
+        If the waveforms haven't been generated yet, they will be generated
+        and cached.
 
         Returns
         -------
         dict :
             Dictionary of detector names -> FrequencySeries.
         """
-        params = self.current_params
-        wfs = self.waveform_generator.generate(**params)
-        if whiten:
-            for det, h in wfs.items():
-                invpsd = self._invpsds[det]
-                if whiten == 2:
-                    h *= invpsd
-                else:
-                    h *= invpsd**0.5
-                wfs[det] = h
-        return wfs
+        if self._current_wfs is None:
+            params = self.current_params
+            self._current_wfs = self.waveform_generator.generate(**params)
+        return self._current_wfs
 
-    def get_gated_waveforms(self, whiten=False):
+    def get_gated_waveforms(self):
         """Generates and gates waveforms using the current parameters.
 
-        Parameters
-        ----------
-        whiten : bool, optional
-            Whiten the waveforms before returning. Default is False.
-
         Returns
         -------
         dict :
             Dictionary of detector names -> FrequencySeries.
         """
-        params = self.current_params
-        wfs = self.waveform_generator.generate(**params)
+        wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
+            h.resize(len(self.data[det]))
             ht = h.to_timeseries()
             ht = ht.gate(gatestartdelay + dgatedelay/2,
                          window=dgatedelay/2, copy=False,
                          invpsd=invpsd, method='paint')
             h = ht.to_frequencyseries()
-            if whiten == 2:
-                h *= invpsd
-            elif whiten:
-                h *= invpsd**0.5
             wfs[det] = h
         return wfs
 
-    def get_residuals(self, whiten=False):
+    def get_residuals(self):
         """Generates the residuals ``d-h`` using the current parameters.
-
-        Parameters
-        ----------
-        whiten : bool, optional
-            Whiten the residuals before returning. Default is False.
 
         Returns
         -------
         dict :
             Dictionary of detector names -> FrequencySeries.
         """
-        params = self.current_params
-        wfs = self.waveform_generator.generate(**params)
+        wfs = self.get_waveforms()
         out = {}
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             d = self.data[det]
-            res = d - h
-            if whiten == 2:
-                res *= invpsd
-            elif whiten:
-                res *= invpsd**0.5
-            out[det] = res
+            out[det] = d - h
         return out
 
-    def get_gated_residuals(self, whiten=False):
+    def get_gated_residuals(self):
         """Generates the gated residuals ``d-h`` using the current parameters.
-
-        Parameters
-        ----------
-        whiten : bool, optional
-            Whiten the residuals before returning. Default is False.
 
         Returns
         -------
@@ -444,44 +451,23 @@ class GatedGaussianNoise(BaseGaussianNoise):
                            window=dgatedelay/2, copy=True,
                            invpsd=invpsd, method='paint')
             res = res.to_frequencyseries()
-            if whiten == 2:
-                res *= invpsd
-            elif whiten:
-                res *= invpsd**0.5
             out[det] = res
         return out
 
-    def get_data(self, whiten=False):
+    def get_data(self):
         """Return a copy of the data.
-
-        Parameters
-        ----------
-        whiten : bool, optional
-            Whiten the data before returning. Default is False.
 
         Returns
         -------
         dict :
             Dictionary of detector names -> FrequencySeries.
         """
-        data = {det: d.copy() for det, d in self.data.items()}
-        if whiten:
-            for det, dtilde in data.items():
-                invpsd = self._invpsds[det]
-                if whiten == 2:
-                    dtilde *= invpsd
-                else:
-                    dtilde *= invpsd**0.5
-                data[det] = dtilde
-        return data
+        return {det: d.copy() for det, d in self.data.items()}
 
-    def get_gated_data(self, whiten=False):
+    def get_gated_data(self):
         """Return a copy of the gated data.
 
-        Parameters
-        ----------
-        whiten : bool, optional
-            Whiten the data before returning. Default is False.
+        The gated data will be cached for faster retrieval.
 
         Returns
         -------
@@ -491,16 +477,24 @@ class GatedGaussianNoise(BaseGaussianNoise):
         gate_times = self.get_gate_times()
         out = {}
         for det, d in self.td_data.items():
+            # make sure the cache at least has the detectors in it
+            try:
+                cache = self._gated_data[det]
+            except KeyError:
+                cache = self._gated_data[det] = {}
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
-            d = d.gate(gatestartdelay + dgatedelay/2,
-                       window=dgatedelay/2, copy=True,
-                       invpsd=invpsd, method='paint')
-            dtilde = d.to_frequencyseries()
-            if whiten == 2:
-                dtilde *= invpsd
-            elif whiten:
-                dtilde *= invpsd**0.5
+            try:
+                dtilde = cache[gatestartdelay, dgatedelay]
+            except KeyError:
+                # doesn't exist yet, or the gate times changed
+                cache.clear()
+                d = d.gate(gatestartdelay + dgatedelay/2,
+                           window=dgatedelay/2, copy=True,
+                           invpsd=invpsd, method='paint')
+                dtilde = d.to_frequencyseries()
+                # save for next time
+                cache[gatestartdelay, dgatedelay] = dtilde
             out[det] = dtilde
         return out
 
