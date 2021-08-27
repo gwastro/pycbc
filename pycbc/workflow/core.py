@@ -823,17 +823,9 @@ class Workflow(pegasus_workflow.Workflow):
         fp.close()
 
         # save the dax file
-        super(Workflow, self).save(filename=filename)
-
-        # FIXME: This belongs in pegasus_workflow.py
-        # add workflow storage locations to the output mapper
-        f = open(output_map_path, 'w')
-        for out in self._outputs:
-            try:
-                f.write(out.output_map_str() + '\n')
-            except ValueError:
-                # There was no storage path
-                pass
+        super(Workflow, self).save(filename=filename,
+                                   output_map_path=output_map_path,
+                                   submit_now=self.args.submit_now)
 
     def save_config(self, fname, output_dir, cp=None):
         """ Writes configuration file to disk and returns a pycbc.workflow.File

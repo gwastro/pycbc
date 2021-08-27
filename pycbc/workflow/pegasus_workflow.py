@@ -518,11 +518,14 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, filename=None):
+    def save(self, filename=None, submit_now=False, output_map_path=None):
         """ Write this workflow to DAX file
         """
         if filename is None:
             filename = self.filename
+
+        if output_map_path is None:
+            output_map_path = 'output.map'
 
         for sub in self.sub_workflows:
             sub.save()
@@ -547,7 +550,18 @@ class Workflow(object):
         self._adag.add_transformation_catalog(self._tc)
         self._adag.add_site_catalog(self._sc)
 
-        self._adag.write(filename)
+        f = open(output_map_path, 'w')
+        for out in self._outputs:
+            try:
+                f.write(out.output_map_str() + '\n')
+            except ValueError:
+                # There was no storage path
+                pass
+
+        if submit_now:
+            self.plan_and_submit()
+        else:
+            self._adag.write(filename)
 
     def plan_and_submit(self):
         """ Plan and submit the workflow now.
