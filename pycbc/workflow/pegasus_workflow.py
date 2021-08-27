@@ -32,6 +32,8 @@ from six.moves.urllib.parse import urljoin, urlsplit
 from pycbc.workflow import PEGASUS_FILE_DIRECTORY
 import Pegasus.api as dax
 
+PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'pegasus_files')
+
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
     on Executables and nodes. This class expects to be inherited from
