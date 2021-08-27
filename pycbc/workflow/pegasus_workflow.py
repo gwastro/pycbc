@@ -27,11 +27,13 @@
 provides additional abstraction and argument handling.
 """
 import os
+import tempfile
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
 
-PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'pegasus_files')
+PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
+                                      'pegasus_files')
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -596,7 +598,7 @@ class Workflow(object):
         planner_args['output_sites'] = ['local']
 
         # Site options
-        planner_args['sites'] = self._sc.sites
+        planner_args['sites'] = [s for s in self._sc.sites]
         planner_args['staging_sites'] = self.staging_site
 
         # Make tmpdir for submitfiles
@@ -605,7 +607,7 @@ class Workflow(object):
 
         # Other options
         planner_args['cluster'] = ['label,horizontal']
-        planner_args['relative_dir'] = ['work']
+        planner_args['relative_dir'] = 'work'
 
         # FIXME: The location of output.map is hardcoded in the properties
         #        file. This is overridden for subworkflows, but is not for
