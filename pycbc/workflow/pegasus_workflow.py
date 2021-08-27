@@ -489,10 +489,10 @@ class Workflow(object):
                     self._swinputs += [inp]
 
             else:
-                err_msg = "I don't understand how to deal with an input file "
-                          "here. Ian doesn't think this message should be "
-                          "possible, but if you get here something has gone "
-                          "wrong and will need debugging!"
+                err_msg = ("I don't understand how to deal with an input file "
+                           "here. Ian doesn't think this message should be "
+                           "possible, but if you get here something has gone "
+                           "wrong and will need debugging!")
                 raise ValueError(err_msg)
 
         # Record the outputs that this node generates
