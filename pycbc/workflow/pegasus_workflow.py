@@ -29,6 +29,7 @@ provides additional abstraction and argument handling.
 import os
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
+from pycbc.workflow import PEGASUS_FILE_DIRECTORY
 import Pegasus.api as dax
 
 class ProfileShortcuts(object):
@@ -548,6 +549,53 @@ class Workflow(object):
 
         self._adag.write(filename)
 
+    def plan_and_submit(self):
+        """ Plan and submit the workflow now.
+        """
+        # New functionality, this might still need some work. Here's things
+        # that this might want to do, that submit_dax does:
+        # * Checks proxy (ignore this, user should already have this done)
+        # * Pulls properties file in (need to do)
+        # * Send necessary options to the planner (need to do)
+        # * Some logging about hostnames (might be useful)
+        # * Setup the helper scripts (start/debug/stop/status) .. (is useful)
+        # * Copy some of the interesting files into workflow/ (is useful)
+        # * Checks for dashboard URL (might be nice, not priority)
+
+        planner_args = {}
+        planner_args['submit'] = True
+
+        # Get properties file - would be nice to add extra properties here.
+        prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
+                                 'pegasus-properties.conf')
+        planner_args['conf'] = prop_file
+
+        # Cache file, if there is one
+        if self.cache_file is not None:
+            planner_args['cache'] = [self.cache_file]
+
+        # Not really sure what this does, but Karan said to use it. Seems to
+        # matter for subworkflows
+        planner_args['output_sites'] = ['local']
+
+        # Site options
+        planner_args['sites'] = self._sc.sites
+        planner_args['staging_sites'] = self.staging_site
+
+        # Make tmpdir for submitfiles
+        submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_')
+        planner_args['dir'] = submitdir
+
+        # Other options
+        planner_args['cluster'] = ['label,horizontal']
+        planner_args['relative_dir'] = ['work']
+
+        # FIXME: The location of output.map is hardcoded in the properties
+        #        file. This is overridden for subworkflows, but is not for
+        #        main workflows with submit_dax. If we ever remove submit_dax
+        #        we should include the location explicitly here.
+        self._adag.plan(**planner_args)
+
 
 class SubWorkflow(dax.SubWorkflow):
     """Workflow representation of a SubWorkflow.
@@ -602,7 +650,7 @@ class SubWorkflow(dax.SubWorkflow):
         self.add_planner_arg('basename',  bname)
         self.add_planner_arg('output-sites', 'local')
         self.add_planner_arg('cleanup', 'inplace')
-        self.add_planner_arg('cluster', 'label,horizontal')
+        self.add_planner_arg('cluster', ['label', 'horizontal'])
         self.add_planner_arg('verbose', 3)
 
         # NOTE: The _reuse.cache file is produced during submit_dax and would

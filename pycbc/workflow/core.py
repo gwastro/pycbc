@@ -704,7 +704,7 @@ class Workflow(pegasus_workflow.Workflow):
 
     @property
     def staging_site(self):
-        return ','.join(['='.join(x) for x in self._staging_site.items()])
+        return self._staging_site
 
     def add_sites_from_config(self):
         # FIXME: It would be nice to be able to override site properties here.
