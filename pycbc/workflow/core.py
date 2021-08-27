@@ -688,7 +688,7 @@ class Workflow(pegasus_workflow.Workflow):
     @property
     def output_map(self):
         args = self.args
-        if hasattr(args, 'output_map') args.output_map is not None:
+        if hasattr(args, 'output_map') and args.output_map is not None:
             if not os.path.isabs(args.output_map):
                 err_msg = "--output-map argument must give a full path"
                 raise ValueError(err_msg)
