@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys, os
+import sys, os, copy
 import logging, argparse, numpy, itertools
 from six.moves import range
 import pycbc
@@ -237,6 +237,7 @@ def template_triggers(t_num):
     """ Get the triggers for a specific template
     """
     template = None
+    tparm = None
     out_vals_all = []
     for s_num, stilde in enumerate(segments):
         # Filter check checks the 'inj_filter_rejector' options to
@@ -247,6 +248,7 @@ def template_triggers(t_num):
             continue
         if template is None:
             template = bank[t_num]
+            tparam = template.params
 
         if opt.update_progress:
             update_progress((t_num + (s_num / float(len(segments))) ) / len(bank),
@@ -288,14 +290,16 @@ def template_triggers(t_num):
         out_vals['time_index'] = idx
         out_vals['snr'] = snrv * norm
         out_vals['sigmasq'] = numpy.zeros(len(snrv), dtype=float32) + sigmasq
-
         if opt.psdvar_short_segment is not None:
             out_vals['psd_var_val'] = \
                         pycbc.psd.find_trigger_value(psd_var,
                                       out_vals['time_index'],
                                       opt.gps_start_time, opt.sample_rate)
-        out_vals_all.append(out_vals)
-    return out_vals_all, template.params
+        #print(idx, out_vals['time_index'])
+        
+        out_vals_all.append(copy.deepcopy(out_vals))
+        #print(out_vals_all)
+    return out_vals_all, tparam
 
 with ctx:
     # The following FFTW specific options needed to wait until
@@ -460,15 +464,15 @@ with ctx:
 
         for elem in data:
             out_vals_all, tparam = elem
-
             if len(out_vals_all) > 0:
                 event_mgr.new_template(tmplt=tparam)
 
-                for out_vals in out_vals_all:
-                    event_mgr.add_template_events(names, [out_vals[n] for n in names])
-
+                for edata in out_vals_all:
+                    event_mgr.add_template_events(names, [edata[n] for n in names])              
+                                    
                 event_mgr.cluster_template_events("time_index", "snr", cluster_window)
                 event_mgr.finalize_template_events()
+        
         
         if opt.finalize_events_template_rate is not None and \
                 not (tchunk[0]) % opt.finalize_events_template_rate:
