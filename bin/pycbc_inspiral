@@ -25,6 +25,7 @@ from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, eve
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
+from multiprocessing import Pool
 import pycbc.version
 import pycbc.opt
 import pycbc.inject
@@ -197,6 +198,12 @@ parser.add_argument("--checkpoint-exit-maxtime", type=int,
                          " time is exceeded. Default is no checkpointing.")
 parser.add_argument("--checkpoint-exit-code", type=int, default=77,
                     help="Exit code returned if exiting after a checkpoint")
+parser.add_argument("--multiprocessing-nprocesses", type=int,
+                    help="Parallelize over multiple processes, note this is"
+                         "separate from threading using the proc. scheme")
+parser.add_argument("--multiprocess-groupby", type-int,
+                    help="Number of template to group together for parallel"
+                         "analysis, should be multiple of nprocesses")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -384,7 +391,7 @@ with ctx:
     # from the bank.
     for t_num in range(len(bank) - tnum_start):
         t_num += tnum_start
-        tmplt_generated = False
+        template = None
 
         for s_num, stilde in enumerate(segments):
             # Filter check checks the 'inj_filter_rejector' options to
@@ -393,11 +400,10 @@ with ctx:
             if not inj_filter_rejector.template_segment_checker(
                     bank, t_num, stilde, opt.gps_start_time):
                 continue
-            if not tmplt_generated:
+            if template is None:
                 template = bank[t_num]
                 event_mgr.new_template(tmplt=template.params,
                     sigmasq=template.sigmasq(segments[0].psd))
-                tmplt_generated = True
 
             if opt.cluster_method == "window":
                 cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
