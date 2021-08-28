@@ -201,7 +201,7 @@ parser.add_argument("--checkpoint-exit-code", type=int, default=77,
 parser.add_argument("--multiprocessing-nprocesses", type=int,
                     help="Parallelize over multiple processes, note this is"
                          "separate from threading using the proc. scheme")
-parser.add_argument("--multiprocess-groupby", type-int,
+parser.add_argument("--multiprocess-groupby", type=int,
                     help="Number of template to group together for parallel"
                          "analysis, should be multiple of nprocesses")
 
@@ -272,6 +272,7 @@ with ctx:
         'bank_chisq_dof' : int,
         'cont_chisq'     : float32,
         'psd_var_val'    : float32,
+        'sigmasq'        : float32,
                 }
     out_types.update(SingleDetSGChisq.returns)
     out_vals = {key: None for key in out_types}
@@ -402,8 +403,7 @@ with ctx:
                 continue
             if template is None:
                 template = bank[t_num]
-                event_mgr.new_template(tmplt=template.params,
-                    sigmasq=template.sigmasq(segments[0].psd))
+                event_mgr.new_template(tmplt=template.params)
 
             if opt.cluster_method == "window":
                 cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
@@ -417,9 +417,10 @@ with ctx:
             logging.info("Filtering template %d/%d segment %d/%d" %
                          (t_num + 1, len(bank), s_num + 1, len(segments)))
 
+            sigmasq = template.sigmasq(stilde.psd)
             snr, norm, corr, idx, snrv = \
                matched_filter.matched_filter_and_cluster(s_num,
-                                                         template.sigmasq(stilde.psd),
+                                                         sigmasq,
                                                          cluster_window,
                                                          epoch=stilde._epoch)
 
@@ -449,6 +450,7 @@ with ctx:
 
             out_vals['time_index'] = idx
             out_vals['snr'] = snrv * norm
+            out_vals['sigmasq'] = numpy.zeros(len(snrv), dtype=float32) + sigmasq
 
             if opt.psdvar_short_segment is not None:
                 out_vals['psd_var_val'] = \

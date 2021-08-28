@@ -468,10 +468,7 @@ class EventManager(object):
                 f['sigmasq'] = template_sigmasq_plus[tid]
             except Exception:
                 # Not precessing
-                template_sigmasq = numpy.array(
-                                  [t['sigmasq'] for t in self.template_params],
-                                               dtype=numpy.float32)
-                f['sigmasq'] = template_sigmasq[tid]
+                f['sigmasq'] = self.events['sigmasq']
 
             template_durations = [p['tmplt'].template_duration for p in
                                   self.template_params]
