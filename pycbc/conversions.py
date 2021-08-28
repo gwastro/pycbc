@@ -1174,11 +1174,11 @@ def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
 
 def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                            spin2x=0., spin2y=0., spin2z=0.,
-                           approximant='SEOBNRv4'):
+                           approximant='SEOBNRv4PHM', f_ref=-1):
     """Estimates the final mass and spin from the given initial parameters.
 
-    This uses the fits used by the EOBNR models for converting from initial
-    parameters to final. Which version used can be controlled by the
+    This uses the fits used by either the NRSur7dq4 or EOBNR models for
+    converting from initial parameters to final, depending on the
     ``approximant`` argument.
 
     Parameters
@@ -1200,8 +1200,17 @@ def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
     spin2z : float, optional
         The dimensionless z-component of the spin of mass2. Default is 0.
     approximant : str, optional
-        The waveform approximant to use for the fit function. Default is
-        "SEOBNRv4".
+        The waveform approximant to use for the fit function. If "NRSur7dq4",
+        the NRSur7dq4Remnant fit in lalsimulation will be used. If "SEOBNRv4",
+        the ``XLALSimIMREOBFinalMassSpin`` function in lalsimulation will be
+        used. Otherwise, ``XLALSimIMREOBFinalMassSpinPrec`` from lalsimulation
+        will be used, with the approximant name passed as the approximant
+        in that function ("SEOBNRv4PHM" will work with this function).
+        Default is "SEOBNRv4PHM".
+    f_ref : float, optional
+        The reference frequency for the spins. Only used by the NRSur7dq4
+        fit. Default (-1) will use the default reference frequency for the
+        approximant.
 
     Returns
     -------
@@ -1217,17 +1226,38 @@ def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
     # flatten inputs for storing results
     args = [a.ravel() for a in args[:-1]]
     mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = args
-    final_mass = numpy.zeros(mass1.shape)
-    final_spin = numpy.zeros(mass1.shape)
+    final_mass = numpy.full(mass1.shape, numpy.nan)
+    final_spin = numpy.full(mass1.shape, numpy.nan)
     for ii in range(final_mass.size):
         m1 = numpy.float(mass1[ii])
         m2 = numpy.float(mass2[ii])
         spin1 = list(map(float, [spin1x[ii], spin1y[ii], spin1z[ii]]))
         spin2 = list(map(float, [spin2x[ii], spin2y[ii], spin2z[ii]]))
-        _, fm, fs = lalsim.SimIMREOBFinalMassSpin(m1, m2, spin1, spin2,
-                                                  getattr(lalsim, approximant))
-        final_mass[ii] = fm * (m1 + m2)
-        final_spin[ii] = fs
+        if approximant == 'NRSur7dq4':
+            from lalsimulation import nrfits
+            try:
+                res = nrfits.eval_nrfit(m1*lal.MSUN_SI,
+                                        m2*lal.MSUN_SI,
+                                        spin1, spin2, 'NRSur7dq4Remnant',
+                                        ['FinalMass', 'FinalSpin'],
+                                        f_ref=f_ref)
+            except RuntimeError:
+                continue
+            final_mass[ii] = res['FinalMass'][0] / lal.MSUN_SI
+            sf = res['FinalSpin']
+            final_spin[ii] = (sf**2).sum()**0.5
+            if sf[-1] < 0:
+                final_spin[ii] *= -1
+        elif approximant == 'SEOBNRv4':
+            _, fm, fs = lalsim.SimIMREOBFinalMassSpin(
+                m1, m2, spin1, spin2, getattr(lalsim, approximant))
+            final_mass[ii] = fm * (m1 + m2)
+            final_spin[ii] = fs
+        else:
+            _, fm, fs = lalsim.SimIMREOBFinalMassSpinPrec(
+                m1, m2, spin1, spin2, getattr(lalsim, approximant))
+            final_mass[ii] = fm * (m1 + m2)
+            final_spin[ii] = fs
     final_mass = final_mass.reshape(origshape)
     final_spin = final_spin.reshape(origshape)
     return (formatreturn(final_mass, input_is_array),
@@ -1236,11 +1266,11 @@ def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
 
 def final_mass_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                             spin2x=0., spin2y=0., spin2z=0.,
-                            approximant='SEOBNRv4'):
+                            approximant='SEOBNRv4PHM', f_ref=-1):
     """Estimates the final mass from the given initial parameters.
 
-    This uses the fits used by the EOBNR models for converting from initial
-    parameters to final. Which version used can be controlled by the
+    This uses the fits used by either the NRSur7dq4 or EOBNR models for
+    converting from initial parameters to final, depending on the
     ``approximant`` argument.
 
     Parameters
@@ -1262,8 +1292,17 @@ def final_mass_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
     spin2z : float, optional
         The dimensionless z-component of the spin of mass2. Default is 0.
     approximant : str, optional
-        The waveform approximant to use for the fit function. Default is
-        "SEOBNRv4".
+        The waveform approximant to use for the fit function. If "NRSur7dq4",
+        the NRSur7dq4Remnant fit in lalsimulation will be used. If "SEOBNRv4",
+        the ``XLALSimIMREOBFinalMassSpin`` function in lalsimulation will be
+        used. Otherwise, ``XLALSimIMREOBFinalMassSpinPrec`` from lalsimulation
+        will be used, with the approximant name passed as the approximant
+        in that function ("SEOBNRv4PHM" will work with this function).
+        Default is "SEOBNRv4PHM".
+    f_ref : float, optional
+        The reference frequency for the spins. Only used by the NRSur7dq4
+        fit. Default (-1) will use the default reference frequency for the
+        approximant.
 
     Returns
     -------
@@ -1271,16 +1310,17 @@ def final_mass_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
         The final mass, in solar masses.
     """
     return get_final_from_initial(mass1, mass2, spin1x, spin1y, spin1z,
-                                  spin2x, spin2y, spin2z, approximant)[0]
+                                  spin2x, spin2y, spin2z, approximant,
+                                  f_ref=f_ref)[0]
 
 
 def final_spin_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                             spin2x=0., spin2y=0., spin2z=0.,
-                            approximant='SEOBNRv4'):
+                            approximant='SEOBNRv4PHM', f_ref=-1):
     """Estimates the final spin from the given initial parameters.
 
-    This uses the fits used by the EOBNR models for converting from initial
-    parameters to final. Which version used can be controlled by the
+    This uses the fits used by either the NRSur7dq4 or EOBNR models for
+    converting from initial parameters to final, depending on the
     ``approximant`` argument.
 
     Parameters
@@ -1302,8 +1342,17 @@ def final_spin_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
     spin2z : float, optional
         The dimensionless z-component of the spin of mass2. Default is 0.
     approximant : str, optional
-        The waveform approximant to use for the fit function. Default is
-        "SEOBNRv4".
+        The waveform approximant to use for the fit function. If "NRSur7dq4",
+        the NRSur7dq4Remnant fit in lalsimulation will be used. If "SEOBNRv4",
+        the ``XLALSimIMREOBFinalMassSpin`` function in lalsimulation will be
+        used. Otherwise, ``XLALSimIMREOBFinalMassSpinPrec`` from lalsimulation
+        will be used, with the approximant name passed as the approximant
+        in that function ("SEOBNRv4PHM" will work with this function).
+        Default is "SEOBNRv4PHM".
+    f_ref : float, optional
+        The reference frequency for the spins. Only used by the NRSur7dq4
+        fit. Default (-1) will use the default reference frequency for the
+        approximant.
 
     Returns
     -------
@@ -1311,7 +1360,8 @@ def final_spin_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
         The dimensionless final spin.
     """
     return get_final_from_initial(mass1, mass2, spin1x, spin1y, spin1z,
-                                  spin2x, spin2y, spin2z, approximant)[1]
+                                  spin2x, spin2y, spin2z, approximant,
+                                  f_ref=f_ref)[1]
 
 
 #
