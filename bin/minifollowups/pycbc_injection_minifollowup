@@ -53,11 +53,6 @@ parser.add_argument('--ifar-threshold', type=float, default=None,
 parser.add_argument('--maximum-decisive-snr', type=float, default=None,
                     help="If given, only followup injections where the "
                          "decisive SNR is smaller than this value.")
-parser.add_argument('--main-workflow-directory', default=None, required=False,
-                    help='Supply the location that the main workflow was '
-                         'generated in. Only needed if running this job '
-                         'within a workflow, and then identifies where the '
-                         'local-site-scratch is')
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
@@ -65,8 +60,7 @@ args = parser.parse_args()
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
-workflow = wf.Workflow(args, args.workflow_name,
-                       directory=args.main_workflow_directory)
+workflow = wf.Workflow(args)
 
 wf.makedir(args.output_dir)
 
@@ -287,5 +281,5 @@ for num_event in range(num_events):
     layouts += list(layout.grouper(files, 2))
     num_event += 1
 
-workflow.save(filename=args.dax_file, output_map_path=args.output_map)
+workflow.save()
 layout.two_column_layout(args.output_dir, layouts)
