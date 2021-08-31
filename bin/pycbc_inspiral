@@ -283,7 +283,8 @@ def template_triggers(t_num):
         out_vals['sigmasq'] = numpy.zeros(len(snrv), dtype=float32) + sigmasq
         if opt.psdvar_short_segment is not None:
             out_vals['psd_var_val'] = \
-                        pycbc.psd.find_trigger_value(psd_var, out_vals['end_time'])
+                        pycbc.psd.find_trigger_value(stilde.strain.psd_var,
+                                                     out_vals['end_time'])
         
         out_vals_all.append(copy.deepcopy(out_vals))
     return out_vals_all, tparam
@@ -344,10 +345,12 @@ with ctx:
     # FIXME: Maybe we should use the PSD corresponding to each trigger
     if opt.psdvar_segment is not None:
         logging.info("Calculating PSD variation")
-        psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
+        for gws in gwstrain:
+            psd_var = pycbc.psd.calc_filt_psd_variation(gws, opt.psdvar_segment,
                 opt.psdvar_short_segment, opt.psdvar_long_segment, 
                 opt.psdvar_psd_duration, opt.psdvar_psd_stride,
                 opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
+            gws.psd_var = psd_var
 
     if opt.enable_q_transform:
         logging.info("Performing q-transform on analysis segments")
