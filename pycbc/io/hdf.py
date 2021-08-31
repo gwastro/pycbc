@@ -1070,7 +1070,6 @@ class ForegroundTriggers(object):
             valid = temp_dur_vals_valid[ifo][1]
             temp_dur[valid] = vals[valid]
         ofd.create_dataset('template_duration', data=temp_dur, dtype=np.float32)
-        logging.info(all(temp_dur > 0))
         ofd.close()
 
 class ReadByTemplate(object):
