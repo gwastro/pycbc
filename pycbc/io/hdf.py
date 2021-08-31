@@ -1039,7 +1039,6 @@ class ForegroundTriggers(object):
         logging.info("Outputting single-detector info")
         for field in sngl_fields:
             if field in ['gating','search','snr']: continue
-            logging.info(field)
             vals_valid = self.get_snglfile_array_dict(field)
             for ifo in self.ifos:
                 vals = vals_valid[ifo][0]
