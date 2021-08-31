@@ -464,7 +464,7 @@ with ctx:
         
         if opt.finalize_events_template_rate is not None and \
                 not (tchunk[0]) % opt.finalize_events_template_rate:
-            event_mgr.consolidate_events(opt, gwstrain=gwstrain)
+            event_mgr.consolidate_events(opt, gwstrain=gwstrain[0])
 
         if opt.checkpoint_interval and \
             (time.time() - tcheckpoint > opt.checkpoint_interval):
@@ -476,7 +476,8 @@ with ctx:
             event_mgr.save_state(max(tchunk), opt.output + '.checkpoint')
             sys.exit(opt.checkpoint_exit_code)           
 
-event_mgr.consolidate_events(opt, gwstrain=gwstrain)
+# This should not need gwstrain somehow
+event_mgr.consolidate_events(opt, gwstrain=gwstrain[0])
 event_mgr.finalize_events()
 logging.info("Outputting %s triggers" % str(len(event_mgr.events)))
 
