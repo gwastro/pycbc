@@ -293,15 +293,10 @@ class InjFilterRejector(object):
             # If disabled, always filter (ie. return True)
             return True
 
-        # Get times covered by segment analyze
-        sample_rate = 2. * (len(segment) - 1) * segment.delta_f
-        cum_ind = segment.cumulative_index
-        diff = segment.analyze.stop - segment.analyze.start
-        seg_start_time = cum_ind / sample_rate + start_time
-        seg_end_time = (cum_ind + diff) / sample_rate + start_time
-        # And add buffer
-        seg_start_time = seg_start_time - self.seg_buffer
-        seg_end_time = seg_end_time + self.seg_buffer
+        # Get times covered by segment analyze and add buffer
+        sample_rate = segment.sample_rate
+        seg_start_time = segment.start_time - self.seg_buffer
+        seg_end_time = segment.end_time + self.seg_buffer
 
         # Chirp time test
         if self.chirp_time_window is not None:
@@ -372,7 +367,7 @@ class InjFilterRejector(object):
                 if isinstance(inj, np.record):
                     # hdf format file
                     end_time = inj['tc']
-                    sim_id = ii
+                    sim_id = self.injection_ids[ii]
                 else:
                     # must be an xml file originally
                     end_time = inj.geocent_end_time + \

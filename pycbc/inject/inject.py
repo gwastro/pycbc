@@ -592,7 +592,14 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         injected = copy.copy(self)
         injected.table = injections[np.array(injected_ids).astype(int)]
         if inj_filter_rejector is not None:
+            if hasattr(inj_filter_rejector, 'injected'):
+                prev_p = inj_filter_rejector.injection_params
+                prev_id = inj_filter_rejector.injection_ids
+                injected = numpy.concatenate([prev_p, injected])
+                injected_ids = numpy.concatenate([prev_id, injected_ids])
+               
             inj_filter_rejector.injection_params = injected
+            inj_filter_rejector.injection_ids = injected_ids
         return injected
 
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,

@@ -436,8 +436,42 @@ def from_cli_multi_ifos(opt, ifos, inj_filter_rejector_dict=None, **kwargs):
                           inj_filter_rejector_dict[ifo], **kwargs)
     return strain
 
+def from_cli_multi_times(opt, inj_filter_rejector=None, **kwargs):
+    """ Get the strain for a single ifo but at multiple disjoint times
+    """
+    opts = []
+    
+    if len(opt.gps_start_time) != len(opt.gps_end_time):
+        raise ValueError("Must get the same number of gps start/end times")
+    
+    ntimes = len(opt.gps_start_time)
+    
+    if opt.trig_start_time:
+        print(opt.trig_start_time, opt.trig_end_time)
+        if (len(opt.trig_start_time) != len(opt.trig_end_time) or
+           len(opt.trig_start_time) != ntimes):
+           raise ValueError("""Must get the same number of trig start/end times
+                            as gps start/end times""")
+    
+    for j, (start, end) in enumerate(zip(opt.gps_start_time, opt.gps_end_time)):
+        nopt = copy.deepcopy(opt)
+        nopt.gps_start_time = start
+        nopt.gps_end_time = end
+        
+        if opt.trig_start_time:
+            nopt.trig_start_time = opt.trig_start_time[j]
+            nopt.trig_end_time = opt.trig_end_time[j]
+        
+        opts.append(nopt)
+    
+    strains = []
+    for single_opts in opts:
+        strain = from_cli(single_opts, inj_filter_rejector=inj_filter_rejector,
+                          **kwargs)
+        strains.append(strain)
+    return strains
 
-def insert_strain_option_group(parser, gps_times=True):
+def insert_strain_option_group(parser, gps_times=True, multi_times=False):
     """ Add strain-related options to the optparser object.
 
     Adds the options used to call the pycbc.strain.from_cli function to an
@@ -451,6 +485,8 @@ def insert_strain_option_group(parser, gps_times=True):
     gps_times : bool, optional
         Include ``--gps-start-time`` and ``--gps-end-time`` options. Default
         is True.
+    multi_times: bool, optional
+        Allow the gps/trigger time options to be lists. Default is False. 
     """
 
     data_reading_group = parser.add_argument_group("Options for obtaining h(t)",
@@ -463,10 +499,12 @@ def insert_strain_option_group(parser, gps_times=True):
     if gps_times:
         data_reading_group.add_argument("--gps-start-time",
                                 help="The gps start time of the data "
-                                     "(integer seconds)", type=int)
+                                     "(integer seconds)", type=int, 
+                                     nargs='+' if multi_times else None)
         data_reading_group.add_argument("--gps-end-time",
                                 help="The gps end time of the data "
-                                     "(integer seconds)", type=int)
+                                     "(integer seconds)", type=int,
+                                     nargs='+' if multi_times else None)
 
     data_reading_group.add_argument("--strain-high-pass", type=float,
               help="High pass frequency")
@@ -947,7 +985,6 @@ class StrainSegments(object):
             for analysis.
         """
         self._fourier_segments = None
-        self.strain = strain
 
         self.delta_t = strain.delta_t
         self.sample_rate = strain.sample_rate
@@ -1082,6 +1119,7 @@ class StrainSegments(object):
 
         self.segment_slices = segment_slices_red
         self.analyze_slices = analyze_slices_red
+        self.strain = [strain for s in self.segment_slices]
 
     def fourier_segments(self):
         """ Return a list of the FFT'd segments.
@@ -1093,24 +1131,25 @@ class StrainSegments(object):
         """
         if not self._fourier_segments:
             self._fourier_segments = []
-            for seg_slice, ana in zip(self.segment_slices, self.analyze_slices):
-                if seg_slice.start >= 0 and seg_slice.stop <= len(self.strain):
-                    freq_seg = make_frequency_series(self.strain[seg_slice])
+            itera =  zip(self.segment_slices, self.analyze_slices, self.strain)
+            for seg_slice, ana, strain in itera:
+                if seg_slice.start >= 0 and seg_slice.stop <= len(strain):
+                    freq_seg = make_frequency_series(strain[seg_slice])
                 # Assume that we cannot have a case where we both zero-pad on
                 # both sides
                 elif seg_slice.start < 0:
-                    strain_chunk = self.strain[:seg_slice.stop]
+                    strain_chunk = strain[:seg_slice.stop]
                     strain_chunk.prepend_zeros(-seg_slice.start)
                     freq_seg = make_frequency_series(strain_chunk)
-                elif seg_slice.stop > len(self.strain):
-                    strain_chunk = self.strain[seg_slice.start:]
-                    strain_chunk.append_zeros(seg_slice.stop - len(self.strain))
+                elif seg_slice.stop > len(strain):
+                    strain_chunk = strain[seg_slice.start:]
+                    strain_chunk.append_zeros(seg_slice.stop - len(strain))
                     freq_seg = make_frequency_series(strain_chunk)
                 freq_seg.analyze = ana
                 freq_seg.cumulative_index = seg_slice.start + ana.start
                 freq_seg.seg_slice = seg_slice
+                freq_seg.strain = strain
                 self._fourier_segments.append(freq_seg)
-
         return self._fourier_segments
 
     @classmethod
@@ -1128,7 +1167,41 @@ class StrainSegments(object):
                    allow_zero_padding=opt.allow_zero_padding)
 
     @classmethod
-    def insert_segment_option_group(cls, parser):
+    def from_cli_multi_times(cls, opt, strains):
+        """Calculate the segmentation of the strain data for analysis from
+        the command line options.
+        """
+        segs = []
+        for j in range(len(opt.gps_start_time)):
+            if opt.trig_start_time:
+                trig_start = opt.trig_start_time[j]
+                trig_end = opt.trig_end_time[j]
+            else:
+                trig_start = trig_end = None
+                
+            segmented = cls(strains[j], segment_length=opt.segment_length,
+                       segment_start_pad=opt.segment_start_pad,
+                       segment_end_pad=opt.segment_end_pad,
+                       trigger_start=trig_start,
+                       trigger_end=trig_end,
+                       filter_inj_only=opt.filter_inj_only,
+                       injection_window=opt.injection_window,
+                       allow_zero_padding=opt.allow_zero_padding)
+            segs.append(segmented)
+        combined = copy.deepcopy(segmented)
+        combined.segment_slices = []
+        combined.analyze_slices = []
+        combined.strain = []
+
+        for seg in segs:
+            combined.segment_slices += seg.segment_slices
+            combined.analyze_slices += seg.analyze_slices
+            combined.full_segment_slices += seg.full_segment_slices
+            combined.strain += seg.strain
+        return combined
+        
+    @classmethod
+    def insert_segment_option_group(cls, parser, multi_times=False):
         segment_group = parser.add_argument_group(
                                   "Options for segmenting the strain",
                                   "These options are used to determine how to "
@@ -1136,8 +1209,10 @@ class StrainSegments(object):
                                   "and for determining the portion of each to "
                                   "analyze for triggers. ")
         segment_group.add_argument("--trig-start-time", type=int, default=0,
+                    nargs='+' if multi_times else None,
                     help="(optional) The gps time to start recording triggers")
         segment_group.add_argument("--trig-end-time", type=int, default=0,
+                    nargs='+' if multi_times else None,
                     help="(optional) The gps time to stop recording triggers")
         segment_group.add_argument("--segment-length", type=int,
                           help="The length of each strain segment in seconds.")

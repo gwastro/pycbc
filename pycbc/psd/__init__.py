@@ -484,7 +484,7 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
         strain_part = gwstrain[start_idx:end_idx]
         psd = from_cli(opt, flen, delta_f, flow, strain=strain_part,
                        dyn_range_factor=dyn_range_factor, precision=precision)
-        psds_and_times.append( (start_idx, end_idx, psd) )
+        psds_and_times.append( (strain_part.start_time, strain_part.end_time, psd) )
     return psds_and_times
 
 def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
@@ -520,17 +520,22 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
     """
-    psds_and_times = generate_overlapping_psds(opt, gwstrain, flen, delta_f,
+    if not isinstance(gwstrain, list):
+        gwstrain = [gwstrain]
+        
+    psds_and_times = []
+    for gws in gwstrain:
+        psds_and_times += generate_overlapping_psds(opt, gws, flen, delta_f,
                                        flow, dyn_range_factor=dyn_range_factor,
                                        precision=precision)
 
     for fd_segment in fd_segments:
         best_psd = None
         psd_overlap = 0
-        inp_seg = segments.segment(fd_segment.seg_slice.start,
-                                   fd_segment.seg_slice.stop)
-        for start_idx, end_idx, psd in psds_and_times:
-            psd_seg = segments.segment(start_idx, end_idx)
+        inp_seg = segments.segment(fd_segment.start_time,
+                                   fd_segment.end_time)
+        for start, end, psd in psds_and_times:
+            psd_seg = segments.segment(start, end)
             if psd_seg.intersects(inp_seg):
                 curr_overlap = abs(inp_seg & psd_seg)
                 if curr_overlap > psd_overlap:
