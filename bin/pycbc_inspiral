@@ -258,47 +258,36 @@ def template_triggers(t_num):
 
         sigmasq = template.sigmasq(stilde.psd)
         snr, norm, corr, idx, snrv = \
-           matched_filter.matched_filter_and_cluster(s_num,
-                                                     sigmasq,
+           matched_filter.matched_filter_and_cluster(s_num, sigmasq,
                                                      cluster_window,
                                                      epoch=stilde._epoch)
         if not len(idx):
             continue
 
         out_vals = out_vals_ref.copy()
+        idx_s = idx + stilde.analyze.start
         out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
-              bank_chisq.values(template, stilde.psd, stilde, snrv, norm,
-                                idx+stilde.analyze.start)
+              bank_chisq.values(template, stilde.psd, stilde, snrv, norm, idx_s)
 
         out_vals['chisq'], out_vals['chisq_dof'] = \
-              power_chisq.values(corr, snrv, norm, stilde.psd,
-                                 idx+stilde.analyze.start, template)
+              power_chisq.values(corr, snrv, norm, stilde.psd, idx_s, template)
 
         out_vals['sg_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
-                                      snrv, norm,
-                                      out_vals['chisq'],
-                                      out_vals['chisq_dof'],
-                                      idx+stilde.analyze.start)
+                                      snrv, norm, out_vals['chisq'],
+                                      out_vals['chisq_dof'], idx_s)
 
         out_vals['cont_chisq'] = \
-              autochisq.values(snr, idx+stilde.analyze.start, template,
-                               stilde.psd, norm, stilde=stilde,
-                               low_frequency_cutoff=flow)
+              autochisq.values(snr, idx_s, template, stilde.psd, norm,
+                               stilde=stilde, low_frequency_cutoff=flow)
 
-        idx += stilde.cumulative_index
-
-        out_vals['time_index'] = idx
+        out_vals['end_time'] = idx_s.astype(float64) * stilde.delta_t + stilde.start_time 
         out_vals['snr'] = snrv * norm
         out_vals['sigmasq'] = numpy.zeros(len(snrv), dtype=float32) + sigmasq
         if opt.psdvar_short_segment is not None:
             out_vals['psd_var_val'] = \
-                        pycbc.psd.find_trigger_value(psd_var,
-                                      out_vals['time_index'],
-                                      opt.gps_start_time, opt.sample_rate)
-        #print(idx, out_vals['time_index'])
+                        pycbc.psd.find_trigger_value(psd_var, out_vals['end_time'])
         
         out_vals_all.append(copy.deepcopy(out_vals))
-        #print(out_vals_all)
     return out_vals_all, tparam
 
 with ctx:
@@ -329,7 +318,7 @@ with ctx:
 
     # storage for values and types to be passed to event manager
     out_types = {
-        'time_index'     : int,
+        'end_time'     : float64,
         'snr'            : complex64,
         'chisq'          : float32,
         'chisq_dof'      : int,
@@ -470,7 +459,7 @@ with ctx:
                 for edata in out_vals_all:
                     event_mgr.add_template_events(names, [edata[n] for n in names])              
                                     
-                event_mgr.cluster_template_events("time_index", "snr", cluster_window)
+                event_mgr.cluster_template_events("end_time", "snr", opt.cluster_window)
                 event_mgr.finalize_template_events()
         
         

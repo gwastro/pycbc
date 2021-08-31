@@ -185,7 +185,7 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
     return psd_var
 
 
-def find_trigger_value(psd_var, idx, start, sample_rate):
+def find_trigger_value(psd_var, time):
     """ Find the PSD variation value at a particular time with the filter
     method. If the time is outside the timeseries bound, 1. is given.
 
@@ -205,8 +205,6 @@ def find_trigger_value(psd_var, idx, start, sample_rate):
     vals : Array
         PSD variation value at a particular time
     """
-    # Find gps time of the trigger
-    time = start + idx / sample_rate
     # Extract the PSD variation at trigger time through linear
     # interpolation
     if not hasattr(psd_var, 'cached_psd_var_interpolant'):
@@ -215,5 +213,4 @@ def find_trigger_value(psd_var, idx, start, sample_rate):
             interpolate.interp1d(psd_var.sample_times.numpy(), psd_var.numpy(),
                                  fill_value=1.0, bounds_error=False)
     vals = psd_var.cached_psd_var_interpolant(time)
-
     return vals

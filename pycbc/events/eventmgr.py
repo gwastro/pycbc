@@ -259,8 +259,7 @@ class EventManager(object):
             return
 
         inj_time = numpy.array(injections.end_times())
-        gpstime = self.events['time_index'].astype(numpy.float64)
-        gpstime = gpstime / self.opt.sample_rate + self.opt.gps_start_time
+        gpstime = self.events['end_time']
         i = indices_within_times(gpstime, inj_time - window, inj_time + window)
         self.events = self.events[i]
 
@@ -279,8 +278,7 @@ class EventManager(object):
         statv = ranking.get_sngls_ranking_from_trigs(e_copy, statname)
 
         # Convert trigger time to integer bin number
-        # NB time_index and window are in units of samples
-        wtime = (e_copy['time_index'] / window).astype(numpy.int32)
+        wtime = (e_copy['end_time'] / window).astype(numpy.int32)
         bins = numpy.unique(wtime)
 
         if log_chirp_width:
@@ -370,7 +368,7 @@ class EventManager(object):
                          opt.keep_loudest_num, opt.keep_loudest_interval,
                          opt.keep_loudest_stat)
             self.keep_loudest_in_interval\
-                (opt.keep_loudest_interval * opt.sample_rate,
+                (opt.keep_loudest_interval,
                  opt.keep_loudest_num, statname=opt.keep_loudest_stat,
                  log_chirp_width=opt.keep_loudest_log_chirp_window)
             logging.info("%d remaining triggers", len(self.events))
@@ -448,9 +446,7 @@ class EventManager(object):
             f['bank_chisq'] = self.events['bank_chisq']
             f['bank_chisq_dof'] = self.events['bank_chisq_dof']
             f['cont_chisq'] = self.events['cont_chisq']
-            f['end_time'] = self.events['time_index'] / \
-                              float(self.opt.sample_rate) \
-                            + self.opt.gps_start_time
+            f['end_time'] = self.events['end_time']
             try:
                 # Precessing
                 template_sigmasq_plus = numpy.array(
