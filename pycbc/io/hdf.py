@@ -988,14 +988,15 @@ class ForegroundTriggers(object):
 
         ligolw_utils.write_filename(outdoc, file_name)
 
-def to_coinc_hdf_object(self, file_name):
+    def to_coinc_hdf_object(self, file_name):
         ofd = h5py.File(file_name,'w')
 
         # Some fields are special cases:
-
+        logging.info("Outputting end times")
         time = self.get_end_time()
         ofd.create_dataset('end_time', data=time, dtype=np.float32)
 
+        logging.info("Getting IFARs and outputting as FARs")
         far = 1. / self.get_coincfile_array('ifar')
         ofd.create_dataset('false_alarm_rate', data=far, dtype=np.float32)
 
@@ -1003,6 +1004,7 @@ def to_coinc_hdf_object(self, file_name):
         ofd.create_dataset('false_alarm_rate_exclusive', data=far_exc,
                            dtype=np.float32)
 
+        logging.info("Outputting p values")
         fap = self.get_coincfile_array('fap')
         ofd.create_dataset('p_value', data=fap,
                            dtype=np.float32)
@@ -1012,12 +1014,16 @@ def to_coinc_hdf_object(self, file_name):
                            dtype=np.float32)
 
         # Coinc fields
+        logging.info("Outputting coinc info")
         for field in ['stat']:
+            logging.info(field)
             vals = self.get_coincfile_array(field)
             ofd.create_dataset(field, data=vals, dtype=np.float32)
 
         # Bank fields
+        logging.info("Outputting associated bank values")
         for field in ['mass1','mass2','spin1z','spin2z']:
+            logging.info(field)
             vals = self.get_bankfile_array(field)
             ofd.create_dataset(field, data=vals, dtype=np.float32)
 
@@ -1027,9 +1033,13 @@ def to_coinc_hdf_object(self, file_name):
 
         ofd.create_dataset('chirp_mass', data=mchirp, dtype=np.float32)
 
+        sngl_fields = [f for f in self.sngl_files[self.ifos[0]].columns
+                       if not ('template' in f)]
         # Single-detector fields
-        for field in ['chisq', 'chisq_dof', 'coa_phase', 'end_time',
-                      'sg_chisq', 'sigmasq']:
+        logging.info("Outputting single-detector info")
+        for field in sngl_fields:
+            if field in ['gating','search','snr']: continue
+            logging.info(field)
             vals_valid = self.get_snglfile_array_dict(field)
             for ifo in self.ifos:
                 vals = vals_valid[ifo][0]
@@ -1038,6 +1048,8 @@ def to_coinc_hdf_object(self, file_name):
                 ofd.create_dataset(ifo + '_'+field, data=vals,
                                    dtype=np.float32)
 
+
+        logging.info("Outputting single-detector and network SNRs")
         snr_vals_valid = self.get_snglfile_array_dict('snr')
         network_snr_sq = np.zeros_like(snr_vals_valid[self.ifos[0]][0])
         for ifo in self.ifos:
@@ -1050,6 +1062,15 @@ def to_coinc_hdf_object(self, file_name):
         network_snr = np.sqrt(network_snr_sq)
         ofd.create_dataset('network_snr', data=network_snr, dtype=np.float32)
 
+        logging.info("Outputting template duration")
+        temp_dur_vals_valid = self.get_snglfile_array_dict('template_duration')
+        temp_dur = np.zeros_like(snr_vals_valid[self.ifos[0]][0])
+        for ifo in self.ifos:
+            vals = temp_dur_vals_valid[ifo][0]
+            valid = temp_dur_vals_valid[ifo][1]
+            temp_dur[valid] = vals[valid]
+        ofd.create_dataset('template_duration', data=temp_dur, dtype=np.float32)
+        logging.info(all(temp_dur > 0))
         ofd.close()
 
 class ReadByTemplate(object):
