@@ -182,3 +182,8 @@ if args.output_file.endswith('.html'):
 elif args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
     fortrigs.to_coinc_xml_object(args.output_file)
 
+elif args.output_file.endswith('.hdf'):
+    fortrigs.to_coinc_hdf_object(args.output_file)
+
+else:
+    raise NotImplementedError("Output file format not recognised")

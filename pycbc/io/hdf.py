@@ -25,6 +25,8 @@ from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events.stat import sngl_statistic_dict
+from pycbc.events import mean_if_greater_than_zero
+from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -985,6 +987,70 @@ class ForegroundTriggers(object):
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
         ligolw_utils.write_filename(outdoc, file_name)
+
+def to_coinc_hdf_object(self, file_name):
+        ofd = h5py.File(file_name,'w')
+
+        # Some fields are special cases:
+
+        time = self.get_end_time()
+        ofd.create_dataset('end_time', data=time, dtype=np.float32)
+
+        far = 1. / self.get_coincfile_array('ifar')
+        ofd.create_dataset('false_alarm_rate', data=far, dtype=np.float32)
+
+        far_exc = 1. / self.get_coincfile_array('ifar_exc')
+        ofd.create_dataset('false_alarm_rate_exclusive', data=far_exc,
+                           dtype=np.float32)
+
+        fap = self.get_coincfile_array('fap')
+        ofd.create_dataset('p_value', data=fap,
+                           dtype=np.float32)
+
+        fap_exc = self.get_coincfile_array('fap_exc')
+        ofd.create_dataset('p_value_exclusive', data=fap_exc,
+                           dtype=np.float32)
+
+        # Coinc fields
+        for field in ['stat']:
+            vals = self.get_coincfile_array(field)
+            ofd.create_dataset(field, data=vals, dtype=np.float32)
+
+        # Bank fields
+        for field in ['mass1','mass2','spin1z','spin2z']:
+            vals = self.get_bankfile_array(field)
+            ofd.create_dataset(field, data=vals, dtype=np.float32)
+
+        mass1 = self.get_bankfile_array('mass1')
+        mass2 = self.get_bankfile_array('mass2')
+        mchirp, _ = mass1_mass2_to_mchirp_eta(mass1, mass2)
+
+        ofd.create_dataset('chirp_mass', data=mchirp, dtype=np.float32)
+
+        # Single-detector fields
+        for field in ['chisq', 'chisq_dof', 'coa_phase', 'end_time',
+                      'sg_chisq', 'sigmasq']:
+            vals_valid = self.get_snglfile_array_dict(field)
+            for ifo in self.ifos:
+                vals = vals_valid[ifo][0]
+                valid = vals_valid[ifo][1]
+                vals[np.logical_not(valid)] = -1.
+                ofd.create_dataset(ifo + '_'+field, data=vals,
+                                   dtype=np.float32)
+
+        snr_vals_valid = self.get_snglfile_array_dict('snr')
+        network_snr_sq = np.zeros_like(snr_vals_valid[self.ifos[0]][0])
+        for ifo in self.ifos:
+            vals = snr_vals_valid[ifo][0]
+            valid = snr_vals_valid[ifo][1]
+            vals[np.logical_not(valid)] = -1.
+            ofd.create_dataset(ifo + '_snr', data=vals,
+                               dtype=np.float32)
+            network_snr_sq[valid] += vals[valid] ** 2.0
+        network_snr = np.sqrt(network_snr_sq)
+        ofd.create_dataset('network_snr', data=network_snr, dtype=np.float32)
+
+        ofd.close()
 
 class ReadByTemplate(object):
     # default assignment to {} is OK for a variable used only in __init__
