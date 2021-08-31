@@ -24,7 +24,7 @@ import pycbc.version
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
-from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
+from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, float64, complex64
 from multiprocessing import Pool
 import pycbc.version
 import pycbc.opt
@@ -236,8 +236,7 @@ strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 def template_triggers(t_num):
     """ Get the triggers for a specific template
     """
-    template = None
-    tparm = None
+    template = tparam = None
     out_vals_all = []
     for s_num, stilde in enumerate(segments):
         # Filter check checks the 'inj_filter_rejector' options to
