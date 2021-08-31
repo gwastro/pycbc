@@ -1,7 +1,7 @@
 from .recalibrate import CubicSpline, PhysicalModel
 
 from .strain import detect_loud_glitches
-from .strain import from_cli, from_cli_single_ifo, from_cli_multi_ifos
+from .strain import from_cli, from_cli_single_ifo, from_cli_multi_ifos, from_cli_multi_times
 from .strain import insert_strain_option_group, insert_strain_option_group_multi_ifo
 from .strain import verify_strain_options, verify_strain_options_multi_ifo
 from .strain import gate_data, StrainSegments, StrainBuffer

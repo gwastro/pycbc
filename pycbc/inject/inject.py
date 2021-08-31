@@ -593,6 +593,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         injected.table = injections[np.array(injected_ids).astype(int)]
         if inj_filter_rejector is not None:
             inj_filter_rejector.injection_params = injected
+            inj_filter_rejector.injection_ids = injected_ids
         return injected
 
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,

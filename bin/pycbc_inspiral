@@ -205,8 +205,8 @@ parser.add_argument("--template-groupby", type=int, default=1,
 
 # Add options groups
 psd.insert_psd_option_group(parser)
-strain.insert_strain_option_group(parser)
-strain.StrainSegments.insert_segment_option_group(parser)
+strain.insert_strain_option_group(parser, multi_times=True)
+strain.StrainSegments.insert_segment_option_group(parser, multi_times=True)
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 pycbc.opt.insert_optimization_option_group(parser)
@@ -228,10 +228,9 @@ fft.from_cli(opt)
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli(opt)
 ctx = scheme.from_cli(opt)
 
-gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
+gwstrain = strain.from_cli_multi_times(opt, dyn_range_fac=DYN_RANGE_FAC,
                            inj_filter_rejector=inj_filter_rejector)
-
-strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
+strain_segments = strain.StrainSegments.from_cli_multi_times(opt, gwstrain)
 
 def template_triggers(t_num):
     """ Get the triggers for a specific template
@@ -308,7 +307,7 @@ with ctx:
     flen = strain_segments.freq_len
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
-
+    sample_rate = strain_segments.sample_rate
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
@@ -331,11 +330,12 @@ with ctx:
     out_vals_ref = {key: None for key in out_types}
     names = sorted(out_vals_ref.keys())
 
+    gating_info = sum([g.gating_info for g in gwstrain], start=[])
     if len(strain_segments.segment_slices) == 0:
         logging.info("--filter-inj-only specified and no injections in analysis time")
         event_mgr = events.EventManager(
               opt, names, [out_types[n] for n in names], psd=None,
-              gating_info=gwstrain.gating_info)
+              gating_info=gating_info)
         event_mgr.finalize_template_events()
         event_mgr.write_events(opt.output)
         logging.info("Finished")
@@ -376,10 +376,10 @@ with ctx:
     if not checkpoint_exists:
         event_mgr = events.EventManager(
             opt, names, [out_types[n] for n in names], psd=segments[0].psd,
-            gating_info=gwstrain.gating_info, q_trans=q_trans)
+            gating_info=gating_info, q_trans=q_trans)
 
     template_mem = zeros(tlen, dtype = complex64)
-    cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
+    cluster_window = int(opt.cluster_window * sample_rate)
 
     if opt.cluster_window == 0.0:
         use_cluster = False

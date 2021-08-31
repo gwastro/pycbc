@@ -446,7 +446,8 @@ def from_cli_multi_times(opt, inj_filter_rejector=None, **kwargs):
     
     ntimes = len(opt.gps_start_time)
     
-    if hasattr(opt.trig_start_time):
+    if opt.trig_start_time:
+        print(opt.trig_start_time, opt.trig_end_time)
         if (len(opt.trig_start_time) != len(opt.trig_end_time) or
            len(opt.trig_start_time) != ntimes):
            raise ValueError("""Must get the same number of trig start/end times
@@ -457,7 +458,7 @@ def from_cli_multi_times(opt, inj_filter_rejector=None, **kwargs):
         nopt.gps_start_time = start
         nopt.gps_end_time = end
         
-        if hasattr(opt.trig_start_time):
+        if opt.trig_start_time:
             nopt.trig_start_time = opt.trig_start_time[j]
             nopt.trig_end_time = opt.trig_end_time[j]
         
@@ -1166,26 +1167,37 @@ class StrainSegments(object):
                    allow_zero_padding=opt.allow_zero_padding)
 
     @classmethod
-    def from_cli_multitimes(cls, opt, strains):
+    def from_cli_multi_times(cls, opt, strains):
         """Calculate the segmentation of the strain data for analysis from
         the command line options.
         """
         segs = []
-        for j in range(len(opt.gps_start_times)):
-            segmented = cls(strain, segment_length=opt.segment_length,
+        for j in range(len(opt.gps_start_time)):
+            if opt.trig_start_time:
+                trig_start = opt.trig_start_time[j]
+                trig_end = opt.trig_end_time[j]
+            else:
+                trig_start = trig_end = None
+                
+            segmented = cls(strains[j], segment_length=opt.segment_length,
                        segment_start_pad=opt.segment_start_pad,
                        segment_end_pad=opt.segment_end_pad,
-                       trigger_start=opt.trig_start_time[j],
-                       trigger_end=opt.trig_end_time[j],
+                       trigger_start=trig_start,
+                       trigger_end=trig_end,
                        filter_inj_only=opt.filter_inj_only,
                        injection_window=opt.injection_window,
                        allow_zero_padding=opt.allow_zero_padding)
             segs.append(segmented)
         combined = copy.deepcopy(segmented)
-        combined.segment_slices = sum(seg.segment_slices for seg in segs)
-        combined.analyze_slices = sum(seg.analyze_slices for seg in segs)
-        combined.full_segment_slices = sum(seg.full_segment_slices for seg in segs)
-        combined.strain = sum(seg.strain for seg in segs)
+        combined.segment_slices = []
+        combined.analyze_slices = []
+        combined.strain = []
+
+        for seg in segs:
+            combined.segment_slices += seg.segment_slices
+            combined.analyze_slices += seg.analyze_slices
+            combined.full_segment_slices += seg.full_segment_slices
+            combined.strain += seg.strain
         return combined
         
     @classmethod
