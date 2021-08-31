@@ -348,7 +348,7 @@ class EventManager(object):
         self.accumulate.append(self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
 
-    def consolidate_events(self, opt, injections=None):
+    def consolidate_events(self, opt, gwstrain=None):
         self.events = numpy.concatenate(self.accumulate)
         logging.info("We currently have %d triggers", len(self.events))
         if opt.chisq_threshold and opt.chisq_bins:
@@ -373,10 +373,11 @@ class EventManager(object):
                  log_chirp_width=opt.keep_loudest_log_chirp_window)
             logging.info("%d remaining triggers", len(self.events))
 
-        if opt.injection_window and injections is not None:
+        if opt.injection_window and hasattr(gwstrain, 'injections'):
             logging.info("Keeping triggers within %s seconds of injection",
                          opt.injection_window)
-            self.keep_near_injection(opt.injection_window, injections)
+            self.keep_near_injection(opt.injection_window,
+                                     gwstrain.injections)
             logging.info("%d remaining triggers", len(self.events))
 
         self.accumulate = [self.events]
