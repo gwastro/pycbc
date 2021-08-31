@@ -330,8 +330,12 @@ with ctx:
     out_types.update(SingleDetSGChisq.returns)
     out_vals_ref = {key: None for key in out_types}
     names = sorted(out_vals_ref.keys())
+    
+    gating_info = {}
+    for k in gwstrain[0].gating_info:
+        for gws in gwstrain:
+            gating_info[k] = sum([gws.gating_info[k]], start=[])
 
-    gating_info = sum([g.gating_info for g in gwstrain], start=[])
     if len(strain_segments.segment_slices) == 0:
         logging.info("--filter-inj-only specified and no injections in analysis time")
         event_mgr = events.EventManager(

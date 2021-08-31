@@ -495,24 +495,27 @@ class EventManager(object):
                 f['psd_var_val'] = self.events['psd_var_val']
 
         if self.opt.trig_start_time:
-            f['search/start_time'] = numpy.array([self.opt.trig_start_time])
-            search_start_time = float(self.opt.trig_start_time)
+            search_start =  numpy.array(self.opt.trig_start_time, 
+                                                 dtype=numpy.float64,
+                                                 ndmin=1)
         else:
-            f['search/start_time'] = numpy.array([self.opt.gps_start_time +
-                                                  self.opt.segment_start_pad])
-            search_start_time = float(self.opt.gps_start_time +
-                                      self.opt.segment_start_pad)
+            search_start = numpy.array(self.opt.gps_start_time, 
+                                                 dtype=numpy.float64,
+                                                 ndmin=1) + self.opt.segment_start_pad
         if self.opt.trig_end_time:
-            f['search/end_time'] = numpy.array([self.opt.trig_end_time])
-            search_end_time = float(self.opt.trig_end_time)
+            search_end =  numpy.array(self.opt.trig_end_time, 
+                                                 dtype=numpy.float64,
+                                                 ndmin=1) 
         else:
-            f['search/end_time'] = numpy.array([self.opt.gps_end_time -
-                                                self.opt.segment_end_pad])
-            search_end_time = float(self.opt.gps_end_time -
-                                    self.opt.segment_end_pad)
+            search_end =  numpy.array(self.opt.gps_end_time, 
+                                                 dtype=numpy.float64,
+                                                 ndmin=1) - self.opt.segment_end_pad
+        f['search/start_time'] = search_start
+        f['search/end_time'] = search_end                                    
+        
 
         if self.write_performance:
-            self.analysis_time = search_end_time - search_start_time
+            self.analysis_time = (search_end - search_start).sum()
             time_ratio = numpy.array(
                 [float(self.analysis_time) / float(self.run_time)])
             temps_per_core = float(self.ntemplates) / float(self.ncores)

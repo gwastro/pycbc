@@ -532,7 +532,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
     for fd_segment in fd_segments:
         best_psd = None
         psd_overlap = 0
-        inp_seg = segments.segment(fd_segment.start_time
+        inp_seg = segments.segment(fd_segment.start_time,
                                    fd_segment.end_time)
         for start, end, psd in psds_and_times:
             psd_seg = segments.segment(start, end)
