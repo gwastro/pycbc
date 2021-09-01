@@ -703,6 +703,16 @@ class Workflow(pegasus_workflow.Workflow):
     def staging_site(self):
         return self._staging_site
 
+    @property
+    def staging_site_str(self):
+        return ','.join(['='.join(x) for x in self._staging_site.items()])
+
+    @property
+    def exec_sites_str(self):
+        sites = list(self._sc.sites)
+        sites.remove('local')
+        return ','.join(sites)
+
     def add_sites_from_config(self):
         # FIXME: It would be nice to be able to override site properties here.
         #        We do want a mechanism to change things from the command line.

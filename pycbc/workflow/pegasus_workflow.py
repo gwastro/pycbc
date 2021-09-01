@@ -555,19 +555,38 @@ class Workflow(object):
         self._adag.add_transformation_catalog(self._tc)
         self._adag.add_site_catalog(self._sc)
 
-        f = open(output_map_path, 'w')
-        for out in self._outputs:
-            try:
-                f.write(out.output_map_str() + '\n')
-            except ValueError:
-                # There was no storage path
-                pass
+        with open(output_map_path, 'w') as f:
+            for out in self._outputs:
+                try:
+                    f.write(out.output_map_str() + '\n')
+                except ValueError:
+                    # There was no storage path
+                    pass
 
         if submit_now and self._asdag is None:
             self.plan_and_submit()
         else:
             self._adag.write(filename)
+            if self._asdag is None:
+                with open('additional_planner_args.dat') as f:
+                    stage_site_str = self.staging_site_str
+                    exec_sites = self.exec_sites_str
+                    prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
+                                             'pegasus-properties.conf')
+                    f.write('--config % '.format(prop_file))
+                    if self.cache_file is not None:
+                        f.write('--cache %s '.format(self.cache_file))
 
+                    f.write('--output-sites local ')
+                    f.write('--sites % '.format(exec_sites))
+                    f.write('--staging-sites % '.format(stage_site_str))
+                    f.write('--cluster label,horizontal ')
+                    f.write('--cleanup inplace ')
+                    f.write('--relative-dir work ')
+                    # --dir is not being set here because it might be easier to
+                    # set this in submit_dax still?
+                    f.write('-vvv ')
+            
     def plan_and_submit(self):
         """ Plan and submit the workflow now.
         """
@@ -608,6 +627,7 @@ class Workflow(object):
         # Other options
         planner_args['cluster'] = ['label,horizontal']
         planner_args['relative_dir'] = 'work'
+        planner_args['cleanup'] = 'inplace'
 
         # FIXME: The location of output.map is hardcoded in the properties
         #        file. This is overridden for subworkflows, but is not for
