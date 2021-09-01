@@ -36,15 +36,14 @@ import Pegasus.api as dax
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
                                       'pegasus_files')
 
-PEGASUS_START_TEMPLATE = '''
-#!/bin/bash
+PEGASUS_START_TEMPLATE = '''#!/bin/bash
 
-if [ -f /tmp/x509up_u\`id -u\` ] ; then
+if [ -f /tmp/x509up_u`id -u` ] ; then
   unset X509_USER_PROXY
 else
-  if [ ! -z \${X509_USER_PROXY} ] ; then
-    if [ -f \${X509_USER_PROXY} ] ; then
-      cp -a \${X509_USER_PROXY} /tmp/x509up_u\`id -u\`
+  if [ ! -z ${X509_USER_PROXY} ] ; then
+    if [ -f ${X509_USER_PROXY} ] ; then
+      cp -a ${X509_USER_PROXY} /tmp/x509up_u`id -u`
     fi
   fi
   unset X509_USER_PROXY
@@ -52,15 +51,15 @@ fi
 
 # Check that the proxy is valid
 grid-proxy-info -exists
-RESULT=\${?}
-if [ \${RESULT} -eq 0 ] ; then
-  PROXY_TYPE=\`grid-proxy-info -type | tr -d ' '\`
-  if [ x\${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+RESULT=${?}
+if [ ${RESULT} -eq 0 ] ; then
+  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
     grid-proxy-info
   else
-    cp /tmp/x509up_u\`id -u\` /tmp/x509up_u\`id -u\`.orig
-    grid-proxy-init -cert /tmp/x509up_u\`id -u\`.orig -key /tmp/x509up_u\`id -u\`.orig
-    rm -f /tmp/x509up_u\`id -u\`.orig
+    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+    grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+    rm -f /tmp/x509up_u`id -u`.orig
     grid-proxy-info
   fi
 else
