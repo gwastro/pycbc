@@ -201,7 +201,7 @@ parser.add_argument("--multiprocessing-nprocesses", type=int,
                          "separate from threading using the proc. scheme. "
                          "Used in conjunction with the option"
                          "--finalize-events-template-rate which should be set"
-                         "to a multiple of the number of processings")
+                         "to a multiple of the number of processes.")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
