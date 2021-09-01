@@ -703,12 +703,12 @@ class Workflow(object):
 
         os.makedirs('workflow/planning', exist_ok=True)
 
-        shutil.copyfile(prop_file, 'workflow/planning')
-        shutil.copyfile(os.path.join(submitdir, 'work', 'braindump.yml'),
+        shutil.copy2(prop_file, 'workflow/planning')
+        shutil.copy2(os.path.join(submitdir, 'work', 'braindump.yml'),
                         'workflow/planning')
 
         if self.cache_file is not None:
-            shutil.copyfile(self.cache_file, 'workflow/planning')
+            shutil.copy2(self.cache_file, 'workflow/planning')
     
 
 
