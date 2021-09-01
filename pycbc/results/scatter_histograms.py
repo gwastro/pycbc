@@ -676,7 +676,6 @@ def create_multidim_plot(parameters, samples, labels=None,
             continue
     samples = sd
     parameters = list(sd.keys())
-    #samples = dict([[p, samples[p]] for p in parameters])
 
     # values for axis bounds
     if mins is None:
