@@ -10,7 +10,6 @@ echo -e "\\n\\n>> [`date`] Running pycbc inspiral $1:$3 with $2 threads"
 --sgchisq-snr-threshold 6.0 \
 --sgchisq-locations "mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120" \
 --segment-end-pad 16 \
---cluster-method window \
 --low-frequency-cutoff 30 \
 --pad-data 8 \
 --cluster-window 1 \
