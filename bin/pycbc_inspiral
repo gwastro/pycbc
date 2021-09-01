@@ -402,6 +402,8 @@ with ctx:
             ncores = ctx.num_threads
     else:
             ncores = 1
+    if opt.multiprocessing_nprocesses:
+        ncores *= opt.multiprocessing_nprocesses
 
 
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
