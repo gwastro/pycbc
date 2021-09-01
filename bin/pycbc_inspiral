@@ -453,6 +453,7 @@ with ctx:
     
     tanalyze = list(range(tnum_start, len(bank)))
     n = opt.finalize_events_template_rate
+    n = 1 if n is None else n
     tchunks = [tanalyze[i:i + n] for i in range(0, len(tanalyze), n)] 
     
     mmap = map
