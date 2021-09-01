@@ -557,7 +557,8 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, filename=None, submit_now=False, output_map_path=None):
+    def save(self, filename=None, submit_now=False, plan_now=False,
+             output_map_path=None):
         """ Write this workflow to DAX file
         """
         if filename is None:
@@ -597,8 +598,8 @@ class Workflow(object):
                     # There was no storage path
                     pass
 
-        if submit_now and self._asdag is None:
-            self.plan_and_submit()
+        if (submit_now or plan_now) and self._asdag is None:
+            self.plan_and_submit(submit_now=submit_now)
         else:
             self._adag.write(filename)
             if self._asdag is None:
@@ -624,7 +625,7 @@ class Workflow(object):
                     # set this in submit_dax still?
                     f.write('-vvv ')
             
-    def plan_and_submit(self):
+    def plan_and_submit(self, submit_now=True):
         """ Plan and submit the workflow now.
         """
         # New functionality, this might still need some work. Here's things
@@ -639,7 +640,7 @@ class Workflow(object):
         # * Does something with condor_reschedule (NOT DONE, needed?)
 
         planner_args = {}
-        planner_args['submit'] = True
+        planner_args['submit'] = submit_now
 
         # Get properties file - would be nice to add extra properties here.
         prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
