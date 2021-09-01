@@ -568,7 +568,7 @@ class Workflow(object):
         else:
             self._adag.write(filename)
             if self._asdag is None:
-                with open('additional_planner_args.dat') as f:
+                with open('additional_planner_args.dat', 'w') as f:
                     stage_site_str = self.staging_site_str
                     exec_sites = self.exec_sites_str
                     prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
