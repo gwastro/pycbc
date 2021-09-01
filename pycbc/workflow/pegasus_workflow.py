@@ -27,6 +27,7 @@
 provides additional abstraction and argument handling.
 """
 import os
+import shutil
 import tempfile
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
@@ -34,6 +35,39 @@ import Pegasus.api as dax
 
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
                                       'pegasus_files')
+
+PEGASUS_START_TEMPLATE = '''
+#!/bin/bash
+
+if [ -f /tmp/x509up_u\`id -u\` ] ; then
+  unset X509_USER_PROXY
+else
+  if [ ! -z \${X509_USER_PROXY} ] ; then
+    if [ -f \${X509_USER_PROXY} ] ; then
+      cp -a \${X509_USER_PROXY} /tmp/x509up_u\`id -u\`
+    fi
+  fi
+  unset X509_USER_PROXY
+fi
+
+# Check that the proxy is valid
+grid-proxy-info -exists
+RESULT=\${?}
+if [ \${RESULT} -eq 0 ] ; then
+  PROXY_TYPE=\`grid-proxy-info -type | tr -d ' '\`
+  if [ x\${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+    grid-proxy-info
+  else
+    cp /tmp/x509up_u\`id -u\` /tmp/x509up_u\`id -u\`.orig
+    grid-proxy-init -cert /tmp/x509up_u\`id -u\`.orig -key /tmp/x509up_u\`id -u\`.orig
+    rm -f /tmp/x509up_u\`id -u\`.orig
+    grid-proxy-info
+  fi
+else
+  echo "Error: Could not find a valid grid proxy to submit workflow."
+  exit 1
+fi
+'''
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -596,12 +630,13 @@ class Workflow(object):
         # New functionality, this might still need some work. Here's things
         # that this might want to do, that submit_dax does:
         # * Checks proxy (ignore this, user should already have this done)
-        # * Pulls properties file in (need to do)
-        # * Send necessary options to the planner (need to do)
-        # * Some logging about hostnames (might be useful)
-        # * Setup the helper scripts (start/debug/stop/status) .. (is useful)
-        # * Copy some of the interesting files into workflow/ (is useful)
-        # * Checks for dashboard URL (might be nice, not priority)
+        # * Pulls properties file in (DONE)
+        # * Send necessary options to the planner (DONE)
+        # * Some logging about hostnames (NOT DONE, needed?)
+        # * Setup the helper scripts (start/debug/stop/status) .. (DONE)
+        # * Copy some of the interesting files into workflow/ (DONE)
+        # * Checks for dashboard URL (NOT DONE)
+        # * Does something with condor_reschedule (NOT DONE, needed?)
 
         planner_args = {}
         planner_args['submit'] = True
@@ -625,6 +660,12 @@ class Workflow(object):
 
         # Make tmpdir for submitfiles
         submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_')
+        os.chmod(submitdir, 0o755)
+        try:
+            os.remove('submitdir')
+        except FileNotFoundError:
+            pass
+        os.symlink(submitdir, 'submitdir')
         planner_args['dir'] = submitdir
 
         # Other options
@@ -637,6 +678,38 @@ class Workflow(object):
         #        main workflows with submit_dax. If we ever remove submit_dax
         #        we should include the location explicitly here.
         self._adag.plan(**planner_args)
+
+        # Set up convenience scripts
+        with open('status', 'w') as fp:
+            fp.write('pegasus-status --verbose ')
+            fp.write('--long {}/work $@'.format(submitdir))
+
+        with open('debug', 'w') as fp:
+            fp.write('pegasus-analyzer -r ')
+            fp.write('-v {}/work $@'.format(submitdir))
+
+        with open('stop', 'w') as fp:
+            fp.write('pegasus-remove {}/work $@'.format(submitdir))
+
+        with open('start', 'w') as fp:
+            fp.write(PEGASUS_START_TEMPLATE)
+            fp.write('\n')
+            fp.write('pegasus-run {}/work $@'.format(submitdir))
+
+        os.chmod('status', 0o755)
+        os.chmod('debug', 0o755)
+        os.chmod('stop', 0o755)
+        os.chmod('start', 0o755)
+
+        os.makedirs('workflow/planning', exist_ok=True)
+
+        shutil.copyfile(prop_file, 'workflow/planning')
+        shutil.copyfile(os.path.join(submitdir, 'work', 'braindump.yml'),
+                        'workflow/planning')
+
+        if self.cache_file is not None:
+            shutil.copyfile(self.cache_file, 'workflow/planning')
+    
 
 
 class SubWorkflow(dax.SubWorkflow):
