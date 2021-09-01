@@ -573,13 +573,13 @@ class Workflow(object):
                     exec_sites = self.exec_sites_str
                     prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
                                              'pegasus-properties.conf')
-                    f.write('--config % '.format(prop_file))
+                    f.write('--config {} '.format(prop_file))
                     if self.cache_file is not None:
-                        f.write('--cache %s '.format(self.cache_file))
+                        f.write('--cache {} '.format(self.cache_file))
 
                     f.write('--output-sites local ')
-                    f.write('--sites % '.format(exec_sites))
-                    f.write('--staging-sites % '.format(stage_site_str))
+                    f.write('--sites {} '.format(exec_sites))
+                    f.write('--staging-sites {} '.format(stage_site_str))
                     f.write('--cluster label,horizontal ')
                     f.write('--cleanup inplace ')
                     f.write('--relative-dir work ')
