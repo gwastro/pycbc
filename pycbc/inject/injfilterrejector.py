@@ -265,7 +265,7 @@ class InjFilterRejector(object):
                                   delta_f=self.coarsematch_deltaf)
         self.short_injections[simulation_id] = new_inj
 
-    def template_segment_checker(self, bank, t_num, segment, start_time):
+    def template_segment_checker(self, bank, t_num, segment):
         """Test if injections in segment are worth filtering with template.
 
         Using the current template, current segment, and injections within that

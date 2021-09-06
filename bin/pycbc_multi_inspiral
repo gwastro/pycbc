@@ -495,7 +495,7 @@ with ctx:
             analyse_segment = True
             for ifo in opt.instruments:
                 if not inj_filter_rejector[ifo].template_segment_checker(
-                        bank, t_num, stilde[ifo], opt.gps_start_time[ifo]):
+                        bank, t_num, stilde[ifo]):
                     logging.info("Skipping segment %d/%d with template %d/%d"
                                  " as no detectable injection is present"
                                  % (s_num + 1, len(segments[ifo]),
