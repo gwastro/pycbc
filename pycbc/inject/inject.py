@@ -595,9 +595,9 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             if hasattr(inj_filter_rejector, 'injected'):
                 prev_p = inj_filter_rejector.injection_params
                 prev_id = inj_filter_rejector.injection_ids
-                injected = numpy.concatenate([prev_p, injected])
-                injected_ids = numpy.concatenate([prev_id, injected_ids])
-               
+                injected = np.concatenate([prev_p, injected])
+                injected_ids = np.concatenate([prev_id, injected_ids])
+
             inj_filter_rejector.injection_params = injected
             inj_filter_rejector.injection_ids = injected_ids
         return injected
