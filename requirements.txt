@@ -28,7 +28,7 @@ dynesty
 epsie>=0.6
 
 # For LDG service access
-dqsegdb
+#dqsegdb # disabled untill next dqsegdb release which fixes setuptools issues
 dqsegdb2>=1.0.1
 https://github.com/ahnitz/pegasus-wms-python3/archive/master.tar.gz
 amqplib
