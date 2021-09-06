@@ -294,7 +294,6 @@ class InjFilterRejector(object):
             return True
 
         # Get times covered by segment analyze and add buffer
-        sample_rate = segment.sample_rate
         seg_start_time = segment.start_time - self.seg_buffer
         seg_end_time = segment.end_time + self.seg_buffer
 
