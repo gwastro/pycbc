@@ -18,9 +18,9 @@ introduces a gate to remove given times from the data, using the inpainting
 method to fill the removed part such that it does not enter the likelihood.
 """
 
+from abc import abstractmethod
 import logging
 import numpy
-from abc import abstractmethod
 from scipy import special
 
 from pycbc.waveform import (NoWaveformError, FailedWaveformError)
@@ -191,7 +191,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             self._current_wfs = self.waveform_generator.generate(**params)
         return self._current_wfs
 
-
     @abstractmethod
     def get_gated_waveforms(self):
         """Generates and gates waveforms using the current parameters.
@@ -214,7 +213,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         wfs = self.get_waveforms()
         out = {}
         for det, h in wfs.items():
-            invpsd = self._invpsds[det]
             d = self.data[det]
             out[det] = d - h
         return out
@@ -325,13 +323,13 @@ class BaseGatedGaussian(BaseGaussianNoise):
             if self.ignore_failed_waveforms:
                 return self._nowaveform_logl()
             raise e
-        # gate input for ringdown analysis which consideres a start time
-        # and an end time
-        dgate = params['gate_window']
         # get waveform parameters
         params = self.current_params
         spin1 = params['spin1z']
         spin2 = params['spin2z']
+        # gate input for ringdown analysis which consideres a start time
+        # and an end time
+        dgate = params['gate_window']
         meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'],
                                        spin1, spin2)
         # figure out the gate times
