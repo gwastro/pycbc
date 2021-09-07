@@ -28,11 +28,12 @@ dynesty
 epsie>=0.6
 
 # For LDG service access
-#dqsegdb # disabled untill next dqsegdb release which fixes setuptools issues
 dqsegdb2>=1.0.1
 https://github.com/ahnitz/pegasus-wms-python3/archive/master.tar.gz
 amqplib
 htchirp >= 2.0
+# use dqsegdb fork till next dqsegdb release
+https://github.com/ahnitz/dqsegdb/archive/master.tar.gz
 
 # For building documentation
 Sphinx>=1.5.0,<2.0.0
