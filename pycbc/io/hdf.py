@@ -994,7 +994,7 @@ class ForegroundTriggers(object):
         # Some fields are special cases:
         logging.info("Outputting end times")
         time = self.get_end_time()
-        ofd.create_dataset('end_time', data=time, dtype=np.float32)
+        ofd.create_dataset('end_time', data=time, dtype=np.float64)
 
         logging.info("Getting IFARs and outputting as FARs")
         far = 1. / self.get_coincfile_array('ifar')
