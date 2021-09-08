@@ -244,7 +244,7 @@ def template_triggers(t_num):
         # determine whether
         # to filter this template/segment if injections are present.
         if not inj_filter_rejector.template_segment_checker(
-                bank, t_num, stilde, opt.gps_start_time):
+                bank, t_num, stilde):
             continue
         if template is None:
             template = bank[t_num]
