@@ -71,7 +71,7 @@ class TestUtils(unittest.TestCase):
     def test_lfilter(self):
         "Check our hand written lfilter"
         c = uniform(-10, 10, size=1024)
-        ts = uniform(-1, 1, size=4323)
+        ts = TimeSeries(uniform(-1, 1, size=4302300), delta_t=self.delta_t)
 
         ref = scipy.signal.lfilter(c, 1.0, ts)
         test = lfilter(c, ts)

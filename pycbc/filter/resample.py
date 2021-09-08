@@ -47,16 +47,16 @@ def lfilter(coefficients, timeseries):
         filtered array
     """
     from pycbc.filter import correlate
+    fillen = len(coefficients)
 
     # If there aren't many points just use the default scipy method
     if len(timeseries) < 2**7:
         series = scipy.signal.lfilter(coefficients, 1.0, timeseries)
         return series
-    else:
+    elif (len(timeseries) < fillen * 10) or (len(timeseries) < 2**18):
         cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
         cseries.resize(len(timeseries))
-        cseries.roll(len(timeseries) - len(coefficients) + 1)
-        timeseries = Array(timeseries, copy=False)
+        cseries.roll(len(timeseries) - fillen + 1)
 
         flen = len(cseries) // 2 + 1
         ftype = complex_same_precision_as(timeseries)
@@ -64,14 +64,27 @@ def lfilter(coefficients, timeseries):
         cfreq = zeros(flen, dtype=ftype)
         tfreq = zeros(flen, dtype=ftype)
 
-        fft(cseries, cfreq)
-        fft(timeseries, tfreq)
+        fft(Array(cseries), cfreq)
+        fft(Array(timeseries), tfreq)
 
-        correlate(cfreq, tfreq, cfreq)
-        ifft(cfreq, cseries)
+        cout = zeros(flen, ftype)
+        out = zeros(len(timeseries), dtype=timeseries)
 
-        cseries /= len(cseries)
-        return cseries
+        correlate(cfreq, tfreq, cout)
+        ifft(cout, out)
+
+        return TimeSeries(out.numpy()  / len(out), epoch=timeseries.start_time,
+                          delta_t=timeseries.delta_t)
+    else:
+        # recursively perform which saves a bit on memory usage
+        # but must keep within recursion limit
+        chunksize = max(fillen * 5, len(timeseries) // 128)
+        part1 = lfilter(coefficients, timeseries[0:chunksize])
+        part2 = lfilter(coefficients, timeseries[chunksize - fillen:])
+        out = timeseries.copy()
+        out[:len(part1)] = part1
+        out[len(part1):] = part2[fillen:]
+        return out
 
 def fir_zero_filter(coeff, timeseries):
     """Filter the timeseries with a set of FIR coefficients
