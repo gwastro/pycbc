@@ -29,6 +29,7 @@ from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
 from pycbc.waveform.utils import time_from_frequencyseries
 from pycbc.waveform import generator
+from pycbc.filter import highpass
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
@@ -42,7 +43,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
     """
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, **kwargs):
+                 static_params=None, highpass_waveforms=False, **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
         # cache the current projection for debugging
@@ -54,11 +55,29 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._gated_data = {}
         # attribute for storing the current waveforms
         self._current_wfs = None
+        # highpass waveforms with the given frequency
+        self.highpass_waveforms = highpass_waveforms
+        if self.highpass_waveforms:
+            logging.info("Will highpass waveforms at %f Hz",
+                         highpass_waveforms)
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
+
+    @classmethod
+    def from_config(cls, cp, data_section='data', data=None, psds=None,
+                    **kwargs):
+        """Adds highpass filtering to keyword arguments based on config file.
+        """
+        if cp.has_option(data_section, 'strain-high-pass') and \
+            'highpass_waveforms' not in kwargs:
+            kwargs['highpass_waveforms'] = float(cp.get(data_section,
+                                                        'strain-high-pass'))
+        return super().from_config(cp, data_section=data_section,
+                                   data=data, psds=psds,
+                                   **kwargs)
 
     def update(self, **params):
         # update
@@ -178,8 +197,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
     def get_waveforms(self):
         """The waveforms generated using the current parameters.
 
-        If the waveforms haven't been generated yet, they will be generated
-        and cached.
+        If the waveforms haven't been generated yet, they will be generated,
+        resized to the same length as the data, and cached. If the
+        ``highpass_waveforms`` attribute is set, a highpass filter will
+        also be applied to the waveforms.
 
         Returns
         -------
@@ -188,7 +209,17 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         if self._current_wfs is None:
             params = self.current_params
-            self._current_wfs = self.waveform_generator.generate(**params)
+            wfs = self.waveform_generator.generate(**params)
+            for det, h in wfs.items():
+                # make the same length as the data
+                h.resize(len(self.data[det]))
+                # apply high pass
+                if self.highpass_waveforms:
+                    h = highpass(
+                        h.to_timeseries(),
+                        frequency=self.highpass_waveforms).to_frequencyseries()
+                wfs[det] = h
+            self._current_wfs = wfs
         return self._current_wfs
 
     @abstractmethod
@@ -530,7 +561,6 @@ class GatedGaussianNoise(BaseGatedGaussian):
             slc = slice(self._kmin[det], self._kmax[det])
             # calculate the residual
             data = self.td_data[det]
-            h.resize(len(self.data[det]))
             ht = h.to_timeseries()
             res = data - ht
             rtilde = res.to_frequencyseries()
@@ -552,7 +582,6 @@ class GatedGaussianNoise(BaseGatedGaussian):
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
-            h.resize(len(self.data[det]))
             ht = h.to_timeseries()
             ht = ht.gate(gatestartdelay + dgatedelay/2,
                          window=dgatedelay/2, copy=False,
@@ -620,6 +649,26 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             generator_class=generator.FDomainDetFrameTwoPolGenerator,
             **self.static_params)
 
+    def get_waveforms(self):
+        if self._current_wfs is None:
+            params = self.current_params
+            wfs = self.waveform_generator.generate(**params)
+            for det, (hp, hc) in wfs.items():
+                # make the same length as the data
+                hp.resize(len(self.data[det]))
+                hc.resize(len(self.data[det]))
+                # apply high pass
+                if self.highpass_waveforms:
+                    hp = highpass(
+                        hp.to_timeseries(),
+                        frequency=self.highpass_waveforms).to_frequencyseries()
+                    hc = highpass(
+                        hc.to_timeseries(),
+                        frequency=self.highpass_waveforms).to_frequencyseries()
+                wfs[det] = (hp, hc)
+            self._current_wfs = wfs
+        return self._current_wfs
+
     def get_gated_waveforms(self):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
@@ -630,7 +679,6 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             # the waveforms are a dictionary of (hp, hc)
             pols = []
             for h in wfs[det]:
-                h.resize(len(self.data[det]))
                 ht = h.to_timeseries()
                 ht = ht.gate(gatestartdelay + dgatedelay/2,
                              window=dgatedelay/2, copy=False,
@@ -694,6 +742,10 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             # inner products
             d = self._overwhitened_data[det]
             # overwhiten the hp and hc
+            # we'll do this in place for computational efficiency, but as a
+            # result we'll clear the current waveforms cache so a repeated call
+            # to get_waveforms does not return the overwhitened versions
+            self._current_wfs = None
             invpsd = self._invpsds[det]
             hp *= invpsd
             hc *= invpsd

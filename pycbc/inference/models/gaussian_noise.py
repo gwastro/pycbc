@@ -520,7 +520,7 @@ class BaseGaussianNoise(BaseDataModel):
             The name of the section to load data options from.
         \**kwargs :
             All additional keyword arguments are passed to the class. Any
-            provided keyword will over ride what is in the config file.
+            provided keyword will override what is in the config file.
         """
         # get the injection file, to replace any FROM_INJECTION settings
         if 'injection-file' in cp.options('data'):
@@ -594,6 +594,7 @@ class BaseGaussianNoise(BaseDataModel):
         gates = gates_from_cli(opts)
         if gates:
             args['gates'] = gates
+        args.update(kwargs)
         return cls(**args)
 
 
