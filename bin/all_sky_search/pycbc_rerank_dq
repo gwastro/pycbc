@@ -1,0 +1,111 @@
+#!/usr/bin/env python
+""" Merge and rerank clustered DQ data
+"""
+import logging, argparse, numpy, h5py
+import pycbc
+from os import path 
+from pycbc.version import git_verbose_msg as version
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=version)
+parser.add_argument('--verbose', action="store_true",default=False)
+parser.add_argument('--no-low-dq-cutoff', action="store_true")
+parser.add_argument("--ifo", type=str,required=True)
+parser.add_argument("--max-stat", type=float,default=8)
+parser.add_argument("--input-file", required=True,nargs='+')
+parser.add_argument("--rate-file", type = str, default = None)
+parser.add_argument("--bank-file", type = str, default = None)
+parser.add_argument("--dq-type", type = str, default = 'dq')
+parser.add_argument("--output-file", required=True)
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+ifo = args.ifo
+
+log_like = numpy.array([])
+times = numpy.array([])
+for filename in args.input_file:
+    logging.info('Reading file %s...'%filename)
+    g = h5py.File(filename, 'r')
+    g_log_like = g[ifo + '/dq_val'][:]
+    g_times = g[ifo + '/times'][:]
+    g.close()
+    log_like = numpy.concatenate((log_like,g_log_like))
+    times = numpy.concatenate((times,g_times))
+
+log_like_ranking = numpy.argsort(log_like)
+len_log_like = len(log_like)
+
+times = times[log_like_ranking]
+log_like_vals = numpy.array(log_like[log_like_ranking])
+
+log_like_dict = {}
+percent_dict = {}
+
+if not args.rate_file or args.bank_file:
+    logging.error('Must supply either a bank or dq rates file')
+
+if args.rate_file is not None:
+    rates = {}
+    locs_dict = {}
+    if path.isfile(args.rate_file):
+        f = h5py.File(args.rate_file,'r')
+        bin_names = f.attrs['names'][:]
+        for bin_name in bin_names:
+            logging.info('Processing bin %s...'%bin_name)
+            rates = f['%s/rates'%bin_name][:]
+            locs_dict[bin_name] = f['%s/locs'%bin_name][:]
+            log_like_dict[bin_name] = numpy.zeros(len(log_like))
+            
+            if not args.no_low_dq_cutoff:
+                rates = numpy.array([max(r,1.) for r in rates])
+
+            log_rates = numpy.log(rates)
+            percent_dict[bin_name] = log_rates
+
+            n_bins = len(log_rates)
+            percentiles = numpy.linspace(0,100,n_bins+1)
+            dq_percentiles = numpy.percentile(log_like_vals,percentiles)[1:]
+
+            rates_bin = numpy.array([n_bins - \
+                              len(dq_percentiles[dq_percentiles >= dq_ll]) \ 
+                              for dq_ll in log_like_vals]) 
+            log_like_dict[bin_name] = log_rates[rates_bin.astype('int')]
+
+        f.close()
+        
+    else: logging.error('Could not find binned trigger rates file')
+else:
+    bank = h5py.File(args.bank_file, 'r')
+    bin_names = ['all_bin']
+    locs_dict = {'all_bin': numpy.arange(0, len(bank['mass1'][:]), 1)}
+
+    log_like = numpy.arange(len(log_like))*100./len(log_like)
+    
+    p_min = int(len_log_like/2.) 
+    p_max = int(len_log_like/(1.+numpy.e**-args.max_stat)) 
+    
+    log_like[p_min:p_max] = numpy.log(log_like[p_min:p_max] \
+                                      / (100.-log_like[p_min:p_max]))
+    log_like[p_max:] = args.max_stat
+    log_like[:p_min] = 0
+    log_like_dict['all_bin'] = log_like
+
+
+f = h5py.File(args.output_file, 'w')
+f.attrs['names'] = bin_names
+for bin_name in bin_names:
+    f[ifo + '/dq_vals/' + bin_name] = numpy.array(log_like_dict[bin_name],
+                                                  dtype=numpy.float32)
+    f[ifo + '/dq_percentiles/' + bin_name] = numpy.array(percent_dict[bin_name],
+                                                  dtype=numpy.float32)
+    f[ifo + '/locs/' + bin_name] = numpy.array(locs_dict[bin_name],
+                                               dtype=numpy.float32)
+f[ifo + '/times'] = numpy.array(times, dtype=numpy.uint32)
+f[ifo + '/dq_input_vals'] = numpy.array(log_like_vals, dtype=numpy.float32)
+f.attrs.create('stat', data=ifo+'-'+args.dq_type+'-dq_ts_reference')
+f.close()
+
+logging.info('Done!')
+
