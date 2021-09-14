@@ -143,27 +143,35 @@ def get_scale_fac(fig, fiducial_width=8, fiducial_height=7):
     return (width*height/(fiducial_width*fiducial_height))**0.5
 
 
-def construct_kde(samples_array, use_kombine=False):
+def construct_kde(samples_array, use_kombine=False, kdeargs=None):
     """Constructs a KDE from the given samples.
     """
+    # make sure samples are randomly sorted
+    numpy.random.seed(0)
+    numpy.random.shuffle(samples_array)
     if use_kombine:
         try:
             import kombine
         except ImportError:
             raise ImportError("kombine is not installed.")
+    if kdeargs is None:
+        kdeargs = {}
     # construct the kde
     if use_kombine:
-        kde = kombine.clustered_kde.KDE(samples_array)
+        kde = kombine.clustered_kde.optimized_kde(samples_array, **kdeargs)
     else:
-        kde = scipy.stats.gaussian_kde(samples_array.T)
+        kde = scipy.stats.gaussian_kde(samples_array.T, **kdeargs)
     return kde
 
 
 def create_density_plot(xparam, yparam, samples, plot_density=True,
                         plot_contours=True, percentiles=None, cmap='viridis',
-                        contour_color=None, xmin=None, xmax=None,
+                        contour_color=None, label_contours=True,
+                        contour_linestyles=None,
+                        xmin=None, xmax=None,
                         ymin=None, ymax=None, exclude_region=None,
-                        fig=None, ax=None, use_kombine=False):
+                        fig=None, ax=None, use_kombine=False,
+                        kdeargs=None):
     """Computes and plots posterior density and confidence intervals using the
     given samples.
 
@@ -187,6 +195,10 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
     contour_color : {None, string}
         What color to make the contours. Default is white for density
         plots and black for other plots.
+    label_contours : bool, optional
+        Whether to label the contours. Default is True.
+    contour_linestyles : list, optional
+        Linestyles to use for the contours. Default (None) will use solid.
     xmin : {None, float}
         Minimum value to plot on x-axis.
     xmax : {None, float}
@@ -211,6 +223,8 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
     use_kombine : {False, bool}
         Use kombine's KDE to calculate density. Otherwise, will use
         `scipy.stats.gaussian_kde.` Default is False.
+    kdeargs : dict, optional
+        Pass the given keyword arguments to the KDE.
 
     Returns
     -------
@@ -233,7 +247,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
     xsamples = samples[xparam]
     ysamples = samples[yparam]
     arr = numpy.vstack((xsamples, ysamples)).T
-    kde = construct_kde(arr, use_kombine=use_kombine)
+    kde = construct_kde(arr, use_kombine=use_kombine, kdeargs=kdeargs)
 
     # construct grid to evaluate on
     if xmin is None:
@@ -282,19 +296,20 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         else:
             lw = 2
         ct = ax.contour(X, Y, Z, s, colors=contour_color, linewidths=lw,
-                        zorder=3)
+                        linestyles=contour_linestyles, zorder=3)
         # label contours
-        lbls = ['{p}%'.format(p=int(p)) for p in (100. - percentiles)]
-        fmt = dict(zip(ct.levels, lbls))
-        fs = 12
-        ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=fs)
+        if label_contours:
+            lbls = ['{p}%'.format(p=int(p)) for p in (100. - percentiles)]
+            fmt = dict(zip(ct.levels, lbls))
+            fs = 12
+            ax.clabel(ct, ct.levels, inline=True, fmt=fmt, fontsize=fs)
 
     return fig, ax
 
 
 def create_marginalized_hist(ax, values, label, percentiles=None,
                              color='k', fillcolor='gray', linecolor='navy',
-                             linestyle='-',
+                             linestyle='-', plot_marginal_lines=True,
                              title=True, expected_value=None,
                              expected_color='red', rotated=False,
                              plot_min=None, plot_max=None):
@@ -318,6 +333,8 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     fillcolor : {'gray', string, or None}
         What color to fill the histogram with. Set to None to not fill the
         histogram. Default is 'gray'.
+    plot_marginal_lines : bool, optional
+        Put vertical lines at the marginal percentiles. Default is True.
     linestyle : str, optional
         What line style to use for the histogram. Default is '-'.
     linecolor : {'navy', string}
@@ -356,11 +373,12 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         plotp = numpy.percentile(values, percentiles)
     else:
         plotp = []
-    for val in plotp:
-        if rotated:
-            ax.axhline(y=val, ls='dashed', color=linecolor, lw=2, zorder=3)
-        else:
-            ax.axvline(x=val, ls='dashed', color=linecolor, lw=2, zorder=3)
+    if plot_marginal_lines:
+        for val in plotp:
+            if rotated:
+                ax.axhline(y=val, ls='dashed', color=linecolor, lw=2, zorder=3)
+            else:
+                ax.axvline(x=val, ls='dashed', color=linecolor, lw=2, zorder=3)
     # plot expected
     if expected_value is not None:
         if rotated:
@@ -496,15 +514,20 @@ def create_multidim_plot(parameters, samples, labels=None,
                          mins=None, maxs=None, expected_parameters=None,
                          expected_parameters_color='r',
                          plot_marginal=True, plot_scatter=True,
+                         plot_maxl=False,
+                         plot_marginal_lines=True,
                          marginal_percentiles=None, contour_percentiles=None,
                          marginal_title=True, marginal_linestyle='-',
                          zvals=None, show_colorbar=True, cbar_label=None,
                          vmin=None, vmax=None, scatter_cmap='plasma',
                          plot_density=False, plot_contours=True,
                          density_cmap='viridis',
-                         contour_color=None, hist_color='black',
+                         contour_color=None, label_contours=True,
+                         contour_linestyles=None,
+                         hist_color='black',
                          line_color=None, fill_color='gray',
-                         use_kombine=False, fig=None, axis_dict=None):
+                         use_kombine=False, kdeargs=None,
+                         fig=None, axis_dict=None):
     """Generate a figure with several plots and histograms.
 
     Parameters
@@ -576,9 +599,19 @@ def create_multidim_plot(parameters, samples, labels=None,
         The color to use for the contour lines. Defaults to white for
         density plots, navy for scatter plots without zvals, and black
         otherwise.
+    label_contours : bool, optional
+        Whether to label the contours. Default is True.
+    contour_linestyles : list, optional
+        Linestyles to use for the contours. Default (None) will use solid.
     use_kombine : {False, bool}
         Use kombine's KDE to calculate density. Otherwise, will use
         `scipy.stats.gaussian_kde.` Default is False.
+    kdeargs : dict, optional
+        Pass the given keyword arguments to the KDE.
+    fig : pyplot.figure
+        Use the given figure instead of creating one.
+    axis_dict : dict
+        Use the given dictionary of axes instead of creating one.
 
     Returns
     -------
@@ -600,6 +633,12 @@ def create_multidim_plot(parameters, samples, labels=None,
     else:
         width_ratios = height_ratios = None
 
+    if plot_maxl:
+        # make sure loglikelihood is provide
+        if 'loglikelihood' not in samples.fieldnames:
+            raise ValueError("plot-maxl requires loglikelihood")
+        maxidx = samples['loglikelihood'].argmax()
+
     # only plot scatter if more than one parameter
     plot_scatter = plot_scatter and nparams > 1
 
@@ -619,9 +658,24 @@ def create_multidim_plot(parameters, samples, labels=None,
             if plot_contours and contour_color is None:
                 contour_color = 'navy'
 
+    # create the axis grid
+    if fig is None and axis_dict is None:
+        fig, axis_dict = create_axes_grid(
+            parameters, labels=labels,
+            width_ratios=width_ratios, height_ratios=height_ratios,
+            no_diagonals=not plot_marginal)
+
     # convert samples to a dictionary to avoid re-computing derived parameters
     # every time they are needed
-    samples = dict([[p, samples[p]] for p in parameters])
+    # only try to plot what's available
+    sd = {}
+    for p in parameters:
+        try:
+            sd[p] = samples[p]
+        except (ValueError, TypeError, IndexError):
+            continue
+    samples = sd
+    parameters = list(sd.keys())
 
     # values for axis bounds
     if mins is None:
@@ -634,13 +688,6 @@ def create_multidim_plot(parameters, samples, labels=None,
     else:
         # copy the dict
         maxs = {p: val for p, val in maxs.items()}
-
-    # create the axis grid
-    if fig is None and axis_dict is None:
-        fig, axis_dict = create_axes_grid(
-            parameters, labels=labels,
-            width_ratios=width_ratios, height_ratios=height_ratios,
-            no_diagonals=not plot_marginal)
 
     # Diagonals...
     if plot_marginal:
@@ -660,6 +707,7 @@ def create_multidim_plot(parameters, samples, labels=None,
             create_marginalized_hist(
                 ax, samples[param], label=labels[param],
                 color=hist_color, fillcolor=fill_color,
+                plot_marginal_lines=plot_marginal_lines,
                 linestyle=marginal_linestyle, linecolor=line_color,
                 title=marginal_title, expected_value=expected_value,
                 expected_color=expected_parameters_color,
@@ -668,7 +716,7 @@ def create_multidim_plot(parameters, samples, labels=None,
 
     # Off-diagonals...
     for px, py in axis_dict:
-        if px == py:
+        if px == py or px not in parameters or py not in parameters:
             continue
         ax, _, _ = axis_dict[px, py]
         if plot_scatter:
@@ -692,10 +740,18 @@ def create_multidim_plot(parameters, samples, labels=None,
                 px, py, samples, plot_density=plot_density,
                 plot_contours=plot_contours, cmap=density_cmap,
                 percentiles=contour_percentiles,
-                contour_color=contour_color, xmin=mins[px], xmax=maxs[px],
+                contour_color=contour_color, label_contours=label_contours,
+                contour_linestyles=contour_linestyles,
+                xmin=mins[px], xmax=maxs[px],
                 ymin=mins[py], ymax=maxs[py],
                 exclude_region=exclude_region, ax=ax,
-                use_kombine=use_kombine)
+                use_kombine=use_kombine, kdeargs=kdeargs)
+
+        if plot_maxl:
+            maxlx = samples[px][maxidx]
+            maxly = samples[py][maxidx]
+            ax.scatter(maxlx, maxly, marker='x', s=20, c=contour_color,
+                       zorder=5)
 
         if expected_parameters is not None:
             try:
