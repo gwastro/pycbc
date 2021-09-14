@@ -637,7 +637,7 @@ with ctx:
                         coherent_ifo_triggers[ifo] / norm_dict[ifo],
                         norm_dict[ifo],
                         stilde[ifo].psd,
-                        coinc_idx + stilde[ifo].analyze.start,
+                        coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start,
                         template)
 
                 # Calculate network chisq value
@@ -655,7 +655,7 @@ with ctx:
                                                         network_chisq_dict)
                 else:
                     reweighted_snr = pycbc_reweight_snr(
-                        abs(snr[opt.instruments[0]][coinc_idx]), network_chisq_dict)
+                        abs(snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]]), network_chisq_dict)
 
                 # Need all out vals to be the same length. This means the
                 # entries that are single values need to be repeated once
@@ -663,13 +663,13 @@ with ctx:
                 num_events = len(reweighted_snr)
 
                 for ifo in opt.instruments:
-                    ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] =\
+                    ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
                         bank_chisq.values(template, stilde[ifo].psd, stilde[ifo],
-                                         coherent_ifo_triggers[ifo] /
-                                         norm_dict[ifo], norm_dict[ifo],
-                                         coinc_idx+stilde[ifo].analyze.start)
+                                          coherent_ifo_triggers[ifo] /
+                                          norm_dict[ifo], norm_dict[ifo],
+                                          coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start)
                     ifo_out_vals['cont_chisq'] = autochisq.values(
-                        snr[ifo], coinc_idx+stilde[ifo].analyze.start,
+                        snr[ifo] / norm_dict[ifo], coinc_idx_det_frame[ifo],
                         template, stilde[ifo].psd, norm_dict[ifo],
                         stilde=stilde[ifo], low_frequency_cutoff=flow)
                     ifo_out_vals['chisq'] = chisq[ifo]
