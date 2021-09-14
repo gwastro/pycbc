@@ -243,26 +243,27 @@ def coherent_snr(snr_triggers, index, threshold, projection_matrix,
     return rho_coh, index, snrv, coinc_snr
 
 
-def coincident_snr(snr_dict, index, threshold):
+def coincident_snr(snr_dict, index, threshold, time_delay_idx):
     """
     Output: rho_coinc: Coincident snr triggers
             index    : The subset of input index that survive the cuts
             coinc_triggers: Dictionary of individual detector SNRs at
                             indexes that survive cuts
-    Input: snr_dict: Dictionary of individual detector SNRs in geocent time
+    Input: snr_dict: Dictionary of individual detector SNRs
            index   : Geocent indexes you want to find coinc SNR for
            threshold: Indexes with coinc SNR below this threshold are cut
+           time_delay_idx: Dictionary of time delay in indices for each detector
     """
-    # Restrict the snr timeseries to just the interesting points
-    coinc_triggers = {ifo : snr_dict[ifo][index] for ifo in snr_dict.keys()}
-    # Calculate the coincident snr
+    #Restrict the snr timeseries to just the interesting points
+    coinc_triggers = {ifo : snr_dict[ifo][index+time_delay_idx[ifo]] for ifo in snr_dict.keys()}
+    #Calculate the coincident snr
     snr_array = np.array([coinc_triggers[ifo]
                         for ifo in coinc_triggers.keys()])
     rho_coinc = np.sqrt(np.sum(snr_array * snr_array.conj(),axis=0))
     # Apply threshold
     thresh_indexes = rho_coinc > threshold
     index = index[thresh_indexes]
-    coinc_triggers = {ifo : snr_dict[ifo][index] for ifo in snr_dict.keys()}
+    coinc_triggers = {ifo : snr_dict[ifo][index+time_delay_idx[ifo]] for ifo in snr_dict.keys()}
     rho_coinc = rho_coinc[thresh_indexes]
     return rho_coinc, index, coinc_triggers
 
