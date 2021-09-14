@@ -1544,7 +1544,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         # Safety against subclassing and not rethinking this
         allowed_names = ['ExpFitFgBgNormStatistic',
-                         'ExpFitFgBgNormBBHStatistic']
+                         'ExpFitFgBgNormBBHStatistic',
+                         'DQExpFitFgBgNormStatistic']
         self._check_coinc_lim_subclass(allowed_names)
 
         if not self.has_hist:
@@ -1725,6 +1726,123 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
         return loglr
 
+class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
+    """
+    The ExpFitFgBgNormStatistic with DQ-based reranking.
+
+    This is the same as the ExpFitFgBgNormStatistic except the likelihood
+    is multiplied by the relative signal rate based on the relevant
+    DQ likelihood value.
+    """
+
+    def __init__(self, sngl_ranking, files=None, ifos=None,
+                 **kwargs):
+        """
+        Create a statistic class instance
+
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+        ifos: list of strs, not used here
+            The list of detector names
+        """
+        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
+                                           ifos=ifos, **kwargs)
+        self.dq_val_by_time = {}
+        self.dq_bin_by_id = {}
+        for k in self.files.keys():
+            parsed_attrs = k.split('-')
+            if len(parsed_attrs) < 3:
+                continue
+            if parsed_attrs[2] == 'dq_ts_reference':
+                ifo = parsed_attrs[0]
+                dq_type = parsed_attrs[1]
+                dq_vals = self.assign_dq_val(k)
+                dq_bins = self.assign_bin_id(k)
+                if ifo not in self.dq_val_by_time:
+                    self.dq_val_by_time[ifo]={}
+                    self.dq_bin_by_id[ifo]={}
+                self.dq_val_by_time[ifo][dq_type]=dq_vals
+                self.dq_bin_by_id[ifo][dq_type]=dq_bins
+
+    def assign_bin_id(self, key):
+        ifo = key.split('-')[0]
+        dq_file = self.files[key]
+        bin_names = dq_file.attrs['names'][:]
+        locs = []
+        names = []
+        for bin_name in bin_names:
+            bin_locs = dq_file[ifo + '/locs/' + bin_name][:]
+            locs = list(locs)+list(bin_locs.astype(int))
+            names = list(names)+list([bin_name]*len(bin_locs))
+        bin_dict = dict(zip(locs,names))
+        return bin_dict
+
+    def assign_dq_val(self, key):
+        ifo = key.split('-')[0]
+        dq_file = self.files[key]
+        times = dq_file[ifo+'/times'][:]
+        bin_names = dq_file.attrs['names'] [:]
+        dq_dict = {}
+        for bin_name in bin_names:
+            dq_vals = dq_file[ifo+'/dq_vals/'+bin_name][:]
+            dq_dict[bin_name] = dict(zip(times,dq_vals))
+        return dq_dict
+
+    def find_dq_val(self, trigs):
+        """Get dq values for a specific ifo and times"""
+        try:
+            time = trigs['end_time'].astype(int)
+            tnum = trigs.template_num
+            ifo = trigs.ifo
+        except AttributeError:
+            time = trigs['end_time'].astype(int)
+            tnum = trigs['template_id']
+            assert len(self.ifos) == 1
+            # Should be exactly one ifo provided
+            ifo = self.ifos[0]
+        dq_val = numpy.zeros(len(time))
+        if ifo in self.dq_val_by_time:
+            for (i,t) in enumerate(time):
+                for k in self.dq_val_by_time[ifo].keys():
+                    if isinstance(tnum,numpy.ndarray):
+                        bin_name = self.dq_bin_by_id[ifo][k][tnum[i]]
+                    else:
+                        bin_name = self.dq_bin_by_id[ifo][k][tnum]
+                    val = self.dq_val_by_time[ifo][k][bin_name][int(t)]
+                    dq_val[i]=max(dq_val[i],val)
+        return dq_val
+
+    def lognoiserate(self, trigs):
+        """
+        Calculate the log noise rate density over single-ifo ranking
+
+        Read in single trigger information, compute the ranking
+        and rescale by the fitted coefficients alpha and rate
+
+        Parameters
+        -----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+
+        Returns
+        ---------
+        lognoisel: numpy.array
+            Array of log noise rate density for each input trigger.
+
+        """
+        logr_n = ExpFitFgBgNormStatistic.lognoiserate(
+                    self,trigs)
+        dq_val = self.find_dq_val(trigs)
+        logr_n += dq_val
+        return logr_n
+
 
 statistic_dict = {
     'quadsum': QuadratureSumStatistic,
@@ -1733,6 +1851,7 @@ statistic_dict = {
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
+    'phasetd_exp_fit_fgbg_norm': DQExpFitFgBgNormStatistic,
     'exp_fit_bg_rate': ExpFitBgRateStatistic,
     'phasetd_exp_fit_fgbg_norm': ExpFitFgBgNormStatistic,
     'phasetd_exp_fit_fgbg_bbh_norm': ExpFitFgBgNormBBHStatistic,
