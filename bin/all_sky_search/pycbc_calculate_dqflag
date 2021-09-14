@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+"""
+    Convert veto definer into timeseries
+"""
+
+import logging, argparse, numpy, h5py
+import pycbc
+from pycbc.version import git_verbose_msg as version
+from pycbc.fft.fftw import set_measure_level
+from pycbc.events import veto
+from pycbc.workflow import SegFile
+set_measure_level(0)
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=version)
+parser.add_argument('--verbose', action="store_true")
+parser.add_argument('--science-segments', required=True)
+parser.add_argument('--dq-segments', required=True)
+parser.add_argument('--flag', type=str, required=True)
+parser.add_argument('--ifo', type=str, required=True)
+parser.add_argument('--output-file', required=True)
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+
+def make_dq_ts(segs, dq_segs, ifo, flag):
+    """ Create a data quality timeseries
+    """
+    logging.info('Creating data quality timeseries for flag %s', 
+                 flag)
+    # Keep just times which belong to science_segments
+    dq_times = numpy.concatenate([numpy.arange(float(seg[0]), float(seg[1])).astype(int)
+                                  for seg in segs])
+    dq = numpy.zeros(len(dq_times))
+    # Identify times within segments for the chosen flag
+    indexes, _ = veto.indices_within_segments(dq_times, [dq_segs], ifo=ifo,
+                                              segment_name=flag)
+    if indexes.size:
+        dq[indexes] = 1
+    else:
+        logging.warning('Veto definer segment list is empty for flag %s-%s',
+                        ifo, flag)
+    return dq, dq_times
+
+
+ifo = args.ifo
+flag = args.flag
+
+flag_list = flag.split(':')
+if len(flag_list)>1:
+    flag = flag_list[1]
+
+# Get science segments from file
+# to do: make this a configurable option
+segs = SegFile.from_segment_xml(args.science_segments).segment_dict["%s:SCIENCE_AVAILABLE" % ifo]
+# Create data quality time series
+dq = make_dq_ts(segs, args.dq_segments, ifo, flag)
+
+f = h5py.File(args.output_file, 'w')
+start, end = [dq[1][0]], [dq[1][-1]]
+
+f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
+f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
+f[ifo + '/dq_val'] = numpy.array(dq[0], dtype=numpy.uint32)
+f[ifo + '/times'] = numpy.array(dq[1], dtype=numpy.uint32)
+
+logging.info('Done!')
