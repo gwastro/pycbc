@@ -583,8 +583,8 @@ with ctx:
             # Check we have data before we try to compute the coherent snr
             if len(coinc_idx) != 0 and nifo > 1:
                 #Find coinc snr at trigger times and apply coinc snr threshold
-                rho_coinc, coinc_idx, coinc_triggers =\
-                    coincident_snr(snr, coinc_idx, opt.coinc_threshold)
+                rho_coinc, coinc_idx, coinc_triggers = \
+                    coincident_snr(snr, coinc_idx, opt.coinc_threshold, time_delay_idx)
                 logging.info("%s points above coincident SNR threshold" % \
                              str(len(coinc_idx)))
                 if len(coinc_idx) != 0:
