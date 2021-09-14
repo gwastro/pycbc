@@ -70,7 +70,8 @@ def get_dq(seg):
         logging.info("%s is not an available dq method", dq_method)
 
     # figure out list of times
-    times_dq = numpy.arange(gwstrain.start_time,gwstrain.end_time,1./dq_sample_rate)
+    times_dq = numpy.arange(gwstrain.start_time,gwstrain.end_time,
+                            1./dq_sample_rate)
 
     return val_dq, times_dq
 

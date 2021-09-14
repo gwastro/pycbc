@@ -31,8 +31,8 @@ def make_dq_ts(segs, dq_segs, ifo, flag):
     logging.info('Creating data quality timeseries for flag %s', 
                  flag)
     # Keep just times which belong to science_segments
-    dq_times = numpy.concatenate([numpy.arange(float(seg[0]), float(seg[1])).astype(int)
-                                  for seg in segs])
+    dq_times = numpy.concatenate([numpy.arange(float(seg[0]), 
+                                  float(seg[1])).astype(int) for seg in segs])
     dq = numpy.zeros(len(dq_times))
     # Identify times within segments for the chosen flag
     indexes, _ = veto.indices_within_segments(dq_times, [dq_segs], ifo=ifo,
@@ -54,7 +54,8 @@ if len(flag_list)>1:
 
 # Get science segments from file
 # to do: make this a configurable option
-segs = SegFile.from_segment_xml(args.science_segments).segment_dict["%s:SCIENCE_AVAILABLE" % ifo]
+segs = SegFile.from_segment_xml(args.science_segments
+                                 ).segment_dict["%s:SCIENCE_AVAILABLE" % ifo]
 # Create data quality time series
 dq = make_dq_ts(segs, args.dq_segments, ifo, flag)
 
