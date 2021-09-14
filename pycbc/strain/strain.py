@@ -28,7 +28,7 @@ from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
-from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
+from pycbc.filter import resample_to_delta_t, lowpass, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
 from pycbc.waveform.spa_tmplt import spa_distance
 import pycbc.psd
@@ -297,6 +297,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
+    if opt.strain_low_pass:
+        logging.info("Lowpass Filtering")
+        strain = lowpass(strain, frequency=opt.strain_low_pass)
+
     if opt.sample_rate:
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain,
@@ -470,6 +474,8 @@ def insert_strain_option_group(parser, gps_times=True):
 
     data_reading_group.add_argument("--strain-high-pass", type=float,
               help="High pass frequency")
+    data_reading_group.add_argument("--strain-low-pass", type=float,
+              help="Low pass frequency")
     data_reading_group.add_argument("--pad-data", default=8,
               help="Extra padding to remove highpass corruption "
                    "(integer seconds)", type=int)
