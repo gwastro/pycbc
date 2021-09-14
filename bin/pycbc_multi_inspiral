@@ -575,8 +575,9 @@ with ctx:
                 if len(snr[ifo])==0:
                     raise ValueError('The SNR triggers dictionary is empty.\
                                      This should not be possible.')
-                #Apply time delay
-                snr[ifo].roll(-time_delay_idx[ifo])
+                # Time delay is applied to indices
+                coinc_idx_det_frame = {ifo: coinc_idx + time_delay_idx[ifo]
+                                        for ifo in opt.instruments}
 
             # Calculate the coincident and coherent snr
             # Check we have data before we try to compute the coherent snr
