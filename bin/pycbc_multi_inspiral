@@ -592,8 +592,9 @@ with ctx:
                                 % str(max(rho_coinc)))
             # If there is only one ifo, then coinc_triggers is just the
             # triggers from ifo
-            elif len(coinc_idx) != 0 and nifo==1:
-                coinc_triggers = {opt.instruments[0] : snr[opt.instruments[0]][coinc_idx]}
+            elif len(coinc_idx) != 0 and nifo == 1:
+                coinc_triggers = {opt.instruments[0]:
+                                      snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]]}
             else:
                 coinc_triggers = {}
                 logging.info("No triggers above coincident SNR threshold")
@@ -622,10 +623,8 @@ with ctx:
             # To do this it is useful to find the indexes of coinc triggers
             # in the detector frame.
             if len(coinc_idx) != 0:
-                coinc_idx_det_frame = {ifo : coinc_idx + time_delay_idx[ifo]
-                                      for ifo in opt.instruments}
-                coherent_ifo_triggers = {ifo : snr[ifo][coinc_idx]
-                                        for ifo in opt.instruments}
+                coherent_ifo_triggers = {ifo: snr[ifo][coinc_idx_det_frame[ifo]]
+                                         for ifo in opt.instruments}
 
                 # Calculate the power and autochi2 values for the coinc indexes
                 # (this uses the snr timeseries before the time delay, so we
