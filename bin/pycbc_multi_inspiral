@@ -688,7 +688,7 @@ with ctx:
                     network_out_vals['coherent_snr'] = np.real(rho_coinc)
                 else:
                     network_out_vals['coherent_snr'] = \
-                        abs(snr[opt.instruments[0]][coinc_idx])
+                        abs(snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]])
                 network_out_vals['reweighted_snr'] = reweighted_snr
                 network_out_vals['time_index'] = \
                     coinc_idx+stilde[ifo].cumulative_index
