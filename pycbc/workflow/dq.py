@@ -69,19 +69,19 @@ class PyCBCCalculateDQFlagExecutable(Executable):
     # current_retention_level = Executable.ALL_TRIGGERS
     current_retention_level = Executable.MERGED_TRIGGERS
 
-    def create_node(self, workflow, seg_file, cat2_file, flag):
+    def create_node(self, workflow, seg_file, dq_file, flag):
         node = Node(self)
         # Executable objects are initialized with ifo information
         node.add_opt('--ifo', self.ifo_string)
         node.add_opt('--flag', flag)
         node.add_input_opt('--science-segments', seg_file)
-        node.add_input_opt('--cat2-segments', cat2_file)
+        node.add_input_opt('--dq-segments', dq_file)
         node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                  '--output-file')
         return node
 
 def setup_dq_reranking(workflow, dq_label, insps, bank,
-                        segs, analyzable_file, cat2_file,
+                        segs, analyzable_file, dq_file,
                         output_dir=None, tags=None):
     make_analysis_dir(output_dir)
     output = FileList()
@@ -166,7 +166,7 @@ def setup_dq_reranking(workflow, dq_label, insps, bank,
                                              'calculate_dqflag', ifos=ifo,
                                              out_dir=output_dir,
                                              tags=dq_tags)
-        raw_node = raw_exe.create_node(workflow, analyzable_file, cat2_file,
+        raw_node = raw_exe.create_node(workflow, analyzable_file, dq_file,
                                        flag_name)
         workflow += raw_node
         dq_files = raw_node.output_files
