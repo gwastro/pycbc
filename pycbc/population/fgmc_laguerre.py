@@ -5,12 +5,12 @@ and technical documentation at
 https://dcc.ligo.org/LIGO-T1700029/public
 """
 
+import json
 import numpy
 import scipy.stats as sst
 import scipy.special as ssp
 import scipy.integrate as sig
 import scipy.optimize as sop
-import json
 
 from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -152,7 +152,7 @@ class count_posterior(augmented_rv_continuous):
         # FIXME: not as feature rich as the expect method this overrides
         return sum(pp * func(xx) for xx, pp in zip(self.x, self.p))
 
-    def _munp(self, n, *args):
+    def _munp(self, n):
         return self.expect(lambda x: x**n)
 
     def p_bg(self, logbf):
@@ -170,9 +170,9 @@ class count_posterior(augmented_rv_continuous):
         P0 = numpy.dot(1./(1. + numpy.outer(k, self.x)), self.p)
         if isinstance(k, (float, int, numpy.number)):
             return P0.item()
-        elif isinstance(k, numpy.ndarray) and k.ndim == 0:
+        if isinstance(k, numpy.ndarray) and k.ndim == 0:
             return P0.item()
-        else:
+        # except in special cases above, return array of values
             return P0
 
 
@@ -237,7 +237,7 @@ def plotfdr(p_b, ntop):
     ax.grid(True)
     ax.plot(p_b, cum_false / cum_true, 'b+')
     ax.plot(p_b, 1. / (numpy.arange(len(p_b)) + 1), 'c--', label=r'1 noise event')
-    leg = ax.legend()
+    ax.legend()
     ax.set_xlabel(r'$p_{\rm terr}$')
     ax.set_ylabel(r'Cumulative $p_{\rm terr}$ / Cumulative $p_{\rm astro}$')
     ax.set_xlim(0., 1.05 * p_b.max())
@@ -304,7 +304,7 @@ def odds_summary(args, rankstats, ifars, p_b, ntop, times=None, mchirps=None,
 
     if plot_extensions is not None:
         plottag = args.plot_tag or ''
-        if plottag is not '':
+        if len(plottag):
             plottag = '_' + plottag
         fig = plotodds(rankstats, p_b)
         finalize_plot(fig, args, plot_extensions, name, 'odds', plottag)
@@ -336,7 +336,7 @@ def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style='lin
         ax.loglog()
         ylabel = r'$p(' + symb + r')$'
         space = lambda a, b: numpy.logspace(numpy.log10(a), numpy.log10(b), 100)
-        func = numpy.vectorize(lambda x: rv.pdf(x))
+        func = numpy.vectorize(rv.pdf)
         xmin = a
         ymin = rv.pdf(b)
 
@@ -352,7 +352,7 @@ def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style='lin
         ax.yaxis.set_ticklabels([])
         ylabel = r'$p(' + symb + r')$'
         space = lambda a, b: numpy.linspace(a, b, 100)
-        func = numpy.vectorize(lambda x: rv.pdf(x))
+        func = numpy.vectorize(rv.pdf)
         xmin = 0.0
         ymin = 0.0
 
@@ -391,7 +391,7 @@ def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style='lin
     return fig
 
 
-def dist_summary(args, rv, plot_styles=['linear', 'loglog', 'semilogx'],
+def dist_summary(args, rv, plot_styles=('linear', 'loglog', 'semilogx'),
                  plot_extensions=None, middle=None, credible_intervals=None):
 
     name = rv.name if hasattr(rv, 'name') else 'posterior'
@@ -444,7 +444,7 @@ def dist_summary(args, rv, plot_styles=['linear', 'loglog', 'semilogx'],
     # plot distributions
     if plot_extensions is not None:
         plottag = args.plot_tag or ''
-        if plottag is not '':
+        if len(plottag):
             plottag = '_' + plottag
         for style in plot_styles:
             fig = plotdist(rv, plot_lim=args.plot_limits, middle=middle,
