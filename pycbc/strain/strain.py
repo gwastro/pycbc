@@ -297,10 +297,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
-    if opt.strain_low_pass:
-        logging.info("Lowpass Filtering")
-        strain = lowpass(strain, frequency=opt.strain_low_pass)
-
     if opt.sample_rate:
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain,
@@ -371,6 +367,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if opt.strain_high_pass:
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
+
+    if opt.strain_low_pass:
+        logging.info("Lowpass Filtering")
+        strain = lowpass(strain, frequency=opt.strain_low_pass)
 
     if hasattr(opt, 'witness_frame_type') and opt.witness_frame_type:
         stilde = strain.to_frequencyseries()
