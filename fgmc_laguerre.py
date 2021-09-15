@@ -6,7 +6,10 @@ https://dcc.ligo.org/LIGO-T1700029/public
 """
 
 import numpy
-import scipy.stats as sst, scipy.special as ssp, scipy.integrate as sig, scipy.optimize as sop
+import scipy.stats as sst
+import scipy.special as ssp
+import scipy.integrate as sig
+import scipy.optimize as sop
 import json
 
 from matplotlib import figure
@@ -14,7 +17,8 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 class augmented_rv_continuous(sst.rv_continuous):
 
-    def __init__(self, unit = 'dimensionless', texunit = r'\mbox{dimensionless}', texsymb = r'x', **kwargs):
+    def __init__(self, unit='dimensionless', texunit=r'\mbox{dimensionless}',
+                 texsymb=r'x', **kwargs):
         '''
         Parameters
         ----------
@@ -37,9 +41,9 @@ class augmented_rv_continuous(sst.rv_continuous):
         def width(a):
             return self.ppf(alpha + self.cdf(a)) - a
 
-        a = self.ppf(1e-6) # a is displaced slightly from 0
+        a = self.ppf(1e-6)  # a is displaced slightly from 0
         b = self.ppf(alpha)
-        if self.pdf(a) >= self.pdf(b): # upper limit
+        if self.pdf(a) >= self.pdf(b):  # upper limit
             return self.a, b
         a = sop.fminbound(width, a, self.ppf(1.0 - alpha))
         b = self.ppf(alpha + self.cdf(a))
@@ -73,7 +77,10 @@ class count_posterior(augmented_rv_continuous):
     Count posterior distribution.
     '''
 
-    def __init__(self, logbf, laguerre_n, Lambda0, prior=-0.5, name='count posterior', unit='signals/experiment', texunit=r'\mathrm{signals}/\mathrm{experiment}', texsymb=r'\Lambda_1'):
+    def __init__(self, logbf, laguerre_n, Lambda0, prior=-0.5,
+                 name='count posterior', unit='signals/experiment',
+                 texunit=r'\mathrm{signals}/\mathrm{experiment}',
+                 texsymb=r'\Lambda_1'):
         '''
         Parameters
         ----------
@@ -88,9 +95,12 @@ class count_posterior(augmented_rv_continuous):
             or count posterior distribution if count_posterior
             (default=-0.5: Jeffreys prior)
         '''
-        super(count_posterior, self).__init__(a=0.0, b=numpy.inf, name=name, unit=unit, texunit=texunit, texsymb=texsymb)
+        super(count_posterior, self).__init__(a=0.0, b=numpy.inf, name=name,
+                                              unit=unit, texunit=texunit,
+                                              texsymb=texsymb)
         self.Lambda0 = Lambda0
-        self.k = numpy.exp(numpy.array(logbf)) / self.Lambda0 # weighted Bayes factor
+        # weighted Bayes factor
+        self.k = numpy.exp(numpy.array(logbf)) / self.Lambda0
 
         # power-law priors
         self.alpha = prior
@@ -105,7 +115,8 @@ class count_posterior(augmented_rv_continuous):
         # pre-compute Gaussian-Generalized-Laguerre quadrature
         # abscissas and weights, along with pdf at these abscissas
         self.x, w = ssp.la_roots(laguerre_n, self.alpha)
-        self.p = numpy.array([ww * numpy.prod(1.0 + self.k * xx) for xx, ww in zip(self.x, w)])
+        self.p = numpy.array([ww * numpy.prod(1.0 + self.k * xx)
+                              for xx, ww in zip(self.x, w)])
         self.norm = 1.0 / sum(self.p)
         self.p *= self.norm
 
@@ -169,7 +180,6 @@ def plotodds(rankstats, p_b):
 
     fig = figure.Figure()
     FigureCanvas(fig)
-    #fig.set_size_inches((4., 4. / golden_ratio))
     ax = fig.gca()
     ax.loglog()
     ax.grid(True)
@@ -179,11 +189,6 @@ def plotodds(rankstats, p_b):
     ax.set_xlabel(r'ranking statistic')
     ax.set_ylabel(r'$P_1/P_0$')
     ax.set_xlim(0.99 * rankstats.min(), 1.2 * rankstats.max())
-#    try:
-#        fig.tight_layout()
-#    except AttributeError:
-#        # old matplotlib. auto-layout not available
-#        pass
     return fig
 
 
@@ -191,7 +196,6 @@ def plotpbg(rankstats, p_b):
 
     fig = figure.Figure()
     FigureCanvas(fig)
-    #fig.set_size_inches((4., 4. / golden_ratio))
     ax = fig.gca()
     ax.loglog()
     ax.grid(True)
@@ -200,11 +204,6 @@ def plotpbg(rankstats, p_b):
     ax.set_xlabel(r'ranking statistic')
     ax.set_ylabel(r'$P_0$')
     ax.set_xlim(0.99 * rankstats.min(), 1.2 * rankstats.max())
-#    try:
-#        fig.tight_layout()
-#    except AttributeError:
-#        # old matplotlib. auto-layout not available
-#        pass
     return fig
 
 
@@ -212,7 +211,6 @@ def plotoddsifar(ifar, p_b):
 
     fig = figure.Figure()
     FigureCanvas(fig)
-    #fig.set_size_inches((4., 4. / golden_ratio))
     ax = fig.gca()
     ax.loglog()
     ax.grid(True)
@@ -222,11 +220,6 @@ def plotoddsifar(ifar, p_b):
     ax.set_xlabel(r'IFAR')
     ax.set_ylabel(r'$P_1/P_0$')
     ax.set_xlim(0.9 * ifar.min(), 1.1 * ifar.max())
-#    try:
-#        fig.tight_layout()
-#    except AttributeError:
-#        # old matplotlib. auto-layout not available
-#        pass
     return fig
 
 
@@ -251,14 +244,23 @@ def plotfdr(p_b, ntop):
     return fig
 
 
-def odds_summary(args, rankstats, ifars, p_b, ntop, times=None, mchirps=None, name='events', plot_extensions=None):
+def finalize_plot(fig, args, extensions, name, pltype, tag):
+    # Helper function
+    for extn in extensions:
+        filename = args.pldir + '_'.join(name.split()) + '_' + pltype + tag + extn
+        if args.verbose:
+            print('writing %s ...' % filename)
+        fig.savefig(filename)
 
-    print
-    print 'Summary of Top %i' % ntop, name.title()
+
+def odds_summary(args, rankstats, ifars, p_b, ntop, times=None, mchirps=None,
+                 name='events', plot_extensions=None):
+
+    print('\nSummary of Top %i %s' % (ntop, name.title()))
 
     # do sort in reverse order
-    statsort = numpy.argsort(1./numpy.array(rankstats))
-    topn = statsort[:ntop] # indices giving top n
+    statsort = numpy.argsort(1. / numpy.array(rankstats))
+    topn = statsort[:ntop]  # indices giving top n
     topgps = []
     topstat = []
     topifar = []
@@ -271,11 +273,10 @@ def odds_summary(args, rankstats, ifars, p_b, ntop, times=None, mchirps=None, na
         topgps.append(gps)
         topstat.append(stat)
         topifar.append(ifar)
-        print '#%d event:' % (n + 1), str(gps), mchirpstring
-        print '    rankstat = %-8.3f' % stat
-        print '    IFAR     = %.2f' % ifar
-        print '    odds     = %g' % ((1. - p_b[i]) / p_b[i])
-        #print '    p-astro  = %-12g' % (1. - p_b[i]), 'p-noise  = %-12g' % p_b[i]
+        print('#%d event:' % (n + 1), str(gps), mchirpstring)
+        print('    rankstat = %-8.3f' % stat)
+        print('    IFAR     = %.2f' % ifar)
+        print('    odds     = %g' % ((1. - p_b[i]) / p_b[i]))
         toppastro.append(1. - p_b[i])
 
     if args.p_astro_txt is not None:
@@ -285,9 +286,11 @@ def odds_summary(args, rankstats, ifars, p_b, ntop, times=None, mchirps=None, na
                       delimiter=',',
                       header='GPS seconds, stat, IFAR/yr, p_astro')
 
-    if hasattr(args, 'json_tag') and args.json_tag is not None:  # save to catalog-style files
+    if hasattr(args, 'json_tag') and args.json_tag is not None:
+        # save to catalog-style files
         def dump_json(gps, p_a, p_b):
-            jfile = args.plot_dir + 'H1L1V1-PYCBC_%s-%s-1.json' % (args.json_tag, str(int(gps))) # truncate to integer GPS
+            jfile = args.plot_dir + 'H1L1V1-PYCBC_%s-%s-1.json' % \
+                      (args.json_tag, str(int(gps)))  # truncate to integer GPS
             with open(jfile, 'w') as jf:
                 json.dump({'Astro': p_a, 'Terrestrial': p_b}, jf)
         if hasattr(args, 'json_min_ifar') and args.json_min_ifar is not None:
@@ -304,36 +307,19 @@ def odds_summary(args, rankstats, ifars, p_b, ntop, times=None, mchirps=None, na
         if plottag is not '':
             plottag = '_' + plottag
         fig = plotodds(rankstats, p_b)
-        for extn in plot_extensions:
-            filename = args.plot_dir + '_'.join(name.split()) + '_odds' + plottag + extn
-            if args.verbose:
-                print 'writing %s ...' % filename
-            fig.savefig(filename)
+        finalize_plot(fig, args, plot_extensions, name, 'odds', plottag)
         fig = plotpbg(rankstats, p_b)
-        for extn in plot_extensions:
-            filename = args.plot_dir + '_'.join(name.split()) + '_pbg' + plottag + extn
-            if args.verbose:
-                print 'writing %s ...' % filename
-            fig.savefig(filename)
+        finalize_plot(fig, args, plot_extensions, name, 'pbg', plottag)
         fig = plotoddsifar(ifars, p_b)
-        for extn in plot_extensions:
-            filename = args.plot_dir + '_'.join(name.split()) + '_ifarodds' + plottag + extn
-            if args.verbose:
-                print 'writing %s ...' % filename
-            fig.savefig(filename)
+        finalize_plot(fig, args, plot_extensions, name, 'ifarodds', plottag)
         fig = plotfdr(p_b, ntop)
-        for extn in plot_extensions:
-            filename = args.plot_dir + '_'.join(name.split()) + '_fdr' + plottag + extn
-            if args.verbose:
-                print 'writing %s ...' % filename
-            fig.savefig(filename)
+        finalize_plot(fig, args, plot_extensions, name, 'fdr', plottag)        
 
 
 def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style='linear'):
 
     fig = figure.Figure()
     FigureCanvas(fig)
-    #fig.set_size_inches((4., 4. / golden_ratio))
     ax = fig.gca()
 
     name = rv.name if hasattr(rv, 'name') else None
@@ -362,7 +348,7 @@ def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style='lin
         xmin = a
         ymin = 0.0
 
-    else: # linear
+    else:  # linear
         ax.yaxis.set_ticklabels([])
         ylabel = r'$p(' + symb + r')$'
         space = lambda a, b: numpy.linspace(a, b, 100)
@@ -405,39 +391,38 @@ def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style='lin
     return fig
 
 
-def dist_summary(args, rv, plot_styles=['linear', 'loglog', 'semilogx'], plot_extensions=None, middle=None, credible_intervals=None, rankstats=None):
+def dist_summary(args, rv, plot_styles=['linear', 'loglog', 'semilogx'],
+                 plot_extensions=None, middle=None, credible_intervals=None):
 
     name = rv.name if hasattr(rv, 'name') else 'posterior'
     unit = rv.unit if hasattr(rv, 'unit') else ''
-
     median = rv.median()
     mode = rv.mode() if hasattr(rv, 'mode') else None
 
-    print
-    print 'Summary of', name.title()
-    print 'mean   =', rv.mean(), unit
-    print 'median =', median, unit
+    print('Summary of ' + name.title())
+    print('mean   =', rv.mean(), unit)
+    print('median =', median, unit)
     if mode is not None:
-        print 'mode   =', mode, unit
-    print 'stddev =', rv.std(), unit
+        print('mode   =', mode, unit)
+    print('stddev =', rv.std(), unit)
 
     if credible_intervals is not None and len(credible_intervals) > 0:
-        print 'equal-tailed credible intervals:'
-
+        print('equal-tailed credible intervals:')
         equal_tailed_credible_intervals = {}
         for cred in credible_intervals:
             lo, hi = rv.interval(cred)
             equal_tailed_credible_intervals[cred] = (lo, hi)
-            print '%g%%' % (cred * 100), 'credible interval =', '[%g, %g]' % (lo, hi), unit
+            print('%g%%' % (cred * 100), 'credible interval =', '[%g, %g]' %
+                                         (lo, hi), unit)
 
         if hasattr(rv, 'hpd_interval'):
-            print 'highest probability density credible intervals:'
-
+            print('highest probability density credible intervals:')
             hpd_credible_intervals = {}
             for cred in credible_intervals:
                 hpdlo, hpdhi = rv.hpd_interval(cred)
                 hpd_credible_intervals[cred] = (hpdlo, hpdhi)
-                print '%g%%' % (cred * 100), 'credible interval =', '[%g, %g]' % (hpdlo, hpdhi), unit
+                print('%g%%' % (cred * 100), 'credible interval =', '[%g, %g]' %
+                                             (hpdlo, hpdhi), unit)
         else:
             hpd_credible_intervals = None
 
@@ -462,13 +447,9 @@ def dist_summary(args, rv, plot_styles=['linear', 'loglog', 'semilogx'], plot_ex
         if plottag is not '':
             plottag = '_' + plottag
         for style in plot_styles:
-            fig = plotdist(rv, plot_lim=args.plot_limits, middle=middle, credible_intervals=intervals, style=style)
-
-            for extn in plot_extensions:
-                filename = args.plot_dir + '_'.join(name.split()) + '_' + style + plottag + extn
-                if args.verbose:
-                    print 'writing %s ...' % filename
-                fig.savefig(filename)
+            fig = plotdist(rv, plot_lim=args.plot_limits, middle=middle,
+                           credible_intervals=intervals, style=style)
+            finalize_plot(fig, args, plot_extensions, name, style, plottag)
 
     if credible_intervals is not None and len(credible_intervals) == 1:
         return median, lo - median, hi - median
