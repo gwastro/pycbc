@@ -623,6 +623,9 @@ with ctx:
             # To do this it is useful to find the indexes of coinc triggers
             # in the detector frame.
             if len(coinc_idx) != 0:
+                # coinc_idx_det_frame is redefined to account for the cuts to coinc_idx above
+                coinc_idx_det_frame = {ifo: coinc_idx + time_delay_idx[ifo]
+                                       for ifo in opt.instruments}
                 coherent_ifo_triggers = {ifo: snr[ifo][coinc_idx_det_frame[ifo]]
                                          for ifo in opt.instruments}
 
