@@ -9,14 +9,27 @@ from pycbc.version import git_verbose_msg as version
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--verbose', action="store_true",default=False)
-parser.add_argument('--no-low-dq-cutoff', action="store_true")
-parser.add_argument("--ifo", type=str,required=True)
-parser.add_argument("--max-stat", type=float,default=8)
-parser.add_argument("--input-file", required=True,nargs='+')
-parser.add_argument("--rate-file", type = str, default = None)
-parser.add_argument("--bank-file", type = str, default = None)
-parser.add_argument("--dq-type", type = str, default = 'dq')
-parser.add_argument("--output-file", required=True)
+parser.add_argument('--no-low-dq-cutoff', action="store_true",
+                    help="Allow dq values less than 0. "
+                         "Otherwise values less than 0 are set to 0")
+parser.add_argument("--ifo", type=str,required=True,
+                     help="interferometer to analyze")
+parser.add_argument("--max-stat", type=float,default=8,
+                     help="maximum allowed dq value. "
+                           "Only used if --rate-file is not used. "
+                            "[default=8]")
+parser.add_argument("--input-file", required=True,nargs='+',
+                     help="List of files containing the dq timeseries")
+parser.add_argument("--rate-file", type = str, default = None,
+                     help="File containing the mapping from each "
+                           "dq bin to the trigger rate")
+parser.add_argument("--bank-file", type = str, default = None,
+                     help="File containing the template bank")
+parser.add_argument("--dq-type", type = str, default = 'dq',
+                     help="Name of dq type to be included in output file "
+                          "metadata [default='dq']")
+parser.add_argument("--output-file", required=True,
+                     help="name of output file")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)

@@ -13,11 +13,20 @@ set_measure_level(0)
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--verbose', action="store_true")
-parser.add_argument("--dq-sample-rate", default=1, type=int)
-parser.add_argument("--dq-sample-method", required=True)
-parser.add_argument("--gps-start-time", type=int,required=True)
-parser.add_argument("--gps-end-time", type=int,required=True)
-parser.add_argument("--output-file", required=True)
+parser.add_argument("--dq-sample-rate", default=1, type=int,
+                    help="Sample rate to calculate dq timeseries, "
+                         "in Hz [default=1Hz]")
+parser.add_argument("--dq-sample-method", required=True,
+                    help="Method used to calculate dq timeseries. "
+                         "Options are 'max' or 'blrms'")
+parser.add_argument("--gps-start-time", type=int,required=True,
+                    help="The gps start time of the data "
+                          "(integer seconds)")
+parser.add_argument("--gps-end-time", type=int,required=True,
+                    help="The gps end time of the data "
+                         "(integer seconds)")
+parser.add_argument("--output-file", required=True,
+                    help="name of output file")
 
 pycbc.strain.insert_strain_option_group(parser, gps_times=False)
 

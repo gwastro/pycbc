@@ -15,11 +15,17 @@ set_measure_level(0)
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--verbose', action="store_true")
-parser.add_argument('--science-segments', required=True)
-parser.add_argument('--dq-segments', required=True)
-parser.add_argument('--flag', type=str, required=True)
-parser.add_argument('--ifo', type=str, required=True)
-parser.add_argument('--output-file', required=True)
+parser.add_argument('--science-segments', required=True,
+                    help="file containing the science segments")
+parser.add_argument('--dq-segments', required=True,
+                    help="segment file containing the "
+                         "relevant data quality flag segments")
+parser.add_argument('--flag', type=str, required=True,
+                    help="name of the data quality flag")
+parser.add_argument('--ifo', type=str, required=True,
+                    help="interferometer to analyze")
+parser.add_argument("--output-file", required=True,
+                    help="name of output file")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
