@@ -54,6 +54,11 @@ class H5BankFile(h5py.File):
         'Mass ratio'
         return self.mass1_param() / self.mass2_param()
 
+    def eta_param(self):
+        'Symmetric mass ratio'
+        return pycbc.pnutils.mass1_mass2_to_mchirp_eta(
+                self.mass1_param(), self.mass2_param())[1]
+
     def effective_spin_param(self):
         'Effective spin z-component'
         return (self.spin1z_param() * self.mass1_param() + self.spin2z_param() * self.mass2_param()) / self.total_mass_param()
@@ -91,12 +96,15 @@ parser.add_argument('--log-y', action='store_true',
 args = parser.parse_args()
 
 bank = H5BankFile(args.bank_file, 'r')
-bank.f_lower = args.f_lower
+if args.f_lower:
+    f_lower = args.f_lower
+else:
+    f_lower = bank['f_lower'][:]
 
 if args.background_bins:
     data = {'mass1': bank['mass1'][:], 'mass2': bank['mass2'][:],
             'spin1z': bank['spin1z'][:], 'spin2z': bank['spin2z'][:],
-            'f_lower': args.f_lower}
+            'f_lower': f_lower}
     locs_dict = pycbc.events.background_bin_from_string(args.background_bins, data)
 else:
     locs_dict = {'Template Bank': numpy.arange(0, len(bank), 1)}
