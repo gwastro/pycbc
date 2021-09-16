@@ -1,8 +1,7 @@
 """
 Based ultimately on code used for O1 rate calculations, see
 https://git.ligo.org/RatesAndPopulations/lvc-rates-and-pop/-/blob/master/bin/O1_scripts/lvc_rates_calc_posterior
-and technical documentation at
-https://dcc.ligo.org/LIGO-T1700029/public
+and technical documentation by J. Creighton at https://dcc.ligo.org/LIGO-T1700029/public
 """
 
 import json
@@ -14,6 +13,7 @@ import scipy.optimize as sop
 
 from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
 
 class augmented_rv_continuous(sst.rv_continuous):
 
@@ -173,7 +173,7 @@ class count_posterior(augmented_rv_continuous):
         if isinstance(k, numpy.ndarray) and k.ndim == 0:
             return P0.item()
         # except in special cases above, return array of values
-            return P0
+        return P0
 
 
 def plotodds(rankstats, p_b):
@@ -304,7 +304,7 @@ def odds_summary(args, rankstats, ifars, p_b, ntop, times=None, mchirps=None,
 
     if plot_extensions is not None:
         plottag = args.plot_tag or ''
-        if len(plottag):
+        if plottag != '':
             plottag = '_' + plottag
         fig = plotodds(rankstats, p_b)
         finalize_plot(fig, args, plot_extensions, name, 'odds', plottag)
@@ -368,7 +368,7 @@ def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style='lin
     ax.set_ylim(ymin=ymin)
 
     if y.max() < 2 and y.max() > 1:
-        ax.set_ylim(ymax = 2.)
+        ax.set_ylim(ymax=2.)
 
     if name is not None:
         ax.set_title(name.title())
@@ -453,3 +453,5 @@ def dist_summary(args, rv, plot_styles=('linear', 'loglog', 'semilogx'),
 
     if credible_intervals is not None and len(credible_intervals) == 1:
         return median, lo - median, hi - median
+    # keep codeclimate happy with explicit return statement
+    return None

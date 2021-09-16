@@ -1,22 +1,19 @@
 """
 A set of helper functions for evaluating rates.
 
-See https://dcc.ligo.org/LIGO-T2100060/public for technical explanations
+See T. Dent, https://dcc.ligo.org/LIGO-T2100060/public for technical explanations
 """
 
-import sys
-import glob
 from os.path import basename
+import numpy as np
+import h5py
+import bisect
+from itertools import chain as it_chain, combinations as it_comb
 
 from matplotlib import use
 use('Agg')
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
-import numpy as np
-import h5py
-from os.path import basename
-import bisect
-from itertools import chain as it_chain, combinations as it_comb
 
 from pycbc import conversions as conv
 from pycbc import events
@@ -142,8 +139,9 @@ def log_rho_bg(trigs, counts, bins):
     return np.array(log_rhos), np.array(fracerr)
 
 
-def log_rho_fg_analytic(trigs):
-    return np.log(3.0) + 3.0*np.log(rhomin) - 4.0*np.log(trigs)
+def log_rho_fg_analytic(trigs, rhomin):
+    # PDF of a rho^-4 distribution defined above the threshold rhomin
+    return np.log(3.) + 3. * np.log(rhomin) - 4 * np.log(trigs)
 
 
 def log_rho_fg(trigs, injstats, bins):
@@ -350,8 +348,6 @@ class EventRate(object):
                 for combo in self.moreifotimes(ct):
                     if len(combo) == len(ct) + 2:
                         fgt -= conv.sec_to_year(f[combo].attrs['foreground_time'])
-                #if self.args.verbose:
-                #    print('exclusive ' + ct + ' livetime is ' + str(fgt) + ' yr')
                 # index dict on chunk start time / coinc time
                 self.livetimes[(get_start_dur(fi)[0], ct)] = fgt
 
@@ -593,7 +589,7 @@ class SignalEventRate(EventRate):
         self.fg_bins = {}
         self.norm = 0
 
-    def add_injections(self, inj_file, fg_file):  # need fg file to get coinc time info :/
+    def add_injections(self, inj_file, fg_file):  # need fg file for coinc time info :/
         self.starts.append(get_start_dur(inj_file)[0])
         self.get_livetimes(inj_file)
 
@@ -633,7 +629,7 @@ class SignalEventRate(EventRate):
                     my_vals = _injstat[np.logical_and(_ctype == cty, intime == 1)]
                     if self.args.verbose:
                         print('%d ' % len(my_vals) + 'are %s coincs' % cty)
-                    if not (ct, cty) in self.inj_vals:  # initialize
+                    if (ct, cty) not in self.inj_vals:  # initialize
                         self.inj_vals[(ct, cty)] = np.array([])
                     if len(my_vals) > 0:
                         self.inj_vals[(ct, cty)] = \
@@ -694,6 +690,6 @@ class SignalEventRate(EventRate):
         # fraction of inj in specified chunk *and* coinc time/type
         this_norm = frac_time_type * self.livetimes[(chunk, ctime)] / \
                                    total_coinc_time
-        local_pdfs, _ = log_rho_fg(statvals, self.inj_vals[time_type], \
-                            self.fg_bins[time_type])
+        local_pdfs, _ = log_rho_fg(statvals, self.inj_vals[time_type],
+                                   self.fg_bins[time_type])
         return local_pdfs + np.log(this_norm)
