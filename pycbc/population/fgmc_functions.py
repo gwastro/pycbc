@@ -213,6 +213,11 @@ _alltimestring = frozenset([''.join(t) for t in _alltimes])
 _allctimes = frozenset(alltimes(_ifoset, mincount=2))
 
 
+def ifos_from_combo(ct):
+    # extract ifos in alphabetical order from a coinc time string
+    return sorted([ct[i:i + 2] for i in range(0, len(ct), 2)])
+
+
 def type_in_time(ct, cty):
     # returns True if the given coinc type can exist in the coinc time ct
     return all(i in ct for i in cty)
@@ -248,7 +253,7 @@ class EventRate(object):
             # any coinc type must also be a time (?)
             for ty in coinc_types:
                 assert ty in list(self.allctimes)
-            self.coinc_types = frozenset([''.join(t) for ty in coinc_types])
+            self.coinc_types = frozenset([''.join(t) for t in coinc_types])
         if args.verbose:
             print('Using', self.coinc_types, 'coincs in', self.allctimestring, 'times')
         self.args = args
@@ -260,6 +265,7 @@ class EventRate(object):
         self.massspins = None
         self.tpars = None
         self.tmplt_filter = None
+        self.in_bin = None
         self.incl_livetimes = {}
         self.livetimes = {}
 
@@ -278,11 +284,11 @@ class EventRate(object):
         assert self.lo is not None
         assert self.hi is not None
         if self.args.verbose:
-            print('Cutting on %s between %f - %f' (self.bin_param, self.lo, self.hi))
+            print('Cutting on %s between %f - %f' % (self.bin_param, self.lo, self.hi))
         self.tpars = triggers.get_param(self.bin_param, None, *self.massspins)
         self.in_bin = filter_bin_lo_hi(self.tpars, self.lo, self.hi)
 
-    def make_bins(self, maxval, choice='bg', vals=None):
+    def make_bins(self, maxval, choice='bg'):
         # allow options to be strings describing bin formulae as well as floats?
         try:
             linbw = getattr(self.args, choice + '_bin_width')
@@ -303,17 +309,13 @@ class EventRate(object):
             print(str(n_bins) + ' ' + choice + ' stat bins')
         return bins
 
-    def ifos_from_combo(self, ct):
-        # extract ifos in alphabetical order from a coinc time string
-        return sorted([ct[i:i + 2] for i in range(0, len(ct), 2)])
-
     def moreifotimes(self, ctstring):
         # get list of coinc times with more ifos than ctstring
         allctime_moreifos = [ct for ct in self.allctimestring if
                              len(ct) > len(ctstring)]
         # only return those when at least the same ifos are operating
         ret = []
-        ifos = self.ifos_from_combo(ctstring)
+        ifos = ifos_from_combo(ctstring)
         for act in allctime_moreifos:
             if all(i in act for i in ifos):
                 ret.append(act)
@@ -382,7 +384,7 @@ class ForegroundEvents(EventRate):
             # get templates & apply filter
             _tids = f['foreground/template_id'][:]
             # we need the template filter to have already been made
-            assert hasattr(self, 'in_bin')
+            assert self.in_bin is not None
             _keep = np.logical_and(_keepstat, self.in_bin[_tids])
             massp = self.tpars[_tids][_keep]  # filtered template params
 
@@ -397,7 +399,7 @@ class ForegroundEvents(EventRate):
             # get coinc types as strings
             _ctype = np.array([''.join([i for i, t in zip(self.ifos, ts) if (t > 0)])
                                for ts in ifotimes])
-            if not len(_ctype):
+            if len(_ctype) == 0:
                 if self.args.verbose:
                     print('No events in ' + start)
                 return
@@ -439,7 +441,7 @@ class ForegroundEvents(EventRate):
                     _idx = np.logical_and((self.ctime == ct), (self.ctype == cty))
                     _idx = np.logical_and(_idx, (self.start == int(st)))
                     _vals = self.stat[_idx]
-                    if not len(_vals):
+                    if len(_vals) == 0:
                         continue
                     # evaluate bg pdf for specific chunk, coinc time & type
                     _pdf = bg_rate.eval_pdf(st, ct, cty, _vals)
@@ -460,7 +462,7 @@ class ForegroundEvents(EventRate):
                     _idx = np.logical_and((self.ctime == ct), (self.ctype == cty))
                     _idx = np.logical_and(_idx, (self.start == int(st)))
                     _vals = self.stat[_idx]
-                    if not len(_vals):
+                    if len(_vals) == 0:
                         continue
                     # norm of PDF is chunk-dependent so need the chunk start time
                     _pdf = sg_rate.eval_pdf(st, ct, cty, _vals)
@@ -501,7 +503,7 @@ class BackgroundEventRate(EventRate):
             # get template ids and filter
             _bgtid = ff['background_exc/template_id'][:]
             # need the template filter to have already been made
-            assert hasattr(self, 'in_bin')
+            assert self.in_bin is not None
             _keep = np.logical_and(_keepstat, self.in_bin[_bgtid])
             _bgstat = _bgstat[_keep]
             _bgdec = ff['background_exc/decimation_factor'][:][_keep]
@@ -539,11 +541,10 @@ class BackgroundEventRate(EventRate):
                   self.incl_livetimes[(start, cty)] / self.bg_livetimes[(start, cty)]
 
     def plot_bg(self):
-        for chunk_type, hist in self.bg_hist.iteritems():  # in py3 just items()
+        for chunk_type, hist in self.bg_hist.items():
             print('Plotting', chunk_type, 'background PDF ...')
             xplot = np.linspace(self.thr, self.args.plot_max_stat, 500)
-            heights = self.bg_hist[chunk_type][0]
-            bins = self.bg_hist[chunk_type][1]
+            heights, bins = hist[0], hist[1]
             logpdf, _ = log_rho_bg(xplot, heights, bins)
             plt.plot(xplot, np.exp(logpdf))
             # plot error bars at bin centres
@@ -561,7 +562,7 @@ class BackgroundEventRate(EventRate):
             plt.close()
 
     def get_norms(self):
-        for chunk_type, count in self.exp_bg.iteritems():
+        for chunk_type, count in self.exp_bg.items():
             self.norm += count
 
     def eval_pdf(self, chunk, ctime, ctype, statvals):
@@ -602,7 +603,7 @@ class SignalEventRate(EventRate):
 
             # get template ids and filter
             _injtid = jf['found_after_vetoes/template_id'][:]
-            assert hasattr(self, 'in_bin')
+            assert self.in_bin is not None
             _keep = np.logical_and(_keepstat, self.in_bin[_injtid])
             _injstat = _injstat[_keep]
 
@@ -633,7 +634,7 @@ class SignalEventRate(EventRate):
                         print('%d ' % len(my_vals) + 'are %s coincs' % cty)
                     if not (ct, cty) in self.inj_vals:  # initialize
                         self.inj_vals[(ct, cty)] = np.array([])
-                    if len(my_vals):
+                    if len(my_vals) > 0:
                         self.inj_vals[(ct, cty)] = \
                                   np.append(self.inj_vals[(ct, cty)], my_vals)
                 del intime, my_vals
@@ -676,7 +677,7 @@ class SignalEventRate(EventRate):
                 plt.close()
 
     def get_norms(self):
-        for time_type, vals in self.inj_vals.iteritems():
+        for time_type, vals in self.inj_vals.items():
             # injections don't have weights/decimation
             self.norm += float(len(vals))
 
