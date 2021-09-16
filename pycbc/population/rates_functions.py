@@ -2,12 +2,12 @@
 A set of helper functions for evaluating rates.
 """
 
-from scipy import integrate, optimize
-import numpy as np, h5py
+import h5py
+import numpy as np
 from numpy import log
+from scipy import integrate, optimize
 import scipy.stats as ss
 
-import bisect
 from pycbc.conversions import mchirp_from_mass1_mass2
 
 

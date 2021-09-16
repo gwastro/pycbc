@@ -444,7 +444,7 @@ def dist_summary(args, rv, plot_styles=('linear', 'loglog', 'semilogx'),
     # plot distributions
     if plot_extensions is not None:
         plottag = args.plot_tag or ''
-        if len(plottag):
+        if plottag is not '':
             plottag = '_' + plottag
         for style in plot_styles:
             fig = plotdist(rv, plot_lim=args.plot_limits, middle=middle,

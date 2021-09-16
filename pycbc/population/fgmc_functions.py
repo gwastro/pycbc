@@ -5,10 +5,10 @@ See T. Dent, https://dcc.ligo.org/LIGO-T2100060/public for technical explanation
 """
 
 from os.path import basename
-import numpy as np
 import h5py
 import bisect
 from itertools import chain as it_chain, combinations as it_comb
+import numpy as np
 
 from matplotlib import use
 use('Agg')
@@ -559,7 +559,7 @@ class BackgroundEventRate(EventRate):
             plt.close()
 
     def get_norms(self):
-        for chunk_type, count in self.exp_bg.items():
+        for count in self.exp_bg.values():
             self.norm += count
 
     def eval_pdf(self, chunk, ctime, ctype, statvals):
@@ -674,7 +674,7 @@ class SignalEventRate(EventRate):
                 plt.close()
 
     def get_norms(self):
-        for time_type, vals in self.inj_vals.items():
+        for vals in self.inj_vals.values():
             # injections don't have weights/decimation
             self.norm += float(len(vals))
 
