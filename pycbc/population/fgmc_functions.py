@@ -114,14 +114,15 @@ def log_rho_bg(trigs, counts, bins):
     assert np.all(trigs >= np.min(bins)), "can't have triggers below bin lower limit"
 
     N = sum(counts)
+    log_rhos = []
+    fracerr = []
+
     # If any zerolag triggers that are louder than the max bin, put one
     # fictitious count in a bin that extends from the limits of the slide triggers
     # out to the loudest trigger.
     if np.any(trigs >= np.max(bins)):
         N = N + 1
 
-    log_rhos = []
-    fracerr = []
     for t in trigs:
         if t >= np.max(bins):
             # For a trigger louder than the max bin, put one fictitious count in
@@ -135,7 +136,7 @@ def log_rho_bg(trigs, counts, bins):
             # count in the background bin
             if counts[i] == 0:
                 counts[i] = 1
-            log_rhos.append(np.log(counts[i]) - np.log(bins[i+1] - bins[i]) 
+            log_rhos.append(np.log(counts[i]) - np.log(bins[i+1] - bins[i])
                             - np.log(N))
             fracerr.append(counts[i] ** -0.5)
     return np.array(log_rhos), np.array(fracerr)
@@ -696,4 +697,3 @@ class SignalEventRate(EventRate):
         local_pdfs, _ = log_rho_fg(statvals, self.inj_vals[time_type], \
                             self.fg_bins[time_type])
         return local_pdfs + np.log(this_norm)
-

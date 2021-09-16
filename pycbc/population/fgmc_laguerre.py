@@ -313,7 +313,7 @@ def odds_summary(args, rankstats, ifars, p_b, ntop, times=None, mchirps=None,
         fig = plotoddsifar(ifars, p_b)
         finalize_plot(fig, args, plot_extensions, name, 'ifarodds', plottag)
         fig = plotfdr(p_b, ntop)
-        finalize_plot(fig, args, plot_extensions, name, 'fdr', plottag)        
+        finalize_plot(fig, args, plot_extensions, name, 'fdr', plottag)
 
 
 def plotdist(rv, plot_lim=None, middle=None, credible_intervals=None, style='linear'):
@@ -453,4 +453,3 @@ def dist_summary(args, rv, plot_styles=('linear', 'loglog', 'semilogx'),
 
     if credible_intervals is not None and len(credible_intervals) == 1:
         return median, lo - median, hi - median
-
