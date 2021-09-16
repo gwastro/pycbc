@@ -1851,7 +1851,7 @@ statistic_dict = {
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
-    'phasetd_exp_fit_fgbg_norm': DQExpFitFgBgNormStatistic,
+    'dq_phasetd_exp_fit_fgbg_norm': DQExpFitFgBgNormStatistic,
     'exp_fit_bg_rate': ExpFitBgRateStatistic,
     'phasetd_exp_fit_fgbg_norm': ExpFitFgBgNormStatistic,
     'phasetd_exp_fit_fgbg_bbh_norm': ExpFitFgBgNormBBHStatistic,
