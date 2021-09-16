@@ -3,7 +3,7 @@
 """
 import logging, argparse, numpy, h5py
 import pycbc
-from os import path 
+from os import path
 from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -70,7 +70,7 @@ if args.rate_file is not None:
             rates = f['%s/rates'%bin_name][:]
             locs_dict[bin_name] = f['%s/locs'%bin_name][:]
             log_like_dict[bin_name] = numpy.zeros(len(log_like))
-            
+
             if not args.no_low_dq_cutoff:
                 rates = numpy.array([max(r,1.) for r in rates])
 
@@ -82,12 +82,12 @@ if args.rate_file is not None:
             dq_percentiles = numpy.percentile(log_like_vals,percentiles)[1:]
 
             rates_bin = numpy.array([n_bins - \
-                              len(dq_percentiles[dq_percentiles >= dq_ll]) \ 
-                              for dq_ll in log_like_vals]) 
+                              len(dq_percentiles[dq_percentiles >= dq_ll]) \
+                              for dq_ll in log_like_vals])
             log_like_dict[bin_name] = log_rates[rates_bin.astype('int')]
 
         f.close()
-        
+
     else: logging.error('Could not find binned trigger rates file')
 else:
     bank = h5py.File(args.bank_file, 'r')
@@ -95,10 +95,10 @@ else:
     locs_dict = {'all_bin': numpy.arange(0, len(bank['mass1'][:]), 1)}
 
     log_like = numpy.arange(len(log_like))*100./len(log_like)
-    
-    p_min = int(len_log_like/2.) 
-    p_max = int(len_log_like/(1.+numpy.e**-args.max_stat)) 
-    
+
+    p_min = int(len_log_like/2.)
+    p_max = int(len_log_like/(1.+numpy.e**-args.max_stat))
+
     log_like[p_min:p_max] = numpy.log(log_like[p_min:p_max] \
                                       / (100.-log_like[p_min:p_max]))
     log_like[p_max:] = args.max_stat
