@@ -802,7 +802,7 @@ class TimeSeries(Array):
         -----------
         delta_t: float
             The time step to resample the times series to.
-    
+
         Returns
         -------
         resampled_ts: pycbc.types.TimeSeries
