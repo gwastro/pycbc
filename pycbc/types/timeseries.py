@@ -797,12 +797,12 @@ class TimeSeries(Array):
 
     def resample(self, delta_t):
         """ Resample this time series to the new delta_t
-        
+
         Parameters
         -----------
         delta_t: float
             The time step to resample the times series to.
-            
+    
         Returns
         -------
         resampled_ts: pycbc.types.TimeSeries
