@@ -70,20 +70,21 @@ class TestUtils(unittest.TestCase):
 
     def test_lfilter(self):
         "Check our hand written lfilter"
-        c = uniform(-10, 10, size=1024)
-        ts = TimeSeries(uniform(-1, 1, size=4302300), delta_t=self.delta_t)
+        for csize, vsize in [(1024, 4302300), (10, 1000)]:
+            c = uniform(-10, 10, size=csize)
+            ts = TimeSeries(uniform(-1, 1, size=vsize), delta_t=self.delta_t)
 
-        ref = scipy.signal.lfilter(c, 1.0, ts)
-        test = lfilter(c, ts)
+            ref = scipy.signal.lfilter(c, 1.0, ts)
+            test = lfilter(c, ts)
 
-        # These only agree where there is no fft wraparound
-        # so excluded corrupted region from test
-        ref = ref[len(c):]
-        test = test[len(c):]
+            # These only agree where there is no fft wraparound
+            # so excluded corrupted region from test
+            ref = ref[len(c):]
+            test = test[len(c):]
 
-        maxreldiff =  ((ref - test) / ref).max()
+            maxreldiff =  ((ref - test) / ref).max()
 
-        self.assertTrue(maxreldiff < 1e-7)
+            self.assertTrue(maxreldiff < 1e-7)
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestUtils))
