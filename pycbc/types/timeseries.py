@@ -795,6 +795,22 @@ class TimeSeries(Array):
         from pycbc.filter import fir_zero_filter
         return self._return(fir_zero_filter(coeff, self))
 
+    def resample(self, delta_t):
+        """ Resample this time series to the new delta_t
+
+        Parameters
+        -----------
+        delta_t: float
+            The time step to resample the times series to.
+
+        Returns
+        -------
+        resampled_ts: pycbc.types.TimeSeries
+            The resample timeseries at the new time interval delta_t.
+        """
+        from pycbc.filter import resample_to_delta_t
+        return resample_to_delta_t(self, delta_t)
+
     def save(self, path, group = None):
         """
         Save time series to a Numpy .npy, hdf, or text file. The first column
