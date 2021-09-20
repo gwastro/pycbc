@@ -47,18 +47,16 @@ def lfilter(coefficients, timeseries):
         filtered array
     """
     from pycbc.filter import correlate
+    fillen = len(coefficients)
 
     # If there aren't many points just use the default scipy method
     if len(timeseries) < 2**7:
-        if hasattr(timeseries, 'numpy'):
-            timeseries = timeseries.numpy()
         series = scipy.signal.lfilter(coefficients, 1.0, timeseries)
         return series
-    else:
+    elif (len(timeseries) < fillen * 10) or (len(timeseries) < 2**18):
         cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
         cseries.resize(len(timeseries))
-        cseries.roll(len(timeseries) - len(coefficients) + 1)
-        timeseries = Array(timeseries, copy=False)
+        cseries.roll(len(timeseries) - fillen + 1)
 
         flen = len(cseries) // 2 + 1
         ftype = complex_same_precision_as(timeseries)
@@ -75,7 +73,18 @@ def lfilter(coefficients, timeseries):
         correlate(cfreq, tfreq, cout)
         ifft(cout, out)
 
-        return out.numpy()  / len(out)
+        return TimeSeries(out.numpy()  / len(out), epoch=timeseries.start_time,
+                          delta_t=timeseries.delta_t)
+    else:
+        # recursively perform which saves a bit on memory usage
+        # but must keep within recursion limit
+        chunksize = max(fillen * 5, len(timeseries) // 128)
+        part1 = lfilter(coefficients, timeseries[0:chunksize])
+        part2 = lfilter(coefficients, timeseries[chunksize - fillen:])
+        out = timeseries.copy()
+        out[:len(part1)] = part1
+        out[len(part1):] = part2[fillen:]
+        return out
 
 def fir_zero_filter(coeff, timeseries):
     """Filter the timeseries with a set of FIR coefficients
@@ -94,15 +103,15 @@ def fir_zero_filter(coeff, timeseries):
     for the FIR filter delay and the corrupted regions zeroed out.
     """
     # apply the filter
-    series = lfilter(coeff, timeseries.numpy())
+    series = lfilter(coeff, timeseries)
 
     # reverse the time shift caused by the filter,
     # corruption regions contain zeros
     # If the number of filter coefficients is odd, the central point *should*
     # be included in the output so we only zero out a region of len(coeff) - 1
-    data = numpy.zeros(len(timeseries))
-    data[len(coeff)//2:len(data)-len(coeff)//2] = series[(len(coeff) // 2) * 2:]
-    return data
+    series[:(len(coeff) // 2) * 2] = 0
+    series.roll(-len(coeff)//2)
+    return series
 
 def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     """Resmple the time_series to delta_t
@@ -206,8 +215,7 @@ def notch_fir(timeseries, f1, f2, order, beta=5.0):
     k1 = f1 / float((int(1.0 / timeseries.delta_t) / 2))
     k2 = f2 / float((int(1.0 / timeseries.delta_t) / 2))
     coeff = scipy.signal.firwin(order * 2 + 1, [k1, k2], window=('kaiser', beta))
-    data = fir_zero_filter(coeff, timeseries)
-    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
+    return fir_zero_filter(coeff, timeseries)
 
 def lowpass_fir(timeseries, frequency, order, beta=5.0):
     """ Lowpass filter the time series using an FIR filtered generated from
@@ -226,8 +234,7 @@ def lowpass_fir(timeseries, frequency, order, beta=5.0):
     """
     k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
     coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', beta))
-    data = fir_zero_filter(coeff, timeseries)
-    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
+    return fir_zero_filter(coeff, timeseries)
 
 def highpass_fir(timeseries, frequency, order, beta=5.0):
     """ Highpass filter the time series using an FIR filtered generated from
@@ -246,8 +253,7 @@ def highpass_fir(timeseries, frequency, order, beta=5.0):
     """
     k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
     coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', beta), pass_zero=False)
-    data = fir_zero_filter(coeff, timeseries)
-    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
+    return fir_zero_filter(coeff, timeseries)
 
 def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     """Return a new timeseries that is highpassed.
