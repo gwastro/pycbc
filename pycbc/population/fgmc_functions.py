@@ -1,7 +1,14 @@
-"""
-A set of helper functions for evaluating rates.
+# Copyright (C) 2021 Thomas Dent
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
 
-See T. Dent, https://dcc.ligo.org/LIGO-T2100060/public for technical explanations
+"""
+A set of helper functions for evaluating event rates, densities etc.
+
+See https://dcc.ligo.org/LIGO-T2100060/public for technical explanations
 """
 
 from os.path import basename
@@ -693,3 +700,9 @@ class SignalEventRate(EventRate):
         local_pdfs, _ = log_rho_fg(statvals, self.inj_vals[time_type],
                                    self.fg_bins[time_type])
         return local_pdfs + np.log(this_norm)
+
+__all__ = ['filter_bin_lo_hi', 'filter_tmplt_mchirp', 'read_full_data',
+           'read_full_data_mchirp', 'log_rho_bg', 'log_rho_fg_analytic',
+           'log_rho_fg', 'get_start_dur', 'in_coinc_time_incl', 'alltimes',
+           'ifos_from_combo', 'type_in_time', 'EventRate', 'ForegroundEvents',
+           'BackgroundEventRate', 'SignalEventRate']
