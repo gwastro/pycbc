@@ -85,8 +85,8 @@ for filename in args.dq_file:
         g_times = g[ifo + '/times'][:]
     dq_logl = np.concatenate((dq_logl,g_logl))
     dq_times = np.concatenate((dq_times,g_times))
-del g_logl
-del g_times
+    del g_logl
+    del g_times
 
 # todo: make this configurable
 percent_bin = 0.5
