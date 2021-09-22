@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 """ Ingest and process DQ data
 """
-import logging, argparse, numpy, h5py, multiprocessing, time, copy
-from six.moves import (range, zip_longest)
+import logging, argparse, numpy, h5py, time, copy
 import pycbc, pycbc.strain
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
