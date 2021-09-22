@@ -39,7 +39,7 @@ ifo = args.ifo
 log_like = numpy.array([])
 times = numpy.array([])
 for filename in args.input_file:
-    logging.info('Reading file %s...'%filename)
+    logging.info('Reading file %s...', filename)
     g = h5py.File(filename, 'r')
     g_log_like = g[ifo + '/dq_val'][:]
     g_times = g[ifo + '/times'][:]
@@ -66,7 +66,7 @@ if args.rate_file is not None:
         f = h5py.File(args.rate_file,'r')
         bin_names = f.attrs['names'][:]
         for bin_name in bin_names:
-            logging.info('Processing bin %s...'%bin_name)
+            logging.info('Processing bin %s...', bin_name)
             rates = f['%s/rates'%bin_name][:]
             locs_dict[bin_name] = f['%s/locs'%bin_name][:]
             log_like_dict[bin_name] = numpy.zeros(len(log_like))

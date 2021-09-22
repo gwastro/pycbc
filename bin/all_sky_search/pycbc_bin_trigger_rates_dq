@@ -79,7 +79,7 @@ dq_times = np.array([])
 dq_logl = np.array([])
 
 for filename in args.dq_file:
-    logging.info('Reading DQ file %s...'%filename)
+    logging.info('Reading DQ file %s...', filename)
     with h5.File(filename, 'r') as g:
         g_logl = g[ifo + '/dq_val'][:]
         g_times = g[ifo + '/times'][:]
@@ -114,7 +114,7 @@ del dq_times
 
 if args.prune_number>0:
     for bin_name in locs_names:
-        logging.info('Processing bin %s...'%bin_name)
+        logging.info('Processing bin %s...', bin_name)
         bin_locs = locs_dict[bin_name]
         trig_times_bin = trig_times[np.isin(trig_ids, bin_locs)]
         trig_stats_bin = stat[np.isin(trig_ids, bin_locs)]
@@ -141,7 +141,7 @@ with h5.File(args.output_file,'w') as f:
         trig_times_bin = trig_times_int[np.isin(trig_ids, bin_locs)]
         trig_percentile = np.array([dq_percentiles_time[t] \
                                     for t in trig_times_bin])
-        logging.info('Processing %d triggers...'%len(trig_percentile))
+        logging.info('Processing %d triggers...', len(trig_percentile))
     
         (counts, bins) = np.histogram(trig_percentile, bins = (percentiles)/100)
         counts = counts.astype('float')
@@ -152,9 +152,11 @@ with h5.File(args.output_file,'w') as f:
         if mean_rate > 0.:
             rates = rates / mean_rate
     
-        logging.info('Writing rates to output file %s...'%args.output_file)
+        logging.info('Writing rates to output file %s...', args.output_file)
         grp = f.create_group(bin_name)
         grp['rates']=rates
         grp['locs']=locs_dict[bin_name]
     
     f.attrs['names'] = locs_names
+
+logging.info('Done!')
