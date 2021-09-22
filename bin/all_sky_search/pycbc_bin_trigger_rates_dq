@@ -24,7 +24,7 @@ parser.add_argument("--stat-threshold", type=float,
 parser.add_argument("--dq-file", required=True,nargs='+')
 parser.add_argument('--bank-file', help='hdf format template bank file',
                     required=True)
-parser.add_argument('--background-bins', nargs='+', 
+parser.add_argument('--background-bins', nargs='+',
                     help='list of background bin format strings')
 parser.add_argument("--output-file", required=True)
 parser.add_argument("--output-plot")
@@ -40,40 +40,38 @@ pystat.insert_statistic_option_group(parser,
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-bank = h5.File(args.bank_file, 'r')
-
-if args.background_bins:
-    logging.info('Sorting bank into bins...')
-    data = {'mass1': bank['mass1'][:], 'mass2': bank['mass2'][:],
-            'spin1z': bank['spin1z'][:], 'spin2z': bank['spin2z'][:],
-            'f_lower': bank['f_lower']}
-    locs_dict = pycbc.events.background_bin_from_string(args.background_bins, 
-                                                        data)
-    del data
-    locs_names = [b.split(':')[0] for b in args.background_bins]
-else:
-    locs_dict = {'all_bin': np.arange(0, len(bank['mass1'][:]), 1)}
-    locs_names = ['all_bin']
+with h5.File(args.bank_file, 'r') as bank:
+    if args.background_bins:
+        logging.info('Sorting bank into bins...')
+        data = {'mass1': bank['mass1'][:], 'mass2': bank['mass2'][:],
+                'spin1z': bank['spin1z'][:], 'spin2z': bank['spin2z'][:],
+                'f_lower': bank['f_lower']}
+        locs_dict = pycbc.events.background_bin_from_string(
+                                                   args.background_bins, data)
+        del data
+        locs_names = [b.split(':')[0] for b in args.background_bins]
+    else:
+        locs_dict = {'all_bin': np.arange(0, len(bank['mass1'][:]), 1)}
+        locs_names = ['all_bin']
 
 logging.info('Reading trigger file...')
 ifo = args.ifo
-trig_file = h5.File(args.trig_file,'r')
-trig_times = trig_file[ifo+'/end_time'][:]
-trig_ids = trig_file[ifo+'/template_id'][:]
+with h5.File(args.trig_file,'r') as trig_file:
+    trig_times = trig_file[ifo+'/end_time'][:]
+    trig_ids = trig_file[ifo+'/template_id'][:]
 
-if args.stat_threshold or args.prune_number>0:
-    logging.info('Calculating stat and filtering...')
-    rank_method = pystat.get_statistic_from_opts(args, [ifo])
-    stat = rank_method.get_sngl_ranking(trig_file[ifo])
-    if args.stat_threshold:
-        abovethresh = stat >= args.stat_threshold
-        trig_ids = trig_ids[abovethresh]
-        trig_times = trig_times[abovethresh]
-        stat = stat[abovethresh]
-        del abovethresh
-    if args.prune_number<1:
-        del stat
-trig_file.close()
+    if args.stat_threshold or args.prune_number>0:
+        logging.info('Calculating stat and filtering...')
+        rank_method = pystat.get_statistic_from_opts(args, [ifo])
+        stat = rank_method.get_sngl_ranking(trig_file[ifo])
+        if args.stat_threshold:
+            abovethresh = stat >= args.stat_threshold
+            trig_ids = trig_ids[abovethresh]
+            trig_times = trig_times[abovethresh]
+            stat = stat[abovethresh]
+            del abovethresh
+        if args.prune_number<1:
+            del stat
 
 trig_times_int = trig_times.astype('int')
 
@@ -82,10 +80,9 @@ dq_logl = np.array([])
 
 for filename in args.dq_file:
     logging.info('Reading DQ file %s...'%filename)
-    g = h5.File(filename, 'r')
-    g_logl = g[ifo + '/dq_val'][:]
-    g_times = g[ifo + '/times'][:]
-    g.close()
+    with h5.File(filename, 'r') as g:
+        g_logl = g[ifo + '/dq_val'][:]
+        g_times = g[ifo + '/times'][:]
     dq_logl = np.concatenate((dq_logl,g_logl))
     dq_times = np.concatenate((dq_times,g_times))
 del g_logl
@@ -98,7 +95,7 @@ percentiles = np.linspace(0,100,n_bins+1)
 bin_times = np.zeros(n_bins)
 dq_percentiles = np.percentile(dq_logl,percentiles)[1:]
 
-    
+
 # seconds bin tells what bin each second ends up
 seconds_bin = np.array([n_bins - \
                         len(dq_percentiles[dq_percentiles >= dq_ll]) \
@@ -114,15 +111,15 @@ del dq_logl
 # create a dict to look up dq percentile at any time
 dq_percentiles_time = dict(zip(dq_times, seconds_bin*percent_bin/100))
 del dq_times
-               
+
 if args.prune_number>0:
     for bin_name in locs_names:
         logging.info('Processing bin %s...'%bin_name)
         bin_locs = locs_dict[bin_name]
-        trig_times_bin = trig_times[np.isin(trig_ids, bin_locs)] 
+        trig_times_bin = trig_times[np.isin(trig_ids, bin_locs)]
         trig_stats_bin = stat[np.isin(trig_ids, bin_locs)]
-    
-        for j in range(args.prune_number):        
+
+        for j in range(args.prune_number):
             max_stat_arg = np.argmax(trig_stats_bin)
             remove = np.nonzero(abs(trig_times_bin[max_stat_arg] - trig_times)
                                < args.prune_window)[0]
@@ -137,28 +134,27 @@ if args.prune_number>0:
     del keep
 
 del trig_times
-               
-f = h5.File(args.output_file,'w')        
-for bin_name in locs_names:
-    bin_locs = locs_dict[bin_name]
-    trig_times_bin = trig_times_int[np.isin(trig_ids, bin_locs)] 
-    trig_percentile = np.array([dq_percentiles_time[t] \
-                                for t in trig_times_bin])
-    logging.info('Processing %d triggers...'%len(trig_percentile))
+
+with h5.File(args.output_file,'w') as f:
+    for bin_name in locs_names:
+        bin_locs = locs_dict[bin_name]
+        trig_times_bin = trig_times_int[np.isin(trig_ids, bin_locs)]
+        trig_percentile = np.array([dq_percentiles_time[t] \
+                                    for t in trig_times_bin])
+        logging.info('Processing %d triggers...'%len(trig_percentile))
     
-    (counts, bins) = np.histogram(trig_percentile, bins = (percentiles)/100)
-    counts = counts.astype('float')
-    rates = np.zeros(len(bin_times))
-    times_nz = (bin_times > 0)
-    rates[times_nz] = counts[times_nz]/bin_times[times_nz]
-    mean_rate = len(trig_percentile) / full_time
-    if mean_rate > 0.:
-        rates = rates / mean_rate
+        (counts, bins) = np.histogram(trig_percentile, bins = (percentiles)/100)
+        counts = counts.astype('float')
+        rates = np.zeros(len(bin_times))
+        times_nz = (bin_times > 0)
+        rates[times_nz] = counts[times_nz]/bin_times[times_nz]
+        mean_rate = len(trig_percentile) / full_time
+        if mean_rate > 0.:
+            rates = rates / mean_rate
     
-    logging.info('Writing rates to output file %s...'%args.output_file)
-    grp = f.create_group(bin_name)
-    grp['rates']=rates
-    grp['locs']=locs_dict[bin_name]
- 
-f.attrs['names'] = locs_names
-f.close()
+        logging.info('Writing rates to output file %s...'%args.output_file)
+        grp = f.create_group(bin_name)
+        grp['rates']=rates
+        grp['locs']=locs_dict[bin_name]
+    
+    f.attrs['names'] = locs_names
