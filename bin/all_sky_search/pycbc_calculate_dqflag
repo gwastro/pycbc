@@ -7,10 +7,8 @@
 import logging, argparse, numpy, h5py
 import pycbc
 from pycbc.version import git_verbose_msg as version
-from pycbc.fft.fftw import set_measure_level
 from pycbc.events import veto
 from pycbc.workflow import SegFile
-set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
