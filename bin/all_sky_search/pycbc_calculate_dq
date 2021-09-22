@@ -73,7 +73,8 @@ def get_dq(seg):
                                for n in numpy.arange(0, len(gwstrain.numpy()) /
                                                      dq_step_size)])
     else:
-        logging.info("%s is not an available dq method", dq_method)
+        raise TypeError("%s is not an available dq method. " 
+                        "Options are 'max' or 'blrms'", dq_method)
 
     # figure out list of times
     times_dq = numpy.arange(gwstrain.start_time,gwstrain.end_time,
