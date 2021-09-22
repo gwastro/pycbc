@@ -1726,6 +1726,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
         return loglr
 
+
 class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
     """
     The ExpFitFgBgNormStatistic with DQ-based reranking.
@@ -1753,7 +1754,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             The list of detector names
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                           ifos=ifos, **kwargs)
+                                         ifos=ifos, **kwargs)
         self.dq_val_by_time = {}
         self.dq_bin_by_id = {}
         for k in self.files.keys():
@@ -1766,12 +1767,24 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
                 dq_vals = self.assign_dq_val(k)
                 dq_bins = self.assign_bin_id(k)
                 if ifo not in self.dq_val_by_time:
-                    self.dq_val_by_time[ifo]={}
-                    self.dq_bin_by_id[ifo]={}
-                self.dq_val_by_time[ifo][dq_type]=dq_vals
-                self.dq_bin_by_id[ifo][dq_type]=dq_bins
+                    self.dq_val_by_time[ifo] = {}
+                    self.dq_bin_by_id[ifo] = {}
+                self.dq_val_by_time[ifo][dq_type] = dq_vals
+                self.dq_bin_by_id[ifo][dq_type] = dq_bins
 
     def assign_bin_id(self, key):
+        """
+        Assign bin ID values
+
+        Parameters
+        ----------
+        key:
+
+        Returns
+        ---------
+        bin_dict:
+
+        """
         ifo = key.split('-')[0]
         dq_file = self.files[key]
         bin_names = dq_file.attrs['names'][:]
@@ -1781,18 +1794,30 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             bin_locs = dq_file[ifo + '/locs/' + bin_name][:]
             locs = list(locs)+list(bin_locs.astype(int))
             names = list(names)+list([bin_name]*len(bin_locs))
-        bin_dict = dict(zip(locs,names))
+        bin_dict = dict(zip(locs, names))
         return bin_dict
 
     def assign_dq_val(self, key):
+        """
+        Assign dq values
+
+        Parameters
+        ----------
+        key:
+
+        Returns
+        ---------
+        dq_dict:
+
+        """
         ifo = key.split('-')[0]
         dq_file = self.files[key]
         times = dq_file[ifo+'/times'][:]
-        bin_names = dq_file.attrs['names'] [:]
+        bin_names = dq_file.attrs['names'][:]
         dq_dict = {}
         for bin_name in bin_names:
             dq_vals = dq_file[ifo+'/dq_vals/'+bin_name][:]
-            dq_dict[bin_name] = dict(zip(times,dq_vals))
+            dq_dict[bin_name] = dict(zip(times, dq_vals))
         return dq_dict
 
     def find_dq_val(self, trigs):
@@ -1809,14 +1834,14 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             ifo = self.ifos[0]
         dq_val = numpy.zeros(len(time))
         if ifo in self.dq_val_by_time:
-            for (i,t) in enumerate(time):
+            for (i, t) in enumerate(time):
                 for k in self.dq_val_by_time[ifo].keys():
-                    if isinstance(tnum,numpy.ndarray):
+                    if isinstance(tnum, numpy.ndarray):
                         bin_name = self.dq_bin_by_id[ifo][k][tnum[i]]
                     else:
                         bin_name = self.dq_bin_by_id[ifo][k][tnum]
                     val = self.dq_val_by_time[ifo][k][bin_name][int(t)]
-                    dq_val[i]=max(dq_val[i],val)
+                    dq_val[i] = max(dq_val[i], val)
         return dq_val
 
     def lognoiserate(self, trigs):
@@ -1838,7 +1863,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
         """
         logr_n = ExpFitFgBgNormStatistic.lognoiserate(
-                    self,trigs)
+                    self, trigs)
         dq_val = self.find_dq_val(trigs)
         logr_n += dq_val
         return logr_n

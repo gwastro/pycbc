@@ -55,7 +55,7 @@ def background_bin_from_string(background_bins, data):
         bin_type_list = bin_type_list.split(',')
         boundary_list = boundary_list.split(',')
 
-        for bin_type, boundary in zip(bin_type_list,boundary_list):
+        for bin_type, boundary in zip(bin_type_list, boundary_list):
             if boundary[0:2] == 'lt':
                 member_func = lambda vals, bd=boundary : vals < float(bd[2:])
             elif boundary[0:2] == 'gt':
@@ -86,19 +86,22 @@ def background_bin_from_string(background_bins, data):
                                                  data['spin1z'], data['spin2z'])
             elif bin_type == 'SEOBNRv2Peak':
                 vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
-                      data['mass1'], data['mass2'], data['spin1z'], data['spin2z'])
+                                              data['mass1'], data['mass2'],
+                                              data['spin1z'], data['spin2z'])
             elif bin_type == 'SEOBNRv4Peak':
                 vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
                                               data['mass2'], data['spin1z'],
                                               data['spin2z'])
             elif bin_type == 'SEOBNRv2duration':
-                vals = pycbc.pnutils.get_imr_duration(data['mass1'], data['mass2'],
-                                   data['spin1z'], data['spin2z'], data['f_lower'],
-                                                            approximant='SEOBNRv2')
+                vals = pycbc.pnutils.get_imr_duration(
+                                   data['mass1'], data['mass2'],
+                                   data['spin1z'], data['spin2z'],
+                                   data['f_lower'], approximant='SEOBNRv2')
             elif bin_type == 'SEOBNRv4duration':
-                vals = pycbc.pnutils.get_imr_duration(data['mass1'][:], data['mass2'][:],
-                                   data['spin1z'][:], data['spin2z'][:], data['f_lower'][:],
-                                                            approximant='SEOBNRv4')
+                vals = pycbc.pnutils.get_imr_duration(
+                                   data['mass1'][:], data['mass2'][:],
+                                   data['spin1z'][:], data['spin2z'][:],
+                                   data['f_lower'][:], approximant='SEOBNRv4')
             else:
                 raise ValueError('Invalid bin type %s' % bin_type)
 
@@ -107,7 +110,7 @@ def background_bin_from_string(background_bins, data):
             sub_locs = numpy.where(sub_locs)[0]
             if locs is not None:
                 # find intersection of boundary conditions
-                locs = numpy.intersect1d(locs,sub_locs)
+                locs = numpy.intersect1d(locs, sub_locs)
             else:
                 locs = sub_locs
 
