@@ -56,7 +56,7 @@ log_like_dict = {}
 percent_dict = {}
 
 if not args.rate_file or args.bank_file:
-    logging.error('Must supply either a bank or dq rates file')
+    raise TypeError('Must supply either a bank or dq rates file')
 
 if args.rate_file is not None:
     rates = {}
