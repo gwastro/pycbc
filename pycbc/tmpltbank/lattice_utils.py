@@ -16,7 +16,6 @@
 
 from __future__ import division
 import copy
-from six.moves import range
 import numpy
 import lal
 

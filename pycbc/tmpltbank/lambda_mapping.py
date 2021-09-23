@@ -16,7 +16,6 @@
 from __future__ import division
 import re
 import numpy
-from six.moves import range
 from lal import MTSUN_SI, PI, CreateREAL8Vector
 import lalsimulation
 

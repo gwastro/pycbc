@@ -35,12 +35,8 @@ from pycbc import pnutils
 from pycbc.types import Array
 from pycbc.filter import match
 from pycbc.waveform import get_fd_waveform
-from six.moves import range
-import difflib
-import sys
 import matplotlib
 matplotlib.use('Agg')
-import pylab
 
 import unittest
 from utils import parse_args_cpu_only, simple_exit

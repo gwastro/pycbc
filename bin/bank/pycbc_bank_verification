@@ -37,7 +37,6 @@ import copy
 import logging
 import numpy
 import h5py
-from six.moves import range
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc import tmpltbank, psd, strain, pnutils
 import matplotlib

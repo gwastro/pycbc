@@ -17,7 +17,6 @@
 import copy
 import numpy
 import logging
-from six.moves import range
 from pycbc.tmpltbank import coord_utils
 
 class PartitionedTmpltbank(object):

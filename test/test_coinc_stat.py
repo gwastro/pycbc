@@ -11,17 +11,6 @@ parse_args_cpu_only('coinc stats')
 
 class CoincStatTest(unittest.TestCase):
     def setUp(self):
-        # FIXME this is only necessary on Python 2, remove at some point
-        if not hasattr(self, 'subTest'):
-            class DummyCM:
-                def __init__(self, msg=''):
-                    print('Testing ' + msg)
-                def __enter__(self):
-                    return self
-                def __exit__(self, ex_type, ex_value, ex_tb):
-                    return False
-            self.subTest = DummyCM
-
         # one could loop over all single rankings
         # and detector combinations for a complete test
         self.single_rank = 'snr'

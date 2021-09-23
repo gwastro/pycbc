@@ -1,16 +1,13 @@
-import sys
-from six.moves import range
 import pycbc
 from pycbc.fft.fftw import set_measure_level
 set_measure_level(0)
 from pycbc.filter import  matched_filter_core
-from pycbc.types import Array, TimeSeries, FrequencySeries, float32, complex64, zeros
-from pycbc.types import complex_same_precision_as,real_same_precision_as
+from pycbc.types import Array, TimeSeries, FrequencySeries
 import pycbc.waveform
 from pycbc.waveform import *
 from pycbc.vetoes import *
 import numpy as np
-from math import cos, sin, sqrt, pi, atan2, exp
+from math import cos, sin, sqrt, pi, exp
 import unittest
 from utils import parse_args_all_schemes, simple_exit
 import time

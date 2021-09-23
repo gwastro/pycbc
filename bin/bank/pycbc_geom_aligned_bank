@@ -34,7 +34,6 @@ import logging
 import distutils.spawn
 import h5py
 from scipy import spatial
-from six.moves import range
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables

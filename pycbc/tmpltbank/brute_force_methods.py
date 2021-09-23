@@ -1,7 +1,6 @@
 from __future__ import division
 import copy
 import numpy
-from six.moves import range
 from pycbc.tmpltbank.coord_utils import get_cov_params
 
 

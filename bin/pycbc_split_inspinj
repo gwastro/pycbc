@@ -1,9 +1,7 @@
-#!/usr/bin/env /usr/bin/python
+#!/usr/bin/env python
 
 # Copyright (C) 2014 Andrew Lundgren
-import sys
 import argparse
-from six.moves import range
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import ligolw, lsctables
 from itertools import cycle

@@ -4,7 +4,6 @@ import pycbc
 import numpy
 import lal
 import json
-from six import u as unicode
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
@@ -24,11 +23,11 @@ from pycbc.mchirp_area import calc_probabilities
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
     Attributes = ligolw.sax.xmlreader.AttributesImpl
     elem = ligolw.LIGO_LW(
-            Attributes({u"Name": unicode(series.__class__.__name__)}))
+            Attributes({'Name': str(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
-    elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
-    elem.appendChild(LIGOLWParam.from_pyvalue(u'f0', series.f0, unit=u's^-1'))
+    elem.appendChild(ligolw.Time.from_gps(series.epoch, 'epoch'))
+    elem.appendChild(LIGOLWParam.from_pyvalue('f0', series.f0, unit='s^-1'))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
@@ -52,10 +51,10 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     snr_lal = snr_series.lal()
     snr_lal.name = 'snr'
     snr_lal.sampleUnits = ''
-    snr_xml = _build_series(snr_lal, (u'Time', u'Time,Real,Imaginary'), None,
+    snr_xml = _build_series(snr_lal, ('Time', 'Time,Real,Imaginary'), None,
                             'deltaT', 's')
     snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = LIGOLWParam.from_pyvalue(u'event_id', sngl_inspiral_id)
+    eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
 def make_psd_xmldoc(psddict, xmldoc=None):
@@ -65,16 +64,16 @@ def make_psd_xmldoc(psddict, xmldoc=None):
     xmldoc = ligolw.Document() if xmldoc is None else xmldoc.childNodes[0]
 
     # the PSDs must be children of a LIGO_LW with name "psd"
-    root_name = u"psd"
+    root_name = 'psd'
     Attributes = ligolw.sax.xmlreader.AttributesImpl
     lw = xmldoc.appendChild(
-        ligolw.LIGO_LW(Attributes({u"Name": root_name})))
+        ligolw.LIGO_LW(Attributes({'Name': root_name})))
 
     for instrument, psd in psddict.items():
-        xmlseries = _build_series(psd, (u"Frequency,Real", u"Frequency"),
+        xmlseries = _build_series(psd, ('Frequency,Real', 'Frequency'),
                                   None, 'deltaF', 's^-1')
         fs = lw.appendChild(xmlseries)
-        fs.appendChild(LIGOLWParam.from_pyvalue(u'instrument', instrument))
+        fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
     return xmldoc
 
 class SingleCoincForGraceDB(object):

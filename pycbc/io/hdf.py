@@ -8,7 +8,6 @@ import logging
 import inspect
 
 from itertools import chain
-from six.moves import range
 from six.moves import cPickle as pickle
 from six import raise_from
 

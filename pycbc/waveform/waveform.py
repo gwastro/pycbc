@@ -41,7 +41,6 @@ import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
                       spa_length_in_time
-from six.moves import range as xrange
 
 
 class NoWaveformError(Exception):
@@ -274,20 +273,20 @@ def _lalsim_sgburst_waveform(**p):
 
     return hp, hc
 
-for approx_enum in xrange(0, lalsimulation.NumApproximants):
+for approx_enum in range(0, lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
         approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
 
-for approx_enum in xrange(0, lalsimulation.NumApproximants):
+for approx_enum in range(0, lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
         approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
 
 # sine-Gaussian burst
-for approx_enum in xrange(0, lalsimulation.NumApproximants):
+for approx_enum in range(0, lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
         approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum

@@ -2,7 +2,7 @@
 """ Calculate psd estimates for analysis segments
 """
 import logging, argparse, numpy, h5py, multiprocessing, time, copy
-from six.moves import (range, zip_longest)
+from six.moves import zip_longest
 import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level

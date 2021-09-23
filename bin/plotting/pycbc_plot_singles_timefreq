@@ -27,7 +27,6 @@ import argparse
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
-from six.moves import range
 import pylab as pl
 import matplotlib.mlab as mlab
 from matplotlib.colors import LogNorm
