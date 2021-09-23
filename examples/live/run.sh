@@ -178,6 +178,9 @@ python -m mpi4py `which pycbc_live` \
 --round-start-time 4 \
 --start-time $gps_start_time \
 --end-time $gps_end_time \
+--src-class-mchirp-to-delta 0.01 \
+--src-class-eff-to-lum-distance 0.74899 \
+--src-class-lum-distance-to-delta -0.51557 -0.32195 \
 --verbose
 
 echo -e "\\n\\n>> [`date`] Checking results"
