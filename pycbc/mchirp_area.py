@@ -36,17 +36,17 @@ def insert_args(parser):
                                    "Used as limits of integration of the "
                                    "different CBC regions.")
     mchirp_group.add_argument('--src-class-mchirp-to-delta', type=float,
-                              metavar='m0',
+                              metavar='m0', required=True,
                               help='Coefficient to estimate the value of the '
                                    'mchirp uncertainty by mchirp_delta = '
                                    'm0 * mchirp.')
     mchirp_group.add_argument('--src-class-eff-to-lum-distance', type=float,
-                              metavar='a0',
+                              metavar='a0', required=True,
                               help='Coefficient to estimate the value of the '
                                    'luminosity distance from the minimum '
                                    'eff distance by D_lum = a0 * min(D_eff).')
     mchirp_group.add_argument('--src-class-lum-distance-to-delta', type=float,
-                              nargs=2, metavar=('b0', 'b1'),
+                              nargs=2, metavar=('b0', 'b1'), required=True,
                               help='Coefficients to estimate the value of the '
                                    'uncertainty on the luminosity distance '
                                    'from the estimated luminosity distance and'
