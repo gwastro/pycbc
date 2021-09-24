@@ -53,10 +53,10 @@ def get_run(time, ifo=None):
         raise ValueError('Time %s not available in a public dataset' % time)
 
 def _get_channel(time):
-    if 1164556817 <= time <= 1187733618:
-        return 'GWOSC-16KHZ_R1_STRAIN'
-    else:
+    if time < 1164556817:
         return 'LOSC-STRAIN'
+    else:
+        return 'GWOSC-16KHZ_R1_STRAIN'
 
 def losc_frame_json(ifo, start_time, end_time):
     """ Get the information about the public data files in a duration of time
