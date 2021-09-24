@@ -21,7 +21,6 @@
 #
 # =============================================================================
 #
-from six.moves import range
 import numpy, pycbc.psd
 from pycbc.types import TimeSeries, FrequencySeries, complex_same_precision_as
 from numpy.random import RandomState

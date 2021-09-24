@@ -1,5 +1,4 @@
 from __future__ import division
-from six.moves import range
 import numpy
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from glue.ligolw import ligolw, lsctables, ilwd, utils as ligolw_utils

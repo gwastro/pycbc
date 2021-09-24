@@ -48,7 +48,7 @@ if [ "$PYCBC_TEST_TYPE" = "help" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
-    #run pycbc inspiral test
+    # run pycbc inspiral test
     pushd examples/inspiral
     bash -e run.sh
     if test $? -ne 0 ; then
@@ -60,20 +60,17 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     fi
     popd
 
-    # run PyCBC Live test if running in Python > 3.6
-    if [ "$PYTHON_VERSION" = "3" && "$PYTHON_MINOR_VERSION" -ge "7" ]
-    then
-        pushd examples/live
-        bash -e run.sh
-        if test $? -ne 0 ; then
-            RESULT=1
-            echo -e "    FAILED!"
-            echo -e "---------------------------------------------------------"
-        else
-            echo -e "    Pass."
-        fi
-        popd
+    # run PyCBC Live test
+    pushd examples/live
+    bash -e run.sh
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!"
+        echo -e "---------------------------------------------------------"
+    else
+        echo -e "    Pass."
     fi
+    popd
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
@@ -162,20 +159,17 @@ if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     fi
     popd
 
-    ## Run pycbc_make_skymap example (requires Python > 3.6)
-    if [ "$PYTHON_VERSION" = "3" && "$PYTHON_MINOR_VERSION" -ge "7" ]
-    then
-        pushd examples/make_skymap
-        bash -e simulated_data.sh
-        if test $? -ne 0 ; then
-            RESULT=1
-            echo -e "    FAILED!"
-            echo -e "---------------------------------------------------------"
-        else
-            echo -e "    Pass."
-        fi
-        popd
+    ## Run pycbc_make_skymap example
+    pushd examples/make_skymap
+    bash -e simulated_data.sh
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!"
+        echo -e "---------------------------------------------------------"
+    else
+        echo -e "    Pass."
     fi
+    popd
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "docs" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then

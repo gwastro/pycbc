@@ -16,8 +16,6 @@
 """Utilites to estimate PSDs from data.
 """
 
-from six.moves import range
-
 import numpy
 from pycbc.types import Array, FrequencySeries, TimeSeries, zeros
 from pycbc.types import real_same_precision_as, complex_same_precision_as

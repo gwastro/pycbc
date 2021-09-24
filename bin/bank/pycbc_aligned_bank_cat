@@ -28,7 +28,6 @@ import argparse
 import numpy
 import pycbc.version
 import h5py
-from six.moves import range
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils

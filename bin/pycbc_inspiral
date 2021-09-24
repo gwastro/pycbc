@@ -18,7 +18,6 @@
 
 import sys, os, copy
 import logging, argparse, numpy, itertools
-from six.moves import range
 import pycbc
 import pycbc.version
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events

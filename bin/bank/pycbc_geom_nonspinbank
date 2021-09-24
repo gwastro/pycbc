@@ -26,7 +26,6 @@ import math
 import copy
 import numpy
 import logging
-from six.moves import range
 import pycbc
 import pycbc.version
 import pycbc.psd

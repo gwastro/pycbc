@@ -26,7 +26,6 @@ import argparse
 import numpy
 import h5py
 import sys
-from six.moves import range
 import matplotlib
 matplotlib.use('agg')
 import pylab

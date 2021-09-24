@@ -3,7 +3,6 @@
 """
 import matplotlib
 matplotlib.use('Agg')
-from six.moves import range
 import h5py, numpy, argparse, pylab, pycbc.results, sys
 import pycbc.psd
 import pycbc.version

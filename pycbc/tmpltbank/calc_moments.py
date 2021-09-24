@@ -16,7 +16,6 @@
 
 from __future__ import division
 import numpy
-from six.moves import range
 from pycbc.tmpltbank.lambda_mapping import generate_mapping
 
 
