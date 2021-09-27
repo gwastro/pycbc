@@ -90,13 +90,13 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     Option will be removed when no longer needed.""")
 
 # Arguments added for the coherent stuff
-parser.add_argument("--longitude", type=float)
-parser.add_argument("--latitude", type=float)
+parser.add_argument("--ra", type=float, help="Right ascension, in radians")
+parser.add_argument("--dec", type=float, help="Declination, in radians")
 parser.add_argument("--coinc-threshold", type=float, default=0.0, help="""
                     Triggers with coincident/coherent snr below this value will
                     be discarded.""")
 parser.add_argument("--null-min", type=float, default=5.25, help="""
-                    Triggers with null_snr above this value with be
+                    Triggers with null_snr above this value will be
                     discarded.""")
 parser.add_argument("--null-grad", type=float, default=0.2, help="""
                     The gradient of the line defining the null cut after the
@@ -122,10 +122,6 @@ opt = parser.parse_args()
 # Use the time in the middle of the segment to calculate the antenna patterns.
 t_gps = opt.trigger_time
 
-# Set sky position being searched.
-ra = opt.longitude
-dec = opt.latitude
-
 # Put the ifos in alphabetical order so they are always called in
 # the same order.
 opt.instruments.sort()
@@ -143,18 +139,20 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli_multi_ifos(opt,opt.instruments)
 ctx = scheme.from_cli(opt)
 
+
 def network_chisq(chisq, chisq_dof, snr_dict):
     ifos = sorted(snr_dict.keys())
     chisq_per_dof = {}
     for ifo in ifos:
         chisq_per_dof[ifo] = chisq[ifo] / chisq_dof[ifo]
-        chisq_per_dof[ifo][chisq_per_dof[ifo]<1] = 1
+        chisq_per_dof[ifo][chisq_per_dof[ifo] < 1] = 1
     snr2 = {ifo : np.real(np.array(snr_dict[ifo]) *
                 np.array(snr_dict[ifo]).conj()) for ifo in ifos}
     coinc_snr2 = sum(snr2.values())
     snr2_ratio = {ifo : snr2[ifo] / coinc_snr2 for ifo in ifos}
     network_chisq = sum( [chisq_per_dof[ifo] * snr2_ratio[ifo] for ifo in ifos] )
     return network_chisq
+
 
 def pycbc_reweight_snr(network_snr, network_chisq, a = 3, b = 1. / 6.):
     """
@@ -179,6 +177,7 @@ def reweight_snr_by_null(network_snr, nullsnr):
     reweighted_snr = network_snr / (nullsnr - 3.25)
     return reweighted_snr
 
+
 def get_weighted_antenna_patterns(Fp_dict, Fc_dict, sigma_dict):
     """
     Output: wp: 1 x nifo of the weighted antenna response fuctions to plus
@@ -197,6 +196,7 @@ def get_weighted_antenna_patterns(Fp_dict, Fc_dict, sigma_dict):
     wc = np.array([sigma_dict[ifo]*Fc_dict[ifo] for ifo in keys])
     return wp, wc
 
+
 def get_projection_matrix(wp, wc):
     """
     Output: projection_matrix: Projects the data onto the signal space
@@ -209,6 +209,7 @@ def get_projection_matrix(wp, wc):
                          np.dot(wp, wc)*(np.outer(wp, wc) +
                          np.outer(wc, wp))) / denominator
     return projection_matrix
+
 
 def coherent_snr(snr_triggers, index, threshold, projection_matrix,
                 coinc_snr=[]):
@@ -241,6 +242,7 @@ def coherent_snr(snr_triggers, index, threshold, projection_matrix,
     rho_coh = rho_coh[rho_coh > threshold]
     return rho_coh, index, snrv, coinc_snr
 
+
 def coincident_snr(snr_dict, index, threshold):
     """
     Output: rho_coinc: Coincident snr triggers
@@ -251,18 +253,19 @@ def coincident_snr(snr_dict, index, threshold):
            index   : Geocent indexes you want to find coinc SNR for
            threshold: Indexes with coinc SNR below this threshold are cut
     """
-    #Restrict the snr timeseries to just the interesting points
+    # Restrict the snr timeseries to just the interesting points
     coinc_triggers = {ifo : snr_dict[ifo][index] for ifo in snr_dict.keys()}
-    #Calculate the coincident snr
+    # Calculate the coincident snr
     snr_array = np.array([coinc_triggers[ifo]
                         for ifo in coinc_triggers.keys()])
     rho_coinc = np.sqrt(np.sum(snr_array * snr_array.conj(),axis=0))
-    #Apply threshold
+    # Apply threshold
     thresh_indexes = rho_coinc > threshold
     index = index[thresh_indexes]
     coinc_triggers = {ifo : snr_dict[ifo][index] for ifo in snr_dict.keys()}
     rho_coinc = rho_coinc[thresh_indexes]
     return rho_coinc, index, coinc_triggers
+
 
 def null_snr(rho_coh, rho_coinc, null_min=5.25, null_grad=0.2, null_step=20.,
              index={}, snrv={}):
@@ -300,6 +303,7 @@ def null_snr(rho_coh, rho_coinc, null_min=5.25, null_grad=0.2, null_step=20.,
     rho_coinc = rho_coinc[keep]
     null = null[keep]
     return null, rho_coh, rho_coinc, index, snrv
+
 
 def get_coinc_indexes(idx_dict, time_delay_idx):
     """
@@ -372,13 +376,15 @@ with ctx:
     # ifos, so just send the first ifo
     template_mem = zeros(tlen, dtype=complex64)
 
-    #Calculate time delay to each detector
-    time_delay_idx = {ifo :  int(round(pycbc.detector.Detector(ifo).
-                     time_delay_from_earth_center(ra,dec,t_gps) * sample_rate))
-                     for ifo in opt.instruments}
+    # Calculate time delay to each detector
+    time_delay_idx = {}
+    for ifo in opt.instruments:
+        dt = pycbc.detector.Detector(ifo).time_delay_from_earth_center(
+            opt.ra, opt.dec, t_gps)
+        time_delay_idx[ifo] = int(round(dt * sample_rate))
 
-    #Matched filter each ifo. Don't cluster here for a coherent search.
-    #Clustering happens at the end of the template loop.
+    # Matched filter each ifo. Don't cluster here for a coherent search.
+    # Clustering happens at the end of the template loop.
     matched_filter = {ifo : MatchedFilterControl(
         opt.low_frequency_cutoff, None, opt.snr_threshold, tlen, delta_f,
         complex64, segments[ifo], template_mem, use_cluster=False,
@@ -470,14 +476,13 @@ with ctx:
     if not len(bank) == ntemplates:
         logging.info("Template bank size after thinning: %s", len(bank))
 
-
-    Fp = {} #Antenna patterns
+    Fp = {}  # Antenna patterns
     Fc = {}
     for ifo in opt.instruments:
         Fp[ifo], Fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(
-            ra, dec, polarization=0, t_gps=t_gps)
+            opt.ra, opt.dec, polarization=0, t_gps=t_gps)
 
-    for t_num, template in enumerate(bank): #Loop over templates
+    for t_num, template in enumerate(bank):  # Loop over templates
         for ifo in opt.instruments:
             if opt.cluster_method == "window":
                 cluster_window = int(opt.cluster_window * sample_rate)
@@ -486,7 +491,7 @@ with ctx:
             elif opt.cluster_window == 0:
                  cluster_window = int(0)
 
-        #Loop over segments
+        # Loop over segments
         for s_num,stilde in enumerate(segments[opt.instruments[0]]):
             stilde = {ifo : segments[ifo][s_num] for ifo in opt.instruments}
             # Filter check checks the 'inj_filter_rejector' options to
@@ -534,27 +539,27 @@ with ctx:
                 #List of ifos with triggers
                 if len(idx[ifo]) == 0: ifo_list.remove(ifo)
 
-            #Move onto next segment if there are no triggers.
+            # Move onto next segment if there are no triggers.
             if len(ifo_list)==0: continue
 
-            #Find the data we need to analyse
+            # Find the data we need to analyse
             analyse_data = {ifo : matched_filter[ifo].segments[s_num].analyze
                            for ifo in opt.instruments}
 
-            #Restrict the snr timeseries to just this section
+            # Restrict the snr timeseries to just this section
             snr = {ifo : snr_ts[ifo][analyse_data[ifo]] * norm_dict[ifo]
                   for ifo in opt.instruments}
 
-            #Save the indexes of triggers (if we have any)
-            #Even if we have none, need to keep an empty dictionary.
-            #Only do this is idx doesn't get time shifted out of the time
-            #we are looking at.
+            # Save the indexes of triggers (if we have any)
+            # Even if we have none, need to keep an empty dictionary.
+            # Only do this is idx doesn't get time shifted out of the time
+            # we are looking at.
             idx_dict = {ifo : idx[ifo][np.logical_and(
                        idx[ifo] > time_delay_idx[ifo],idx[ifo] -
                        time_delay_idx[ifo]  < len(snr[ifo]))]
                        for ifo in opt.instruments}
-            #Find triggers that are coincident (in geocent time) in multiple ifos.
-            #If a single ifo analysis then just use the indexes from that ifo.
+            # Find triggers that are coincident (in geocent time) in multiple ifos.
+            # If a single ifo analysis then just use the indexes from that ifo.
             if len(opt.instruments)>1:
                 coinc_idx = get_coinc_indexes(idx_dict,time_delay_idx)
             else:
@@ -572,8 +577,8 @@ with ctx:
                 #Apply time delay
                 snr[ifo].roll(-time_delay_idx[ifo])
 
-            #Calculate the coincident and coherent snr
-            #Check we have data before we try to compute the coherent snr
+            # Calculate the coincident and coherent snr
+            # Check we have data before we try to compute the coherent snr
             if len(coinc_idx) != 0 and nifo > 1:
                 #Find coinc snr at trigger times and apply coinc snr threshold
                 rho_coinc, coinc_idx, coinc_triggers =\
@@ -687,8 +692,8 @@ with ctx:
                 network_out_vals['time_index'] = \
                     coinc_idx+stilde[ifo].cumulative_index
                 network_out_vals['nifo'] = [nifo] * num_events
-                network_out_vals['latitude'] = [opt.latitude] * num_events
-                network_out_vals['longitude'] = [opt.longitude] * num_events
+                network_out_vals['ra'] = [opt.ra] * num_events
+                network_out_vals['dec'] = [opt.dec] * num_events
                 event_mgr.add_template_events_to_network( network_names,
                                 [network_out_vals[n] for n in network_names])
         event_mgr.cluster_template_network_events(
