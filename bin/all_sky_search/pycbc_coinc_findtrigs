@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-import h5py, copy, argparse, logging, numpy, numpy.random, multiprocessing
+import h5py, copy, argparse, logging, numpy, numpy.random
 import shutil, uuid, os.path, atexit
 from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat, ranking
 import pycbc.version
+from pycbc import pool
 from numpy.random import seed, shuffle
 from pycbc.io.hdf import ReadByTemplate
 from pycbc.types.optparse import MultiDetOptionAction
@@ -97,13 +98,20 @@ class MultiifoTrigs(object):
 
 trigs = MultiifoTrigs()
 cleanup_files = []
+
+def exit_cleaning():
+    for fname in cleanup_files:
+        logging.info('cleaning up %s', fname)
+        os.remove(fname)
+atexit.register(exit_cleaning)
+
 for i in range(len(args.trigger_files)):
     if args.stage_input:
         dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + '.hdf')
         logging.info("Moving %s to shared memory as %s",
                      args.trigger_files[i], dest)
-        shutil.copyfile(args.trigger_files[i], dest)
         cleanup_files.append(dest)
+        shutil.copyfile(args.trigger_files[i], dest)
     else:
         dest = args.trigger_files[i]
 
@@ -120,13 +128,6 @@ for i in range(len(args.trigger_files)):
     logging.info('Applying time shift multiple %i to ifo %s' %
                  (trigs.to_shift[-1], trigs.ifos[-1]))
     trigs.singles.append(reader)
-
-def exit_cleaning():
-    for fname in cleanup_files:
-    logging.info('cleaning up %s', fname)
-    os.remove(fname)
-
-atexit.register(exit_cleaning)
 
 # Coinc_segs contains only segments where all ifos are analyzed
 coinc_segs = veto.start_end_to_segments([-infinity()], [infinity()])
@@ -427,7 +428,7 @@ def process_template(tnum):
 if args.nprocesses == 1:
     ldatas = list(map(process_template, list(template_ids)))
 else:
-    p = multiprocessing.Pool(args.nprocesses)
+    p = pool.BroadcastPool(args.nprocesses)
     ldatas = p.map(process_template, list(template_ids))
 
 logging.info('merging data from the templates')
