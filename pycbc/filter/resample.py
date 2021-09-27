@@ -388,8 +388,7 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
 
     return out_series
 
-__all__ = ['resample_to_delta_t', 'highpass', 'lowpass', 
-           'interpolate_complex_frequency', 'highpass_fir', 
-           'lowpass_fir', 'notch_fir', 'fir_zero_filter',
-          ]
+__all__ = ['resample_to_delta_t', 'highpass', 'lowpass',
+           'interpolate_complex_frequency', 'highpass_fir',
+           'lowpass_fir', 'notch_fir', 'fir_zero_filter']
 
