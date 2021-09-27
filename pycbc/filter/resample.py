@@ -311,7 +311,7 @@ def lowpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     Time Series: TimeSeries
         The time series to be low-passed.
     frequency: float
-        The frequency below which is suppressed.
+        The frequency above which is suppressed.
     filter_order: {8, int}, optional
         The order of the filter to use when low-passing the time series.
     attenuation: {0.1, float}, optional
@@ -320,7 +320,7 @@ def lowpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     Returns
     -------
     Time Series: TimeSeries
-        A  new TimeSeries that has been high-passed.
+        A  new TimeSeries that has been low-passed.
 
     Raises
     ------
@@ -328,7 +328,6 @@ def lowpass(timeseries, frequency, filter_order=8, attenuation=0.1):
         time_series is not an instance of TimeSeries.
     TypeError:
         time_series is not real valued
-
     """
 
     if not isinstance(timeseries, TimeSeries):
@@ -389,5 +388,8 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
 
     return out_series
 
-__all__ = ['resample_to_delta_t', 'highpass', 'lowpass', 'interpolate_complex_frequency', 'highpass_fir', 'lowpass_fir', 'notch_fir', 'fir_zero_filter']
+__all__ = ['resample_to_delta_t', 'highpass', 'lowpass', 
+           'interpolate_complex_frequency', 'highpass_fir', 
+           'lowpass_fir', 'notch_fir', 'fir_zero_filter',
+          ]
 
