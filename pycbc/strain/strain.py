@@ -654,6 +654,10 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             action=MultiDetOptionAction,
                             type=float, metavar='IFO:FREQUENCY',
                             help="High pass frequency")
+    data_reading_group_multi.add_argument("--strain-low-pass", nargs='+',
+                            action=MultiDetOptionAction,
+                            type=float, metavar='IFO:FREQUENCY',
+                            help="Low pass frequency")
     data_reading_group_multi.add_argument("--pad-data", nargs='+', default=8,
                             action=MultiDetOptionAction,
                             type=int, metavar='IFO:LENGTH',
