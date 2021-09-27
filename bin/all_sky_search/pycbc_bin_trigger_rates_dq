@@ -6,6 +6,7 @@ import argparse
 import pycbc
 import pycbc.events
 from pycbc.events import stat as pystat
+from pycbc.types.timeseries import load_timeseries
 import numpy as np
 import h5py as h5
 from pycbc.version import git_verbose_msg as version
@@ -19,6 +20,10 @@ parser.add_argument("--stat-threshold", type=float,
                     help="Only consider triggers with statistic value "
                     "above this threshold")
 parser.add_argument("--dq-file", required=True,nargs='+')
+parser.add_argument("--dq-channel", required=False,type=str,
+                    help='name of channel to read in from '
+                         'provided dq file. Required if '
+                         'provided file is .hdf5 format')
 parser.add_argument('--bank-file', help='hdf format template bank file',
                     required=True)
 parser.add_argument('--background-bins', nargs='+',
@@ -77,13 +82,10 @@ dq_logl = np.array([])
 
 for filename in args.dq_file:
     logging.info('Reading DQ file %s...', filename)
-    with h5.File(filename, 'r') as g:
-        g_logl = g[ifo + '/dq_val'][:]
-        g_times = g[ifo + '/times'][:]
-    dq_logl = np.concatenate((dq_logl,g_logl))
-    dq_times = np.concatenate((dq_times,g_times))
-    del g_logl
-    del g_times
+    dq_data = load_timeseries(filename, group=args.dq_channel)
+    dq_logl = np.concatenate((dq_logl,dq_data[:]))
+    dq_times = np.concatenate((dq_times,dq_data.get_sample_times()))
+    del dq_data
 
 # todo: make this configurable
 percent_bin = 0.5

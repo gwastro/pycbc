@@ -5,6 +5,7 @@ import logging, argparse, numpy, h5py, time, copy
 import pycbc, pycbc.strain
 from pycbc.version import git_verbose_msg as version
 from pycbc.workflow import resolve_td_option
+from pycbc.types.timeseries import TimeSeries
 from ligo.segments import segmentlist, segment
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -25,6 +26,8 @@ parser.add_argument("--gps-end-time", type=int,required=True,
                          "(integer seconds)")
 parser.add_argument("--output-file", required=True,
                     help="name of output file")
+parser.add_argument("--output-channel", required=False,
+                    help="name of output channel")
 
 pycbc.strain.insert_strain_option_group(parser, gps_times=False)
 
@@ -46,7 +49,7 @@ def get_dq(seg):
     argstmp.channel_name = resolve_td_option(args.channel_name, tmp_segment)
 
     try:
-        gwstrain = pycbc.strain.from_cli(argstmp)
+        dq_data = pycbc.strain.from_cli(argstmp)
     except RuntimeError:
         time.sleep(10)
         return get_dq(seg)
@@ -55,42 +58,32 @@ def get_dq(seg):
                  seg[1], abs(seg[1]-seg[0]))
 
     dq_sample_rate = float(args.dq_sample_rate) 
-    dq_step_size = gwstrain.sample_rate/dq_sample_rate
+    dq_step_size = dq_data.sample_rate/dq_sample_rate
 
     dq_method = args.dq_sample_method
     
     if dq_method == "max":
-        # maximize gwstrain over given interval
-        val_dq = numpy.array([max(gwstrain.numpy()
+        # maximize dq_data over given interval
+        val_dq = numpy.array([max(dq_data.numpy()
                                   [int(n*dq_step_size):
                                    int((n+1)*dq_step_size)])
-                              for n in numpy.arange(0, len(gwstrain.numpy()) /
+                              for n in numpy.arange(0, len(dq_data.numpy()) /
                                                     dq_step_size)])
     elif dq_method=="blrms":
         # Calculate the blrms over given interval
-        val_dq = numpy.array([numpy.mean(gwstrain.numpy()
+        val_dq = numpy.array([numpy.mean(dq_data.numpy()
                                           [int(n*dq_step_size):
                                            int((n+1)*dq_step_size)]**2)**0.5
-                               for n in numpy.arange(0, len(gwstrain.numpy()) /
+                               for n in numpy.arange(0, len(dq_data.numpy()) /
                                                      dq_step_size)])
 
-    # figure out list of times
-    times_dq = numpy.arange(gwstrain.start_time,gwstrain.end_time,
-                            1./dq_sample_rate)
-
-    return val_dq, times_dq
+    return TimeSeries(val_dq, epoch=dq_data.start_time,delta_t=1./dq_sample_rate)
 
 ifo = args.channel_name[0:2]
 
 dq = get_dq((args.gps_start_time,args.gps_end_time))
 
-with h5.File(args.output_file, 'w') as f:
-    start, end = [args.gps_start_time], [args.gps_end_time]
-    
-    f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
-    f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
-    f[ifo + '/dq_val'] = numpy.array(dq[0], dtype=numpy.float32)
-    f[ifo + '/times'] = numpy.array(dq[1], dtype=numpy.uint32)
+dq.save(args.output_file, group=args.output_channel)
 
 logging.info('Done!')
 

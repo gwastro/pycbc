@@ -24,6 +24,8 @@ parser.add_argument('--ifo', type=str, required=True,
                     help="interferometer to analyze")
 parser.add_argument("--output-file", required=True,
                     help="name of output file")
+parser.add_argument("--output-channel", required=False,
+                    help="name of output channel")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -63,12 +65,6 @@ segs = SegFile.from_segment_xml(args.science_segments
 # Create data quality time series
 dq = make_dq_ts(segs, args.dq_segments, ifo, flag)
 
-f = h5py.File(args.output_file, 'w')
-start, end = [dq[1][0]], [dq[1][-1]]
-
-f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
-f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
-f[ifo + '/dq_val'] = numpy.array(dq[0], dtype=numpy.uint32)
-f[ifo + '/times'] = numpy.array(dq[1], dtype=numpy.uint32)
+dq.save(args.output_file, group=args.output_channel)
 
 logging.info('Done!')
