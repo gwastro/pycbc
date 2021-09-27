@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import h5py, copy, argparse, logging, numpy, numpy.random, multiprocessing
-import shutil, uuid, os.path
+import shutil, uuid, os.path, atexit
 from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat, ranking
 import pycbc.version
@@ -120,6 +120,13 @@ for i in range(len(args.trigger_files)):
     logging.info('Applying time shift multiple %i to ifo %s' %
                  (trigs.to_shift[-1], trigs.ifos[-1]))
     trigs.singles.append(reader)
+
+def exit_cleaning():
+    for fname in cleanup_files:
+    logging.info('cleaning up %s', fname)
+    os.remove(fname)
+
+atexit.register(exit_cleaning)
 
 # Coinc_segs contains only segments where all ifos are analyzed
 coinc_segs = veto.start_end_to_segments([-infinity()], [infinity()])
@@ -470,8 +477,5 @@ else:
     nslides = 0
 f.attrs['num_slides'] = nslides
 
-for fname in cleanup_files:
-    logging.info('cleaning up %s', fname)
-    os.remove(fname)
 
 logging.info('Done')
