@@ -14,6 +14,7 @@ parser.add_argument("--dq-sample-rate", default=1, type=int,
                     help="Sample rate to calculate dq timeseries, "
                          "in Hz [default=1Hz]")
 parser.add_argument("--dq-sample-method", required=True,
+                    choices=['max', 'blrms'],
                     help="Method used to calculate dq timeseries. "
                          "Options are 'max' or 'blrms'")
 parser.add_argument("--gps-start-time", type=int,required=True,
@@ -72,9 +73,6 @@ def get_dq(seg):
                                            int((n+1)*dq_step_size)]**2)**0.5
                                for n in numpy.arange(0, len(gwstrain.numpy()) /
                                                      dq_step_size)])
-    else:
-        raise TypeError("%s is not an available dq method. " 
-                        "Options are 'max' or 'blrms'", dq_method)
 
     # figure out list of times
     times_dq = numpy.arange(gwstrain.start_time,gwstrain.end_time,
@@ -86,13 +84,13 @@ ifo = args.channel_name[0:2]
 
 dq = get_dq((args.gps_start_time,args.gps_end_time))
 
-f = h5py.File(args.output_file, 'w')
-start, end = [args.gps_start_time], [args.gps_end_time]
-
-f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
-f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
-f[ifo + '/dq_val'] = numpy.array(dq[0], dtype=numpy.float32)
-f[ifo + '/times'] = numpy.array(dq[1], dtype=numpy.uint32)
+with h5.File(args.output_file, 'w') as f:
+    start, end = [args.gps_start_time], [args.gps_end_time]
+    
+    f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
+    f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
+    f[ifo + '/dq_val'] = numpy.array(dq[0], dtype=numpy.float32)
+    f[ifo + '/times'] = numpy.array(dq[1], dtype=numpy.uint32)
 
 logging.info('Done!')
 
