@@ -29,15 +29,10 @@ from __future__ import absolute_import
 
 import sys
 import logging
-# python 2.7 needs to use StingIO from the StringIO module; this was
-# deprecated in python 3
-if sys.version_info.major == 2:
-    from StringIO import StringIO
-else:
-    from io import StringIO
+from io import StringIO
 
 from abc import (ABCMeta, abstractmethod)
-from six import (add_metaclass, string_types)
+from six import add_metaclass
 
 import numpy
 import h5py
@@ -638,7 +633,7 @@ class BaseInferenceFile(h5py.File):
         # copy non-samples/stats data
         if ignore is None:
             ignore = []
-        if isinstance(ignore, string_types):
+        if isinstance(ignore, str):
             ignore = [ignore]
         ignore = set(ignore + [self.samples_group])
         copy_groups = set(self.keys()) - ignore
@@ -729,7 +724,7 @@ class BaseInferenceFile(h5py.File):
         # info
         if ignore is None:
             ignore = []
-        if isinstance(ignore, string_types):
+        if isinstance(ignore, str):
             ignore = [ignore]
         self.copy_info(other, ignore=ignore)
         # samples

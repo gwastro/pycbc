@@ -26,8 +26,6 @@
 
 from __future__ import (absolute_import, division)
 
-from six import string_types
-
 import numpy
 import argparse
 
@@ -647,7 +645,7 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     dict
         A dictionary of field name -> numpy array pairs.
     """
-    if isinstance(fields, string_types):
+    if isinstance(fields, str):
         fields = [fields]
     # walkers to load
     widx, nwalkers = _ensemble_get_walker_index(fp, walkers)
