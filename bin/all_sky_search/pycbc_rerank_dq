@@ -46,8 +46,8 @@ times = numpy.array([])
 for filename in args.input_file:
     logging.info('Reading file %s...', filename)
     dq_data = load_timeseries(filename, group=args.input_channel)
-    log_like = np.concatenate((dq_logl,dq_data[:]))
-    times = np.concatenate((dq_times,dq_data.get_sample_times()))
+    log_like = numpy.concatenate((log_like,dq_data[:]))
+    times = numpy.concatenate((times,dq_data.get_sample_times()))
     del dq_data
 
 log_like_ranking = numpy.argsort(log_like)
@@ -67,6 +67,7 @@ if args.rate_file is not None:
     locs_dict = {}
     if path.isfile(args.rate_file):
         with h5py.File(args.rate_file,'r') as f:
+            bin_names = f.attrs['names'][:]
             for bin_name in bin_names:
                 logging.info('Processing bin %s...', bin_name)
                 rates = f['%s/rates'%bin_name][:]
