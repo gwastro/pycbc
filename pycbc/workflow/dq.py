@@ -69,12 +69,15 @@ class PyCBCCalculateDQFlagExecutable(Executable):
     # current_retention_level = Executable.ALL_TRIGGERS
     current_retention_level = Executable.MERGED_TRIGGERS
 
-    def create_node(self, workflow, seg_file, dq_file, flag):
+    def create_node(self, workflow, segment, dq_file, flag):
         node = Node(self)
         # Executable objects are initialized with ifo information
+        start = int(segment[0])
+        end = int(segment[1])
         node.add_opt('--ifo', self.ifo_string)
         node.add_opt('--flag', flag)
-        node.add_input_opt('--science-segments', seg_file)
+        node.add_opt('--gps-start-time', start)
+        node.add_opt('--gps-end-time', end)
         node.add_input_opt('--dq-segments', dq_file)
         node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                  '--output-file')
@@ -162,14 +165,15 @@ def setup_dq_reranking(workflow, dq_label, insps, bank,
         ifo_insp = ifo_insp[0]
         flag_name = flag_str
         logging.info("Creating job for flag %s" % (flag_name))
-        raw_exe = PyCBCCalculateDQFlagExecutable(workflow.cp,
-                                             'calculate_dqflag', ifos=ifo,
-                                             out_dir=output_dir,
-                                             tags=dq_tags)
-        raw_node = raw_exe.create_node(workflow, analyzable_file, dq_file,
-                                       flag_name)
-        workflow += raw_node
-        dq_files = raw_node.output_files
+        for seg in dq_segs[ifo]:
+            raw_exe = PyCBCCalculateDQFlagExecutable(workflow.cp,
+                                                 'calculate_dqflag', ifos=ifo,
+                                                 out_dir=output_dir,
+                                                 tags=dq_tags)
+            raw_node = raw_exe.create_node(workflow, seg, dq_file,
+                                           flag_name)
+            workflow += raw_node
+            dq_files = raw_node.output_files
         intermediate_exe = PyCBCBinTriggerRatesDQExecutable(workflow.cp,
                                                'bin_trigger_rates_dq',
                                                ifos=ifo,
