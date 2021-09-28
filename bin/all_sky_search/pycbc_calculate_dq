@@ -77,7 +77,8 @@ def get_dq(seg):
                                for n in numpy.arange(0, len(dq_data.numpy()) /
                                                      dq_step_size)])
 
-    return TimeSeries(val_dq, epoch=dq_data.start_time,delta_t=1./dq_sample_rate)
+    return TimeSeries(val_dq, epoch=dq_data.start_time, 
+                      delta_t=1./dq_sample_rate)
 
 ifo = args.channel_name[0:2]
 
