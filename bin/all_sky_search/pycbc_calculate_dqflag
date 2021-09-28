@@ -35,7 +35,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 
-def make_dq_ts(segs, start, end, ifo, flag):
+def make_dq_ts(dq_segs, start, end, ifo, flag):
     """ Create a data quality timeseries
     """
     logging.info('Creating data quality timeseries for flag %s', 
@@ -62,7 +62,8 @@ if len(flag_list)>1:
     flag = flag_list[1]
 
 # Create data quality time series
-dq = make_dq_ts(segs, args.gps_start_time, args.gps_end_time, ifo, flag)
+dq = make_dq_ts(args.dq_segments, args.gps_start_time, args.gps_end_time, 
+                ifo, flag)
 
 dq.save(args.output_file, group=args.output_channel)
 
