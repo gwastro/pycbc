@@ -25,11 +25,12 @@ parser.add_argument("--input-channel", required=False,type=str,
                     help='name of channel to read in from '
                          'provided input file. Required if '
                          'provided file is .hdf5 format')
-parser.add_argument("--rate-file", type = str, default = None,
-                     help="File containing the mapping from each "
-                           "dq bin to the trigger rate")
-parser.add_argument("--bank-file", type = str, default = None,
-                     help="File containing the template bank")
+rate_group = parser.add_mutually_exclusive_group()
+rate_group.add_argument("--rate-file", type = str, default = None,
+                        help="File containing the mapping from each "
+                             "dq bin to the trigger rate")
+rate_group.add_argument("--bank-file", type = str, default = None,
+                        help="File containing the template bank")
 parser.add_argument("--dq-type", type = str, default = 'dq',
                      help="Name of dq type to be included in output file "
                           "metadata [default='dq']")
@@ -58,9 +59,6 @@ log_like_vals = numpy.array(log_like[log_like_ranking])
 
 log_like_dict = {}
 percent_dict = {}
-
-if not args.rate_file or args.bank_file:
-    raise TypeError('Must supply either a bank or dq rates file')
 
 if args.rate_file is not None:
     rates = {}
@@ -92,6 +90,7 @@ if args.rate_file is not None:
 
     else: logging.error('Could not find binned trigger rates file')
 else:
+    # Use analytic model from Godwin et al. arXiv:2010.15282 
     bin_names = ['all_bin']
     with h5py.File(args.bank_file, 'r') as bank:
         locs_dict = {'all_bin': numpy.arange(0, len(bank['mass1'][:]), 1)}
