@@ -186,6 +186,9 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
 
 _highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
                  numpy.dtype('float64'): lal.HighPassREAL8TimeSeries}
+_lowpass_func = {numpy.dtype('float32'): lal.LowPassREAL4TimeSeries,
+                 numpy.dtype('float64'): lal.LowPassREAL8TimeSeries}
+
 
 def notch_fir(timeseries, f1, f2, order, beta=5.0):
     """ notch filter the time series using an FIR filtered generated from
@@ -298,6 +301,49 @@ def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     return TimeSeries(lal_data.data.data, delta_t = lal_data.deltaT,
                       dtype=timeseries.dtype, epoch=timeseries._epoch)
 
+def lowpass(timeseries, frequency, filter_order=8, attenuation=0.1):
+    """Return a new timeseries that is lowpassed.
+
+    Return a new time series that is lowpassed below the `frequency`.
+
+    Parameters
+    ----------
+    Time Series: TimeSeries
+        The time series to be low-passed.
+    frequency: float
+        The frequency above which is suppressed.
+    filter_order: {8, int}, optional
+        The order of the filter to use when low-passing the time series.
+    attenuation: {0.1, float}, optional
+        The attenuation of the filter.
+
+    Returns
+    -------
+    Time Series: TimeSeries
+        A  new TimeSeries that has been low-passed.
+
+    Raises
+    ------
+    TypeError:
+        time_series is not an instance of TimeSeries.
+    TypeError:
+        time_series is not real valued
+    """
+
+    if not isinstance(timeseries, TimeSeries):
+        raise TypeError("Can only resample time series")
+
+    if timeseries.kind is not 'real':
+        raise TypeError("Time series must be real")
+
+    lal_data = timeseries.lal()
+    _lowpass_func[timeseries.dtype](lal_data, frequency,
+                                    1-attenuation, filter_order)
+
+    return TimeSeries(lal_data.data.data, delta_t = lal_data.deltaT,
+                      dtype=timeseries.dtype, epoch=timeseries._epoch)
+
+
 def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right'):
     """Interpolate complex frequency series to desired delta_f.
 
@@ -342,5 +388,7 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
 
     return out_series
 
-__all__ = ['resample_to_delta_t', 'highpass', 'interpolate_complex_frequency', 'highpass_fir', 'lowpass_fir', 'notch_fir', 'fir_zero_filter']
+__all__ = ['resample_to_delta_t', 'highpass', 'lowpass',
+           'interpolate_complex_frequency', 'highpass_fir',
+           'lowpass_fir', 'notch_fir', 'fir_zero_filter']
 
