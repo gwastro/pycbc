@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-""" Ingest and process DQ data
+""" Ingest and process DQ data for use in the ranking statistic. 
+    Any data that can be read by PyCBC as a timeseries can 
+    be read in as a DQ timeseries. 
+    This DQ timeseries is then processed to 
+    lower the sample rate, either by maximizing
+    or calculating the BLRMS over each timestep.
 """
 import logging, argparse, numpy, h5py, time, copy
 import pycbc, pycbc.strain
