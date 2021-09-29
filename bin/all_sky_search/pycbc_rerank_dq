@@ -98,7 +98,7 @@ else:
     log_like = numpy.arange(len(log_like))*100./len(log_like)
 
     p_min = int(len_log_like/2.)
-    p_max = int(len_log_like/(1.+numpy.e**-args.max_stat))
+    p_max = int(len_log_like/(1.+numpy.exp(-args.max_stat)))
 
     log_like[p_min:p_max] = numpy.log(log_like[p_min:p_max] \
                                       / (100.-log_like[p_min:p_max]))
