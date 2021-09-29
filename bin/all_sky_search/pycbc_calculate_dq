@@ -53,11 +53,7 @@ def get_dq(seg):
     tmp_segment = segment([argstmp.gps_start_time, argstmp.gps_end_time])
     argstmp.channel_name = resolve_td_option(args.channel_name, tmp_segment)
 
-    try:
-        dq_data = pycbc.strain.from_cli(argstmp)
-    except RuntimeError:
-        time.sleep(10)
-        return get_dq(seg)
+    dq_data = pycbc.strain.from_cli(argstmp)
 
     logging.info('Normalizing dq values for %.1f-%.1f (%.1f s)', seg[0],
                  seg[1], abs(seg[1]-seg[0]))
