@@ -24,7 +24,7 @@ import pycbc.distributions as distributions
 
 
 def draw_samples_from_config(config_path, samples_num=1, seed=150914, **kwds):
-    """ Generate sampling points from a standlone .ini file.
+    """ Generate sampling points from a standalone .ini file.
 
     Parameters
     ----------
