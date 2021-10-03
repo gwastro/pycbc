@@ -18,14 +18,13 @@
 import argparse
 import numpy as np
 from pycbc.workflow import WorkflowConfigParser, configuration
-from pycbc import transforms
 import pycbc.distributions as distributions
-
+from pycbc.coordinates import spherical_to_cartesian
+from pycbc.cosmology import redshift_from_comoving_volume, distance_from_comoving_volume
 
 
 def draw_samples_from_config(config_path, samples_num=1, seed=150914, **kwds):
-    """ Generate sampling points from a standalone .ini file.
-
+    """ Generate sampling points from a standlone .ini file.
     Parameters
     ----------
     config_path : str
@@ -34,11 +33,10 @@ def draw_samples_from_config(config_path, samples_num=1, seed=150914, **kwds):
         The number of samples.
     seed: int
         The random seed for sampling.
-
     Returns
     --------
-    samples : numpy.record
-        The parameter values of sampling points in the parameter space.
+    samples : list
+        The parameter values [{param:value}] of sampling points in the parameter space.
     """
 
     np.random.seed(seed)
@@ -55,32 +53,48 @@ def draw_samples_from_config(config_path, samples_num=1, seed=150914, **kwds):
                         help='What section to load the static params from. Default '
                             'is static_params.')
     opts = parser.parse_args()
-    # add .ini file path
+    # Add .ini file path.
     opts.config_files = [config_path]
     cp = WorkflowConfigParser.from_cli(opts)
 
-    # get the vairable and static arguments from the .ini file
+    # Get the vairable and static arguments from the .ini file.
     variable_params, static_params = distributions.read_params_from_config(cp,
         prior_section=opts.dist_section,
         vargs_section=opts.variable_params_section,
         sargs_section=opts.static_params_section)
     constraints = distributions.read_constraints_from_config(cp)
 
-    if any(cp.get_subsections('waveform_transforms')):
-        waveform_transforms = transforms.read_transforms_from_config(cp,
-            'waveform_transforms')
-    else:
-        waveform_transforms = None
-        write_args = variable_params
-
-    # get prior distribution for each variable parameter
+    # Get prior distribution for each variable parameter.
     dists = distributions.read_distributions_from_config(cp, opts.dist_section)
 
-    # construct class that will draw the samples
+    # Construct class that will draw the samples.
     randomsampler = distributions.JointDistribution(variable_params, *dists,
                                 **{"constraints" : constraints})
 
-    # draw samples from prior distribution
+    # Draw samples from prior distribution.
     samples = randomsampler.rvs(size=int(samples_num))
+
+    # Pair the value with the parameter name.
+    samples_list = []
+    for sample_index in range(samples_num):
+        sample = {}
+        for param_index in variable_params:
+            sample[param_index] = samples[sample_index][param_index]
+
+        # Maps spherical coordinates to cartesian coordinates.
+        sample['spin1x'],sample['spin1y'],sample['spin1z'] = spherical_to_cartesian(
+                            sample['spin1_a'],sample['spin1_azimuthal'],sample['spin1_polar'])
+        sample['spin2x'],sample['spin2y'],sample['spin2z'] = spherical_to_cartesian(
+                            sample['spin2_a'],sample['spin2_azimuthal'],sample['spin2_polar'])
+
+        # Returns the redshift & luminosity distance from the given comoving volume.
+        sample['redshift'] = redshift_from_comoving_volume(sample['comoving_volume'])
+        sample['distance'] = distance_from_comoving_volume(sample['comoving_volume'])
+        
+        # Calculate detector-frame masses.
+        sample['mass1'] = sample['srcmass1'] * (1+sample['redshift'])
+        sample['mass2'] = sample['srcmass2'] * (1+sample['redshift'])
+
+        samples_list.append(sample)
     
-    return samples[0]
+    return samples_list
