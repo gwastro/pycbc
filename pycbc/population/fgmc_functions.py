@@ -291,7 +291,7 @@ class EventRate(object):
         assert self.lo is not None
         assert self.hi is not None
         if self.args.verbose:
-            print('Cutting on %s between %f - %f' % 
+            print('Cutting on %s between %f - %f' %
                   (self.bin_param, self.lo, self.hi))
         self.tpars = triggers.get_param(self.bin_param, None, *self.massspins)
         self.in_bin = filter_bin_lo_hi(self.tpars, self.lo, self.hi)
@@ -585,7 +585,8 @@ class BackgroundEventRate(EventRate):
         # fraction of expected noise events in given chunk & coinc type
         frac_chunk_type = self.exp_bg[chunk_type] / self.norm
         # fraction of inj in specified chunk, coinc type *and* time
-        frac_in_time = self.livetimes[(chunk, ctime)] / self.incl_livetimes[chunk_type]
+        frac_in_time = self.livetimes[(chunk, ctime)] /
+                                                self.incl_livetimes[chunk_type]
         # unpack heights / bins from bg hist object
         local_pdfs, _ = log_rho_bg(statvals, *self.bg_hist[chunk_type])
         return local_pdfs + np.log(frac_chunk_type * frac_in_time)
@@ -624,7 +625,7 @@ class SignalEventRate(EventRate):
             _times = {}
             for i in self.ifos:
                 _times[i] = jf['found_after_vetoes/' + i + '/time'][:][_keep]
-            meantimes = np.array([coinc_meanigz(ts)[0] 
+            meantimes = np.array([coinc_meanigz(ts)[0]
                                   for ts in zip(*_times.values())])
             _ctype = self.get_ctypes(self, _times)
             # get coinc time as strings
