@@ -1775,8 +1775,8 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
     def assign_bin_id(self, key):
         """
         Assign bin ID values
-        Assign each template id to a bin name based on a 
-        referenced statistic file. 
+        Assign each template id to a bin name based on a
+        referenced statistic file.
 
         Parameters
         ----------
@@ -1785,7 +1785,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
         Returns
         ---------
-        bin_dict: dict of strs 
+        bin_dict: dict of strs
             Dictionary containing the bin name for each template id
         """
         ifo = key.split('-')[0]
@@ -1802,8 +1802,8 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
     def assign_dq_val(self, key):
         """
-        Assign dq values to each time for every bin based on a 
-        referenced statistic file. 
+        Assign dq values to each time for every bin based on a
+        referenced statistic file.
 
         Parameters
         ----------
@@ -1812,7 +1812,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
         Returns
         ---------
-        dq_dict: dict of {time: dq_value} dicts for each bin 
+        dq_dict: dict of {time: dq_value} dicts for each bin
             Dictionary containing the mapping between the time
             and the dq value for each individual bin.
 
