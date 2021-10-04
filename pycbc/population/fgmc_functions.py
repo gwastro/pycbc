@@ -261,7 +261,8 @@ class EventRate(object):
                 assert ty in list(self.allctimes)
             self.coinc_types = frozenset([''.join(t) for t in coinc_types])
         if args.verbose:
-            print('Using', self.coinc_types, 'coincs in', self.allctimestring, 'times')
+            print('Using', self.coinc_types, 'coincs in',
+                  self.allctimestring, 'times')
         self.args = args
         self.thr = self.args.stat_threshold
         self.bin_param = bin_param
@@ -290,7 +291,8 @@ class EventRate(object):
         assert self.lo is not None
         assert self.hi is not None
         if self.args.verbose:
-            print('Cutting on %s between %f - %f' % (self.bin_param, self.lo, self.hi))
+            print('Cutting on %s between %f - %f' % 
+                  (self.bin_param, self.lo, self.hi))
         self.tpars = triggers.get_param(self.bin_param, None, *self.massspins)
         self.in_bin = filter_bin_lo_hi(self.tpars, self.lo, self.hi)
 
@@ -314,6 +316,16 @@ class EventRate(object):
         if self.args.verbose:
             print(str(n_bins) + ' ' + choice + ' stat bins')
         return bins
+
+    def get_ctypes(self, tdict):
+        # tdict is a ifo -> trigger time dictionary
+        ifotimes = zip(*[tdict[i] for i in self.ifos])
+        cty = []
+        for ts in ifotimes:
+            # if an ifo doesn't participate, time is sentinel value -1
+            cty.append(''.join([i for i, t in zip(self.ifos, ts) if t > 0]))
+        # return is array of coinc types strings
+        return np.array(cty)
 
     def moreifotimes(self, ctstring):
         # get list of coinc times with more ifos than ctstring
@@ -351,7 +363,7 @@ class EventRate(object):
                 # index dict on chunk start time / coinc type
                 self.incl_livetimes[(get_start_dur(fi)[0], ct)] = fgt
                 # subtract times during which 1 more ifo was on,
-                # ie subtract H1L1* time from H1L1; subtract H1* time from H1; etc.
+                # ie subtract H1L1* time from H1L1; subtract H1* time from H1; etc
                 for combo in self.moreifotimes(ct):
                     if len(combo) == len(ct) + 2:
                         fgt -= conv.sec_to_year(f[combo].attrs['foreground_time'])
@@ -398,11 +410,9 @@ class ForegroundEvents(EventRate):
                 _times[i] = f['foreground/' + i + '/time'][:][_keep]
             # if an ifo doesn't participate, time is sentinel value -1
             # event time is mean of remaining positive GPS times
-            meantimes = np.array([coinc_meanigz(ts)[0] for ts in zip(*_times.values())])
-            ifotimes = zip(*[_times[i] for i in self.ifos])
-            # get coinc types as strings
-            _ctype = np.array([''.join([i for i, t in zip(self.ifos, ts) if (t > 0)])
-                               for ts in ifotimes])
+            meantimes = np.array([coinc_meanigz(ts)[0]
+                                  for ts in zip(*_times.values())])
+            _ctype = get_ctype(self, _times)
             if len(_ctype) == 0:
                 if self.args.verbose:
                     print('No events in ' + start)
@@ -422,13 +432,14 @@ class ForegroundEvents(EventRate):
             self.stat = np.append(self.stat, _stats[_keep][in_ctypes])
             try:  # injection analyses only have 'ifar_exc', not 'ifar'
                 self.ifar = np.append(self.ifar,
-                                      f['foreground/ifar'][:][_keep][in_ctypes])
+                                     f['foreground/ifar'][:][_keep][in_ctypes])
             except KeyError:
                 self.ifar = np.append(self.ifar,
-                                      f['foreground/ifar_exc'][:][_keep][in_ctypes])
+                                 f['foreground/ifar_exc'][:][_keep][in_ctypes])
             self.gpst = np.append(self.gpst, meantimes)
             self.masspars = np.append(self.masspars, massp)
-            self.start = np.append(self.start, int(start) * np.ones_like(meantimes))
+            self.start = np.append(self.start, int(start) *
+                                   np.ones_like(meantimes))
             self.ctime = np.append(self.ctime, _ctime)
             self.ctype = np.append(self.ctype, _ctype[in_ctypes])
 
@@ -517,11 +528,7 @@ class BackgroundEventRate(EventRate):
             for i in self.ifos:
                 # NB times are time-shifted between ifos
                 _times[i] = ff['background_exc/' + i + '/time'][:][_keep]
-            ifotimes = zip(*[_times[i] for i in self.ifos])
-            # if an ifo doesn't participate, time is sentinel value -1
-            # get coinc types as strings & assign to dict - inefficient?
-            _ctype = np.array([''.join([i for i, t in zip(self.ifos, ts) if (t > 0)])
-                               for ts in ifotimes])
+            _ctype = get_ctype(self, _times)
             for cty in self.coinc_types:
                 self.bg_vals[(start, cty)] = _bgstat[_ctype == cty]
                 self.bg_dec[(start, cty)] = _bgdec[_ctype == cty]
@@ -537,12 +544,13 @@ class BackgroundEventRate(EventRate):
                     if self.args.verbose:
                         print('Halving bg bins for triple bg hist')
                     bins = bins[::2].copy()  # take every 2nd bin edge
-                self.bg_hist[(start, cty)] = np.histogram(_bgstat[_ctype == cty],
-                                weights=_bgdec[_ctype == cty],
-                                bins=bins)
+                self.bg_hist[(start, cty)] = \
+                      np.histogram(_bgstat[_ctype == cty],
+                                   weights=_bgdec[_ctype == cty], bins=bins)
                 # get expected number of bg events for this chunk and coinc type
                 self.exp_bg[(start, cty)] = _bgdec[_ctype == cty].sum() * \
-                  self.incl_livetimes[(start, cty)] / self.bg_livetimes[(start, cty)]
+                      self.incl_livetimes[(start, cty)] / \
+                      self.bg_livetimes[(start, cty)]
 
     def plot_bg(self):
         for chunk_type, hist in self.bg_hist.items():
@@ -554,7 +562,7 @@ class BackgroundEventRate(EventRate):
             # plot error bars at bin centres
             lpdf, fracerr = log_rho_bg(0.5 * (bins[:-1] + bins[1:]), heights, bins)
             plt.errorbar(0.5 * (bins[:-1] + bins[1:]), np.exp(lpdf),
-                                       yerr=np.exp(lpdf) * fracerr, fmt='none')
+                         yerr=np.exp(lpdf) * fracerr, fmt='none')
             plt.semilogy()
             plt.grid(True)
             plt.xlim(xmax=self.args.plot_max_stat + 0.5)
@@ -570,7 +578,7 @@ class BackgroundEventRate(EventRate):
             self.norm += count
 
     def eval_pdf(self, chunk, ctime, ctype, statvals):
-        # given a bunch of statistic values all in the same data chunk and coinc type,
+        # given statistic values all in the same data chunk and coinc type,
         # evaluate the background pdf normalized over all chunks & types
         assert self.norm > 0
         chunk_type = (chunk, ctype)
@@ -596,7 +604,8 @@ class SignalEventRate(EventRate):
         self.fg_bins = {}
         self.norm = 0
 
-    def add_injections(self, inj_file, fg_file):  # need fg file for coinc time info :/
+    def add_injections(self, inj_file, fg_file):
+        # fg_file only needed for coinc time info :/
         self.starts.append(get_start_dur(inj_file)[0])
         self.get_livetimes(inj_file)
 
@@ -615,17 +624,16 @@ class SignalEventRate(EventRate):
             _times = {}
             for i in self.ifos:
                 _times[i] = jf['found_after_vetoes/' + i + '/time'][:][_keep]
-            meantimes = np.array([coinc_meanigz(ts)[0] for ts in zip(*_times.values())])
-            ifotimes = zip(*[_times[i] for i in self.ifos])
-            # get coinc types as strings & assign to dict - inefficient?
-            _ctype = np.array([''.join([i for i, t in zip(self.ifos, ts) if (t > 0)])
-                               for ts in ifotimes])
+            meantimes = np.array([coinc_meanigz(ts)[0] 
+                                  for ts in zip(*_times.values())])
+            _ctype = get_ctypes(self, _times)
             # get coinc time as strings
             # (strings may have different lengths)
             _ctime = np.repeat(np.array([''], dtype=object), len(meantimes))
             for ct in self.allctimestring:
                 # get coinc time info from segments in fg file
-                intime = self.in_coinc_time_excl(h5py.File(fg_file, 'r'), ct, meantimes)
+                intime = self.in_coinc_time_excl(
+                                        h5py.File(fg_file, 'r'), ct, meantimes)
                 _ctime[intime == 1] = ct  # do we need this?
                 if self.args.verbose:
                     print('Got %i ' % (intime == 1).sum() + 'inj in %s time' % ct)
@@ -661,13 +669,15 @@ class SignalEventRate(EventRate):
                 print('Plotting ' + cty + ' signal PDF in ' + ct + ' time ...')
                 samples = self.inj_vals[(ct, cty)]
                 bins = self.fg_bins[(ct, cty)]
-                xplot = np.logspace(np.log10(self.thr), np.log10(samples.max()), 500)
+                xplot = np.logspace(np.log10(self.thr),
+                                    np.log10(samples.max()), 500)
                 logpdf, _ = log_rho_fg(xplot, samples, bins)
                 plt.plot(xplot, np.exp(logpdf))
                 # plot error bars at bin centres
-                lpdf, fracerr = log_rho_fg(0.5 * (bins[:-1] + bins[1:]), samples, bins)
+                lpdf, fracerr = log_rho_fg(0.5 * (bins[:-1] + bins[1:]),
+                                           samples, bins)
                 plt.errorbar(0.5 * (bins[:-1] + bins[1:]), np.exp(lpdf),
-                                       yerr=np.exp(lpdf) * fracerr, fmt='none')
+                             yerr=np.exp(lpdf) * fracerr, fmt='none')
                 plt.semilogy()
                 plt.grid(True)
                 # zoom in on the 'interesting' range
@@ -677,7 +687,8 @@ class SignalEventRate(EventRate):
                                                 (len(samples), len(bins) - 1))
                 plt.xlabel('Ranking statistic')
                 plt.ylabel('Signal PDF')
-                plt.savefig(self.args.plot_dir + '%s-fg_pdf-%s' % (ct, cty) + '.png')
+                plt.savefig(self.args.plot_dir + '%s-fg_pdf-%s' % (ct, cty)
+                            + '.png')
                 plt.close()
 
     def get_norms(self):
@@ -686,7 +697,7 @@ class SignalEventRate(EventRate):
             self.norm += float(len(vals))
 
     def eval_pdf(self, chunk, ctime, ctype, statvals):
-        # given some statistic values in the same chunk, coinc time and coinc type,
+        # given statistic values in the same chunk, coinc time and coinc type,
         # evaluate the signal pdf normalized over all chunks, times and types
         assert self.norm > 0
         time_type = (ctime, ctype)

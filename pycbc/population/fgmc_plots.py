@@ -12,13 +12,19 @@ from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 
-def plotodds(rankstats, p_b):
-
+def plot_setup(*args):
+    # reduce scale of codeclimate complaints
     fig = figure.Figure()
     FigureCanvas(fig)
     ax = fig.gca()
-    ax.loglog()
     ax.grid(True)
+    return fig, ax
+
+
+def plotodds(rankstats, p_b):
+    # odds vs ranking stat
+    fig, ax = plot_setup()
+    ax.loglog()
     ax.plot(rankstats, (1.0 - p_b) / p_b, 'k.')
     ax.plot([rankstats.min(), rankstats.max()], [1.0, 1.0], 'c--')
     ax.set_title(r'Foreground/Background Odds')
@@ -29,12 +35,9 @@ def plotodds(rankstats, p_b):
 
 
 def plotpbg(rankstats, p_b):
-
-    fig = figure.Figure()
-    FigureCanvas(fig)
-    ax = fig.gca()
+    # p_terr vs ranking stat
+    fig, ax = plot_setup()
     ax.loglog()
-    ax.grid(True)
     ax.plot(rankstats, p_b, 'k.')
     ax.set_title(r'Probability of background origin')
     ax.set_xlabel(r'ranking statistic')
@@ -44,12 +47,9 @@ def plotpbg(rankstats, p_b):
 
 
 def plotoddsifar(ifar, p_b):
-
-    fig = figure.Figure()
-    FigureCanvas(fig)
-    ax = fig.gca()
+    # odds vs IFAR
+    fig, ax = plot_setup()
     ax.loglog()
-    ax.grid(True)
     ax.plot(ifar, (1.0 - p_b) / p_b, 'k.')
     ax.plot([ifar.min(), ifar.max()], [1.0, 1.0], 'c--')
     ax.set_title(r'Foreground/Background Odds')
@@ -60,17 +60,14 @@ def plotoddsifar(ifar, p_b):
 
 
 def plotfdr(p_b, ntop):
-
+    # False dismissal rate vs p_terr
+    fig, ax = plot_setup()
     # get smallest N p_terr values
     p_b = numpy.sort(p_b)[:ntop]
     # cumulative probable noise/signal counts
     cum_false = p_b.cumsum()
     cum_true = (1. - p_b).cumsum()
-    fig = figure.Figure()
-    FigureCanvas(fig)
-    ax = fig.gca()
     ax.semilogy()
-    ax.grid(True)
     ax.plot(p_b, cum_false / cum_true, 'b+')
     ax.plot(p_b, 1. / (numpy.arange(len(p_b)) + 1), 'c--', label=r'1 noise event')
     ax.legend()
@@ -280,7 +277,7 @@ def dist_summary(args, rv, plot_styles=('linear', 'loglog', 'semilogx'),
     # plot distributions
     if plot_extensions is not None:
         plottag = args.plot_tag or ''
-        if plottag is not '':
+        if plottag != '':
             plottag = '_' + plottag
         for style in plot_styles:
             fig = plotdist(rv, plot_lim=args.plot_limits, middle=middle,
