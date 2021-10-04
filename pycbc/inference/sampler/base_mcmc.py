@@ -30,7 +30,7 @@ import signal
 import logging
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 
-from six import (add_metaclass, string_types)
+from six import add_metaclass
 from six.moves import configparser as ConfigParser
 
 import numpy
@@ -900,7 +900,7 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
     with loadfile(filename, 'r') as fp:
         if parameters is None:
             parameters = fp.variable_params
-        if isinstance(parameters, string_types):
+        if isinstance(parameters, str):
             parameters = [parameters]
         for param in parameters:
             if per_walker:

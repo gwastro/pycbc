@@ -20,7 +20,6 @@ import os
 import copy
 import logging
 import numpy
-from six import string_types
 from pycbc import conversions
 from pycbc import coordinates
 from pycbc import cosmology
@@ -199,9 +198,9 @@ class CustomTransform(BaseTransform):
 
     def __init__(self, input_args, output_args, transform_functions,
                  jacobian=None):
-        if isinstance(input_args, string_types):
+        if isinstance(input_args, str):
             input_args = [input_args]
-        if isinstance(output_args, string_types):
+        if isinstance(output_args, str):
             output_args = [output_args]
         self.inputs = set(input_args)
         self.outputs = set(output_args)

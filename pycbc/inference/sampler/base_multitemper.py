@@ -27,7 +27,6 @@ samplers."""
 from __future__ import absolute_import
 
 import logging
-from six import string_types
 import numpy
 import h5py
 from pycbc.filter import autocorrelation
@@ -152,7 +151,7 @@ def compute_acf(filename, start_index=None, end_index=None,
     with loadfile(filename, 'r') as fp:
         if parameters is None:
             parameters = fp.variable_params
-        if isinstance(parameters, string_types):
+        if isinstance(parameters, str):
             parameters = [parameters]
         temps = _get_temps_idx(fp, temps)
         if chains is None:
@@ -312,7 +311,7 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
     with loadfile(filename, 'r') as fp:
         if parameters is None:
             parameters = fp.variable_params
-        if isinstance(parameters, string_types):
+        if isinstance(parameters, str):
             parameters = [parameters]
         temps = _get_temps_idx(fp, temps)
         for param in parameters:

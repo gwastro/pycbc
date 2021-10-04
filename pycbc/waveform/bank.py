@@ -25,7 +25,6 @@
 """
 This module provides classes that describe banks of waveforms
 """
-import sys
 import types
 import logging
 import os.path
@@ -39,7 +38,6 @@ import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
-import six
 import hashlib
 
 def sigma_cached(self, psd):
@@ -204,8 +202,6 @@ def tuple_to_hash(tuple_to_be_hashed):
     int
         an integer representation of the hashed array
     """
-    if six.PY2:
-        return hash(tuple_to_be_hashed)
     h = hashlib.blake2b(np.array(tuple_to_be_hashed).tobytes('C'),
                         digest_size=8)
     return np.fromstring(h.digest(), dtype=int)[0]
@@ -338,13 +334,9 @@ class TemplateBank(object):
         # (if anything was in the file)
         if approximant is not None:
             # get the approximant for each template
-            # FIXME: Remove if block once python2 is retired
-            if sys.version_info >= (3, 0):
-                dtype = h5py.string_dtype(encoding='utf-8')
-                apprxs = np.array(self.parse_approximant(approximant),
-                                  dtype=dtype)
-            else:
-                apprxs = self.parse_approximant(approximant)
+            dtype = h5py.string_dtype(encoding='utf-8')
+            apprxs = np.array(self.parse_approximant(approximant),
+                              dtype=dtype)
             if 'approximant' not in self.table.fieldnames:
                 self.table = self.table.add_fields(apprxs, 'approximant')
             else:

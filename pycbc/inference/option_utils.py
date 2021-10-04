@@ -19,8 +19,6 @@
 
 import argparse
 
-from six import string_types
-
 from pycbc import waveform
 from pycbc import distributions
 
@@ -60,7 +58,7 @@ class ParseLabelArg(argparse.Action):
                                             **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        singlearg = isinstance(values, string_types)
+        singlearg = isinstance(values, str)
         if singlearg:
             values = [values]
         params = []
