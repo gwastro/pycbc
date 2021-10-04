@@ -585,7 +585,7 @@ class BackgroundEventRate(EventRate):
         # fraction of expected noise events in given chunk & coinc type
         frac_chunk_type = self.exp_bg[chunk_type] / self.norm
         # fraction of inj in specified chunk, coinc type *and* time
-        frac_in_time = self.livetimes[(chunk, ctime)] /
+        frac_in_time = self.livetimes[(chunk, ctime)] /\
                                                 self.incl_livetimes[chunk_type]
         # unpack heights / bins from bg hist object
         local_pdfs, _ = log_rho_bg(statvals, *self.bg_hist[chunk_type])
