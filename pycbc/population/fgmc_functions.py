@@ -412,7 +412,7 @@ class ForegroundEvents(EventRate):
             # event time is mean of remaining positive GPS times
             meantimes = np.array([coinc_meanigz(ts)[0]
                                   for ts in zip(*_times.values())])
-            _ctype = get_ctype(self, _times)
+            _ctype = self.get_ctypes(self, _times)
             if len(_ctype) == 0:
                 if self.args.verbose:
                     print('No events in ' + start)
@@ -528,7 +528,7 @@ class BackgroundEventRate(EventRate):
             for i in self.ifos:
                 # NB times are time-shifted between ifos
                 _times[i] = ff['background_exc/' + i + '/time'][:][_keep]
-            _ctype = get_ctype(self, _times)
+            _ctype = self.get_ctypes(self, _times)
             for cty in self.coinc_types:
                 self.bg_vals[(start, cty)] = _bgstat[_ctype == cty]
                 self.bg_dec[(start, cty)] = _bgdec[_ctype == cty]
@@ -626,7 +626,7 @@ class SignalEventRate(EventRate):
                 _times[i] = jf['found_after_vetoes/' + i + '/time'][:][_keep]
             meantimes = np.array([coinc_meanigz(ts)[0] 
                                   for ts in zip(*_times.values())])
-            _ctype = get_ctypes(self, _times)
+            _ctype = self.get_ctypes(self, _times)
             # get coinc time as strings
             # (strings may have different lengths)
             _ctime = np.repeat(np.array([''], dtype=object), len(meantimes))
