@@ -1054,6 +1054,8 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
             cp.set(sec, opt, replace_val)
     return replace_params
 
+def multidf_create_waveform_generator
+
 
 def create_waveform_generator(
                 variable_params, data, waveform_transforms=None,
@@ -1128,3 +1130,6 @@ def create_waveform_generator(
         recalib=recalibration, gates=gates,
         **static_params)
     return waveform_generator
+    #Rather, return a list of waveform_generator
+    # Two sets of mapping: det --> delta_f
+                        # delta_f --> waveform_generator
