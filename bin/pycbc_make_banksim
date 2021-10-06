@@ -211,7 +211,6 @@ skip_count = 0
 
 dag = CondorDAG(logfile)
 dag.set_dag_file("banksim")
-dag.set_dax_file("banksim")
 
 bsjob = BaseJob("log", "scripts/pycbc_banksim", confs, "banksim", gpu=gpu,
                 accounting_group=accounting_group)
