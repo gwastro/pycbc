@@ -29,7 +29,6 @@ parser.add_argument('--bank-file', help='hdf format template bank file',
 parser.add_argument('--background-bins', nargs='+',
                     help='list of background bin format strings')
 parser.add_argument("--output-file", required=True)
-parser.add_argument("--output-plot")
 parser.add_argument("--prune-number", type=int, default=0,
                     help="Number of loudest events to remove from each split "
                          "histogram, default 0")
@@ -84,7 +83,7 @@ for filename in args.dq_file:
     logging.info('Reading DQ file %s...', filename)
     dq_data = load_timeseries(filename, group=args.dq_channel)
     dq_logl = np.concatenate((dq_logl,dq_data[:]))
-    dq_times = np.concatenate((dq_times,dq_data.get_sample_times()))
+    dq_times = np.concatenate((dq_times,dq_data.sample_times))
     del dq_data
 
 # todo: make this configurable

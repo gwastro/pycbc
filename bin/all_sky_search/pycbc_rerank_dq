@@ -48,7 +48,7 @@ for filename in args.input_file:
     logging.info('Reading file %s...', filename)
     dq_data = load_timeseries(filename, group=args.input_channel)
     log_like = numpy.concatenate((log_like,dq_data[:]))
-    times = numpy.concatenate((times,dq_data.get_sample_times()))
+    times = numpy.concatenate((times,dq_data.sample_times))
     del dq_data
 
 log_like_ranking = numpy.argsort(log_like)
@@ -63,32 +63,29 @@ percent_dict = {}
 if args.rate_file is not None:
     rates = {}
     locs_dict = {}
-    if path.isfile(args.rate_file):
-        with h5py.File(args.rate_file,'r') as f:
-            bin_names = f.attrs['names'][:]
-            for bin_name in bin_names:
-                logging.info('Processing bin %s...', bin_name)
-                rates = f['%s/rates'%bin_name][:]
-                locs_dict[bin_name] = f['%s/locs'%bin_name][:]
-                log_like_dict[bin_name] = numpy.zeros(len(log_like))
+with h5py.File(args.rate_file,'r') as f:
+    bin_names = f.attrs['names'][:]
+    for bin_name in bin_names:
+        logging.info('Processing bin %s...', bin_name)
+        rates = f['%s/rates'%bin_name][:]
+        locs_dict[bin_name] = f['%s/locs'%bin_name][:]
+        log_like_dict[bin_name] = numpy.zeros(len(log_like))
 
-                if not args.no_low_dq_cutoff:
-                    rates = numpy.array([max(r,1.) for r in rates])
+        if not args.no_low_dq_cutoff:
+            rates = numpy.array([max(r,1.) for r in rates])
 
-                log_rates = numpy.log(rates)
-                percent_dict[bin_name] = log_rates
+        log_rates = numpy.log(rates)
+        percent_dict[bin_name] = log_rates
 
-                n_bins = len(log_rates)
-                percentiles = numpy.linspace(0,100,n_bins+1)
-                dq_percentiles = numpy.percentile(log_like_vals,percentiles)[1:]
+        n_bins = len(log_rates)
+        percentiles = numpy.linspace(0,100,n_bins+1)
+        dq_percentiles = numpy.percentile(log_like_vals,percentiles)[1:]
 
-                rates_bin = numpy.array([n_bins - \
-                                  len(dq_percentiles[dq_percentiles >= dq_ll]) \
-                                  for dq_ll in log_like_vals])
-                log_like_dict[bin_name] = log_rates[rates_bin.astype('int')]
+        rates_bin = numpy.array([n_bins - \
+                          len(dq_percentiles[dq_percentiles >= dq_ll]) \
+                          for dq_ll in log_like_vals])
+        log_like_dict[bin_name] = log_rates[rates_bin.astype('int')]
 
-
-    else: logging.error('Could not find binned trigger rates file')
 else:
     # Use analytic model from Godwin et al. arXiv:2010.15282 
     bin_names = ['all_bin']

@@ -1829,12 +1829,11 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
     def find_dq_val(self, trigs):
         """Get dq values for a specific ifo and times"""
+        time = trigs['end_time'].astype(int)
         try:
-            time = trigs['end_time'].astype(int)
             tnum = trigs.template_num
             ifo = trigs.ifo
         except AttributeError:
-            time = trigs['end_time'].astype(int)
             tnum = trigs['template_id']
             assert len(self.ifos) == 1
             # Should be exactly one ifo provided
@@ -1867,12 +1866,10 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         ---------
         lognoisel: numpy.array
             Array of log noise rate density for each input trigger.
-
         """
         logr_n = ExpFitFgBgNormStatistic.lognoiserate(
                     self, trigs)
-        dq_val = self.find_dq_val(trigs)
-        logr_n += dq_val
+        logr_n += self.find_dq_val(trigs)
         return logr_n
 
 
