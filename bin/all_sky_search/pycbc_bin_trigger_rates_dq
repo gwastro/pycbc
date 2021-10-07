@@ -104,6 +104,7 @@ del dq_percentiles
 bin_times = np.array([len(seconds_bin[seconds_bin==(i)]) \
                      for i in range(n_bins)]).astype('float')
 full_time = float(len(seconds_bin))
+times_nz = (bin_times > 0)
 del dq_logl
 
 # create a dict to look up dq percentile at any time
@@ -144,7 +145,6 @@ with h5.File(args.output_file,'w') as f:
         (counts, bins) = np.histogram(trig_percentile, bins = (percentiles)/100)
         counts = counts.astype('float')
         rates = np.zeros(len(bin_times))
-        times_nz = (bin_times > 0)
         rates[times_nz] = counts[times_nz]/bin_times[times_nz]
         mean_rate = len(trig_percentile) / full_time
         if mean_rate > 0.:
