@@ -1354,7 +1354,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     index: int
         The number of samples to shift to get the match.
     phi: float
-    	Phase to rotate complex waveform to get the match, if desired.
+        Phase to rotate complex waveform to get the match, if desired.
     """
 
     htilde = make_frequency_series(vec1)
@@ -1387,10 +1387,10 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         max_id = max_id + id_shift
 
     if max_phase:
-    	phi = -numpy.angle(snr[max_id])
-		return maxsnr * snr_norm / sqrt(v2_norm), max_id, phi
-	else:
-		return maxsnr * snr_norm / sqrt(v2_norm), max_id
+        phi = -numpy.angle(snr[max_id])
+        return maxsnr * snr_norm / sqrt(v2_norm), max_id, phi
+    else:
+        return maxsnr * snr_norm / sqrt(v2_norm), max_id
 
 def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, normalized=True):
