@@ -1346,7 +1346,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         1 and can cause discontinuities if you don't use it as matches move
         between discrete samples. If True the index returned will be a float.
     max_phase : {False, bool}, optional
-    	If True, also return the phase shift that gives the match.
+        If True, also return the phase shift that gives the match.
 
     Returns
     -------
