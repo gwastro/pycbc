@@ -142,11 +142,13 @@ class SingleCoincForGraceDB(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
+        # ligo.lw does not like `cvs_entry_time` being an empty string
+        cvs_entry_time = pycbc_version.date or None
         proc_id = ligolw_process.register_to_xmldoc(
             outdoc, 'pycbc', {}, instruments=usable_ifos, comment='',
             version=pycbc_version.version,
             cvs_repository='pycbc/'+pycbc_version.git_branch,
-            cvs_entry_time=pycbc_version.date).process_id
+            cvs_entry_time=cvs_entry_time).process_id
 
         # Set up coinc_definer table
         coinc_def_table = lsctables.New(lsctables.CoincDefTable)
