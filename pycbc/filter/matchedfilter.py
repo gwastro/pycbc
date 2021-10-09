@@ -1316,7 +1316,7 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
 _snr = None
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, v1_norm=None, v2_norm=None,
-          subsample_interpolation=False, max_phase=False):
+          subsample_interpolation=False, return_phase=False):
     """ Return the match between the two TimeSeries or FrequencySeries.
 
     Return the match between two waveforms. This is equivalent to the overlap
@@ -1345,7 +1345,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         quadratic fit. This can be important if measuring matches very close to
         1 and can cause discontinuities if you don't use it as matches move
         between discrete samples. If True the index returned will be a float.
-    max_phase : {False, bool}, optional
+    return_phase : {False, bool}, optional
         If True, also return the phase shift that gives the match.
 
     Returns
@@ -1388,7 +1388,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
 
     if max_phase:
         rounded_max_id = int(round(max_id))
-        phi = -numpy.angle(snr[rounded_max_id])
+        phi = numpy.angle(snr[rounded_max_id])
         return maxsnr * snr_norm / sqrt(v2_norm), max_id, phi
     else:
         return maxsnr * snr_norm / sqrt(v2_norm), max_id
