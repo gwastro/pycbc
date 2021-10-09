@@ -1386,7 +1386,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         id_shift, maxsnr = quadratic_interpolate_peak(left, middle, right)
         max_id = max_id + id_shift
 
-    if max_phase:
+    if return_phase:
         rounded_max_id = int(round(max_id))
         phi = numpy.angle(snr[rounded_max_id])
         return maxsnr * snr_norm / sqrt(v2_norm), max_id, phi
