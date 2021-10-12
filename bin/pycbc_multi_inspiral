@@ -243,26 +243,27 @@ def coherent_snr(snr_triggers, index, threshold, projection_matrix,
     return rho_coh, index, snrv, coinc_snr
 
 
-def coincident_snr(snr_dict, index, threshold):
+def coincident_snr(snr_dict, index, threshold, time_delay_idx):
     """
     Output: rho_coinc: Coincident snr triggers
             index    : The subset of input index that survive the cuts
             coinc_triggers: Dictionary of individual detector SNRs at
                             indexes that survive cuts
-    Input: snr_dict: Dictionary of individual detector SNRs in geocent time
+    Input: snr_dict: Dictionary of individual detector SNRs
            index   : Geocent indexes you want to find coinc SNR for
            threshold: Indexes with coinc SNR below this threshold are cut
+           time_delay_idx: Dictionary of time delay in indices for each detector
     """
-    # Restrict the snr timeseries to just the interesting points
-    coinc_triggers = {ifo : snr_dict[ifo][index] for ifo in snr_dict.keys()}
-    # Calculate the coincident snr
+    #Restrict the snr timeseries to just the interesting points
+    coinc_triggers = {ifo : snr_dict[ifo][index+time_delay_idx[ifo]] for ifo in snr_dict.keys()}
+    #Calculate the coincident snr
     snr_array = np.array([coinc_triggers[ifo]
                         for ifo in coinc_triggers.keys()])
     rho_coinc = np.sqrt(np.sum(snr_array * snr_array.conj(),axis=0))
     # Apply threshold
     thresh_indexes = rho_coinc > threshold
     index = index[thresh_indexes]
-    coinc_triggers = {ifo : snr_dict[ifo][index] for ifo in snr_dict.keys()}
+    coinc_triggers = {ifo : snr_dict[ifo][index+time_delay_idx[ifo]] for ifo in snr_dict.keys()}
     rho_coinc = rho_coinc[thresh_indexes]
     return rho_coinc, index, coinc_triggers
 
@@ -574,15 +575,16 @@ with ctx:
                 if len(snr[ifo])==0:
                     raise ValueError('The SNR triggers dictionary is empty.\
                                      This should not be possible.')
-                #Apply time delay
-                snr[ifo].roll(-time_delay_idx[ifo])
+                # Time delay is applied to indices
+                coinc_idx_det_frame = {ifo: coinc_idx + time_delay_idx[ifo]
+                                        for ifo in opt.instruments}
 
             # Calculate the coincident and coherent snr
             # Check we have data before we try to compute the coherent snr
             if len(coinc_idx) != 0 and nifo > 1:
                 #Find coinc snr at trigger times and apply coinc snr threshold
-                rho_coinc, coinc_idx, coinc_triggers =\
-                    coincident_snr(snr, coinc_idx, opt.coinc_threshold)
+                rho_coinc, coinc_idx, coinc_triggers = \
+                    coincident_snr(snr, coinc_idx, opt.coinc_threshold, time_delay_idx)
                 logging.info("%s points above coincident SNR threshold" % \
                              str(len(coinc_idx)))
                 if len(coinc_idx) != 0:
@@ -590,8 +592,9 @@ with ctx:
                                 % str(max(rho_coinc)))
             # If there is only one ifo, then coinc_triggers is just the
             # triggers from ifo
-            elif len(coinc_idx) != 0 and nifo==1:
-                coinc_triggers = {opt.instruments[0] : snr[opt.instruments[0]][coinc_idx]}
+            elif len(coinc_idx) != 0 and nifo == 1:
+                coinc_triggers = {opt.instruments[0]:
+                                      snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]]}
             else:
                 coinc_triggers = {}
                 logging.info("No triggers above coincident SNR threshold")
@@ -620,10 +623,11 @@ with ctx:
             # To do this it is useful to find the indexes of coinc triggers
             # in the detector frame.
             if len(coinc_idx) != 0:
-                coinc_idx_det_frame = {ifo : coinc_idx + time_delay_idx[ifo]
-                                      for ifo in opt.instruments}
-                coherent_ifo_triggers = {ifo : snr[ifo][coinc_idx]
-                                        for ifo in opt.instruments}
+                # coinc_idx_det_frame is redefined to account for the cuts to coinc_idx above
+                coinc_idx_det_frame = {ifo: coinc_idx + time_delay_idx[ifo]
+                                       for ifo in opt.instruments}
+                coherent_ifo_triggers = {ifo: snr[ifo][coinc_idx_det_frame[ifo]]
+                                         for ifo in opt.instruments}
 
                 # Calculate the power and autochi2 values for the coinc indexes
                 # (this uses the snr timeseries before the time delay, so we
@@ -636,7 +640,7 @@ with ctx:
                         coherent_ifo_triggers[ifo] / norm_dict[ifo],
                         norm_dict[ifo],
                         stilde[ifo].psd,
-                        coinc_idx + stilde[ifo].analyze.start,
+                        coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start,
                         template)
 
                 # Calculate network chisq value
@@ -654,7 +658,7 @@ with ctx:
                                                         network_chisq_dict)
                 else:
                     reweighted_snr = pycbc_reweight_snr(
-                        abs(snr[opt.instruments[0]][coinc_idx]), network_chisq_dict)
+                        abs(snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]]), network_chisq_dict)
 
                 # Need all out vals to be the same length. This means the
                 # entries that are single values need to be repeated once
@@ -662,13 +666,13 @@ with ctx:
                 num_events = len(reweighted_snr)
 
                 for ifo in opt.instruments:
-                    ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] =\
+                    ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
                         bank_chisq.values(template, stilde[ifo].psd, stilde[ifo],
-                                         coherent_ifo_triggers[ifo] /
-                                         norm_dict[ifo], norm_dict[ifo],
-                                         coinc_idx+stilde[ifo].analyze.start)
+                                          coherent_ifo_triggers[ifo] /
+                                          norm_dict[ifo], norm_dict[ifo],
+                                          coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start)
                     ifo_out_vals['cont_chisq'] = autochisq.values(
-                        snr[ifo], coinc_idx+stilde[ifo].analyze.start,
+                        snr[ifo] / norm_dict[ifo], coinc_idx_det_frame[ifo],
                         template, stilde[ifo].psd, norm_dict[ifo],
                         stilde=stilde[ifo], low_frequency_cutoff=flow)
                     ifo_out_vals['chisq'] = chisq[ifo]
@@ -687,7 +691,7 @@ with ctx:
                     network_out_vals['coherent_snr'] = np.real(rho_coinc)
                 else:
                     network_out_vals['coherent_snr'] = \
-                        abs(snr[opt.instruments[0]][coinc_idx])
+                        abs(snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]])
                 network_out_vals['reweighted_snr'] = reweighted_snr
                 network_out_vals['time_index'] = \
                     coinc_idx+stilde[ifo].cumulative_index
