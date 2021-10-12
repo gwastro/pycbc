@@ -136,7 +136,7 @@ class Executable(ProfileShortcuts):
             container=self.container
         )
         transform.pycbc_name = self.pegasus_name
-        for (namespace,key), value in self.profiles.items():
+        for (namespace, key), value in self.profiles.items():
             transform.add_profiles(
                 dax.Namespace(namespace),
                 key=key,
@@ -149,7 +149,7 @@ class Executable(ProfileShortcuts):
         """
         if self.transformations:
             raise ValueError("Need code changes to be able to add profiles after transformations are created.")
-        self.profiles[(namespace,key)] = value
+        self.profiles[(namespace, key)] = value
 
     def is_same_as(self, other):
         test_vals = ['namespace', 'version', 'arch', 'os', 'osrelease',
@@ -263,11 +263,6 @@ class Node(ProfileShortcuts):
             self._options += [opt, value]
         else:
             self._options += [opt]
-
-    def add_input(self, inp):
-        """Declares an input file without adding it as a command-line option.
-        """
-        self._add_input(inp)
 
     #private functions to add input and output data sources/sinks
     def _add_input(self, inp):
@@ -435,12 +430,12 @@ class Workflow(object):
 
         self._adag.add_jobs(workflow._asdag)
 
-        #for inp in workflow._external_workflow_inputs:
-            # FIXME: This won't work is inp.node is not in the same workflow as
-            # workflow._asdag. In pegasus5 I think this isn't the right way of
-            # handling this anyway. We need to declare such files as inputs and
-            # outputs of the various jobs, and not add explicit dependencies.
-            #self._adag.add_dependency(inp.node, children=[workflow._asdag])
+        # for inp in workflow._external_workflow_inputs:
+        #     FIXME: This won't work is inp.node is not in the same workflow as
+        #     workflow._asdag. In pegasus5 I think this isn't the right way of
+        #     handling this anyway. We need to declare such files as inputs and
+        #     outputs of the various jobs, and not add explicit dependencies.
+        #     self._adag.add_dependency(inp.node, children=[workflow._asdag])
 
         return self
 
@@ -499,7 +494,7 @@ class Workflow(object):
         node.in_workflow = self
 
         # Record the executable that this node uses
-        if not node.transformation in self._transformations:
+        if node.transformation not in self._transformations:
             for tform in self._transformations:
                 # Check if transform is already in workflow
                 if node.transformation.is_same_as(tform):
@@ -510,7 +505,7 @@ class Workflow(object):
             else:
                 #node.executable.in_workflow = True
                 tform_site = list(node.transformation.sites.keys())[0]
-                if not tform_site in self._sc.sites:
+                if tform_site not in self._sc.sites:
                     # This block should never be accessed in the way things
                     # are set up. However, it might be possible to hit this if
                     # certain overrides are allowed.
@@ -545,14 +540,14 @@ class Workflow(object):
                 # Don't need to do anything here.
                 continue
 
-            elif inp.node is not None and not inp.node.in_workflow:
+            if inp.node is not None and not inp.node.in_workflow:
                 # This error should be rare, but can happen. If a Node hasn't
                 # yet been added to a workflow, this logic breaks. Always add
                 # nodes in order that files will be produced.
                 raise ValueError('Parents of this node must be added to the '
                                  'workflow first.')
 
-            elif inp.node is None or inp.node.in_workflow != self:
+            if inp.node is None or inp.node.in_workflow != self:
                 # File is external to the workflow (e.g. a pregenerated
                 # template bank). (if inp.node is None)
                 # OR
@@ -663,14 +658,14 @@ class File(dax.File):
         """
         Associate a PFN with this file. Takes a URL and associated site.
         """
-        self.input_pfns.append((url,site))
+        self.input_pfns.append((url, site))
 
     def has_pfn(self, url, site='local'):
         """
         Check if the url, site is already associated to this File. If site is
         not provided, we will assume it is 'local'.
         """
-        return (url,site) in self.input_pfns
+        return (url, site) in self.input_pfns
 
     def insert_into_dax(self, rep_cat):
         for (url, site) in self.input_pfns:

@@ -461,7 +461,6 @@ class JobSegmenter(object):
                                               upper_boundary])
         return job_valid_seg
 
-
     def get_data_times_for_job(self, num_job):
         """ Get the data that this job will read in. """
         # small factor of 0.0001 to avoid float round offs causing us to

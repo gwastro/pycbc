@@ -180,6 +180,6 @@ def create_versioning_page(path, cp):
     logging.info("Entering versioning module")
     if not os.path.exists(path):
         os.mkdir(path)
-    #write_library_information(path)
-    #write_code_versions(path, cp)
+    write_library_information(path)
+    write_code_versions(path, cp)
     logging.info("Leaving versioning module")

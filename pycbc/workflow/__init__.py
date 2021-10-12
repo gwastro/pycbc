@@ -29,23 +29,20 @@ interferometer data
 import os.path
 
 from pycbc.workflow.configuration import *
-try:
-    from pycbc.workflow.core import *
-    from pycbc.workflow.grb_utils import *
-    from pycbc.workflow.jobsetup import *
-    from pycbc.workflow.psd import *
-    from pycbc.workflow.matched_filter import *
-    from pycbc.workflow.datafind import *
-    from pycbc.workflow.segment import *
-    from pycbc.workflow.tmpltbank import *
-    from pycbc.workflow.psdfiles import *
-    from pycbc.workflow.splittable import *
-    from pycbc.workflow.coincidence import *
-    from pycbc.workflow.injection import *
-    from pycbc.workflow.plotting import *
-    from pycbc.workflow.minifollowups import *
-except ImportError:
-    raise
+from pycbc.workflow.core import *
+from pycbc.workflow.grb_utils import *
+from pycbc.workflow.jobsetup import *
+from pycbc.workflow.psd import *
+from pycbc.workflow.matched_filter import *
+from pycbc.workflow.datafind import *
+from pycbc.workflow.segment import *
+from pycbc.workflow.tmpltbank import *
+from pycbc.workflow.psdfiles import *
+from pycbc.workflow.splittable import *
+from pycbc.workflow.coincidence import *
+from pycbc.workflow.injection import *
+from pycbc.workflow.plotting import *
+from pycbc.workflow.minifollowups import *
 
 # Set the configuration file base directory
 INI_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'ini_files')

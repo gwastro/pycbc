@@ -207,7 +207,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
 
     # FIXME: This should not have been added in this way (pegasus does not know
     #        it's a file). Do we still want it?
-    #wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
+    # wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
 
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
@@ -217,7 +217,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     node.add_opt('--instrument', curr_ifo)
-    #node.add_opt('--wiki-file', wikifile)
+    # node.add_opt('--wiki-file', wikifile)
     if veto_file is not None:
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
