@@ -38,10 +38,10 @@ parse_args_cpu_only("MKL threaded backend")
 
 # See if we can get set the FFTW backend to 'openmp'; if not, say so and exit.
 if 'arm64' in platform.machine():
-    print("MKL not supported on arm64")
+    print("MKL not supported on arm64, skipping")
     pass
 elif not 'mkl' in pycbc.fft.get_backend_names():
-    print("MKL does not seem to be available; skipping MKL tests")
+    print("MKL does not seem to be available; why isn't it installed?")
     _exit(0)
 else:
     # Now set the number of threads to something nontrivial
