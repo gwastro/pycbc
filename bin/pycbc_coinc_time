@@ -1,7 +1,11 @@
 #!/bin/env python
 import argparse, logging, pycbc.version, ligo.segments, numpy
 from dqsegdb.apicalls import dqsegdbQueryTimes as query
-from pycbc.workflow.segment import cat_to_veto_def_cat as convert_cat
+#from pycbc.workflow.segment import cat_to_veto_def_cat as convert_cat
+
+print("WARNING: this code has not been updated to the current PyCBC segment "
+      "reading code. It is going to fail if you try and use it. If you need "
+      "this please update it, otherwise it will be removed.")
 
 def sane(seg_list):
     """ Convert list of len two lists containing strs to segment list """
