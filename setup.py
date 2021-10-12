@@ -54,6 +54,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'ligo-segments',
                       'tqdm',
                       'gwdatafind',
+                      'pegasus-wms >= 5.0.1'
                       ]
 
 def find_files(dirname, relpath=None):
