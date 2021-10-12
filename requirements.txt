@@ -29,7 +29,7 @@ epsie>=0.6
 
 # For LDG service access
 dqsegdb2>=1.0.1
-https://github.com/ahnitz/pegasus-wms-python3/archive/master.tar.gz
+pegasus-wms >= 5.0.1
 amqplib
 htchirp >= 2.0
 # use dqsegdb fork till next dqsegdb release
