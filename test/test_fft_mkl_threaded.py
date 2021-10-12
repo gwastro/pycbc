@@ -39,21 +39,20 @@ parse_args_cpu_only("MKL threaded backend")
 
 if not 'mkl' in pycbc.fft.get_backend_names():
     print("MKL does not seem to be available; skipping MKL tests")
-    _exit(0)
+else:
+    # Now set the number of threads to something nontrivial
 
-# Now set the number of threads to something nontrivial
+    # Most of the work is now done in fft_base.
 
-# Most of the work is now done in fft_base.
-
-FFTTestClasses = []
-for num_threads in [2,4,6,8]:
-    kdict = {'backends' : ['mkl'],
-             'scheme' : 'cpu',
-             'context' : CPUScheme(num_threads=num_threads)}
-    klass = type('FFTW_OpenMP_test',
-                 (_BaseTestFFTClass,),kdict)
-    klass.__test__ = True
-    FFTTestClasses.append(klass)
+    FFTTestClasses = []
+    for num_threads in [2,4,6,8]:
+        kdict = {'backends' : ['mkl'],
+                 'scheme' : 'cpu',
+                 'context' : CPUScheme(num_threads=num_threads)}
+        klass = type('FFTW_OpenMP_test',
+                     (_BaseTestFFTClass,),kdict)
+        klass.__test__ = True
+        FFTTestClasses.append(klass)
 
 
 # Finally, we create suites and run them
