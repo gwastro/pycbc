@@ -26,7 +26,7 @@ import re
 import os
 from argparse import ArgumentParser
 from ligo import segments
-from glue import markup
+from MarkupPy import markup
 
 def initialize_page(title, style, script, header=None):
     """
