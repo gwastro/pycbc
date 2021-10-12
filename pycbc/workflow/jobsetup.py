@@ -28,7 +28,6 @@ and add jobs/nodes to a pycbc workflow. For details about pycbc.workflow see:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 
-import logging
 import math, os
 import lal
 from ligo import segments

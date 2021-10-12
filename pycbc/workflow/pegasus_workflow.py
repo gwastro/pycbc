@@ -194,10 +194,10 @@ class Transformation(dax.Transformation):
                 return False
         # Some properties are stored in the TransformationSite
         self_site = list(self.sites.values())
-        assert(len(self_site) == 1)
+        assert len(self_site) == 1
         self_site = self_site[0]
         other_site = list(other.sites.values())
-        assert(len(other_site) == 1)
+        assert len(other_site) == 1
         other_site = other_site[0]
         for val in test_site_vals:
             sattr = getattr(self_site, val)
@@ -281,7 +281,7 @@ class Node(ProfileShortcuts):
         """
         self._outputs += [out]
         out.node = self
-        stage_out = out.storage_path is not None 
+        stage_out = out.storage_path is not None
         self._dax_node.add_outputs(out, stage_out=stage_out)
 
     # public functions to add options, arguments with or without data sources
@@ -526,7 +526,9 @@ class Workflow(object):
                         self._staging_site[tform_site] = 'local'
 
                 self._transformations += [node.transformation]
-                if hasattr(node, 'executable') and node.executable.container is not None and node.executable.container not in self._containers:
+                if hasattr(node, 'executable') \
+                        and node.executable.container is not None \
+                        and node.executable.container not in self._containers:
                     self._containers.append(node.executable.container)
 
         # Add the node itself
@@ -535,7 +537,7 @@ class Workflow(object):
         # Determine the parent child relationships based on the inputs that
         # this node requires.
         # In Pegasus5 this is mostly handled by pegasus, we just need to
-        # connect files correctly if dealing with file management between 
+        # connect files correctly if dealing with file management between
         # workflows/subworkflows
         for inp in node._inputs:
             if inp.node is not None and inp.node.in_workflow == self:
@@ -551,7 +553,7 @@ class Workflow(object):
                                  'workflow first.')
 
             elif inp.node is None or inp.node.in_workflow != self:
-                # File is external to the workflow (e.g. a pregenerated 
+                # File is external to the workflow (e.g. a pregenerated
                 # template bank). (if inp.node is None)
                 # OR
                 # File is generated in a different Workflow/Subworkflow that is
@@ -577,7 +579,7 @@ class Workflow(object):
              site_catalog_path=None):
         """ Write this workflow to DAX file
         """
-        if filename is None: 
+        if filename is None:
             filename = self.filename
         if transformation_catalog_path is None:
             transformation_catalog_path = self.transformation_catalog
@@ -664,14 +666,14 @@ class File(dax.File):
         self.input_pfns.append((url,site))
 
     def has_pfn(self, url, site='local'):
-        """ 
+        """
         Check if the url, site is already associated to this File. If site is
         not provided, we will assume it is 'local'.
         """
         return (url,site) in self.input_pfns
 
     def insert_into_dax(self, rep_cat):
-        for (url, site) in self.input_pfns: 
+        for (url, site) in self.input_pfns:
             rep_cat.add_replica(site, self, url)
 
     @classmethod
