@@ -109,8 +109,6 @@ for idx, row in enumerate(res):
     outstr = ""
     if row['bank'] not in btables:
         bank_path = row['bank']
-        print (row)
-        print (bank_path, row['bank'], "NOTHING?")
         temp_bank = TemplateBank(bank_path)
         btables[row['bank']] = temp_bank.table
 
