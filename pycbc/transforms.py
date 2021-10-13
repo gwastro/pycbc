@@ -26,7 +26,7 @@ from pycbc.io import record
 from pycbc.waveform import parameters
 from pycbc.boundaries import Bounds
 from pycbc import VARARGS_DELIM
-from pycbc.waveform.waveform_modes import jframe_to_l0frame
+from pycbc.pnutils import jframe_to_l0frame
 
 
 class BaseTransform(object):
