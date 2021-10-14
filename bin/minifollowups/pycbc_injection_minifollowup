@@ -23,23 +23,12 @@ from pycbc.events import select_segments_by_definer, coinc
 from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
+from pycbc.workflow.core import resolve_url_to_file
 import pycbc.version, pycbc.pnutils
 from pycbc.io.hdf import SingleDetTriggers
 
-
-def to_file(path, ifo=None):
-    fil = wdax.File(os.path.basename(path))
-    fil.ifo = ifo
-    path = os.path.abspath(path)
-    fil.PFN(path, 'local')
-    return fil
-
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
 parser.add_argument('--injection-file',
@@ -64,34 +53,39 @@ parser.add_argument('--ifar-threshold', type=float, default=None,
 parser.add_argument('--maximum-decisive-snr', type=float, default=None,
                     help="If given, only followup injections where the "
                          "decisive SNR is smaller than this value.")
-parser.add_argument('--output-map')
-parser.add_argument('--output-file')
-parser.add_argument('--transformation-catalog')
-parser.add_argument('--tags', nargs='+', default=[])
+parser.add_argument('--main-workflow-directory', default=None, required=False,
+                    help='Supply the location that the main workflow was '
+                         'generated in. Only needed if running this job '
+                         'within a workflow, and then identifies where the '
+                         'local-site-scratch is')
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
-workflow = wf.Workflow(args, args.workflow_name)
+workflow = wf.Workflow(args, args.workflow_name,
+                       directory=args.main_workflow_directory)
 
 wf.makedir(args.output_dir)
 
 # create a FileList that will contain all output files
 layouts = []
 
-tmpltbank_file = to_file(args.bank_file)
-injection_file = to_file(args.injection_file)
-injection_xml_file = to_file(args.injection_xml_file)
-insp_segs = to_file(args.inspiral_segments)
+tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
+injection_file = resolve_url_to_file(os.path.abspath(args.injection_file))
+injection_xml_file = resolve_url_to_file(os.path.abspath(args.injection_xml_file))
+insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 
 single_triggers = []
 insp_data_seglists = {}
 insp_analysed_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
-    single_triggers.append(to_file(fname, ifo=ifo))
+    strig_file = resolve_url_to_file(os.path.abspath(fname),
+                                     attrs={'ifos': ifo})
+    single_triggers.append(strig_file)
     insp_data_seglists[ifo] = select_segments_by_definer\
         (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
          ifo=ifo)
@@ -293,6 +287,5 @@ for num_event in range(num_events):
     layouts += list(layout.grouper(files, 2))
     num_event += 1
 
-workflow.save(filename=args.output_file, output_map_path=args.output_map,
-              transformation_catalog_path=args.transformation_catalog)
+workflow.save(filename=args.dax_file, output_map_path=args.output_map)
 layout.two_column_layout(args.output_dir, layouts)

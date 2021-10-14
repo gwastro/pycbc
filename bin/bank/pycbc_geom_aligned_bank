@@ -28,11 +28,11 @@ import os
 import copy
 import argparse
 import tempfile
-from six.moves import configparser as ConfigParser
 import numpy
 import logging
 import distutils.spawn
 import h5py
+import configparser
 from scipy import spatial
 from glue.ligolw import ligolw
 from glue.ligolw import table
@@ -47,6 +47,7 @@ import pycbc.version
 import pycbc.tmpltbank
 import pycbc.workflow as wf
 import pycbc.workflow.pegasus_workflow as pwf
+from pycbc.workflow import WorkflowConfigParser
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -192,19 +193,11 @@ parser.add_argument("--print-chi-points", action="store", default=None,
                     "using pycbc_tmpltbank_to_chi_params. This will be "
                     "written to FILENAME. If this argument is not given, no "
                     "chi points file will be written.")
-parser.add_argument("--workflow-name", type=str, default='bank_gen',
-                    help="Name to use for the produced .dax file.")
-parser.add_argument("--dax-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the dax filename.")
-parser.add_argument("--map-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the output map filename. "
-                         "WARNING: Giving this if not running as a "
-                         "sub-workflow will cause pycbc_submit_dax to not "
-                         "work.")
-parser.add_argument("--transformation-catalog-filename", type=str, default=None,
-                    help="See workflow/core.py")
+parser.add_argument('--main-workflow-directory', default=None, required=False,
+                    help='Supply the location that the main workflow was '
+                         'generated in. Only needed if running this job '
+                         'within a workflow, and then identifies where the '
+                         'local-site-scratch is')
 parser.add_argument("--intermediate-data-file", type=str, required=True,
                     help="The HDF file to be used to store data to pass down "
                     "to the various worker jobs.")
@@ -218,6 +211,10 @@ parser.add_argument("--is-sub-workflow", default=False, action="store_true",
 parser.add_argument("--storage-path-base", default=None,
                     help="If running this code as a sub-workflow then this "
                     "path is pretended to all storage directories.")
+parser.add_argument("--supplement-config-file", action="append",
+                    help="This can be used to add additional options to those "
+                    "that this code will supply. If there are conflicts the "
+                    "code will fail. Can be supplied multiple times.")
 
 pycbc.tmpltbank.insert_base_bank_options(parser)
 
@@ -235,6 +232,9 @@ data_opts = pycbc.strain.insert_strain_option_group(parser)
 
 # Add the ethinca calculation options - applied in the combiner
 ethinca_opts = pycbc.tmpltbank.insert_ethinca_metric_options(parser)
+
+# Workflow options
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 
 opts = parser.parse_args()
 # Going to need this for setting up the dag later
@@ -448,26 +448,43 @@ h5file.close()
 
 # And begin dag generation
 # First: Set up the config parser.
-cp = ConfigParser.ConfigParser()
+# FIXME: We really should just let *all* of this be provided in the input
+#        config file. The issue is in ensuring consistency with options above.
+#        Maybe this becomes a Workflow->SubWorkflow set-up?
+#        With other bank generators being used a lot now, this is perhaps not
+#        so high priority.
+cp = WorkflowConfigParser(configFiles=opts.supplement_config_file)
 # Workflow first:
-cp.add_section('workflow')
+try:
+    cp.add_section('workflow')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('workflow', 'file-retention-level', 'all_files')
 cp.set('workflow', 'start-time', '900000000')
 cp.set('workflow', 'end-time', '900010000')
-cp.add_section('workflow-ifos')
+try:
+    cp.add_section('workflow-ifos')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('workflow-ifos', 'h1', '')
 cp.set('workflow-ifos', 'l1', '')
 cp.set('workflow-ifos', 'v1', '')
 
 # Then executables
-cp.add_section('executables')
+try:
+    cp.add_section('executables')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('executables', 'aligned2dstack', '${which:pycbc_geom_aligned_2dstack}')
 cp.set('executables', 'alignedbankcat', '${which:pycbc_aligned_bank_cat}')
 cp.set('executables', 'dumptochis', '${which:pycbc_tmpltbank_to_chi_params}')
 cp.set('executables', 'bankverify', '${which:pycbc_bank_verification}')
 
 # Shared option groups
-cp.add_section('sharedoptions')
+try:
+    cp.add_section('sharedoptions')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('sharedoptions', 'massranges', 'aligned2dstack,dumptochis,bankverify')
 cp.set('sharedoptions', 'metric', 'alignedbankcat,dumptochis,bankverify')
 cp.set('sharedoptions', 'psd', 'alignedbankcat,dumptochis,bankverify')
@@ -501,25 +518,37 @@ if opts.threed_lattice:
     cp.set('aligned2dstack', 'threed-lattice', '')
 if opts.random_seed:
     cp.set('aligned2dstack', 'random-seed', str(opts.random_seed))
-cp.add_section('pegasus_profile-aligned2dstack')
+try:
+    cp.add_section('pegasus_profile-aligned2dstack')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('pegasus_profile-aligned2dstack', 'condor|request_memory', '3000')
 
 # alignedcat
 cp.add_section('alignedbankcat')
 if opts.f_low_column is not None:
     cp.set('alignedbankcat', 'f-low-column', opts.f_low_column)
-cp.add_section('pegasus_profile-alignedbankcat')
+try:
+    cp.add_section('pegasus_profile-alignedbankcat')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('pegasus_profile-alignedbankcat', 'condor|request_memory', '3000')
 
 # dumptochis
 cp.add_section('dumptochis')
-cp.add_section('pegasus_profile-dumptochis')
+try:
+    cp.add_section('pegasus_profile-dumptochis')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('pegasus_profile-dumptochis', 'condor|request_memory', '3000')
 
 # bank verification
 cp.add_section('bankverify')
 cp.set('bankverify', 'bin-spacing', str(1 - opts.min_match))
-cp.add_section('pegasus_profile-bankverify')
+try:
+    cp.add_section('pegasus_profile-bankverify')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('pegasus_profile-bankverify', 'condor|request_memory', '3000')
 
 temp_fp = open('temp.ini', 'w')
@@ -531,7 +560,8 @@ opts.config_overrides = []
 opts.config_delete = []
 
 # Now setup the workflow
-workflow = wf.Workflow(opts, opts.workflow_name)
+workflow = wf.Workflow(opts, opts.workflow_name,
+                       directory=opts.main_workflow_directory)
 
 # Start with 2dstack jobs
 if opts.storage_path_base:
@@ -597,8 +627,7 @@ bankverify_exe = BankVerification(workflow.cp, 'bankverify',
 bankverify_node = bankverify_exe.create_node(out_bank, workflow.analysis_time)
 workflow += bankverify_node
 
-workflow.save(filename=opts.dax_filename, output_map_path=opts.map_filename,
-              transformation_catalog_path=opts.transformation_catalog_filename)
+workflow.save(filename=opts.dax_file, output_map_path=opts.output_map)
 
 logging.info("GENERATION SUCCESSFUL.")
 logging.info("Submit the resulting dax file to generate your template bank.")

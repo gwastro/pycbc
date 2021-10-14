@@ -31,7 +31,6 @@ from ligo import segments
 
 import pycbc.version
 import pycbc.workflow as wf
-import pycbc.workflow.pegasus_workflow as pwf
 from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.workflow import LalappsInspinjExecutable, PycbcDarkVsBrightInjectionsExecutable
 from pycbc.workflow import setup_splittable_dax_generated
@@ -48,8 +47,6 @@ class BanksimExecutable(wf.Executable):
     """
     # This can be altered if you don't always want to store output files
     current_retention_level = wf.Executable.ALL_TRIGGERS
-
-    file_input_options = ['--psd-file', '--asd-file']
 
     def create_node(self, analysis_time, inj_file, bank_file, extra_tags=None):
         if extra_tags is None:
@@ -82,7 +79,8 @@ class BanksimMatchCombineExecutable(wf.Executable):
     # This can be altered if you don't always want to store output files
     current_retention_level = wf.Executable.FINAL_RESULT
 
-    file_input_options = ['--filter-func-file']
+    file_input_options = wf.Executable.file_input_options + \
+        ['--filter-func-file']
 
     def create_node(self, analysis_time, match_files, inj_files, bank_files,
                     extra_tags=None):
@@ -154,15 +152,15 @@ class BanksimTablePointInjsExecutable(wf.Executable):
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("--workflow-name", type=str, default='bank_verifier',
-                    help="Descriptive name of the analysis.")
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
+# FIXME: opts.tags is currently unused here.
+
 # Create the workflow object
-workflow = wf.Workflow(args, args.workflow_name)
+workflow = wf.Workflow(args, args.workflow_name, directory=args.output_dir)
+
 
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
@@ -176,7 +174,7 @@ wf.makedir(rdir['workflow'])
 
 # Input bank file
 inp_bank = workflow.cp.get('workflow', 'input-bank')
-inp_bank = wf.File.from_path(inp_bank)
+inp_bank = wf.resolve_url_to_file(inp_bank)
 inp_bank.tags = []
 inp_bank.description='TEMPLATEBANK'
 inp_bank.ifo_list=(['H1','L1','V1'])

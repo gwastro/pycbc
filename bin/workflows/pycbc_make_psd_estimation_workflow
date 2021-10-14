@@ -29,6 +29,7 @@ from ligo import segments as _segments
 import datetime
 import lal, sys
 from pycbc.results import save_fig_with_metadata, two_column_layout
+import pycbc.workflow
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -36,11 +37,11 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--workflow-name', required=True)
-parser.add_argument("-d", "--output-dir", required=True,
-                    help="Path to output directory.")
 pycbc.workflow.add_workflow_command_line_group(parser)
+pycbc.workflow.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+# FIXME: opts.tags is currently unused here.
 
 container = pycbc.workflow.Workflow(args, args.workflow_name)
 workflow = pycbc.workflow.Workflow(args, args.workflow_name + '-main')
@@ -192,9 +193,7 @@ pycbc.workflow.make_results_web_page(finalize_workflow,
 container += workflow
 container += finalize_workflow
 
-import Pegasus.DAX3 as dax
-dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
-container._adag.addDependency(dep)
+container.add_subworkflow_dependancy(workflow, finalize_workflow)
 
 container.save()
 

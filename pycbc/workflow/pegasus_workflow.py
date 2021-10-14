@@ -29,8 +29,7 @@ provides additional abstraction and argument handling.
 import os
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
-from Pegasus.catalogs.transformation_catalog import TransformationCatalog
-import Pegasus.DAX3 as dax
+import Pegasus.api as dax
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -65,87 +64,108 @@ class ProfileShortcuts(object):
     def set_num_retries(self, number):
         self.add_profile("dagman", "retry", number)
 
+    def set_execution_site(self, site):
+        self.add_profile("selector", "execution_site", site)
+
+
 class Executable(ProfileShortcuts):
     """ The workflow representation of an Executable
     """
     id = 0
-    def __init__(self, name, namespace=None, os='linux',
-                       arch='x86_64', installed=True, version=None,
-                       container=None):
+    def __init__(self, name, os='linux',
+                 arch='x86_64', installed=False,
+                 container=None):
         self.logical_name = name + "_ID%s" % str(Executable.id)
+        self.pegasus_name = name
         Executable.id += 1
-        self.namespace = namespace
-        self.version = version
-        if container:
-            self._dax_executable = dax.Executable(self.logical_name,
-                   namespace=self.namespace, version=version, os=os,
-                   arch=arch, installed=installed, container=container)
-        else:
-            self._dax_executable = dax.Executable(self.logical_name,
-                   namespace=self.namespace, version=version, os=os,
-                   arch=arch, installed=installed)
+        self.os = dax.OS(os)
+        self.arch = dax.Arch(arch)
+        self.installed = installed
+        self.container = container
         self.in_workflow = False
-        self.pfns = {}
+        self.profiles = {}
+        self.transformations = {}
 
-    def clear_pfns(self):
-        self._dax_executable.clearPFNs()
+    def create_transformation(self, site, url):
+        transform = Transformation(
+            self.logical_name,
+            site=site,
+            pfn=url,
+            is_stageable=self.installed,
+            arch=self.arch,
+            os_type=self.os,
+            container=self.container
+        )
+        transform.pycbc_name = self.pegasus_name
+        for (namespace, key), value in self.profiles.items():
+            transform.add_profiles(
+                dax.Namespace(namespace),
+                key=key,
+                value=value
+            )
+        self.transformations[site] = transform
 
-    def add_pfn(self, url, site='local'):
-        self._dax_executable.PFN(url, site)
-        self.pfns[site] = url
-
-    def get_pfn(self, site='local'):
-        return self.pfns[site]
-
-    def insert_into_dax(self, dax):
-        dax.addExecutable(self._dax_executable)
-
-    def add_profile(self, namespace, key, value, force=False):
+    def add_profile(self, namespace, key, value):
         """ Add profile information to this executable
         """
-        try:
-            entry = dax.Profile(namespace, key, value)
-            self._dax_executable.addProfile(entry)
-        except dax.DuplicateError:
-            if force:
-                # Replace with the new key
-                self._dax_executable.removeProfile(entry)
-                self._dax_executable.addProfile(entry)
+        if self.transformations:
+            err_msg = "Need code changes to be able to add profiles "
+            err_msg += "after transformations are created."
+            raise ValueError(err_msg)
+        self.profiles[(namespace, key)] = value
+
+
+class Transformation(dax.Transformation):
 
     def is_same_as(self, other):
-        test_vals = ['namespace', 'version', 'arch', 'os', 'osrelease',
-                     'osversion', 'glibc', 'installed', 'container']
+        test_vals = ['namespace', 'version']
+        test_site_vals = ['arch', 'os_type', 'os_release',
+                          'os_version', 'bypass', 'container']
         # Check for logical name first
-        if not self.pegasus_name == other.pegasus_name:
+        if not self.pycbc_name == other.pycbc_name:
             return False
 
         # Check the properties of the executable
         for val in test_vals:
-            sattr = getattr(self._dax_executable, val)
-            oattr = getattr(other._dax_executable, val)
+            sattr = getattr(self, val)
+            oattr = getattr(other, val)
             if not sattr == oattr:
                 return False
+        # Some properties are stored in the TransformationSite
+        self_site = list(self.sites.values())
+        assert len(self_site) == 1
+        self_site = self_site[0]
+        other_site = list(other.sites.values())
+        assert len(other_site) == 1
+        other_site = other_site[0]
+        for val in test_site_vals:
+            sattr = getattr(self_site, val)
+            oattr = getattr(other_site, val)
+            if not sattr == oattr:
+                return False
+
         # Also check the "profile". This is things like Universe, RAM/disk/CPU
         # requests, execution site, getenv=True, etc.
-        for profile in self._dax_executable.profiles:
-            if profile not in other._dax_executable.profiles:
+        for profile in self.profiles:
+            if profile not in other.profiles:
                 return False
-        for profile in other._dax_executable.profiles:
-            if profile not in self._dax_executable.profiles:
+        for profile in other.profiles:
+            if profile not in self.profiles:
                 return False
 
         return True
 
 
 class Node(ProfileShortcuts):
-    def __init__(self, executable):
+    def __init__(self, transformation):
         self.in_workflow = False
-        self.executable=executable
+        self.transformation=transformation
         self._inputs = []
         self._outputs = []
-        self._dax_node = dax.Job(name=executable.logical_name,
-                                 version = executable.version,
-                                 namespace=executable.namespace)
+        self._dax_node = dax.Job(transformation)
+        # NOTE: We are enforcing one site per transformation. Therefore the
+        #       transformation used indicates the site to be used.
+        self.set_execution_site(list(transformation.sites.keys())[0])
         self._args = []
         # Each value in _options is added separated with whitespace
         # so ['--option','value'] --> "--option value"
@@ -183,26 +203,32 @@ class Node(ProfileShortcuts):
         else:
             self._options += [opt]
 
-    def add_input(self, inp):
-        """Declares an input file without adding it as a command-line option.
-        """
-        self._add_input(inp)
-
     #private functions to add input and output data sources/sinks
     def _add_input(self, inp):
         """ Add as source of input data
         """
         self._inputs += [inp]
-        inp._set_as_input_of(self)
+        self._dax_node.add_inputs(inp)
 
     def _add_output(self, out):
         """ Add as destination of output data
         """
         self._outputs += [out]
         out.node = self
-        out._set_as_output_of(self)
+        stage_out = out.storage_path is not None
+        self._dax_node.add_outputs(out, stage_out=stage_out)
 
     # public functions to add options, arguments with or without data sources
+    def add_input(self, inp):
+        """Declares an input file without adding it as a command-line option.
+        """
+        self._add_input(inp)
+
+    def add_output(self, inp):
+        """Declares an output file without adding it as a command-line option.
+        """
+        self._add_output(inp)
+
     def add_input_opt(self, opt, inp):
         """ Add an option that determines an input
         """
@@ -258,59 +284,54 @@ class Node(ProfileShortcuts):
         return fil
 
     # functions to describe properties of this node
-    def add_profile(self, namespace, key, value, force=False):
+    def add_profile(self, namespace, key, value):
         """ Add profile information to this node at the DAX level
         """
-        try:
-            entry = dax.Profile(namespace, key, value)
-            self._dax_node.addProfile(entry)
-        except dax.DuplicateError:
-            if force:
-                # Replace with the new key
-                self._dax_node.removeProfile(entry)
-                self._dax_node.addProfile(entry)
+        self._dax_node.add_profiles(
+            dax.Namespace(namespace),
+            key=key,
+            value=value
+        )
 
     def _finalize(self):
-        args = self._args + self._options
-        self._dax_node.addArguments(*args)
         if len(self._raw_options):
-            raw_args = [' '] + self._raw_options
-            self._dax_node.addRawArguments(*raw_args)
+            raw_args = [''.join([str(a) for a in self._raw_options])]
+        else:
+            raw_args = []
+        args = self._args + raw_args + self._options
+        self._dax_node.add_args(*args)
+
 
 class Workflow(object):
     """
     """
-    def __init__(self, name='my_workflow'):
+    def __init__(self, name='my_workflow', is_subworkflow=False,
+                 directory=None):
         self.name = name
-        self._adag = dax.ADAG(name)
+        self._rc = dax.ReplicaCatalog()
+        self._tc = dax.TransformationCatalog()
+        self._sc = dax.SiteCatalog()
+
+        if directory is None:
+            self.out_dir = os.getcwd()
+        else:
+            self.out_dir = os.path.abspath(directory)
 
         self._inputs = []
         self._outputs = []
-        self._executables = []
+        self._transformations = []
+        self._containers = []
         self.in_workflow = False
         self.sub_workflows = []
-        self._external_workflow_inputs = []
         self.filename = self.name + '.dax'
-
-        self.as_job = dax.DAX(self.filename)
-
-    def _make_root_dependency(self, inp):
-        def root_path(v):
-            path = [v]
-            while v.in_workflow:
-                path += [v.in_workflow]
-                v = v.in_workflow
-            return path
-        workflow_root = root_path(self)
-        input_root = root_path(inp)
-        for step in workflow_root:
-            if step in input_root:
-                common = step
-                break
-        dep = dax.Dependency(
-            parent=input_root[input_root.index(common)-1].as_job,
-            child=workflow_root[workflow_root.index(common)-1].as_job)
-        common._adag.addDependency(dep)
+        self._adag = dax.Workflow(self.filename)
+        if is_subworkflow:
+            self._asdag = SubWorkflow(self.filename, is_planned=False,
+                                      _id=self.name)
+            self._swinputs = []
+        else:
+            self._asdag = None
+            self._swinputs = None
 
     def add_workflow(self, workflow):
         """ Add a sub-workflow to this workflow
@@ -326,23 +347,79 @@ class Workflow(object):
         workflow.in_workflow = self
         self.sub_workflows += [workflow]
 
-        node = workflow.as_job
-        self._adag.addJob(node)
-
-        node.file.PFN(os.path.join(os.getcwd(), node.file.name), site='local')
-        self._adag.addFile(node.file)
-
-        for inp in workflow._external_workflow_inputs:
-            workflow._make_root_dependency(inp.node)
+        self._adag.add_jobs(workflow._asdag)
 
         return self
 
+    def add_explicit_dependancy(self, parent, child):
+        """
+        Add an explicit dependancy between two Nodes in this workflow.
+
+        Most dependencies (in PyCBC and Pegasus thinking) are added by
+        declaring file linkages. However, there are some cases where you might
+        want to override that and add an explicit dependancy.
+
+        Parameters
+        ----------
+        parent : Node instance
+            The parent Node.
+        child : Node instance
+            The child Node
+        """
+        self._adag.add_dependency(parent._dax_node, children=[child._dax_node])
+
+
+    def add_subworkflow_dependancy(self, parent_workflow, child_workflow):
+        """
+        Add a dependency between two sub-workflows in this workflow
+
+        This is done if those subworkflows are themselves declared as Workflows
+        which are sub-workflows and not explicit SubWorkflows. (These Workflows
+        contain SubWorkflows inside them .... Yes, the relationship between
+        PyCBC and Pegasus becomes confusing here). If you are working with
+        explicit SubWorkflows these can be added normally using File relations.
+
+        Parameters
+        ----------
+        parent_workflow : Workflow instance
+            The sub-workflow to use as the parent dependence.
+            Must be a sub-workflow of this workflow.
+        child_workflow : Workflow instance
+            The sub-workflow to add as the child dependence.
+            Must be a sub-workflow of this workflow.
+        """
+        self._adag.add_dependency(parent_workflow._asdag,
+                                  children=[child_workflow._asdag])
+
+    def add_transformation(self, tranformation):
+        """ Add a transformation to this workflow
+
+        Adds the input transformation to this workflow.
+
+        Parameters
+        ----------
+        transformation : Pegasus.api.Transformation
+            The transformation to be added.
+        """
+        self._tc.add_transformations(tranformation)
+
+    def add_container(self, container):
+        """ Add a container to this workflow
+
+        Adds the input container to this workflow.
+
+        Parameters
+        ----------
+        container : Pegasus.api.Container
+            The container to be added.
+        """
+        self._tc.add_containers(container)
 
     def add_node(self, node):
         """ Add a node to this workflow
 
         This function adds nodes to the workflow. It also determines
-        parent/child relations from the DataStorage inputs to this job.
+        parent/child relations from the inputs to this job.
 
         Parameters
         ----------
@@ -353,43 +430,70 @@ class Workflow(object):
         node.in_workflow = self
 
         # Record the executable that this node uses
-        if not node.executable.in_workflow:
-            for exe in self._executables:
-                if node.executable.is_same_as(exe):
-                    node.executable.in_workflow = True
-                    node._dax_node.name = exe.logical_name
-                    node.executable.logical_name = exe.logical_name
+        if node.transformation not in self._transformations:
+            for tform in self._transformations:
+                # Check if transform is already in workflow
+                if node.transformation.is_same_as(tform):
+                    node.transformation.in_workflow = True
+                    node._dax_node.transformation = tform.name
+                    node.transformation.name = tform.name
                     break
             else:
-                node.executable.in_workflow = True
-                self._executables += [node.executable]
+                #node.executable.in_workflow = True
+                tform_site = list(node.transformation.sites.keys())[0]
+                if tform_site not in self._sc.sites:
+                    # This block should never be accessed in the way things
+                    # are set up. However, it might be possible to hit this if
+                    # certain overrides are allowed.
+                    raise ValueError("Do not know site {}".format(tform_site))
+
+                self._transformations += [node.transformation]
+                lgc = (hasattr(node, 'executable')
+                       and node.executable.container is not None
+                       and node.executable.container not in self._containers)
+                if lgc:
+                    self._containers.append(node.executable.container)
 
         # Add the node itself
-        self._adag.addJob(node._dax_node)
+        self._adag.add_jobs(node._dax_node)
 
         # Determine the parent child relationships based on the inputs that
         # this node requires.
-        added_nodes = []
+        # In Pegasus5 this is mostly handled by pegasus, we just need to
+        # connect files correctly if dealing with file management between
+        # workflows/subworkflows
         for inp in node._inputs:
             if inp.node is not None and inp.node.in_workflow == self:
-                if inp.node not in added_nodes:
-                    parent = inp.node._dax_node
-                    child = node._dax_node
-                    dep = dax.Dependency(parent=parent, child=child)
-                    self._adag.addDependency(dep)
-                    added_nodes.append(inp.node)
+                # Standard case: File produced within the same workflow.
+                # Don't need to do anything here.
+                continue
 
             elif inp.node is not None and not inp.node.in_workflow:
+                # This error should be rare, but can happen. If a Node hasn't
+                # yet been added to a workflow, this logic breaks. Always add
+                # nodes in order that files will be produced.
                 raise ValueError('Parents of this node must be added to the '
                                  'workflow first.')
 
-            elif inp.node is None and not inp.workflow_input:
-                self._inputs += [inp]
-                inp.workflow_input = True
+            elif inp.node is None:
+                # File is external to the workflow (e.g. a pregenerated
+                # template bank). (if inp.node is None)
+                if inp not in self._inputs:
+                    self._inputs += [inp]
 
-            elif inp.node is not None and inp.node.in_workflow != self and inp not in self._inputs:
-                self._inputs += [inp]
-                self._external_workflow_inputs += [inp]
+            elif inp.node.in_workflow != self:
+                # File is coming from a parent workflow, or other workflow
+                # These needs a few extra hooks later, use _swinputs for this.
+                if inp not in self._inputs:
+                    self._inputs += [inp]
+                    self._swinputs += [inp]
+
+            else:
+                err_msg = ("I don't understand how to deal with an input file "
+                           "here. Ian doesn't think this message should be "
+                           "possible, but if you get here something has gone "
+                           "wrong and will need debugging!")
+                raise ValueError(err_msg)
 
         # Record the outputs that this node generates
         self._outputs += node._outputs
@@ -405,7 +509,7 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, filename=None, tc=None):
+    def save(self, filename=None):
         """ Write this workflow to DAX file
         """
         if filename is None:
@@ -413,61 +517,90 @@ class Workflow(object):
 
         for sub in self.sub_workflows:
             sub.save()
+            # FIXME: If I'm now putting output_map here, all output_map stuff
+            #        should move here.
+            sub.output_map_file.insert_into_dax(self._rc, self._tc)
+            sub_workflow_file = File(sub.filename)
+            pfn = os.path.join(os.getcwd(), sub.filename)
+            sub_workflow_file.add_pfn(pfn, site='local')
+            sub_workflow_file.insert_into_dax(self._rc, self._tc)
 
-        # FIXME this is ugly as pegasus 4.9.0 does not support the full
-        # transformation catalog in the DAX. I have asked Karan to fix this so
-        # that executables and containers can be specified in the DAX itself.
-        # Karan says that XML is going away in Pegasus 5.x and so this code
-        # will need to be re-written anyway.
-        #
-        # the transformation catalog is written in the same directory as the
-        # DAX.  pycbc_submit_dax needs to know this so that the right
-        # transformation catalog is used when the DAX is planned.
-        if tc is None:
-            tc = '{}.tc.txt'.format(filename)
-        p = os.path.dirname(tc)
-        f = os.path.basename(tc)
-        if not p:
-            p = '.'
+        # add workflow input files pfns for local site to dax
+        for fil in self._inputs:
+            fil.insert_into_dax(self._rc, self._tc)
 
-        tc = TransformationCatalog(p, f)
+        if self._asdag is not None:
+            # Is a sub-workflow, add the _swinputs as needed.
+            self._asdag.add_inputs(*self._swinputs)
 
-        for e in self._adag.executables.copy():
-            tc.add(e)
-            try:
-                tc.add_container(e.container)
-            except:
-                pass
-            self._adag.removeExecutable(e)
+        self._adag.add_replica_catalog(self._rc)
+        # Add TC and SC into workflow
+        self._adag.add_transformation_catalog(self._tc)
+        self._adag.add_site_catalog(self._sc)
 
-        f = open(filename, "w")
-        self._adag.writeXML(f)
-        tc.write()
+        self._adag.write(filename)
 
 
-class DataStorage(object):
-    """ A workflow representation of a place to store and read data from.
+class SubWorkflow(dax.SubWorkflow):
+    """Workflow representation of a SubWorkflow.
 
-    The abstract representation of a place to store and read data from. This
-    can include files, database, or remote connections. This object is
-    used as a handle to pass between functions, and is used a way to logically
-    represent the order operation on the physical data.
+    This follows the Pegasus nomenclature where there are Workflows, Jobs and
+    SubWorkflows. Be careful though! A SubWorkflow is actually a Job, not a
+    Workflow. If creating a sub-workflow you would create a Workflow as normal
+    and write out the necessary dax files. Then you would create a SubWorkflow
+    object, which acts as the Job in the top-level workflow. Most of the
+    special linkages that are needed for sub-workflows are then handled at that
+    stage. We do add a little bit of functionality here.
     """
-    def __init__(self, name):
-        self.name = name
-        self.node = None
-        self.workflow_input = False
 
-    def _set_as_node_input(self):
-        pass
+    def add_into_workflow(self, container_wflow, parents=None):
+        """Add this Job into a container Workflow
+        """
+        if parents is None:
+            parents = []
+        else:
+            # Get Pegasus objects from PyCBC objects for parent Nodes
+            parents = [n._dax_node for n in parents]
+        container_wflow._adag.add_jobs(self)
+        container_wflow._adag.add_dependency(self, parents=parents)
 
-    def _set_as_node_output(self):
-        pass
+    def set_subworkflow_properties(self, output_map_file,
+                                   out_dir,
+                                   staging_site):
 
-    def _dax_repr(self):
-        return self.name
+        # FIXME: Pegasus added a add_planner_args for SubWorkflows. We should
+        #        use this, but it can only be called once, so we'd have to
+        #        store options at PyCBC level and then call this once when
+        #        saving the workflow.
+        self.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
+                      os.path.basename(output_map_file.name))
+        self.add_inputs(output_map_file)
 
-class File(DataStorage, dax.File):
+        # I think this is needed to deal with cases where the subworkflow file
+        # does not exist at submission time.
+        bname = os.path.splitext(os.path.basename(self.file))[0]
+        self.add_args('--basename {}'.format(bname))
+        self.add_args('--output-sites local')
+        self.add_args('--cleanup inplace')
+        self.add_args('--cluster label,horizontal')
+        self.add_args('-vvv')
+
+        # NOTE: The _reuse.cache file is produced during submit_dax and would
+        #       be sent to all sub-workflows. Currently we do not declare this
+        #       as a proper File, as this is a special case. While the use-case
+        #       is that this is always created during submit_dax then this is
+        #       the right thing to do. pegasus-plan must run on local site, and
+        #       this is guaranteed to be visible. However, we could consider
+        #       having this file created differently. Note that all other
+        #       inputs might be generated within the workflow, and then pegasus
+        #       data transfer is needed, so these must be File objects.
+        self.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
+
+        if staging_site:
+            self.add_args('--staging-site %s' % staging_site)
+
+
+class File(dax.File):
     """ The workflow representation of a physical file
 
     An object that represents a file from the perspective of setting up a
@@ -477,9 +610,16 @@ class File(DataStorage, dax.File):
     destination of this file.
     """
     def __init__(self, name):
-        DataStorage.__init__(self, name)
+        self.name = name
+        self.node = None
         dax.File.__init__(self, name)
+        # Storage_path is where the file would be *output* to
         self.storage_path = None
+        # Input_pfns is *input* locations of the file. This needs a site.
+        self.input_pfns = []
+        # Adding to a dax finalizes the File. Ensure that changes cannot be
+        # made after doing this.
+        self.added_to_dax = False
 
     def _dax_repr(self):
         return self
@@ -489,35 +629,41 @@ class File(DataStorage, dax.File):
         """Return the dax representation of a File."""
         return self._dax_repr()
 
-    def _set_as_input_of(self, node):
-        node._dax_node.uses(self, link=dax.Link.INPUT, register=False,
-                                                       transfer=True)
-    def _set_as_output_of(self, node):
-        if self.storage_path:
-            transfer_file = True
-        else:
-            transfer_file = False
-        node._dax_node.uses(self, link=dax.Link.OUTPUT, register=True,
-                                                        transfer=transfer_file)
     def output_map_str(self):
         if self.storage_path:
             return '%s %s pool="%s"' % (self.name, self.storage_path, 'local')
         else:
             raise ValueError('This file does not have a storage path')
 
-    def has_pfn(self, url, site=None):
-        """ Wrapper of the pegasus hasPFN function, that allows it to be called
-        outside of specific pegasus functions.
+    def add_pfn(self, url, site):
         """
-        curr_pfn = dax.PFN(url, site)
-        return self.hasPFN(curr_pfn)
+        Associate a PFN with this file. Takes a URL and associated site.
+        """
+        self.input_pfns.append((url, site))
 
-    def insert_into_dax(self, dax):
-        dax.addFile(self)
+    def has_pfn(self, url, site='local'):
+        """
+        Check if the url, site is already associated to this File. If site is
+        not provided, we will assume it is 'local'.
+        """
+        return (((url, site) in self.input_pfns)
+                or ((url, 'all') in self.input_pfns))
+
+    def insert_into_dax(self, rep_cat, site_cat):
+        for (url, site) in self.input_pfns:
+            if site == 'all':
+                for curr_site in site_cat.sites:
+                    rep_cat.add_replica(curr_site, self, url)
+            else:
+                rep_cat.add_replica(site, self, url)
 
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
+        logging.warn("The from_path method in pegasus_workflow is deprecated. "
+                     "Please use File.from_path (for output files) in core.py "
+                     "or resolve_url_to_file in core.py (for input files) "
+                     "instead.")
         urlparts = urlsplit(path)
         site = 'nonlocal'
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
@@ -526,9 +672,6 @@ class File(DataStorage, dax.File):
                 path = urljoin('file:', pathname2url(path)) 
                 site = 'local'
 
-        fil = File(os.path.basename(path))
-        fil.PFN(path, site)
+        fil = cls(os.path.basename(path))
+        fil.add_pfn(path, site=site)
         return fil
-
-class Database(DataStorage):
-    pass

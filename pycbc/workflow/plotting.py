@@ -250,7 +250,7 @@ def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
         file_url = urljoin('file:', pathname2url(vetodef_file))
         vdf_file = File(workflow.ifos, 'VETO_DEFINER',
                         workflow.analysis_time, file_url=file_url)
-        vdf_file.PFN(file_url, site='local')
+        vdf_file.add_pfn(file_url, site='local')
     else:
         vdf_file = vetodef_file
 
@@ -405,6 +405,7 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
     workflow += node
     return node.output_files[0]
 
+
 def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
     template_path = 'templates/orange.html'
 
@@ -416,11 +417,9 @@ def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
     node.add_opt('--template-file', template_path)
     workflow += node
     if explicit_dependencies is not None:
-        import Pegasus.DAX3 as dax
         for dep in explicit_dependencies:
-            dax_dep = dax.Dependency(parent=dep._dax_node,
-                                     child=node._dax_node)
-            workflow._adag.addDependency(dax_dep)
+            workflow.add_explicit_dependancy(dep, node)
+
 
 def make_single_hist(workflow, trig_file, veto_file, veto_name,
                      out_dir, bank_file=None, exclude=None,

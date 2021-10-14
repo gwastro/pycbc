@@ -22,21 +22,11 @@ from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
 from pycbc.io import get_all_subkeys
 import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
+from pycbc.workflow.core import resolve_url_to_file
 import pycbc.version
-
-def to_file(path, ifo=None):
-    fil = wdax.File(os.path.basename(path))
-    fil.ifo = ifo
-    path = os.path.abspath(path)
-    fil.PFN(path, 'local')
-    return fil
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
 parser.add_argument('--statmap-file',
@@ -64,32 +54,30 @@ parser.add_argument('--sort-order', default='descending',
                     choices=['ascending','descending'],
                     help='Which direction to use when sorting on '
                          '--sort-variable. Default=descending')
-parser.add_argument('--output-map', type=str, required=False,
-                    help='Supply the location of the pegasus output map file. '
-                         'Only needed if running this job within a workflow.')
-parser.add_argument('--output-file', type=str, required=True,
-                    help='Name of the output dax file to be generated.')
-parser.add_argument('--transformation-catalog', type=str, required=False,
-                    help='Supply the location of the pegasus executable '
-                         'transformation catalog file. '
-                         'Only needed if running this job within a workflow.')
-parser.add_argument('--tags', nargs='+', default=[])
+parser.add_argument('--main-workflow-directory', default=None, required=False,
+                    help='Supply the location that the main workflow was '
+                         'generated in. Only needed if running this job '
+                         'within a workflow, and then identifies where the '
+                         'local-site-scratch is')
+
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
-workflow = wf.Workflow(args, args.workflow_name)
+workflow = wf.Workflow(args, args.workflow_name,
+                       directory=args.main_workflow_directory)
 
 wf.makedir(args.output_dir)
 
 # create a FileList that will contain all output files
 layouts = []
 
-tmpltbank_file = to_file(args.bank_file)
-coinc_file = to_file(args.statmap_file)
-insp_segs = to_file(args.inspiral_segments)
+tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
+coinc_file = resolve_url_to_file(os.path.abspath(args.statmap_file))
+insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 
 single_triggers = []
 fsdt = {}
@@ -97,7 +85,9 @@ insp_data_seglists = {}
 insp_analysed_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
-    single_triggers.append(to_file(fname, ifo=ifo))
+    strig_file = resolve_url_to_file(os.path.abspath(fname),
+                                     attrs={'ifos': ifo})
+    single_triggers.append(strig_file)
     fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
     insp_data_seglists[ifo] = select_segments_by_definer(
         args.inspiral_segments,
@@ -123,14 +113,6 @@ if args.sort_variable not in f[file_val]:
     raise KeyError('Sort variable {0} not in {1}: sort choices in '
                    '{1} are {2}'.format(args.sort_variable, file_val,
                                         ', '.join(all_datasets)))
-
-if len(stat) == 0:
-    # There are no triggers, make no-op job and exit
-    noop_node = mini.create_noop_node()
-    workflow += noop_node
-    workflow.save(filename=args.output_file, output_map_path=args.output_map,
-                  transformation_catalog_path=args.transformation_catalog)
-    sys.exit(0)
 
 events_to_read = num_events * 100
 
@@ -265,6 +247,5 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
 
     layouts += list(layout.grouper(files, 2))
 
-workflow.save(filename=args.output_file, output_map_path=args.output_map,
-              transformation_catalog_path=args.transformation_catalog)
+workflow.save(filename=args.dax_file, output_map_path=args.output_map)
 layout.two_column_layout(args.output_dir, layouts)

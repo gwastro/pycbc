@@ -23,10 +23,8 @@ import argparse
 import h5py
 import logging
 import os
-import Pegasus.DAX3 as dax
 import pycbc
 import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
 import socket
 import sys
 import shlex
@@ -38,7 +36,6 @@ from pycbc.types import MultiDetOptionAction
 from pycbc.types import MultiDetOptionAppendAction
 from pycbc.workflow import configuration
 from pycbc.workflow import core
-from pycbc.workflow import pegasus_workflow
 from pycbc.workflow import datafind
 from pycbc.workflow import plotting
 from pycbc import __version__
@@ -218,10 +215,10 @@ for num_event, event in enumerate(events):
 
     # convert the samples files to workflow File types
     for ii, fname in enumerate(samples_filelist):
-        pfile = pegasus_workflow.File(fname)
-        pfile.PFN(fname, "local")
-        # set the storage path to be the same
-        pfile.storage_path = fname
+        # FIXME: This was using code that says "This is an input file" and
+        #        "This is an output file". I think it's an input and changed
+        #        it accordingly. Please delete this if correct.
+        pfile = core.resolve_url_to_file(fname)
         samples_filelist[ii] = pfile
     samples_filelist = core.FileList(samples_filelist)
 
@@ -265,12 +262,10 @@ container += workflow
 container += finalize_workflow
 
 # make finalize sub-workflow depend on main sub-workflow
-dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
-container._adag.addDependency(dep)
+container.add_subworkflow_dependancy(workflow, finalize_workflow)
 
 # write dax
-container.save(filename=dax_file, output_map_path=opts.output_map,
-               transformation_catalog_path=opts.transformation_catalog)
+container.save(filename=dax_file, output_map_path=opts.output_map)
 
 # save workflow configuration file
 base = rdir["workflow/configuration"]
