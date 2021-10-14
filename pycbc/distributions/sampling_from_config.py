@@ -79,8 +79,7 @@ def draw_samples_from_config(path, num=1, seed=150914):
     file.close()
 
     # Get the vairable arguments from the .ini file.
-    variable_args, _ = \
-        distributions.read_params_from_config(
+    variable_args, _ = distributions.read_params_from_config(
                             config_parser, prior_section='prior',
                             vargs_section='variable_params')
     constraints = distributions.read_constraints_from_config(config_parser)
