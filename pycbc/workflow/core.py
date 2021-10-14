@@ -50,7 +50,7 @@ from pycbc.io.ligolw import legacy_row_id_converter \
         as legacy_ligolw_row_id_converter
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
-from .pegasus_sites import add_site
+from .pegasus_sites import make_catalog, add_site
 
 
 @legacy_ligolw_row_id_converter
@@ -830,6 +830,11 @@ class Workflow(pegasus_workflow.Workflow):
                                    output_map_path=output_map_path,
                                    submit_now=self.args.submit_now,
                                    plan_now=self.args.plan_now)
+
+        # save the sites file
+        if not self.in_workflow:
+            catalog_path = os.path.join(self.out_dir, 'sites.yml')
+            make_catalog(cp, self.out_dir).write(catalog_path)
 
     def save_config(self, fname, output_dir, cp=None):
         """ Writes configuration file to disk and returns a pycbc.workflow.File

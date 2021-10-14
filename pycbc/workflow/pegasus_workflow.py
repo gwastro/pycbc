@@ -582,7 +582,7 @@ class Workflow(object):
         self._adag.add_replica_catalog(self._rc)
         # Add TC and SC into workflow
         self._adag.add_transformation_catalog(self._tc)
-        self._adag.add_site_catalog(self._sc)
+        #self._adag.add_site_catalog(self._sc)
 
         with open(output_map_path, 'w') as f:
             for out in self._outputs:
