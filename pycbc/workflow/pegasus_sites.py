@@ -242,3 +242,4 @@ def make_catalog(cp, out_dir):
     for site in ['local', 'condorpool_symlink',
                  'condorpool_copy', 'condorpool_shared', 'osg']:
         add_site(catalog, site, cp, out_dir=out_dir)
+    return catalog

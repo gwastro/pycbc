@@ -834,7 +834,7 @@ class Workflow(pegasus_workflow.Workflow):
         # save the sites file
         if not self.in_workflow:
             catalog_path = os.path.join(self.out_dir, 'sites.yml')
-            make_catalog(cp, self.out_dir).write(catalog_path)
+            make_catalog(self.cp, self.out_dir).write(catalog_path)
 
     def save_config(self, fname, output_dir, cp=None):
         """ Writes configuration file to disk and returns a pycbc.workflow.File
