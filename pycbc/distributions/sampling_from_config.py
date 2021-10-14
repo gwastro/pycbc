@@ -26,12 +26,10 @@ This module provides functions for drawing samples from a standalone .ini file
 in a Python script, rather than in the command line.
 """
 
-
 import numpy as np
 from pycbc.types.config import InterpolatingConfigParser
 from pycbc import transforms
 import pycbc.distributions as distributions
-
 
 
 def draw_samples_from_config(path, num=1, seed=150914):
@@ -63,7 +61,7 @@ def draw_samples_from_config(path, num=1, seed=150914):
     >>> random_seed = np.random.randint(low=0, high=2**32-1)
     >>> sample = draw_samples_from_config(
     >>>          path=CONFIG_PATH, num=1, seed=random_seed)
-    
+
     >>> # Print all parameters.
     >>> print(sample.fieldnames)
     >>> print(sample)
@@ -74,27 +72,27 @@ def draw_samples_from_config(path, num=1, seed=150914):
     np.random.seed(seed)
 
     # Initialise InterpolatingConfigParser class.
-    cp = InterpolatingConfigParser()
+    config_parser = InterpolatingConfigParser()
     # Read the file
-    fp = open(path, 'r')
-    cp.read_file(fp)
-    fp.close()
+    file = open(path, 'r')
+    config_parser.read_file(file)
+    file.close()
 
     # Get the vairable and static arguments from the .ini file.
     variable_args, static_args = \
         distributions.read_params_from_config(
-                            cp, prior_section='prior',
+                            config_parser, prior_section='prior',
                             vargs_section='variable_params')
-    constraints = distributions.read_constraints_from_config(cp)
+    constraints = distributions.read_constraints_from_config(config_parser)
 
-    if any(cp.get_subsections('waveform_transforms')):
+    if any(config_parser.get_subsections('waveform_transforms')):
         waveform_transforms = transforms.read_transforms_from_config(
-            cp, 'waveform_transforms')
+            config_parser, 'waveform_transforms')
     else:
         waveform_transforms = None
 
     # Get prior distribution for each variable parameter.
-    dists = distributions.read_distributions_from_config(cp)
+    dists = distributions.read_distributions_from_config(config_parser)
 
     # Construct class that will draw the samples.
     randomsampler = distributions.JointDistribution(
