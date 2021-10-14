@@ -629,7 +629,7 @@ class Workflow(pegasus_workflow.Workflow):
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs.
     """
-    def __init__(self, args, **kwargs):
+    def __init__(self, args, name=None):
         """
         Create a pycbc workflow
 
@@ -648,11 +648,10 @@ class Workflow(pegasus_workflow.Workflow):
             dax_file = None
 
         super(Workflow, self).__init__(
-            name=args.workflow_name,
+            name=name if name is not None else args.workflow_name,
             directory=args.output_dir,
             cache_file=args.cache_file,
             dax_file_name=dax_file,
-            **kwargs
         )
 
         # Set global values
