@@ -198,7 +198,6 @@ assert(map_file.name.endswith('.map'))
 #       the stuff done below, and does not consider file management
 dax_job = SubWorkflow(dax_file, is_planned=False, _id='geom')
 dax_job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
 
@@ -246,7 +245,6 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     map_file = sbank_node.output_files[1]
     dax_job = SubWorkflow(dax_file, is_planned=False, _id='sbank_bbh')
     dax_job.set_subworkflow_properties(map_file,
-                                       workflow.out_dir,
                                        staging_site=workflow.staging_site,
                                        cache_file=workflow.cache_file)
 
@@ -287,7 +285,6 @@ dax_file = sbank_node.output_files[0]
 map_file = sbank_node.output_files[1]
 dax_job = SubWorkflow(dax_file, is_planned=False, _id='sbank_final')
 dax_job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
 dax_job.add_inputs(*seed_files)

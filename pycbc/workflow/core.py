@@ -803,7 +803,6 @@ class Workflow(pegasus_workflow.Workflow):
         if self._asdag is not None:
             self._asdag.set_subworkflow_properties(
                 output_map_file,
-                self.out_dir,
                 staging_site=self.staging_site,
                 cache_file=self.cache_file
             )
@@ -2228,14 +2227,13 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
                                 "{workflow-name}.dax.")
         wfgrp.add_argument('--main-workflow-directory', default=None,
                            required=False,
-                            help="Supply the location that the main workflow "
-                                 "was generated in. Only needed if running "
-                                 "this job within a workflow, and then "
-                                 "identifies where the local-site-scratch is")
+                           help="Supply the location that the main workflow "
+                                "was generated in. Only needed if running "
+                                "this job within a workflow, and then "
+                                "identifies where the local-site-scratch is")
         wfgrp.add_argument("--is-sub-workflow", default=False,
-                            action="store_true",
-                            help="Only give this option if this code is being "
-                                 "run as a sub-workflow within pegasus. If "
-                                 "this means nothing to you, do not give this "
-                                 "option.")
-
+                           action="store_true",
+                           help="Only give this option if this code is being "
+                                "run as a sub-workflow within pegasus. If "
+                                "this means nothing to you, do not give this "
+                                "option.")

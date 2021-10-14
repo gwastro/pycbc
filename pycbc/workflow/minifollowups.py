@@ -121,7 +121,6 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     input_files = [tmpltbank_file, coinc_file, insp_segs] + single_triggers
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
     job.add_into_workflow(workflow, parents=[node])
@@ -226,7 +225,6 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         input_files += statfiles
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
     job.add_into_workflow(workflow, parents=[node])
@@ -315,7 +313,6 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     input_files += single_triggers
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
     job.add_into_workflow(workflow, parents=[node])

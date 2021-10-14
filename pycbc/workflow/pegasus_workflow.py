@@ -623,7 +623,7 @@ class Workflow(object):
                     # --dir is not being set here because it might be easier to
                     # set this in submit_dax still?
                     f.write('-vvv ')
-            
+
     def plan_and_submit(self, submit_now=True):
         """ Plan and submit the workflow now.
         """
@@ -655,7 +655,7 @@ class Workflow(object):
         planner_args['output_sites'] = ['local']
 
         # Site options
-        planner_args['sites'] = [s for s in self._sc.sites]
+        planner_args['sites'] = list(self._sc.sites)
         planner_args['staging_sites'] = self.staging_site
 
         # Make tmpdir for submitfiles
@@ -705,11 +705,10 @@ class Workflow(object):
 
         shutil.copy2(prop_file, 'workflow/planning')
         shutil.copy2(os.path.join(submitdir, 'work', 'braindump.yml'),
-                        'workflow/planning')
+                     'workflow/planning')
 
         if self.cache_file is not None:
             shutil.copy2(self.cache_file, 'workflow/planning')
-    
 
 
 class SubWorkflow(dax.SubWorkflow):
@@ -744,14 +743,13 @@ class SubWorkflow(dax.SubWorkflow):
 
     def add_planner_arg(self, value, option):
         if self.pycbc_planner_args is None:
-           err_msg = ("We cannot add arguments to the SubWorkflow planning "
-                      "stage after this is added to the parent workflow.")
-           raise ValueError(err_msg)
+            err_msg = ("We cannot add arguments to the SubWorkflow planning "
+                       "stage after this is added to the parent workflow.")
+            raise ValueError(err_msg)
 
         self.pycbc_planner_args[value] = option
 
     def set_subworkflow_properties(self, output_map_file,
-                                   out_dir,
                                    staging_site,
                                    cache_file):
 
