@@ -342,12 +342,9 @@ class Node(ProfileShortcuts):
 class Workflow(object):
     """
     """
-    def __init__(self, name='my_workflow', is_subworkflow=False,
-                 subworkflow_name='swflow', directory=None, cache_file=None,
+    def __init__(self, name='my_workflow', directory=None, cache_file=None,
                  dax_file_name=None):
         self.name = name
-        if is_subworkflow:
-            self.name += '_' + subworkflow_name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
         self._sc = dax.SiteCatalog()
@@ -371,14 +368,13 @@ class Workflow(object):
             self.filename = self.name + '.dax'
         else:
             self.filename = dax_file_name
-        self._adag = dax.Workflow(self.filename)
-        if is_subworkflow:
-            self._asdag = SubWorkflow(self.filename, is_planned=False,
-                                      _id=self.name)
-            self._swinputs = []
-        else:
-            self._asdag = None
-            self._swinputs = None
+        self._adag = dax.Workflow(self.filename)       
+        
+        # A pegasus job version of this workflow for use if it isncluded
+        # within a larger workflow
+        self._as_job = SubWorkflow(self.filename, is_planned=False,
+                                  _id=self.name)
+        self._swinputs = [] 
 
     def add_workflow(self, workflow):
         """ Add a sub-workflow to this workflow
@@ -394,7 +390,7 @@ class Workflow(object):
         workflow.in_workflow = self
         self.sub_workflows += [workflow]
 
-        self._adag.add_jobs(workflow._asdag)
+        self._adag.add_jobs(workflow._as_job)
 
         return self
 
@@ -415,7 +411,6 @@ class Workflow(object):
         """
         self._adag.add_dependency(parent._dax_node, children=[child._dax_node])
 
-
     def add_subworkflow_dependancy(self, parent_workflow, child_workflow):
         """
         Add a dependency between two sub-workflows in this workflow
@@ -435,8 +430,8 @@ class Workflow(object):
             The sub-workflow to add as the child dependence.
             Must be a sub-workflow of this workflow.
         """
-        self._adag.add_dependency(parent_workflow._asdag,
-                                  children=[child_workflow._asdag])
+        self._adag.add_dependency(parent_workflow._as_job,
+                                  children=[child_workflow._as_job])
 
     def add_transformation(self, tranformation):
         """ Add a transformation to this workflow
@@ -580,9 +575,9 @@ class Workflow(object):
         for fil in self._inputs:
             fil.insert_into_dax(self._rc, self._tc)
 
-        if self._asdag is not None:
-            # Is a sub-workflow, add the _swinputs as needed.
-            self._asdag.add_inputs(*self._swinputs)
+        # Is a sub-workflow, add the _swinputs as needed.
+        if self.in_workflow is not None:
+            self._as_job.add_inputs(*self._swinputs)
 
         self._adag.add_replica_catalog(self._rc)
         # Add TC and SC into workflow
@@ -597,11 +592,11 @@ class Workflow(object):
                     # There was no storage path
                     pass
 
-        if (submit_now or plan_now) and self._asdag is None:
-            self.plan_and_submit(submit_now=submit_now)
-        else:
-            self._adag.write(filename)
-            if self._asdag is None:
+        self._adag.write(filename)
+        if not self.in_workflow:
+            if submit_now or plan_now:
+                self.plan_and_submit(submit_now=submit_now)
+            else:
                 with open('additional_planner_args.dat', 'w') as f:
                     stage_site_str = self.staging_site_str
                     exec_sites = self.exec_sites_str
@@ -712,7 +707,7 @@ class Workflow(object):
 
 
 class SubWorkflow(dax.SubWorkflow):
-    """Workflow representation of a SubWorkflow.
+    """Workflow job representation of a SubWorkflow.
 
     This follows the Pegasus nomenclature where there are Workflows, Jobs and
     SubWorkflows. Be careful though! A SubWorkflow is actually a Job, not a

@@ -642,11 +642,6 @@ class Workflow(pegasus_workflow.Workflow):
         self.cp = WorkflowConfigParser.from_cli(args)
         self.args = args
 
-        if hasattr(args, 'main_workflow_directory'):
-            wflow_dir = args.main_workflow_directory or args.output_dir
-        else:
-            wflow_dir = args.output_dir
-
         if hasattr(args, 'dax_file'):
             dax_file = args.dax_file or None
         else:
@@ -654,7 +649,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         super(Workflow, self).__init__(
             name=args.workflow_name,
-            directory=wflow_dir,
+            directory=args.output_dir,
             cache_file=args.cache_file,
             dax_file_name=dax_file,
             **kwargs
@@ -803,13 +798,13 @@ class Workflow(pegasus_workflow.Workflow):
         output_map_file.add_pfn(output_map_path, site='local')
         self.output_map_file = output_map_file
 
-        if self._asdag is not None:
-            self._asdag.set_subworkflow_properties(
+        if self.in_workflow:
+            self._as_job.set_subworkflow_properties(
                 output_map_file,
                 staging_site=self.staging_site,
                 cache_file=self.cache_file
             )
-            self._asdag.add_planner_args(**self._asdag.pycbc_planner_args)
+            self._as_job.add_planner_args(**self._as_job.pycbc_planner_args)
 
         # add transformations to dax
         for transform in self._transformations:
@@ -2218,24 +2213,12 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
     wfgrp.add_argument("--submit-now", default=False, action='store_true',
                        help="If given, workflow will immediately be submitted "
                             "on completion of workflow generation")
-
+    wfgrp.add_argument("--dax-file", default=None,
+                       help="Path to DAX file. Default is to write to the "
+                            "output directory with name "
+                            "{workflow-name}.dax.")
     if include_subdax_opts:
         wfgrp.add_argument("--output-map", default="output.map",
                            help="Path to an output map file. Default is "
                                 "output.map.")
-        wfgrp.add_argument("--dax-file", default=None,
-                           help="Path to DAX file. Default is to write to the "
-                                "output directory with name "
-                                "{workflow-name}.dax.")
-        wfgrp.add_argument('--main-workflow-directory', default=None,
-                           required=False,
-                           help="Supply the location that the main workflow "
-                                "was generated in. Only needed if running "
-                                "this job within a workflow, and then "
-                                "identifies where the local-site-scratch is")
-        wfgrp.add_argument("--is-sub-workflow", default=False,
-                           action="store_true",
-                           help="Only give this option if this code is being "
-                                "run as a sub-workflow within pegasus. If "
-                                "this means nothing to you, do not give this "
-                                "option.")
+

@@ -73,13 +73,9 @@ args = parser.parse_args()
 
 wf.makedir(args.output_dir)
 
-container = wf.Workflow(args)
-# Setting these as SubWorkflows doesn't work as SubWorkflow is not a sub-class
-# of Workflow, but of Job, so you cannot set anything in a SubWorkflow.
-workflow = wf.Workflow(args, subworkflow_name='main', is_subworkflow=True)
-finalize_workflow = wf.Workflow(args, subworkflow_name='finalization',
-                                is_subworkflow=True)
-
+container = wf.Workflow(args, name=args.workflow_name)
+workflow = wf.Workflow(args, name=args.workflow_name + '-main')
+finalize_workflow = wf.Workflow(args, name=args.workflow_name + '-finalization')
 os.chdir(args.output_dir)
 
 rdir = layout.SectionNumber('results', ['analysis_time',
