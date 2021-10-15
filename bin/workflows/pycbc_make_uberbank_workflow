@@ -154,7 +154,7 @@ wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
 # Create the workflow object
-workflow = wf.Workflow(args, args.workflow_name, directory=args.output_dir)
+workflow = wf.Workflow(args)
 
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
@@ -198,8 +198,8 @@ assert(map_file.name.endswith('.map'))
 #       the stuff done below, and does not consider file management
 dax_job = SubWorkflow(dax_file, is_planned=False, _id='geom')
 dax_job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
-                                   staging_site=workflow.staging_site)
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
 
 # Tell the dax job that it needs some input files
 dax_job.add_inputs(metadata_file, intermediate_file)
@@ -245,8 +245,8 @@ if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
     map_file = sbank_node.output_files[1]
     dax_job = SubWorkflow(dax_file, is_planned=False, _id='sbank_bbh')
     dax_job.set_subworkflow_properties(map_file,
-                                       workflow.out_dir,
-                                       staging_site=workflow.staging_site)
+                                       staging_site=workflow.staging_site,
+                                       cache_file=workflow.cache_file)
 
     dax_job.add_outputs(sbank_out_file_bbh, stage_out=True)
     workflow._outputs.append(sbank_out_file_bbh)
@@ -285,8 +285,8 @@ dax_file = sbank_node.output_files[0]
 map_file = sbank_node.output_files[1]
 dax_job = SubWorkflow(dax_file, is_planned=False, _id='sbank_final')
 dax_job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
-                                   staging_site=workflow.staging_site)
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
 dax_job.add_inputs(*seed_files)
 dax_job.add_into_workflow(workflow)
 

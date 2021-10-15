@@ -27,9 +27,46 @@
 provides additional abstraction and argument handling.
 """
 import os
+import shutil
+import tempfile
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
+
+PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
+                                      'pegasus_files')
+
+PEGASUS_START_TEMPLATE = '''#!/bin/bash
+
+if [ -f /tmp/x509up_u`id -u` ] ; then
+  unset X509_USER_PROXY
+else
+  if [ ! -z ${X509_USER_PROXY} ] ; then
+    if [ -f ${X509_USER_PROXY} ] ; then
+      cp -a ${X509_USER_PROXY} /tmp/x509up_u`id -u`
+    fi
+  fi
+  unset X509_USER_PROXY
+fi
+
+# Check that the proxy is valid
+grid-proxy-info -exists
+RESULT=${?}
+if [ ${RESULT} -eq 0 ] ; then
+  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+    grid-proxy-info
+  else
+    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+    grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+    rm -f /tmp/x509up_u`id -u`.orig
+    grid-proxy-info
+  fi
+else
+  echo "Error: Could not find a valid grid proxy to submit workflow."
+  exit 1
+fi
+'''
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -306,8 +343,11 @@ class Workflow(object):
     """
     """
     def __init__(self, name='my_workflow', is_subworkflow=False,
-                 directory=None):
+                 subworkflow_name='swflow', directory=None, cache_file=None,
+                 dax_file_name=None):
         self.name = name
+        if is_subworkflow:
+            self.name += '_' + subworkflow_name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
         self._sc = dax.SiteCatalog()
@@ -317,13 +357,20 @@ class Workflow(object):
         else:
             self.out_dir = os.path.abspath(directory)
 
+        if cache_file is not None:
+            cache_file = os.path.abspath(cache_file)
+        self.cache_file = cache_file
+
         self._inputs = []
         self._outputs = []
         self._transformations = []
         self._containers = []
         self.in_workflow = False
         self.sub_workflows = []
-        self.filename = self.name + '.dax'
+        if dax_file_name is None:
+            self.filename = self.name + '.dax'
+        else:
+            self.filename = dax_file_name
         self._adag = dax.Workflow(self.filename)
         if is_subworkflow:
             self._asdag = SubWorkflow(self.filename, is_planned=False,
@@ -509,11 +556,15 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, filename=None):
+    def save(self, filename=None, submit_now=False, plan_now=False,
+             output_map_path=None):
         """ Write this workflow to DAX file
         """
         if filename is None:
             filename = self.filename
+
+        if output_map_path is None:
+            output_map_path = 'output.map'
 
         for sub in self.sub_workflows:
             sub.save()
@@ -538,7 +589,126 @@ class Workflow(object):
         self._adag.add_transformation_catalog(self._tc)
         self._adag.add_site_catalog(self._sc)
 
-        self._adag.write(filename)
+        with open(output_map_path, 'w') as f:
+            for out in self._outputs:
+                try:
+                    f.write(out.output_map_str() + '\n')
+                except ValueError:
+                    # There was no storage path
+                    pass
+
+        if (submit_now or plan_now) and self._asdag is None:
+            self.plan_and_submit(submit_now=submit_now)
+        else:
+            self._adag.write(filename)
+            if self._asdag is None:
+                with open('additional_planner_args.dat', 'w') as f:
+                    stage_site_str = self.staging_site_str
+                    exec_sites = self.exec_sites_str
+                    # For now we don't include --config as this can be added to
+                    # in submit_dax. We should add an option to add additional
+                    # pegasus properties (through the config files?) here.
+                    #prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
+                    #                         'pegasus-properties.conf')
+                    #f.write('--conf {} '.format(prop_file))
+                    if self.cache_file is not None:
+                        f.write('--cache {} '.format(self.cache_file))
+
+                    f.write('--output-sites local ')
+                    f.write('--sites {} '.format(exec_sites))
+                    f.write('--staging-site {} '.format(stage_site_str))
+                    f.write('--cluster label,horizontal ')
+                    f.write('--cleanup inplace ')
+                    f.write('--relative-dir work ')
+                    # --dir is not being set here because it might be easier to
+                    # set this in submit_dax still?
+                    f.write('-vvv ')
+
+    def plan_and_submit(self, submit_now=True):
+        """ Plan and submit the workflow now.
+        """
+        # New functionality, this might still need some work. Here's things
+        # that this might want to do, that submit_dax does:
+        # * Checks proxy (ignore this, user should already have this done)
+        # * Pulls properties file in (DONE)
+        # * Send necessary options to the planner (DONE)
+        # * Some logging about hostnames (NOT DONE, needed?)
+        # * Setup the helper scripts (start/debug/stop/status) .. (DONE)
+        # * Copy some of the interesting files into workflow/ (DONE)
+        # * Checks for dashboard URL (NOT DONE)
+        # * Does something with condor_reschedule (NOT DONE, needed?)
+
+        planner_args = {}
+        planner_args['submit'] = submit_now
+
+        # Get properties file - would be nice to add extra properties here.
+        prop_file = os.path.join(PEGASUS_FILE_DIRECTORY,
+                                 'pegasus-properties.conf')
+        planner_args['conf'] = prop_file
+
+        # Cache file, if there is one
+        if self.cache_file is not None:
+            planner_args['cache'] = [self.cache_file]
+
+        # Not really sure what this does, but Karan said to use it. Seems to
+        # matter for subworkflows
+        planner_args['output_sites'] = ['local']
+
+        # Site options
+        planner_args['sites'] = list(self._sc.sites)
+        planner_args['staging_sites'] = self.staging_site
+
+        # Make tmpdir for submitfiles
+        submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_')
+        os.chmod(submitdir, 0o755)
+        try:
+            os.remove('submitdir')
+        except FileNotFoundError:
+            pass
+        os.symlink(submitdir, 'submitdir')
+        planner_args['dir'] = submitdir
+
+        # Other options
+        planner_args['cluster'] = ['label,horizontal']
+        planner_args['relative_dir'] = 'work'
+        planner_args['cleanup'] = 'inplace'
+
+        # FIXME: The location of output.map is hardcoded in the properties
+        #        file. This is overridden for subworkflows, but is not for
+        #        main workflows with submit_dax. If we ever remove submit_dax
+        #        we should include the location explicitly here.
+        self._adag.plan(**planner_args)
+
+        # Set up convenience scripts
+        with open('status', 'w') as fp:
+            fp.write('pegasus-status --verbose ')
+            fp.write('--long {}/work $@'.format(submitdir))
+
+        with open('debug', 'w') as fp:
+            fp.write('pegasus-analyzer -r ')
+            fp.write('-v {}/work $@'.format(submitdir))
+
+        with open('stop', 'w') as fp:
+            fp.write('pegasus-remove {}/work $@'.format(submitdir))
+
+        with open('start', 'w') as fp:
+            fp.write(PEGASUS_START_TEMPLATE)
+            fp.write('\n')
+            fp.write('pegasus-run {}/work $@'.format(submitdir))
+
+        os.chmod('status', 0o755)
+        os.chmod('debug', 0o755)
+        os.chmod('stop', 0o755)
+        os.chmod('start', 0o755)
+
+        os.makedirs('workflow/planning', exist_ok=True)
+
+        shutil.copy2(prop_file, 'workflow/planning')
+        shutil.copy2(os.path.join(submitdir, 'work', 'braindump.yml'),
+                     'workflow/planning')
+
+        if self.cache_file is not None:
+            shutil.copy2(self.cache_file, 'workflow/planning')
 
 
 class SubWorkflow(dax.SubWorkflow):
@@ -553,6 +723,10 @@ class SubWorkflow(dax.SubWorkflow):
     stage. We do add a little bit of functionality here.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.pycbc_planner_args = {}
+
     def add_into_workflow(self, container_wflow, parents=None):
         """Add this Job into a container Workflow
         """
@@ -561,29 +735,36 @@ class SubWorkflow(dax.SubWorkflow):
         else:
             # Get Pegasus objects from PyCBC objects for parent Nodes
             parents = [n._dax_node for n in parents]
+        self.add_planner_args(**self.pycbc_planner_args)
+        # Set this to None so code will fail if more planner args are added
+        self.pycbc_planner_args = None
         container_wflow._adag.add_jobs(self)
         container_wflow._adag.add_dependency(self, parents=parents)
 
-    def set_subworkflow_properties(self, output_map_file,
-                                   out_dir,
-                                   staging_site):
+    def add_planner_arg(self, value, option):
+        if self.pycbc_planner_args is None:
+            err_msg = ("We cannot add arguments to the SubWorkflow planning "
+                       "stage after this is added to the parent workflow.")
+            raise ValueError(err_msg)
 
-        # FIXME: Pegasus added a add_planner_args for SubWorkflows. We should
-        #        use this, but it can only be called once, so we'd have to
-        #        store options at PyCBC level and then call this once when
-        #        saving the workflow.
-        self.add_args('-Dpegasus.dir.storage.mapper.replica.file=%s' %
-                      os.path.basename(output_map_file.name))
+        self.pycbc_planner_args[value] = option
+
+    def set_subworkflow_properties(self, output_map_file,
+                                   staging_site,
+                                   cache_file):
+
+        self.add_planner_arg('pegasus.dir.storage.mapper.replica.file',
+                             os.path.basename(output_map_file.name))
         self.add_inputs(output_map_file)
 
         # I think this is needed to deal with cases where the subworkflow file
         # does not exist at submission time.
         bname = os.path.splitext(os.path.basename(self.file))[0]
-        self.add_args('--basename {}'.format(bname))
-        self.add_args('--output-sites local')
-        self.add_args('--cleanup inplace')
-        self.add_args('--cluster label,horizontal')
-        self.add_args('-vvv')
+        self.add_planner_arg('basename',  bname)
+        self.add_planner_arg('output_sites', ['local'])
+        self.add_planner_arg('cleanup', 'inplace')
+        self.add_planner_arg('cluster', ['label', 'horizontal'])
+        self.add_planner_arg('verbose', 3)
 
         # NOTE: The _reuse.cache file is produced during submit_dax and would
         #       be sent to all sub-workflows. Currently we do not declare this
@@ -594,10 +775,11 @@ class SubWorkflow(dax.SubWorkflow):
         #       having this file created differently. Note that all other
         #       inputs might be generated within the workflow, and then pegasus
         #       data transfer is needed, so these must be File objects.
-        self.add_args('--cache %s' % os.path.join(out_dir, '_reuse.cache'))
+        if cache_file:
+            self.add_planner_arg('cache', cache_file)
 
         if staging_site:
-            self.add_args('--staging-site %s' % staging_site)
+            self.add_planner_arg('staging_sites', staging_site)
 
 
 class File(dax.File):

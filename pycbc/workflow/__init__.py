@@ -44,8 +44,8 @@ from pycbc.workflow.injection import *
 from pycbc.workflow.plotting import *
 from pycbc.workflow.minifollowups import *
 
+# Set the pycbc workflow specific pegasus configuration and planning files
+from pycbc.workflow.pegasus_workflow import PEGASUS_FILE_DIRECTORY
+
 # Set the configuration file base directory
 INI_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'ini_files')
-
-# Set the pycbc workflow specific pegasus configuration and planning files
-PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'pegasus_files')

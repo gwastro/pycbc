@@ -626,7 +626,7 @@ class Workflow(pegasus_workflow.Workflow):
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs.
     """
-    def __init__(self, args, name, **kwargs):
+    def __init__(self, args, **kwargs):
         """
         Create a pycbc workflow
 
@@ -637,8 +637,25 @@ class Workflow(pegasus_workflow.Workflow):
         """
         # Parse ini file
         self.cp = WorkflowConfigParser.from_cli(args)
+        self.args = args
 
-        super(Workflow, self).__init__(name, **kwargs)
+        if hasattr(args, 'main_workflow_directory'):
+            wflow_dir = args.main_workflow_directory or args.output_dir
+        else:
+            wflow_dir = args.output_dir
+
+        if hasattr(args, 'dax_file'):
+            dax_file = args.dax_file or None
+        else:
+            dax_file = None
+
+        super(Workflow, self).__init__(
+            name=args.workflow_name,
+            directory=wflow_dir,
+            cache_file=args.cache_file,
+            dax_file_name=dax_file,
+            **kwargs
+        )
 
         # Set global values
         start_time = end_time = 0
@@ -670,6 +687,10 @@ class Workflow(pegasus_workflow.Workflow):
     # FIXME: Should this be in pegasus_workflow?
     @property
     def output_map(self):
+        args = self.args
+        if hasattr(args, 'output_map') and args.output_map is not None:
+            return args.output_map
+
         if self.in_workflow is not False:
             name = self.name + '.map'
         else:
@@ -680,7 +701,17 @@ class Workflow(pegasus_workflow.Workflow):
 
     @property
     def staging_site(self):
+        return self._staging_site
+
+    @property
+    def staging_site_str(self):
         return ','.join(['='.join(x) for x in self._staging_site.items()])
+
+    @property
+    def exec_sites_str(self):
+        sites = list(self._sc.sites)
+        sites.remove('local')
+        return ','.join(sites)
 
     def add_sites_from_config(self):
         # FIXME: It would be nice to be able to override site properties here.
@@ -772,9 +803,10 @@ class Workflow(pegasus_workflow.Workflow):
         if self._asdag is not None:
             self._asdag.set_subworkflow_properties(
                 output_map_file,
-                self.out_dir,
-                staging_site=self.staging_site
+                staging_site=self.staging_site,
+                cache_file=self.cache_file
             )
+            self._asdag.add_planner_args(**self._asdag.pycbc_planner_args)
 
         # add transformations to dax
         for transform in self._transformations:
@@ -798,17 +830,10 @@ class Workflow(pegasus_workflow.Workflow):
         fp.close()
 
         # save the dax file
-        super(Workflow, self).save(filename=filename)
-
-        # FIXME: This belongs in pegasus_workflow.py
-        # add workflow storage locations to the output mapper
-        f = open(output_map_path, 'w')
-        for out in self._outputs:
-            try:
-                f.write(out.output_map_str() + '\n')
-            except ValueError:
-                # There was no storage path
-                pass
+        super(Workflow, self).save(filename=filename,
+                                   output_map_path=output_map_path,
+                                   submit_now=self.args.submit_now,
+                                   plan_now=self.args.plan_now)
 
     def save_config(self, fname, output_dir, cp=None):
         """ Writes configuration file to disk and returns a pycbc.workflow.File
@@ -2180,6 +2205,18 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
                        help="Path to directory where the workflow will be "
                             "written. Default is to use "
                             "{workflow-name}_output.")
+    wfgrp.add_argument("--cache-file", default=None,
+                       help="Path to input file containing list of files to "
+                            "be reused (the 'input_map' file)")
+    wfgrp.add_argument("--plan-now", default=False, action='store_true',
+                       help="If given, workflow will immediately be planned "
+                            "on completion of workflow generation but not "
+                            "submitted to the condor pool. A start script "
+                            "will be created to submit to condor.")
+    wfgrp.add_argument("--submit-now", default=False, action='store_true',
+                       help="If given, workflow will immediately be submitted "
+                            "on completion of workflow generation")
+
     if include_subdax_opts:
         wfgrp.add_argument("--output-map", default="output.map",
                            help="Path to an output map file. Default is "
@@ -2188,3 +2225,15 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
                            help="Path to DAX file. Default is to write to the "
                                 "output directory with name "
                                 "{workflow-name}.dax.")
+        wfgrp.add_argument('--main-workflow-directory', default=None,
+                           required=False,
+                           help="Supply the location that the main workflow "
+                                "was generated in. Only needed if running "
+                                "this job within a workflow, and then "
+                                "identifies where the local-site-scratch is")
+        wfgrp.add_argument("--is-sub-workflow", default=False,
+                           action="store_true",
+                           help="Only give this option if this code is being "
+                                "run as a sub-workflow within pegasus. If "
+                                "this means nothing to you, do not give this "
+                                "option.")

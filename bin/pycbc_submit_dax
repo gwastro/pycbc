@@ -19,8 +19,6 @@ DAX_FILE=""
 CACHE_FILE=0
 LOCAL_PEGASUS_DIR=""
 PEGASUS_PROPERTIES=""
-SITE_LIST=""
-STAGING_SITES=""
 NO_CREATE_PROXY=0
 NO_QUERY_DB=0
 NO_GRID=""
@@ -43,7 +41,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:C:p:P:es:S:t:nl:Gh --long dax:,cache-file:,pegasus-properties:,append-pegasus-property:,execution-sites:,staging-sites:,transformation-catalog:,site-catalog:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:p:P:K:Q:n:l:G:h --long dax:,cache-file:,pegasus-properties:,append-pegasus-property:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -100,16 +98,6 @@ EOF`
         "") shift 2 ;;
         *) echo $2 >> extra-properties.conf ; shift 2 ;;
       esac ;;
-    -s|--execution-sites)
-      case "$2" in
-        "") shift 2 ;;
-        *) SITE_LIST=$2 ; shift 2 ;;
-      esac ;;
-    -S|--staging-sites)
-      case "$2" in
-        "") shift 2 ;;
-        *) STAGING_SITES="--staging-site $2" ; shift 2 ;;
-      esac ;;
     -K|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
     -Q|--no-query-db) NO_QUERY_DB=1 ; shift ;;
     -n|--no-submit) SUBMIT_DAX="" ; shift ;;
@@ -128,29 +116,14 @@ EOF`
       echo "optional arguments:"
       echo "  -h, --help              show this help message and exit"
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
-      echo "  -g, --local-staging-server uri://host provide a uri on host"
-      echo "                                 for the local site scratch"
-      echo "                                 (default is file://)"
-      echo "  -r, --remote-staging-server uri://host provide a uri on host"
-      echo "                                 for the remote site scratch."
       echo "  -p, --pegasus-properties FILE use the specified file as"
       echo "                               the pegasus properties file"
       echo "  -P, --append-pegasus-property STRING add the extra property"
       echo "                                          specified by the argument"
-      echo "  -s, --execution-sites A,B,C specify a comma separated list"
-      echo "                               of execution sites that will be"
-      echo "                               used in addition to the local site"
-      echo "  -S, --staging-sites A=X,B=Y,C=Z  comma separated list of key=value"
-      echo "                                   pairs, where the key is the"
-      echo "                                   execution site and value is the"
-      echo "                                   staging site for that execution site"
-      echo "  -t, --transformation-catalog FILE pass the specified"
-      echo "                                   transformation catalog to Pegasus"
-      echo "  -t, --site-catalog FILE pass the specified"
-      echo "                                   site catalog to Pegasus"
       echo "  -K, --no-create-proxy   Do not run ligo-proxy-init and assume"
       echo "                             that the user has a valid grid proxy"
       echo "  -n, --no-submit         Plan the DAX but do not submit it"
+      echo "  -Q, --no-query-db       Don't query the pegasus DB."
       echo "  -l, --local-dir         Directory to put condor files under"
       echo "  -G, --no-grid           Disable checks for grid proxy and"
       echo "                             GLOBUS_LOCATION in pegasus-plan"
@@ -232,15 +205,6 @@ elif [ -z $PEGASUS_FILE_DIRECTORY ] ; then
   PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print(PEGASUS_FILE_DIRECTORY)'`
 fi
 
-# add the local site
-# Set remote staging url to local
-if [ -z $SITE_LIST ] ; then
-  SITE_LIST="condorpool_symlink"
-else
-  SITE_LIST="${SITE_LIST}"
-fi
-
-
 # Plan the workflow
 echo "Generating concrete workflow"
 
@@ -260,7 +224,11 @@ else
   CACHE_OPTION='--cache _reuse.cache'
 fi
 
-pegasus-plan --conf ./pegasus-properties.conf --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace ${CACHE_OPTION} --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID $DAX_FILE
+# Ian's bash-fu is not good enough to wrap this in the nice error handling that
+# it deserves!
+STORED_PLANNER_ARGS=`cat additional_planner_args.dat`
+
+pegasus-plan --conf ./pegasus-properties.conf ${STORED_PLANNER_ARGS} --dir $SUBMIT_DIR ${CACHE_OPTION} $SUBMIT_DAX $NO_GRID $DAX_FILE
 
 echo
 

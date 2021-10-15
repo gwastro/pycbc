@@ -117,12 +117,12 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     # determine if a staging site has been specified
 
-    job = SubWorkflow(fil, is_planned=False)
+    job = SubWorkflow(fil.name, is_planned=False)
     input_files = [tmpltbank_file, coinc_file, insp_segs] + single_triggers
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
-                                   staging_site=workflow.staging_site)
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
     job.add_into_workflow(workflow, parents=[node])
     logging.info('Leaving minifollowups module')
 
@@ -217,7 +217,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
-    job = SubWorkflow(fil, is_planned=False)
+    job = SubWorkflow(fil.name, is_planned=False)
     input_files = [tmpltbank_file, insp_segs, single_trig_file]
     if veto_file is not None:
         input_files.append(veto_file)
@@ -225,8 +225,8 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         input_files += statfiles
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
-                                   staging_site=workflow.staging_site)
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
     job.add_into_workflow(workflow, parents=[node])
     logging.info('Leaving minifollowups module')
 
@@ -308,13 +308,13 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
-    job = SubWorkflow(fil, is_planned=False)
+    job = SubWorkflow(fil.name, is_planned=False)
     input_files = [tmpltbank_file, injection_file, inj_xml_file, insp_segs]
     input_files += single_triggers
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
-                                   workflow.out_dir,
-                                   staging_site=workflow.staging_site)
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
     job.add_into_workflow(workflow, parents=[node])
 
     logging.info('Leaving injection minifollowups module')

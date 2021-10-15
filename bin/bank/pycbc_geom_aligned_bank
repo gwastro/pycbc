@@ -193,21 +193,12 @@ parser.add_argument("--print-chi-points", action="store", default=None,
                     "using pycbc_tmpltbank_to_chi_params. This will be "
                     "written to FILENAME. If this argument is not given, no "
                     "chi points file will be written.")
-parser.add_argument('--main-workflow-directory', default=None, required=False,
-                    help='Supply the location that the main workflow was '
-                         'generated in. Only needed if running this job '
-                         'within a workflow, and then identifies where the '
-                         'local-site-scratch is')
 parser.add_argument("--intermediate-data-file", type=str, required=True,
                     help="The HDF file to be used to store data to pass down "
                     "to the various worker jobs.")
 parser.add_argument("--metadata-file", type=str, required=True,
                     help="Location of the output file containing the metadata "
                     "that will be added to the final XML file.")
-parser.add_argument("--is-sub-workflow", default=False, action="store_true",
-                    help="Only give this option if this code is being run "
-                    "as a sub-workflow within pegasus. If this means nothing "
-                    "to you, do not give this option.")
 parser.add_argument("--storage-path-base", default=None,
                     help="If running this code as a sub-workflow then this "
                     "path is pretended to all storage directories.")
@@ -627,7 +618,7 @@ bankverify_exe = BankVerification(workflow.cp, 'bankverify',
 bankverify_node = bankverify_exe.create_node(out_bank, workflow.analysis_time)
 workflow += bankverify_node
 
-workflow.save(filename=opts.dax_file, output_map_path=opts.output_map)
+workflow.save()
 
 logging.info("GENERATION SUCCESSFUL.")
 logging.info("Submit the resulting dax file to generate your template bank.")

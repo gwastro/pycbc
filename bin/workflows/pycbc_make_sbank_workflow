@@ -175,15 +175,6 @@ parser.add_argument("--output-file", type=str, default=None,
                     help="Specify the output file name. Either a name can be "
                          "provided or a full path to file. Is this is not "
                          "given a filename and location is chosen ")
-parser.add_argument('--main-workflow-directory', default=None, required=False,
-                    help='Supply the location that the main workflow was '
-                         'generated in. Only needed if running this job '
-                         'within a workflow, and then identifies where the '
-                         'local-site-scratch is')
-parser.add_argument("--is-sub-workflow", default=False, action="store_true",
-                    help="Only give this option if this code is being run "
-                    "as a sub-workflow within pegasus. If this means nothing "
-                    "to you, do not give this option.")
 
 
 wf.add_workflow_command_line_group(parser)
@@ -191,9 +182,7 @@ wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 # Create the workflow object
-wflow_dir = args.main_workflow_directory or args.output_dir
-workflow = wf.Workflow(args, args.workflow_name,
-                       directory=wflow_dir)
+workflow = wf.Workflow(args) 
 
 if not args.is_sub_workflow:
     wf.makedir(args.output_dir)
@@ -404,4 +393,4 @@ for cycle_idx in range(num_cycles):
     seed_file = h5add_node.output_files[0]
     bins_inp_file = seed_file
 
-workflow.save(filename=args.dax_file, output_map_path=args.output_map)
+workflow.save()
