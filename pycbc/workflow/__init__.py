@@ -49,4 +49,3 @@ from pycbc.workflow.pegasus_workflow import PEGASUS_FILE_DIRECTORY
 
 # Set the configuration file base directory
 INI_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__), 'ini_files')
-
