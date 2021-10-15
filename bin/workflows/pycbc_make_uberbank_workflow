@@ -146,11 +146,10 @@ class SbankDaxGenerator(wf.Executable):
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("--workflow-name", type=str, default='sbank_workflow',
-                    help="Descriptive name of the analysis.")
 parser.add_argument("-d", "--output-dir", default='./',
                     help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
 # Create the workflow object
@@ -290,35 +289,4 @@ dax_job.set_subworkflow_properties(map_file,
 dax_job.add_inputs(*seed_files)
 dax_job.add_into_workflow(workflow)
 
-# FIXME: This bit needs resolving without calling to _adag here.
-#        For now I'm waiting on discussions with pegasus about subworkflows.
-# These dependencies must be added manually as no data linkage is known to
-# pegasus.
-#if not workflow.cp.has_option("workflow-bank_structure", "skip-coarse-bank"):
-#    workflow._adag.add_dependency(dax_job, parents=[sbank_bbh_dax_job])
-#workflow._adag.add_dependency(dax_job, parents=[geom_dax_job])
-
 workflow.save()
-
-# NOTES: Here are things that I found during writing this that will be useful
-#        if changing this around in the future.
-
-# 1: If we have two sub-daxes with a file dependancy (ie. dax B uses a file
-#    produced from dax A). Even if these are not *direct* parent-child related
-#    one must add an explicit dax dependency between the two sub-daxes:
-#    dep = dax.Dependency(parent=parent_dax_job, child=child_dax_job)
-
-# 2: If a sub-dax uses as input a file from the parent workflow, one can a
-#    dax.uses() command to list that file as an input. This is probably
-#    unncessary but it does avoid potential issues with cleanup jobs. The
-#    input mapper should be listed as an input! Should the dax file itself
-#    also be listed? Currently it is not
-
-# 3: The case of a sub-dax producing an output file used by a job (not another
-#    sub-dax) in the uberworkflow appears unsupported. If I do not list the
-#    file as an output of the dax job - with dax.uses - then the uberworkflow
-#    will not plan as it does not understand where that file comes from.
-#    However, if the file *is* listed as an output it will be sent in the
-#    input map catalog to the sub-dax (which contains the local locations of
-#    all files in the uber-workflow). Then the sub-workflow thinks that this
-#    file already exists and does not run the job that generates it.
