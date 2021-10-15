@@ -102,7 +102,11 @@ cleanup_files = []
 def exit_cleaning():
     for fname in cleanup_files:
         logging.info('cleaning up %s', fname)
-        os.remove(fname)
+        try:
+            os.remove(fname)
+        except OSError as e:
+            print(e)
+            pass
 atexit.register(exit_cleaning)
 
 for i in range(len(args.trigger_files)):
