@@ -304,10 +304,16 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         ifos: list of strs, needed here
             The list of detector names
+
+        skip_pregeneration: bool, optional
+            If True, do not pregenerate histogram on class instantiation.
+            Default is false.
         """
 
         QuadratureSumStatistic.__init__(self, sngl_ranking, files=files,
-                                        ifos=ifos, **kwargs)
+                                        ifos=ifos,
+                                        skip_pregeneration=False,
+                                        **kwargs)
 
         self.single_dtype = [
             ('snglstat', numpy.float32),
@@ -330,6 +336,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
         self.two_det_weights = {}
+        if not skip_pregeneration:
+            self.get_hist()
 
     def get_hist(self, ifos=None):
         """
