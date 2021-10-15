@@ -287,7 +287,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
     amplitude ratios between triggers in different ifos.
     """
 
-    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None,
+                 skip_pregeneration=False, **kwargs):
         """
         Create a statistic class instance
 
@@ -311,9 +312,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         """
 
         QuadratureSumStatistic.__init__(self, sngl_ranking, files=files,
-                                        ifos=ifos,
-                                        skip_pregeneration=False,
-                                        **kwargs)
+                                        ifos=ifos, **kwargs)
 
         self.single_dtype = [
             ('snglstat', numpy.float32),
