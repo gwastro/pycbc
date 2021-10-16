@@ -1,4 +1,4 @@
-# Copyright (C)  2016 Collin Capano, Christopher M. Biwer, Alex Nitz
+# Copyright (C)  2016, 2021 Collin Capano, Christopher M. Biwer, Alex Nitz, Shichao Wu
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -37,6 +37,7 @@ from pycbc.distributions.external import External
 from pycbc.distributions.fixedsamples import FixedSamples
 from pycbc.distributions.mass import MchirpfromUniformMass1Mass2, \
                                      QfromUniformMass1Mass2
+from pycbc.distributions.sampling_from_config import draw_samples_from_config
 
 # a dict of all available distributions
 distribs = {
