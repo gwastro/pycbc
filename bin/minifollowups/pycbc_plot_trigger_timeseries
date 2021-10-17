@@ -119,3 +119,4 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
             caption = 'Time series showing the single detector triggers'
                       ' centered around the time of the trigger of interest.',
          )
+exit(2)
