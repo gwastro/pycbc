@@ -463,7 +463,7 @@ with ctx:
     
     for tchunk in tchunks:
         data = list(mmap(template_triggers, tchunk))
-
+        exit(2)
         for elem in data:
             out_vals_all, tparam = elem
             if len(out_vals_all) > 0:
