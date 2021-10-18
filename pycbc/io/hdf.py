@@ -826,7 +826,7 @@ class ForegroundTriggers(object):
 
         ifos = list(self.sngl_files.keys())
         proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
-                     {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
+                     {}, instruments=ifos, comment='', version=pycbc_version.git_hash,
                      cvs_repository='pycbc/'+pycbc_version.git_branch,
                      cvs_entry_time=pycbc_version.date).process_id
 

@@ -160,7 +160,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     outdoc.appendChild(ligolw.LIGO_LW())
 
     proc_id = ligolw_process.register_to_xmldoc(outdoc, 
-                    __program__, args.__dict__, ifos=["G1"],
+                    __program__, args.__dict__, instruments=["G1"],
                     version=version.version, cvs_repository=version.git_branch,
                     cvs_entry_time=version.date).process_id
 

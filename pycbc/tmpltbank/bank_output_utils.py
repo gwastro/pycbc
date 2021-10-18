@@ -337,7 +337,7 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
             ifos = [optDict['channel_name'][0:2]]
 
     proc_id = ligolw_process.register_to_xmldoc(outdoc, programName, optDict,
-                                                ifos=ifos, **kwargs).process_id
+                                                instruments=ifos, **kwargs).process_id
     sngl_inspiral_table = convert_to_sngl_inspiral_table(tempBank, proc_id)
     # Calculate Gamma components if needed
     if ethincaParams is not None:

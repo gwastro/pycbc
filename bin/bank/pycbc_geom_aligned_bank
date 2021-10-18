@@ -236,7 +236,7 @@ cmds_file_name = opts.metadata_file
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
 ligolw_process.register_to_xmldoc(outdoc, __program__, vars(opts), comment="",
-                            ifos="", version=pycbc.version.git_hash,
+                            instruments="", version=pycbc.version.git_hash,
                             cvs_repository='pycbc/'+pycbc.version.git_branch,
                             cvs_entry_time=pycbc.version.date)
 ligolw_utils.write_filename(outdoc, cmds_file_name)
