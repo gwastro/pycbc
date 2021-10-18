@@ -1,5 +1,5 @@
 #!/bin/sh
-for f in emcee_stub.ini emcee_pt_stub.ini dynesty_stub.ini ultranest_stub.ini epsie_stub.ini; do
+for f in cpnest_stub.ini emcee_stub.ini emcee_pt_stub.ini dynesty_stub.ini ultranest_stub.ini epsie_stub.ini; do
         echo $f
 	pycbc_inference \
         --config-files `dirname $0`/simp.ini `dirname $0`/$f \
@@ -15,4 +15,5 @@ emcee_pt_stub.ini.hdf:emcee_pt \
 dynesty_stub.ini.hdf:dynesty \
 ultranest_stub.ini.hdf:ultranest \
 epsie_stub.ini.hdf:espie \
+cpnest_stub.ini.hdf:cpnest \
 --output-file sample.png

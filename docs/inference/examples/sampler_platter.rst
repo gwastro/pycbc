@@ -69,14 +69,14 @@ or an external package (multinest).
 `cpnest <https://github.com/johnveitch/cpnest>`_
 ===============================================
    
-.. literalinclude:: ../../../examples/inference/samplers/cpnest_tub.ini
+.. literalinclude:: ../../../examples/inference/samplers/cpnest_stub.ini
    :language: ini
    
 =============================================================
 `Multinest <https://johannesbuchner.github.io/PyMultiNest/>`_
 =============================================================
    
-.. literalinclude:: ../../../examples/inference/samplers/multinest_tub.ini
+.. literalinclude:: ../../../examples/inference/samplers/multinest_stub.ini
    :language: ini
    
 If we run these samplers, we create the following plot:
