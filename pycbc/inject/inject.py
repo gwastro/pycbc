@@ -56,8 +56,8 @@ injection_func_map = {
 # Remove everything between the dashed lines once we get rid of xml
 # -----------------------------------------------------------------------------
 #
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import ligolw, table, lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import ligolw, table, lsctables
 
 # dummy class needed for loading LIGOLW files
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):

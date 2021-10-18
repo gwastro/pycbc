@@ -2,8 +2,8 @@
 
 # Copyright (C) 2014 Andrew Lundgren
 import argparse
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import ligolw, lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import ligolw, lsctables
 from itertools import cycle
 import pycbc.version
 

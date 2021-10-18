@@ -35,7 +35,7 @@ import shutil
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
 from ligo import segments
-from glue.ligolw import ligolw, lsctables, utils, ilwd
+from ligo.lw import ligolw, lsctables, utils, ilwd
 from pycbc.workflow.core import File, FileList, resolve_url_to_file
 from pycbc.workflow.jobsetup import select_generic_executable
 

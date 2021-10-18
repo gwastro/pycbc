@@ -30,10 +30,10 @@ import h5py
 import pycbc
 import lal
 import lal.series
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import ligolw
+from ligo.lw import table
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
 from pycbc.io.live import gracedb_tag_with_version
 

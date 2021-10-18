@@ -26,9 +26,9 @@ from pycbc.inject import InjectionSet
 import unittest
 import numpy
 import itertools
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
 from utils import parse_args_cpu_only, simple_exit
 
 # Injection tests only need to happen on the CPU

@@ -21,10 +21,10 @@ import logging
 import numpy
 import pycbc.results
 import sys
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import table
-from glue.ligolw import utils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import table
+from ligo.lw import utils
 from pycbc.results import save_fig_with_metadata
 import pycbc.version
 

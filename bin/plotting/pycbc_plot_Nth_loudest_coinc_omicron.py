@@ -9,7 +9,7 @@ import h5py
 import numpy as np
 import argparse
 import glob
-from glue.ligolw import ligolw, lsctables, table, utils
+from ligo.lw import ligolw, lsctables, table, utils
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

@@ -41,10 +41,10 @@ import lal.utils
 import Pegasus.api  # Try and move this into pegasus_workflow
 from glue import lal as gluelal
 from ligo import segments
-from glue.ligolw import table, lsctables, ligolw
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import segments as ligolw_segments
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import table, lsctables, ligolw
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import segments as ligolw_segments
+from ligo.lw.utils import process as ligolw_process
 from pycbc import makedir
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url

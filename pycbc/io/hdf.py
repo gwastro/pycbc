@@ -14,10 +14,10 @@ from six import raise_from
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 
 from pycbc import version as pycbc_version
 from pycbc.tmpltbank import return_search_summary
