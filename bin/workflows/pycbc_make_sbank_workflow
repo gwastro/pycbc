@@ -47,7 +47,7 @@ class SbankExecutable(wf.Executable):
     current_retention_level = wf.Executable.FINAL_RESULT
 
     # This tells us that reference-psd is a file option
-    file_input_options = ['--reference-psd']
+    file_input_options = wf.Executable.file_input_options + ['--reference-psd']
 
     sbank_job_seed = 0
 
@@ -171,43 +171,18 @@ class CombineHDFBanksExecutable(wf.Executable):
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("--workflow-name", type=str, default='sbank_workflow',
-                    help="Descriptive name of the analysis.")
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 parser.add_argument("--output-file", type=str, default=None,
                     help="Specify the output file name. Either a name can be "
                          "provided or a full path to file. Is this is not "
-                         "given a filename and location is chosen "
-                         "automatically.")
-parser.add_argument("--dax-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the dax filename.")
-parser.add_argument("--map-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the output map filename. "
-                         "WARNING: Giving this if not running as a "
-                         "sub-workflow will cause pycbc_submit_dax to not "
-                         "work.")
-parser.add_argument("--transformation-catalog-filename", type=str, default=None,
-                    help="See workflow/core.py")
-parser.add_argument("--is-sub-workflow", default=False, action="store_true",
-                    help="Only give this option if this code is being run "
-                    "as a sub-workflow within pegasus. If this means nothing "
-                    "to you, do not give this option.")
-parser.add_argument("--tags", default=[], nargs="*", action="store",
-                    help="If this option is given all jobs, and all workflow "
-                          "configuration options, will use the tags given "
-                          "here. This can be used if running this as a "
-                          "sub-workflow to give two sets of options to two "
-                          "different invocations of the sbank workflow.")
+                         "given a filename and location is chosen ")
 
 
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 # Create the workflow object
-workflow = wf.Workflow(args, args.workflow_name)
+workflow = wf.Workflow(args) 
 
 if not args.is_sub_workflow:
     wf.makedir(args.output_dir)
@@ -229,10 +204,14 @@ if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
         raise ValueError("No seed bank actually provided!")
     seed_files = []
     for seed_bank in seed_banks:
+        # NOTE: Be careful that the seed-file will not exist when the
+        #       dax file is generated if this is a sub-workflow.
+        #       Don't run anything that assumes it will be there
         if not args.is_sub_workflow:
-            seed_file = wf.File.from_path(seed_bank)
+            seed_file = wf.resolve_url_to_file(seed_bank)
         else:
-            seed_file = pwf.File(os.path.basename(seed_bank))
+            seed_file = wf.File.from_path(os.path.basename(seed_bank),
+                                          store_file=False)
         seed_files.append(seed_file)
     if len(seed_files) == 1:
         seed_file = seed_files[0]
@@ -414,5 +393,4 @@ for cycle_idx in range(num_cycles):
     seed_file = h5add_node.output_files[0]
     bins_inp_file = seed_file
 
-workflow.save(filename=args.dax_filename, output_map_path=args.map_filename,
-              transformation_catalog_path=args.transformation_catalog_filename)
+workflow.save()

@@ -26,7 +26,7 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
   deploy_pypi:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+    name: Build and publish Python 🐍 distributions 📦 to PyPI
     runs-on: ubuntu-20.04
     needs: build_wheels
     steps:
@@ -44,12 +44,6 @@ jobs:
       run: |
         python setup.py sdist
         mv artifact/* dist/
-    - name: Publish distribution 📦 to Test PyPI
-      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        password: ${{ secrets.test_pypi_password }}
-        repository_url: https://test.pypi.org/legacy/
     - name: Publish distribution 📦 to PyPI
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@master

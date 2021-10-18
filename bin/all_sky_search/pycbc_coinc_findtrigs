@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-import h5py, copy, argparse, logging, numpy, numpy.random, multiprocessing
-import shutil, uuid, os.path
+import h5py, copy, argparse, logging, numpy, numpy.random
+import shutil, uuid, os.path, atexit
 from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat, ranking
 import pycbc.version
+from pycbc import pool
 from numpy.random import seed, shuffle
 from pycbc.io.hdf import ReadByTemplate
 from pycbc.types.optparse import MultiDetOptionAction
@@ -97,13 +98,24 @@ class MultiifoTrigs(object):
 
 trigs = MultiifoTrigs()
 cleanup_files = []
+
+def exit_cleaning():
+    for fname in cleanup_files:
+        logging.info('cleaning up %s', fname)
+        try:
+            os.remove(fname)
+        except OSError as e:
+            print(e)
+            pass
+atexit.register(exit_cleaning)
+
 for i in range(len(args.trigger_files)):
     if args.stage_input:
         dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + '.hdf')
         logging.info("Moving %s to shared memory as %s",
                      args.trigger_files[i], dest)
-        shutil.copyfile(args.trigger_files[i], dest)
         cleanup_files.append(dest)
+        shutil.copyfile(args.trigger_files[i], dest)
     else:
         dest = args.trigger_files[i]
 
@@ -420,7 +432,7 @@ def process_template(tnum):
 if args.nprocesses == 1:
     ldatas = list(map(process_template, list(template_ids)))
 else:
-    p = multiprocessing.Pool(args.nprocesses)
+    p = pool.BroadcastPool(args.nprocesses)
     ldatas = p.map(process_template, list(template_ids))
 
 logging.info('merging data from the templates')
@@ -470,8 +482,5 @@ else:
     nslides = 0
 f.attrs['num_slides'] = nslides
 
-for fname in cleanup_files:
-    logging.info('cleaning up %s', fname)
-    os.remove(fname)
 
 logging.info('Done')

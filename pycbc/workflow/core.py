@@ -38,7 +38,7 @@ from itertools import combinations, groupby, permutations
 from operator import attrgetter
 import lal
 import lal.utils
-import Pegasus.DAX3
+import Pegasus.api  # Try and move this into pegasus_workflow
 from glue import lal as gluelal
 from ligo import segments
 from glue.ligolw import table, lsctables, ligolw
@@ -46,35 +46,15 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import segments as ligolw_segments
 from glue.ligolw.utils import process as ligolw_process
 from pycbc import makedir
-from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
-from pycbc.workflow import pegasus_workflow
+from . import pegasus_workflow
+from .configuration import WorkflowConfigParser, resolve_url
+from .pegasus_sites import add_site
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
 
 lsctables.use_in(ContentHandler)
 
-#REMOVE THESE FUNCTIONS  FOR PYTHON >= 2.7 ####################################
-def check_output_error_and_retcode(*popenargs, **kwargs):
-    """
-    This function is used to obtain the stdout of a command. It is only used
-    internally, recommend using the make_external_call command if you want
-    to call external executables.
-    """
-    if 'stdout' in kwargs:
-        raise ValueError('stdout argument not allowed, it will be overridden.')
-    process = subprocess.Popen(stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
-                               *popenargs, **kwargs)
-    output, error = process.communicate()
-    retcode = process.poll()
-    return output, error, retcode
-
-def check_output(*popenargs, **kwargs):
-    output, _, _ = check_output_error_and_retcode(*popenargs, **kwargs)
-    return output
-
-###############################################################################
 
 def make_analysis_dir(path):
     """
@@ -84,24 +64,6 @@ def make_analysis_dir(path):
     if path is not None:
         makedir(os.path.join(path, 'logs'))
 
-def is_condor_exec(exe_path):
-    """
-    Determine if an executable is condor-compiled
-
-    Parameters
-    ----------
-    exe_path : str
-          The executable path
-
-    Returns
-    -------
-    truth_value  : boolean
-        Return True if the exe is condor compiled, False otherwise.
-    """
-    if str(check_output(['nm', '-a', exe_path])).find('condor') != -1:
-        return True
-    else:
-        return False
 
 file_input_from_config_dict = {}
 
@@ -118,8 +80,13 @@ class Executable(pegasus_workflow.Executable):
     # file and is normally specified in an file, e.g. a PSD file. As files
     # need to be identified as such to pegasus, this attempts to catch this
     # case.
-    # file_input_options = ['--psd-file, '--bank-file'] (as an example)
-    file_input_options = []
+    # These are standard file input arguments used in PyCBC, so we declare
+    # these as files if given to any PyCBC job.
+    file_input_options = ['--gating-file', '--frame-files', '--injection-file',
+                          '--statistic-files', '--bank-file', '--config-files',
+                          '--psd-file', '--asd-file',
+                          '--fake-strain-from-file',
+                          '--sgburst-injection-file']
 
     # Set this parameter to indicate that this option should take different
     # values based on the time. E.g. something like
@@ -141,7 +108,7 @@ class Executable(pegasus_workflow.Executable):
     current_retention_level = KEEP_BUT_RAISE_WARNING
     def __init__(self, cp, name,
                  universe=None, ifos=None, out_dir=None, tags=None,
-                 reuse_executable=True):
+                 reuse_executable=True, set_submit_subdir=True):
         """
         Initialize the Executable class.
 
@@ -175,15 +142,15 @@ class Executable(pegasus_workflow.Executable):
             self.ifo_string = None
         self.cp = cp
         self.universe=universe
+        self.name = name
         self.container_cls = None
         self.container_type = None
 
         try:
-            self.installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
+            self.installed = cp.getboolean('pegasus_profile-%s' % name,
+                                           'pycbc|installed')
         except:
-            self.installed = True
-
-        self.name=name
+            self.installed = False
 
         self.update_current_tags(tags)
 
@@ -198,6 +165,74 @@ class Executable(pegasus_workflow.Executable):
         else:
             self.pegasus_name = self.tagged_name
 
+        # Check that the executable actually exists locally or
+        # looks like a URL, in which case trust Pegasus to be
+        # able to fetch it.
+        exe_path = cp.get('executables', name)
+        self.needs_fetching = False
+
+        exe_url = urllib.parse.urlparse(exe_path)
+
+        # See if the user specified a list of sites for the executable
+        # Ordering is:
+        #  1) Check if a specific site for this Executable is set.
+        #  2) Check is primary_site is set globally.
+        #  3) Use condorpool_symlink as a fallback.
+        self.exe_pfns = {}
+        if cp.has_option_tags('pegasus_profile-%s' % name, 'pycbc|site', tags):
+            exe_site = cp.get_opt_tags('pegasus_profile-%s' % name,
+                                       'pycbc|site', tags)
+        elif cp.has_option('pegasus_profile', 'pycbc|primary_site'):
+            exe_site = cp.get('pegasus_profile', 'pycbc|primary_site')
+        else:
+            exe_site = 'condorpool_symlink'
+
+        exe_site = exe_site.strip()
+
+        if exe_url.scheme in ['', 'file']:
+            # NOTE: There could be a case where the exe is available at a
+            #       remote site, but not on the submit host. We could work to
+            #       allow this if it ever becomes a viable use-case. Some other
+            #       places (e.g. versioning) would have to be edited as well.
+
+            # Check that executables at file urls
+            #  on the local site exist
+            if os.path.isfile(exe_url.path) is False:
+                raise TypeError("Failed to find %s executable "
+                                "at %s on site %s" % (name, exe_path,
+                                exe_site))
+        else:
+            # Could be http, gsiftp, etc. so it needs fetching if run now
+            self.needs_fetching = True
+            if self.needs_fetching and not self.installed:
+                err_msg = "Non-file path URLs cannot be used unless the "
+                err_msg += "executable is a bundled standalone executable. "
+                err_msg += "If this is the case, then add the "
+                err_msg += "pycbc.installed=True property."
+                raise ValueError(err_msg)
+
+        if self.installed:
+            # Is installed, so copy from local site, like other inputs
+            self.exe_pfns['local'] = exe_path
+        else:
+            # We must rely on the executables, and accompanying libraries,
+            # being directly accessible on the execution site.
+            # CVMFS is perfect for this! As is singularity.
+            self.exe_pfns[exe_site] = exe_path
+        logging.info("Using %s executable "
+                     "at %s on site %s" % (name, exe_url.path, exe_site))
+
+        # Determine the condor universe if we aren't given one
+        if self.universe is None:
+            self.universe = 'vanilla'
+
+        if self.universe != 'vanilla':
+            logging.info("%s executable will run as %s universe"
+                         % (name, self.universe))
+
+        # FIXME: This hasn't yet been ported to pegasus5 and won't work.
+        #        Pegasus describes two ways to work with containers, and I need
+        #        to figure out which is most appropriate and use that.
         # Determine if this executables should be run in a container
         try:
             self.container_type = cp.get('pegasus_profile-%s' % name,
@@ -206,6 +241,7 @@ class Executable(pegasus_workflow.Executable):
             pass
 
         if self.container_type is not None:
+            # FIXME: Move the actual container setup into pegasus_workflow
             self.container_img = cp.get('pegasus_profile-%s' % name,
                                         'container|image')
             try:
@@ -221,7 +257,7 @@ class Executable(pegasus_workflow.Executable):
                 self.container_mount = None
 
 
-            self.container_cls = Pegasus.DAX3.Container("{}-container".format(
+            self.container_cls = Pegasus.api.Container("{}-container".format(
                                                     name),
                                                     self.container_type,
                                                     self.container_img,
@@ -237,55 +273,18 @@ class Executable(pegasus_workflow.Executable):
                                              installed=self.installed)
 
         self._set_pegasus_profile_options()
-
-        # Check that the executable actually exists locally or
-        # looks like a URL, in which case trust Pegasus to be
-        # able to fetch it.
-        exe_path = cp.get('executables', name)
-        self.needs_fetching = False
-
-        exe_url = urllib.parse.urlparse(exe_path)
-
-        # See if the user specified a list of sites for the executable
-        try:
-            exe_site_list = cp.get('pegasus_profile-%s' % name, 'pycbc|site')
-        except:
-            exe_site_list = 'local'
-
-        for s in exe_site_list.split(','):
-            exe_site = s.strip()
-
-            if exe_url.scheme in ['', 'file']:
-                if exe_site is 'local':
-                    # Check that executables at file urls
-                    #  on the local site exist
-                    if os.path.isfile(exe_url.path) is False:
-                        raise TypeError("Failed to find %s executable "
-                                        "at %s on site %s" % (name, exe_path,
-                                        exe_site))
-            else:
-                # Could be http, gsiftp, etc. so it needs fetching if run now
-                self.needs_fetching = True
-
-            self.add_pfn(exe_path, site=exe_site)
-            logging.info("Using %s executable "
-                         "at %s on site %s" % (name, exe_url.path, exe_site))
-
-        # Determine the condor universe if we aren't given one
-        if self.universe is None:
-            if is_condor_exec(exe_path):
-                self.universe = 'standard'
-            else:
-                self.universe = 'vanilla'
-
-        if not self.universe == 'vanilla':
-            logging.info("%s executable will run as %s universe"
-                         % (name, self.universe))
-
         self.set_universe(self.universe)
 
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
+
+        # This sets up the sub-directory to use in the submit directory
+        if set_submit_subdir:
+            self.add_profile('pegasus', 'relative.submit.dir',
+                             self.pegasus_name)
+
+        self.execution_site = exe_site
+        self.executable_url = exe_path
 
     @property
     def ifo(self):
@@ -300,6 +299,14 @@ class Executable(pegasus_workflow.Executable):
             errMsg = "self.ifoList must contain only one ifo to access the "
             errMsg += "ifo property. %s." %(str(self.ifo_list),)
             raise TypeError(errMsg)
+
+    def get_transformation(self):
+        if self.execution_site in self.transformations:
+            return self.transformations[self.execution_site]
+        else:
+            self.create_transformation(self.execution_site,
+                                       self.executable_url)
+            return self.get_transformation()
 
     def add_ini_profile(self, cp, sec):
         """Add profile from configuration file.
@@ -318,11 +325,7 @@ class Executable(pegasus_workflow.Executable):
 
             value = cp.get(sec, opt).strip()
             key = opt.split('|')[1]
-            self.add_profile(namespace, key, value, force=True)
-
-            # Remove if Pegasus can apply this hint in the TC
-            if namespace == 'hints' and key == 'execution.site':
-                self.execution_site = value
+            self.add_profile(namespace, key, value)
 
     def add_ini_opts(self, cp, sec):
         """Add job-specific options from configuration file.
@@ -526,7 +529,7 @@ class Executable(pegasus_workflow.Executable):
         if tags is None:
             tags = []
         if '' in tags:
-            logging.warn('DO NOT GIVE ME EMPTY TAGS')
+            logging.warn('DO NOT GIVE ME EMPTY TAGS (in %s)', self.name)
             tags.remove('')
         tags = [tag.upper() for tag in tags]
         self.tags = tags
@@ -610,15 +613,12 @@ class Executable(pegasus_workflow.Executable):
         for nodes that might already have been created. Therefore this is
         only called once in __init__. Second calls to this will fail.
         """
-        # Add executable non-specific profile information
-        if self.cp.has_section('pegasus_profile'):
-            self.add_ini_profile(self.cp, 'pegasus_profile')
-
         # Executable- and tag-specific profile information
         for sec in self.sections:
             if self.cp.has_section('pegasus_profile-{0}'.format(sec)):
                 self.add_ini_profile(self.cp,
                                      'pegasus_profile-{0}'.format(sec))
+
 
 class Workflow(pegasus_workflow.Workflow):
     """
@@ -626,7 +626,7 @@ class Workflow(pegasus_workflow.Workflow):
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs.
     """
-    def __init__(self, args, name):
+    def __init__(self, args, **kwargs):
         """
         Create a pycbc workflow
 
@@ -635,10 +635,27 @@ class Workflow(pegasus_workflow.Workflow):
         args : argparse.ArgumentParser
             The command line options to initialize a CBC workflow.
         """
-        super(Workflow, self).__init__(name)
-
         # Parse ini file
         self.cp = WorkflowConfigParser.from_cli(args)
+        self.args = args
+
+        if hasattr(args, 'main_workflow_directory'):
+            wflow_dir = args.main_workflow_directory or args.output_dir
+        else:
+            wflow_dir = args.output_dir
+
+        if hasattr(args, 'dax_file'):
+            dax_file = args.dax_file or None
+        else:
+            dax_file = None
+
+        super(Workflow, self).__init__(
+            name=args.workflow_name,
+            directory=wflow_dir,
+            cache_file=args.cache_file,
+            dax_file_name=dax_file,
+            **kwargs
+        )
 
         # Set global values
         start_time = end_time = 0
@@ -663,35 +680,73 @@ class Workflow(pegasus_workflow.Workflow):
         self._inputs = FileList([])
         self._outputs = FileList([])
 
+        # Setup staging site links
+        self._staging_site = {}
+        self.add_sites_from_config()
+
+    # FIXME: Should this be in pegasus_workflow?
     @property
     def output_map(self):
+        args = self.args
+        if hasattr(args, 'output_map') and args.output_map is not None:
+            return args.output_map
+
         if self.in_workflow is not False:
             name = self.name + '.map'
         else:
             name = 'output.map'
-        path =  os.path.join(os.getcwd(), name)
-        return path
 
-    @property
-    def transformation_catalog(self):
-        if self.in_workflow is not False:
-            name = self.name + '.tc.txt'
-        else:
-            name = 'tc.txt'
-        path =  os.path.join(os.getcwd(), name)
+        path =  os.path.join(self.out_dir, name)
         return path
 
     @property
     def staging_site(self):
-        if self.in_workflow is not False:
-            workflow_section = 'workflow-%s' % self.name
+        return self._staging_site
+
+    @property
+    def staging_site_str(self):
+        return ','.join(['='.join(x) for x in self._staging_site.items()])
+
+    @property
+    def exec_sites_str(self):
+        sites = list(self._sc.sites)
+        sites.remove('local')
+        return ','.join(sites)
+
+    def add_sites_from_config(self):
+        # FIXME: It would be nice to be able to override site properties here.
+        #        We do want a mechanism to change things from the command line.
+        #        Perhaps read options from some reserved config section to do
+        #        this, which can then be accessed through command line?
+        add_site(self._sc, 'local', self.cp, out_dir=self.out_dir)
+        if self.cp.has_option('pegasus_profile', 'pycbc|primary_site'):
+            site = self.cp.get('pegasus_profile', 'pycbc|primary_site')
         else:
-            workflow_section = 'workflow'
-        try:
-            staging_site = self.cp.get(workflow_section,'staging-site')
-        except:
-            staging_site = None
-        return staging_site
+            # The default if not chosen
+            site = 'condorpool_symlink'
+        add_site(self._sc, site, self.cp, out_dir=self.out_dir)
+        # NOTE: For now we *always* stage from local or the site itself.
+        #       This doesn't have to always be true though.
+        # FIXME: Don't want to hardcode this!
+        if site in ['condorpool_shared']:
+            self._staging_site[site] = site
+        else:
+            self._staging_site[site] = 'local'
+
+        subsections = [sec for sec in self.cp.sections()
+                       if sec.startswith('pegasus_profile-')]
+
+        for subsec in subsections:
+            if self.cp.has_option(subsec, 'pycbc|site'):
+                site = self.cp.get(subsec, 'pycbc|site')
+                if site not in self._sc.sites:
+                    add_site(self._sc, site, self.cp, out_dir=self.out_dir)
+                    # NOTE: For now we *always* stage from local. This doesn't
+                    #       have to always be true though.
+                    if site in ['condorpool_shared']:
+                        self._staging_site[site] = site
+                    else:
+                        self._staging_site[site] = 'local'
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
@@ -709,7 +764,10 @@ class Workflow(pegasus_workflow.Workflow):
                 # entry.
                 pfn = node.executable.get_pfn('nonlocal')
 
-            resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+            resolved = resolve_url(
+                pfn,
+                permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+            )
             node.executable.clear_pfns()
             node.executable.add_pfn(urljoin('file:', pathname2url(resolved)),
                                     site='local')
@@ -723,79 +781,39 @@ class Workflow(pegasus_workflow.Workflow):
 
         # Make call
         make_external_call(cmd_list, out_dir=os.path.join(out_dir, 'logs'),
-                                     out_basename=node.executable.name)
+                           out_basename=node.executable.name)
         # Change back
         os.chdir(curr_dir)
 
         for fil in node._outputs:
             fil.node = None
-            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
-                    site='local')
+            fil.add_pfn(urljoin('file:', pathname2url(fil.storage_path)),
+                        site='local')
 
-    @staticmethod
-    def set_job_properties(job, output_map_file, transformation_catalog_file,
-                           staging_site=None):
+    def save(self, filename=None, output_map_path=None):
 
-        job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' %
-                         os.path.basename(output_map_file.name))
-        job.uses(output_map_file, link=Pegasus.DAX3.Link.INPUT)
-        job.addArguments('-Dpegasus.dir.storage.mapper.replica=File')
-
-        # FIXME this is an ugly hack to connect the right transformation
-        # catalog to the right DAX beacuse Pegasus 4.9 does not support
-        # the full transformation catalog syntax in the DAX. This will go
-        # away in Pegasus 5.x when this code is re-written.
-
-        job.addArguments('-Dpegasus.catalog.transformation.file=%s' %
-                         os.path.basename(transformation_catalog_file.name))
-        job.uses(transformation_catalog_file, link=Pegasus.DAX3.Link.INPUT)
-
-        job.addArguments('--output-site local')
-        job.addArguments('--cleanup inplace')
-        job.addArguments('--cluster label,horizontal')
-        job.addArguments('-vvv')
-
-        # FIXME _reuse_cache needs to be fixed to use PFNs properly. This will
-        # work as pegasus-plan is currently invoked on the local site so has
-        # access to a file in os.getcwd() but this code is fragile.
-        job.addArguments('--cache %s' % os.path.join(os.getcwd(), '_reuse.cache'))
-
-        if staging_site:
-            job.addArguments('--staging-site %s' % staging_site)
-
-    def save(self, filename=None, output_map_path=None,
-             transformation_catalog_path=None, staging_site=None):
+        # FIXME: Too close to pegasus to live here and not in pegasus_workflow
 
         if output_map_path is None:
             output_map_path = self.output_map
-        output_map_file = Pegasus.DAX3.File(os.path.basename(output_map_path))
-        output_map_file.addPFN(Pegasus.DAX3.PFN(output_map_path, 'local'))
-        if self.in_workflow is not False:
-            self.in_workflow._adag.addFile(output_map_file)
+        output_map_file = pegasus_workflow.File(os.path.basename(output_map_path))
+        output_map_file.add_pfn(output_map_path, site='local')
+        self.output_map_file = output_map_file
 
-        if transformation_catalog_path is None:
-            transformation_catalog_path = self.transformation_catalog
-        transformation_catalog_file = Pegasus.DAX3.File(os.path.basename(
-                                                        transformation_catalog_path))
-        transformation_catalog_file.addPFN(Pegasus.DAX3.PFN(
-            transformation_catalog_path, 'local'))
-        if self.in_workflow is not False:
-            self.in_workflow._adag.addFile(transformation_catalog_file)
+        if self._asdag is not None:
+            self._asdag.set_subworkflow_properties(
+                output_map_file,
+                staging_site=self.staging_site,
+                cache_file=self.cache_file
+            )
+            self._asdag.add_planner_args(**self._asdag.pycbc_planner_args)
 
-        if staging_site is None:
-            staging_site = self.staging_site
+        # add transformations to dax
+        for transform in self._transformations:
+            self.add_transformation(transform)
 
-        Workflow.set_job_properties(self.as_job, output_map_file,
-                                    transformation_catalog_file,
-                                    staging_site)
-
-        # add executable pfns for local site to dax
-        for exe in self._executables:
-            exe.insert_into_dax(self._adag)
-
-        # add workflow input files pfns for local site to dax
-        for fil in self._inputs:
-            fil.insert_into_dax(self._adag)
+        for container in self._containers:
+            self.add_container(container)
 
         # save the configuration file
         ini_file = os.path.abspath(self.name + '.ini')
@@ -804,7 +822,7 @@ class Workflow(pegasus_workflow.Workflow):
         if os.path.isfile(ini_file):
             err_msg = "Refusing to overwrite configuration file that "
             err_msg += "shouldn't be there: "
-            err_msg += os.path.join(os.getcwd(), ini_file)
+            err_msg += os.path.join(self.out_dir, ini_file)
             raise ValueError(err_msg)
 
         fp = open(ini_file, 'w')
@@ -813,16 +831,9 @@ class Workflow(pegasus_workflow.Workflow):
 
         # save the dax file
         super(Workflow, self).save(filename=filename,
-                                   tc=transformation_catalog_path)
-
-        # add workflow storage locations to the output mapper
-        f = open(output_map_path, 'w')
-        for out in self._outputs:
-            try:
-                f.write(out.output_map_str() + '\n')
-            except ValueError:
-                # There was no storage path
-                pass
+                                   output_map_path=output_map_path,
+                                   submit_now=self.args.submit_now,
+                                   plan_now=self.args.plan_now)
 
     def save_config(self, fname, output_dir, cp=None):
         """ Writes configuration file to disk and returns a pycbc.workflow.File
@@ -849,7 +860,7 @@ class Workflow(pegasus_workflow.Workflow):
         ini_file = File(self.ifos, "", self.analysis_time,
                         file_url="file://" + ini_file_path)
         # set the physical file name
-        ini_file.PFN(ini_file_path, "local")
+        ini_file.add_pfn(ini_file_path, "local")
         # set the storage path to be the same
         ini_file.storage_path = ini_file_path
         return FileList([ini_file])
@@ -857,21 +868,16 @@ class Workflow(pegasus_workflow.Workflow):
 
 class Node(pegasus_workflow.Node):
     def __init__(self, executable, valid_seg=None):
-        super(Node, self).__init__(executable)
+        super(Node, self).__init__(executable.get_transformation())
+        self.executable = executable
         self.executed = False
         self.set_category(executable.name)
         self.valid_seg = valid_seg
 
-        if executable.universe == 'vanilla' and executable.installed:
-            self.add_profile('condor', 'getenv', 'True')
-
-        if hasattr(executable, 'execution_site'):
-            self.add_profile('hints', 'execution.site', executable.execution_site)
-
         self._options += self.executable.common_options
         self._raw_options += self.executable.common_raw_options
         for inp in self.executable.common_input_files:
-            self._add_input(inp)
+            self.add_input(inp)
 
         if len(self.executable.time_dependent_options):
             # Resolving these options requires the concept of a valid time.
@@ -883,6 +889,7 @@ class Node(pegasus_workflow.Node):
             self.resolve_td_options(self.executable.unresolved_td_options)
 
     def get_command_line(self):
+        # FIXME: Put in pegasus_workflow??
         self._finalize()
         arglist = self._dax_node.arguments
 
@@ -962,7 +969,7 @@ class Node(pegasus_workflow.Node):
             self.add_raw_arg(':')
             self.add_raw_arg(infile.name)
             self.add_raw_arg(' ')
-            self._add_input(infile)
+            self.add_input(infile)
 
     def add_multiifo_output_list_opt(self, opt, outputs):
         """ Add an option that determines a list of outputs from multiple
@@ -978,7 +985,7 @@ class Node(pegasus_workflow.Node):
             self.add_raw_arg(':')
             self.add_raw_arg(outfile.name)
             self.add_raw_arg(' ')
-            self._add_output(outfile)
+            self.add_output(outfile)
 
     def new_multiifo_output_list_opt(self, opt, ifos, analysis_time, extension,
                                      tags=None, store_file=None,
@@ -1116,7 +1123,7 @@ class File(pegasus_workflow.File):
         if tags is None:
             tags = []
         if '' in tags:
-            logging.warn('DO NOT GIVE ME EMPTY TAGS')
+            logging.warn('DO NOT GIVE EMPTY TAGS (from %s)', exe_name)
             tags.remove('')
         self.tags = tags
 
@@ -1146,7 +1153,6 @@ class File(pegasus_workflow.File):
             file_url = urllib.parse.urlunparse(['file', 'localhost', path,
                                                 None, None, None])
 
-        # Let's do a test here
         if use_tmp_subdirs and len(self.segment_list):
             pegasus_lfn = str(int(self.segment_list.extent()[0]))[:-4]
             pegasus_lfn = pegasus_lfn + '/' + os.path.basename(file_url)
@@ -1160,7 +1166,7 @@ class File(pegasus_workflow.File):
             self.storage_path = None
 
     def __getstate__(self):
-        """ Allow the ahope file to be picklable. This disables the usage of
+        """ Allow the workflow.File to be picklable. This disables the usage of
         the internal cache entry.
         """
         for i, seg in enumerate(self.segment_list):
@@ -1170,6 +1176,8 @@ class File(pegasus_workflow.File):
         safe_dict['cache_entry'] = None
         return safe_dict
 
+    # FIXME: This is a pegasus_workflow thing (don't think it's needed at all!)
+    #        use the pegasus function directly (maybe not).
     def add_metadata(self, key, value):
         """ Add arbitrary metadata to this file """
         self.metadata[key] = value
@@ -1234,6 +1242,33 @@ class File(pegasus_workflow.File):
 
         return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start,
                                    duration, extension)
+
+    @classmethod
+    def from_path(cls, path, attrs=None, **kwargs):
+        """
+        Create an output File object from path, with optional attributes.
+        """
+        if attrs is None:
+            attrs = {}
+        if attrs and 'ifos' in attrs:
+            ifos = attrs['ifos']
+        else:
+            ifos = ['H1', 'K1', 'L1', 'V1']
+        if attrs and 'exe_name' in attrs:
+            exe_name = attrs['exe_name']
+        else:
+            exe_name = 'INPUT'
+        if attrs and 'segs' in attrs:
+            segs = attrs['segs']
+        else:
+            segs = segments.segment([1, 2000000000])
+        if attrs and 'tags' in attrs:
+            tags = attrs['tags']
+        else:
+            tags = []
+
+        curr_file = cls(ifos, exe_name, segs, path, tags=tags, **kwargs)
+        return curr_file
 
 class FileList(list):
     '''
@@ -1441,8 +1476,8 @@ class FileList(list):
         if not useSplitLists:
             # Slower, but simpler method
             outFiles = [i for i in self if ifo in i.ifo_list]
-            outFiles = [i for i in outFiles \
-                                      if i.segment_list.intersects_segment(currSeg)]
+            outFiles = [i for i in outFiles
+                        if i.segment_list.intersects_segment(currSeg)]
         else:
             # Faster, but more complicated
             # Basically only check if a subset of files intersects_segment by
@@ -1450,8 +1485,8 @@ class FileList(list):
             if not self._check_split_list_validity():
                 # FIXME: DO NOT hard code this.
                 self._temporal_split_list(100)
-            startIdx = int( (currSeg[0] - self._splitListsStart) / \
-                                                          self._splitListsStep )
+            startIdx = int((currSeg[0] - self._splitListsStart) /
+                           self._splitListsStep)
             # Add some small rounding here
             endIdx = (currSeg[1] - self._splitListsStart) / self._splitListsStep
             endIdx = int(endIdx - 0.000001)
@@ -1460,10 +1495,10 @@ class FileList(list):
             for idx in range(startIdx, endIdx + 1):
                 if idx < 0 or idx >= self._splitListsNum:
                     continue
-                outFilesTemp = [i for i in self._splitLists[idx] \
-                                                            if ifo in i.ifo_list]
-                outFiles.extend([i for i in outFilesTemp \
-                                      if i.segment_list.intersects_segment(currSeg)])
+                outFilesTemp = [i for i in self._splitLists[idx]
+                                if ifo in i.ifo_list]
+                outFiles.extend([i for i in outFilesTemp
+                                 if i.segment_list.intersects_segment(currSeg)])
                 # Remove duplicates
                 outFiles = list(set(outFiles))
 
@@ -1584,20 +1619,20 @@ class FileList(list):
     @classmethod
     def load(cls, filename):
         """
-        Load an AhopeFileList from a pickle file
+        Load a FileList from a pickle file
         """
         f = open(filename, 'r')
         return cPickle.load(f)
 
     def dump(self, filename):
         """
-        Output this AhopeFileList to a pickle file
+        Output this FileList to a pickle file
         """
         f = open(filename, 'w')
         cPickle.dump(self, f)
 
     def to_file_object(self, name, out_dir):
-        """Dump to a pickle file and return an File object reference of this list
+        """Dump to a pickle file and return an File object reference
 
         Parameters
         ----------
@@ -1616,6 +1651,7 @@ class FileList(list):
                              extension='.pkl', directory=out_dir)
         self.dump(file_ref.storage_path)
         return file_ref
+
 
 class SegFile(File):
     '''
@@ -1775,8 +1811,8 @@ class SegFile(File):
         if not file_exists:
             instnc.to_segment_xml()
         else:
-            instnc.PFN(urljoin('file:', pathname2url(instnc.storage_path)),
-                       site='local')
+            instnc.add_pfn(urljoin('file:', pathname2url(instnc.storage_path)),
+                           site='local')
         return instnc
 
     @classmethod
@@ -1907,7 +1943,7 @@ class SegFile(File):
         # write file
         url = urljoin('file:', pathname2url(self.storage_path))
         if not override_file_if_exists or not self.has_pfn(url, site='local'):
-            self.PFN(url, site='local')
+            self.add_pfn(url, site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
@@ -1977,6 +2013,7 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
                 errFile=errFile, outFile=outFile, cmdFile=cmdFile)
     logging.info("Call successful, or error checking disabled.")
 
+
 class CalledProcessErrorMod(Exception):
     """
     This exception is raised when subprocess.call returns a non-zero exit code
@@ -2000,6 +2037,7 @@ class CalledProcessErrorMod(Exception):
         if self.cmdFile:
             msg += "The failed command has been printed in %s ." %(self.cmdFile)
         return msg
+
 
 def resolve_url_to_file(curr_pfn, attrs=None):
     """
@@ -2044,41 +2082,20 @@ def resolve_url_to_file(curr_pfn, attrs=None):
         # Use resolve_url to download file/symlink as appropriate
         local_file_path = resolve_url(curr_pfn)
         # Create File object with default local path
-        # To do this we first need to check the attributes
-        if attrs and 'ifos' in attrs:
-            ifos = attrs['ifos']
-        else:
-            ifos = ['H1', 'K1', 'L1', 'V1']
-        if attrs and 'exe_name' in attrs:
-            exe_name = attrs['exe_name']
-        else:
-            exe_name = 'INPUT'
-        if attrs and 'segs' in attrs:
-            segs = attrs['segs']
-        else:
-            segs = segments.segment([1, 2000000000])
-        if attrs and 'tags' in attrs:
-            tags = attrs['tags']
-        else:
-            tags = []
+        curr_file = File.from_path(local_file_path, attrs=attrs)
 
-        curr_file = File(ifos, exe_name, segs, local_file_path, tags=tags)
-        pfn_local = urljoin('file:', pathname2url(local_file_path))
-        curr_file.PFN(pfn_local, 'local')
-        # Add other PFNs for nonlocal sites as needed.
-        # This block could be extended as needed
         if curr_pfn.startswith(cvmfsstrs):
-            curr_file.PFN(curr_pfn, site='osg')
-            curr_file.PFN(curr_pfn, site='nonfsio')
-            # Also register the CVMFS PFN with the local site. We want to
-            # prefer this, and symlink from here, when possible.
-            # However, I think we need a little more to avoid it symlinking
-            # to this through an NFS mount.
-            curr_file.PFN(curr_pfn, site='local')
+            # Add PFNs for nonlocal sites for special cases (e.g. CVMFS).
+            # This block could be extended as needed
+            curr_file.add_pfn(curr_pfn, site='all')
+        else:
+            pfn_local = urljoin('file:', pathname2url(local_file_path))
+            curr_file.add_pfn(pfn_local, 'local')
         # Store the file to avoid later duplication
         tuple_val = (local_file_path, curr_file, curr_pfn)
         file_input_from_config_dict[curr_lfn] = tuple_val
     return curr_file
+
 
 def get_full_analysis_chunk(science_segs):
     """
@@ -2104,6 +2121,7 @@ def get_full_analysis_chunk(science_segs):
             max = hi
     fullSegment = segments.segment(min, max)
     return fullSegment
+
 
 def get_random_label():
     """
@@ -2165,6 +2183,7 @@ def resolve_td_option(val_str, valid_seg):
         raise ValueError
     return output
 
+
 def add_workflow_settings_cli(parser, include_subdax_opts=False):
     """Adds workflow options to an argument parser.
 
@@ -2186,13 +2205,35 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
                        help="Path to directory where the workflow will be "
                             "written. Default is to use "
                             "{workflow-name}_output.")
+    wfgrp.add_argument("--cache-file", default=None,
+                       help="Path to input file containing list of files to "
+                            "be reused (the 'input_map' file)")
+    wfgrp.add_argument("--plan-now", default=False, action='store_true',
+                       help="If given, workflow will immediately be planned "
+                            "on completion of workflow generation but not "
+                            "submitted to the condor pool. A start script "
+                            "will be created to submit to condor.")
+    wfgrp.add_argument("--submit-now", default=False, action='store_true',
+                       help="If given, workflow will immediately be submitted "
+                            "on completion of workflow generation")
+
     if include_subdax_opts:
         wfgrp.add_argument("--output-map", default="output.map",
                            help="Path to an output map file. Default is "
                                 "output.map.")
-        wfgrp.add_argument("--transformation-catalog", default=None,
-                           help="Path to transformation catalog file.")
         wfgrp.add_argument("--dax-file", default=None,
                            help="Path to DAX file. Default is to write to the "
                                 "output directory with name "
                                 "{workflow-name}.dax.")
+        wfgrp.add_argument('--main-workflow-directory', default=None,
+                           required=False,
+                           help="Supply the location that the main workflow "
+                                "was generated in. Only needed if running "
+                                "this job within a workflow, and then "
+                                "identifies where the local-site-scratch is")
+        wfgrp.add_argument("--is-sub-workflow", default=False,
+                           action="store_true",
+                           help="Only give this option if this code is being "
+                                "run as a sub-workflow within pegasus. If "
+                                "this means nothing to you, do not give this "
+                                "option.")

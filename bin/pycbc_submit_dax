@@ -18,16 +18,7 @@ exec 2>&1
 DAX_FILE=""
 CACHE_FILE=0
 LOCAL_PEGASUS_DIR=""
-ACCOUNTING_GROUP=""
-ACCOUNTING_GROUP_USER=""
-NO_ACCOUNTING_GROUP=0
 PEGASUS_PROPERTIES=""
-SHARED_FILESYSTEM=0
-SITE_LIST=""
-STAGING_SITES=""
-TRANSFORMATION_CATALOG=""
-LOCAL_STAGING_SERVER="file://"
-REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
 NO_QUERY_DB=0
 NO_GRID=""
@@ -50,7 +41,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:p:P:K:Q:n:l:G:h --long dax:,cache-file:,pegasus-properties:,append-pegasus-property:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -97,26 +88,6 @@ EOF`
            set -e
            shift 2 ;;
       esac ;;
-    -g|--local-staging-server)
-      case "$2" in
-        "") shift 2 ;;
-        *) LOCAL_STAGING_SERVER=$2 ; shift 2 ;;
-      esac ;;
-    -r|--remote-staging-server)
-      case "$2" in
-        "") shift 2 ;;
-        *) REMOTE_STAGING_SERVER=$2 ; shift 2 ;;
-      esac ;;
-    -a|--accounting-group)
-      case "$2" in
-        "") shift 2 ;;
-        *) export ACCOUNTING_GROUP=$2 ; shift 2 ;;
-      esac ;;
-    -u|--accounting-group-user)
-      case "$2" in
-        "") shift 2 ;;
-        *) export ACCOUNTING_GROUP_USER=$2 ; shift 2 ;;
-      esac ;;
     -p|--pegasus-properties)
       case "$2" in
         "") shift 2 ;;
@@ -127,46 +98,6 @@ EOF`
         "") shift 2 ;;
         *) echo $2 >> extra-properties.conf ; shift 2 ;;
       esac ;;
-    -e|--enable-shared-filesystem) SHARED_FILESYSTEM=1 ; shift ;;
-    -s|--execution-sites)
-      case "$2" in
-        "") shift 2 ;;
-        *) SITE_LIST=$2 ; shift 2 ;;
-      esac ;;
-    -S|--staging-sites)
-      case "$2" in
-        "") shift 2 ;;
-        *) STAGING_SITES="--staging-site $2" ; shift 2 ;;
-      esac ;;
-    -k|--append-site-profile)
-      case "$2" in
-        "") shift 2 ;;
-        *) SITE_PROFILE=${2}
-           APPEND_SITE_PROFILE_ARRAY=$(python -c "import sys; from xml.sax.saxutils import (escape, unescape); print(escape(unescape(sys.stdin.read()), entities=${HTML_ENTITIES}))" <<< ${SITE_PROFILE})
-           OIFS=${IFS}; IFS=":"
-           read -ra APPEND_SITE_PROFILE_ARRAY <<< "${APPEND_SITE_PROFILE_ARRAY}"
-           IFS=${OIFS}
-           APPEND_SITE=${APPEND_SITE_PROFILE_ARRAY[0]}
-           APPEND_SITE_NS_KEY=(${APPEND_SITE_PROFILE_ARRAY[1]//\|/ })
-           APPEND_SITE_VALUE=("${APPEND_SITE_PROFILE_ARRAY[@]:2}")
-           /bin/echo -n "    <profile namespace=\"${APPEND_SITE_NS_KEY[0]}\" key=\"${APPEND_SITE_NS_KEY[1]}\">" >> ${APPEND_SITE}-extra-site-properties.xml
-           need_colon=0
-           for i in "${APPEND_SITE_VALUE[@]}" ; do
-               if [ ${need_colon} -eq 1 ] ; then
-                   /bin/echo -n ":" >> ${APPEND_SITE}-extra-site-properties.xml
-               fi
-               /bin/echo -n "${i}" >> ${APPEND_SITE}-extra-site-properties.xml
-               need_colon=1
-           done
-           echo "</profile>" >> ${APPEND_SITE}-extra-site-properties.xml
-           shift 2 ;;
-      esac ;;
-    -t|--transformation-catalog)
-      case "$2" in
-        "") shift 2 ;;
-        *) TRANSFORMATION_CATALOG=$2 ; shift 2 ;;
-      esac ;;
-    -F|--force-no-accounting-group) NO_ACCOUNTING_GROUP=1 ; shift ;;
     -K|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
     -Q|--no-query-db) NO_QUERY_DB=1 ; shift ;;
     -n|--no-submit) SUBMIT_DAX="" ; shift ;;
@@ -182,41 +113,17 @@ EOF`
       echo "required arguments:"
       echo "  -d, --dax DAX           name of the dax file to plan"
       echo
-      echo "workflow submission required one of:"
-      echo "  -a, --accounting-group GROUP tagged string used for site "
-      echo "                               resource accounting."
-      echo "  -F, --force-no-accounting-group submit without an accounting"
-      echo "                               group. Will cause condor submission"
-      echo "                               to fail on LIGO Data Grid clusters"
-      echo
       echo "optional arguments:"
       echo "  -h, --help              show this help message and exit"
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
-      echo "  -g, --local-staging-server uri://host provide a uri on host"
-      echo "                                 for the local site scratch"
-      echo "                                 (default is file://)"
-      echo "  -r, --remote-staging-server uri://host provide a uri on host"
-      echo "                                 for the remote site scratch."
       echo "  -p, --pegasus-properties FILE use the specified file as"
       echo "                               the pegasus properties file"
       echo "  -P, --append-pegasus-property STRING add the extra property"
       echo "                                          specified by the argument"
-      echo "  -s, --execution-sites A,B,C specify a comma separated list"
-      echo "                               of execution sites that will be"
-      echo "                               used in addition to the local site"
-      echo "  -S, --staging-sites A=X,B=Y,C=Z  comma separated list of key=value"
-      echo "                                   pairs, where the key is the"
-      echo "                                   execution site and value is the"
-      echo "                                   staging site for that execution site"
-      echo "  -k, --append-site-profile SITE:NAMESPACE|KEY:VALUE"
-      echo "                               append the profile determined by"
-      echo "                               NAMESPACE, KEY, and VALUE to the"
-      echo "                               site catalog entry for SITE"
-      echo "  -t, --transformation-catalog FILE pass the specified"
-      echo "                                   transformation catalog to Pegasus"
       echo "  -K, --no-create-proxy   Do not run ligo-proxy-init and assume"
       echo "                             that the user has a valid grid proxy"
       echo "  -n, --no-submit         Plan the DAX but do not submit it"
+      echo "  -Q, --no-query-db       Don't query the pegasus DB."
       echo "  -l, --local-dir         Directory to put condor files under"
       echo "  -G, --no-grid           Disable checks for grid proxy and"
       echo "                             GLOBUS_LOCATION in pegasus-plan"
@@ -226,14 +133,9 @@ EOF`
       echo "If the --local-dir option is not given."
       echo
       echo "If the environment variable PEGASUS_FILE_DIRECTORY is set then the"
-      echo "script will look there for pegasus site catalog and configuration"
-      echo "otherwise, the script will look for this directory by querying the"
+      echo "script will look there for configuration, "
+      echo "otherwise the script will look for this directory by querying the"
       echo "pycbc.workflow module."
-      echo
-      echo "If the environment variable PEGASUS_SITE_CATALOG_PATH is set then the"
-      echo "script will look for site catalog templates in this directory."
-      echo "Site catalog templates may contain other environment variables that"
-      echo "must be set in order for them to be rendered correctly."
       echo
       exit 0 ;;
     --) shift ; break ;;
@@ -244,16 +146,6 @@ done
 if [ "x$DAX_FILE" == "x" ]; then
   echo "Error: --dax must be specified. Use --help for options."
    exit 1
-fi
-
-if [ "x$ACCOUNTING_GROUP" == "x" ] && [ $NO_ACCOUNTING_GROUP == 0 ]; then
-  echo "Error: You must specify an accounting group with --accounting-group or"
-  echo "override this check with --force-no-accounting-group. If you do not specify"
-  echo "an accounting group, job submission will fail on the LIGO Data Grid."
-  echo
-  echo "For a list of available LIGO Data Grid accounting group tags, see"
-  echo "   https://ldas-gridmon.ligo.caltech.edu/ldg_accounting/user"
-  exit 1
 fi
 
 if [ $NO_CREATE_PROXY == 0 ]; then
@@ -313,103 +205,6 @@ elif [ -z $PEGASUS_FILE_DIRECTORY ] ; then
   PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print(PEGASUS_FILE_DIRECTORY)'`
 fi
 
-# Create the site catalog
-export LOCAL_SITE_PATH=${PWD}
-LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_PATH}
-LOCAL_SITE_STORAGE_URL='file://'${LOCAL_SITE_PATH}
-if [[ "$LOCAL_STAGING_SERVER" == stash://* ]] ; then
-  LOCAL_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
-  LOCAL_SITE_SCRATCH_URL='stash://'`echo ${LOCAL_SITE_SCRATCH_PATH} | sed 's+^/stash++g'`
-else
-  LOCAL_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
-  LOCAL_SITE_SCRATCH_URL=${LOCAL_STAGING_SERVER}${LOCAL_SITE_PATH}
-fi
-export LOCAL_SITE_SCRATCH_PATH LOCAL_SITE_SCRATCH_URL
-export LOCAL_SITE_STORAGE_PATH LOCAL_SITE_STORAGE_URL
-
-# add the local site
-# Set remote staging url to local
-if [ -z $SITE_LIST ] ; then
-  SITE_LIST="local"
-else
-  SITE_LIST="local,${SITE_LIST}"
-fi
-
-if [ -z ${PEGASUS_SITE_CATALOG_PATH} ] ; then
-  PEGASUS_SITE_CATALOG_PATH=${PEGASUS_FILE_DIRECTORY}
-fi
-
-# Create the site catalog
-# Don't overwrite remote staging URL if site list is local
-if [ ${SITE_LIST} != "local" ] ; then
-  if [ -z $REMOTE_STAGING_SERVER ] ; then
-    REMOTE_SITE_SCRATCH_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
-  else
-    if [[ "${REMOTE_STAGING_SERVER}" == stash://* ]] ; then
-      REMOTE_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
-      REMOTE_SITE_SCRATCH_URL='stash://'`echo ${REMOTE_SITE_SCRATCH_PATH} | sed 's+^/stash++g'`
-    else
-      REMOTE_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
-      REMOTE_SITE_SCRATCH_URL="${REMOTE_STAGING_SERVER}${REMOTE_SITE_SCRATCH_PATH}"
-    fi
-  fi
-fi
-export REMOTE_SITE_SCRATCH_PATH REMOTE_SITE_SCRATCH_URL
-
-
-# create the site catalog template
-if [ $NO_ACCOUNTING_GROUP == 0 ] ; then
-  cat >> local-extra-site-properties.xml << EOF
-    <profile namespace="condor" key="accounting_group">$ACCOUNTING_GROUP</profile>
-    <profile namespace="condor" key="accounting_group_user">$ACCOUNTING_GROUP_USER</profile>
-EOF
-fi
-
-if [ -z "${NO_GRID}" ] ; then
-  echo '    <profile namespace="condor" key="use_x509userproxy">True</profile>' >> local-extra-site-properties.xml
-fi
-
-echo 'cat <<END_OF_TEXT' > site-catalog.sh
-
-cat << EOF >> site-catalog.sh
-<?xml version="1.0" encoding="UTF-8"?>
-<sitecatalog xmlns="http://pegasus.isi.edu/schema/sitecatalog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi.edu/schema/sc-4.0.xsd" version="4.0">
-EOF
-
-OLD_IFS=${IFS}
-IFS=','
-read -ra SITE <<< "$SITE_LIST"
-IFS=${OLD_IFS}
-for s in "${SITE[@]}"; do
-  SITE_TEMPLATE=$PEGASUS_SITE_CATALOG_PATH/${s}-site-template.xml
-  if [ ! -e ${SITE_TEMPLATE} ] ; then
-    echo "Error: Could not find site catalog template for site ${s}"
-    exit 1
-  else
-    cat $SITE_TEMPLATE >> site-catalog.sh
-    if [ -e ${s}-extra-site-properties.xml ] ; then
-      cat ${s}-extra-site-properties.xml >> site-catalog.sh
-    fi
-    echo "  </site>" >> site-catalog.sh
-  fi
-done
-
-cat << EOF >> site-catalog.sh
-</sitecatalog>
-EOF
-echo 'END_OF_TEXT' >> site-catalog.sh
-
-# write out the site catalog
-bash site-catalog.sh > site-catalog.xml
-
-# If REMOTE_STAGING_SERVER was not set, but was needed by
-# sites the user asked for, then raise an error and exit
-if grep -q REMOTE_STAGING_SERVER_UNSET site-catalog.xml ; then
-  echo "Attempt to use a remote site but --remote-staging-server not specified"
-  exit 1
-fi
-
 # Plan the workflow
 echo "Generating concrete workflow"
 
@@ -420,36 +215,20 @@ else
   cp ${PEGASUS_PROPERTIES} ./pegasus-properties.conf
 fi
 
-# add a transformation catalog, if specified
-if [ ! -z ${TRANSFORMATION_CATALOG} ] ; then
-  cp ${TRANSFORMATION_CATALOG} ./transformation-catalog.txt
-  echo >> pegasus-properties.conf
-  echo "pegasus.catalog.transformation Text" >> pegasus-properties.conf
-  echo "pegasus.catalog.transformation.file ${PWD}/transformation-catalog.txt" >> pegasus-properties.conf
-fi
-
 echo >> pegasus-properties.conf
 cat extra-properties.conf >> pegasus-properties.conf
 
-# If user specified a value for pegasus.data.configuration
-# then don't add another one
-if ! grep -q pegasus.data.configuration= pegasus-properties.conf
-then
-  # No option specified, append nonshared unless user said
-  # not to
-  if [ $SHARED_FILESYSTEM == 0 ]
-  then
-    echo 'pegasus.data.configuration=nonsharedfs' >> pegasus-properties.conf
-  fi
-fi
-
-
-
 if [ $CACHE_FILE == 0 ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID
+  CACHE_OPTION=''
 else
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID
+  CACHE_OPTION='--cache _reuse.cache'
 fi
+
+# Ian's bash-fu is not good enough to wrap this in the nice error handling that
+# it deserves!
+STORED_PLANNER_ARGS=`cat additional_planner_args.dat`
+
+pegasus-plan --conf ./pegasus-properties.conf ${STORED_PLANNER_ARGS} --dir $SUBMIT_DIR ${CACHE_OPTION} $SUBMIT_DAX $NO_GRID $DAX_FILE
 
 echo
 
@@ -507,8 +286,7 @@ chmod 755 start
 
 # Copy planning information into workflow directory so it can be displayed on the results page
 cp pegasus-properties.conf workflow/planning
-cp site-catalog.xml workflow/planning
-cp $SUBMIT_DIR/work/braindump.txt workflow/planning
+cp $SUBMIT_DIR/work/braindump.yml workflow/planning
 
 mkdir -p workflow/input_map
 cp _reuse.cache workflow/input_map/reuse.cache

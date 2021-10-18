@@ -156,7 +156,7 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
     """
     import lal.series
     from glue.ligolw import utils as ligolw_utils
-    fp = open(filename, 'r')
+    fp = open(filename, 'rb')
     ct_handler = lal.series.PSDContentHandler
     fileobj, _ = ligolw_utils.load_fileobj(fp, contenthandler=ct_handler)
     psd_dict = lal.series.read_psd_xmldoc(fileobj, root_name=root_name)

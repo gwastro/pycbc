@@ -23,7 +23,6 @@ import logging
 import os
 import shlex
 import numpy
-import Pegasus.DAX3 as dax
 import pycbc.version
 import socket
 import sys
@@ -115,18 +114,14 @@ core.makedir('{}/{}'.format(opts.output_dir, config_file_dir))
 core.makedir('{}/{}'.format(opts.output_dir, posterior_file_dir))
 core.makedir('{}/{}'.format(opts.output_dir, injection_file_dir))
 
-# set the dax file name
-dax_file = opts.dax_file
-if dax_file is None:
-    dax_file = "{}.dax".format(opts.workflow_name)
-
 # log to terminal until we know where the path to log output file
 log_format = "%(asctime)s:%(levelname)s : %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
-workflow = core.Workflow(opts, opts.workflow_name)
-finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
+workflow = core.Workflow(opts)
+finalize_workflow = core.Workflow(opts, subworkflow_name="finalization",
+                                  is_subworkflow=True)
 
 # load the inference config file
 inference_cp, nruns = read_inference_settings_from_config(
@@ -157,7 +152,7 @@ if opts.injection_file:
                  write_params=[k for k in injections.table.fieldnames 
                                if k not in injections._injhandler.static_args],
                  static_args=st_args)
-            injection_files.append(core.File.from_path(outfile))
+            injection_files.append(core.resolve_url_to_file(outfile))
             n_injections += 1
 else:
     n_injections = opts.num_injections
@@ -226,8 +221,8 @@ for num_inj in range(n_injections):
     # we need to go back to the original directory to do this for all the file
     # references to work correctly
     os.chdir(origdir)
-    sub_workflow = core.Workflow(opts,
-                                 "{}-{}".format(opts.workflow_name, event))
+    sub_workflow = core.Workflow(opts, subworkflow_name=event,
+                                 is_subworkflow=True)
     # now go back to the output
     os.chdir(opts.output_dir)
 
@@ -331,8 +326,8 @@ if do_pp_test:
     # we need to go back to the original directory to do this for all the file
     # references to work correctly
     os.chdir(origdir)
-    pp_workflow = core.Workflow(
-        opts, "{}-{}".format(opts.workflow_name, 'pp_test'))
+    pp_workflow = core.Workflow(opts, subworkflow_name='pp_test',
+                                is_subworkflow=True)
     # now go back to the output
     os.chdir(opts.output_dir)
     # create the pp summary table
@@ -373,17 +368,12 @@ plotting.make_results_web_page(finalize_workflow,
 # add finalize workflow to workflow and make it depend on the others
 workflow += finalize_workflow
 for sub_workflow in sub_workflows:
-    dep = dax.Dependency(parent=sub_workflow.as_job,
-                         child=finalize_workflow.as_job)
-    workflow._adag.addDependency(dep)
+    workflow.add_subworkflow_dependancy(sub_workflow, finalize_workflow)
 if do_pp_test:
-    dep = dax.Dependency(parent=pp_workflow.as_job,
-                         child=finalize_workflow.as_job)
-    workflow._adag.addDependency(dep)
+    workflow.add_subworkflow_dependancy(pp_workflow, finalize_workflow)
 
 # write dax
-workflow.save(filename=dax_file, output_map_path=opts.output_map,
-              transformation_catalog_path=opts.transformation_catalog)
+workflow.save()
 
 # save workflow configuration file
 base = rdir["workflow/configuration"]
