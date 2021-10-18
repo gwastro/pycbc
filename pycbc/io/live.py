@@ -192,7 +192,7 @@ class SingleCoincForGraceDB(object):
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
                 if name == 'end_time':
                     val += self.time_offset
-                    sngl.set_end(lal.LIGOTimeGPS(val))
+                    sngl.end = lal.LIGOTimeGPS(val)
                 else:
                     try:
                         setattr(sngl, name, val)
@@ -233,7 +233,7 @@ class SingleCoincForGraceDB(object):
             if sngl.ifo in followup_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
-                sngl.set_end(lal.LIGOTimeGPS(self.merger_time))
+                sngl.end = lal.LIGOTimeGPS(self.merger_time)
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)

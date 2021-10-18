@@ -925,7 +925,7 @@ class ForegroundTriggers(object):
                 for name in sngl_col_names:
                     val = sngl_col_vals[name][ifo][0][idx]
                     if name == 'end_time':
-                        sngl.set_end(LIGOTimeGPS(val))
+                        sngl.end = LIGOTimeGPS(val)
                     else:
                         setattr(sngl, name, val)
                 for name in bank_col_names:
@@ -966,9 +966,7 @@ class ForegroundTriggers(object):
             coinc_inspiral_row.coinc_event_id = coinc_id
             coinc_inspiral_row.mchirp = sngl_combined_mchirp
             coinc_inspiral_row.mass = sngl_combined_mtot
-            coinc_inspiral_row.set_end(
-                LIGOTimeGPS(coinc_event_vals['time'][idx])
-            )
+            coinc_inspiral_row.end = LIGOTimeGPS(coinc_event_vals['time'][idx])
             coinc_inspiral_row.snr = net_snrsq**0.5
             coinc_inspiral_row.false_alarm_rate = coinc_event_vals['fap'][idx]
             coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]

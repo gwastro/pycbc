@@ -33,18 +33,20 @@ def return_empty_sngl(nones=False):
             setattr(sngl, entry, None)
     else:
         for entry in cols.keys():
-            if cols[entry] in ['real_4','real_8']:
-                setattr(sngl,entry,0.)
-            elif cols[entry] == 'int_4s':
-                setattr(sngl,entry,0)
+            if cols[entry] in ['real_4', 'real_8']:
+                setattr(sngl, entry, 0.)
+            elif cols[entry] in ['int_4s', 'int_8s']:
+                setattr(sngl, entry, 0)
             elif cols[entry] == 'lstring':
-                setattr(sngl,entry,'')
+                setattr(sngl, entry, '')
             elif entry == 'process_id':
+                # old glue-style LIGOLW with non-integer IDs
                 sngl.process_id = ilwd.ilwdchar("process:process_id:0")
             elif entry == 'event_id':
+                # old glue-style LIGOLW with non-integer IDs
                 sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
             else:
-                raise ValueError("Column %s not recognized" %(entry) )
+                raise ValueError("Column %s not recognized" % entry)
     return sngl
 
 def return_search_summary(start_time=0, end_time=0, nevents=0,
