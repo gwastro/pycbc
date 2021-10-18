@@ -33,8 +33,8 @@ from __future__ import print_function
 import os, copy
 import logging
 from ligo import segments
-from glue import lal
 from ligo.lw import utils, table, lsctables, ligolw
+from glue import lal
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
 
