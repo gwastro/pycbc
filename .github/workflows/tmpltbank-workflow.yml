@@ -44,4 +44,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: logs
-        path: output/submitdir/work/*/*/*.out.001
+        path: output/submitdir/work
