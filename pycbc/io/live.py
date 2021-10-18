@@ -281,7 +281,7 @@ class SingleCoincForGraceDB(object):
             self.probabilities = None
 
         self.outdoc = outdoc
-        self.time = sngl_populated.get_end()
+        self.time = sngl_populated.end
 
     def save(self, filename):
         """Write this trigger to gracedb compatible xml format
