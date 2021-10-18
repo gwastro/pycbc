@@ -33,4 +33,6 @@ while 1:
     if failed != 0:
         print("workflow has a failed job, ending now")
         subprocess.run(["bash", "./stop"])
+        # Need to wait here to make sure it fully exits before uploading logs!
+        time.sleep(30)
         exit(1)
