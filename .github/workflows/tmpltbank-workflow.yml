@@ -32,6 +32,8 @@ jobs:
         pip install sbank
         pip install .
     - name: generating, submitting and running workflow
+      env:
+          _CONDOR_DAGMAN_USE_STRICT: "0"
       run: |
         cp examples/tmpltbank/bank_workflow_test/*.ini ./
         bash -e examples/tmpltbank/bank_workflow_test/gen.sh
