@@ -551,8 +551,7 @@ opts.config_overrides = []
 opts.config_delete = []
 
 # Now setup the workflow
-workflow = wf.Workflow(opts, opts.workflow_name,
-                       directory=opts.main_workflow_directory)
+workflow = wf.Workflow(opts)
 
 # Start with 2dstack jobs
 if opts.storage_path_base:
@@ -562,7 +561,7 @@ else:
 #wf.makedir(curr_dir)
 
 stack_exe = GeomAligned2DStackExecutable(workflow.cp, 'aligned2dstack',
-                                   ifos=workflow.ifos, out_dir=curr_dir)
+                                         ifos=workflow.ifos, out_dir=curr_dir)
 num_banks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
 if not opts.is_sub_workflow:
     input_h5file = wf.File.from_path(opts.intermediate_data_file)

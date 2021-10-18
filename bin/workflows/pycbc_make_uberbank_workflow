@@ -146,8 +146,6 @@ class SbankDaxGenerator(wf.Executable):
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("-d", "--output-dir", default='./',
-                    help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
