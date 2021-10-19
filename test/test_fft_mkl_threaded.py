@@ -25,10 +25,11 @@
 These are the unit-tests for the pycbc.fft subpackage, testing only unthreaded
 backends for the various schemes.
 """
+import platform
+import unittest
 
 import pycbc.fft
 from pycbc.scheme import CPUScheme
-import unittest
 from sys import exit as _exit
 from utils import parse_args_cpu_only, simple_exit
 from fft_base import _BaseTestFFTClass
@@ -36,9 +37,12 @@ from fft_base import _BaseTestFFTClass
 parse_args_cpu_only("MKL threaded backend")
 
 # See if we can get set the FFTW backend to 'openmp'; if not, say so and exit.
-
-if not 'mkl' in pycbc.fft.get_backend_names():
-    print("MKL does not seem to be available; skipping MKL tests")
+if 'arm64' in platform.machine():
+    print("MKL not supported on arm64, skipping")
+    pass
+elif not 'mkl' in pycbc.fft.get_backend_names():
+    print("MKL does not seem to be available; why isn't it installed?")
+    _exit(0)
 else:
     # Now set the number of threads to something nontrivial
 
@@ -55,13 +59,13 @@ else:
         FFTTestClasses.append(klass)
 
 
-# Finally, we create suites and run them
+    # Finally, we create suites and run them
 
-if __name__ == '__main__':
+    if __name__ == '__main__':
 
-    suite = unittest.TestSuite()
-    for klass in FFTTestClasses:
-        suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
+        suite = unittest.TestSuite()
+        for klass in FFTTestClasses:
+            suite.addTest(unittest.TestLoader().loadTestsFromTestCase(klass))
 
-    results = unittest.TextTestRunner(verbosity=2).run(suite)
-    simple_exit(results)
+        results = unittest.TextTestRunner(verbosity=2).run(suite)
+        simple_exit(results)
