@@ -28,6 +28,7 @@ while 1:
 
     if passed:
         print("workflow has completed successfully")
+        time.sleep(30)
         exit(0)
 
     if failed != 0:
