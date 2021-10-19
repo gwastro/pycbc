@@ -122,8 +122,8 @@ class TestInjection(unittest.TestCase):
         for i in range(len(self.injections)):
             row = sim_table.RowType()
             self.injections[i].fill_sim_inspiral_row(row)
-            row.process_id = 'process:process_id:0'
-            row.simulation_id = 'sim_inspiral:simulation_id:%d' % i
+            row.process_id = 0
+            row.simulation_id = i
             sim_table.append(row)
 
         # write document to temp file
