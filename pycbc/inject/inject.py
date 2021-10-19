@@ -101,7 +101,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
         ra = inj.ra
         dec = inj.dec
     except:
-        tc = inj.get_time_geocent()
+        tc = inj.time_geocent
         ra = inj.longitude
         dec = inj.latitude
 
@@ -228,11 +228,11 @@ class _XMLInjectionSet(object):
             f_l = inj.f_lower if f_lower is None else f_lower
             # roughly estimate if the injection may overlap with the segment
             # Add 2s to end_time to account for ringdown and light-travel delay
-            end_time = inj.get_time_geocent() + 2
+            end_time = inj.time_geocent + 2
             inj_length = tau0_from_mass1_mass2(inj.mass1, inj.mass2, f_l)
             # Start time is taken as twice approx waveform length with a 1s
             # safety buffer
-            start_time = inj.get_time_geocent() - 2 * (inj_length + 1)
+            start_time = inj.time_geocent - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
                 continue
             signal = self.make_strain_from_inj_object(inj, delta_t,
@@ -298,7 +298,7 @@ class _XMLInjectionSet(object):
 
     def end_times(self):
         """Return the end times of all injections"""
-        return [inj.get_time_geocent() for inj in self.table]
+        return [inj.time_geocent for inj in self.table]
 
     @staticmethod
     def write(filename, samples, write_params=None, static_args=None):
@@ -1229,7 +1229,7 @@ class SGBurstInjectionSet(object):
 
         for inj in self.table:
             # roughly estimate if the injection may overlap with the segment
-            end_time = inj.get_time_geocent()
+            end_time = inj.time_geocent
             #CHECK: This is a hack (10.0s); replace with an accurate estimate
             inj_length = 10.0
             eccentricity = 0.0
