@@ -288,7 +288,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None,
-                 skip_pregeneration=False, **kwargs):
+                 pregenerate_hist=True, **kwargs):
         """
         Create a statistic class instance
 
@@ -306,9 +306,9 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         ifos: list of strs, needed here
             The list of detector names
 
-        skip_pregeneration: bool, optional
-            If True, do not pregenerate histogram on class instantiation.
-            Default is false.
+        pregenerate_hist: bool, optional
+            If False, do not pregenerate histogram on class instantiation.
+            Default is True.
         """
 
         QuadratureSumStatistic.__init__(self, sngl_ranking, files=files,
@@ -335,7 +335,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
         self.two_det_weights = {}
-        if not skip_pregeneration:
+        if pregenerate_hist:
             self.get_hist()
 
     def get_hist(self, ifos=None):
