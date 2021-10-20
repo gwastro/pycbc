@@ -24,14 +24,11 @@
 """
 These are the unittests for the pycbc.filter.matchedfilter module
 """
-import sys
-import pycbc
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 from pycbc.filter import *
 from math import sqrt
-import pycbc.fft
 import numpy
 from utils import parse_args_all_schemes, simple_exit
 
@@ -43,7 +40,6 @@ class TestMatchedFilter(unittest.TestCase):
     def setUp(self,*args):
         self.context = _context
         self.scheme = _scheme
-        from math import sin
         # Use sine wave as test signal
         data = numpy.sin(numpy.arange(0,100,100/(4096.0*64)))
         self.filt = TimeSeries(data,dtype=float32,delta_t=1.0/4096)

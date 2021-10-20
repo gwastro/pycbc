@@ -32,7 +32,7 @@ from pycbc.psd import interpolate, inverse_spectrum_truncation
 from pycbc.frame import read_frame
 from pycbc.filter import highpass, resample_to_delta_t
 from astropy.utils.data import download_file
-from pycbc.inference import models, sampler
+from pycbc.inference import models
 from pycbc.distributions import Uniform, JointDistribution, SinAngle
 
 class TestModels(unittest.TestCase):

@@ -24,12 +24,11 @@
 """
 These are the unittests for the pycbc.waveform module
 """
-import pycbc
 import unittest
 import numpy
 from numpy import sqrt, cos, sin
 from pycbc.scheme import CPUScheme
-from pycbc.waveform import td_approximants, fd_approximants, get_td_waveform, get_fd_waveform
+from pycbc.waveform import get_td_waveform, get_fd_waveform
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Waveform")

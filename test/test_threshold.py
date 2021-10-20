@@ -24,14 +24,11 @@
 """
 These are the unittests for the pycbc.waveform module
 """
-import sys
-import pycbc
 import unittest
 import numpy
 from pycbc.types import *
 from pycbc.scheme import *
 from pycbc.events import *
-import pycbc.fft
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Threshold")
