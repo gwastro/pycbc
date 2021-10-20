@@ -1388,3 +1388,11 @@ def load_state(fp, path=None, dsetname='state'):
         fp = fp[path]
     bdata = fp[dsetname][()].tobytes()
     return pickle.load(BytesIO(bdata))
+
+
+__all__ = ('HFile', 'DictArray', 'StatmapData', 'MultiifoStatmapData',
+           'FileData', 'DataFromFiles', 'SingleDetTriggers',
+           'ForegroundTriggers', 'ReadByTemplate', 'get_chisq_from_file_choice',
+           'save_dict_to_hdf5', 'recursively_save_dict_contents_to_group',
+           'load_hdf5_to_dict', 'combine_and_copy', 'name_all_datasets',
+           'get_all_subkeys', 'dump_state', 'dump_pickle_to_hdf', 'load_state')
