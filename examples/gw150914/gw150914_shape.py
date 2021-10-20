@@ -1,6 +1,4 @@
-from pycbc.frame import read_frame
 from pycbc.filter import highpass_fir, lowpass_fir
-from pycbc.waveform import get_fd_waveform
 from pycbc.psd import welch, interpolate
 from pycbc.catalog import Merger
 import pylab
