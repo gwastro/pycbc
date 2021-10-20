@@ -25,8 +25,6 @@
 """ This package provides information about LIGO/Virgo detections of
 compact binary mergers
 """
-
-import os
 import numpy
 from . import catalog
 

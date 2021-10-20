@@ -20,7 +20,6 @@ Unit test for PyCBC's injection module.
 
 import tempfile
 import lal
-import pycbc
 from pycbc.types import TimeSeries
 from pycbc.detector import Detector, get_available_detectors
 from pycbc.inject import InjectionSet

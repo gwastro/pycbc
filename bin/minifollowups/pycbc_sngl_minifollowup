@@ -16,9 +16,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, sys, argparse, logging, h5py, datetime
+import os, argparse, logging, h5py
 import numpy
-from lal import GPSToUTC
 from glue.ligolw import lsctables, table
 from glue.ligolw import utils as ligolw_utils
 from pycbc.results import layout

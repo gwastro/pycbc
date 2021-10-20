@@ -22,7 +22,6 @@ a set of injection files. The *order* of the injection files *must* match the
 bank files, and the number of injections in each must correspond one-to-one.
 """
 
-from os.path import isfile
 import imp
 import argparse
 import numpy as np

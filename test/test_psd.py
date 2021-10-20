@@ -25,7 +25,6 @@
 These are the unittests for the pycbc PSD module.
 '''
 from __future__ import division
-import sys
 import os
 import tempfile
 import pycbc

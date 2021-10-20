@@ -4,7 +4,6 @@ from pycbc.types import *
 from pycbc.waveform import *
 import pycbc
 from optparse import OptionParser
-from math import sin, log
 import gc
 parser = OptionParser()
 

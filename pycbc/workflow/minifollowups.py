@@ -15,11 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, os.path
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
-import distutils.spawn
 from ligo import segments
-from pycbc.workflow.core import Executable, FileList, Node, File, Workflow
+from pycbc.workflow.core import Executable, FileList
 from pycbc.workflow.core import makedir, resolve_url_to_file
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 try:

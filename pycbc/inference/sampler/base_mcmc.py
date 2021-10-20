@@ -24,9 +24,6 @@
 """Provides constructor classes and convenience functions for MCMC samplers."""
 
 from __future__ import (absolute_import, division)
-
-import os
-import signal
 import logging
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 
@@ -38,8 +35,6 @@ import numpy
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import (validate_checkpoint_files, loadfile)
 from pycbc.inference.io.base_mcmc import nsamples_in_chain
-
-from .base import setup_output
 from .base import initial_dist_from_config
 
 #

@@ -17,7 +17,7 @@
 """This module is responsible for setting up PSD-related jobs in workflows.
 """
 
-from pycbc.workflow.core import FileList, make_analysis_dir, Executable, File
+from pycbc.workflow.core import FileList, make_analysis_dir, Executable
 from pycbc.workflow.core import SegFile
 from ligo.segments import segmentlist
 

@@ -25,11 +25,8 @@
 These are the unittests for the data quality query methods in pycbc
 """
 import unittest
-import numpy
 from utils import simple_exit
 from pycbc.dq import query_flag, query_cumulative_flags, query_str
-from pycbc.workflow.segment import get_segments_file
-from pycbc.workflow import Workflow
 
 
 class TestDataQualityFlags(unittest.TestCase):

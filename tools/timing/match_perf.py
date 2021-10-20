@@ -7,9 +7,7 @@ import pycbc
 from math import log
 import numpy
 import numpy.random
-import sys
 from optparse import OptionParser
-from math import sin
 import gc
 parser = OptionParser()
 

@@ -4,7 +4,7 @@ import numpy
 from utils import simple_exit
 
 from pycbc.waveform.utils import apply_fd_time_shift
-from pycbc.types import (FrequencySeries, TimeSeries)
+from pycbc.types import (TimeSeries)
 
 
 class TestFDTimeShift(unittest.TestCase):

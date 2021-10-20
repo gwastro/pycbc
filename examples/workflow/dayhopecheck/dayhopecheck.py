@@ -44,16 +44,13 @@ __program__ = "dayhopecheck"
 
 
 import os
-import copy
 import logging
 import argparse
 from ligo import segments
 import pycbc.workflow as _workflow
 
 from glue.ligolw import ligolw
-from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import segments as ligolw_segments
 from glue.ligolw.utils import process as ligolw_process
 
 from glue.segmentdb import segmentdb_utils

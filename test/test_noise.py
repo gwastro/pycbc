@@ -25,12 +25,10 @@
 These are the unittests for noise generation
 """
 import unittest
-import numpy
 import pycbc.psd
 from utils import simple_exit
 from pycbc.noise.reproduceable import noise_from_string
 from pycbc.fft.fftw import set_measure_level
-from hashlib import md5
 from pycbc.noise.reproduceable import normal
 set_measure_level(0)
 

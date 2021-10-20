@@ -429,7 +429,6 @@ class TemplateBank(object):
     def end_frequency(self, index):
         """ Return the end frequency of the waveform at the given index value
         """
-        from pycbc.waveform.waveform import props
         if hasattr(self.table[index], 'f_final'):
             return self.table[index].f_final
 

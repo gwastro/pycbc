@@ -21,7 +21,7 @@ import sys
 from pycbc import frame
 
 # import dependencies that are not standard to pycbc
-from foton import FilterFile, Filter, iir2z
+from foton import Filter, iir2z
 
 def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
     ''' This function just checks the first time in the SWSTAT channel

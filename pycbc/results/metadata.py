@@ -97,7 +97,7 @@ def save_pdf_with_metadata(fig, filename, fig_kwds, kwds):
                 metadata[str(key)] = str(kwds[key])
 
 def load_png_metadata(filename):
-    from PIL import Image, PngImagePlugin
+    from PIL import Image
     data = Image.open(filename).info
     cp = ConfigParser.ConfigParser(data)
     cp.add_section(os.path.basename(filename))

@@ -30,13 +30,9 @@ workflows.
 # FIXME: Is this module still relevant for any code? Can it be removed?
 
 from __future__ import division
-
-import os
 import logging
 from six.moves import configparser as ConfigParser
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
-from pycbc.workflow.core import File, FileList
+from pycbc.workflow.core import FileList
 from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
 
 def setup_psd_workflow(workflow, science_segs, datafind_outs,

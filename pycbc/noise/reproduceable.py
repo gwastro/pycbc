@@ -22,7 +22,7 @@
 # =============================================================================
 #
 import numpy, pycbc.psd
-from pycbc.types import TimeSeries, FrequencySeries, complex_same_precision_as
+from pycbc.types import TimeSeries, complex_same_precision_as
 from numpy.random import RandomState
 
 # This constant need to be constant to be able to recover identical results.

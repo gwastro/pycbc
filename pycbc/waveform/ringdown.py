@@ -25,7 +25,7 @@
 """Generate ringdown templates in the time and frequency domain.
 """
 
-import re, numpy, lal, lalsimulation
+import numpy, lal
 try:
     import pykerr
 except ImportError:

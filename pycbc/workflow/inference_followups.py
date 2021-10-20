@@ -16,12 +16,8 @@
 """
 Module that contains functions for setting up the inference workflow.
 """
-
-import logging, os.path
-from pycbc.workflow.core import (Executable, FileList, Node, makedir, File,
-                                 Workflow)
-from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
-from pycbc.workflow import WorkflowConfigParser
+from pycbc.workflow.core import (Executable, makedir)
+from pycbc.workflow.plotting import PlotExecutable
 from pycbc.results import layout
 
 
