@@ -98,9 +98,10 @@ def sigma_cached(self, psd):
     return self._sigmasq[key]
 
 # dummy class needed for loading LIGOLW files
+@pycbc.io.ligolw.use_in
+@lsctables.use_in
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
-lsctables.use_in(LIGOLWContentHandler)
 
 # helper function for parsing approximant strings
 def boolargs_from_apprxstr(approximant_strs):
