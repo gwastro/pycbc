@@ -24,10 +24,10 @@
 domain waveforms.
 """
 from __future__ import absolute_import
-import lalsimulation, lal, numpy, logging, h5py
-from pycbc import pnutils, filter
+import lal, numpy, logging, h5py
+from pycbc import filter
 from scipy import interpolate
-from pycbc.types import FrequencySeries, zeros, complex_same_precision_as, real_same_precision_as
+from pycbc.types import FrequencySeries, real_same_precision_as
 from pycbc.waveform import utils
 from pycbc.scheme import schemed
 

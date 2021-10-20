@@ -19,8 +19,6 @@
 
 from __future__ import absolute_import
 
-import numpy
-
 from .base_sampler import BaseSamplerFile
 from . import base_mcmc
 from .base_mcmc import EnsembleMCMCMetadataIO

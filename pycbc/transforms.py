@@ -17,7 +17,6 @@ This modules provides classes and functions for transforming parameters.
 """
 
 import os
-import copy
 import logging
 import numpy
 from pycbc import conversions

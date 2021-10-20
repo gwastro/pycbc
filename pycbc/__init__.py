@@ -25,7 +25,7 @@
 """PyCBC contains a toolkit for CBC gravitational wave analysis
 """
 from __future__ import (absolute_import, print_function)
-import subprocess, os, sys, tempfile, signal, warnings
+import subprocess, os, sys, signal, warnings
 
 # Filter annoying Cython warnings that serve no good purpose.
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")

@@ -31,11 +31,10 @@ from abc import (ABCMeta, abstractmethod)
 from six import add_metaclass
 
 from . import waveform
-from .waveform import (NoWaveformError, FailedWaveformError)
+from .waveform import (FailedWaveformError)
 from . import ringdown
 from . import supernovae
 from . import waveform_modes
-from pycbc import filter
 from pycbc import transforms
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters

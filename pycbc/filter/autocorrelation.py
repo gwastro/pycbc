@@ -27,7 +27,6 @@ and length of a data series.
 """
 
 import numpy
-from math import isnan
 from pycbc.filter.matchedfilter import correlate
 from pycbc.types import FrequencySeries, TimeSeries, zeros
 
