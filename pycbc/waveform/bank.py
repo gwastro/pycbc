@@ -924,3 +924,9 @@ class FilterBankSkyMax(TemplateBank):
         hcross._sigmasq = {}
 
         return hplus, hcross
+
+
+__all__ = ('sigma_cached', 'boolargs_from_apprxstr', 'add_approximant_arg',
+           'parse_approximant_arg', 'tuple_to_hash', 'TemplateBank',
+           'LiveFilterBank', 'FilterBank', 'find_variable_start_frequency',
+           'FilterBankSkyMax')
