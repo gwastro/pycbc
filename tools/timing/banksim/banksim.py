@@ -25,20 +25,17 @@
 from time import sleep
 
 import sys
-from numpy import loadtxt,complex64,float32
+from numpy import complex64,float32
 from optparse import OptionParser
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table, lsctables
-from math import pow
-
-from scipy.interpolate import interp1d
 
 from pycbc.utils import mass1_mass2_to_mchirp_eta
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, real_same_precision_as, complex_same_precision_as
-from pycbc.filter import match, sigmasq, resample_to_delta_t
-from pycbc.scheme import DefaultScheme, CUDAScheme, OpenCLScheme
+from pycbc.filter import match, sigmasq
+from pycbc.scheme import DefaultScheme, CUDAScheme
 from pycbc.fft import fft
 from math import cos, sin
 import pycbc.psd
