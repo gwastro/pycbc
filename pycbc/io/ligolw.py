@@ -20,14 +20,14 @@ from ligo.lw.lsctables import TableByName
 from ligo.lw.table import Column, TableStream
 from ligo.lw.types import FormatFunc, FromPyType, IDTypes, ToPyType
 
-__all__ = ('use_in',)
+__all__ = ('legacy_row_id_converter',)
 
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
 
 
-def use_in(ContentHandler):
+def legacy_row_id_converter(ContentHandler):
     """Convert from old-style to new-style row IDs on the fly.
 
     This is loosely adapted from :func:`ligo.lw.utils.ilwd.strip_ilwdchar`.
@@ -37,25 +37,6 @@ def use_in(ContentHandler):
     When building a ContentHandler, this must be the _outermost_ decorator,
     outside of :func:`ligo.lw.lsctables.use_in`, :func:`ligo.lw.param.use_in`,
     or :func:`ligo.lw.table.use_in`.
-
-    Examples
-    --------
-    >>> from pkg_resources import resource_filename
-    >>> from ligo.lw import array, ligolw, lsctables, param, table, utils
-    >>> from ligo.skymap.util import ilwd
-    >>> @ilwd.use_in
-    ... @lsctables.use_in
-    ... @param.use_in
-    ... @table.use_in
-    ... class ContentHandler(ligolw.LIGOLWContentHandler):
-    ...     pass
-    >>> filename = resource_filename(
-    ...     'ligo.skymap.io.tests', 'data/G197392_coinc.xml.gz')
-    >>> xmldoc = utils.load_filename(filename, contenthandler=ContentHandler)
-    >>> table = lsctables.SnglInspiralTable.get_table(xmldoc)
-    >>> table[0].process_id
-    0
-
     """
 
     def endElementNS(self, uri_localname, qname,
@@ -134,4 +115,3 @@ def use_in(ContentHandler):
     ContentHandler.startStream = startStream
 
     return ContentHandler
-

@@ -99,7 +99,7 @@ def sigma_cached(self, psd):
     return self._sigmasq[key]
 
 # dummy class needed for loading LIGOLW files
-@pycbc.io.ligolw.use_in
+@pycbc.io.ligolw.legacy_row_id_converter
 @lsctables.use_in
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
