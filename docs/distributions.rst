@@ -8,7 +8,7 @@ The aim of this page is to demonstrate some simple uses of the distributions ava
 Generating samples in a Python script by using the .ini file
 ============================================================
 
-This example shows how to generate samples in a Python script by using a standalone .ini file. In this example, we can also learn that when we draw samples from source-frame masses and comoving volume uniformly, the distributions of detector-frame masses are not uniform.
+This example shows how to generate samples in a Python script by using a standalone .ini `file <https://github.com/gwastro/pycbc/tree/master/examples/distributions/pycbc_bbh_prior.ini>`_. In this example, we can also learn that when we draw samples from source-frame masses and comoving volume uniformly, the distributions of detector-frame masses are not uniform.
 
 .. plot:: ../examples/distributions/sampling_from_config_example.py
    :include-source:
