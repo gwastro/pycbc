@@ -38,6 +38,7 @@ import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
+import pycbc.io.ligolw
 import hashlib
 
 def sigma_cached(self, psd):
