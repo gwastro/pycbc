@@ -43,6 +43,8 @@ from pycbc.detector import Detector
 from pycbc.conversions import tau0_from_mass1_mass2
 from pycbc.filter import resample_to_delta_t
 import pycbc.io
+from pycbc.io.ligolw import legacy_row_id_converter \
+        as legacy_ligolw_row_id_converter
 
 from six import add_metaclass
 
@@ -60,10 +62,11 @@ from ligo.lw import utils as ligolw_utils
 from ligo.lw import ligolw, table, lsctables
 
 # dummy class needed for loading LIGOLW files
+@legacy_ligolw_row_id_converter
+@lsctables.use_in
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
 
-lsctables.use_in(LIGOLWContentHandler)
 
 # Map parameter names used in pycbc to names used in the sim_inspiral
 # table, if they are different
