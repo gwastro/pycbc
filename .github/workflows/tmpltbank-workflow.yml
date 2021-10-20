@@ -39,7 +39,6 @@ jobs:
         bash -e examples/tmpltbank/bank_workflow_test/gen.sh
         condor_status
         cd output
-        bash -e ../examples/search/submit.sh
         ./status
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
