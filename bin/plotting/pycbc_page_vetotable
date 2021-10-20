@@ -17,12 +17,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import h5py
 import logging
 import numpy
 import pycbc.results
 import sys
-from ligo import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
