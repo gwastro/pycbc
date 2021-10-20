@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Building Documentation for Git Hub Pages &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Building Documentation for Git Hub Pages</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/build_gh_pages.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="building-documentation-for-git-hub-pages">
+<h1>Building Documentation for Git Hub Pages<a class="headerlink" href="#building-documentation-for-git-hub-pages" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="creating-a-git-hub-project-page">
+<h2>Creating a Git Hub project page<a class="headerlink" href="#creating-a-git-hub-project-page" title="Permalink to this headline">¶</a></h2>
+<p>Git Hub pages are built from a branch of the repository called <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code>.
+If you have not already created a Git Hub project pages for PyCBC in your
+repository, make a <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> branch in your repository as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git checkout --orphan gh-pages
+git rm -rf .
+git clean -dxf
+touch .nojekyll
+mkdir latest
+git add .nojekyll latest
+git commit -a -m <span class="s2">&quot;set up gh-pages branch&quot;</span>
+git push origin gh-pages
+git branch --set-upstream gh-pages origin/gh-pages
+</pre></div>
+</div>
+<p>These commands create the branch and then remove all of the files from this branch, so that it will just contain the documentation pages.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The main <a class="reference external" href="https://github.com/ligo-cbc/pycbc">ligo-cbc/pycbc</a> repository already has a <cite>gh-pages</cite> branch, so do not do this in the main repository.</p>
+</div>
+</div>
+<div class="section" id="building-and-pushing-the-documentation">
+<h2>Building and pushing the documentation<a class="headerlink" href="#building-and-pushing-the-documentation" title="Permalink to this headline">¶</a></h2>
+<p>The documentation should built from the source code on a regular branch and installed into the <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> branch. Since git cannot have two branches checked out simultaneously, you need to check out another copy of the repository with the <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> branch inside your PyCBC source repository. Do this will the following commands (assuming your PyCBC git repository is in a directory named <code class="docutils literal notranslate"><span class="pre">pycbc</span></code>).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> /path/to/your/repo/pycbc
+git clone git@github.com:github-username/pycbc.git _gh-pages
+</pre></div>
+</div>
+<p>Now flush the contents of this directory. We do this, as the documentation is
+not really under version control in the <code class="docutils literal notranslate"><span class="pre">gh-pages</span></code> branch. We just use this
+branch to publish to GitHub pages. Run the commands</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> _gh-pages
+git rm -rf *
+git commit -a -m <span class="s2">&quot;flush documentation&quot;</span>
+<span class="nb">cd</span> ..
+</pre></div>
+</div>
+<p>The last <code class="docutils literal notranslate"><span class="pre">cd</span></code> command should put you back at the top level of your PyCBC
+source directory. To build the documentation into the <code class="docutils literal notranslate"><span class="pre">_gh-pages</span></code> directory,
+run the command</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python setup.py build_gh_pages
+</pre></div>
+</div>
+<p>This will build the documentation in the second repository that you created called <code class="docutils literal notranslate"><span class="pre">_gh-pages</span></code> under the directory <code class="docutils literal notranslate"><span class="pre">latest/</span></code>. To push these changes up to Git Hub</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> _gh-pages
+git add --all
+git commit -a -m <span class="s2">&quot;documentation update&quot;</span>
+git push origin gh-pages
+</pre></div>
+</div>
+<p>The documentation will then be available under your Git Hub pages at <code class="docutils literal notranslate"><span class="pre">http://username.github.io/pycbc/latest/html/</span></code> where you should replace <code class="docutils literal notranslate"><span class="pre">username/</span></code> with your Git Hub account name.</p>
+<p>In this example, we checkout the master branch to build the documentation, but you can change the last command above to checkout any other branch that your are developing.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Be careful with the <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">rm</span> <span class="pre">-rf</span> <span class="pre">*</span></code> command as if you run it in the wrong
+directory you can delete the contents of your git repository. If you do
+this by accident, you can use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">reset</span></code> to undo the commit.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

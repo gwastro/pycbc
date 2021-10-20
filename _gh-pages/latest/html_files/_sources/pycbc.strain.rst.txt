@@ -1,0 +1,54 @@
+pycbc.strain package
+====================
+
+Submodules
+----------
+
+pycbc.strain.calibration module
+-------------------------------
+
+.. automodule:: pycbc.strain.calibration
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.strain.gate module
+------------------------
+
+.. automodule:: pycbc.strain.gate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.strain.lines module
+-------------------------
+
+.. automodule:: pycbc.strain.lines
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.strain.recalibrate module
+-------------------------------
+
+.. automodule:: pycbc.strain.recalibrate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.strain.strain module
+--------------------------
+
+.. automodule:: pycbc.strain.strain
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.strain
+    :members:
+    :undoc-members:
+    :show-inheritance:

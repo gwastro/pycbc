@@ -1,0 +1,86 @@
+pycbc.filter package
+====================
+
+Submodules
+----------
+
+pycbc.filter.autocorrelation module
+-----------------------------------
+
+.. automodule:: pycbc.filter.autocorrelation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.filter.matchedfilter module
+---------------------------------
+
+.. automodule:: pycbc.filter.matchedfilter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.filter.matchedfilter\_cpu module
+--------------------------------------
+
+.. automodule:: pycbc.filter.matchedfilter_cpu
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.filter.matchedfilter\_numpy module
+----------------------------------------
+
+.. automodule:: pycbc.filter.matchedfilter_numpy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.filter.qtransform module
+------------------------------
+
+.. automodule:: pycbc.filter.qtransform
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.filter.resample module
+----------------------------
+
+.. automodule:: pycbc.filter.resample
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.filter.simd\_correlate module
+-----------------------------------
+
+.. automodule:: pycbc.filter.simd_correlate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.filter.simd\_correlate\_cython module
+-------------------------------------------
+
+.. automodule:: pycbc.filter.simd_correlate_cython
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.filter.zpk module
+-----------------------
+
+.. automodule:: pycbc.filter.zpk
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.filter
+    :members:
+    :undoc-members:
+    :show-inheritance:

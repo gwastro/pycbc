@@ -1,0 +1,126 @@
+pycbc.results package
+=====================
+
+Submodules
+----------
+
+pycbc.results.color module
+--------------------------
+
+.. automodule:: pycbc.results.color
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.dq module
+-----------------------
+
+.. automodule:: pycbc.results.dq
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.followup module
+-----------------------------
+
+.. automodule:: pycbc.results.followup
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.layout module
+---------------------------
+
+.. automodule:: pycbc.results.layout
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.legacy\_grb module
+--------------------------------
+
+.. automodule:: pycbc.results.legacy_grb
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.metadata module
+-----------------------------
+
+.. automodule:: pycbc.results.metadata
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.mpld3\_utils module
+---------------------------------
+
+.. automodule:: pycbc.results.mpld3_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.plot module
+-------------------------
+
+.. automodule:: pycbc.results.plot
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.pygrb\_plotting\_utils module
+-------------------------------------------
+
+.. automodule:: pycbc.results.pygrb_plotting_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.render module
+---------------------------
+
+.. automodule:: pycbc.results.render
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.scatter\_histograms module
+----------------------------------------
+
+.. automodule:: pycbc.results.scatter_histograms
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.str\_utils module
+-------------------------------
+
+.. automodule:: pycbc.results.str_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.table\_utils module
+---------------------------------
+
+.. automodule:: pycbc.results.table_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.results.versioning module
+-------------------------------
+
+.. automodule:: pycbc.results.versioning
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.results
+    :members:
+    :undoc-members:
+    :show-inheritance:

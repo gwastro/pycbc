@@ -1,0 +1,169 @@
+pycbc.waveform package
+======================
+
+Submodules
+----------
+
+pycbc.waveform.bank module
+--------------------------
+
+.. automodule:: pycbc.waveform.bank
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.compress module
+------------------------------
+
+.. automodule:: pycbc.waveform.compress
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.decompress\_cpu module
+-------------------------------------
+
+.. automodule:: pycbc.waveform.decompress_cpu
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.decompress\_cpu\_cython module
+---------------------------------------------
+
+.. automodule:: pycbc.waveform.decompress_cpu_cython
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.generator module
+-------------------------------
+
+.. automodule:: pycbc.waveform.generator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.multiband module
+-------------------------------
+
+.. automodule:: pycbc.waveform.multiband
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.nltides module
+-----------------------------
+
+.. automodule:: pycbc.waveform.nltides
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.parameters module
+--------------------------------
+
+.. automodule:: pycbc.waveform.parameters
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.plugin module
+----------------------------
+
+.. automodule:: pycbc.waveform.plugin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.premerger module
+-------------------------------
+
+.. automodule:: pycbc.waveform.premerger
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.pycbc\_phenomC\_tmplt module
+-------------------------------------------
+
+pycbc.waveform.ringdown module
+------------------------------
+
+.. automodule:: pycbc.waveform.ringdown
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.sinegauss module
+-------------------------------
+
+.. automodule:: pycbc.waveform.sinegauss
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.spa\_tmplt module
+--------------------------------
+
+.. automodule:: pycbc.waveform.spa_tmplt
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.spa\_tmplt\_cpu module
+-------------------------------------
+
+.. automodule:: pycbc.waveform.spa_tmplt_cpu
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.supernovae module
+--------------------------------
+
+.. automodule:: pycbc.waveform.supernovae
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.utils module
+---------------------------
+
+.. automodule:: pycbc.waveform.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.utils\_cpu module
+--------------------------------
+
+.. automodule:: pycbc.waveform.utils_cpu
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.waveform module
+------------------------------
+
+.. automodule:: pycbc.waveform.waveform
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.waveform.waveform\_modes module
+-------------------------------------
+
+.. automodule:: pycbc.waveform.waveform_modes
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.waveform
+    :members:
+    :undoc-members:
+    :show-inheritance:

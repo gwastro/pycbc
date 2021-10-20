@@ -1,0 +1,110 @@
+pycbc.events package
+====================
+
+Submodules
+----------
+
+pycbc.events.coinc module
+-------------------------
+
+.. automodule:: pycbc.events.coinc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.coinc\_rate module
+-------------------------------
+
+.. automodule:: pycbc.events.coinc_rate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.eventmgr module
+----------------------------
+
+.. automodule:: pycbc.events.eventmgr
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.eventmgr\_cython module
+------------------------------------
+
+.. automodule:: pycbc.events.eventmgr_cython
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.ranking module
+---------------------------
+
+.. automodule:: pycbc.events.ranking
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.simd\_threshold\_cython module
+-------------------------------------------
+
+.. automodule:: pycbc.events.simd_threshold_cython
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.single module
+--------------------------
+
+.. automodule:: pycbc.events.single
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.stat module
+------------------------
+
+.. automodule:: pycbc.events.stat
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.threshold\_cpu module
+----------------------------------
+
+.. automodule:: pycbc.events.threshold_cpu
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.trigger\_fits module
+---------------------------------
+
+.. automodule:: pycbc.events.trigger_fits
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.triggers module
+----------------------------
+
+.. automodule:: pycbc.events.triggers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.events.veto module
+------------------------
+
+.. automodule:: pycbc.events.veto
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.events
+    :members:
+    :undoc-members:
+    :show-inheritance:

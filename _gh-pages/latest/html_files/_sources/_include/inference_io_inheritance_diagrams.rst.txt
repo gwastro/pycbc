@@ -1,0 +1,99 @@
+.. _inheritance-io-cpnest_file:
+
+* ``cpnest_file``:
+
+.. inheritance-diagram:: pycbc.inference.io.cpnest.CPNestFile
+   :parts: 3
+   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
+
+|
+
+
+.. _inheritance-io-dynesty_file:
+
+* ``dynesty_file``:
+
+.. inheritance-diagram:: pycbc.inference.io.dynesty.DynestyFile
+   :parts: 3
+   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
+
+|
+
+
+.. _inheritance-io-emcee_file:
+
+* ``emcee_file``:
+
+.. inheritance-diagram:: pycbc.inference.io.emcee.EmceeFile
+   :parts: 3
+   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
+
+|
+
+
+.. _inheritance-io-emcee_pt_file:
+
+* ``emcee_pt_file``:
+
+.. inheritance-diagram:: pycbc.inference.io.emcee_pt.EmceePTFile
+   :parts: 3
+   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
+
+|
+
+
+.. _inheritance-io-epsie_file:
+
+* ``epsie_file``:
+
+.. inheritance-diagram:: pycbc.inference.io.epsie.EpsieFile
+   :parts: 3
+   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
+
+|
+
+
+.. _inheritance-io-multinest_file:
+
+* ``multinest_file``:
+
+.. inheritance-diagram:: pycbc.inference.io.multinest.MultinestFile
+   :parts: 3
+   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
+
+|
+
+
+.. _inheritance-io-posterior_file:
+
+* ``posterior_file``:
+
+.. inheritance-diagram:: pycbc.inference.io.posterior.PosteriorFile
+   :parts: 3
+   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
+
+|
+
+
+.. _inheritance-io-ptemcee_file:
+
+* ``ptemcee_file``:
+
+.. inheritance-diagram:: pycbc.inference.io.ptemcee.PTEmceeFile
+   :parts: 3
+   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
+
+|
+
+
+.. _inheritance-io-ultranest_file:
+
+* ``ultranest_file``:
+
+.. inheritance-diagram:: pycbc.inference.io.ultranest.UltranestFile
+   :parts: 3
+   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
+
+|
+
+

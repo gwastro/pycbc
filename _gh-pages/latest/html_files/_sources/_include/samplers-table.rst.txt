@@ -1,0 +1,12 @@
+===============  ==============================================================
+Name             Class
+===============  ==============================================================
+``'cpnest'``     :py:class:`pycbc.inference.sampler.cpnest.CPNestSampler`
+``'dynesty'``    :py:class:`pycbc.inference.sampler.dynesty.DynestySampler`
+``'emcee'``      :py:class:`pycbc.inference.sampler.emcee.EmceeEnsembleSampler`
+``'emcee_pt'``   :py:class:`pycbc.inference.sampler.emcee_pt.EmceePTSampler`
+``'epsie'``      :py:class:`pycbc.inference.sampler.epsie.EpsieSampler`
+``'multinest'``  :py:class:`pycbc.inference.sampler.multinest.MultinestSampler`
+``'ptemcee'``    :py:class:`pycbc.inference.sampler.ptemcee.PTEmceeSampler`
+``'ultranest'``  :py:class:`pycbc.inference.sampler.ultranest.UltranestSampler`
+===============  ==============================================================

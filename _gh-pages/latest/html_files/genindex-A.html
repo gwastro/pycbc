@@ -1,0 +1,582 @@
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Index &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li></li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+
+<h1 id="index">Index &ndash; A</h1>
+
+<table style="width: 100%" class="indextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="pycbc.html#pycbc.pnutils.A0">A0() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.A3">A3() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.array_cpu.abs_arg_max">abs_arg_max() (in module pycbc.types.array_cpu)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.array.Array.abs_arg_max">(pycbc.types.array.Array method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.types.html#pycbc.types.array_cpu.abs_arg_max_complex">abs_arg_max_complex (in module pycbc.types.array_cpu)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.array_cpu.abs_max_loc">abs_max_loc() (in module pycbc.types.array_cpu)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.array.Array.abs_max_loc">(pycbc.types.array.Array method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO.acl">acl (pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO attribute)</a>
+
+      <ul>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.acl">(pycbc.inference.sampler.base_mcmc.BaseMCMC attribute)</a>
+</li>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.EnsembleSupport.acl">(pycbc.inference.sampler.base_mcmc.EnsembleSupport attribute)</a>
+</li>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.acl">(pycbc.inference.sampler.epsie.EpsieSampler attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.acl">acl() (pycbc.inference.sampler.base_mcmc.BaseMCMC method)</a>
+</li>
+      <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.acl_from_raw_acls">acl_from_raw_acls() (in module pycbc.inference.sampler.base_multitemper)</a>
+</li>
+      <li><a href="pycbc.inference.io.html#pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO.act">act (pycbc.inference.io.base_mcmc.CommonMCMCMetadataIO attribute)</a>
+
+      <ul>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.act">(pycbc.inference.sampler.base_mcmc.BaseMCMC attribute)</a>, <a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.act">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.inference.io.html#pycbc.inference.io.ResultsArgumentParser.actions">actions (pycbc.inference.io.ResultsArgumentParser attribute)</a>
+</li>
+      <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.ptemcee.PTEmceeSampler.adaptation_lag">adaptation_lag (pycbc.inference.sampler.ptemcee.PTEmceeSampler attribute)</a>
+</li>
+      <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.ptemcee.PTEmceeSampler.adaptation_time">adaptation_time (pycbc.inference.sampler.ptemcee.PTEmceeSampler attribute)</a>
+</li>
+      <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.ptemcee.PTEmceeSampler.adaptive">adaptive (pycbc.inference.sampler.ptemcee.PTEmceeSampler attribute)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.coinc.CoincExpireBuffer.add">add() (pycbc.events.coinc.CoincExpireBuffer method)</a>
+
+      <ul>
+        <li><a href="pycbc.events.html#pycbc.events.coinc.MultiRingBuffer.add">(pycbc.events.coinc.MultiRingBuffer method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.bank.add_approximant_arg">add_approximant_arg() (in module pycbc.waveform.bank)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_arg">add_arg() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.segment.add_cumulative_files">add_cumulative_files() (in module pycbc.workflow.segment)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.plugin.add_custom_waveform">add_custom_waveform() (in module pycbc.waveform.plugin)</a>
+</li>
+      <li><a href="pycbc.inference.html#pycbc.inference.option_utils.add_density_option_group">add_density_option_group() (in module pycbc.inference.option_utils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.detector.add_detector_on_earth">add_detector_on_earth() (in module pycbc.detector)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.record.FieldArray.add_fields">add_fields() (pycbc.io.record.FieldArray method)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.record.FieldArray.add_functions">add_functions() (pycbc.io.record.FieldArray method)</a>
+</li>
+      <li><a href="pycbc.strain.html#pycbc.strain.gate.add_gate_option_group">add_gate_option_group() (in module pycbc.strain.gate)</a>
+</li>
+      <li><a href="pycbc.strain.html#pycbc.strain.strain.StrainBuffer.add_hard_count">add_hard_count() (pycbc.strain.strain.StrainBuffer method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.Executable.add_ini_opts">add_ini_opts() (pycbc.workflow.core.Executable method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.Executable.add_ini_profile">add_ini_profile() (pycbc.workflow.core.Executable method)</a>
+</li>
+      <li><a href="pycbc.inference.html#pycbc.inference.option_utils.add_injsamples_map_opt">add_injsamples_map_opt() (in module pycbc.inference.option_utils)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_input">add_input() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_input_arg">add_input_arg() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_input_list_opt">add_input_list_opt() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_input_opt">add_input_opt() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.timeseries.TimeSeries.add_into">add_into() (pycbc.types.timeseries.TimeSeries method)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.plugin.add_length_estimator">add_length_estimator() (in module pycbc.waveform.plugin)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_list_opt">add_list_opt() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.File.add_metadata">add_metadata() (pycbc.workflow.core.File method)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.record.FieldArray.add_methods">add_methods() (pycbc.io.record.FieldArray method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.Node.add_multiifo_input_list_opt">add_multiifo_input_list_opt() (pycbc.workflow.core.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.Node.add_multiifo_output_list_opt">add_multiifo_output_list_opt() (pycbc.workflow.core.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.add_node">add_node() (pycbc.workflow.pegasus_workflow.Workflow method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.Executable.add_opt">add_opt() (pycbc.workflow.core.Executable method)</a>
+
+      <ul>
+        <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_opt">(pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.configparser_test.add_options_to_section">add_options_to_section() (in module pycbc.workflow.configparser_test)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.config.InterpolatingConfigParser.add_options_to_section">(pycbc.types.config.InterpolatingConfigParser method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_output_arg">add_output_arg() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_output_list_opt">add_output_list_opt() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_output_opt">add_output_opt() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Executable.add_pfn">add_pfn() (pycbc.workflow.pegasus_workflow.Executable method)</a>
+</li>
+      <li><a href="pycbc.inference.html#pycbc.inference.option_utils.add_plot_posterior_option_group">add_plot_posterior_option_group() (in module pycbc.inference.option_utils)</a>
+</li>
+      <li><a href="pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.add_point_by_chi_coords">add_point_by_chi_coords() (pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank method)</a>
+</li>
+      <li><a href="pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.add_point_by_masses">add_point_by_masses() (pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Executable.add_profile">add_profile() (pycbc.workflow.pegasus_workflow.Executable method)</a>
+
+      <ul>
+        <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_profile">(pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.io.html#pycbc.io.record.FieldArray.add_properties">add_properties() (pycbc.io.record.FieldArray method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Node.add_raw_arg">add_raw_arg() (pycbc.workflow.pegasus_workflow.Node method)</a>
+</li>
+      <li><a href="pycbc.inference.io.html#pycbc.inference.io.ResultsArgumentParser.add_results_option_group">add_results_option_group() (pycbc.inference.io.ResultsArgumentParser method)</a>
+</li>
+      <li><a href="pycbc.inference.html#pycbc.inference.option_utils.add_scatter_option_group">add_scatter_option_group() (in module pycbc.inference.option_utils)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.coinc.LiveCoincTimeslideBackgroundEstimator.add_singles">add_singles() (pycbc.events.coinc.LiveCoincTimeslideBackgroundEstimator method)</a>
+</li>
+      <li><a href="pycbc.results.html#pycbc.results.plot.add_style_opt_to_parser">add_style_opt_to_parser() (in module pycbc.results.plot)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.eventmgr.EventManager.add_template_events">add_template_events() (pycbc.events.eventmgr.EventManager method)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.eventmgr.EventManagerCoherent.add_template_events_to_network">add_template_events_to_network() (pycbc.events.eventmgr.EventManagerCoherent method)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.eventmgr.EventManagerCoherent.add_template_network_events">add_template_network_events() (pycbc.events.eventmgr.EventManagerCoherent method)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.eventmgr.EventManager.add_template_params">add_template_params() (pycbc.events.eventmgr.EventManager method)</a>
+</li>
+      <li><a href="pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.add_tmpltbank_from_hdf_file">add_tmpltbank_from_hdf_file() (pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank method)</a>
+</li>
+      <li><a href="pycbc.tmpltbank.html#pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank.add_tmpltbank_from_xml_table">add_tmpltbank_from_xml_table() (pycbc.tmpltbank.partitioned_bank.PartitionedTmpltbank method)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.record.FieldArray.add_virtualfields">add_virtualfields() (pycbc.io.record.FieldArray method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.pegasus_workflow.Workflow.add_workflow">add_workflow() (pycbc.workflow.pegasus_workflow.Workflow method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.configuration.add_workflow_command_line_group">add_workflow_command_line_group() (in module pycbc.workflow.configuration)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.add_workflow_settings_cli">add_workflow_settings_cli() (in module pycbc.workflow.core)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.record.FieldArray.addattr">addattr() (pycbc.io.record.FieldArray method)</a>
+</li>
+      <li><a href="pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel.adjust_strain">adjust_strain() (pycbc.strain.recalibrate.PhysicalModel method)</a>
+</li>
+      <li><a href="pycbc.strain.html#pycbc.strain.strain.StrainBuffer.advance">advance() (pycbc.strain.strain.StrainBuffer method)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.coinc.MultiRingBuffer.advance_time">advance_time() (pycbc.events.coinc.MultiRingBuffer method)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.AdVBNSOptimizedSensitivityP1200087">AdVBNSOptimizedSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.AdVDesignSensitivityP1200087">AdVDesignSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.AdVEarlyHighSensitivityP1200087">AdVEarlyHighSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.AdVEarlyLowSensitivityP1200087">AdVEarlyLowSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.AdVLateHighSensitivityP1200087">AdVLateHighSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.AdVLateLowSensitivityP1200087">AdVLateLowSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.AdVMidHighSensitivityP1200087">AdVMidHighSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.AdVMidLowSensitivityP1200087">AdVMidLowSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.AdvVirgo">AdvVirgo() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.record.FieldArray.aliases">aliases (pycbc.io.record.FieldArray attribute)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.transforms.AlignedMassSpinToCartesianSpin">AlignedMassSpinToCartesianSpin (class in pycbc.transforms)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOAdVO3LowT1800545">aLIGOAdVO3LowT1800545() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOAdVO4IntermediateT1800545">aLIGOAdVO4IntermediateT1800545() (in module pycbc.psd.analytical)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOAdVO4T1800545">aLIGOAdVO4T1800545() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGO140MpcT1800545">aLIGOaLIGO140MpcT1800545() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGO175MpcT1800545">aLIGOaLIGO175MpcT1800545() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGODesignSensitivityT1800044">aLIGOaLIGODesignSensitivityT1800044() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGOO3LowT1800545">aLIGOaLIGOO3LowT1800545() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOAPlusDesignSensitivityT1800042">aLIGOAPlusDesignSensitivityT1800042() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOBHBH20Deg">aLIGOBHBH20Deg() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOBHBH20DegGWINC">aLIGOBHBH20DegGWINC() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOBNSOptimizedSensitivityP1200087">aLIGOBNSOptimizedSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGODesignSensitivityP1200087">aLIGODesignSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOEarlyHighSensitivityP1200087">aLIGOEarlyHighSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOEarlyLowSensitivityP1200087">aLIGOEarlyLowSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOHighFrequency">aLIGOHighFrequency() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOHighFrequencyGWINC">aLIGOHighFrequencyGWINC() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOKAGRA128MpcT1800545">aLIGOKAGRA128MpcT1800545() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOKAGRA25MpcT1800545">aLIGOKAGRA25MpcT1800545() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOKAGRA80MpcT1800545">aLIGOKAGRA80MpcT1800545() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOLateHighSensitivityP1200087">aLIGOLateHighSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOLateLowSensitivityP1200087">aLIGOLateLowSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOMidHighSensitivityP1200087">aLIGOMidHighSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOMidLowSensitivityP1200087">aLIGOMidLowSensitivityP1200087() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGONoSRMHighPower">aLIGONoSRMHighPower() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGONoSRMLowPower">aLIGONoSRMLowPower() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGONoSRMLowPowerGWINC">aLIGONoSRMLowPowerGWINC() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGONSNSOpt">aLIGONSNSOpt() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGONSNSOptGWINC">aLIGONSNSOptGWINC() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumBHBH20Deg">aLIGOQuantumBHBH20Deg() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumHighFrequency">aLIGOQuantumHighFrequency() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumNoSRMHighPower">aLIGOQuantumNoSRMHighPower() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumNoSRMLowPower">aLIGOQuantumNoSRMLowPower() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumNSNSOpt">aLIGOQuantumNSNSOpt() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumZeroDetHighPower">aLIGOQuantumZeroDetHighPower() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumZeroDetLowPower">aLIGOQuantumZeroDetLowPower() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOThermal">aLIGOThermal() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetHighPower">aLIGOZeroDetHighPower() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetHighPowerGWINC">aLIGOZeroDetHighPowerGWINC() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetLowPower">aLIGOZeroDetLowPower() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetLowPowerGWINC">aLIGOZeroDetLowPowerGWINC() (in module pycbc.psd.analytical)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.Executable.ALL_TRIGGERS">ALL_TRIGGERS (pycbc.workflow.core.Executable attribute)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pool.BroadcastPool.allmap">allmap() (pycbc.pool.BroadcastPool method)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.array.Array.almost_equal_elem">almost_equal_elem() (pycbc.types.array.Array method)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.almost_equal_elem">(pycbc.types.frequencyseries.FrequencySeries method)</a>
+</li>
+        <li><a href="pycbc.types.html#pycbc.types.timeseries.TimeSeries.almost_equal_elem">(pycbc.types.timeseries.TimeSeries method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.types.html#pycbc.types.array.Array.almost_equal_norm">almost_equal_norm() (pycbc.types.array.Array method)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.almost_equal_norm">(pycbc.types.frequencyseries.FrequencySeries method)</a>
+</li>
+        <li><a href="pycbc.types.html#pycbc.types.timeseries.TimeSeries.almost_equal_norm">(pycbc.types.timeseries.TimeSeries method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.compress.CompressedWaveform.amplitude">amplitude (pycbc.waveform.compress.CompressedWaveform attribute)</a>, <a href="pycbc.waveform.html#pycbc.waveform.compress.CompressedWaveform.amplitude">[1]</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.utils.amplitude_from_frequencyseries">amplitude_from_frequencyseries() (in module pycbc.waveform.utils)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.utils.amplitude_from_polarizations">amplitude_from_polarizations() (in module pycbc.waveform.utils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.detector.Detector.antenna_pattern">antenna_pattern() (pycbc.detector.Detector method)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.record.FieldArray.append">append() (pycbc.io.record.FieldArray method)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.timeseries.TimeSeries.append_zeros">append_zeros() (pycbc.types.timeseries.TimeSeries method)</a>
+</li>
+      <li><a href="pycbc.inference.models.html#pycbc.inference.models.base.SamplingTransforms.apply">apply() (pycbc.inference.models.base.SamplingTransforms method)</a>
+
+      <ul>
+        <li><a href="pycbc.inject.html#pycbc.inject.inject.CBCHDFInjectionSet.apply">(pycbc.inject.inject.CBCHDFInjectionSet method)</a>
+</li>
+        <li><a href="pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.apply">(pycbc.inject.inject.IncoherentFromFileHDFInjectionSet method)</a>
+</li>
+        <li><a href="pycbc.inject.html#pycbc.inject.inject.RingdownHDFInjectionSet.apply">(pycbc.inject.inject.RingdownHDFInjectionSet method)</a>
+</li>
+        <li><a href="pycbc.inject.html#pycbc.inject.inject.SGBurstInjectionSet.apply">(pycbc.inject.inject.SGBurstInjectionSet method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.distributions.html#pycbc.distributions.angular.UniformAngle.apply_boundary_conditions">apply_boundary_conditions() (pycbc.distributions.angular.UniformAngle method)</a>
+
+      <ul>
+        <li><a href="pycbc.distributions.html#pycbc.distributions.angular.UniformSolidAngle.apply_boundary_conditions">(pycbc.distributions.angular.UniformSolidAngle method)</a>
+</li>
+        <li><a href="pycbc.distributions.html#pycbc.distributions.bounded.BoundedDist.apply_boundary_conditions">(pycbc.distributions.bounded.BoundedDist method)</a>
+</li>
+        <li><a href="pycbc.distributions.html#pycbc.distributions.external.External.apply_boundary_conditions">(pycbc.distributions.external.External method)</a>
+</li>
+        <li><a href="pycbc.distributions.html#pycbc.distributions.fixedsamples.FixedSamples.apply_boundary_conditions">(pycbc.distributions.fixedsamples.FixedSamples method)</a>
+</li>
+        <li><a href="pycbc.distributions.html#pycbc.distributions.joint.JointDistribution.apply_boundary_conditions">(pycbc.distributions.joint.JointDistribution method)</a>
+</li>
+        <li><a href="pycbc.distributions.html#pycbc.distributions.spins.IndependentChiPChiEff.apply_boundary_conditions">(pycbc.distributions.spins.IndependentChiPChiEff method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.strain.html#pycbc.strain.calibration.CubicSpline.apply_calibration">apply_calibration() (pycbc.strain.calibration.CubicSpline method)</a>
+
+      <ul>
+        <li><a href="pycbc.strain.html#pycbc.strain.calibration.Recalibrate.apply_calibration">(pycbc.strain.calibration.Recalibrate method)</a>
+</li>
+        <li><a href="pycbc.strain.html#pycbc.strain.recalibrate.CubicSpline.apply_calibration">(pycbc.strain.recalibrate.CubicSpline method)</a>
+</li>
+        <li><a href="pycbc.strain.html#pycbc.strain.recalibrate.Recalibrate.apply_calibration">(pycbc.strain.recalibrate.Recalibrate method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.html#pycbc.boundaries.Bounds.apply_conditions">apply_conditions() (pycbc.boundaries.Bounds method)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.boundaries.apply_cyclic">apply_cyclic() (in module pycbc.boundaries)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.utils.apply_fd_time_shift">apply_fd_time_shift() (in module pycbc.waveform.utils)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.utils.apply_fseries_time_shift">apply_fseries_time_shift() (in module pycbc.waveform.utils)</a>
+
+      <ul>
+        <li><a href="pycbc.waveform.html#pycbc.waveform.utils_cpu.apply_fseries_time_shift">(in module pycbc.waveform.utils_cpu)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.strain.html#pycbc.strain.gate.apply_gates_to_fd">apply_gates_to_fd() (in module pycbc.strain.gate)</a>
+</li>
+      <li><a href="pycbc.strain.html#pycbc.strain.gate.apply_gates_to_td">apply_gates_to_td() (in module pycbc.strain.gate)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.hdf.SingleDetTriggers.apply_mask">apply_mask() (pycbc.io.hdf.SingleDetTriggers method)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.transforms.apply_transforms">apply_transforms() (in module pycbc.transforms)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.hdf.SingleDetTriggers.approximant">approximant (pycbc.io.hdf.SingleDetTriggers attribute)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.bank.TemplateBank.approximant">approximant() (pycbc.waveform.bank.TemplateBank method)</a>
+</li>
+      <li><a href="pycbc.distributions.html#pycbc.distributions.arbitrary.Arbitrary">Arbitrary (class in pycbc.distributions.arbitrary)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.bin_utils.BinnedArray.argmax">argmax() (pycbc.bin_utils.BinnedArray method)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.bin_utils.BinnedArray.argmin">argmin() (pycbc.bin_utils.BinnedArray method)</a>
+</li>
+      <li><a href="pycbc.inference.html#pycbc.inference.evidence.arithmetic_mean_estimator">arithmetic_mean_estimator() (in module pycbc.inference.evidence)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.array.Array">Array (class in pycbc.types.array)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.parameters.ParameterList.asdict">asdict (pycbc.waveform.parameters.ParameterList attribute)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.parameters.ParameterList.aslist">aslist (pycbc.waveform.parameters.ParameterList attribute)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.stat.ExpFitStatistic.assign_fits">assign_fits() (pycbc.events.stat.ExpFitStatistic method)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.stat.ExpFitFgBgNormStatistic.assign_median_sigma">assign_median_sigma() (pycbc.events.stat.ExpFitFgBgNormStatistic method)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.associate_psds_to_multi_ifo_segments">associate_psds_to_multi_ifo_segments() (in module pycbc.psd)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.associate_psds_to_segments">associate_psds_to_segments() (in module pycbc.psd)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.associate_psds_to_single_ifo_segments">associate_psds_to_single_ifo_segments() (in module pycbc.psd)</a>
+</li>
+      <li><a href="pycbc.population.html#pycbc.population.scale_injections.astro_redshifts">astro_redshifts() (in module pycbc.population.scale_injections)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.array.Array.astype">astype() (pycbc.types.array.Array method)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.at_frequency">at_frequency() (pycbc.types.frequencyseries.FrequencySeries method)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.timeseries.TimeSeries.at_time">at_time() (pycbc.types.timeseries.TimeSeries method)</a>
+</li>
+      <li><a href="pycbc.vetoes.html#pycbc.vetoes.autochisq.autochisq_from_precomputed">autochisq_from_precomputed() (in module pycbc.vetoes.autochisq)</a>
+</li>
+      <li><a href="pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.available_tests">available_tests (pycbc.inference.burn_in.BaseBurnInTests attribute)</a>
+
+      <ul>
+        <li><a href="pycbc.inference.html#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.available_tests">(pycbc.inference.burn_in.EnsembleMCMCBurnInTests attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.strain.html#pycbc.strain.lines.avg_inner_product">avg_inner_product() (in module pycbc.strain.lines)</a>
+</li>
+      <li><a href="pycbc.results.html#pycbc.results.pygrb_plotting_utils.axis_max_value">axis_max_value() (in module pycbc.results.pygrb_plotting_utils)</a>
+</li>
+      <li><a href="pycbc.distributions.html#pycbc.distributions.angular.UniformSolidAngle.azimuthal_angle">azimuthal_angle (pycbc.distributions.angular.UniformSolidAngle attribute)</a>, <a href="pycbc.distributions.html#pycbc.distributions.angular.UniformSolidAngle.azimuthal_angle">[1]</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

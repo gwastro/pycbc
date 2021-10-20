@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HDF files within the PyCBC workflow &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Workflow: the inspiral analysis workflow generator (pycbc.workflow)" href="../workflow.html" />
+    <link rel="prev" title="Creating Releases of PyCBC" href="../release.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">HDF files within the PyCBC workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#single-inspiral-triggers">single inspiral triggers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#executables">Executables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#specification">Specification</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#combined-single-inspiral-triggers">combined single inspiral triggers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Executables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Specification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-uses">Example uses</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>HDF files within the PyCBC workflow</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/formats/hdf_format.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="hdf-files-within-the-pycbc-workflow">
+<h1>HDF files within the PyCBC workflow<a class="headerlink" href="#hdf-files-within-the-pycbc-workflow" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Format specifications are provided here to aid in development. The canonical
+definition, as always, lives within the code itself.</p>
+</div>
+<div class="section" id="single-inspiral-triggers">
+<h2>single inspiral triggers<a class="headerlink" href="#single-inspiral-triggers" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="executables">
+<h3>Executables<a class="headerlink" href="#executables" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>pycbc_inspiral</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="specification">
+<h3>Specification<a class="headerlink" href="#specification" title="Permalink to this headline">¶</a></h3>
+<p>All keys in the inspiral output are prefixed with the IFO name, e.g. H1, L1. Currently,
+only a single ifo is present in each file, but at a future date, multiple may
+be allowed.</p>
+<p>The following table consists of columns of trigger data. Each column is of the same length
+and an index into one column corresponds to the same trigger in each of the other columns.</p>
+<table border="1" class="docutils" id="id3">
+<caption><span class="caption-text">Column vectors of trigger data</span><a class="headerlink" href="#id3" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">path</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>IFO/snr</td>
+<td>The mangitude of the complex SNR</td>
+</tr>
+<tr class="row-odd"><td>IFO/coa_phase</td>
+<td>The phase of the complex SNR</td>
+</tr>
+<tr class="row-even"><td>IFO/end_time</td>
+<td>The gps time of the trigger</td>
+</tr>
+<tr class="row-odd"><td>IFO/chisq</td>
+<td>Value of the bruce power chisq</td>
+</tr>
+<tr class="row-even"><td>IFO/chisq_dof</td>
+<td>Not DOF. The number of bins in the chisq. DOF = 2 * (num_bins -1)</td>
+</tr>
+<tr class="row-odd"><td>IFO/bank_chisq</td>
+<td>Value of the bank chisq</td>
+</tr>
+<tr class="row-even"><td>IFO/bank_chisq_dof</td>
+<td>Number of templates used to construct the bank chisq</td>
+</tr>
+<tr class="row-odd"><td>IFO/cont_chisq</td>
+<td>Value of the autochisq</td>
+</tr>
+<tr class="row-even"><td>IFO/cont_chisq_dof</td>
+<td>Number of dof for the auto chisq</td>
+</tr>
+<tr class="row-odd"><td>IFO/template_duration</td>
+<td>Duration of the template approximant used for this trigger</td>
+</tr>
+<tr class="row-even"><td>IFO/sigmasq</td>
+<td>The weighted power of the template, placed at 1Mpc, used for this trigger</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils" id="id4">
+<caption><span class="caption-text">Additional Data</span><a class="headerlink" href="#id4" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">path</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>IFO/search/start_time</td>
+<td>Array of gps times which denote the start of a valid period of triggers</td>
+</tr>
+<tr class="row-odd"><td>IFO/search/end_time</td>
+<td>Array of gps times which denote the corresponding end of a vlid period of triggers</td>
+</tr>
+</tbody>
+</table>
+<p>The following are columns that exists in the file, but should not be used by any user.
+Its definition or existence is subject to change without notice.</p>
+<table border="1" class="docutils" id="id5">
+<caption><span class="caption-text">reserved columns</span><a class="headerlink" href="#id5" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="100%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">path</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>IFO/template_hash</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="combined-single-inspiral-triggers">
+<h2>combined single inspiral triggers<a class="headerlink" href="#combined-single-inspiral-triggers" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h3>Executables<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><ul class="simple">
+<li>pycbc_coinc_mergetrigs</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="id2">
+<h3>Specification<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>All keys in the inspiral output are prefixed with the IFO name, e.g. H1, L1. Currently,
+only a single ifo is present in each file, but at a future date, multiple may
+be allowed.</p>
+<p>The following table consists of columns of trigger data. Each column is of the same length
+and an index into one column corresponds to the same trigger in each of the other columns.</p>
+<table border="1" class="docutils" id="id6">
+<caption><span class="caption-text">Column vectors of trigger data</span><a class="headerlink" href="#id6" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">path</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>IFO/snr</td>
+<td>The mangitude of the complex SNR</td>
+</tr>
+<tr class="row-odd"><td>IFO/coa_phase</td>
+<td>The phase of the complex SNR</td>
+</tr>
+<tr class="row-even"><td>IFO/end_time</td>
+<td>The gps time of the trigger</td>
+</tr>
+<tr class="row-odd"><td>IFO/chisq</td>
+<td>Value of the bruce power chisq</td>
+</tr>
+<tr class="row-even"><td>IFO/chisq_dof</td>
+<td>Not DOF. The number of bins in the chisq. DOF = 2 * (num_bins -1)</td>
+</tr>
+<tr class="row-odd"><td>IFO/bank_chisq</td>
+<td>Value of the bank chisq</td>
+</tr>
+<tr class="row-even"><td>IFO/bank_chisq_dof</td>
+<td>Number of templates used to construct the bank chisq</td>
+</tr>
+<tr class="row-odd"><td>IFO/cont_chisq</td>
+<td>Value of the autochisq</td>
+</tr>
+<tr class="row-even"><td>IFO/cont_chisq_dof</td>
+<td>Number of dof for the auto chisq</td>
+</tr>
+<tr class="row-odd"><td>IFO/template_duration</td>
+<td>Duration of the template approximant used for this trigger</td>
+</tr>
+<tr class="row-even"><td>IFO/sigmasq</td>
+<td>The weighted power of the template, placed at 1Mpc, used for this trigger</td>
+</tr>
+<tr class="row-odd"><td>IFO/template_id</td>
+<td>The unique template id value. This is the index into the hdf template file format</td>
+</tr>
+</tbody>
+</table>
+<p>The key feature that the combined trigger format adds is the convenience of precalculated region
+references to access only the data produced by a given template. These values are stored in region
+reference arrays. The length of each array is the same as the number of templates, and an index
+into the array matches the template_id number. Each array directly maps to a single column.</p>
+<table border="1" class="docutils" id="id7">
+<caption><span class="caption-text">region reference arrays</span><a class="headerlink" href="#id7" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="100%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">path</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>IFO/bank_chisq_dof_template</td>
+</tr>
+<tr class="row-odd"><td>IFO/bank_chisq_template</td>
+</tr>
+<tr class="row-even"><td>IFO/chisq_dof_template</td>
+</tr>
+<tr class="row-odd"><td>IFO/chisq_template</td>
+</tr>
+<tr class="row-even"><td>IFO/coa_phase_template</td>
+</tr>
+<tr class="row-odd"><td>IFO/cont_chisq_dof_template</td>
+</tr>
+<tr class="row-even"><td>IFO/cont_chisq_template</td>
+</tr>
+<tr class="row-odd"><td>IFO/end_time_template</td>
+</tr>
+<tr class="row-even"><td>IFO/sigmasq_template</td>
+</tr>
+<tr class="row-odd"><td>IFO/snr_template</td>
+</tr>
+<tr class="row-even"><td>IFO/template_boundaries</td>
+</tr>
+<tr class="row-odd"><td>IFO/template_duration_template</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils" id="id8">
+<caption><span class="caption-text">Additional Data</span><a class="headerlink" href="#id8" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">path</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>IFO/search/start_time</td>
+<td>Array of gps times which denote the start of a valid period of triggers</td>
+</tr>
+<tr class="row-odd"><td>IFO/search/end_time</td>
+<td>Array of gps times which denote the corresponding end of a vlid period of triggers</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="example-uses">
+<h3>Example uses<a class="headerlink" href="#example-uses" title="Permalink to this headline">¶</a></h3>
+<p>Accessing triggers by template</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">h5py</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="s1">&#39;H1-testdata.hdf&#39;</span><span class="p">)</span>
+<span class="n">snr_regs</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;H1/snr_template&#39;</span><span class="p">]</span>
+<span class="n">snr_template_0</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="s1">&#39;H1/snr&#39;</span><span class="p">][</span><span class="n">snr_regs</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../release.html" class="btn btn-neutral float-left" title="Creating Releases of PyCBC" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../workflow.html" class="btn btn-neutral float-right" title="Workflow: the inspiral analysis workflow generator (pycbc.workflow)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

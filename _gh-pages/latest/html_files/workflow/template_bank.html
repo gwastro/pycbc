@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The workflow template bank generation module &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The workflow table splitting module" href="splittable.html" />
+    <link rel="prev" title="The workflow injection generation module" href="injections.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../workflow.html#introduction">Introduction</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../workflow.html#workflow-module-documentation">Workflow module documentation</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#basics-and-overview">Basics and overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#generating-segments">Generating segments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#obtaining-data">Obtaining data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#injection-generation">Injection generation</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../workflow.html#template-bank">Template bank</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">The workflow template bank generation module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#split-table">Split table</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#matched-filtering">Matched-filtering</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../workflow.html#coincidence">Coincidence</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../workflow.html#method-documentation">Method documentation</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a> &raquo;</li>
+      <li>The workflow template bank generation module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/workflow/template_bank.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="the-workflow-template-bank-generation-module">
+<span id="workflowtmpltbankmod"></span><h1>The workflow template bank generation module<a class="headerlink" href="#the-workflow-template-bank-generation-module" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>The template bank section of the pycbc workflow module is responsible for gathering/generating the banks of waveforms that will be used to matched-filter against the data.</p>
+<p>It can run in a number of different modes</p>
+<ul class="simple">
+<li>With a pre-generated template bank, which can be specified for all ifos, or as one bank for each ifo.</li>
+<li>By generating unique and independent template banks for each ifo that are regenerated every approx. 2000s</li>
+<li>Generating template banks that do not vary over the workflow, can be the same template bank in each ifo or different ones.</li>
+</ul>
+<p>The template bank module, by default, is independent of other modules, though it
+is possible to ensure that there is a one-to-one correspondence between template banks and matched-filter outputs.
+Improvements over ihope:</p>
+<ul class="simple">
+<li>The template bank analysis chunks may be longer or shorter than the inspiral chunks</li>
+<li>Options sent to one job can be sent to the other or not, as desired.  No hardcoding of options that are <strong>always</strong> sent to both the matched-filter and template bank stages.</li>
+</ul>
+<p>Like other modules, the template bank module returns a pycbc FileList of the template bank files generated/supplied to this module. It is possible to make multiple calls to the template bank module in the same module by using the tags kwarg when calling this.</p>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>Using this module requires a number of things</p>
+<ul class="simple">
+<li>A configuration file (or files) containing the information needed to tell this module how to generate (or gather) the template banks (described below).</li>
+<li>An initialized instance of the pycbc Workflow class, containing the ConfigParser.</li>
+<li>A list of segments to be analysed by this module.</li>
+<li>A FileList returned by the datafind module containing the frames that contain the data that will be used to make the template banks. (If using a pre-supplied PSD, or some other use-case that does not require reading data this can be set to None).</li>
+</ul>
+<p>The module is then called according to</p>
+<dl class="function">
+<dt>
+<code class="descclassname">pycbc.workflow.</code><code class="descname">setup_tmpltbank_workflow</code><span class="sig-paren">(</span><em>workflow</em>, <em>science_segs</em>, <em>datafind_outs</em>, <em>output_dir=None</em>, <em>psd_files=None</em>, <em>tags=None</em>, <em>return_format=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/tmpltbank.html#setup_tmpltbank_workflow"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Setup template bank section of CBC workflow. This function is responsible
+for deciding which of the various template bank workflow generation
+utilities should be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – An instanced class that manages the constructed workflow.</li>
+<li><strong>science_segs</strong> (<em>Keyed dictionary of glue.segmentlist objects</em>) – scienceSegs[ifo] holds the science segments to be analysed for each
+ifo.</li>
+<li><strong>datafind_outs</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing the datafind files.</li>
+<li><strong>output_dir</strong> (<em>path string</em>) – The directory where data products will be placed.</li>
+<li><strong>psd_files</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing predefined PSDs, if provided.</li>
+<li><strong>tags</strong> (<em>list of strings</em>) – If given these tags are used to uniquely name and identify output files
+that would be produced in multiple calls to this function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tmplt_banks</strong> – The FileList holding the details of all the template bank jobs.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<div class="section" id="configuration-file-setup">
+<h3>Configuration file setup<a class="headerlink" href="#configuration-file-setup" title="Permalink to this headline">¶</a></h3>
+<p>Here we describe the options given in the configuration file used in the
+workflow that will be needed in this section</p>
+<div class="section" id="workflow-tmpltbank-section">
+<h4>[workflow-tmpltbank] section<a class="headerlink" href="#workflow-tmpltbank-section" title="Permalink to this headline">¶</a></h4>
+<p>The configuration file must have a [workflow-tmpltbank] section,
+which is used to
+tell the workflow how to construct (or gather) the template banks. The first option to choose and provide is</p>
+<ul class="simple">
+<li>tmpltbank-method = VALUE</li>
+</ul>
+<p>The choices here and their description are as described below</p>
+<ul class="simple">
+<li>PREGENERATED_BANK - A pregenerated template bank is supplied and this should be used when performing matched-filtering for all ifos and all times. This uses the setup_tmpltbank_pregenerated sub-module.</li>
+<li>WORKFLOW_INDEPENDENT_IFOS - Template banks will be generated within the workflow. These banks will be made to cover only short (normally ~ 2000s) of data to reflect PSD changes over time and will be independent and distinct for each analysed interferometer. This uses the setup_tmpltbank_dax_generated sub-module.</li>
+<li>WORKFLOW_INDEPENDENT_IFOS_NODATA - Template banks will be generated within the workflow. There will be one bank for each ifo, which will cover all times. No data frames will be used when constructing the workflow (ie. using a design PSD or similar). This uses the setup_tmpltbank_without_frames sub-module.</li>
+<li>WORKFLOW_NO_IFO_VARIATION_NODATA - As WORKFLOW_INDEPENDENT_IFOS_NODATA except only one template bank will be generated that is valid for all ifos. This uses the setup_tmpltbank_without_frames sub-module.</li>
+</ul>
+<p>Each of these options will describe which subfunction to use. These are described here</p>
+<dl class="function">
+<dt>
+<code class="descclassname">pycbc.workflow.</code><code class="descname">setup_tmpltbank_pregenerated</code><span class="sig-paren">(</span><em>workflow</em>, <em>tags=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/tmpltbank.html#setup_tmpltbank_pregenerated"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Setup CBC workflow to use a pregenerated template bank.
+The bank given in cp.get(‘workflow’,’pregenerated-template-bank’) will be used
+as the input file for all matched-filtering jobs. If this option is
+present, workflow will assume that it should be used and not generate
+template banks within the workflow.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – An instanced class that manages the constructed workflow.</li>
+<li><strong>tags</strong> (<em>list of strings</em>) – If given these tags are used to uniquely name and identify output files
+that would be produced in multiple calls to this function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tmplt_banks</strong> – The FileList holding the details of the template bank.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">pycbc.workflow.</code><code class="descname">setup_tmpltbank_dax_generated</code><span class="sig-paren">(</span><em>workflow</em>, <em>science_segs</em>, <em>datafind_outs</em>, <em>output_dir</em>, <em>tags=None</em>, <em>link_to_matchedfltr=True</em>, <em>compatibility_mode=False</em>, <em>psd_files=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/tmpltbank.html#setup_tmpltbank_dax_generated"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Setup template bank jobs that are generated as part of the CBC workflow.
+This function will add numerous jobs to the CBC workflow using
+configuration options from the .ini file. The following executables are
+currently supported:</p>
+<ul class="simple">
+<li>lalapps_tmpltbank</li>
+<li>pycbc_geom_nonspin_bank</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – An instanced class that manages the constructed workflow.</li>
+<li><strong>science_segs</strong> (<em>Keyed dictionary of glue.segmentlist objects</em>) – scienceSegs[ifo] holds the science segments to be analysed for each
+ifo.</li>
+<li><strong>datafind_outs</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing the datafind files.</li>
+<li><strong>output_dir</strong> (<em>path string</em>) – The directory where data products will be placed.</li>
+<li><strong>tags</strong> (<em>list of strings</em>) – If given these tags are used to uniquely name and identify output files
+that would be produced in multiple calls to this function.</li>
+<li><strong>link_to_matchedfltr</strong> (<em>boolean</em><em>, </em><em>optional</em><em> (</em><em>default=True</em><em>)</em>) – If this option is given, the job valid_times will be altered so that
+there will be one inspiral file for every template bank and they will
+cover the same time span. Note that this option must also be given
+during matched-filter generation to be meaningful.</li>
+<li><strong>psd_file</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing predefined PSDs, if provided.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tmplt_banks</strong> – The FileList holding the details of all the template bank jobs.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">pycbc.workflow.</code><code class="descname">setup_tmpltbank_without_frames</code><span class="sig-paren">(</span><em>workflow</em>, <em>output_dir</em>, <em>tags=None</em>, <em>independent_ifos=False</em>, <em>psd_files=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/tmpltbank.html#setup_tmpltbank_without_frames"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Setup CBC workflow to use a template bank (or banks) that are generated in
+the workflow, but do not use the data to estimate a PSD, and therefore do
+not vary over the duration of the workflow. This can either generate one
+bank that is valid for all ifos at all times, or multiple banks that are
+valid only for a single ifo at all times (one bank per ifo).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – An instanced class that manages the constructed workflow.</li>
+<li><strong>output_dir</strong> (<em>path string</em>) – The directory where the template bank outputs will be placed.</li>
+<li><strong>tags</strong> (<em>list of strings</em>) – If given these tags are used to uniquely name and identify output files
+that would be produced in multiple calls to this function.</li>
+<li><strong>independent_ifos</strong> (<em>Boolean</em><em>, </em><em>optional</em><em> (</em><em>default=False</em><em>)</em>) – If given this will produce one template bank per ifo. If not given
+there will be on template bank to cover all ifos.</li>
+<li><strong>psd_file</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing predefined PSDs, if provided.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tmplt_banks</strong> – The FileList holding the details of the template bank(s).</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p>When using the setup_tmpltbank_pregenerated sub-module the following additional options apply in the [workflow-tmpltbank] section.</p>
+<ul class="simple">
+<li>tmpltbank-pregenerated-bank = PATH - OPTIONAL. This is the location of the pre-generated bank that is to be used for all ifos.</li>
+<li>tmpltbank-pregenerated-bank-[ifo] = PATH = OPTIONAL. This is the location of the pre-generated bank that is to be used for all ifos. Either this option must be given for all active ifos or tmpltbank-pregenerated-bank must be given. If both are supplied this option tmpltbank-pregenerated-bank-[ifo] will be ignored. [ifo] should be replaced by the name of each ifo in lower case. For example tmpltbank-pregenerated-bank-l1 or tmpltbank-pregenerated-bank-v1.</li>
+</ul>
+<p>When using the setup_tmpltbank_without_frames sub-module the following additional options apply in the [workflow-tmpltbank] section:</p>
+<ul class="simple">
+<li>tmpltbank-write-psd-file - OPTIONAL. If given the template bank code will also write a file containing the PSD. Currently only supported in pycbc template bank codes.</li>
+</ul>
+<p>When using the setup_tmpltbank_dax_generated sub-module the following additional options apply in the [workflow-templtbank] section.</p>
+<ul class="simple">
+<li>tmpltbank-link-to-matchedfltr - OPTIONAL. If this is given the workflow module will attempt to ensure a one-to-one correspondence between template banks and matched-filter outputs. This may not work in all cases and should be considered an option to be used for comparing with ihope output.</li>
+<li>tmpltbank-compatibility-mode - OPTIONAL. If this is given the workflow module will tile the template bank jobs in the same way as inspiral_hipe used to. This requires the link option above and that the template bank and matched-filtering jobs are reading the same amount of data in each job.</li>
+<li>tmpltbank-write-psd-file - OPTIONAL. If given the template bank code will also write a file containing the PSD. Currently only supported in pycbc template bank codes.</li>
+</ul>
+<p>The following options apply only when using setup_tmpltbank_dax_generated and not using lalapps_tmpltbank</p>
+<ul class="simple">
+<li>analysis-length = LENGTH_IN_SECONDS (not used when lalapps_tmpltbank is the executable) - REQUIRED. The amount of time in seconds that will be used for frames for PSD generation.</li>
+</ul>
+</div>
+<div class="section" id="executables">
+<h4>[executables]<a class="headerlink" href="#executables" title="Permalink to this headline">¶</a></h4>
+<p>If using setup_tmpltbank_pregenerated then no executables are needed, you have already generated the template bank.</p>
+<p>If using setup_tmpltbank_dax_generated or setup_tmpltbank_without_frames then you need to supply the template bank executable. This is done in the [executables] section by adding something like:</p>
+<p>tmpltbank = /path/to/lalapps_tmpltbank</p>
+<p>the option, in this case ‘tmpltbank’, will be used to specify the constant command line options that are sent to all tmpltbank jobs. Currently this value is hardcoded to tmpltbank, but we plan to change this to allow multiple tmpltbank executables to be used in a single workflow. How to set up the [{exe_name}] section, and which executables are currently supported is discussed below.</p>
+<p>If template banks are being generated separately for each ifo then sections named [tmpltbank-${ifo}] (for e.g. [tmpltbank-h1] or [tmpltbank-v1]) can be used to specify options that should only be supplied when running on that ifo.</p>
+</div>
+</div>
+<div class="section" id="supported-template-bank-exes-and-instructions-for-using-them">
+<h3>Supported template bank exes and instructions for using them<a class="headerlink" href="#supported-template-bank-exes-and-instructions-for-using-them" title="Permalink to this headline">¶</a></h3>
+<p>The following template bank executables are currently supported in the workflow module</p>
+<ul class="simple">
+<li>lalapps_tmpltbank</li>
+<li>pycbc_geom_nonspinbank</li>
+</ul>
+<p>Adding a new executable is not too hard, please ask a developer for some pointers on how to do this if you want to add a new code.</p>
+<p>Also see <a class="reference internal" href="../tmpltbank.html#tmpltbankmod"><span class="std std-ref">Pycbc.Tmpltbank</span></a> for a description/introduction to pycbc template bank code and papers describing these codes, lalapps_tmpltbank and sBank.</p>
+<div class="section" id="lalapps-tmpltbank-ahope">
+<h4>lalapps_tmpltbank_ahope<a class="headerlink" href="#lalapps-tmpltbank-ahope" title="Permalink to this headline">¶</a></h4>
+<p>Lalapps_tmpltbank is the legacy C-code that has been used to generate template banks for gravitational-wave data analysis since the dawn of time. It is a little inflexible in terms of output file names. We recommend using the newer pycbc_geom_nonspinbank if possible.</p>
+<p>lalapps_tmpltbank is supported in pycbc’s workflow module via a wrapper script lalapps_tmpltbank_ahope, this allows us to specify all the frame files and the output file name directly.</p>
+<p>The help message for lalapps_tmpltbank is available at <a class="reference external" href="http://software.ligo.org/docs/lalsuite/lalapps/tmpltbank_8c.html">http://software.ligo.org/docs/lalsuite/lalapps/tmpltbank_8c.html</a></p>
+<p>Of these options the workflow module and/or the wrapper script will automatically add the following, which are unique for each job. <strong>DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE</strong>.</p>
+<ul class="simple">
+<li>–gps-start-time</li>
+<li>–gps-end-time</li>
+<li>–frame-cache</li>
+<li>–user-tag</li>
+<li>–ifo-tag</li>
+</ul>
+<p>All other options must be provided in the configuration file. Here is an example of a lalapps_tmpltbank call.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lalapps_tmpltbank --grid-spacing Hexagonal --dynamic-range-exponent <span class="m">69</span>.0 --minimal-match <span class="m">0</span>.97 --high-pass-order <span class="m">8</span> --strain-high-pass-order <span class="m">8</span> --maximum-mass <span class="m">25</span>.0 --gps-end-time <span class="m">961587599</span> --calibrated-data real_8 --channel-name H1:LDAS-STRAIN --space Tau0Tau3 --number-of-segments <span class="m">15</span> --enable-high-pass <span class="m">30</span>.0 --gps-start-time <span class="m">961585551</span> --high-pass-attenuation <span class="m">0</span>.1 --num-freq-cutoffs <span class="m">1</span> --segment-length <span class="m">1048576</span> --low-frequency-cutoff <span class="m">40</span>.0 --pad-data <span class="m">8</span> --min-high-freq-cutoff SchwarzISCO --sample-rate <span class="m">4096</span> --high-frequency-cutoff <span class="m">2048</span>.0 --resample-filter ldas --strain-high-pass-atten <span class="m">0</span>.1 --strain-high-pass-freq <span class="m">30</span> --max-total-mass <span class="m">25</span>.0 --frame-cache /home/spxiwh/lscsoft_git/src/pycbc/examples/ahope/weekly_ahope/961585543-961671943/datafind/H1-DATAFIND-961585543-86400.lcf --disable-compute-moments  --max-high-freq-cutoff SchwarzISCO --approximant TaylorF2 --write-compress  --minimum-mass <span class="m">1</span>.0 --order twoPN --spectrum-type median
+</pre></div>
+</div>
+</div>
+<div class="section" id="pycbc-geom-nonspinbank">
+<h4>pycbc_geom_nonspinbank<a class="headerlink" href="#pycbc-geom-nonspinbank" title="Permalink to this headline">¶</a></h4>
+<p>pycbc_geom_nonspinbank is pycbc’s non-spinning template bank generator. Designed as a replacement and improvement of lalapps_tmpltbank. See <a class="reference internal" href="../tmpltbank.html#tmpltbankmod"><span class="std std-ref">PyCBC template bank generation documentation (pycbc.tmpltbank)</span></a> for documentation of this code. The help message of pycbc_geom_nonspinbank follows:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$ pycbc_geom_nonspinbank --help
+usage: pycbc_geom_nonspinbank [-h] [--version] [-V]
+                              [--random-seed RANDOM_SEED] -m MIN_MATCH -O
+                              OUTPUT_FILE [--f-low-column NAME] --pn-order
+                              PN_ORDER [--f0 F0] --f-low F_LOW --f-upper
+                              F_UPPER --delta-f DELTA_F [--write-metric]
+                              --min-mass1 MIN_MASS1 --max-mass1 MAX_MASS1
+                              --min-mass2 MIN_MASS2 --max-mass2 MAX_MASS2
+                              [--max-total-mass MAX_TOTAL_MASS]
+                              [--min-total-mass MIN_TOTAL_MASS]
+                              [--max-chirp-mass MAX_CHIRP_MASS]
+                              [--min-chirp-mass MIN_CHIRP_MASS]
+                              [--max-eta MAX_ETA] [--min-eta MIN_ETA]
+                              [--ns-eos NS_EOS]
+                              [--remnant-mass-threshold REMNANT_MASS_THRESHOLD]
+                              [--use-eos-max-ns-mass]
+                              [--delta-bh-spin DELTA_BH_SPIN]
+                              [--delta-ns-mass DELTA_NS_MASS]
+                              [--psd-model {AdVBNSOptimizedSensitivityP1200087,AdVDesignSensitivityP1200087,AdVEarlyHighSensitivityP1200087,AdVEarlyLowSensitivityP1200087,AdVLateHighSensitivityP1200087,AdVLateLowSensitivityP1200087,AdVMidHighSensitivityP1200087,AdVMidLowSensitivityP1200087,AdvVirgo,CosmicExplorerP1600143,CosmicExplorerPessimisticP1600143,CosmicExplorerWidebandP1600143,EinsteinTelescopeP1600143,GEO,GEOHF,KAGRA,KAGRADesignSensitivityT1600593,KAGRAEarlySensitivityT1600593,KAGRALateSensitivityT1600593,KAGRAMidSensitivityT1600593,KAGRAOpeningSensitivityT1600593,TAMA,Virgo,aLIGOAPlusDesignSensitivityT1800042,aLIGOAdVO3LowT1800545,aLIGOAdVO4IntermediateT1800545,aLIGOAdVO4T1800545,aLIGOBHBH20Deg,aLIGOBHBH20DegGWINC,aLIGOBNSOptimizedSensitivityP1200087,aLIGODesignSensitivityP1200087,aLIGOEarlyHighSensitivityP1200087,aLIGOEarlyLowSensitivityP1200087,aLIGOHighFrequency,aLIGOHighFrequencyGWINC,aLIGOKAGRA128MpcT1800545,aLIGOKAGRA25MpcT1800545,aLIGOKAGRA80MpcT1800545,aLIGOLateHighSensitivityP1200087,aLIGOLateLowSensitivityP1200087,aLIGOMidHighSensitivityP1200087,aLIGOMidLowSensitivityP1200087,aLIGONSNSOpt,aLIGONSNSOptGWINC,aLIGONoSRMHighPower,aLIGONoSRMLowPower,aLIGONoSRMLowPowerGWINC,aLIGOQuantumBHBH20Deg,aLIGOQuantumHighFrequency,aLIGOQuantumNSNSOpt,aLIGOQuantumNoSRMHighPower,aLIGOQuantumNoSRMLowPower,aLIGOQuantumZeroDetHighPower,aLIGOQuantumZeroDetLowPower,aLIGOThermal,aLIGOZeroDetHighPower,aLIGOZeroDetHighPowerGWINC,aLIGOZeroDetLowPower,aLIGOZeroDetLowPowerGWINC,aLIGOaLIGO140MpcT1800545,aLIGOaLIGO175MpcT1800545,aLIGOaLIGODesignSensitivityT1800044,aLIGOaLIGOO3LowT1800545,eLIGOModel,eLIGOShot,iLIGOModel,iLIGOSRD,iLIGOSeismic,iLIGOShot,iLIGOThermal,flat_unity}]
+                              [--psd-file PSD_FILE] [--asd-file ASD_FILE]
+                              [--psd-inverse-length PSD_INVERSE_LENGTH]
+                              [--invpsd-trunc-method {hann}]
+                              [--psd-file-xml-ifo-string PSD_FILE_XML_IFO_STRING]
+                              [--psd-file-xml-root-name PSD_FILE_XML_ROOT_NAME]
+                              [--psdvar-segment SECONDS]
+                              [--psdvar-short-segment SECONDS]
+                              [--psdvar-long-segment SECONDS]
+                              [--psdvar-psd-duration SECONDS]
+                              [--psdvar-psd-stride SECONDS]
+                              [--psdvar-low-freq HERTZ]
+                              [--psdvar-high-freq HERTZ]
+                              [--psd-estimation {mean,median,median-mean}]
+                              [--psd-segment-length PSD_SEGMENT_LENGTH]
+                              [--psd-segment-stride PSD_SEGMENT_STRIDE]
+                              [--psd-num-segments PSD_NUM_SEGMENTS]
+                              [--psd-output PSD_OUTPUT]
+                              [--gps-start-time GPS_START_TIME]
+                              [--gps-end-time GPS_END_TIME]
+                              [--strain-high-pass STRAIN_HIGH_PASS]
+                              [--strain-low-pass STRAIN_LOW_PASS]
+                              [--pad-data PAD_DATA] [--taper-data TAPER_DATA]
+                              [--sample-rate SAMPLE_RATE]
+                              [--channel-name CHANNEL_NAME]
+                              [--frame-cache FRAME_CACHE [FRAME_CACHE ...]]
+                              [--frame-files FRAME_FILES [FRAME_FILES ...]]
+                              [--hdf-store HDF_STORE]
+                              [--frame-type FRAME_TYPE]
+                              [--frame-sieve FRAME_SIEVE]
+                              [--fake-strain {AdVBNSOptimizedSensitivityP1200087,AdVDesignSensitivityP1200087,AdVEarlyHighSensitivityP1200087,AdVEarlyLowSensitivityP1200087,AdVLateHighSensitivityP1200087,AdVLateLowSensitivityP1200087,AdVMidHighSensitivityP1200087,AdVMidLowSensitivityP1200087,AdvVirgo,CosmicExplorerP1600143,CosmicExplorerPessimisticP1600143,CosmicExplorerWidebandP1600143,EinsteinTelescopeP1600143,GEO,GEOHF,KAGRA,KAGRADesignSensitivityT1600593,KAGRAEarlySensitivityT1600593,KAGRALateSensitivityT1600593,KAGRAMidSensitivityT1600593,KAGRAOpeningSensitivityT1600593,TAMA,Virgo,aLIGOAPlusDesignSensitivityT1800042,aLIGOAdVO3LowT1800545,aLIGOAdVO4IntermediateT1800545,aLIGOAdVO4T1800545,aLIGOBHBH20Deg,aLIGOBHBH20DegGWINC,aLIGOBNSOptimizedSensitivityP1200087,aLIGODesignSensitivityP1200087,aLIGOEarlyHighSensitivityP1200087,aLIGOEarlyLowSensitivityP1200087,aLIGOHighFrequency,aLIGOHighFrequencyGWINC,aLIGOKAGRA128MpcT1800545,aLIGOKAGRA25MpcT1800545,aLIGOKAGRA80MpcT1800545,aLIGOLateHighSensitivityP1200087,aLIGOLateLowSensitivityP1200087,aLIGOMidHighSensitivityP1200087,aLIGOMidLowSensitivityP1200087,aLIGONSNSOpt,aLIGONSNSOptGWINC,aLIGONoSRMHighPower,aLIGONoSRMLowPower,aLIGONoSRMLowPowerGWINC,aLIGOQuantumBHBH20Deg,aLIGOQuantumHighFrequency,aLIGOQuantumNSNSOpt,aLIGOQuantumNoSRMHighPower,aLIGOQuantumNoSRMLowPower,aLIGOQuantumZeroDetHighPower,aLIGOQuantumZeroDetLowPower,aLIGOThermal,aLIGOZeroDetHighPower,aLIGOZeroDetHighPowerGWINC,aLIGOZeroDetLowPower,aLIGOZeroDetLowPowerGWINC,aLIGOaLIGO140MpcT1800545,aLIGOaLIGO175MpcT1800545,aLIGOaLIGODesignSensitivityT1800044,aLIGOaLIGOO3LowT1800545,eLIGOModel,eLIGOShot,iLIGOModel,iLIGOSRD,iLIGOSeismic,iLIGOShot,iLIGOThermal,zeroNoise}]
+                              [--fake-strain-seed FAKE_STRAIN_SEED]
+                              [--fake-strain-from-file FAKE_STRAIN_FROM_FILE]
+                              [--fake-strain-flow FAKE_STRAIN_FLOW]
+                              [--fake-strain-filter-duration FAKE_STRAIN_FILTER_DURATION]
+                              [--fake-strain-sample-rate FAKE_STRAIN_SAMPLE_RATE]
+                              [--injection-file INJECTION_FILE]
+                              [--sgburst-injection-file SGBURST_INJECTION_FILE]
+                              [--injection-scale-factor INJECTION_SCALE_FACTOR]
+                              [--injection-sample-rate INJECTION_SAMPLE_RATE]
+                              [--injection-f-ref INJECTION_F_REF]
+                              [--injection-f-final INJECTION_F_FINAL]
+                              [--gating-file GATING_FILE]
+                              [--autogating-threshold SIGMA]
+                              [--autogating-max-iterations SIGMA]
+                              [--autogating-cluster SECONDS]
+                              [--autogating-width SECONDS]
+                              [--autogating-taper SECONDS]
+                              [--autogating-pad SECONDS]
+                              [--gating-method {hard,taper,paint}]
+                              [--normalize-strain NORMALIZE_STRAIN]
+                              [--zpk-z ZPK_Z [ZPK_Z ...]]
+                              [--zpk-p ZPK_P [ZPK_P ...]] [--zpk-k ZPK_K]
+                              [--witness-frame-type WITNESS_FRAME_TYPE]
+                              [--witness-tf-file WITNESS_TF_FILE]
+                              [--witness-filter-length WITNESS_FILTER_LENGTH]
+                              [--calculate-time-metric-components | --calculate-ethinca-metric]
+                              [--ethinca-pn-order {zeroPN,onePN,onePointFivePN,twoPN,twoPointFivePN,threePN,threePointFivePN}]
+                              [--filter-cutoff {SchwarzISCO,LightRing,ERD,BKLISCO,FRD,LRD,MECO,HybridMECO,IMRPhenomBFinal,IMRPhenomCFinal,IMRPhenomDPeak,EOBNRv2RD,EOBNRv2HMRD,SEOBNRv1RD,SEOBNRv1Peak,SEOBNRv2RD,SEOBNRv2Peak,SEOBNRv4RD,SEOBNRv4Peak}]
+                              [--ethinca-frequency-step ETHINCA_FREQUENCY_STEP]
+
+Template bank generator for placing a bank of non-spinning templates.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --version             show program&#39;s version number and exit
+  -V, --verbose         verbose output (default: False)
+  --random-seed RANDOM_SEED
+                        Random seed to use when calling numpy.random functions
+                        used in obtaining the principal components and when
+                        translating points back to physical space. If given,
+                        the code should give the same output when run with the
+                        same random seed. (default: None)
+  -m MIN_MATCH, --min-match MIN_MATCH
+                        Generate bank with specified minimum match. Required.
+                        (default: None)
+  -O OUTPUT_FILE, --output-file OUTPUT_FILE
+                        Output file name. Required. (default: None)
+  --f-low-column NAME   If given, store the lower frequency cutoff into column
+                        NAME of the single-inspiral table. (default: None)
+
+Options related to calculating the parameter space metric:
+  --pn-order PN_ORDER   Determines the PN order to use. For a bank of non-
+                        spinning templates, spin-related terms in the metric
+                        will be zero. REQUIRED. Choices: * zeroPN: Will only
+                        include the dominant term (proportional to chirp mass)
+                        * onePN: Will only the leading orbit term and first
+                        correction at 1PN * onePointFivePN: Will include orbit
+                        and spin terms to 1.5PN. * twoPN: Will include orbit
+                        and spin terms to 2PN. * twoPointFivePN: Will include
+                        orbit and spin terms to 2.5PN. * threePN: Will include
+                        orbit terms to 3PN and spin terms to 2.5PN. *
+                        threePointFivePN: Include orbit terms to 3.5PN and
+                        spin terms to 2.5PN (default: None)
+  --f0 F0               f0 is used as a dynamic scaling factor when
+                        calculating integrals used in metric construction.
+                        I.e. instead of integrating F(f) we integrate F(f/f0)
+                        then rescale by powers of f0. The default value 70Hz
+                        should be fine for most applications. OPTIONAL.
+                        UNITS=Hz. **WARNING: If the ethinca metric is to be
+                        calculated, f0 must be set equal to f-low** (default:
+                        70.0)
+  --f-low F_LOW         Lower frequency cutoff used in computing the parameter
+                        space metric. REQUIRED. UNITS=Hz (default: None)
+  --f-upper F_UPPER     Upper frequency cutoff used in computing the parameter
+                        space metric. REQUIRED. UNITS=Hz (default: None)
+  --delta-f DELTA_F     Frequency spacing used in computing the parameter
+                        space metric: integrals of the form \int F(f) df are
+                        approximated as \sum F(f) delta_f. REQUIRED. UNITS=Hz
+                        (default: None)
+  --write-metric        If given write the metric components to disk as they
+                        are calculated. (default: False)
+
+Options related to mass and spin limits for bank generation:
+  --min-mass1 MIN_MASS1
+                        Minimum mass1: must be &gt;= min-mass2. REQUIRED.
+                        UNITS=Solar mass (default: None)
+  --max-mass1 MAX_MASS1
+                        Maximum mass1: must be &gt;= max-mass2. REQUIRED.
+                        UNITS=Solar mass (default: None)
+  --min-mass2 MIN_MASS2
+                        Minimum mass2. REQUIRED. UNITS=Solar mass (default:
+                        None)
+  --max-mass2 MAX_MASS2
+                        Maximum mass2. REQUIRED. UNITS=Solar mass (default:
+                        None)
+  --max-total-mass MAX_TOTAL_MASS
+                        Maximum total mass. OPTIONAL, if not provided the max
+                        total mass is determined by the component masses.
+                        UNITS=Solar mass (default: None)
+  --min-total-mass MIN_TOTAL_MASS
+                        Minimum total mass. OPTIONAL, if not provided the min
+                        total mass is determined by the component masses.
+                        UNITS=Solar mass (default: None)
+  --max-chirp-mass MAX_CHIRP_MASS
+                        Maximum chirp mass. OPTIONAL, if not provided the max
+                        chirp mass is determined by the component masses.
+                        UNITS=Solar mass (default: None)
+  --min-chirp-mass MIN_CHIRP_MASS
+                        Minimum total mass. OPTIONAL, if not provided the min
+                        chirp mass is determined by the component masses.
+                        UNITS=Solar mass (default: None)
+  --max-eta MAX_ETA     Maximum symmetric mass ratio. OPTIONAL, no upper bound
+                        on eta will be imposed if not provided. UNITS=Solar
+                        mass. (default: 0.25)
+  --min-eta MIN_ETA     Minimum symmetric mass ratio. OPTIONAL, no lower bound
+                        on eta will be imposed if not provided. UNITS=Solar
+                        mass. (default: 0.0)
+  --ns-eos NS_EOS       Select the EOS to be used for the NS when calculating
+                        the remnant disk mass. Only 2H is currently supported.
+                        OPTIONAL (default: None)
+  --remnant-mass-threshold REMNANT_MASS_THRESHOLD
+                        Setting this filters EM dim NS-BH binaries: if the
+                        remnant disk mass does not exceed this value, the NS-
+                        BH binary is dropped from the target parameter space.
+                        When it is set to None (default value) the EM dim
+                        filter is not activated. OPTIONAL (default: None)
+  --use-eos-max-ns-mass
+                        Cut the mass range of the smaller object to the
+                        maximum mass allowed by EOS. OPTIONAL (default: False)
+  --delta-bh-spin DELTA_BH_SPIN
+                        Grid spacing used for the BH spin z component when
+                        generating the surface of the minumum minimum
+                        symmetric mass ratio as a function of BH spin and NS
+                        mass required to produce a remnant disk mass that
+                        exceeds the threshold specificed in --remnant-mass-
+                        threshold. OPTIONAL (0.1 by default) (default: None)
+  --delta-ns-mass DELTA_NS_MASS
+                        Grid spacing used for the NS mass when generating the
+                        surface of the minumum minimum symmetric mass ratio as
+                        a function of BH spin and NS mass required to produce
+                        a remnant disk mass that exceeds the thrsehold
+                        specified in --remnant-mass-threshold. OPTIONAL (0.1
+                        by default) (default: None)
+
+Options to select the method of PSD generation:
+  The options --psd-model, --psd-file, --asd-file, and --psd-estimation are
+  mutually exclusive.
+
+  --psd-model {AdVBNSOptimizedSensitivityP1200087,AdVDesignSensitivityP1200087,AdVEarlyHighSensitivityP1200087,AdVEarlyLowSensitivityP1200087,AdVLateHighSensitivityP1200087,AdVLateLowSensitivityP1200087,AdVMidHighSensitivityP1200087,AdVMidLowSensitivityP1200087,AdvVirgo,CosmicExplorerP1600143,CosmicExplorerPessimisticP1600143,CosmicExplorerWidebandP1600143,EinsteinTelescopeP1600143,GEO,GEOHF,KAGRA,KAGRADesignSensitivityT1600593,KAGRAEarlySensitivityT1600593,KAGRALateSensitivityT1600593,KAGRAMidSensitivityT1600593,KAGRAOpeningSensitivityT1600593,TAMA,Virgo,aLIGOAPlusDesignSensitivityT1800042,aLIGOAdVO3LowT1800545,aLIGOAdVO4IntermediateT1800545,aLIGOAdVO4T1800545,aLIGOBHBH20Deg,aLIGOBHBH20DegGWINC,aLIGOBNSOptimizedSensitivityP1200087,aLIGODesignSensitivityP1200087,aLIGOEarlyHighSensitivityP1200087,aLIGOEarlyLowSensitivityP1200087,aLIGOHighFrequency,aLIGOHighFrequencyGWINC,aLIGOKAGRA128MpcT1800545,aLIGOKAGRA25MpcT1800545,aLIGOKAGRA80MpcT1800545,aLIGOLateHighSensitivityP1200087,aLIGOLateLowSensitivityP1200087,aLIGOMidHighSensitivityP1200087,aLIGOMidLowSensitivityP1200087,aLIGONSNSOpt,aLIGONSNSOptGWINC,aLIGONoSRMHighPower,aLIGONoSRMLowPower,aLIGONoSRMLowPowerGWINC,aLIGOQuantumBHBH20Deg,aLIGOQuantumHighFrequency,aLIGOQuantumNSNSOpt,aLIGOQuantumNoSRMHighPower,aLIGOQuantumNoSRMLowPower,aLIGOQuantumZeroDetHighPower,aLIGOQuantumZeroDetLowPower,aLIGOThermal,aLIGOZeroDetHighPower,aLIGOZeroDetHighPowerGWINC,aLIGOZeroDetLowPower,aLIGOZeroDetLowPowerGWINC,aLIGOaLIGO140MpcT1800545,aLIGOaLIGO175MpcT1800545,aLIGOaLIGODesignSensitivityT1800044,aLIGOaLIGOO3LowT1800545,eLIGOModel,eLIGOShot,iLIGOModel,iLIGOSRD,iLIGOSeismic,iLIGOShot,iLIGOThermal,flat_unity}
+                        Get PSD from given analytical model. (default: None)
+  --psd-file PSD_FILE   Get PSD using given PSD ASCII file (default: None)
+  --asd-file ASD_FILE   Get PSD using given ASD ASCII file (default: None)
+  --psd-inverse-length PSD_INVERSE_LENGTH
+                        (Optional) The maximum length of the impulse response
+                        of the overwhitening filter (s) (default: None)
+  --invpsd-trunc-method {hann}
+                        (Optional) What truncation method to use when applying
+                        psd-inverse-length. If not provided, a hard truncation
+                        will be used. (default: None)
+  --psd-file-xml-ifo-string PSD_FILE_XML_IFO_STRING
+                        If using an XML PSD file, use the PSD in the file&#39;s
+                        PSD dictionary with this ifo string. If not given and
+                        only one PSD present in the file return that, if not
+                        given and multiple (or zero) PSDs present an exception
+                        will be raised. (default: None)
+  --psd-file-xml-root-name PSD_FILE_XML_ROOT_NAME
+                        If given use this as the root name for the PSD XML
+                        file. If this means nothing to you, then it is
+                        probably safe to ignore this option. (default: psd)
+  --psdvar-segment SECONDS
+                        Length of segment for mean square calculation of PSD
+                        variation. (default: None)
+  --psdvar-short-segment SECONDS
+                        Length of short segment for outliers removal in PSD
+                        variability calculation. (default: None)
+  --psdvar-long-segment SECONDS
+                        Length of long segment when calculating the PSD
+                        variability. (default: None)
+  --psdvar-psd-duration SECONDS
+                        Duration of short segments for PSD estimation.
+                        (default: None)
+  --psdvar-psd-stride SECONDS
+                        Separation between PSD estimation segments. (default:
+                        None)
+  --psdvar-low-freq HERTZ
+                        Minimum frequency to consider in strain bandpass.
+                        (default: None)
+  --psdvar-high-freq HERTZ
+                        Maximum frequency to consider in strain bandpass.
+                        (default: None)
+  --psd-estimation {mean,median,median-mean}
+                        Measure PSD from the data, using given average method.
+                        (default: None)
+  --psd-segment-length PSD_SEGMENT_LENGTH
+                        (Required for --psd-estimation) The segment length for
+                        PSD estimation (s) (default: None)
+  --psd-segment-stride PSD_SEGMENT_STRIDE
+                        (Required for --psd-estimation) The separation between
+                        consecutive segments (s) (default: None)
+  --psd-num-segments PSD_NUM_SEGMENTS
+                        (Optional, used only with --psd-estimation). If given,
+                        PSDs will be estimated using only this number of
+                        segments. If more data is given than needed to make
+                        this number of segments then excess data will not be
+                        used in the PSD estimate. If not enough data is given,
+                        the code will fail. (default: None)
+  --psd-output PSD_OUTPUT
+                        (Optional) Write PSD to specified file (default: None)
+
+Options for obtaining h(t):
+  These options are used for generating h(t) either by reading from a file
+  or by generating it. This is only needed if the PSD is to be estimated
+  from the data, ie. if the --psd-estimation option is given.
+
+  --gps-start-time GPS_START_TIME
+                        The gps start time of the data (integer seconds)
+                        (default: None)
+  --gps-end-time GPS_END_TIME
+                        The gps end time of the data (integer seconds)
+                        (default: None)
+  --strain-high-pass STRAIN_HIGH_PASS
+                        High pass frequency (default: None)
+  --strain-low-pass STRAIN_LOW_PASS
+                        Low pass frequency (default: None)
+  --pad-data PAD_DATA   Extra padding to remove highpass corruption (integer
+                        seconds) (default: 8)
+  --taper-data TAPER_DATA
+                        Taper ends of data to zero using the supplied length
+                        as a window (integer seconds) (default: 0)
+  --sample-rate SAMPLE_RATE
+                        The sample rate to use for h(t) generation (integer
+                        Hz) (default: None)
+  --channel-name CHANNEL_NAME
+                        The channel containing the gravitational strain data
+                        (default: None)
+  --frame-cache FRAME_CACHE [FRAME_CACHE ...]
+                        Cache file containing the frame locations. (default:
+                        None)
+  --frame-files FRAME_FILES [FRAME_FILES ...]
+                        list of frame files (default: None)
+  --hdf-store HDF_STORE
+                        Store of time series data in hdf format (default:
+                        None)
+  --frame-type FRAME_TYPE
+                        (optional), replaces frame-files. Use datafind to get
+                        the needed frame file(s) of this type. (default: None)
+  --frame-sieve FRAME_SIEVE
+                        (optional), Only use frame files where the URL matches
+                        the regular expression given. (default: None)
+  --fake-strain {AdVBNSOptimizedSensitivityP1200087,AdVDesignSensitivityP1200087,AdVEarlyHighSensitivityP1200087,AdVEarlyLowSensitivityP1200087,AdVLateHighSensitivityP1200087,AdVLateLowSensitivityP1200087,AdVMidHighSensitivityP1200087,AdVMidLowSensitivityP1200087,AdvVirgo,CosmicExplorerP1600143,CosmicExplorerPessimisticP1600143,CosmicExplorerWidebandP1600143,EinsteinTelescopeP1600143,GEO,GEOHF,KAGRA,KAGRADesignSensitivityT1600593,KAGRAEarlySensitivityT1600593,KAGRALateSensitivityT1600593,KAGRAMidSensitivityT1600593,KAGRAOpeningSensitivityT1600593,TAMA,Virgo,aLIGOAPlusDesignSensitivityT1800042,aLIGOAdVO3LowT1800545,aLIGOAdVO4IntermediateT1800545,aLIGOAdVO4T1800545,aLIGOBHBH20Deg,aLIGOBHBH20DegGWINC,aLIGOBNSOptimizedSensitivityP1200087,aLIGODesignSensitivityP1200087,aLIGOEarlyHighSensitivityP1200087,aLIGOEarlyLowSensitivityP1200087,aLIGOHighFrequency,aLIGOHighFrequencyGWINC,aLIGOKAGRA128MpcT1800545,aLIGOKAGRA25MpcT1800545,aLIGOKAGRA80MpcT1800545,aLIGOLateHighSensitivityP1200087,aLIGOLateLowSensitivityP1200087,aLIGOMidHighSensitivityP1200087,aLIGOMidLowSensitivityP1200087,aLIGONSNSOpt,aLIGONSNSOptGWINC,aLIGONoSRMHighPower,aLIGONoSRMLowPower,aLIGONoSRMLowPowerGWINC,aLIGOQuantumBHBH20Deg,aLIGOQuantumHighFrequency,aLIGOQuantumNSNSOpt,aLIGOQuantumNoSRMHighPower,aLIGOQuantumNoSRMLowPower,aLIGOQuantumZeroDetHighPower,aLIGOQuantumZeroDetLowPower,aLIGOThermal,aLIGOZeroDetHighPower,aLIGOZeroDetHighPowerGWINC,aLIGOZeroDetLowPower,aLIGOZeroDetLowPowerGWINC,aLIGOaLIGO140MpcT1800545,aLIGOaLIGO175MpcT1800545,aLIGOaLIGODesignSensitivityT1800044,aLIGOaLIGOO3LowT1800545,eLIGOModel,eLIGOShot,iLIGOModel,iLIGOSRD,iLIGOSeismic,iLIGOShot,iLIGOThermal,zeroNoise}
+                        Name of model PSD for generating fake gaussian noise.
+                        (default: None)
+  --fake-strain-seed FAKE_STRAIN_SEED
+                        Seed value for the generation of fake colored gaussian
+                        noise (default: 0)
+  --fake-strain-from-file FAKE_STRAIN_FROM_FILE
+                        File containing ASD for generating fake noise from it.
+                        (default: None)
+  --fake-strain-flow FAKE_STRAIN_FLOW
+                        Low frequency cutoff of the fake strain (default: 1.0)
+  --fake-strain-filter-duration FAKE_STRAIN_FILTER_DURATION
+                        Duration in seconds of the fake data coloring filter
+                        (default: 128.0)
+  --fake-strain-sample-rate FAKE_STRAIN_SAMPLE_RATE
+                        Sample rate of the fake data generation (default:
+                        16384)
+  --injection-file INJECTION_FILE
+                        (optional) Injection file containing parameters of CBC
+                        signals to be added to the strain (default: None)
+  --sgburst-injection-file SGBURST_INJECTION_FILE
+                        (optional) Injection file containing parametersof
+                        sine-Gaussian burst signals to add to the strain
+                        (default: None)
+  --injection-scale-factor INJECTION_SCALE_FACTOR
+                        Divide injections by this factor before adding to the
+                        strain data (default: 1)
+  --injection-sample-rate INJECTION_SAMPLE_RATE
+                        Sample rate to use for injections (integer Hz).
+                        Typically similar to the strain data sample rate.If
+                        not provided, the strain sample rate will be used
+                        (default: None)
+  --injection-f-ref INJECTION_F_REF
+                        Reference frequency in Hz for creating CBC injections
+                        from an XML file (default: None)
+  --injection-f-final INJECTION_F_FINAL
+                        Override the f_final field of a CBC XML injection file
+                        (frequency in Hz) (default: None)
+  --gating-file GATING_FILE
+                        (optional) Text file of gating segments to apply.
+                        Format of each line is (all values in seconds):
+                        gps_time zeros_half_width pad_half_width (default:
+                        None)
+  --autogating-threshold SIGMA
+                        If given, find and gate glitches producing a deviation
+                        larger than SIGMA in the whitened strain time series.
+                        (default: None)
+  --autogating-max-iterations SIGMA
+                        If given, iteratively apply autogating (default: 1)
+  --autogating-cluster SECONDS
+                        Length of clustering window for detecting glitches for
+                        autogating. (default: 5.0)
+  --autogating-width SECONDS
+                        Half-width of the gating window. (default: 0.25)
+  --autogating-taper SECONDS
+                        Taper the strain before and after each gating window
+                        over a duration of SECONDS. (default: 0.25)
+  --autogating-pad SECONDS
+                        Ignore the given length of whitened strain at the ends
+                        of a segment, to avoid filters ringing. (default: 16)
+  --gating-method {hard,taper,paint}
+                        Choose the method for gating. Default: `taper`
+                        (default: taper)
+  --normalize-strain NORMALIZE_STRAIN
+                        (optional) Divide frame data by constant. (default:
+                        None)
+  --zpk-z ZPK_Z [ZPK_Z ...]
+                        (optional) Zero-pole-gain (zpk) filter strain. A list
+                        of zeros for transfer function (default: None)
+  --zpk-p ZPK_P [ZPK_P ...]
+                        (optional) Zero-pole-gain (zpk) filter strain. A list
+                        of poles for transfer function (default: None)
+  --zpk-k ZPK_K         (optional) Zero-pole-gain (zpk) filter strain.
+                        Transfer function gain (default: None)
+  --witness-frame-type WITNESS_FRAME_TYPE
+                        (optional), frame type which will be use to query the
+                        witness channel data. (default: None)
+  --witness-tf-file WITNESS_TF_FILE
+                        an hdf file containing the transfer functions and the
+                        associated channel names (default: None)
+  --witness-filter-length WITNESS_FILTER_LENGTH
+                        filter length in seconds for the transfer function
+                        (default: None)
+
+Ethinca metric options:
+  Options used in the calculation of Gamma metric components for the ethinca
+  coincidence test and for assigning high-frequency cutoffs to templates.
+
+  --calculate-time-metric-components
+                        If given, the ethinca metric will be calculated for
+                        only the time component, and stored in the Gamma0
+                        entry of the sngl_inspiral table. OPTIONAL,
+                        default=False (default: False)
+  --calculate-ethinca-metric
+                        If given, the ethinca metric will be calculated and
+                        stored in the Gamma entries of the sngl_inspiral
+                        table. OPTIONAL, default=False (default: False)
+  --ethinca-pn-order {zeroPN,onePN,onePointFivePN,twoPN,twoPointFivePN,threePN,threePointFivePN}
+                        Specify a PN order to be used in calculating the
+                        ethinca metric. OPTIONAL: if not specified, the same
+                        order will be used as for the bank metric. (default:
+                        None)
+  --filter-cutoff {SchwarzISCO,LightRing,ERD,BKLISCO,FRD,LRD,MECO,HybridMECO,IMRPhenomBFinal,IMRPhenomCFinal,IMRPhenomDPeak,EOBNRv2RD,EOBNRv2HMRD,SEOBNRv1RD,SEOBNRv1Peak,SEOBNRv2RD,SEOBNRv2Peak,SEOBNRv4RD,SEOBNRv4Peak}
+                        Specify an upper frequency cutoff formula for the
+                        ethinca metric calculation, and for the values of
+                        f_final assigned to the templates. REQUIRED if the
+                        calculate-ethinca-metric option is given. (default:
+                        None)
+  --ethinca-frequency-step ETHINCA_FREQUENCY_STEP
+                        Control the precision of the upper frequency cutoff.
+                        For speed, the metric is calculated only for discrete
+                        f_max values with a spacing given by this option. Each
+                        template is assigned the metric for the f_max closest
+                        to its analytical cutoff formula. OPTIONAL,
+                        default=10. UNITS=Hz (default: 10.0)
+</pre></div>
+</div>
+<p>Of these options the workflow module will automatically add the following, which are unique fo
+r each job. <strong>DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE</strong>.</p>
+<ul class="simple">
+<li>–gps-start-time</li>
+<li>–gps-end-time</li>
+<li>–frame-cache</li>
+<li>–output-file</li>
+</ul>
+<p>All other options must be provided in the configuration file. Here is an example of a pycbc_geom_nonspinbank call.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pycbc_geom_nonspinbank --pn-order twoPN --f0 <span class="m">40</span> --f-low <span class="m">40</span> --f-upper <span class="m">2048</span> --delta-f <span class="m">0</span>.01 --min-match <span class="m">0</span>.97 --min-mass1 <span class="m">2</span>.0 --min-mass2 <span class="m">2</span>.0 --max-mass1 <span class="m">3</span>. --max-mass2 <span class="m">3</span>. --verbose --output-file testNonSpin.xml --calculate-ethinca-metric --filter-cutoff SchwarzISCO --psd-estimation median --psd-segment-length <span class="m">256</span> --psd-segment-stride <span class="m">128</span> --psd-inverse-length <span class="m">8</span> --gps-start-time <span class="m">900000033</span> --gps-end-time <span class="m">900002081</span> --strain-high-pass <span class="m">30</span> --pad-data <span class="m">8</span> --sample-rate <span class="m">4096</span> --frame-cache cache/H-H1_NINJA2_G1000176_EARLY_RECOLORED_CACHE-900000024-10653.lcf --channel-name H1:LDAS-STRAIN --max-total-mass <span class="m">5</span>.5 --min-total-mass <span class="m">4</span>.5
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="pycbc-workflow-tmpltbank-module">
+<h2><a class="reference internal" href="../pycbc.workflow.html#module-pycbc.workflow.tmpltbank" title="pycbc.workflow.tmpltbank"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pycbc.workflow.tmpltbank</span></code></a> Module<a class="headerlink" href="#pycbc-workflow-tmpltbank-module" title="Permalink to this headline">¶</a></h2>
+<p>This is complete documentation of this module’s code</p>
+<p>This module is responsible for setting up the template bank stage of CBC
+workflows. For details about this module and its capabilities see here:
+<a class="reference external" href="https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html</a></p>
+<dl class="function">
+<dt>
+<code class="descclassname">pycbc.workflow.tmpltbank.</code><code class="descname">setup_tmpltbank_dax_generated</code><span class="sig-paren">(</span><em>workflow</em>, <em>science_segs</em>, <em>datafind_outs</em>, <em>output_dir</em>, <em>tags=None</em>, <em>link_to_matchedfltr=True</em>, <em>compatibility_mode=False</em>, <em>psd_files=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/tmpltbank.html#setup_tmpltbank_dax_generated"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Setup template bank jobs that are generated as part of the CBC workflow.
+This function will add numerous jobs to the CBC workflow using
+configuration options from the .ini file. The following executables are
+currently supported:</p>
+<ul class="simple">
+<li>lalapps_tmpltbank</li>
+<li>pycbc_geom_nonspin_bank</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – An instanced class that manages the constructed workflow.</li>
+<li><strong>science_segs</strong> (<em>Keyed dictionary of glue.segmentlist objects</em>) – scienceSegs[ifo] holds the science segments to be analysed for each
+ifo.</li>
+<li><strong>datafind_outs</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing the datafind files.</li>
+<li><strong>output_dir</strong> (<em>path string</em>) – The directory where data products will be placed.</li>
+<li><strong>tags</strong> (<em>list of strings</em>) – If given these tags are used to uniquely name and identify output files
+that would be produced in multiple calls to this function.</li>
+<li><strong>link_to_matchedfltr</strong> (<em>boolean</em><em>, </em><em>optional</em><em> (</em><em>default=True</em><em>)</em>) – If this option is given, the job valid_times will be altered so that
+there will be one inspiral file for every template bank and they will
+cover the same time span. Note that this option must also be given
+during matched-filter generation to be meaningful.</li>
+<li><strong>psd_file</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing predefined PSDs, if provided.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tmplt_banks</strong> – The FileList holding the details of all the template bank jobs.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">pycbc.workflow.tmpltbank.</code><code class="descname">setup_tmpltbank_pregenerated</code><span class="sig-paren">(</span><em>workflow</em>, <em>tags=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/tmpltbank.html#setup_tmpltbank_pregenerated"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Setup CBC workflow to use a pregenerated template bank.
+The bank given in cp.get(‘workflow’,’pregenerated-template-bank’) will be used
+as the input file for all matched-filtering jobs. If this option is
+present, workflow will assume that it should be used and not generate
+template banks within the workflow.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – An instanced class that manages the constructed workflow.</li>
+<li><strong>tags</strong> (<em>list of strings</em>) – If given these tags are used to uniquely name and identify output files
+that would be produced in multiple calls to this function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tmplt_banks</strong> – The FileList holding the details of the template bank.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">pycbc.workflow.tmpltbank.</code><code class="descname">setup_tmpltbank_without_frames</code><span class="sig-paren">(</span><em>workflow</em>, <em>output_dir</em>, <em>tags=None</em>, <em>independent_ifos=False</em>, <em>psd_files=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/tmpltbank.html#setup_tmpltbank_without_frames"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Setup CBC workflow to use a template bank (or banks) that are generated in
+the workflow, but do not use the data to estimate a PSD, and therefore do
+not vary over the duration of the workflow. This can either generate one
+bank that is valid for all ifos at all times, or multiple banks that are
+valid only for a single ifo at all times (one bank per ifo).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – An instanced class that manages the constructed workflow.</li>
+<li><strong>output_dir</strong> (<em>path string</em>) – The directory where the template bank outputs will be placed.</li>
+<li><strong>tags</strong> (<em>list of strings</em>) – If given these tags are used to uniquely name and identify output files
+that would be produced in multiple calls to this function.</li>
+<li><strong>independent_ifos</strong> (<em>Boolean</em><em>, </em><em>optional</em><em> (</em><em>default=False</em><em>)</em>) – If given this will produce one template bank per ifo. If not given
+there will be on template bank to cover all ifos.</li>
+<li><strong>psd_file</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing predefined PSDs, if provided.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tmplt_banks</strong> – The FileList holding the details of the template bank(s).</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descclassname">pycbc.workflow.tmpltbank.</code><code class="descname">setup_tmpltbank_workflow</code><span class="sig-paren">(</span><em>workflow</em>, <em>science_segs</em>, <em>datafind_outs</em>, <em>output_dir=None</em>, <em>psd_files=None</em>, <em>tags=None</em>, <em>return_format=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pycbc/workflow/tmpltbank.html#setup_tmpltbank_workflow"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Setup template bank section of CBC workflow. This function is responsible
+for deciding which of the various template bank workflow generation
+utilities should be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>workflow</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.Workflow" title="pycbc.workflow.core.Workflow"><em>pycbc.workflow.core.Workflow</em></a>) – An instanced class that manages the constructed workflow.</li>
+<li><strong>science_segs</strong> (<em>Keyed dictionary of glue.segmentlist objects</em>) – scienceSegs[ifo] holds the science segments to be analysed for each
+ifo.</li>
+<li><strong>datafind_outs</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing the datafind files.</li>
+<li><strong>output_dir</strong> (<em>path string</em>) – The directory where data products will be placed.</li>
+<li><strong>psd_files</strong> (<a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList"><em>pycbc.workflow.core.FileList</em></a>) – The file list containing predefined PSDs, if provided.</li>
+<li><strong>tags</strong> (<em>list of strings</em>) – If given these tags are used to uniquely name and identify output files
+that would be produced in multiple calls to this function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tmplt_banks</strong> – The FileList holding the details of all the template bank jobs.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../pycbc.workflow.html#pycbc.workflow.core.FileList" title="pycbc.workflow.core.FileList">pycbc.workflow.core.FileList</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="injections.html" class="btn btn-neutral float-left" title="The workflow injection generation module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="splittable.html" class="btn btn-neutral float-right" title="The workflow table splitting module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

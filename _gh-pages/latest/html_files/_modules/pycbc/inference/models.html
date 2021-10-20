@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference.models &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../pycbc.html">pycbc</a> &raquo;</li>
+      <li>pycbc.inference.models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.inference.models</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2018  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This package provides classes and functions for evaluating Bayesian statistics</span>
+<span class="sd">assuming various noise models.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">.analytic</span> <span class="kn">import</span> <span class="p">(</span><span class="n">TestEggbox</span><span class="p">,</span> <span class="n">TestNormal</span><span class="p">,</span> <span class="n">TestRosenbrock</span><span class="p">,</span> <span class="n">TestVolcano</span><span class="p">,</span>
+                       <span class="n">TestPrior</span><span class="p">,</span> <span class="n">TestPosterior</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.gaussian_noise</span> <span class="kn">import</span> <span class="n">GaussianNoise</span>
+<span class="kn">from</span> <span class="nn">.marginalized_gaussian_noise</span> <span class="kn">import</span> <span class="n">MarginalizedPhaseGaussianNoise</span>
+<span class="kn">from</span> <span class="nn">.marginalized_gaussian_noise</span> <span class="kn">import</span> <span class="n">MarginalizedPolarization</span>
+<span class="kn">from</span> <span class="nn">.marginalized_gaussian_noise</span> <span class="kn">import</span> <span class="n">MarginalizedHMPolPhase</span>
+<span class="kn">from</span> <span class="nn">.brute_marg</span> <span class="kn">import</span> <span class="n">BruteParallelGaussianMarginalize</span>
+<span class="kn">from</span> <span class="nn">.gated_gaussian_noise</span> <span class="kn">import</span> <span class="p">(</span><span class="n">GatedGaussianNoise</span><span class="p">,</span> <span class="n">GatedGaussianMargPol</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.single_template</span> <span class="kn">import</span> <span class="n">SingleTemplate</span>
+<span class="kn">from</span> <span class="nn">.relbin</span> <span class="kn">import</span> <span class="n">Relative</span>
+
+
+<span class="c1"># Used to manage a model instance across multiple cores or MPI</span>
+<span class="n">_global_instance</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">_call_global_model</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Private function for global model (needed for parallelization).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_global_instance</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>  <span class="c1"># pylint:disable=not-callable</span>
+
+
+<span class="k">def</span> <span class="nf">_call_global_model_logprior</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Private function for a calling global&#39;s logprior.</span>
+
+<span class="sd">    This is needed for samplers that use a separate function for the logprior,</span>
+<span class="sd">    like ``emcee_pt``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># pylint:disable=not-callable</span>
+    <span class="k">return</span> <span class="n">_global_instance</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">callstat</span><span class="o">=</span><span class="s1">&#39;logprior&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CallModel"><a class="viewcode-back" href="../../../pycbc.inference.models.html#pycbc.inference.models.CallModel">[docs]</a><span class="k">class</span> <span class="nc">CallModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wrapper class for calling models from a sampler.</span>
+
+<span class="sd">    This class can be called like a function, with the parameter values to</span>
+<span class="sd">    evaluate provided as a list in the same order as the model&#39;s</span>
+<span class="sd">    ``variable_params``. In that case, the model is updated with the provided</span>
+<span class="sd">    parameters and then the ``callstat`` retrieved. If ``return_all_stats`` is</span>
+<span class="sd">    set to ``True``, then all of the stats specified by the model&#39;s</span>
+<span class="sd">    ``default_stats`` will be returned as a tuple, in addition to the stat</span>
+<span class="sd">    value.</span>
+
+<span class="sd">    The model&#39;s attributes are promoted to this class&#39;s namespace, so that any</span>
+<span class="sd">    attribute and method of ``model`` may be called directly from this class.</span>
+
+<span class="sd">    This class must be initalized prior to the creation of a ``Pool`` object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : Model instance</span>
+<span class="sd">        The model to call.</span>
+<span class="sd">    callstat : str</span>
+<span class="sd">        The statistic to call.</span>
+<span class="sd">    return_all_stats : bool, optional</span>
+<span class="sd">        Whether or not to return all of the other statistics along with the</span>
+<span class="sd">        ``callstat`` value.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Create a wrapper around an instance of the ``TestNormal`` model, with the</span>
+<span class="sd">    ``callstat`` set to ``logposterior``:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pycbc.inference.models import TestNormal, CallModel</span>
+<span class="sd">    &gt;&gt;&gt; model = TestNormal([&#39;x&#39;, &#39;y&#39;])</span>
+<span class="sd">    &gt;&gt;&gt; call_model = CallModel(model, &#39;logposterior&#39;)</span>
+
+<span class="sd">    Now call on a set of parameter values:</span>
+
+<span class="sd">    &gt;&gt;&gt; call_model([0.1, -0.2])</span>
+<span class="sd">    (-1.8628770664093453, (0.0, 0.0, -1.8628770664093453))</span>
+
+<span class="sd">    Note that a tuple of all of the model&#39;s ``default_stats`` were returned in</span>
+<span class="sd">    addition to the ``logposterior`` value. We can shut this off by toggling</span>
+<span class="sd">    ``return_all_stats``:</span>
+
+<span class="sd">    &gt;&gt;&gt; call_model.return_all_stats = False</span>
+<span class="sd">    &gt;&gt;&gt; call_model([0.1, -0.2])</span>
+<span class="sd">    -1.8628770664093453</span>
+
+<span class="sd">    Attributes of the model can be called from the call model. For example:</span>
+
+<span class="sd">    &gt;&gt;&gt; call_model.variable_params</span>
+<span class="sd">    (&#39;x&#39;, &#39;y&#39;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">callstat</span><span class="p">,</span> <span class="n">return_all_stats</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callstat</span> <span class="o">=</span> <span class="n">callstat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_all_stats</span> <span class="o">=</span> <span class="n">return_all_stats</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds the models attributes to self.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_values</span><span class="p">,</span> <span class="n">callstat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_all_stats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the model with the given parameter values, then calls the</span>
+<span class="sd">        call function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        param_values : list of float</span>
+<span class="sd">            The parameter values to test. Assumed to be in the same order as</span>
+<span class="sd">            ``model.sampling_params``.</span>
+<span class="sd">        callstat : str, optional</span>
+<span class="sd">            Specify which statistic to call. Default is to call whatever self&#39;s</span>
+<span class="sd">            ``callstat`` is set to.</span>
+<span class="sd">        return_all_stats : bool, optional</span>
+<span class="sd">            Whether or not to return all stats in addition to the ``callstat``</span>
+<span class="sd">            value. Default is to use self&#39;s ``return_all_stats``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        stat : float</span>
+<span class="sd">            The statistic returned by the ``callfunction``.</span>
+<span class="sd">        all_stats : tuple, optional</span>
+<span class="sd">            The values of all of the model&#39;s ``default_stats`` at the given</span>
+<span class="sd">            param values. Any stat that has not be calculated is set to</span>
+<span class="sd">            ``numpy.nan``. This is only returned if ``return_all_stats`` is</span>
+<span class="sd">            set to ``True``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">callstat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">callstat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">callstat</span>
+        <span class="k">if</span> <span class="n">return_all_stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">return_all_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_all_stats</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">sampling_params</span><span class="p">,</span> <span class="n">param_values</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">callstat</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_all_stats</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_current_stats</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">val</span></div>
+
+
+<div class="viewcode-block" id="read_from_config"><a class="viewcode-back" href="../../../pycbc.inference.models.html#pycbc.inference.models.read_from_config">[docs]</a><span class="k">def</span> <span class="nf">read_from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Initializes a model from the given config file.</span>
+
+<span class="sd">    The section must have a ``name`` argument. The name argument corresponds to</span>
+<span class="sd">    the name of the class to initialize.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cp : WorkflowConfigParser</span>
+<span class="sd">        Config file parser to read.</span>
+<span class="sd">    \**kwargs :</span>
+<span class="sd">        All other keyword arguments are passed to the ``from_config`` method</span>
+<span class="sd">        of the class specified by the name argument.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cls</span>
+<span class="sd">        The initialized model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># use the name to get the distribution</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">models</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">cp</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<span class="n">models</span> <span class="o">=</span> <span class="p">{</span><span class="n">_cls</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">_cls</span> <span class="k">for</span> <span class="n">_cls</span> <span class="ow">in</span> <span class="p">(</span>
+    <span class="n">TestEggbox</span><span class="p">,</span>
+    <span class="n">TestNormal</span><span class="p">,</span>
+    <span class="n">TestRosenbrock</span><span class="p">,</span>
+    <span class="n">TestVolcano</span><span class="p">,</span>
+    <span class="n">TestPosterior</span><span class="p">,</span>
+    <span class="n">TestPrior</span><span class="p">,</span>
+    <span class="n">GaussianNoise</span><span class="p">,</span>
+    <span class="n">MarginalizedPhaseGaussianNoise</span><span class="p">,</span>
+    <span class="n">MarginalizedPolarization</span><span class="p">,</span>
+    <span class="n">MarginalizedHMPolPhase</span><span class="p">,</span>
+    <span class="n">BruteParallelGaussianMarginalize</span><span class="p">,</span>
+    <span class="n">GatedGaussianNoise</span><span class="p">,</span>
+    <span class="n">GatedGaussianMargPol</span><span class="p">,</span>
+    <span class="n">SingleTemplate</span><span class="p">,</span>
+    <span class="n">Relative</span>
+<span class="p">)}</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

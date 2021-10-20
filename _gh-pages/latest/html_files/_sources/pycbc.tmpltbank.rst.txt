@@ -1,0 +1,86 @@
+pycbc.tmpltbank package
+=======================
+
+Submodules
+----------
+
+pycbc.tmpltbank.bank\_output\_utils module
+------------------------------------------
+
+.. automodule:: pycbc.tmpltbank.bank_output_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.tmpltbank.brute\_force\_methods module
+--------------------------------------------
+
+.. automodule:: pycbc.tmpltbank.brute_force_methods
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.tmpltbank.calc\_moments module
+------------------------------------
+
+.. automodule:: pycbc.tmpltbank.calc_moments
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.tmpltbank.coord\_utils module
+-----------------------------------
+
+.. automodule:: pycbc.tmpltbank.coord_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.tmpltbank.em\_progenitors module
+--------------------------------------
+
+.. automodule:: pycbc.tmpltbank.em_progenitors
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.tmpltbank.lambda\_mapping module
+--------------------------------------
+
+.. automodule:: pycbc.tmpltbank.lambda_mapping
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.tmpltbank.lattice\_utils module
+-------------------------------------
+
+.. automodule:: pycbc.tmpltbank.lattice_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.tmpltbank.option\_utils module
+------------------------------------
+
+.. automodule:: pycbc.tmpltbank.option_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.tmpltbank.partitioned\_bank module
+----------------------------------------
+
+.. automodule:: pycbc.tmpltbank.partitioned_bank
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.tmpltbank
+    :members:
+    :undoc-members:
+    :show-inheritance:

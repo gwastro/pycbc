@@ -1,0 +1,158 @@
+pycbc.workflow package
+======================
+
+Submodules
+----------
+
+pycbc.workflow.coincidence module
+---------------------------------
+
+.. automodule:: pycbc.workflow.coincidence
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.configparser\_test module
+----------------------------------------
+
+.. automodule:: pycbc.workflow.configparser_test
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.configuration module
+-----------------------------------
+
+.. automodule:: pycbc.workflow.configuration
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.core module
+--------------------------
+
+.. automodule:: pycbc.workflow.core
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.datafind module
+------------------------------
+
+.. automodule:: pycbc.workflow.datafind
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.grb\_utils module
+--------------------------------
+
+.. automodule:: pycbc.workflow.grb_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.inference\_followups module
+------------------------------------------
+
+.. automodule:: pycbc.workflow.inference_followups
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.injection module
+-------------------------------
+
+.. automodule:: pycbc.workflow.injection
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.jobsetup module
+------------------------------
+
+.. automodule:: pycbc.workflow.jobsetup
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.matched\_filter module
+-------------------------------------
+
+.. automodule:: pycbc.workflow.matched_filter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.minifollowups module
+-----------------------------------
+
+.. automodule:: pycbc.workflow.minifollowups
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.pegasus\_workflow module
+---------------------------------------
+
+.. automodule:: pycbc.workflow.pegasus_workflow
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.plotting module
+------------------------------
+
+.. automodule:: pycbc.workflow.plotting
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.psd module
+-------------------------
+
+.. automodule:: pycbc.workflow.psd
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.psdfiles module
+------------------------------
+
+.. automodule:: pycbc.workflow.psdfiles
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.segment module
+-----------------------------
+
+.. automodule:: pycbc.workflow.segment
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.splittable module
+--------------------------------
+
+.. automodule:: pycbc.workflow.splittable
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.workflow.tmpltbank module
+-------------------------------
+
+.. automodule:: pycbc.workflow.tmpltbank
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.workflow
+    :members:
+    :undoc-members:
+    :show-inheritance:

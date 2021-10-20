@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_include/waveform-parameters.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <table border="1" class="docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Parameter</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'mass1'</span></code></td>
+<td>The mass of the first component object in the binary (in solar masses).</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'mass2'</span></code></td>
+<td>The mass of the second component object in the binary (in solar masses).</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'spin1x'</span></code></td>
+<td>The x component of the first binary component’s dimensionless spin.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'spin1y'</span></code></td>
+<td>The y component of the first binary component’s dimensionless spin.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'spin1z'</span></code></td>
+<td>The z component of the first binary component’s dimensionless spin.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'spin2x'</span></code></td>
+<td>The x component of the second binary component’s dimensionless spin.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'spin2y'</span></code></td>
+<td>The y component of the second binary component’s dimensionless spin.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'spin2z'</span></code></td>
+<td>The z component of the second binary component’s dimensionless spin.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'eccentricity'</span></code></td>
+<td>Eccentricity.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'lambda1'</span></code></td>
+<td>The dimensionless tidal deformability parameter of object 1.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'lambda2'</span></code></td>
+<td>The dimensionless tidal deformability parameter of object 2.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dquad_mon1'</span></code></td>
+<td>Quadrupole-monopole parameter / m_1^5 -1.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dquad_mon2'</span></code></td>
+<td>Quadrupole-monopole parameter / m_2^5 -1.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'lambda_octu1'</span></code></td>
+<td>The octupolar tidal deformability parameter of object 1.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'lambda_octu2'</span></code></td>
+<td>The octupolar tidal deformability parameter of object 2.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'quadfmode1'</span></code></td>
+<td>The quadrupolar f-mode angular frequency of object 1.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'quadfmode2'</span></code></td>
+<td>The quadrupolar f-mode angular frequency of object 2.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'octufmode1'</span></code></td>
+<td>The octupolar f-mode angular frequency of object 1.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'octufmode2'</span></code></td>
+<td>The octupolar f-mode angular frequency of object 2.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dchi0'</span></code></td>
+<td>0PN testingGR parameter.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dchi1'</span></code></td>
+<td>0.5PN testingGR parameter.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dchi2'</span></code></td>
+<td>1PN testingGR parameter.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dchi3'</span></code></td>
+<td>1.5PN testingGR parameter.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dchi4'</span></code></td>
+<td>2PN testingGR parameter.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dchi5'</span></code></td>
+<td>2.5PN testingGR parameter.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dchi5l'</span></code></td>
+<td>2.5PN logrithm testingGR parameter.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dchi6'</span></code></td>
+<td>3PN testingGR parameter.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dchi6l'</span></code></td>
+<td>3PN logrithm testingGR parameter.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dchi7'</span></code></td>
+<td>3.5PN testingGR parameter.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dalpha1'</span></code></td>
+<td>Merger-ringdown testingGR parameter.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dalpha2'</span></code></td>
+<td>Merger-ringdown testingGR parameter.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dalpha3'</span></code></td>
+<td>Merger-ringdown testingGR parameter.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dalpha4'</span></code></td>
+<td>Merger-ringdown testingGR parameter.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dalpha5'</span></code></td>
+<td>Merger-ringdown testingGR parameter.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dbeta1'</span></code></td>
+<td>Intermediate testingGR parameter.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dbeta2'</span></code></td>
+<td>Intermediate testingGR parameter.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'dbeta3'</span></code></td>
+<td>Intermediate testingGR parameter.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'distance'</span></code></td>
+<td>Luminosity distance to the binary (in Mpc).</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'coa_phase'</span></code></td>
+<td>Coalesence phase of the binary (in rad).</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'inclination'</span></code></td>
+<td>Inclination (rad), defined as the angle between the orbital angular momentum L and the line-of-sight at the reference frequency.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'long_asc_nodes'</span></code></td>
+<td>Longitude of ascending nodes axis (rad).</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'mean_per_ano'</span></code></td>
+<td>Mean anomaly of the periastron (rad).</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'delta_t'</span></code></td>
+<td>The time step used to generate the waveform (in s).</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'f_lower'</span></code></td>
+<td>The starting frequency of the waveform (in Hz).</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'approximant'</span></code></td>
+<td>A string that indicates the chosen approximant.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'f_ref'</span></code></td>
+<td>The reference frequency.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'phase_order'</span></code></td>
+<td>The pN order of the orbital phase. The default of -1 indicates that all implemented orders are used.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'spin_order'</span></code></td>
+<td>The pN order of the spin corrections. The default of -1 indicates that all implemented orders are used.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'tidal_order'</span></code></td>
+<td>The pN order of the tidal corrections. The default of -1 indicates that all implemented orders are used.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'amplitude_order'</span></code></td>
+<td>The pN order of the amplitude. The default of -1 indicates that all implemented orders are used.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'eccentricity_order'</span></code></td>
+<td>The pN order of the eccentricity corrections.The default of -1 indicates that all implemented orders are used.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'frame_axis'</span></code></td>
+<td>Allow to choose among orbital_l, view and total_j</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'modes_choice'</span></code></td>
+<td>Allow to turn on  among orbital_l, view and total_j</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'side_bands'</span></code></td>
+<td>Flag for generating sidebands</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'mode_array'</span></code></td>
+<td>Choose which (l,m) modes to include when generating a waveform. Only if approximant supports this feature.By default pass None and let lalsimulation use it’s default behaviour.Example: mode_array = [ [2,2], [2,-2] ]</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'numrel_data'</span></code></td>
+<td>Sets the NR flags; only needed for NR waveforms.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'delta_f'</span></code></td>
+<td>The frequency step used to generate the waveform (in Hz).</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'f_final'</span></code></td>
+<td>The ending frequency of the waveform. The default (0) indicates that the choice is made by the respective approximant.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'f_final_func'</span></code></td>
+<td>Use the given frequency function to compute f_final based on the parameters of the waveform.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'tc'</span></code></td>
+<td>Coalescence time (s).</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'ra'</span></code></td>
+<td>Right ascension (rad).</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">'dec'</span></code></td>
+<td>Declination (rad).</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">'polarization'</span></code></td>
+<td>Polarization (rad).</td>
+</tr>
+</tbody>
+</table>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

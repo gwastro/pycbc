@@ -1,0 +1,54 @@
+pycbc.vetoes package
+====================
+
+Submodules
+----------
+
+pycbc.vetoes.autochisq module
+-----------------------------
+
+.. automodule:: pycbc.vetoes.autochisq
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.vetoes.bank\_chisq module
+-------------------------------
+
+.. automodule:: pycbc.vetoes.bank_chisq
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.vetoes.chisq module
+-------------------------
+
+.. automodule:: pycbc.vetoes.chisq
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.vetoes.chisq\_cpu module
+------------------------------
+
+.. automodule:: pycbc.vetoes.chisq_cpu
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.vetoes.sgchisq module
+---------------------------
+
+.. automodule:: pycbc.vetoes.sgchisq
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.vetoes
+    :members:
+    :undoc-members:
+    :show-inheritance:

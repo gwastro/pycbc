@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.psd package &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.noise package" href="pycbc.noise.html" />
+    <link rel="prev" title="pycbc.tmpltbank package" href="pycbc.tmpltbank.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tmpltbank.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tmpltbank.html#non-spin-bank-placement-pycbc-geom-nonspinbank">Non spin bank placement: pycbc_geom_nonspinbank</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tmpltbank.html#aligned-spin-geometric-placement-pycbc-geom-aligned-bank">Aligned-spin geometric placement: pycbc_geom_aligned_bank</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tmpltbank.html#aligned-spin-stochastic-placement">Aligned-spin stochastic placement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tmpltbank.html#hybrid-approaches-the-best-of-both-worlds">Hybrid approaches: the best of both worlds</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="tmpltbank.html#the-module-s-source-code">The module’s source code</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">pycbc.psd package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-pycbc.psd.analytical">pycbc.psd.analytical module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-pycbc.psd.estimate">pycbc.psd.estimate module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-pycbc.psd.read">pycbc.psd.read module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-pycbc.psd.variation">pycbc.psd.variation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-pycbc.psd">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a> &raquo;</li>
+      <li>pycbc.psd package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pycbc.psd.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="pycbc-psd-package">
+<h1>pycbc.psd package<a class="headerlink" href="#pycbc-psd-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pycbc.psd.analytical">
+<span id="pycbc-psd-analytical-module"></span><h2>pycbc.psd.analytical module<a class="headerlink" href="#module-pycbc.psd.analytical" title="Permalink to this headline">¶</a></h2>
+<p>Provides reference PSDs from LALSimulation.</p>
+<dl class="function">
+<dt id="pycbc.psd.analytical.AdVBNSOptimizedSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">AdVBNSOptimizedSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.AdVBNSOptimizedSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the AdVBNSOptimizedSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.AdVDesignSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">AdVDesignSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.AdVDesignSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the AdVDesignSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.AdVEarlyHighSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">AdVEarlyHighSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.AdVEarlyHighSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the AdVEarlyHighSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.AdVEarlyLowSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">AdVEarlyLowSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.AdVEarlyLowSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the AdVEarlyLowSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.AdVLateHighSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">AdVLateHighSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.AdVLateHighSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the AdVLateHighSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.AdVLateLowSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">AdVLateLowSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.AdVLateLowSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the AdVLateLowSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.AdVMidHighSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">AdVMidHighSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.AdVMidHighSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the AdVMidHighSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.AdVMidLowSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">AdVMidLowSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.AdVMidLowSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the AdVMidLowSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.AdvVirgo">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">AdvVirgo</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.AdvVirgo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the AdvVirgo PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.CosmicExplorerP1600143">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">CosmicExplorerP1600143</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.CosmicExplorerP1600143" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the CosmicExplorerP1600143 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.CosmicExplorerPessimisticP1600143">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">CosmicExplorerPessimisticP1600143</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.CosmicExplorerPessimisticP1600143" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the CosmicExplorerPessimisticP1600143 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.CosmicExplorerWidebandP1600143">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">CosmicExplorerWidebandP1600143</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.CosmicExplorerWidebandP1600143" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the CosmicExplorerWidebandP1600143 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.EinsteinTelescopeP1600143">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">EinsteinTelescopeP1600143</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.EinsteinTelescopeP1600143" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the EinsteinTelescopeP1600143 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.GEO">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">GEO</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.GEO" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the GEO PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.GEOHF">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">GEOHF</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.GEOHF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the GEOHF PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.KAGRA">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">KAGRA</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.KAGRA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the KAGRA PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.KAGRADesignSensitivityT1600593">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">KAGRADesignSensitivityT1600593</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.KAGRADesignSensitivityT1600593" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the KAGRADesignSensitivityT1600593 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.KAGRAEarlySensitivityT1600593">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">KAGRAEarlySensitivityT1600593</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.KAGRAEarlySensitivityT1600593" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the KAGRAEarlySensitivityT1600593 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.KAGRALateSensitivityT1600593">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">KAGRALateSensitivityT1600593</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.KAGRALateSensitivityT1600593" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the KAGRALateSensitivityT1600593 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.KAGRAMidSensitivityT1600593">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">KAGRAMidSensitivityT1600593</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.KAGRAMidSensitivityT1600593" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the KAGRAMidSensitivityT1600593 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.KAGRAOpeningSensitivityT1600593">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">KAGRAOpeningSensitivityT1600593</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.KAGRAOpeningSensitivityT1600593" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the KAGRAOpeningSensitivityT1600593 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.TAMA">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">TAMA</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.TAMA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the TAMA PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.Virgo">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">Virgo</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.Virgo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the Virgo PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOAPlusDesignSensitivityT1800042">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOAPlusDesignSensitivityT1800042</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOAPlusDesignSensitivityT1800042" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOAPlusDesignSensitivityT1800042 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOAdVO3LowT1800545">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOAdVO3LowT1800545</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOAdVO3LowT1800545" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOAdVO3LowT1800545 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOAdVO4IntermediateT1800545">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOAdVO4IntermediateT1800545</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOAdVO4IntermediateT1800545" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOAdVO4IntermediateT1800545 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOAdVO4T1800545">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOAdVO4T1800545</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOAdVO4T1800545" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOAdVO4T1800545 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOBHBH20Deg">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOBHBH20Deg</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOBHBH20Deg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOBHBH20Deg PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOBHBH20DegGWINC">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOBHBH20DegGWINC</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOBHBH20DegGWINC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOBHBH20DegGWINC PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOBNSOptimizedSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOBNSOptimizedSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOBNSOptimizedSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOBNSOptimizedSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGODesignSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGODesignSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGODesignSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGODesignSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOEarlyHighSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOEarlyHighSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOEarlyHighSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOEarlyHighSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOEarlyLowSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOEarlyLowSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOEarlyLowSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOEarlyLowSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOHighFrequency">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOHighFrequency</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOHighFrequency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOHighFrequency PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOHighFrequencyGWINC">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOHighFrequencyGWINC</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOHighFrequencyGWINC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOHighFrequencyGWINC PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOKAGRA128MpcT1800545">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOKAGRA128MpcT1800545</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOKAGRA128MpcT1800545" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOKAGRA128MpcT1800545 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOKAGRA25MpcT1800545">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOKAGRA25MpcT1800545</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOKAGRA25MpcT1800545" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOKAGRA25MpcT1800545 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOKAGRA80MpcT1800545">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOKAGRA80MpcT1800545</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOKAGRA80MpcT1800545" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOKAGRA80MpcT1800545 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOLateHighSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOLateHighSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOLateHighSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOLateHighSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOLateLowSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOLateLowSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOLateLowSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOLateLowSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOMidHighSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOMidHighSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOMidHighSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOMidHighSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOMidLowSensitivityP1200087">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOMidLowSensitivityP1200087</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOMidLowSensitivityP1200087" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOMidLowSensitivityP1200087 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGONSNSOpt">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGONSNSOpt</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGONSNSOpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGONSNSOpt PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGONSNSOptGWINC">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGONSNSOptGWINC</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGONSNSOptGWINC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGONSNSOptGWINC PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGONoSRMHighPower">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGONoSRMHighPower</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGONoSRMHighPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGONoSRMHighPower PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGONoSRMLowPower">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGONoSRMLowPower</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGONoSRMLowPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGONoSRMLowPower PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGONoSRMLowPowerGWINC">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGONoSRMLowPowerGWINC</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGONoSRMLowPowerGWINC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGONoSRMLowPowerGWINC PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOQuantumBHBH20Deg">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOQuantumBHBH20Deg</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOQuantumBHBH20Deg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOQuantumBHBH20Deg PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOQuantumHighFrequency">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOQuantumHighFrequency</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOQuantumHighFrequency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOQuantumHighFrequency PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOQuantumNSNSOpt">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOQuantumNSNSOpt</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOQuantumNSNSOpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOQuantumNSNSOpt PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOQuantumNoSRMHighPower">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOQuantumNoSRMHighPower</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOQuantumNoSRMHighPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOQuantumNoSRMHighPower PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOQuantumNoSRMLowPower">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOQuantumNoSRMLowPower</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOQuantumNoSRMLowPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOQuantumNoSRMLowPower PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOQuantumZeroDetHighPower">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOQuantumZeroDetHighPower</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOQuantumZeroDetHighPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOQuantumZeroDetHighPower PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOQuantumZeroDetLowPower">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOQuantumZeroDetLowPower</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOQuantumZeroDetLowPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOQuantumZeroDetLowPower PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOThermal">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOThermal</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOThermal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOThermal PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOZeroDetHighPower">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOZeroDetHighPower</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOZeroDetHighPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOZeroDetHighPower PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOZeroDetHighPowerGWINC">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOZeroDetHighPowerGWINC</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOZeroDetHighPowerGWINC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOZeroDetHighPowerGWINC PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOZeroDetLowPower">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOZeroDetLowPower</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOZeroDetLowPower" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOZeroDetLowPower PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOZeroDetLowPowerGWINC">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOZeroDetLowPowerGWINC</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOZeroDetLowPowerGWINC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOZeroDetLowPowerGWINC PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOaLIGO140MpcT1800545">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOaLIGO140MpcT1800545</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOaLIGO140MpcT1800545" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOaLIGO140MpcT1800545 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOaLIGO175MpcT1800545">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOaLIGO175MpcT1800545</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOaLIGO175MpcT1800545" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOaLIGO175MpcT1800545 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOaLIGODesignSensitivityT1800044">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOaLIGODesignSensitivityT1800044</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOaLIGODesignSensitivityT1800044" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOaLIGODesignSensitivityT1800044 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.aLIGOaLIGOO3LowT1800545">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">aLIGOaLIGOO3LowT1800545</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.aLIGOaLIGOO3LowT1800545" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the aLIGOaLIGOO3LowT1800545 PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.eLIGOModel">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">eLIGOModel</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.eLIGOModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the eLIGOModel PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.eLIGOShot">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">eLIGOShot</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.eLIGOShot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the eLIGOShot PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.flat_unity">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">flat_unity</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/analytical.html#flat_unity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.analytical.flat_unity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a FrequencySeries of ones above the low_frequency_cutoff.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Length of output Frequencyseries.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Frequency step for output FrequencySeries.</li>
+<li><strong>low_freq_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Low-frequency cutoff for output FrequencySeries.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Returns a FrequencySeries containing the unity PSD model.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.from_string">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">from_string</code><span class="sig-paren">(</span><em>psd_name</em>, <em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/analytical.html#from_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.analytical.from_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a frequency series containing a LALSimulation PSD specified
+by name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>psd_name</strong> (<em>string</em>) – PSD name as found in LALSimulation, minus the SimNoisePSD prefix.</li>
+<li><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Length of the frequency series in samples.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Frequency resolution of the frequency series.</li>
+<li><strong>low_freq_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Frequencies below this value are set to zero.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psd</strong> – The generated frequency series.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.get_lalsim_psd_list">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">get_lalsim_psd_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/analytical.html#get_lalsim_psd_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.analytical.get_lalsim_psd_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of available reference PSD functions from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.get_psd_model_list">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">get_psd_model_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/analytical.html#get_psd_model_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.analytical.get_psd_model_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of available reference PSD functions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns a list of names of reference PSD functions.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.get_pycbc_psd_list">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">get_pycbc_psd_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/analytical.html#get_pycbc_psd_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.analytical.get_pycbc_psd_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of available reference PSD functions coded in PyCBC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Returns a list of names of all reference PSD functions coded in PyCBC.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.iLIGOModel">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">iLIGOModel</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.iLIGOModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the iLIGOModel PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.iLIGOSRD">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">iLIGOSRD</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.iLIGOSRD" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the iLIGOSRD PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.iLIGOSeismic">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">iLIGOSeismic</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.iLIGOSeismic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the iLIGOSeismic PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.iLIGOShot">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">iLIGOShot</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.iLIGOShot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the iLIGOShot PSD from LALSimulation.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.analytical.iLIGOThermal">
+<code class="descclassname">pycbc.psd.analytical.</code><code class="descname">iLIGOThermal</code><span class="sig-paren">(</span><em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="headerlink" href="#pycbc.psd.analytical.iLIGOThermal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a FrequencySeries containing the iLIGOThermal PSD from LALSimulation.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.psd.estimate">
+<span id="pycbc-psd-estimate-module"></span><h2>pycbc.psd.estimate module<a class="headerlink" href="#module-pycbc.psd.estimate" title="Permalink to this headline">¶</a></h2>
+<p>Utilites to estimate PSDs from data.</p>
+<dl class="function">
+<dt id="pycbc.psd.estimate.bandlimited_interpolate">
+<code class="descclassname">pycbc.psd.estimate.</code><code class="descname">bandlimited_interpolate</code><span class="sig-paren">(</span><em>series</em>, <em>delta_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/estimate.html#bandlimited_interpolate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.estimate.bandlimited_interpolate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new PSD that has been interpolated to the desired delta_f.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>series</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – Frequency series to be interpolated.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The desired delta_f of the output</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>interpolated series</strong> – A new FrequencySeries that has been interpolated.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.estimate.interpolate">
+<code class="descclassname">pycbc.psd.estimate.</code><code class="descname">interpolate</code><span class="sig-paren">(</span><em>series</em>, <em>delta_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/estimate.html#interpolate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.estimate.interpolate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new PSD that has been interpolated to the desired delta_f.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>series</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – Frequency series to be interpolated.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The desired delta_f of the output</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>interpolated series</strong> – A new FrequencySeries that has been interpolated.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.estimate.inverse_spectrum_truncation">
+<code class="descclassname">pycbc.psd.estimate.</code><code class="descname">inverse_spectrum_truncation</code><span class="sig-paren">(</span><em>psd</em>, <em>max_filter_len</em>, <em>low_frequency_cutoff=None</em>, <em>trunc_method=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/estimate.html#inverse_spectrum_truncation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.estimate.inverse_spectrum_truncation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modify a PSD such that the impulse response associated with its inverse
+square root is no longer than <cite>max_filter_len</cite> time samples. In practice
+this corresponds to a coarse graining or smoothing of the PSD.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>psd</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries"><em>FrequencySeries</em></a>) – PSD whose inverse spectrum is to be truncated.</li>
+<li><strong>max_filter_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Maximum length of the time-domain filter in samples.</li>
+<li><strong>low_frequency_cutoff</strong> (<em>{None</em><em>, </em><em>int}</em>) – Frequencies below <cite>low_frequency_cutoff</cite> are zeroed in the output.</li>
+<li><strong>trunc_method</strong> (<em>{None</em><em>, </em><em>'hann'}</em>) – Function used for truncating the time-domain filter.
+None produces a hard truncation at <cite>max_filter_len</cite>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psd</strong> – PSD whose inverse spectrum has been truncated.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.10)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – For invalid types or values of <cite>max_filter_len</cite> and <cite>low_frequency_cutoff</cite>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>See arXiv:gr-qc/0509116 for details.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.estimate.median_bias">
+<code class="descclassname">pycbc.psd.estimate.</code><code class="descname">median_bias</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/estimate.html#median_bias"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.estimate.median_bias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the bias of the median average PSD computed from <cite>n</cite> segments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Number of segments used in PSD estimation.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>ans</strong> – Calculated bias.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.10)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – For non-integer or non-positive <cite>n</cite>.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>See arXiv:gr-qc/0509116 appendix B for details.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.estimate.welch">
+<code class="descclassname">pycbc.psd.estimate.</code><code class="descname">welch</code><span class="sig-paren">(</span><em>timeseries</em>, <em>seg_len=4096</em>, <em>seg_stride=2048</em>, <em>window='hann'</em>, <em>avg_method='median'</em>, <em>num_segments=None</em>, <em>require_exact_data_fit=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/estimate.html#welch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.estimate.welch" title="Permalink to this definition">¶</a></dt>
+<dd><p>PSD estimator based on Welch’s method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>timeseries</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – Time series for which the PSD is to be estimated.</li>
+<li><strong>seg_len</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Segment length in samples.</li>
+<li><strong>seg_stride</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Separation between consecutive segments, in samples.</li>
+<li><strong>window</strong> (<em>{'hann'</em><em>, </em><em>numpy.ndarray}</em>) – Function used to window segments before Fourier transforming, or
+a <cite>numpy.ndarray</cite> that specifies the window.</li>
+<li><strong>avg_method</strong> (<em>{'median'</em><em>, </em><em>'mean'</em><em>, </em><em>'median-mean'}</em>) – Method used for averaging individual segment PSDs.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psd</strong> – Frequency series containing the estimated PSD.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.10)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – For invalid choices of <cite>seg_len</cite>, <cite>seg_stride</cite> <cite>window</cite> and
+<cite>avg_method</cite> and for inconsistent combinations of len(<cite>timeseries</cite>),
+<cite>seg_len</cite> and <cite>seg_stride</cite>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>See arXiv:gr-qc/0509116 for details.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.psd.read">
+<span id="pycbc-psd-read-module"></span><h2>pycbc.psd.read module<a class="headerlink" href="#module-pycbc.psd.read" title="Permalink to this headline">¶</a></h2>
+<p>Utilities to read PSDs from files.</p>
+<dl class="function">
+<dt id="pycbc.psd.read.from_numpy_arrays">
+<code class="descclassname">pycbc.psd.read.</code><code class="descname">from_numpy_arrays</code><span class="sig-paren">(</span><em>freq_data</em>, <em>noise_data</em>, <em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/read.html#from_numpy_arrays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.read.from_numpy_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolate n PSD (as two 1-dimensional arrays of frequency and data)
+to the desired length, delta_f and low frequency cutoff.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>freq_data</strong> (<em>array</em>) – Array of frequencies.</li>
+<li><strong>noise_data</strong> (<em>array</em>) – PSD values corresponding to frequencies in freq_arr.</li>
+<li><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Length of the frequency series in samples.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Frequency resolution of the frequency series in Herz.</li>
+<li><strong>low_freq_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Frequencies below this value are set to zero.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psd</strong> – The generated frequency series.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.read.from_txt">
+<code class="descclassname">pycbc.psd.read.</code><code class="descname">from_txt</code><span class="sig-paren">(</span><em>filename</em>, <em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em>, <em>is_asd_file=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/read.html#from_txt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.read.from_txt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an ASCII file containing one-sided ASD or PSD  data and generate
+a frequency series with the corresponding PSD. The ASD or PSD data is
+interpolated in order to match the desired resolution of the
+generated frequency series.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> (<em>string</em>) – Path to a two-column ASCII file. The first column must contain
+the frequency (positive frequencies only) and the second column
+must contain the amplitude density OR power spectral density.</li>
+<li><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Length of the frequency series in samples.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Frequency resolution of the frequency series in Herz.</li>
+<li><strong>low_freq_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Frequencies below this value are set to zero.</li>
+<li><strong>is_asd_file</strong> (<em>Boolean</em>) – If false assume that the second column holds power spectral density.
+If true assume that the second column holds amplitude spectral density.
+Default: True</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psd</strong> – The generated frequency series.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.10)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – If the ASCII file contains negative, infinite or NaN frequencies
+or amplitude densities.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.read.from_xml">
+<code class="descclassname">pycbc.psd.read.</code><code class="descname">from_xml</code><span class="sig-paren">(</span><em>filename</em>, <em>length</em>, <em>delta_f</em>, <em>low_freq_cutoff</em>, <em>ifo_string=None</em>, <em>root_name='psd'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/read.html#from_xml"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.read.from_xml" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an ASCII file containing one-sided ASD or PSD  data and generate
+a frequency series with the corresponding PSD. The ASD or PSD data is
+interpolated in order to match the desired resolution of the
+generated frequency series.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> (<em>string</em>) – Path to a two-column ASCII file. The first column must contain
+the frequency (positive frequencies only) and the second column
+must contain the amplitude density OR power spectral density.</li>
+<li><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Length of the frequency series in samples.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Frequency resolution of the frequency series in Herz.</li>
+<li><strong>low_freq_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Frequencies below this value are set to zero.</li>
+<li><strong>ifo_string</strong> (<em>string</em>) – Use the PSD in the file’s PSD dictionary with this ifo string.
+If not given and only one PSD present in the file return that, if not
+given and multiple (or zero) PSDs present an exception will be raised.</li>
+<li><strong>root_name</strong> (<em>string</em><em> (</em><em>default='psd'</em><em>)</em>) – If given use this as the root name for the PSD XML file. If this means
+nothing to you, then it is probably safe to ignore this option.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psd</strong> – The generated frequency series.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.psd.variation">
+<span id="pycbc-psd-variation-module"></span><h2>pycbc.psd.variation module<a class="headerlink" href="#module-pycbc.psd.variation" title="Permalink to this headline">¶</a></h2>
+<p>PSD Variation</p>
+<dl class="function">
+<dt id="pycbc.psd.variation.calc_filt_psd_variation">
+<code class="descclassname">pycbc.psd.variation.</code><code class="descname">calc_filt_psd_variation</code><span class="sig-paren">(</span><em>strain</em>, <em>segment</em>, <em>short_segment</em>, <em>psd_long_segment</em>, <em>psd_duration</em>, <em>psd_stride</em>, <em>psd_avg_method</em>, <em>low_freq</em>, <em>high_freq</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/variation.html#calc_filt_psd_variation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.variation.calc_filt_psd_variation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates time series of PSD variability</p>
+<p>This function first splits the segment up into 512 second chunks. It
+then calculates the PSD over this 512 second. The PSD is used to
+to create a filter that is the composition of three filters:
+1. Bandpass filter between f_low and f_high.
+2. Weighting filter which gives the rough response of a CBC template.
+3. Whitening filter.
+Next it makes the convolution of this filter with the stretch of data.
+This new time series is given to the “mean_square” function, which
+computes the mean square of the timeseries within an 8 seconds window,
+once per second.
+The result, which is the variance of the S/N in that stride for the
+Parseval theorem, is then stored in a timeseries.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>strain</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – Input strain time series to estimate PSDs</li>
+<li><strong>segment</strong> (<em>{float</em><em>, </em><em>8}</em>) – Duration of the segments for the mean square estimation in seconds.</li>
+<li><strong>short_segment</strong> (<em>{float</em><em>, </em><em>0.25}</em>) – Duration of the short segments for the outliers removal.</li>
+<li><strong>psd_long_segment</strong> (<em>{float</em><em>, </em><em>512}</em>) – Duration of the long segments for PSD estimation in seconds.</li>
+<li><strong>psd_duration</strong> (<em>{float</em><em>, </em><em>8}</em>) – Duration of FFT segments for long term PSD estimation, in seconds.</li>
+<li><strong>psd_stride</strong> (<em>{float</em><em>, </em><em>4}</em>) – Separation between FFT segments for long term PSD estimation, in
+seconds.</li>
+<li><strong>psd_avg_method</strong> (<em>{string</em><em>, </em><em>'median'}</em>) – Method for averaging PSD estimation segments.</li>
+<li><strong>low_freq</strong> (<em>{float</em><em>, </em><em>20}</em>) – Minimum frequency to consider the comparison between PSDs.</li>
+<li><strong>high_freq</strong> (<em>{float</em><em>, </em><em>480}</em>) – Maximum frequency to consider the comparison between PSDs.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psd_var</strong> – Time series of the variability in the PSD estimation</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries">TimeSeries</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.variation.find_trigger_value">
+<code class="descclassname">pycbc.psd.variation.</code><code class="descname">find_trigger_value</code><span class="sig-paren">(</span><em>psd_var</em>, <em>idx</em>, <em>start</em>, <em>sample_rate</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/variation.html#find_trigger_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.variation.find_trigger_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the PSD variation value at a particular time with the filter
+method. If the time is outside the timeseries bound, 1. is given.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>psd_var</strong> (<a class="reference internal" href="pycbc.types.html#pycbc.types.timeseries.TimeSeries" title="pycbc.types.timeseries.TimeSeries"><em>TimeSeries</em></a>) – Time series of the varaibility in the PSD estimation</li>
+<li><strong>idx</strong> (<em>numpy.ndarray</em>) – Time indices of the triggers</li>
+<li><strong>start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – GPS start time</li>
+<li><strong>sample_rate</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Sample rate defined in ini file</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>vals</strong> – PSD variation value at a particular time</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="pycbc.types.html#pycbc.types.array.Array" title="pycbc.types.array.Array">Array</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.variation.mean_square">
+<code class="descclassname">pycbc.psd.variation.</code><code class="descname">mean_square</code><span class="sig-paren">(</span><em>data</em>, <em>delta_t</em>, <em>srate</em>, <em>short_stride</em>, <em>stride</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd/variation.html#mean_square"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.variation.mean_square" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate mean square of given time series once per stride</p>
+<p>First of all this function calculate the mean square of given time
+series once per short_stride. This is used to find and remove
+outliers due to short glitches. Here an outlier is defined as any
+element which is greater than two times the average of its closest
+neighbours. Every outlier is substituted with the average of the
+corresponding adjacent elements.
+Then, every second the function compute the mean square of the
+smoothed time series, within the stride.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data</strong> (<em>numpy.ndarray</em>) – </li>
+<li><strong>delta_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Duration of the time series</li>
+<li><strong>srate</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Sample rate of the data were it given as a TimeSeries</li>
+<li><strong>short_stride</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Stride duration for outlier removal</li>
+<li><strong>; float</strong> (<em>stride</em>) – Stride duration</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>m_s</strong> – Mean square of given time series</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">List</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.psd">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.psd" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pycbc.psd.associate_psds_to_multi_ifo_segments">
+<code class="descclassname">pycbc.psd.</code><code class="descname">associate_psds_to_multi_ifo_segments</code><span class="sig-paren">(</span><em>opt</em>, <em>fd_segments</em>, <em>gwstrain</em>, <em>flen</em>, <em>delta_f</em>, <em>flow</em>, <em>ifos</em>, <em>dyn_range_factor=1.0</em>, <em>precision=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#associate_psds_to_multi_ifo_segments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.associate_psds_to_multi_ifo_segments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Associate PSDs to segments for all ifos when using the multi-detector CLI</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.associate_psds_to_segments">
+<code class="descclassname">pycbc.psd.</code><code class="descname">associate_psds_to_segments</code><span class="sig-paren">(</span><em>opt</em>, <em>fd_segments</em>, <em>gwstrain</em>, <em>flen</em>, <em>delta_f</em>, <em>flow</em>, <em>dyn_range_factor=1.0</em>, <em>precision=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#associate_psds_to_segments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.associate_psds_to_segments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a set of overlapping PSDs covering the data in GWstrain.
+Then associate these PSDs with the appropriate segment in strain_segments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes (psd_model, psd_file, asd_file, psd_estimation,
+psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).</li>
+<li><strong>fd_segments</strong> (<em>StrainSegments.fourier_segments</em><em>(</em><em>) </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – The fourier transforms of the various analysis segments. The psd
+attribute of each segment is updated to point to the appropriate PSD.</li>
+<li><strong>gwstrain</strong> (<em>Strain object</em>) – The timeseries of raw data on which to estimate PSDs.</li>
+<li><strong>flen</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The length in samples of the output PSDs.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The frequency step of the output PSDs.</li>
+<li><strong>flow</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The low frequncy cutoff to use when calculating the PSD.</li>
+<li><strong>dyn_range_factor</strong> (<em>{1</em><em>, </em><em>float}</em>) – For PSDs taken from models or text files, if <cite>dyn_range_factor</cite> is
+not None, then the PSD is multiplied by <cite>dyn_range_factor</cite> ** 2.</li>
+<li><strong>precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>choices</em><em> (</em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><em>None</em></a><em>,</em><em>'single'</em><em>,</em><em>'double'</em><em>)</em>) – If not specified, or specified as None, the precision of the returned
+PSD will match the precision of the data, if measuring a PSD, or will
+match the default precision of the model if using an analytical PSD.
+If ‘single’ the PSD will be converted to float32, if not already in
+that precision. If ‘double’ the PSD will be converted to float64, if
+not already in that precision.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.associate_psds_to_single_ifo_segments">
+<code class="descclassname">pycbc.psd.</code><code class="descname">associate_psds_to_single_ifo_segments</code><span class="sig-paren">(</span><em>opt</em>, <em>fd_segments</em>, <em>gwstrain</em>, <em>flen</em>, <em>delta_f</em>, <em>flow</em>, <em>ifo</em>, <em>dyn_range_factor=1.0</em>, <em>precision=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#associate_psds_to_single_ifo_segments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.associate_psds_to_single_ifo_segments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Associate PSDs to segments for a single ifo when using the multi-detector
+CLI</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.from_cli">
+<code class="descclassname">pycbc.psd.</code><code class="descname">from_cli</code><span class="sig-paren">(</span><em>opt</em>, <em>length</em>, <em>delta_f</em>, <em>low_frequency_cutoff</em>, <em>strain=None</em>, <em>dyn_range_factor=1</em>, <em>precision=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#from_cli"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.from_cli" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the CLI options related to the noise PSD and returns a
+FrequencySeries with the corresponding PSD. If necessary, the PSD is
+linearly interpolated to achieve the resolution specified in the CLI.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes (psd_model, psd_file, asd_file, psd_estimation,
+psd_segment_length, psd_segment_stride, psd_inverse_length,
+psd_output).</li>
+<li><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The length in samples of the output PSD.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The frequency step of the output PSD.</li>
+<li><strong>low_frequency_cutoff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The low frequncy cutoff to use when calculating the PSD.</li>
+<li><strong>strain</strong> (<em>{None</em><em>, </em><em>TimeSeries}</em>) – Time series containing the data from which the PSD should be measured,
+when psd_estimation is in use.</li>
+<li><strong>dyn_range_factor</strong> (<em>{1</em><em>, </em><em>float}</em>) – For PSDs taken from models or text files, if <cite>dyn_range_factor</cite> is
+not None, then the PSD is multiplied by <cite>dyn_range_factor</cite> ** 2.</li>
+<li><strong>precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>choices</em><em> (</em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><em>None</em></a><em>,</em><em>'single'</em><em>,</em><em>'double'</em><em>)</em>) – If not specified, or specified as None, the precision of the returned
+PSD will match the precision of the data, if measuring a PSD, or will
+match the default precision of the model if using an analytical PSD.
+If ‘single’ the PSD will be converted to float32, if not already in
+that precision. If ‘double’ the PSD will be converted to float64, if
+not already in that precision.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psd</strong> – The frequency series containing the PSD.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries" title="pycbc.types.frequencyseries.FrequencySeries">FrequencySeries</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.from_cli_multi_ifos">
+<code class="descclassname">pycbc.psd.</code><code class="descname">from_cli_multi_ifos</code><span class="sig-paren">(</span><em>opt</em>, <em>length_dict</em>, <em>delta_f_dict</em>, <em>low_frequency_cutoff_dict</em>, <em>ifos</em>, <em>strain_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#from_cli_multi_ifos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.from_cli_multi_ifos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the PSD for all ifos when using the multi-detector CLI</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.from_cli_single_ifo">
+<code class="descclassname">pycbc.psd.</code><code class="descname">from_cli_single_ifo</code><span class="sig-paren">(</span><em>opt</em>, <em>length</em>, <em>delta_f</em>, <em>low_frequency_cutoff</em>, <em>ifo</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#from_cli_single_ifo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.from_cli_single_ifo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the PSD for a single ifo when using the multi-detector CLI</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.generate_overlapping_psds">
+<code class="descclassname">pycbc.psd.</code><code class="descname">generate_overlapping_psds</code><span class="sig-paren">(</span><em>opt</em>, <em>gwstrain</em>, <em>flen</em>, <em>delta_f</em>, <em>flow</em>, <em>dyn_range_factor=1.0</em>, <em>precision=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#generate_overlapping_psds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.generate_overlapping_psds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a set of overlapping PSDs to cover a stretch of data. This
+allows one to analyse a long stretch of data with PSD measurements that
+change with time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes (psd_model, psd_file, asd_file, psd_estimation,
+psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).</li>
+<li><strong>gwstrain</strong> (<em>Strain object</em>) – The timeseries of raw data on which to estimate PSDs.</li>
+<li><strong>flen</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The length in samples of the output PSDs.</li>
+<li><strong>delta_f</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The frequency step of the output PSDs.</li>
+<li><strong>flow</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The low frequncy cutoff to use when calculating the PSD.</li>
+<li><strong>dyn_range_factor</strong> (<em>{1</em><em>, </em><em>float}</em>) – For PSDs taken from models or text files, if <cite>dyn_range_factor</cite> is
+not None, then the PSD is multiplied by <cite>dyn_range_factor</cite> ** 2.</li>
+<li><strong>precision</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>choices</em><em> (</em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><em>None</em></a><em>,</em><em>'single'</em><em>,</em><em>'double'</em><em>)</em>) – If not specified, or specified as None, the precision of the returned
+PSD will match the precision of the data, if measuring a PSD, or will
+match the default precision of the model if using an analytical PSD.
+If ‘single’ the PSD will be converted to float32, if not already in
+that precision. If ‘double’ the PSD will be converted to float64, if
+not already in that precision.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psd_and_times</strong> – This is a list of tuples containing one entry for each PSD. The first
+and second entries (start, end) in each tuple represent the index
+range of the gwstrain data that was used to estimate that PSD. The
+third entry (psd) contains the PSD estimate between that interval.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of (start, end, PSD) tuples</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.insert_psd_option_group">
+<code class="descclassname">pycbc.psd.</code><code class="descname">insert_psd_option_group</code><span class="sig-paren">(</span><em>parser</em>, <em>output=True</em>, <em>include_data_options=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#insert_psd_option_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.insert_psd_option_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the options used to call the pycbc.psd.from_cli function to an
+optparser as an OptionGroup. This should be used if you
+want to use these options in your code.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – OptionParser instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.insert_psd_option_group_multi_ifo">
+<code class="descclassname">pycbc.psd.</code><code class="descname">insert_psd_option_group_multi_ifo</code><span class="sig-paren">(</span><em>parser</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#insert_psd_option_group_multi_ifo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.insert_psd_option_group_multi_ifo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the options used to call the pycbc.psd.from_cli function to an
+optparser as an OptionGroup. This should be used if you
+want to use these options in your code.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – OptionParser instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.verify_psd_options">
+<code class="descclassname">pycbc.psd.</code><code class="descname">verify_psd_options</code><span class="sig-paren">(</span><em>opt</em>, <em>parser</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#verify_psd_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.verify_psd_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the CLI options and verifies that they are consistent and
+reasonable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes (psd_model, psd_file, asd_file, psd_estimation,
+psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).</li>
+<li><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – OptionParser instance.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.psd.verify_psd_options_multi_ifo">
+<code class="descclassname">pycbc.psd.</code><code class="descname">verify_psd_options_multi_ifo</code><span class="sig-paren">(</span><em>opt</em>, <em>parser</em>, <em>ifos</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/psd.html#verify_psd_options_multi_ifo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.psd.verify_psd_options_multi_ifo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the CLI options and verifies that they are consistent and
+reasonable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>opt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – Result of parsing the CLI with OptionParser, or any object with the
+required attributes (psd_model, psd_file, asd_file, psd_estimation,
+psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).</li>
+<li><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – OptionParser instance.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.tmpltbank.html" class="btn btn-neutral float-left" title="pycbc.tmpltbank package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.noise.html" class="btn btn-neutral float-right" title="pycbc.noise package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

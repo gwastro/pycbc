@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results package &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.strain package" href="pycbc.strain.html" />
+    <link rel="prev" title="pycbc.population package" href="pycbc.population.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pycbc</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inference.html">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.coordinates">pycbc.coordinates module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.detector">pycbc.detector module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">pycbc</a> &raquo;</li>
+          <li><a href="pycbc.html">pycbc package</a> &raquo;</li>
+      <li>pycbc.results package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pycbc.results.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="pycbc-results-package">
+<h1>pycbc.results package<a class="headerlink" href="#pycbc-results-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pycbc.results.color">
+<span id="pycbc-results-color-module"></span><h2>pycbc.results.color module<a class="headerlink" href="#module-pycbc.results.color" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for managing matplotlib colors and mapping ifos to color</p>
+<dl class="function">
+<dt id="pycbc.results.color.ifo_color">
+<code class="descclassname">pycbc.results.color.</code><code class="descname">ifo_color</code><span class="sig-paren">(</span><em>ifo</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/color.html#ifo_color"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.color.ifo_color" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.color.source_color">
+<code class="descclassname">pycbc.results.color.</code><code class="descname">source_color</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/color.html#source_color"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.color.source_color" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.dq">
+<span id="pycbc-results-dq-module"></span><h2>pycbc.results.dq module<a class="headerlink" href="#module-pycbc.results.dq" title="Permalink to this headline">¶</a></h2>
+<p>This module contains utilities for following up search triggers</p>
+<dl class="function">
+<dt id="pycbc.results.dq.get_summary_page_link">
+<code class="descclassname">pycbc.results.dq.</code><code class="descname">get_summary_page_link</code><span class="sig-paren">(</span><em>ifo</em>, <em>utc_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/dq.html#get_summary_page_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.dq.get_summary_page_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a string that links to the summary page and aLOG for this ifo</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ifo</strong> (<em>string</em>) – The detector name</li>
+<li><strong>utc_time</strong> (<em>sequence</em>) – First three elements must be strings giving year, month, day resp.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>return_string</strong> – String containing HTML for links to summary page and aLOG search</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">string</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.followup">
+<span id="pycbc-results-followup-module"></span><h2>pycbc.results.followup module<a class="headerlink" href="#module-pycbc.results.followup" title="Permalink to this headline">¶</a></h2>
+<p>This module provides functions to generate followup plots and trigger
+time series.</p>
+<dl class="function">
+<dt id="pycbc.results.followup.coinc_timeseries_plot">
+<code class="descclassname">pycbc.results.followup.</code><code class="descname">coinc_timeseries_plot</code><span class="sig-paren">(</span><em>coinc_file</em>, <em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#coinc_timeseries_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.followup.coinc_timeseries_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.followup.columns_from_file_list">
+<code class="descclassname">pycbc.results.followup.</code><code class="descname">columns_from_file_list</code><span class="sig-paren">(</span><em>file_list</em>, <em>columns</em>, <em>ifo</em>, <em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#columns_from_file_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.followup.columns_from_file_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return columns of information stored in single detector trigger
+files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>file_list_file</strong> (<em>string</em>) – pickle file containing the list of single detector</li>
+<li><strong>triggers.</strong> – </li>
+<li><strong>ifo</strong> (<em>string</em>) – The ifo to return triggers for.</li>
+<li><strong>columns</strong> (<em>list of strings</em>) – The list of columns to read from the trigger files.</li>
+<li><strong>start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The start time to get triggers from</li>
+<li><strong>end</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The end time to get triggers from</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>trigger_dict</strong> – A dictionary of column vectors with column names as keys.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.followup.get_gracedb_search_link">
+<code class="descclassname">pycbc.results.followup.</code><code class="descname">get_gracedb_search_link</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#get_gracedb_search_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.followup.get_gracedb_search_link" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.followup.times_to_links">
+<code class="descclassname">pycbc.results.followup.</code><code class="descname">times_to_links</code><span class="sig-paren">(</span><em>times</em>, <em>window</em>, <em>tag</em>, <em>base=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#times_to_links"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.followup.times_to_links" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.followup.times_to_urls">
+<code class="descclassname">pycbc.results.followup.</code><code class="descname">times_to_urls</code><span class="sig-paren">(</span><em>times</em>, <em>window</em>, <em>tag</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#times_to_urls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.followup.times_to_urls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.followup.trigger_timeseries_plot">
+<code class="descclassname">pycbc.results.followup.</code><code class="descname">trigger_timeseries_plot</code><span class="sig-paren">(</span><em>file_list</em>, <em>ifos</em>, <em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/followup.html#trigger_timeseries_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.followup.trigger_timeseries_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.layout">
+<span id="pycbc-results-layout-module"></span><h2>pycbc.results.layout module<a class="headerlink" href="#module-pycbc.results.layout" title="Permalink to this headline">¶</a></h2>
+<p>This module contains result page layout and numbering helper functions</p>
+<dl class="class">
+<dt id="pycbc.results.layout.SectionNumber">
+<em class="property">class </em><code class="descclassname">pycbc.results.layout.</code><code class="descname">SectionNumber</code><span class="sig-paren">(</span><em>base</em>, <em>secs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#SectionNumber"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.layout.SectionNumber" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Class to help with numbering sections in an output page.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.layout.group_layout">
+<code class="descclassname">pycbc.results.layout.</code><code class="descname">group_layout</code><span class="sig-paren">(</span><em>path</em>, <em>files</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#group_layout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.layout.group_layout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a well layout in chunks of two from a list of files</p>
+<dl class="docutils">
+<dt>path: str</dt>
+<dd>Location to make the well html file</dd>
+<dt>files: list of pycbc.workflow.core.Files</dt>
+<dd>This list of images to show in order within the well layout html file.
+Every two are placed on the same row.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.layout.grouper">
+<code class="descclassname">pycbc.results.layout.</code><code class="descname">grouper</code><span class="sig-paren">(</span><em>iterable</em>, <em>n</em>, <em>fillvalue=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#grouper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.layout.grouper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group items into chunks of n length</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.layout.single_layout">
+<code class="descclassname">pycbc.results.layout.</code><code class="descname">single_layout</code><span class="sig-paren">(</span><em>path</em>, <em>files</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#single_layout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.layout.single_layout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a well layout in  single column format</p>
+<dl class="docutils">
+<dt>path: str</dt>
+<dd>Location to make the well html file</dd>
+<dt>files: list of pycbc.workflow.core.Files</dt>
+<dd>This list of images to show in order within the well layout html file.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.layout.two_column_layout">
+<code class="descclassname">pycbc.results.layout.</code><code class="descname">two_column_layout</code><span class="sig-paren">(</span><em>path</em>, <em>cols</em>, <em>unique=''</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/layout.html#two_column_layout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.layout.two_column_layout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a well layout in a two column format</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Location to make the well html file</li>
+<li><strong>unique</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – String to add to end of well name. Used if you want more than one well.</li>
+<li><strong>cols</strong> (<em>list of tuples</em>) – The format of the items on the well result section. Each tuple
+contains the two files that are shown in the left and right hand
+side of a row in the well.html page.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.legacy_grb">
+<span id="pycbc-results-legacy-grb-module"></span><h2>pycbc.results.legacy_grb module<a class="headerlink" href="#module-pycbc.results.legacy_grb" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.initialize_page">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">initialize_page</code><span class="sig-paren">(</span><em>title</em>, <em>style</em>, <em>script</em>, <em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#initialize_page"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.initialize_page" title="Permalink to this definition">¶</a></dt>
+<dd><p>A function that returns a markup.py page object with the required html
+header.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.make_grb_segments_plot">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">make_grb_segments_plot</code><span class="sig-paren">(</span><em>wkflow</em>, <em>science_segs</em>, <em>trigger_time</em>, <em>trigger_name</em>, <em>out_dir</em>, <em>coherent_seg=None</em>, <em>fail_criterion=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#make_grb_segments_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.make_grb_segments_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_antenna">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_antenna</code><span class="sig-paren">(</span><em>page</em>, <em>args</em>, <em>seg_plot=None</em>, <em>grid=False</em>, <em>ipn=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_antenna"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_antenna" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write antenna factors to merkup.page object page and generate John’s
+detector response plot.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_banner">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_banner</code><span class="sig-paren">(</span><em>title</em>, <em>text='&amp;nbsp;'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_banner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_banner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write html &lt;title&gt; tag into markup.page object</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_chisq">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_chisq</code><span class="sig-paren">(</span><em>page</em>, <em>injList</em>, <em>grbtag</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_chisq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_chisq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write injection chisq plots to markup.page object page</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_exclusion_distances">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_exclusion_distances</code><span class="sig-paren">(</span><em>page</em>, <em>trial</em>, <em>injList</em>, <em>massbins</em>, <em>reduced=False</em>, <em>onsource=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_exclusion_distances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_exclusion_distances" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_found_missed">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_found_missed</code><span class="sig-paren">(</span><em>page</em>, <em>args</em>, <em>injList</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_found_missed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_found_missed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write injection found/missed plots to markup.page object page</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_inj_snrs">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_inj_snrs</code><span class="sig-paren">(</span><em>page</em>, <em>ifos</em>, <em>injList</em>, <em>grbtag</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_inj_snrs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_inj_snrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write injection chisq plots to markup.page object page</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_loudest_events">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_loudest_events</code><span class="sig-paren">(</span><em>page</em>, <em>bins</em>, <em>onsource=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_loudest_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_loudest_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write injection chisq plots to markup.page object page</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_offsource">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_offsource</code><span class="sig-paren">(</span><em>page</em>, <em>args</em>, <em>grbtag</em>, <em>onsource=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_offsource"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_offsource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write offsource SNR versus time plots to markup.page object page</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_recovery">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_recovery</code><span class="sig-paren">(</span><em>page</em>, <em>injList</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_recovery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_recovery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write injection recovery plots to markup.page object page</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_summary">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_summary</code><span class="sig-paren">(</span><em>page</em>, <em>args</em>, <em>ifos</em>, <em>skyError=None</em>, <em>ipn=False</em>, <em>ipnError=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write summary of information to markup.page object page</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.legacy_grb.write_table">
+<code class="descclassname">pycbc.results.legacy_grb.</code><code class="descname">write_table</code><span class="sig-paren">(</span><em>page</em>, <em>headers</em>, <em>data</em>, <em>cl=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/legacy_grb.html#write_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.legacy_grb.write_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write table in html</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.metadata">
+<span id="pycbc-results-metadata-module"></span><h2>pycbc.results.metadata module<a class="headerlink" href="#module-pycbc.results.metadata" title="Permalink to this headline">¶</a></h2>
+<p>This Module contains generic utility functions for creating plots within
+PyCBC.</p>
+<dl class="class">
+<dt id="pycbc.results.metadata.MetaParser">
+<em class="property">class </em><code class="descclassname">pycbc.results.metadata.</code><code class="descname">MetaParser</code><a class="reference internal" href="_modules/pycbc/results/metadata.html#MetaParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.MetaParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/html.parser.html#html.parser.HTMLParser" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">html.parser.HTMLParser</span></code></a></p>
+<dl class="method">
+<dt id="pycbc.results.metadata.MetaParser.handle_data">
+<code class="descname">handle_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#MetaParser.handle_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.MetaParser.handle_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pycbc.results.metadata.MetaParser.handle_starttag">
+<code class="descname">handle_starttag</code><span class="sig-paren">(</span><em>tag</em>, <em>attrs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#MetaParser.handle_starttag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.MetaParser.handle_starttag" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.metadata.html_escape">
+<code class="descclassname">pycbc.results.metadata.</code><code class="descname">html_escape</code><span class="sig-paren">(</span><em>text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#html_escape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.html_escape" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sanitize text for html parsing</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.metadata.load_html_metadata">
+<code class="descclassname">pycbc.results.metadata.</code><code class="descname">load_html_metadata</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#load_html_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.load_html_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get metadata from html file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.metadata.load_metadata_from_file">
+<code class="descclassname">pycbc.results.metadata.</code><code class="descname">load_metadata_from_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#load_metadata_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.load_metadata_from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the plot related metadata saved in a file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Name of file load metadata from.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>cp</strong> – A configparser object containing the metadata</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ConfigParser</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.metadata.load_png_metadata">
+<code class="descclassname">pycbc.results.metadata.</code><code class="descname">load_png_metadata</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#load_png_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.load_png_metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.metadata.save_fig_with_metadata">
+<code class="descclassname">pycbc.results.metadata.</code><code class="descname">save_fig_with_metadata</code><span class="sig-paren">(</span><em>fig</em>, <em>filename</em>, <em>fig_kwds=None</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#save_fig_with_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.save_fig_with_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save plot to file with metadata included. Kewords translate to metadata
+that is stored directly in the plot file. Limited format types available.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fig</strong> (<em>matplotlib figure</em>) – The matplotlib figure to save to the file</li>
+<li><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Name of file to store the plot.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.metadata.save_html_with_metadata">
+<code class="descclassname">pycbc.results.metadata.</code><code class="descname">save_html_with_metadata</code><span class="sig-paren">(</span><em>fig</em>, <em>filename</em>, <em>fig_kwds</em>, <em>kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#save_html_with_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.save_html_with_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a html output to file with metadata</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.metadata.save_pdf_with_metadata">
+<code class="descclassname">pycbc.results.metadata.</code><code class="descname">save_pdf_with_metadata</code><span class="sig-paren">(</span><em>fig</em>, <em>filename</em>, <em>fig_kwds</em>, <em>kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#save_pdf_with_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.save_pdf_with_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a matplotlib figure to a PDF file with metadata.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.metadata.save_png_with_metadata">
+<code class="descclassname">pycbc.results.metadata.</code><code class="descname">save_png_with_metadata</code><span class="sig-paren">(</span><em>fig</em>, <em>filename</em>, <em>fig_kwds</em>, <em>kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/metadata.html#save_png_with_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.metadata.save_png_with_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save a matplotlib figure to a png with metadata</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.mpld3_utils">
+<span id="pycbc-results-mpld3-utils-module"></span><h2>pycbc.results.mpld3_utils module<a class="headerlink" href="#module-pycbc.results.mpld3_utils" title="Permalink to this headline">¶</a></h2>
+<p>This module provides functionality to extend mpld3</p>
+<dl class="class">
+<dt id="pycbc.results.mpld3_utils.ClickLink">
+<em class="property">class </em><code class="descclassname">pycbc.results.mpld3_utils.</code><code class="descname">ClickLink</code><span class="sig-paren">(</span><em>points</em>, <em>links</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/mpld3_utils.html#ClickLink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.mpld3_utils.ClickLink" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">mpld3.plugins.PluginBase</span></code></p>
+<p>Plugin for following a link on click</p>
+<dl class="attribute">
+<dt id="pycbc.results.mpld3_utils.ClickLink.JAVASCRIPT">
+<code class="descname">JAVASCRIPT</code><em class="property"> = '\n    mpld3.register_plugin(&quot;clicklink&quot;, ClickLink);\n    ClickLink.prototype = Object.create(mpld3.Plugin.prototype);\n    ClickLink.prototype.constructor = ClickLink;\n    ClickLink.prototype.requiredProps = [&quot;id&quot;];\n    ClickLink.prototype.defaultProps = {\n        links: null\n    }\n    function ClickLink(fig, props){\n        mpld3.Plugin.call(this, fig, props);\n    };\n\n    ClickLink.prototype.draw = function(){\n        var obj = mpld3.get_element(this.props.id);\n        var links = this.props.links;\n\n        obj.elements().on(&quot;mousedown&quot;,\n                          function(d, i){\n                                           window.open(links[i]);\n                                        }\n                          );\n    }\n    '</em><a class="headerlink" href="#pycbc.results.mpld3_utils.ClickLink.JAVASCRIPT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycbc.results.mpld3_utils.LineTooltip">
+<em class="property">class </em><code class="descclassname">pycbc.results.mpld3_utils.</code><code class="descname">LineTooltip</code><span class="sig-paren">(</span><em>line</em>, <em>label=None</em>, <em>hoffset=0</em>, <em>voffset=10</em>, <em>css=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/mpld3_utils.html#LineTooltip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.mpld3_utils.LineTooltip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">mpld3.plugins.LineHTMLTooltip</span></code></p>
+<dl class="attribute">
+<dt id="pycbc.results.mpld3_utils.LineTooltip.JAVASCRIPT">
+<code class="descname">JAVASCRIPT</code><em class="property"> = ''</em><a class="headerlink" href="#pycbc.results.mpld3_utils.LineTooltip.JAVASCRIPT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycbc.results.mpld3_utils.MPLSlide">
+<em class="property">class </em><code class="descclassname">pycbc.results.mpld3_utils.</code><code class="descname">MPLSlide</code><span class="sig-paren">(</span><em>button=True</em>, <em>enabled=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/mpld3_utils.html#MPLSlide"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.mpld3_utils.MPLSlide" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">mpld3.plugins.PluginBase</span></code></p>
+<dl class="attribute">
+<dt id="pycbc.results.mpld3_utils.MPLSlide.JAVASCRIPT">
+<code class="descname">JAVASCRIPT</code><em class="property"> = '\n         mpld3.Axes.prototype.zoomed = function(propagate) {\n            propagate = typeof propagate == &quot;undefined&quot; ? true : propagate;\n            if (propagate) {\n              var dt0 = this.zoom.translate()[0] - this.zoom.last_t[0];\n              var dt1 = this.zoom.translate()[1] - this.zoom.last_t[1];\n              var ds = this.zoom.scale() / this.zoom.last_s;\n              this.zoom_x.translate([ this.zoom_x.translate()[0] + dt0, 0 ]);\n              this.zoom_x.scale(this.zoom_x.scale() * ds);\n\n              this.zoom.last_t = this.zoom.translate();\n              this.zoom.last_s = this.zoom.scale();\n              this.sharex.forEach(function(ax) {\n                ax.zoom_x.translate(this.zoom_x.translate()).scale(this.zoom_x.scale());\n              }.bind(this));\n\n              this.sharex.forEach(function(ax) {\n                ax.zoomed(false);\n              });\n            }\n            for (var i = 0; i &lt; this.elements.length; i++) {\n              this.elements[i].zoomed();\n            }\n          };\n\n            mpld3.ZoomPlugin = mpld3_ZoomPlugin;\n            mpld3.register_plugin(&quot;zoom&quot;, mpld3_ZoomPlugin);\n            mpld3_ZoomPlugin.prototype = Object.create(mpld3.Plugin.prototype);\n            mpld3_ZoomPlugin.prototype.constructor = mpld3_ZoomPlugin;\n            mpld3_ZoomPlugin.prototype.requiredProps = [];\n            mpld3_ZoomPlugin.prototype.defaultProps = {\n                button: true,\n                enabled: null\n            };\n            function mpld3_ZoomPlugin(fig, props) {\n                mpld3.Plugin.call(this, fig, props);\n                if (this.props.enabled === null) {\n                    this.props.enabled = !this.props.button;\n                }\n                var enabled = this.props.enabled;\n                if (this.props.button) {\n                    var ZoomButton = mpld3.ButtonFactory({\n                        buttonID: &quot;zoom&quot;,\n                        sticky: true,\n                        actions: [ &quot;scroll&quot;, &quot;drag&quot; ],\n                        onActivate: this.activate.bind(this),\n                        onDeactivate: this.deactivate.bind(this),\n                        onDraw: function() {\n                            this.setState(enabled);\n                        },\n                        icon: function() {\n                            return mpld3.icons[&quot;move&quot;];\n                        }\n                    });\n                this.fig.buttons.push(ZoomButton);\n                }\n            }\n            mpld3_ZoomPlugin.prototype.activate = function() {\n                this.fig.enable_zoom();\n            };\n            mpld3_ZoomPlugin.prototype.deactivate = function() {\n                this.fig.disable_zoom();\n            };\n            mpld3_ZoomPlugin.prototype.draw = function() {\n                if (this.props.enabled) this.fig.enable_zoom(); else this.fig.disable_zoom();\n            };\n        '</em><a class="headerlink" href="#pycbc.results.mpld3_utils.MPLSlide.JAVASCRIPT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycbc.results.mpld3_utils.Tooltip">
+<em class="property">class </em><code class="descclassname">pycbc.results.mpld3_utils.</code><code class="descname">Tooltip</code><span class="sig-paren">(</span><em>points</em>, <em>labels=None</em>, <em>hoffset=0</em>, <em>voffset=10</em>, <em>css=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/mpld3_utils.html#Tooltip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.mpld3_utils.Tooltip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">mpld3.plugins.PointHTMLTooltip</span></code></p>
+<dl class="attribute">
+<dt id="pycbc.results.mpld3_utils.Tooltip.JAVASCRIPT">
+<code class="descname">JAVASCRIPT</code><em class="property"> = ''</em><a class="headerlink" href="#pycbc.results.mpld3_utils.Tooltip.JAVASCRIPT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.plot">
+<span id="pycbc-results-plot-module"></span><h2>pycbc.results.plot module<a class="headerlink" href="#module-pycbc.results.plot" title="Permalink to this headline">¶</a></h2>
+<p>Plotting utilities and premade plot configurations</p>
+<dl class="function">
+<dt id="pycbc.results.plot.add_style_opt_to_parser">
+<code class="descclassname">pycbc.results.plot.</code><code class="descname">add_style_opt_to_parser</code><span class="sig-paren">(</span><em>parser</em>, <em>default=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/plot.html#add_style_opt_to_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.plot.add_style_opt_to_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds an option to set the matplotlib style to a parser.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser" title="(in Python v3.10)"><em>argparse.ArgumentParser</em></a>) – The parser to add the option to.</li>
+<li><strong>default</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – The default style to use. Default, None, will result in the default
+matplotlib style to be used.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.plot.hist_overflow">
+<code class="descclassname">pycbc.results.plot.</code><code class="descname">hist_overflow</code><span class="sig-paren">(</span><em>val</em>, <em>val_max</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/plot.html#hist_overflow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.plot.hist_overflow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a histogram with an overflow bar above val_max</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.plot.set_style_from_cli">
+<code class="descclassname">pycbc.results.plot.</code><code class="descname">set_style_from_cli</code><span class="sig-paren">(</span><em>opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/plot.html#set_style_from_cli"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.plot.set_style_from_cli" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses the mpl-style option to set the style for plots.</p>
+<p>Note: This will change the global rcParams.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.pygrb_plotting_utils">
+<span id="pycbc-results-pygrb-plotting-utils-module"></span><h2>pycbc.results.pygrb_plotting_utils module<a class="headerlink" href="#module-pycbc.results.pygrb_plotting_utils" title="Permalink to this headline">¶</a></h2>
+<p>Module to generate PyGRB figures: scatter plots and timeseries.</p>
+<dl class="class">
+<dt id="pycbc.results.pygrb_plotting_utils.PygrbFilterOutput">
+<em class="property">class </em><code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">PygrbFilterOutput</code><span class="sig-paren">(</span><em>trigs_or_injs</em>, <em>ifos</em>, <em>columns</em>, <em>output_type</em>, <em>opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#PygrbFilterOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.PygrbFilterOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Extract trigger/injection data produced by PyGRB search</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.axis_max_value">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">axis_max_value</code><span class="sig-paren">(</span><em>trig_values</em>, <em>inj_values</em>, <em>inj_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#axis_max_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.axis_max_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deterime the maximum of a quantity in the trigger and injection data</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.calculate_contours">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">calculate_contours</code><span class="sig-paren">(</span><em>trigs</em>, <em>opts</em>, <em>new_snrs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#calculate_contours"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.calculate_contours" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the plot contours for chisq variable plots</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.contour_plotter">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">contour_plotter</code><span class="sig-paren">(</span><em>axis</em>, <em>snr_vals</em>, <em>contours</em>, <em>colors</em>, <em>vert_spike=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#contour_plotter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.contour_plotter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot contours in a scatter plot where SNR is on the horizontal axis</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.extract_ifos">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">extract_ifos</code><span class="sig-paren">(</span><em>trig_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#extract_ifos"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.extract_ifos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts IFOs from search summary table</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.extract_vetoes">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">extract_vetoes</code><span class="sig-paren">(</span><em>veto_files</em>, <em>ifos</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#extract_vetoes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.extract_vetoes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts vetoes from veto filelist</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.format_single_chisqs">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">format_single_chisqs</code><span class="sig-paren">(</span><em>trig_ifo_cs</em>, <em>ifos</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#format_single_chisqs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.format_single_chisqs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Format single IFO chi-square data as numpy array and floor at 0.005</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.load_injections">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">load_injections</code><span class="sig-paren">(</span><em>inj_file</em>, <em>vetoes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#load_injections"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.load_injections" title="Permalink to this definition">¶</a></dt>
+<dd><p>“Loads injections from PyGRB output file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.load_triggers">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">load_triggers</code><span class="sig-paren">(</span><em>trig_file</em>, <em>vetoes</em>, <em>ifos</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#load_triggers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.load_triggers" title="Permalink to this definition">¶</a></dt>
+<dd><p>“Loads triggers from PyGRB output file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.load_xml_file">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">load_xml_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#load_xml_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.load_xml_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper to ligolw’s utils.load_filename</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.new_snr_chisq">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">new_snr_chisq</code><span class="sig-paren">(</span><em>snr</em>, <em>new_snr</em>, <em>chisq_dof</em>, <em>chisq_index=4.0</em>, <em>chisq_nhigh=3.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#new_snr_chisq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.new_snr_chisq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the chi-square value needed to weight SNR into new SNR</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.pygrb_plot_opts_parser">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">pygrb_plot_opts_parser</code><span class="sig-paren">(</span><em>usage=''</em>, <em>description=None</em>, <em>version=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#pygrb_plot_opts_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.pygrb_plot_opts_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses options for PyGRB plotting scripts</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.pygrb_plotter">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">pygrb_plotter</code><span class="sig-paren">(</span><em>trig_x</em>, <em>trig_y</em>, <em>inj_x</em>, <em>inj_y</em>, <em>inj_file</em>, <em>xlabel</em>, <em>ylabel</em>, <em>fig_path</em>, <em>snr_vals=None</em>, <em>conts=None</em>, <em>shade_cont_value=None</em>, <em>colors=None</em>, <em>vert_spike=False</em>, <em>xlims=None</em>, <em>ylims=None</em>, <em>use_logs=True</em>, <em>cmd=None</em>, <em>plot_title=None</em>, <em>plot_caption=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#pygrb_plotter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.pygrb_plotter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Master function to plot PyGRB results</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.pygrb_shared_plot_setups">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">pygrb_shared_plot_setups</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#pygrb_shared_plot_setups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.pygrb_shared_plot_setups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Master function to plot PyGRB results</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.pygrb_plotting_utils.reset_times">
+<code class="descclassname">pycbc.results.pygrb_plotting_utils.</code><code class="descname">reset_times</code><span class="sig-paren">(</span><em>seg_dir</em>, <em>trig_data</em>, <em>inj_data</em>, <em>inj_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/pygrb_plotting_utils.html#reset_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.pygrb_plotting_utils.reset_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset times so that t=0 is corresponds to the GRB trigger time</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.render">
+<span id="pycbc-results-render-module"></span><h2>pycbc.results.render module<a class="headerlink" href="#module-pycbc.results.render" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pycbc.results.render.get_embedded_config">
+<code class="descclassname">pycbc.results.render.</code><code class="descname">get_embedded_config</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#get_embedded_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.render.get_embedded_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt to load config data attached to file</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.render.render_default">
+<code class="descclassname">pycbc.results.render.</code><code class="descname">render_default</code><span class="sig-paren">(</span><em>path</em>, <em>cp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_default"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.render.render_default" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the default function that will render a template to a string of HTML. The
+string will be for a drop-down tab that contains a link to the file.</p>
+<p>If the file extension requires information to be read, then that is passed to the
+content variable (eg. a segmentlistdict).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.render.render_glitchgram">
+<code class="descclassname">pycbc.results.render.</code><code class="descname">render_glitchgram</code><span class="sig-paren">(</span><em>path</em>, <em>cp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_glitchgram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.render.render_glitchgram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Render a glitchgram file template.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.render.render_ignore">
+<code class="descclassname">pycbc.results.render.</code><code class="descname">render_ignore</code><span class="sig-paren">(</span><em>path</em>, <em>cp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_ignore"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.render.render_ignore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does not render anything.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.render.render_text">
+<code class="descclassname">pycbc.results.render.</code><code class="descname">render_text</code><span class="sig-paren">(</span><em>path</em>, <em>cp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.render.render_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Render a file as text.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.render.render_tmplt">
+<code class="descclassname">pycbc.results.render.</code><code class="descname">render_tmplt</code><span class="sig-paren">(</span><em>path</em>, <em>cp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_tmplt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.render.render_tmplt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Render a file as text.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.render.render_workflow_html_template">
+<code class="descclassname">pycbc.results.render.</code><code class="descname">render_workflow_html_template</code><span class="sig-paren">(</span><em>filename</em>, <em>subtemplate</em>, <em>filelists</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#render_workflow_html_template"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.render.render_workflow_html_template" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a template given inputs from the workflow generator. Takes
+a list of tuples. Each tuple is a pycbc File object. Also the name of the
+subtemplate to render and the filename of the output.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.render.setup_template_render">
+<code class="descclassname">pycbc.results.render.</code><code class="descname">setup_template_render</code><span class="sig-paren">(</span><em>path</em>, <em>config_path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/render.html#setup_template_render"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.render.setup_template_render" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is the gateway for rendering a template for a file.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.scatter_histograms">
+<span id="pycbc-results-scatter-histograms-module"></span><h2>pycbc.results.scatter_histograms module<a class="headerlink" href="#module-pycbc.results.scatter_histograms" title="Permalink to this headline">¶</a></h2>
+<p>Module to generate figures with scatter plots and histograms.</p>
+<dl class="function">
+<dt id="pycbc.results.scatter_histograms.construct_kde">
+<code class="descclassname">pycbc.results.scatter_histograms.</code><code class="descname">construct_kde</code><span class="sig-paren">(</span><em>samples_array</em>, <em>use_kombine=False</em>, <em>kdeargs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#construct_kde"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.construct_kde" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a KDE from the given samples.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.scatter_histograms.create_axes_grid">
+<code class="descclassname">pycbc.results.scatter_histograms.</code><code class="descname">create_axes_grid</code><span class="sig-paren">(</span><em>parameters</em>, <em>labels=None</em>, <em>height_ratios=None</em>, <em>width_ratios=None</em>, <em>no_diagonals=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#create_axes_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.create_axes_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of parameters, creates a figure with an axis for
+every possible combination of the parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – Names of the variables to be plotted.</li>
+<li><strong>labels</strong> (<em>{None</em><em>, </em><em>dict}</em><em>, </em><em>optional</em>) – A dictionary of parameters -&gt; parameter labels.</li>
+<li><strong>height_ratios</strong> (<em>{None</em><em>, </em><em>list}</em><em>, </em><em>optional</em>) – Set the height ratios of the axes; see <cite>matplotlib.gridspec.GridSpec</cite>
+for details.</li>
+<li><strong>width_ratios</strong> (<em>{None</em><em>, </em><em>list}</em><em>, </em><em>optional</em>) – Set the width ratios of the axes; see <cite>matplotlib.gridspec.GridSpec</cite>
+for details.</li>
+<li><strong>no_diagonals</strong> (<em>{False</em><em>, </em><em>bool}</em><em>, </em><em>optional</em>) – Do not produce axes for the same parameter on both axes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>fig</strong> (<em>pyplot.figure</em>) – The figure that was created.</li>
+<li><strong>axis_dict</strong> (<em>dict</em>) – A dictionary mapping the parameter combinations to the axis and their
+location in the subplots grid; i.e., the key, values are:
+<cite>{(‘param1’, ‘param2’): (pyplot.axes, row index, column index)}</cite></li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.scatter_histograms.create_density_plot">
+<code class="descclassname">pycbc.results.scatter_histograms.</code><code class="descname">create_density_plot</code><span class="sig-paren">(</span><em>xparam</em>, <em>yparam</em>, <em>samples</em>, <em>plot_density=True</em>, <em>plot_contours=True</em>, <em>percentiles=None</em>, <em>cmap='viridis'</em>, <em>contour_color=None</em>, <em>label_contours=True</em>, <em>contour_linestyles=None</em>, <em>xmin=None</em>, <em>xmax=None</em>, <em>ymin=None</em>, <em>ymax=None</em>, <em>exclude_region=None</em>, <em>fig=None</em>, <em>ax=None</em>, <em>use_kombine=False</em>, <em>kdeargs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#create_density_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.create_density_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes and plots posterior density and confidence intervals using the
+given samples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>xparam</strong> (<em>string</em>) – The parameter to plot on the x-axis.</li>
+<li><strong>yparam</strong> (<em>string</em>) – The parameter to plot on the y-axis.</li>
+<li><strong>samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>numpy structured array</em><em>, or </em><a class="reference internal" href="pycbc.io.html#pycbc.io.record.FieldArray" title="pycbc.io.record.FieldArray"><em>FieldArray</em></a>) – The samples to plot.</li>
+<li><strong>plot_density</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Plot a color map of the density.</li>
+<li><strong>plot_contours</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Plot contours showing the n-th percentiles of the density.</li>
+<li><strong>percentiles</strong> (<em>{None</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><em>array}</em>) – What percentile contours to draw. If None, will plot the 50th
+and 90th percentiles.</li>
+<li><strong>cmap</strong> (<em>{'viridis'</em><em>, </em><em>string}</em>) – The name of the colormap to use for the density plot.</li>
+<li><strong>contour_color</strong> (<em>{None</em><em>, </em><em>string}</em>) – What color to make the contours. Default is white for density
+plots and black for other plots.</li>
+<li><strong>label_contours</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to label the contours. Default is True.</li>
+<li><strong>contour_linestyles</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>, </em><em>optional</em>) – Linestyles to use for the contours. Default (None) will use solid.</li>
+<li><strong>xmin</strong> (<em>{None</em><em>, </em><em>float}</em>) – Minimum value to plot on x-axis.</li>
+<li><strong>xmax</strong> (<em>{None</em><em>, </em><em>float}</em>) – Maximum value to plot on x-axis.</li>
+<li><strong>ymin</strong> (<em>{None</em><em>, </em><em>float}</em>) – Minimum value to plot on y-axis.</li>
+<li><strong>ymax</strong> (<em>{None</em><em>, </em><em>float}</em>) – Maximum value to plot on y-axis.</li>
+<li><strong>exclue_region</strong> (<em>{None</em><em>, </em><em>str}</em>) – Exclude the specified region when plotting the density or contours.
+Must be a string in terms of <cite>xparam</cite> and <cite>yparam</cite> that is
+understandable by numpy’s logical evaluation. For example, if
+<cite>xparam = m_1</cite> and <cite>yparam = m_2</cite>, and you want to exclude the region
+for which <cite>m_2</cite> is greater than <cite>m_1</cite>, then exclude region should be
+<cite>‘m_2 &gt; m_1’</cite>.</li>
+<li><strong>fig</strong> (<em>{None</em><em>, </em><em>pyplot.figure}</em>) – Add the plot to the given figure. If None and ax is None, will create
+a new figure.</li>
+<li><strong>ax</strong> (<em>{None</em><em>, </em><em>pyplot.axes}</em>) – Draw plot on the given axis. If None, will create a new axis from
+<cite>fig</cite>.</li>
+<li><strong>use_kombine</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Use kombine’s KDE to calculate density. Otherwise, will use
+<cite>scipy.stats.gaussian_kde.</cite> Default is False.</li>
+<li><strong>kdeargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – Pass the given keyword arguments to the KDE.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>fig</strong> (<em>pyplot.figure</em>) – The figure the plot was made on.</li>
+<li><strong>ax</strong> (<em>pyplot.axes</em>) – The axes the plot was drawn on.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.scatter_histograms.create_marginalized_hist">
+<code class="descclassname">pycbc.results.scatter_histograms.</code><code class="descname">create_marginalized_hist</code><span class="sig-paren">(</span><em>ax</em>, <em>values</em>, <em>label</em>, <em>percentiles=None</em>, <em>color='k'</em>, <em>fillcolor='gray'</em>, <em>linecolor='navy'</em>, <em>linestyle='-'</em>, <em>plot_marginal_lines=True</em>, <em>title=True</em>, <em>expected_value=None</em>, <em>expected_color='red'</em>, <em>rotated=False</em>, <em>plot_min=None</em>, <em>plot_max=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#create_marginalized_hist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.create_marginalized_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots a 1D marginalized histogram of the given param from the given
+samples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ax</strong> (<em>pyplot.Axes</em>) – The axes on which to draw the plot.</li>
+<li><strong>values</strong> (<em>array</em>) – The parameter values to plot.</li>
+<li><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – A label to use for the title.</li>
+<li><strong>percentiles</strong> (<em>{None</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em> or </em><em>array}</em>) – What percentiles to draw lines at. If None, will draw lines at
+<cite>[5, 50, 95]</cite> (i.e., the bounds on the upper 90th percentile and the
+median).</li>
+<li><strong>color</strong> (<em>{'k'</em><em>, </em><em>string}</em>) – What color to make the histogram; default is black.</li>
+<li><strong>fillcolor</strong> (<em>{'gray'</em><em>, </em><em>string</em><em>, or </em><em>None}</em>) – What color to fill the histogram with. Set to None to not fill the
+histogram. Default is ‘gray’.</li>
+<li><strong>plot_marginal_lines</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – Put vertical lines at the marginal percentiles. Default is True.</li>
+<li><strong>linestyle</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – What line style to use for the histogram. Default is ‘-‘.</li>
+<li><strong>linecolor</strong> (<em>{'navy'</em><em>, </em><em>string}</em>) – What color to use for the percentile lines. Default is ‘navy’.</li>
+<li><strong>title</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – Add a title with a estimated value +/- uncertainty. The estimated value
+is the pecentile halfway between the max/min of <code class="docutils literal notranslate"><span class="pre">percentiles</span></code>, while
+the uncertainty is given by the max/min of the <code class="docutils literal notranslate"><span class="pre">percentiles</span></code>. If no
+percentiles are specified, defaults to quoting the median +/- 95/5
+percentiles.</li>
+<li><strong>rotated</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Plot the histogram on the y-axis instead of the x. Default is False.</li>
+<li><strong>plot_min</strong> (<em>{None</em><em>, </em><em>float}</em>) – The minimum value to plot. If None, will default to whatever <cite>pyplot</cite>
+creates.</li>
+<li><strong>plot_max</strong> (<em>{None</em><em>, </em><em>float}</em>) – The maximum value to plot. If None, will default to whatever <cite>pyplot</cite>
+creates.</li>
+<li><strong>scalefac</strong> (<em>{1.</em><em>, </em><em>float}</em>) – Factor to scale the default font sizes by. Default is 1 (no scaling).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.scatter_histograms.create_multidim_plot">
+<code class="descclassname">pycbc.results.scatter_histograms.</code><code class="descname">create_multidim_plot</code><span class="sig-paren">(</span><em>parameters</em>, <em>samples</em>, <em>labels=None</em>, <em>mins=None</em>, <em>maxs=None</em>, <em>expected_parameters=None</em>, <em>expected_parameters_color='r'</em>, <em>plot_marginal=True</em>, <em>plot_scatter=True</em>, <em>plot_maxl=False</em>, <em>plot_marginal_lines=True</em>, <em>marginal_percentiles=None</em>, <em>contour_percentiles=None</em>, <em>marginal_title=True</em>, <em>marginal_linestyle='-'</em>, <em>zvals=None</em>, <em>show_colorbar=True</em>, <em>cbar_label=None</em>, <em>vmin=None</em>, <em>vmax=None</em>, <em>scatter_cmap='plasma'</em>, <em>plot_density=False</em>, <em>plot_contours=True</em>, <em>density_cmap='viridis'</em>, <em>contour_color=None</em>, <em>label_contours=True</em>, <em>contour_linestyles=None</em>, <em>hist_color='black'</em>, <em>line_color=None</em>, <em>fill_color='gray'</em>, <em>use_kombine=False</em>, <em>kdeargs=None</em>, <em>fig=None</em>, <em>axis_dict=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#create_multidim_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.create_multidim_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a figure with several plots and histograms.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – Names of the variables to be plotted.</li>
+<li><strong>samples</strong> (<a class="reference internal" href="pycbc.io.html#pycbc.io.record.FieldArray" title="pycbc.io.record.FieldArray"><em>FieldArray</em></a>) – A field array of the samples to plot.</li>
+<li><strong>labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – A dictionary mapping parameters to labels. If none provided, will just
+use the parameter strings as the labels.</li>
+<li><strong>mins</strong> (<em>{None</em><em>, </em><em>dict}</em><em>, </em><em>optional</em>) – Minimum value for the axis of each variable in <cite>parameters</cite>.
+If None, it will use the minimum of the corresponding variable in
+<cite>samples</cite>.</li>
+<li><strong>maxs</strong> (<em>{None</em><em>, </em><em>dict}</em><em>, </em><em>optional</em>) – Maximum value for the axis of each variable in <cite>parameters</cite>.
+If None, it will use the maximum of the corresponding variable in
+<cite>samples</cite>.</li>
+<li><strong>expected_parameters</strong> (<em>{None</em><em>, </em><em>dict}</em><em>, </em><em>optional</em>) – Expected values of <cite>parameters</cite>, as a dictionary mapping parameter
+names -&gt; values. A cross will be plotted at the location of the
+expected parameters on axes that plot any of the expected parameters.</li>
+<li><strong>expected_parameters_color</strong> (<em>{'r'</em><em>, </em><em>string}</em><em>, </em><em>optional</em>) – What color to make the expected parameters cross.</li>
+<li><strong>plot_marginal</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Plot the marginalized distribution on the diagonals. If False, the
+diagonal axes will be turned off.</li>
+<li><strong>plot_scatter</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Plot each sample point as a scatter plot.</li>
+<li><strong>marginal_percentiles</strong> (<em>{None</em><em>, </em><em>array}</em>) – What percentiles to draw lines at on the 1D histograms.
+If None, will draw lines at <cite>[5, 50, 95]</cite> (i.e., the bounds on the
+upper 90th percentile and the median).</li>
+<li><strong>marginal_title</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – Add a title over the 1D marginal plots that gives an estimated value
++/- uncertainty. The estimated value is the pecentile halfway between
+the max/min of <code class="docutils literal notranslate"><span class="pre">maginal_percentiles</span></code>, while the uncertainty is given
+by the max/min of the <code class="docutils literal notranslate"><span class="pre">marginal_percentiles.</span> <span class="pre">If</span> <span class="pre">no</span>
+<span class="pre">``marginal_percentiles</span></code> are specified, the median +/- 95/5 percentiles
+will be quoted.</li>
+<li><strong>marginal_linestyle</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – What line style to use for the marginal histograms.</li>
+<li><strong>contour_percentiles</strong> (<em>{None</em><em>, </em><em>array}</em>) – What percentile contours to draw on the scatter plots. If None,
+will plot the 50th and 90th percentiles.</li>
+<li><strong>zvals</strong> (<em>{None</em><em>, </em><em>array}</em>) – An array to use for coloring the scatter plots. If None, scatter points
+will be the same color.</li>
+<li><strong>show_colorbar</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Show the colorbar of zvalues used for the scatter points. A ValueError
+will be raised if zvals is None and this is True.</li>
+<li><strong>cbar_label</strong> (<em>{None</em><em>, </em><em>str}</em>) – Specify a label to add to the colorbar.</li>
+<li><strong>vmin</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Minimum value for the colorbar. If None, will use the minimum of zvals.</li>
+<li><strong>vmax</strong> (<em>{None</em><em>, </em><em>float}</em><em>, </em><em>optional</em>) – Maximum value for the colorbar. If None, will use the maxmimum of
+zvals.</li>
+<li><strong>scatter_cmap</strong> (<em>{'plasma'</em><em>, </em><em>string}</em>) – The color map to use for the scatter points. Default is ‘plasma’.</li>
+<li><strong>plot_density</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Plot the density of points as a color map.</li>
+<li><strong>plot_contours</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Draw contours showing the 50th and 90th percentile confidence regions.</li>
+<li><strong>density_cmap</strong> (<em>{'viridis'</em><em>, </em><em>string}</em>) – The color map to use for the density plot.</li>
+<li><strong>contour_color</strong> (<em>{None</em><em>, </em><em>string}</em>) – The color to use for the contour lines. Defaults to white for
+density plots, navy for scatter plots without zvals, and black
+otherwise.</li>
+<li><strong>label_contours</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to label the contours. Default is True.</li>
+<li><strong>contour_linestyles</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a><em>, </em><em>optional</em>) – Linestyles to use for the contours. Default (None) will use solid.</li>
+<li><strong>use_kombine</strong> (<em>{False</em><em>, </em><em>bool}</em>) – Use kombine’s KDE to calculate density. Otherwise, will use
+<cite>scipy.stats.gaussian_kde.</cite> Default is False.</li>
+<li><strong>kdeargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a><em>, </em><em>optional</em>) – Pass the given keyword arguments to the KDE.</li>
+<li><strong>fig</strong> (<em>pyplot.figure</em>) – Use the given figure instead of creating one.</li>
+<li><strong>axis_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Use the given dictionary of axes instead of creating one.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>fig</strong> (<em>pyplot.figure</em>) – The figure that was created.</li>
+<li><strong>axis_dict</strong> (<em>dict</em>) – A dictionary mapping the parameter combinations to the axis and their
+location in the subplots grid; i.e., the key, values are:
+<cite>{(‘param1’, ‘param2’): (pyplot.axes, row index, column index)}</cite></li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.scatter_histograms.get_scale_fac">
+<code class="descclassname">pycbc.results.scatter_histograms.</code><code class="descname">get_scale_fac</code><span class="sig-paren">(</span><em>fig</em>, <em>fiducial_width=8</em>, <em>fiducial_height=7</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#get_scale_fac"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.get_scale_fac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets a factor to scale fonts by for the given figure. The scale
+factor is relative to a figure with dimensions
+(<cite>fiducial_width</cite>, <cite>fiducial_height</cite>).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.scatter_histograms.reduce_ticks">
+<code class="descclassname">pycbc.results.scatter_histograms.</code><code class="descname">reduce_ticks</code><span class="sig-paren">(</span><em>ax</em>, <em>which</em>, <em>maxticks=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#reduce_ticks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.reduce_ticks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a pyplot axis, resamples its <cite>which</cite>-axis ticks such that are at most
+<cite>maxticks</cite> left.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ax</strong> (<em>axis</em>) – The axis to adjust.</li>
+<li><strong>which</strong> (<em>{'x' | 'y'}</em>) – Which axis to adjust.</li>
+<li><strong>maxticks</strong> (<em>{3</em><em>, </em><em>int}</em>) – Maximum number of ticks to use.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">An array of the selected ticks.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.scatter_histograms.remove_common_offset">
+<code class="descclassname">pycbc.results.scatter_histograms.</code><code class="descname">remove_common_offset</code><span class="sig-paren">(</span><em>arr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#remove_common_offset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.remove_common_offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an array of data, removes a common offset &gt; 1000, returning the
+removed value.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.scatter_histograms.set_marginal_histogram_title">
+<code class="descclassname">pycbc.results.scatter_histograms.</code><code class="descname">set_marginal_histogram_title</code><span class="sig-paren">(</span><em>ax</em>, <em>fmt</em>, <em>color</em>, <em>label=None</em>, <em>rotated=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/scatter_histograms.html#set_marginal_histogram_title"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.scatter_histograms.set_marginal_histogram_title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the title of the marginal histograms.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ax</strong> (<em>Axes</em>) – The <cite>Axes</cite> instance for the plot.</li>
+<li><strong>fmt</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – The string to add to the title.</li>
+<li><strong>color</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – The color of the text to add to the title.</li>
+<li><strong>label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – If title does not exist, then include label at beginning of the string.</li>
+<li><strong>rotated</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – If <cite>True</cite> then rotate the text 270 degrees for sideways title.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.str_utils">
+<span id="pycbc-results-str-utils-module"></span><h2>pycbc.results.str_utils module<a class="headerlink" href="#module-pycbc.results.str_utils" title="Permalink to this headline">¶</a></h2>
+<p>This modules provides functions for formatting values into strings for display.</p>
+<dl class="function">
+<dt id="pycbc.results.str_utils.drop_trailing_zeros">
+<code class="descclassname">pycbc.results.str_utils.</code><code class="descname">drop_trailing_zeros</code><span class="sig-paren">(</span><em>num</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/str_utils.html#drop_trailing_zeros"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.str_utils.drop_trailing_zeros" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drops the trailing zeros in a float that is printed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.str_utils.format_value">
+<code class="descclassname">pycbc.results.str_utils.</code><code class="descname">format_value</code><span class="sig-paren">(</span><em>value</em>, <em>error</em>, <em>plus_error=None</em>, <em>use_scientific_notation=3</em>, <em>include_error=True</em>, <em>use_relative_error=False</em>, <em>ndecs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/str_utils.html#format_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.str_utils.format_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a numerical value and some bound on it, formats the number into a
+string such that the value is rounded to the nearest significant figure,
+which is determined by the error = abs(value-bound).</p>
+<p>Note: if either use_scientific_notation or include_error are True, the
+returned string will include LaTeX characters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>value</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The value to format.</li>
+<li><strong>error</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The uncertainty in the value. This is used to determine the
+number of significant figures to print. If the value has no
+uncertainty, you can just do value*1e-k, where k+1 is the number
+of significant figures you want.</li>
+<li><strong>plus_error</strong> (<em>{None</em><em>, </em><em>float}</em>) – The upper uncertainty on the value; i.e., what you need to add to the
+value to get its upper bound. If provided, <code class="docutils literal notranslate"><span class="pre">error</span></code> is assumed to be
+the negative; i.e., value +plus_error -error. The number of
+significant figures printed is determined from min(error,
+plus_error).</li>
+<li><strong>use_scientific_notation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – If <code class="docutils literal notranslate"><span class="pre">abs(log10(value))</span></code> is greater than the given, the return string
+will be formated to “%.1f times 10^{p}”, where p is the powers of 10
+needed for the leading number in the value to be in the singles spot.
+Otherwise will return “%.(p+1)f”. Default is 3.  To turn off, set to
+<code class="docutils literal notranslate"><span class="pre">numpy.inf</span></code>. Note: using scientific notation assumes that the
+returned value will be enclosed in LaTeX math mode.</li>
+<li><strong>include_error</strong> (<em>{True</em><em>, </em><em>bool}</em>) – Include the error in the return string; the output will be formated
+val pm err, where err is the error rounded to the same
+power of 10 as val. Otherwise, just the formatted value will
+be returned. If plus_error is provided then the return text will be
+formatted as <code class="docutils literal notranslate"><span class="pre">val^{+plus_error}_{-error}</span></code>.</li>
+<li><strong>use_relative_error</strong> (<em>{False</em><em>, </em><em>bool}</em>) – If include_error, the error will be formatted as a percentage of the
+the value.</li>
+<li><strong>ndecs</strong> (<em>{None</em><em>, </em><em>int}</em>) – Number of values after the decimal point. If not provided,
+it will default to the number of values in the error.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The value (and error, if include_error is True) formatted as a string.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">string</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>Given a value and its uncertainty:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">val</span><span class="p">,</span> <span class="n">err</span>
+<span class="go">(3.9278372067613837e-22, 2.2351435286500487e-23)</span>
+</pre></div>
+</div>
+<p>Format with error quoted:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+<span class="go">&#39;3.93 \pm 0.22\times 10^{-22}&#39;</span>
+</pre></div>
+</div>
+<p>Quote error as a relative error:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">use_relative_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">&#39;3.93 \times 10^{-22} \pm5.6\%&#39;</span>
+</pre></div>
+</div>
+<p>Format without the error and without scientific notation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">use_scientific_notation</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
+<span class="go">                 include_error=False)</span>
+<span class="go">&#39;0.000000000000000000000393&#39;</span>
+</pre></div>
+</div>
+<p>Given an plus error:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">err_plus</span>
+<span class="go">8.2700310560051804e-24</span>
+</pre></div>
+</div>
+<p>Format with both bounds quoted:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">plus_error</span><span class="o">=</span><span class="n">err_plus</span><span class="p">)</span>
+<span class="go">&#39;3.928^{+0.083}_{-0.224}\times 10^{-22}&#39;</span>
+</pre></div>
+</div>
+<p>Format with both bounds quoted as a relative error:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">format_value</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">plus_error</span><span class="o">=</span><span class="n">err_plus</span><span class="p">,</span> <span class="n">use_relative_error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">&#39;3.928\times 10^{-22}\,^{+2.1\%}_{-5.7\%}&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.str_utils.get_signum">
+<code class="descclassname">pycbc.results.str_utils.</code><code class="descname">get_signum</code><span class="sig-paren">(</span><em>val</em>, <em>err</em>, <em>max_sig=inf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/str_utils.html#get_signum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.str_utils.get_signum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an error, returns a string for val formated to the appropriate
+number of significant figures.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.str_utils.mathjax_html_header">
+<code class="descclassname">pycbc.results.str_utils.</code><code class="descname">mathjax_html_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/str_utils.html#mathjax_html_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.str_utils.mathjax_html_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard header to use for html pages to display latex math.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>header</strong> – The necessary html head needed to use latex on an html page.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)">str</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.table_utils">
+<span id="pycbc-results-table-utils-module"></span><h2>pycbc.results.table_utils module<a class="headerlink" href="#module-pycbc.results.table_utils" title="Permalink to this headline">¶</a></h2>
+<p>This module provides functions to generate sortable html tables</p>
+<dl class="function">
+<dt id="pycbc.results.table_utils.html_table">
+<code class="descclassname">pycbc.results.table_utils.</code><code class="descname">html_table</code><span class="sig-paren">(</span><em>columns</em>, <em>names</em>, <em>page_size=None</em>, <em>format_strings=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/table_utils.html#html_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.table_utils.html_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an html table of this data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>columns</strong> (<em>list of numpy arrays</em>) – </li>
+<li><strong>names</strong> (<em>list of strings</em>) – The list of columns names</li>
+<li><strong>page_size</strong> (<em>{int</em><em>, </em><em>None}</em><em>, </em><em>optional</em>) – The number of items to show on each page of the table</li>
+<li><strong>format_strings</strong> (<em>{lists of strings</em><em>, </em><em>None}</em><em>, </em><em>optional</em>) – The ICU format string for this column, None for no formatting. All</li>
+<li><strong>must have a format string if provided.</strong> (<em>columns</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>html_table</strong> – A str containing the html code to display a table of this data</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)">str</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.table_utils.static_table">
+<code class="descclassname">pycbc.results.table_utils.</code><code class="descname">static_table</code><span class="sig-paren">(</span><em>data</em>, <em>titles=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/table_utils.html#static_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.table_utils.static_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an html tableo of this data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data</strong> (<em>two-dimensional numpy string array</em>) – Array containing the cell values</li>
+<li><strong>titles</strong> (<em>numpy array</em>) – Vector str of titles</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>html_table</strong> – A string containing the html table.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)">str</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results.versioning">
+<span id="pycbc-results-versioning-module"></span><h2>pycbc.results.versioning module<a class="headerlink" href="#module-pycbc.results.versioning" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pycbc.results.versioning.create_versioning_page">
+<code class="descclassname">pycbc.results.versioning.</code><code class="descname">create_versioning_page</code><span class="sig-paren">(</span><em>path</em>, <em>cp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/versioning.html#create_versioning_page"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.versioning.create_versioning_page" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.versioning.get_code_version_numbers">
+<code class="descclassname">pycbc.results.versioning.</code><code class="descname">get_code_version_numbers</code><span class="sig-paren">(</span><em>cp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/versioning.html#get_code_version_numbers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.versioning.get_code_version_numbers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Will extract the version information from the executables listed in
+the executable section of the supplied ConfigParser object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A dictionary keyed by the executable name with values giving the
+version string for each executable.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.versioning.get_library_version_info">
+<code class="descclassname">pycbc.results.versioning.</code><code class="descname">get_library_version_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/versioning.html#get_library_version_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.versioning.get_library_version_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>This will return a list of dictionaries containing versioning
+information about the various LIGO libraries that PyCBC will use in an
+analysis run.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.versioning.write_code_versions">
+<code class="descclassname">pycbc.results.versioning.</code><code class="descname">write_code_versions</code><span class="sig-paren">(</span><em>path</em>, <em>cp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/versioning.html#write_code_versions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.versioning.write_code_versions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pycbc.results.versioning.write_library_information">
+<code class="descclassname">pycbc.results.versioning.</code><code class="descname">write_library_information</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/results/versioning.html#write_library_information"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.results.versioning.write_library_information" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.results">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.results" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.population.html" class="btn btn-neutral float-left" title="pycbc.population package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.strain.html" class="btn btn-neutral float-right" title="pycbc.strain package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

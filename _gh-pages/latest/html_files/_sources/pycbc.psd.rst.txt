@@ -1,0 +1,46 @@
+pycbc.psd package
+=================
+
+Submodules
+----------
+
+pycbc.psd.analytical module
+---------------------------
+
+.. automodule:: pycbc.psd.analytical
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.psd.estimate module
+-------------------------
+
+.. automodule:: pycbc.psd.estimate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.psd.read module
+---------------------
+
+.. automodule:: pycbc.psd.read
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.psd.variation module
+--------------------------
+
+.. automodule:: pycbc.psd.variation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.psd
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trying out different samplers &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Trying out different samplers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/inference/examples/sampler_platter.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="trying-out-different-samplers">
+<span id="inference-example-samplers"></span><h1>Trying out different samplers<a class="headerlink" href="#trying-out-different-samplers" title="Permalink to this headline">¶</a></h1>
+<p>This page shows basic configurations for some of the samplers that PyCBC
+Inference supports. Note that these samplers often have many additional
+options which you can learn apart from their respective library documentation
+pages. There very likely are more optimal settings than the example ones here
+for your problem as these are configured to run quickly.</p>
+<p>We’ll use a very simple analytic model to test each sampler. The following is
+the configuration to set up a unimodal gaussian likelihood. We’ll have each
+sampler try to fit this.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">test_normal</span>
+
+<span class="k">[variable_params]</span>
+<span class="na">x</span> <span class="o">=</span>
+
+<span class="k">[prior-x]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">uniform</span>
+<span class="na">min-x</span> <span class="o">=</span> <span class="s">-10</span>
+<span class="na">max-x</span> <span class="o">=</span> <span class="s">10</span>
+</pre></div>
+</div>
+<p>Each sampler needs nees a slightly different configuration. Below are basic
+configurations which can analyze this simple problem.</p>
+<div class="section" id="id1">
+<h2><a class="reference external" href="https://emcee.readthedocs.io/en/v2.2.1/">Emcee</a><a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">emcee</span>
+<span class="na">nwalkers</span> <span class="o">=</span> <span class="s">100</span>
+<span class="na">niterations</span> <span class="o">=</span> <span class="s">200</span>
+
+<span class="c1">;##### Other possible options</span>
+<span class="c1">;effective-nsamples = 1000</span>
+<span class="c1">;max-samples-per-chain = 1000</span>
+<span class="c1">;checkpoint-interval = 2000</span>
+
+<span class="c1">;[sampler-burn_in]</span>
+<span class="c1">;burn-in-test = nacl &amp; max_posterior</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h2><a class="reference external" href="https://emcee.readthedocs.io/en/v2.2.1/">Parallel-tempered Emcee</a><a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">emcee_pt</span>
+<span class="na">nwalkers</span> <span class="o">=</span> <span class="s">100</span>
+<span class="na">ntemps</span> <span class="o">=</span> <span class="s">4</span>
+<span class="na">niterations</span> <span class="o">=</span> <span class="s">100</span>
+
+<span class="c1">;##### Other possible options</span>
+<span class="c1">;effective-nsamples = 1000</span>
+<span class="c1">;max-samples-per-chain = 1000</span>
+<span class="c1">;checkpoint-interval = 2000</span>
+
+<span class="c1">;[sampler-burn_in]</span>
+<span class="c1">;burn-in-test = nacl &amp; max_posterior</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id3">
+<h2><a class="reference external" href="https://github.com/willvousden/ptemcee">PTEmcee</a><a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">ptemcee</span>
+<span class="na">nwalkers</span> <span class="o">=</span> <span class="s">100</span>
+<span class="na">ntemps</span> <span class="o">=</span> <span class="s">4</span>
+<span class="na">niterations</span> <span class="o">=</span> <span class="s">100</span>
+
+<span class="c1">;##### Other possible options</span>
+<span class="c1">;effective-nsamples = 1000</span>
+<span class="c1">;max-samples-per-chain = 1000</span>
+<span class="c1">;checkpoint-interval = 2000</span>
+<span class="c1">;adaptive =</span>
+<span class="c1">;adaptation-lag = 10000</span>
+<span class="c1">;adaptation-time = 100</span>
+
+<span class="c1">;[sampler-burn_in]</span>
+<span class="c1">;burn-in-test = nacl &amp; max_posterior</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2><a class="reference external" href="https://dynesty.readthedocs.io/">Dynesty</a><a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">dynesty</span>
+<span class="na">dlogz</span> <span class="o">=</span> <span class="s">0.1</span>
+<span class="na">nlive</span> <span class="o">=</span> <span class="s">150</span>
+
+<span class="c1">; Other arguments (see Dynesty package for details).</span>
+<span class="c1">; bound, bootstrap, enlarge, update_interval, sample</span>
+<span class="c1">; loglikelihood-function = loglr</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h2><a class="reference external" href="https://johannesbuchner.github.io/UltraNest/">Ultranest</a><a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">ultranest</span>
+<span class="na">dlogz</span> <span class="o">=</span> <span class="s">0.1</span>
+
+<span class="c1">;##### Other possible options (see ultranest package for useage)</span>
+<span class="c1">; update_interval_iter_fraction, update_interval_ncall</span>
+<span class="c1">; log_interval, show_status, dKL, frac_remain,</span>
+<span class="c1">; Lepsilon, min_ess, max_iters, max_ncalls,</span>
+<span class="c1">; max_num_improvement_loops, min_num_live_points,</span>
+<span class="c1">; cluster_num_live_points</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id6">
+<h2><a class="reference external" href="https://github.com/cdcapano/epsie">Epsie</a><a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">epsie</span>
+<span class="na">nchains</span> <span class="o">=</span> <span class="s">100</span>
+<span class="na">niterations</span> <span class="o">=</span> <span class="s">100</span>
+<span class="na">ntemps</span> <span class="o">=</span> <span class="s">4</span>
+
+<span class="c1">;##### Other possible options</span>
+<span class="c1">;effective-nsamples = 1000</span>
+<span class="c1">;max-samples-per-chain = 1000</span>
+<span class="c1">;checkpoint-interval = 2000</span>
+
+<span class="c1">;[sampler-burn_in]</span>
+<span class="c1">;burn-in-test = nacl &amp; max_posterior</span>
+
+<span class="k">[jump_proposal-x]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">normal</span>
+</pre></div>
+</div>
+<p>The following are also supported, but require either python3 support only (cpnest)
+or an external package (multinest).</p>
+</div>
+<div class="section" id="id7">
+<h2><a class="reference external" href="https://github.com/johnveitch/cpnest">cpnest</a><a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">cpnest</span>
+<span class="na">nlive</span> <span class="o">=</span> <span class="s">100</span>
+<span class="na">maxmcmc</span> <span class="o">=</span> <span class="s">1000</span>
+<span class="na">nthreads</span> <span class="o">=</span> <span class="s">1</span>
+<span class="na">verbose</span> <span class="o">=</span> <span class="s">1</span>
+
+<span class="c1">;##### Other possible options</span>
+<span class="c1">;verbose = True</span>
+<span class="c1">;loglikelihood-function = </span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id8">
+<h2><a class="reference external" href="https://johannesbuchner.github.io/PyMultiNest/">Multinest</a><a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[sampler]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">multinest</span>
+<span class="na">nlivepoints</span> <span class="o">=</span> <span class="s">100</span>
+
+<span class="c1">;##### Optional arguments</span>
+<span class="c1">;evidence-tolerance = 0.1</span>
+<span class="c1">;sampling-efficiency = 0.3</span>
+<span class="c1">;checkpoint-interval = 5000</span>
+<span class="c1">;importance-nested-sampling = True</span>
+</pre></div>
+</div>
+<p>If we run these samplers, we create the following plot:</p>
+<a class="reference internal image-reference" href="../../_images/sample.png"><img alt="../../_images/sample.png" class="align-center" src="../../_images/sample.png" style="width: 386.7px; height: 383.4px;" /></a>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

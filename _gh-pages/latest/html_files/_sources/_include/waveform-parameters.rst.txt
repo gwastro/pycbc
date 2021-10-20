@@ -1,0 +1,67 @@
+========================  =======================================================================================================================================================================================================================
+Parameter                 Description
+========================  =======================================================================================================================================================================================================================
+``'mass1'``               The mass of the first component object in the binary (in solar masses).
+``'mass2'``               The mass of the second component object in the binary (in solar masses).
+``'spin1x'``              The x component of the first binary component's dimensionless spin.
+``'spin1y'``              The y component of the first binary component's dimensionless spin.
+``'spin1z'``              The z component of the first binary component's dimensionless spin.
+``'spin2x'``              The x component of the second binary component's dimensionless spin.
+``'spin2y'``              The y component of the second binary component's dimensionless spin.
+``'spin2z'``              The z component of the second binary component's dimensionless spin.
+``'eccentricity'``        Eccentricity.
+``'lambda1'``             The dimensionless tidal deformability parameter of object 1.
+``'lambda2'``             The dimensionless tidal deformability parameter of object 2.
+``'dquad_mon1'``          Quadrupole-monopole parameter / m_1^5 -1.
+``'dquad_mon2'``          Quadrupole-monopole parameter / m_2^5 -1.
+``'lambda_octu1'``        The octupolar tidal deformability parameter of object 1.
+``'lambda_octu2'``        The octupolar tidal deformability parameter of object 2.
+``'quadfmode1'``          The quadrupolar f-mode angular frequency of object 1.
+``'quadfmode2'``          The quadrupolar f-mode angular frequency of object 2.
+``'octufmode1'``          The octupolar f-mode angular frequency of object 1.
+``'octufmode2'``          The octupolar f-mode angular frequency of object 2.
+``'dchi0'``               0PN testingGR parameter.
+``'dchi1'``               0.5PN testingGR parameter.
+``'dchi2'``               1PN testingGR parameter.
+``'dchi3'``               1.5PN testingGR parameter.
+``'dchi4'``               2PN testingGR parameter.
+``'dchi5'``               2.5PN testingGR parameter.
+``'dchi5l'``              2.5PN logrithm testingGR parameter.
+``'dchi6'``               3PN testingGR parameter.
+``'dchi6l'``              3PN logrithm testingGR parameter.
+``'dchi7'``               3.5PN testingGR parameter.
+``'dalpha1'``             Merger-ringdown testingGR parameter.
+``'dalpha2'``             Merger-ringdown testingGR parameter.
+``'dalpha3'``             Merger-ringdown testingGR parameter.
+``'dalpha4'``             Merger-ringdown testingGR parameter.
+``'dalpha5'``             Merger-ringdown testingGR parameter.
+``'dbeta1'``              Intermediate testingGR parameter.
+``'dbeta2'``              Intermediate testingGR parameter.
+``'dbeta3'``              Intermediate testingGR parameter.
+``'distance'``            Luminosity distance to the binary (in Mpc).
+``'coa_phase'``           Coalesence phase of the binary (in rad).
+``'inclination'``         Inclination (rad), defined as the angle between the orbital angular momentum L and the line-of-sight at the reference frequency.
+``'long_asc_nodes'``      Longitude of ascending nodes axis (rad).
+``'mean_per_ano'``        Mean anomaly of the periastron (rad).
+``'delta_t'``             The time step used to generate the waveform (in s).
+``'f_lower'``             The starting frequency of the waveform (in Hz).
+``'approximant'``         A string that indicates the chosen approximant.
+``'f_ref'``               The reference frequency.
+``'phase_order'``         The pN order of the orbital phase. The default of -1 indicates that all implemented orders are used.
+``'spin_order'``          The pN order of the spin corrections. The default of -1 indicates that all implemented orders are used.
+``'tidal_order'``         The pN order of the tidal corrections. The default of -1 indicates that all implemented orders are used.
+``'amplitude_order'``     The pN order of the amplitude. The default of -1 indicates that all implemented orders are used.
+``'eccentricity_order'``  The pN order of the eccentricity corrections.The default of -1 indicates that all implemented orders are used.
+``'frame_axis'``          Allow to choose among orbital_l, view and total_j
+``'modes_choice'``        Allow to turn on  among orbital_l, view and total_j
+``'side_bands'``          Flag for generating sidebands
+``'mode_array'``          Choose which (l,m) modes to include when generating a waveform. Only if approximant supports this feature.By default pass None and let lalsimulation use it's default behaviour.Example: mode_array = [ [2,2], [2,-2] ]
+``'numrel_data'``         Sets the NR flags; only needed for NR waveforms.
+``'delta_f'``             The frequency step used to generate the waveform (in Hz).
+``'f_final'``             The ending frequency of the waveform. The default (0) indicates that the choice is made by the respective approximant.
+``'f_final_func'``        Use the given frequency function to compute f_final based on the parameters of the waveform.
+``'tc'``                  Coalescence time (s).
+``'ra'``                  Right ascension (rad).
+``'dec'``                 Declination (rad).
+``'polarization'``        Polarization (rad).
+========================  =======================================================================================================================================================================================================================

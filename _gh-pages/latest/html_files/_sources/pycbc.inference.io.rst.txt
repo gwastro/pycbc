@@ -1,0 +1,126 @@
+pycbc.inference.io package
+==========================
+
+Submodules
+----------
+
+pycbc.inference.io.base\_hdf module
+-----------------------------------
+
+.. automodule:: pycbc.inference.io.base_hdf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.base\_mcmc module
+------------------------------------
+
+.. automodule:: pycbc.inference.io.base_mcmc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.base\_multitemper module
+-------------------------------------------
+
+.. automodule:: pycbc.inference.io.base_multitemper
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.base\_nested\_sampler module
+-----------------------------------------------
+
+.. automodule:: pycbc.inference.io.base_nested_sampler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.base\_sampler module
+---------------------------------------
+
+.. automodule:: pycbc.inference.io.base_sampler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.dynesty module
+---------------------------------
+
+.. automodule:: pycbc.inference.io.dynesty
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.emcee module
+-------------------------------
+
+.. automodule:: pycbc.inference.io.emcee
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.emcee\_pt module
+-----------------------------------
+
+.. automodule:: pycbc.inference.io.emcee_pt
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.epsie module
+-------------------------------
+
+.. automodule:: pycbc.inference.io.epsie
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.multinest module
+-----------------------------------
+
+.. automodule:: pycbc.inference.io.multinest
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.posterior module
+-----------------------------------
+
+.. automodule:: pycbc.inference.io.posterior
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.ptemcee module
+---------------------------------
+
+.. automodule:: pycbc.inference.io.ptemcee
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.txt module
+-----------------------------
+
+.. automodule:: pycbc.inference.io.txt
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.io.ultranest module
+-----------------------------------
+
+.. automodule:: pycbc.inference.io.ultranest
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.inference.io
+    :members:
+    :undoc-members:
+    :show-inheritance:

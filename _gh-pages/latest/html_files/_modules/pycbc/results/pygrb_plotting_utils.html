@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.results.pygrb_plotting_utils &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../pycbc.html">pycbc</a> &raquo;</li>
+      <li>pycbc.results.pygrb_plotting_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.results.pygrb_plotting_utils</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2019 Francesco Pannarale, Gino Contestabile</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Preamble</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module to generate PyGRB figures: scatter plots and timeseries.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">pycbc.results</span> <span class="kn">import</span> <span class="n">save_fig_with_metadata</span>
+<span class="c1"># TODO: imports to fix/remove</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">glue</span> <span class="kn">import</span> <span class="n">segments</span>
+    <span class="kn">from</span> <span class="nn">glue.ligolw</span> <span class="kn">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">lsctables</span><span class="p">,</span> <span class="n">ligolw</span><span class="p">,</span> <span class="n">table</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pylal</span> <span class="kn">import</span> <span class="n">MultiInspiralUtils</span>
+    <span class="kn">from</span> <span class="nn">pylal.coh_PTF_pyutils</span> <span class="kn">import</span> <span class="n">get_bestnr</span><span class="p">,</span> <span class="n">get_det_response</span>
+    <span class="kn">from</span> <span class="nn">pylal.coh_PTF_pyutils</span> <span class="kn">import</span> <span class="n">readSegFiles</span>
+    <span class="kn">from</span> <span class="nn">pylal.dq</span> <span class="kn">import</span> <span class="n">dqSegmentUtils</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+<span class="c1"># Only if a backend is not already set ... This should really *not* be done</span>
+<span class="c1"># here, but in the executables you should set matplotlib.use()</span>
+<span class="c1"># This matches the check that matplotlib does internally, but this *may* be</span>
+<span class="c1"># version dependenant. If this is a problem then remove this and control from</span>
+<span class="c1"># the executables directly.</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="k">if</span> <span class="s1">&#39;matplotlib.backends&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>  <span class="c1"># nopep8</span>
+    <span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;agg&#39;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">rc</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Parse command line</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="pygrb_plot_opts_parser"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.pygrb_plot_opts_parser">[docs]</a><span class="k">def</span> <span class="nf">pygrb_plot_opts_parser</span><span class="p">(</span><span class="n">usage</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parses options for PyGRB plotting scripts&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">usage</span><span class="o">=</span><span class="n">usage</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--version&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;verbose output&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="s2">&quot;--trig-file&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The location of the trigger file&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-I&quot;</span><span class="p">,</span> <span class="s2">&quot;--inj-file&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The location of the injection file&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="s2">&quot;--segment-dir&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;directory holding buffer, on &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;and off source segment files.&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;--output-file&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output file.&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-O&quot;</span><span class="p">,</span> <span class="s2">&quot;--zoomed-output-file&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">required</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output file for a zoomed in &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;version of the plot.&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-Q&quot;</span><span class="p">,</span> <span class="s2">&quot;--chisq-index&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;chisq_index for newSNR calculation&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-N&quot;</span><span class="p">,</span> <span class="s2">&quot;--chisq-nhigh&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;nhigh for newSNR calculation&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-B&quot;</span><span class="p">,</span> <span class="s2">&quot;--sngl-snr-threshold&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Single detector SNR &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;threshold, the two most sensitive detectors &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;should have SNR above this&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="s2">&quot;--snr-threshold&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">6.0</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;SNR threshold for recording &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;triggers&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;--newsnr-threshold&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;NewSNR threshold for &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;calculating the chisq of triggers (based on value &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;of auto and bank chisq  values. By default will &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;take the same value as snr-threshold&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-A&quot;</span><span class="p">,</span> <span class="s2">&quot;--null-snr-threshold&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;4.25,6&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;comma separated lower,higher null SNR &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;threshold for null SNR cut&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-C&quot;</span><span class="p">,</span> <span class="s2">&quot;--null-grad-thresh&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">20.</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Threshold above which to &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;increase the values of the null SNR cut&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-D&quot;</span><span class="p">,</span> <span class="s2">&quot;--null-grad-val&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Rate the null SNR cut will &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;increase above the threshold&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-l&quot;</span><span class="p">,</span> <span class="s2">&quot;--veto-directory&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The location of the CATX veto files&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;--veto-category&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Apply vetoes up to this level &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;inclusive&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="s2">&quot;--ifo&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;IFO used for IFO &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;specific plots&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--use-sngl-ifo-snr&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Plots are vs single IFO &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;SNR, rather than coherent SNR&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--variable&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Quantity to plot &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;the vertical axis. Supported choices are: &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;coherent, single, reweighted, or null (for &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;timeeries plots), standard, bank, or auto (for &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;chi-square veto plots), coincident, nullstat, &quot;</span> <span class="o">+</span>
+                        <span class="s2">&quot;or overwhitened (for null statistics plots)&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot-title&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If given, use this as the plot caption&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot-caption&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If given, use this as the plot caption&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Format single detector chi-square data as numpy array and floor at 0.005</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="format_single_chisqs"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.format_single_chisqs">[docs]</a><span class="k">def</span> <span class="nf">format_single_chisqs</span><span class="p">(</span><span class="n">trig_ifo_cs</span><span class="p">,</span> <span class="n">ifos</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Format single IFO chi-square data as numpy array and floor at 0.005&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">trig_ifo_cs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trig_ifo_cs</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">putmask</span><span class="p">(</span><span class="n">trig_ifo_cs</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span> <span class="n">trig_ifo_cs</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">trig_ifo_cs</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Reset times so that t=0 is corresponds to the GRB trigger time</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="reset_times"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.reset_times">[docs]</a><span class="k">def</span> <span class="nf">reset_times</span><span class="p">(</span><span class="n">seg_dir</span><span class="p">,</span> <span class="n">trig_data</span><span class="p">,</span> <span class="n">inj_data</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reset times so that t=0 is corresponds to the GRB trigger time&quot;&quot;&quot;</span>
+    <span class="n">segs</span> <span class="o">=</span> <span class="n">readSegFiles</span><span class="p">(</span><span class="n">seg_dir</span><span class="p">)</span>
+    <span class="n">grb_time</span> <span class="o">=</span> <span class="n">segs</span><span class="p">[</span><span class="s1">&#39;on&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">trig_data</span><span class="o">.</span><span class="n">time</span><span class="p">))</span> <span class="o">-</span> <span class="n">grb_time</span>
+    <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">trig_data</span><span class="o">.</span><span class="n">time</span><span class="p">))</span> <span class="o">-</span> <span class="n">grb_time</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="n">end</span><span class="o">-</span><span class="n">start</span>
+    <span class="n">start</span> <span class="o">-=</span> <span class="n">duration</span><span class="o">*</span><span class="mf">0.05</span>
+    <span class="n">end</span> <span class="o">+=</span> <span class="n">duration</span><span class="o">*</span><span class="mf">0.05</span>
+    <span class="n">trig_data</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="n">grb_time</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trig_data</span><span class="o">.</span><span class="n">time</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">inj_file</span><span class="p">:</span>
+        <span class="n">inj_data</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="n">grb_time</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">inj_data</span><span class="o">.</span><span class="n">time</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">grb_time</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">trig_data</span><span class="p">,</span> <span class="n">inj_data</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Extract trigger/injection data produced by PyGRB</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="PygrbFilterOutput"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.PygrbFilterOutput">[docs]</a><span class="k">class</span> <span class="nc">PygrbFilterOutput</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract trigger/injection data produced by PyGRB search&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigs_or_injs</span><span class="p">,</span> <span class="n">ifos</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">output_type</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Extracting data from the </span><span class="si">%s</span><span class="s2"> just loaded...&quot;</span><span class="p">,</span> <span class="n">output_type</span><span class="p">)</span>
+        <span class="c1"># Initialize all content of self</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">snr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reweighted_snr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">null_snr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">null_stat</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trace_snr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chi_square</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bank_veto</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_veto</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coinc_snr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifo_snr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">ifo</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifo_bank_cs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">ifo</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifo_auto_cs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">ifo</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifo_stan_cs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">ifo</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rel_amp_1</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm_3</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rel_amp_2</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inclination</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Exctract data and fill in content of self</span>
+        <span class="n">null_thresh</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">null_snr_threshold</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">trigs_or_injs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Work out if using sngl chisqs</span>
+            <span class="n">ifo_att</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;G1&#39;</span><span class="p">:</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;H1&#39;</span><span class="p">:</span> <span class="s1">&#39;h1&#39;</span><span class="p">,</span> <span class="s1">&#39;H2&#39;</span><span class="p">:</span> <span class="s1">&#39;h2&#39;</span><span class="p">,</span> <span class="s1">&#39;L1&#39;</span><span class="p">:</span> <span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;V1&#39;</span><span class="p">:</span> <span class="s1">&#39;v&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;T1&#39;</span><span class="p">:</span> <span class="s1">&#39;t&#39;</span><span class="p">}</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">ifo_att</span><span class="p">[</span><span class="n">ifos</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">sngl_chisq</span> <span class="o">=</span> <span class="s1">&#39;chisq_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">columns</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sngl_bank_chisq</span> <span class="o">=</span> <span class="s1">&#39;bank_chisq_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">columns</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sngl_cont_chisq</span> <span class="o">=</span> <span class="s1">&#39;cont_chisq_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">columns</span>
+
+            <span class="c1"># Set basic data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_end</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">snr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">&#39;snr&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reweighted_snr</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_bestnr</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">chisq_index</span><span class="p">,</span>
+                                              <span class="n">n</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">chisq_nhigh</span><span class="p">,</span>
+                                              <span class="n">null_thresh</span><span class="o">=</span><span class="n">null_thresh</span><span class="p">,</span>
+                                              <span class="n">snr_threshold</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">snr_threshold</span><span class="p">,</span>
+                                              <span class="n">sngl_snr_threshold</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">sngl_snr_threshold</span><span class="p">,</span>
+                                              <span class="n">chisq_threshold</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">newsnr_threshold</span><span class="p">,</span>
+                                              <span class="n">null_grad_thresh</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">null_grad_thresh</span><span class="p">,</span>
+                                              <span class="n">null_grad_val</span><span class="o">=</span><span class="n">opts</span><span class="o">.</span><span class="n">null_grad_val</span><span class="p">)</span>
+                                   <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trigs_or_injs</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reweighted_snr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reweighted_snr</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">null_snr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_null_snr</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">null_stat</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span>
+                <span class="s1">&#39;null_statistic&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trace_snr</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span>
+                <span class="s1">&#39;null_stat_degen&#39;</span><span class="p">))</span>
+
+            <span class="c1"># Get chisq data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chi_square</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">&#39;chisq&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bank_veto</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span>
+                <span class="s1">&#39;bank_chisq&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auto_veto</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span>
+                <span class="s1">&#39;cont_chisq&#39;</span><span class="p">))</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">putmask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chi_square</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chi_square</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">)</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">putmask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bank_veto</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bank_veto</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">)</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">putmask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auto_veto</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auto_veto</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.005</span><span class="p">)</span>
+
+            <span class="c1"># Get single detector data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coinc_snr</span> <span class="o">=</span> <span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">&#39;coinc_snr&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ifo_snr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">ifo</span><span class="p">,</span> <span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_sngl_snr</span><span class="p">(</span><span class="n">ifo</span><span class="p">))</span>
+                                <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sngl_bank_chisq</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ifo_bank_cs</span> <span class="o">=</span> <span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_sngl_bank_chisqs</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ifo_bank_cs</span> <span class="o">=</span> <span class="n">format_single_chisqs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo_bank_cs</span><span class="p">,</span> <span class="n">ifos</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sngl_cont_chisq</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ifo_auto_cs</span> <span class="o">=</span> <span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_sngl_cont_chisqs</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ifo_auto_cs</span> <span class="o">=</span> <span class="n">format_single_chisqs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo_auto_cs</span><span class="p">,</span> <span class="n">ifos</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sngl_chisq</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ifo_stan_cs</span> <span class="o">=</span> <span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_sngl_chisqs</span><span class="p">(</span><span class="n">ifos</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ifo_stan_cs</span> <span class="o">=</span> <span class="n">format_single_chisqs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo_stan_cs</span><span class="p">,</span> <span class="n">ifos</span><span class="p">)</span>
+
+            <span class="c1"># Initiate amplitude generator</span>
+            <span class="n">num_amp</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">amplitudes</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_amp</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># Get amplitude terms</span>
+            <span class="n">amp</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">amplitude</span><span class="p">,</span>
+                        <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span>
+                            <span class="s1">&#39;amp_term_</span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">amplitude</span><span class="p">)))</span>
+                       <span class="k">for</span> <span class="n">amplitude</span> <span class="ow">in</span> <span class="n">amplitudes</span><span class="p">)</span>
+            <span class="c1">#</span>
+            <span class="c1"># All 0, hence the 3 warnings</span>
+            <span class="c1"># for i in amplitudes:</span>
+            <span class="c1">#     print numpy.count_nonzero(amp[amplitudes])</span>
+            <span class="c1">#</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rel_amp_1</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">amp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">amp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span>
+                                        <span class="p">(</span><span class="n">amp</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">amp</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+            <span class="n">gamma_r</span> <span class="o">=</span> <span class="n">amp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">amp</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">gamma_i</span> <span class="o">=</span> <span class="n">amp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">amp</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">delta_r</span> <span class="o">=</span> <span class="n">amp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">amp</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">delta_i</span> <span class="o">=</span> <span class="n">amp</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">amp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">norm_1</span> <span class="o">=</span> <span class="n">delta_r</span><span class="o">*</span><span class="n">delta_r</span> <span class="o">+</span> <span class="n">delta_i</span><span class="o">*</span><span class="n">delta_i</span>
+            <span class="n">norm_2</span> <span class="o">=</span> <span class="n">gamma_r</span><span class="o">*</span><span class="n">gamma_r</span> <span class="o">+</span> <span class="n">gamma_i</span><span class="o">*</span><span class="n">gamma_i</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">norm_3</span> <span class="o">=</span> <span class="p">((</span><span class="n">norm_1</span><span class="o">**</span><span class="mf">0.25</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">norm_2</span><span class="o">**</span><span class="mf">0.25</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">amp_plus</span> <span class="o">=</span> <span class="p">(</span><span class="n">norm_1</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">+</span> <span class="p">(</span><span class="n">norm_2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+            <span class="n">amp_cross</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">norm_1</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">-</span> <span class="p">(</span><span class="n">norm_2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rel_amp_2</span> <span class="o">=</span> <span class="n">amp_plus</span><span class="o">/</span><span class="n">amp_cross</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inclination</span> <span class="o">=</span> <span class="n">amp_cross</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">norm_3</span>
+
+            <span class="n">num_trigs_or_injs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">num_trigs_or_injs</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No </span><span class="si">%s</span><span class="s2"> found.&quot;</span><span class="p">,</span> <span class="n">output_type</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">num_trigs_or_injs</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> </span><span class="si">%s</span><span class="s2"> found.&quot;</span><span class="p">,</span> <span class="n">num_trigs_or_injs</span><span class="p">,</span> <span class="n">output_type</span><span class="p">)</span>
+            <span class="c1"># Deal with the sigma-squares (historically called sigmas here)</span>
+            <span class="k">if</span> <span class="n">output_type</span> <span class="o">==</span> <span class="s2">&quot;triggers&quot;</span><span class="p">:</span>
+                <span class="n">sigma</span> <span class="o">=</span> <span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_sigmasqs</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sigma_tot</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_trigs_or_injs</span><span class="p">)</span>
+                <span class="c1"># Get antenna response based parameters</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">longitude</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">&#39;ra&#39;</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">trigs_or_injs</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">&#39;dec&#39;</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">f_resp</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">ifo</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">num_trigs_or_injs</span><span class="p">))</span>
+                                   <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_trigs_or_injs</span><span class="p">):</span>
+                    <span class="c1"># Calculate f_resp for each IFO if we haven&#39;t done so yet</span>
+                    <span class="n">f_plus</span><span class="p">,</span> <span class="n">f_cross</span> <span class="o">=</span> <span class="n">get_det_response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">longitude</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">f_resp</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">f_plus</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+                                                               <span class="n">f_cross</span><span class="p">[</span><span class="n">ifo</span><span class="p">]]</span>
+                                                              <span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_tot</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">sigma</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">f_resp</span><span class="p">[</span><span class="n">ifo</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+
+                <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">f_resp</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_resp</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+                <span class="c1"># Normalise trig_sigma</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sigma_tot</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma_tot</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+                    <span class="n">sigma</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sigma</span><span class="p">[</span><span class="n">ifo</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_tot</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">sigma_mean</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sigma_max</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_mean</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_max</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_mean</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_max</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_min</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> parameters extracted&quot;</span><span class="p">,</span> <span class="n">output_type</span><span class="p">)</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to open trigger and injection xml files</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="load_xml_file"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.load_xml_file">[docs]</a><span class="k">def</span> <span class="nf">load_xml_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wrapper to ligolw&#39;s utils.load_filename&quot;&quot;&quot;</span>
+
+    <span class="n">xml_doc</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">gz</span><span class="o">=</span><span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;gz&quot;</span><span class="p">),</span>
+                                  <span class="n">contenthandler</span><span class="o">=</span><span class="n">lsctables</span><span class="o">.</span><span class="n">use_in</span><span class="p">(</span>
+                                      <span class="n">ligolw</span><span class="o">.</span><span class="n">LIGOLWContentHandler</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">xml_doc</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to extract ifos</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="extract_ifos"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.extract_ifos">[docs]</a><span class="k">def</span> <span class="nf">extract_ifos</span><span class="p">(</span><span class="n">trig_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extracts IFOs from search summary table&quot;&quot;&quot;</span>
+
+    <span class="c1"># Load search summary</span>
+    <span class="n">xml_doc</span> <span class="o">=</span> <span class="n">load_xml_file</span><span class="p">(</span><span class="n">trig_file</span><span class="p">)</span>
+    <span class="n">search_summ</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="n">xml_doc</span><span class="p">,</span>
+                                  <span class="n">lsctables</span><span class="o">.</span><span class="n">SearchSummaryTable</span><span class="o">.</span><span class="n">tableName</span><span class="p">)</span>
+
+    <span class="c1"># Extract IFOs</span>
+    <span class="n">ifos</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">search_summ</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_ifos</span><span class="p">()))</span>
+
+    <span class="k">return</span> <span class="n">ifos</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to extract vetoes</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="extract_vetoes"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.extract_vetoes">[docs]</a><span class="k">def</span> <span class="nf">extract_vetoes</span><span class="p">(</span><span class="n">veto_files</span><span class="p">,</span> <span class="n">ifos</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extracts vetoes from veto filelist&quot;&quot;&quot;</span>
+
+    <span class="c1"># Initialize vetoe containers</span>
+    <span class="n">vetoes</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlistdict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">vetoes</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">=</span> <span class="n">segments</span><span class="o">.</span><span class="n">segmentlist</span><span class="p">()</span>
+
+    <span class="c1"># Construct veto list from veto filelist</span>
+    <span class="k">if</span> <span class="n">veto_files</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">veto_files</span><span class="p">:</span>
+            <span class="n">ifo</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">file</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+                <span class="c1"># This returns a coalesced list of the vetoes</span>
+                <span class="n">tmp_veto_segs</span> <span class="o">=</span> <span class="n">dqSegmentUtils</span><span class="o">.</span><span class="n">fromsegmentxml</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">tmp_veto_segs</span><span class="p">:</span>
+                    <span class="n">vetoes</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+        <span class="n">vetoes</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">vetoes</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to load triggers</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="load_triggers"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.load_triggers">[docs]</a><span class="k">def</span> <span class="nf">load_triggers</span><span class="p">(</span><span class="n">trig_file</span><span class="p">,</span> <span class="n">vetoes</span><span class="p">,</span> <span class="n">ifos</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;&quot;Loads triggers from PyGRB output file&quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading triggers...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Extract time-slides</span>
+    <span class="n">multis</span><span class="p">,</span> <span class="n">slide_dict</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+        <span class="n">MultiInspiralUtils</span><span class="o">.</span><span class="n">ReadMultiInspiralTimeSlidesFromFiles</span><span class="p">([</span><span class="n">trig_file</span><span class="p">])</span>
+    <span class="n">num_slides</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">slide_dict</span><span class="p">)</span>
+    <span class="n">lsctables</span><span class="o">.</span><span class="n">MultiInspiralTable</span><span class="o">.</span><span class="n">loadcolumns</span> <span class="o">=</span>\
+        <span class="p">[</span><span class="n">slot</span> <span class="k">for</span> <span class="n">slot</span> <span class="ow">in</span> <span class="n">multis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="vm">__slots__</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">multis</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">slot</span><span class="p">)]</span>
+
+    <span class="c1"># Extract triggers</span>
+    <span class="n">trigs</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">New</span><span class="p">(</span><span class="n">lsctables</span><span class="o">.</span><span class="n">MultiInspiralTable</span><span class="p">,</span>
+                          <span class="n">columns</span><span class="o">=</span><span class="n">lsctables</span><span class="o">.</span><span class="n">MultiInspiralTable</span><span class="o">.</span><span class="n">loadcolumns</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> triggers found.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigs</span><span class="p">))</span>
+
+    <span class="c1"># Time-slid vetoes</span>
+    <span class="k">for</span> <span class="n">slide_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_slides</span><span class="p">):</span>
+        <span class="n">slid_vetoes</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">vetoes</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="n">slid_vetoes</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">shift</span><span class="p">(</span><span class="o">-</span><span class="n">slide_dict</span><span class="p">[</span><span class="n">slide_id</span><span class="p">][</span><span class="n">ifo</span><span class="p">])</span>
+
+        <span class="c1"># Add time-slid triggers</span>
+        <span class="n">vets</span> <span class="o">=</span> <span class="n">slid_vetoes</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">slid_vetoes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">trigs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">multis</span><span class="o">.</span><span class="n">veto</span><span class="p">(</span><span class="n">vets</span><span class="p">)</span>
+                     <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">time_slide_id</span><span class="p">)</span> <span class="o">==</span> <span class="n">slide_id</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> triggers found when including timeslides.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigs</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">trigs</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to load injections</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="load_injections"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.load_injections">[docs]</a><span class="k">def</span> <span class="nf">load_injections</span><span class="p">(</span><span class="n">inj_file</span><span class="p">,</span> <span class="n">vetoes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;&quot;Loads injections from PyGRB output file&quot;&quot;&quot;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading injections...&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Load injection file</span>
+    <span class="n">xml_doc</span> <span class="o">=</span> <span class="n">load_xml_file</span><span class="p">(</span><span class="n">inj_file</span><span class="p">)</span>
+    <span class="n">multis</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="n">xml_doc</span><span class="p">,</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">MultiInspiralTable</span><span class="o">.</span><span class="n">tableName</span><span class="p">)</span>
+
+    <span class="c1"># Extract injections</span>
+    <span class="n">injs</span> <span class="o">=</span> <span class="n">lsctables</span><span class="o">.</span><span class="n">New</span><span class="p">(</span><span class="n">lsctables</span><span class="o">.</span><span class="n">MultiInspiralTable</span><span class="p">,</span>
+                         <span class="n">columns</span><span class="o">=</span><span class="n">lsctables</span><span class="o">.</span><span class="n">MultiInspiralTable</span><span class="o">.</span><span class="n">loadcolumns</span><span class="p">)</span>
+
+    <span class="c1"># Injections in time-slid non-vetoed data</span>
+    <span class="n">injs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">multis</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">get_end</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">vetoes</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> injections found.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">injs</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">injs</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Function to load injections</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="new_snr_chisq"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.new_snr_chisq">[docs]</a><span class="k">def</span> <span class="nf">new_snr_chisq</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">new_snr</span><span class="p">,</span> <span class="n">chisq_dof</span><span class="p">,</span> <span class="n">chisq_index</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">chisq_nhigh</span><span class="o">=</span><span class="mf">3.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the chi-square value needed to weight SNR into new SNR&quot;&quot;&quot;</span>
+
+    <span class="n">chisqnorm</span> <span class="o">=</span> <span class="p">(</span><span class="n">snr</span><span class="o">/</span><span class="n">new_snr</span><span class="p">)</span><span class="o">**</span><span class="n">chisq_index</span>
+    <span class="k">if</span> <span class="n">chisqnorm</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1E-20</span>
+
+    <span class="k">return</span> <span class="n">chisq_dof</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">chisqnorm</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">chisq_nhigh</span><span class="o">/</span><span class="n">chisq_index</span><span class="p">)</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Given the trigger and injection values of a quantity, determine the maximum</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="axis_max_value"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.axis_max_value">[docs]</a><span class="k">def</span> <span class="nf">axis_max_value</span><span class="p">(</span><span class="n">trig_values</span><span class="p">,</span> <span class="n">inj_values</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deterime the maximum of a quantity in the trigger and injection data&quot;&quot;&quot;</span>
+
+    <span class="n">axis_max</span> <span class="o">=</span> <span class="n">trig_values</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">inj_file</span> <span class="ow">and</span> <span class="n">inj_values</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">inj_values</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">axis_max</span><span class="p">:</span>
+        <span class="n">axis_max</span> <span class="o">=</span> <span class="n">inj_values</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">axis_max</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Calculate all chi-square contours for diagnostic plots</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="calculate_contours"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.calculate_contours">[docs]</a><span class="k">def</span> <span class="nf">calculate_contours</span><span class="p">(</span><span class="n">trigs</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">new_snrs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate the plot contours for chisq variable plots&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">new_snrs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">new_snrs</span> <span class="o">=</span> <span class="p">[</span><span class="mf">5.5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mf">6.5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">]</span>
+    <span class="n">chisq_index</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">chisq_index</span>
+    <span class="n">chisq_nhigh</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">chisq_nhigh</span>
+    <span class="n">new_snr_thresh</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">newsnr_threshold</span>
+    <span class="n">null_thresh</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">opts</span><span class="o">.</span><span class="n">null_snr_threshold</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)):</span>
+        <span class="n">null_thresh</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="n">null_thresh</span> <span class="o">=</span> <span class="n">null_thresh</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">null_grad_snr</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">null_grad_thresh</span>
+    <span class="n">null_grad_val</span> <span class="o">=</span> <span class="n">opts</span><span class="o">.</span><span class="n">null_grad_val</span>
+    <span class="n">chisq_dof</span> <span class="o">=</span> <span class="n">trigs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">chisq_dof</span>
+    <span class="n">bank_chisq_dof</span> <span class="o">=</span> <span class="n">trigs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bank_chisq_dof</span>
+    <span class="n">cont_chisq_dof</span> <span class="o">=</span> <span class="n">trigs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cont_chisq_dof</span>
+
+    <span class="c1"># Add the new SNR threshold contour to the list if necessary</span>
+    <span class="c1"># and keep track of where it is</span>
+    <span class="n">cont_value</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">cont_value</span> <span class="o">=</span> <span class="n">new_snrs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">new_snr_thresh</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">new_snrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_snr_thresh</span><span class="p">)</span>
+        <span class="n">cont_value</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="c1"># Initialise chisq contour values and colours</span>
+    <span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;k-&quot;</span> <span class="k">if</span> <span class="n">snr</span> <span class="o">==</span> <span class="n">new_snr_thresh</span> <span class="k">else</span>
+              <span class="s2">&quot;y-&quot;</span> <span class="k">if</span> <span class="n">snr</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">snr</span><span class="p">)</span> <span class="k">else</span>
+              <span class="s2">&quot;y--&quot;</span> <span class="k">for</span> <span class="n">snr</span> <span class="ow">in</span> <span class="n">new_snrs</span><span class="p">]</span>
+
+    <span class="c1"># Get SNR values for contours</span>
+    <span class="n">snr_low_vals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">snr_high_vals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">snr_vals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">snr_low_vals</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">snr_high_vals</span><span class="p">))</span>
+
+    <span class="c1"># Initialise contours</span>
+    <span class="n">bank_conts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">new_snrs</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">)],</span>
+                             <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">auto_conts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">new_snrs</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">)],</span>
+                             <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">chi_conts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">new_snrs</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">)],</span>
+                            <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">null_cont</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Loop over each and calculate chisq variable needed for SNR contour</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">snr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">new_snr</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_snrs</span><span class="p">):</span>
+            <span class="n">bank_conts</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_snr_chisq</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">new_snr</span><span class="p">,</span> <span class="n">bank_chisq_dof</span><span class="p">,</span>
+                                             <span class="n">chisq_index</span><span class="p">,</span> <span class="n">chisq_nhigh</span><span class="p">)</span>
+            <span class="n">auto_conts</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_snr_chisq</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">new_snr</span><span class="p">,</span> <span class="n">cont_chisq_dof</span><span class="p">,</span>
+                                             <span class="n">chisq_index</span><span class="p">,</span> <span class="n">chisq_nhigh</span><span class="p">)</span>
+            <span class="n">chi_conts</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_snr_chisq</span><span class="p">(</span><span class="n">snr</span><span class="p">,</span> <span class="n">new_snr</span><span class="p">,</span> <span class="n">chisq_dof</span><span class="p">,</span>
+                                            <span class="n">chisq_index</span><span class="p">,</span> <span class="n">chisq_nhigh</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">snr</span> <span class="o">&gt;</span> <span class="n">null_grad_snr</span><span class="p">:</span>
+            <span class="n">null_cont</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">null_thresh</span> <span class="o">+</span> <span class="p">(</span><span class="n">snr</span><span class="o">-</span><span class="n">null_grad_snr</span><span class="p">)</span><span class="o">*</span><span class="n">null_grad_val</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">null_cont</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">null_thresh</span><span class="p">)</span>
+    <span class="n">null_cont</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">null_cont</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">bank_conts</span><span class="p">,</span> <span class="n">auto_conts</span><span class="p">,</span> <span class="n">chi_conts</span><span class="p">,</span> <span class="n">null_cont</span><span class="p">,</span> <span class="n">snr_vals</span><span class="p">,</span> \
+        <span class="n">cont_value</span><span class="p">,</span> <span class="n">colors</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Plot contours in a scatter plot where SNR is on the horizontal axis</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="contour_plotter"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.contour_plotter">[docs]</a><span class="k">def</span> <span class="nf">contour_plotter</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">snr_vals</span><span class="p">,</span> <span class="n">contours</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">vert_spike</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plot contours in a scatter plot where SNR is on the horizontal axis&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">contours</span><span class="p">):</span>
+        <span class="n">plot_vals_x</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">plot_vals_y</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">vert_spike</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">):</span>
+                <span class="c1"># Workaround to ensure vertical spike is shown on veto plots</span>
+                <span class="k">if</span> <span class="n">contours</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1E-15</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">plot_vals_x</span><span class="p">:</span>
+                    <span class="n">plot_vals_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="n">plot_vals_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">contours</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1E-15</span> <span class="ow">and</span> <span class="n">plot_vals_x</span><span class="p">:</span>
+                    <span class="n">plot_vals_x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+                    <span class="n">plot_vals_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">contours</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plot_vals_x</span> <span class="o">=</span> <span class="n">snr_vals</span>
+            <span class="n">plot_vals_y</span> <span class="o">=</span> <span class="n">contours</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">axis</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_vals_x</span><span class="p">,</span> <span class="n">plot_vals_y</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Contains plotting setups shared by PyGRB plots</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="pygrb_shared_plot_setups"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.pygrb_shared_plot_setups">[docs]</a><span class="k">def</span> <span class="nf">pygrb_shared_plot_setups</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Master function to plot PyGRB results&quot;&quot;&quot;</span>
+
+    <span class="c1"># Get rcParams</span>
+    <span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+    <span class="c1"># Set color for out-of-range values</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">spring</span><span class="o">.</span><span class="n">set_over</span><span class="p">(</span><span class="s1">&#39;g&#39;</span><span class="p">)</span></div>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Master plotting function: fits all plotting needs in for PyGRB results</span>
+<span class="c1"># =============================================================================</span>
+
+<div class="viewcode-block" id="pygrb_plotter"><a class="viewcode-back" href="../../../pycbc.results.html#pycbc.results.pygrb_plotting_utils.pygrb_plotter">[docs]</a><span class="k">def</span> <span class="nf">pygrb_plotter</span><span class="p">(</span><span class="n">trig_x</span><span class="p">,</span> <span class="n">trig_y</span><span class="p">,</span> <span class="n">inj_x</span><span class="p">,</span> <span class="n">inj_y</span><span class="p">,</span> <span class="n">inj_file</span><span class="p">,</span> <span class="n">xlabel</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">,</span>
+                  <span class="n">fig_path</span><span class="p">,</span> <span class="n">snr_vals</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">conts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">shade_cont_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">vert_spike</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">xlims</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ylims</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_logs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                  <span class="n">cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">plot_title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">plot_caption</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Master function to plot PyGRB results&quot;&quot;&quot;</span>
+
+    <span class="n">fig_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">fig_path</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot; * </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2"> vs </span><span class="si">%s</span><span class="s2">)...&quot;</span><span class="p">,</span> <span class="n">fig_name</span><span class="p">,</span> <span class="n">xlabel</span><span class="p">,</span> <span class="n">ylabel</span><span class="p">)</span>
+    <span class="c1"># Set up plot</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+    <span class="n">cax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+    <span class="c1"># Plot trigger-related quantities</span>
+    <span class="k">if</span> <span class="n">use_logs</span><span class="p">:</span>
+        <span class="n">cax</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">trig_x</span><span class="p">,</span> <span class="n">trig_y</span><span class="p">,</span> <span class="s1">&#39;bx&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">trig_x</span><span class="p">,</span> <span class="n">trig_y</span><span class="p">,</span> <span class="s1">&#39;bx&#39;</span><span class="p">)</span>
+    <span class="n">cax</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="c1"># Plot injection-related quantities</span>
+    <span class="k">if</span> <span class="n">inj_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_logs</span><span class="p">:</span>
+            <span class="n">cax</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">inj_x</span><span class="p">,</span> <span class="n">inj_y</span><span class="p">,</span> <span class="s1">&#39;r+&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">inj_x</span><span class="p">,</span> <span class="n">inj_y</span><span class="p">,</span> <span class="s1">&#39;r+&#39;</span><span class="p">)</span>
+    <span class="c1"># Plot contours</span>
+    <span class="k">if</span> <span class="n">conts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">contour_plotter</span><span class="p">(</span><span class="n">cax</span><span class="p">,</span> <span class="n">snr_vals</span><span class="p">,</span> <span class="n">conts</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">vert_spike</span><span class="o">=</span><span class="n">vert_spike</span><span class="p">)</span>
+    <span class="c1"># Add shading above a specific contour (typically used for vetoed area)</span>
+    <span class="k">if</span> <span class="n">shade_cont_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">limy</span> <span class="o">=</span> <span class="n">cax</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">polyx</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">)</span>
+        <span class="n">polyy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">conts</span><span class="p">[</span><span class="n">shade_cont_value</span><span class="p">])</span>
+        <span class="n">polyx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">polyx</span><span class="p">,</span> <span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="n">snr_vals</span><span class="p">)])</span>
+        <span class="n">polyy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">polyy</span><span class="p">,</span> <span class="p">[</span><span class="n">limy</span><span class="p">,</span> <span class="n">limy</span><span class="p">])</span>
+        <span class="n">cax</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">polyx</span><span class="p">,</span> <span class="n">polyy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#dddddd&#39;</span><span class="p">)</span>
+    <span class="c1"># Axes: labels and limits</span>
+    <span class="n">cax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
+    <span class="n">cax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">ylabel</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">xlims</span><span class="p">:</span>
+        <span class="n">cax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xlims</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ylims</span><span class="p">:</span>
+        <span class="n">cax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ylims</span><span class="p">)</span>
+    <span class="c1"># Wrap up</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">save_fig_with_metadata</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">fig_path</span><span class="p">,</span> <span class="n">cmd</span><span class="o">=</span><span class="n">cmd</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">plot_title</span><span class="p">,</span>
+                           <span class="n">caption</span><span class="o">=</span><span class="n">plot_caption</span><span class="p">)</span>
+    <span class="c1"># fig_kwds=fig_kwds,</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

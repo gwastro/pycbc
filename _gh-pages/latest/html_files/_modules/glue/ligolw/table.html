@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>glue.ligolw.table &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+      <li>glue.ligolw.table</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for glue.ligolw.table</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2006--2016  Kipp Cannon</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">While the ligolw module provides classes and parser support for reading and</span>
+<span class="sd">writing LIGO Light Weight XML documents, this module supplements that code</span>
+<span class="sd">with classes and parsers that add intelligence to the in-RAM document</span>
+<span class="sd">representation.</span>
+
+<span class="sd">In particular, the document tree associated with a Table element is</span>
+<span class="sd">enhanced.  During parsing, the Stream element in this module converts the</span>
+<span class="sd">character data contained within it into a list of objects.  The list</span>
+<span class="sd">contains one object for each row of the table, and the objects&#39; attributes</span>
+<span class="sd">are the names of the table&#39;s columns.  When the document is written out</span>
+<span class="sd">again, the Stream element serializes the row objects back into character</span>
+<span class="sd">data.</span>
+
+<span class="sd">The Table element exports a list-like interface to the rows.  The Column</span>
+<span class="sd">elements also provide list-like access to the values in the corresponding</span>
+<span class="sd">columns of the table.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">zip</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">xml.sax.saxutils</span> <span class="kn">import</span> <span class="n">escape</span> <span class="k">as</span> <span class="n">xmlescape</span>
+<span class="kn">from</span> <span class="nn">xml.sax.xmlreader</span> <span class="kn">import</span> <span class="n">AttributesImpl</span>
+
+
+<span class="kn">from</span> <span class="nn">glue</span> <span class="kn">import</span> <span class="n">git_version</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">ligolw</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">tokenizer</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">types</span> <span class="k">as</span> <span class="n">ligolwtypes</span>
+
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Kipp Cannon &lt;kipp.cannon@ligo.org&gt;&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;git id </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">git_version</span><span class="o">.</span><span class="n">id</span>
+<span class="n">__date__</span> <span class="o">=</span> <span class="n">git_version</span><span class="o">.</span><span class="n">date</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                  Utilities</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<span class="k">def</span> <span class="nf">get_table</span><span class="p">(</span><span class="n">xmldoc</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Scan xmldoc for a Table element named name.  Raises ValueError if</span>
+<span class="sd">	not exactly 1 such table is found.</span>
+
+<span class="sd">	NOTE:  if a Table sub-class has its .tableName attribute set, then</span>
+<span class="sd">	its .get_table() class method can be used instead.  This is true</span>
+<span class="sd">	for all Table classes in the glue.ligolw.lsctables module, and it</span>
+<span class="sd">	is recommended to always use the .get_table() class method of those</span>
+<span class="sd">	classes to retrieve those standard tables instead of calling this</span>
+<span class="sd">	function and passing the .tableName attribute.  The example below</span>
+<span class="sd">	shows both techniques.</span>
+
+<span class="sd">	Example:</span>
+
+<span class="sd">	&gt;&gt;&gt; from . import ligolw, lsctables</span>
+<span class="sd">	&gt;&gt;&gt; xmldoc = ligolw.Document()</span>
+<span class="sd">	&gt;&gt;&gt; xmldoc.appendChild(ligolw.LIGO_LW()).appendChild(lsctables.New(lsctables.SnglInspiralTable))</span>
+<span class="sd">	[]</span>
+<span class="sd">	&gt;&gt;&gt; # find table with this function</span>
+<span class="sd">	&gt;&gt;&gt; sngl_inspiral_table = get_table(xmldoc, lsctables.SnglInspiralTable.tableName)</span>
+<span class="sd">	&gt;&gt;&gt; # find table with .get_table() class method (preferred)</span>
+<span class="sd">	&gt;&gt;&gt; sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)</span>
+
+<span class="sd">	See also the .get_table() class method of the Table class.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">tables</span> <span class="o">=</span> <span class="n">Table</span><span class="o">.</span><span class="n">getTablesByName</span><span class="p">(</span><span class="n">xmldoc</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;document must contain exactly one </span><span class="si">%s</span><span class="s2"> table&quot;</span> <span class="o">%</span> <span class="n">Table</span><span class="o">.</span><span class="n">TableName</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">tables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">reassign_ids</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Recurses over all Table elements below elem whose next_id</span>
+<span class="sd">	attributes are not None, and uses the .get_next_id() method of each</span>
+<span class="sd">	of those Tables to generate and assign new IDs to their rows.  The</span>
+<span class="sd">	modifications are recorded, and finally all ID attributes in all</span>
+<span class="sd">	rows of all tables are updated to fix cross references to the</span>
+<span class="sd">	modified IDs.</span>
+
+<span class="sd">	This function is used by ligolw_add to assign new IDs to rows when</span>
+<span class="sd">	merging documents in order to make sure there are no ID collisions.</span>
+<span class="sd">	Using this function in this way requires the .get_next_id() methods</span>
+<span class="sd">	of all Table elements to yield unused IDs, otherwise collisions</span>
+<span class="sd">	will result anyway.  See the .sync_next_id() method of the Table</span>
+<span class="sd">	class for a way to initialize the .next_id attributes so that</span>
+<span class="sd">	collisions will not occur.</span>
+
+<span class="sd">	Example:</span>
+
+<span class="sd">	&gt;&gt;&gt; from . import ligolw, lsctables</span>
+<span class="sd">	&gt;&gt;&gt; xmldoc = ligolw.Document()</span>
+<span class="sd">	&gt;&gt;&gt; xmldoc.appendChild(ligolw.LIGO_LW()).appendChild(lsctables.New(lsctables.SnglInspiralTable))</span>
+<span class="sd">	[]</span>
+<span class="sd">	&gt;&gt;&gt; reassign_ids(xmldoc)</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">mapping</span> <span class="o">=</span> <span class="p">{}</span>
+	<span class="k">for</span> <span class="n">tbl</span> <span class="ow">in</span> <span class="n">elem</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">tagName</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">tbl</span><span class="o">.</span><span class="n">next_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="n">tbl</span><span class="o">.</span><span class="n">updateKeyMapping</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">tbl</span> <span class="ow">in</span> <span class="n">elem</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">tagName</span><span class="p">):</span>
+		<span class="n">tbl</span><span class="o">.</span><span class="n">applyKeyMapping</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                Column Element</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<span class="k">class</span> <span class="nc">Column</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Column</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	High-level column element that provides list-like access to the</span>
+<span class="sd">	values in a column.</span>
+
+<span class="sd">	Example:</span>
+
+<span class="sd">	&gt;&gt;&gt; from xml.sax.xmlreader import AttributesImpl</span>
+<span class="sd">	&gt;&gt;&gt; import sys</span>
+<span class="sd">	&gt;&gt;&gt; tbl = Table(AttributesImpl({u&quot;Name&quot;: u&quot;test&quot;}))</span>
+<span class="sd">	&gt;&gt;&gt; col = tbl.appendChild(Column(AttributesImpl({u&quot;Name&quot;: u&quot;test:snr&quot;, u&quot;Type&quot;: u&quot;real_8&quot;})))</span>
+<span class="sd">	&gt;&gt;&gt; tbl.appendChild(TableStream(AttributesImpl({u&quot;Name&quot;: u&quot;test&quot;})))	# doctest: +ELLIPSIS</span>
+<span class="sd">	&lt;glue.ligolw.table.TableStream object at ...&gt;</span>
+<span class="sd">	&gt;&gt;&gt; tbl._update_column_info()</span>
+<span class="sd">	&gt;&gt;&gt; assert col.Name == &#39;snr&#39;</span>
+<span class="sd">	&gt;&gt;&gt; assert col.Type == &#39;real_8&#39;</span>
+<span class="sd">	&gt;&gt;&gt; # append 3 rows (with nothing in them)</span>
+<span class="sd">	&gt;&gt;&gt; tbl.append(tbl.RowType())</span>
+<span class="sd">	&gt;&gt;&gt; tbl.append(tbl.RowType())</span>
+<span class="sd">	&gt;&gt;&gt; tbl.append(tbl.RowType())</span>
+<span class="sd">	&gt;&gt;&gt; # assign values to the rows, in order, in this column</span>
+<span class="sd">	&gt;&gt;&gt; col[:] = [8.0, 10.0, 12.0]</span>
+<span class="sd">	&gt;&gt;&gt; col[:]</span>
+<span class="sd">	[8.0, 10.0, 12.0]</span>
+<span class="sd">	&gt;&gt;&gt; col.asarray()	# doctest: +NORMALIZE_WHITESPACE</span>
+<span class="sd">	array([  8.,  10.,  12.])</span>
+<span class="sd">	&gt;&gt;&gt; tbl.write(sys.stdout)	# doctest: +NORMALIZE_WHITESPACE</span>
+<span class="sd">	&lt;Table Name=&quot;test&quot;&gt;</span>
+<span class="sd">		&lt;Column Name=&quot;test:snr&quot; Type=&quot;real_8&quot;/&gt;</span>
+<span class="sd">		&lt;Stream Name=&quot;test&quot;&gt;</span>
+<span class="sd">			8,</span>
+<span class="sd">			10,</span>
+<span class="sd">			12</span>
+<span class="sd">		&lt;/Stream&gt;</span>
+<span class="sd">	&lt;/Table&gt;</span>
+<span class="sd">	&gt;&gt;&gt; col.index(10)</span>
+<span class="sd">	1</span>
+<span class="sd">	&gt;&gt;&gt; 12 in col</span>
+<span class="sd">	True</span>
+<span class="sd">	&gt;&gt;&gt; col[0] = 9.</span>
+<span class="sd">	&gt;&gt;&gt; col[1] = 9.</span>
+<span class="sd">	&gt;&gt;&gt; col[2] = 9.</span>
+<span class="sd">	&gt;&gt;&gt; tbl.write(sys.stdout)		# doctest: +NORMALIZE_WHITESPACE</span>
+<span class="sd">	&lt;Table Name=&quot;test&quot;&gt;</span>
+<span class="sd">		&lt;Column Name=&quot;test:snr&quot; Type=&quot;real_8&quot;/&gt;</span>
+<span class="sd">		&lt;Stream Name=&quot;test&quot;&gt;</span>
+<span class="sd">			9,</span>
+<span class="sd">			9,</span>
+<span class="sd">			9</span>
+<span class="sd">		&lt;/Stream&gt;</span>
+<span class="sd">	&lt;/Table&gt;</span>
+<span class="sd">	&gt;&gt;&gt; col.count(9)</span>
+<span class="sd">	3</span>
+
+<span class="sd">	NOTE:  the .Name attribute returns the stripped &quot;Name&quot; attribute of</span>
+<span class="sd">	the element, e.g. with the table suffix removed, but when assigning</span>
+<span class="sd">	to the .Name attribute the value provided is stored without</span>
+<span class="sd">	modification, i.e. there is no attempt to reattach the table&#39;s name</span>
+<span class="sd">	to the string.  The calling code is responsible for doing the</span>
+<span class="sd">	correct manipulations.  Therefore, the assignment operation below</span>
+
+<span class="sd">	&gt;&gt;&gt; assert col.Name, col.getAttribute(&quot;Name&quot;) == (&#39;snr&#39;, &#39;test:snr&#39;)</span>
+<span class="sd">	&gt;&gt;&gt; col.Name = col.Name</span>
+<span class="sd">	&gt;&gt;&gt; assert col.Name, col.getAttribute(&quot;Name&quot;) == (&#39;snr&#39;, &#39;snr&#39;)</span>
+
+<span class="sd">	does not preserve the value of the &quot;Name&quot; attribute (though it does</span>
+<span class="sd">	preserve the stripped form reported by the .Name property).  This</span>
+<span class="sd">	asymmetry is necessary because the correct table name string to</span>
+<span class="sd">	reattach to the attribute&#39;s value cannot always be known, e.g., if</span>
+<span class="sd">	the Column object is not part of an XML tree and does not have a</span>
+<span class="sd">	parent node.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="c1"># FIXME: the pattern should be</span>
+	<span class="c1">#</span>
+	<span class="c1"># r&quot;(?:\A[a-z0-9_]+:|\A)(?P&lt;FullName&gt;(?:[a-z0-9_]+:|\A)(?P&lt;Name&gt;[a-z0-9_]+))\Z&quot;</span>
+	<span class="c1">#</span>
+	<span class="c1"># but people are putting upper case letters in names!!!!!  Someone</span>
+	<span class="c1"># is going to get the beats.  There is a reason for requiring names</span>
+	<span class="c1"># to be all lower case:  SQL table and column names are case</span>
+	<span class="c1"># insensitive, therefore (i) when converting a document to SQL the</span>
+	<span class="c1"># columns &quot;Rho&quot; and &quot;rho&quot; would become indistinguishable and so it</span>
+	<span class="c1"># would be impossible to convert a document with columns having</span>
+	<span class="c1"># names like this into an SQL database;  and (ii) even if that</span>
+	<span class="c1"># degeneracy is not encountered the case cannot be preserved and so</span>
+	<span class="c1"># when converting back to XML the correct capitalization is lost.</span>
+	<span class="c1"># Requiring names to be all lower-case creates the same</span>
+	<span class="c1"># degeneracies in XML representations that exist in SQL</span>
+	<span class="c1"># representations ensuring compatibility and defines the correct</span>
+	<span class="c1"># case to restore the names to when converting to XML.  Other rules</span>
+	<span class="c1"># can be imagined that would work as well, this is the one that got</span>
+	<span class="c1"># chosen.</span>
+	<span class="k">class</span> <span class="nc">ColumnName</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">LLWNameAttr</span><span class="p">):</span>
+		<span class="n">dec_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?:\A\w+:|\A)(?P&lt;FullName&gt;(?:(?P&lt;Table&gt;\w+):|\A)(?P&lt;Name&gt;\w+))\Z&quot;</span><span class="p">)</span>
+		<span class="n">enc_pattern</span> <span class="o">=</span> <span class="sa">u</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span>
+
+	<span class="n">Name</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">attributeproxy</span><span class="p">(</span><span class="sa">u</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="n">enc</span> <span class="o">=</span> <span class="n">ColumnName</span><span class="o">.</span><span class="n">enc</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">ColumnName</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		The number of values in this column.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Retrieve the value in this column in row i.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+			<span class="k">return</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Set the value in this column in row i.  i may be a slice.</span>
+
+<span class="sd">		NOTE:  Unlike normal Python lists, the length of the Column</span>
+<span class="sd">		cannot be changed as it is tied to the number of rows in</span>
+<span class="sd">		the Table.  Therefore, if i is a slice, value should be an</span>
+<span class="sd">		iterable with exactly the correct number of items.  No</span>
+<span class="sd">		check is performed to ensure that this is true:  if value</span>
+<span class="sd">		contains too many items the extras will be ignored, and if</span>
+<span class="sd">		value contains too few items only as many rows will be</span>
+<span class="sd">		updated as there are items.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+			<span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">value</span><span class="p">):</span>
+				<span class="nb">setattr</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+	<span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Return an iterator object for iterating over values in this</span>
+<span class="sd">		column.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="p">:</span>
+			<span class="k">yield</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Return the number of rows with this column equal to value.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">value</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Return the smallest index of the row(s) with this column</span>
+<span class="sd">		equal to value.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+			<span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">value</span><span class="p">:</span>
+				<span class="k">return</span> <span class="n">i</span>
+		<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Returns True or False if there is or is not, respectively,</span>
+<span class="sd">		a row containing val in this column.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">asarray</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Construct a numpy array from this column.  Note that this</span>
+<span class="sd">		creates a copy of the data, so modifications made to the</span>
+<span class="sd">		array will *not* be recorded in the original document.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># most codes don&#39;t use this feature, this is the only place</span>
+		<span class="c1"># numpy is used here, and importing numpy can be</span>
+		<span class="c1"># time-consuming, so we derfer the import until needed.</span>
+		<span class="kn">import</span> <span class="nn">numpy</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">dtype</span> <span class="o">=</span> <span class="n">ligolwtypes</span><span class="o">.</span><span class="n">ToNumPyType</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">Type</span><span class="p">]</span>
+		<span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;cannot determine numpy dtype for Column &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span> <span class="n">e</span><span class="p">))</span>
+		<span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fromiter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span><span class="p">)</span>
+
+	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">getColumnsByName</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">elem</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Return a list of Column elements named name under elem.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">name</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ColumnName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">getElements</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">tagName</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">tagName</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">Name</span> <span class="o">==</span> <span class="n">name</span><span class="p">))</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                Stream Element</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># A subclass of tokenizer.RowBuilder that interns strings.</span>
+<span class="c1">#</span>
+
+
+<span class="k">class</span> <span class="nc">InterningRowBuilder</span><span class="p">(</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">RowBuilder</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	This subclass of the tokenizer.RowBuilder class respects the</span>
+<span class="sd">	&quot;interning&quot; hints provided by table definitions, and attempts to</span>
+<span class="sd">	replace the values of row attributes associated with interned</span>
+<span class="sd">	columns with references to shared instances of those values.  This</span>
+<span class="sd">	results in a reduction in memory use which is small for most</span>
+<span class="sd">	documents, but can be subtantial when dealing with tables</span>
+<span class="sd">	containing large volumes of repeated information.</span>
+
+<span class="sd">	Example:</span>
+
+<span class="sd">	&gt;&gt;&gt; class Row(object):</span>
+<span class="sd">	...	pass</span>
+<span class="sd">	...</span>
+<span class="sd">	&gt;&gt;&gt; # 3rd arg is optional list of attributes to intern</span>
+<span class="sd">	&gt;&gt;&gt; rows = InterningRowBuilder(Row, [&quot;name&quot;, &quot;age&quot;], (&quot;name&quot;,))</span>
+<span class="sd">	&gt;&gt;&gt; l = list(rows.append([&quot;Dick&quot;, 20., &quot;Jane&quot;, 75., &quot;Dick&quot;, 22.]))</span>
+<span class="sd">	&gt;&gt;&gt; l[0].name</span>
+<span class="sd">	&#39;Dick&#39;</span>
+<span class="sd">	&gt;&gt;&gt; l[2].name</span>
+<span class="sd">	&#39;Dick&#39;</span>
+<span class="sd">	&gt;&gt;&gt; l[2].name is l[0].name</span>
+<span class="sd">	True</span>
+
+<span class="sd">	Note that Python naturally interns short strings, so this example</span>
+<span class="sd">	would return True regardless;  it is intended only to demonstrate</span>
+<span class="sd">	the use of the class.</span>
+
+<span class="sd">	The values are stored in a dictionary that is shared between all</span>
+<span class="sd">	instances of this class, and which survives forever.  Nothing is</span>
+<span class="sd">	ever naturally &quot;uninterned&quot;, so the string dictionary grows without</span>
+<span class="sd">	bound as more documents are processed.  This can be a problem in</span>
+<span class="sd">	some use cases, and the work-around is to run</span>
+
+<span class="sd">	&gt;&gt;&gt; InterningRowBuilder.strings.clear()</span>
+
+<span class="sd">	to reset the dictionary at appropriate points in the application.</span>
+<span class="sd">	Typically this would be done immediately after each document is</span>
+<span class="sd">	loaded.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">strings</span> <span class="o">=</span> <span class="p">{}</span>
+	<span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokens</span><span class="p">):</span>
+		<span class="n">interns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interns</span>
+		<span class="n">setdefault</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strings</span><span class="o">.</span><span class="n">setdefault</span>
+		<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">super</span><span class="p">(</span><span class="n">InterningRowBuilder</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+			<span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">interns</span><span class="p">:</span>
+				<span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span>
+				<span class="nb">setattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">setdefault</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
+			<span class="k">yield</span> <span class="n">row</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># Stream class</span>
+<span class="c1">#</span>
+
+
+<span class="k">class</span> <span class="nc">TableStream</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Stream</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	High-level Stream element for use inside Tables.  This element</span>
+<span class="sd">	knows how to parse the delimited character stream into row objects</span>
+<span class="sd">	that it appends into the list-like parent element, and knows how to</span>
+<span class="sd">	turn the parent&#39;s rows back into a character stream.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="c1">#</span>
+	<span class="c1"># Select the RowBuilder class to use when parsing tables.</span>
+	<span class="c1">#</span>
+
+	<span class="n">RowBuilder</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">RowBuilder</span>
+
+	<span class="k">def</span> <span class="nf">config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parentNode</span><span class="p">):</span>
+		<span class="c1"># some initialization that requires access to the</span>
+		<span class="c1"># parentNode, and so cannot be done inside the __init__()</span>
+		<span class="c1"># function.</span>
+		<span class="n">loadcolumns</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">parentNode</span><span class="o">.</span><span class="n">columnnames</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">parentNode</span><span class="o">.</span><span class="n">loadcolumns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="c1"># FIXME:  convert loadcolumns attributes to sets to</span>
+			<span class="c1"># avoid the conversion.</span>
+			<span class="n">loadcolumns</span> <span class="o">&amp;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">parentNode</span><span class="o">.</span><span class="n">loadcolumns</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_tokenizer</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">Tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Delimiter</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_tokenizer</span><span class="o">.</span><span class="n">set_types</span><span class="p">([(</span><span class="n">pytype</span> <span class="k">if</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">loadcolumns</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">pytype</span><span class="p">,</span> <span class="n">colname</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">parentNode</span><span class="o">.</span><span class="n">columnpytypes</span><span class="p">,</span> <span class="n">parentNode</span><span class="o">.</span><span class="n">columnnames</span><span class="p">)])</span>
+		<span class="n">columnnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">parentNode</span><span class="o">.</span><span class="n">columnnames</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">loadcolumns</span><span class="p">]</span>
+		<span class="c1"># FIXME:  convert interncolumns attributes to sets to</span>
+		<span class="c1"># simplify computing the intersection</span>
+		<span class="n">interncolumns</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="n">parentNode</span><span class="o">.</span><span class="n">interncolumns</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">())</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">columnnames</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_rowbuilder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RowBuilder</span><span class="p">(</span><span class="n">parentNode</span><span class="o">.</span><span class="n">RowType</span><span class="p">,</span> <span class="n">columnnames</span><span class="p">,</span> <span class="n">interncolumns</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span>
+
+	<span class="k">def</span> <span class="nf">appendData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+		<span class="c1"># tokenize buffer, pack into row objects, and append to</span>
+		<span class="c1"># table</span>
+		<span class="n">appendfunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="o">.</span><span class="n">append</span>
+		<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rowbuilder</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tokenizer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">content</span><span class="p">)):</span>
+			<span class="n">appendfunc</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">endElement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="c1"># stream tokenizer uses delimiter to identify end of each</span>
+		<span class="c1"># token, so add a final delimiter to induce the last token</span>
+		<span class="c1"># to get parsed but only if there&#39;s something other than</span>
+		<span class="c1"># whitespace left in the tokenizer&#39;s buffer.  the writing</span>
+		<span class="c1"># code will have put a final delimiter into the stream if</span>
+		<span class="c1"># the final token was pure whitespace in order to</span>
+		<span class="c1"># unambiguously indicate that token&#39;s presence</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tokenizer</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">isspace</span><span class="p">():</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">appendData</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Delimiter</span><span class="p">)</span>
+		<span class="c1"># now we&#39;re done with these</span>
+		<span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tokenizer</span>
+		<span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rowbuilder</span>
+		<span class="c1"># call parent&#39;s _end_of_rows() hook.</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="o">.</span><span class="n">_end_of_rows</span><span class="p">()</span>
+
+	<span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileobj</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">indent</span> <span class="o">=</span> <span class="sa">u</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+		<span class="c1"># retrieve the .write() method of the file object to avoid</span>
+		<span class="c1"># doing the attribute lookup in loops</span>
+		<span class="n">w</span> <span class="o">=</span> <span class="n">fileobj</span><span class="o">.</span><span class="n">write</span>
+		<span class="c1"># loop over parent&#39;s rows.  This is complicated because we</span>
+		<span class="c1"># need to not put a delimiter at the end of the last row</span>
+		<span class="c1"># unless it ends with a null token</span>
+		<span class="n">w</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_tag</span><span class="p">(</span><span class="n">indent</span><span class="p">))</span>
+		<span class="n">rowdumper</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">RowDumper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="o">.</span><span class="n">columnnames</span><span class="p">,</span> <span class="p">[</span><span class="n">ligolwtypes</span><span class="o">.</span><span class="n">FormatFunc</span><span class="p">[</span><span class="n">coltype</span><span class="p">]</span> <span class="k">for</span> <span class="n">coltype</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="o">.</span><span class="n">columntypes</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">Delimiter</span><span class="p">)</span>
+		<span class="n">rowdumper</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parentNode</span><span class="p">)</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">line</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">rowdumper</span><span class="p">)</span>
+		<span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+			<span class="c1"># table is empty</span>
+			<span class="k">pass</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="c1"># write first row</span>
+			<span class="n">newline</span> <span class="o">=</span> <span class="sa">u</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">indent</span> <span class="o">+</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Indent</span>
+			<span class="n">w</span><span class="p">(</span><span class="n">newline</span><span class="p">)</span>
+			<span class="c1"># the xmlescape() call replaces things like &quot;&lt;&quot;</span>
+			<span class="c1"># with &quot;&amp;lt;&quot; so that the string will not confuse</span>
+			<span class="c1"># an XML parser when the file is read.  turning</span>
+			<span class="c1"># &quot;&amp;lt;&quot; back into &quot;&lt;&quot; during file reading is</span>
+			<span class="c1"># handled by the XML parser, so there is no code</span>
+			<span class="c1"># in Glue related to that.</span>
+			<span class="n">w</span><span class="p">(</span><span class="n">xmlescape</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+			<span class="c1"># now add delimiter and write the remaining rows</span>
+			<span class="n">newline</span> <span class="o">=</span> <span class="n">rowdumper</span><span class="o">.</span><span class="n">delimiter</span> <span class="o">+</span> <span class="n">newline</span>
+			<span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">rowdumper</span><span class="p">:</span>
+				<span class="n">w</span><span class="p">(</span><span class="n">newline</span><span class="p">)</span>
+				<span class="n">w</span><span class="p">(</span><span class="n">xmlescape</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+			<span class="k">if</span> <span class="n">rowdumper</span><span class="o">.</span><span class="n">tokens</span> <span class="ow">and</span> <span class="n">rowdumper</span><span class="o">.</span><span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="sa">u</span><span class="s2">&quot;&quot;</span><span class="p">:</span>
+				<span class="c1"># the last token of the last row was null:</span>
+				<span class="c1"># add a final delimiter to indicate that a</span>
+				<span class="c1"># token is present</span>
+				<span class="n">w</span><span class="p">(</span><span class="n">rowdumper</span><span class="o">.</span><span class="n">delimiter</span><span class="p">)</span>
+		<span class="n">w</span><span class="p">(</span><span class="sa">u</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_tag</span><span class="p">(</span><span class="n">indent</span><span class="p">)</span> <span class="o">+</span> <span class="sa">u</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                Table Element</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<span class="k">class</span> <span class="nc">Table</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Table</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	High-level Table element that knows about its columns and rows.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">class</span> <span class="nc">TableName</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">LLWNameAttr</span><span class="p">):</span>
+		<span class="n">dec_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?:\A[a-z0-9_]+:|\A)(?P&lt;Name&gt;[a-z0-9_]+):table\Z&quot;</span><span class="p">)</span>
+		<span class="n">enc_pattern</span> <span class="o">=</span> <span class="sa">u</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">:table&quot;</span>
+
+	<span class="n">Name</span> <span class="o">=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">attributeproxy</span><span class="p">(</span><span class="sa">u</span><span class="s2">&quot;Name&quot;</span><span class="p">,</span> <span class="n">enc</span> <span class="o">=</span> <span class="n">TableName</span><span class="o">.</span><span class="n">enc</span><span class="p">,</span> <span class="n">dec</span> <span class="o">=</span> <span class="n">TableName</span><span class="p">)</span>
+
+	<span class="n">validcolumns</span> <span class="o">=</span> <span class="kc">None</span>
+	<span class="n">loadcolumns</span> <span class="o">=</span> <span class="kc">None</span>
+	<span class="n">interncolumns</span> <span class="o">=</span> <span class="kc">None</span>
+	<span class="n">constraints</span> <span class="o">=</span> <span class="kc">None</span>
+	<span class="n">how_to_index</span> <span class="o">=</span> <span class="kc">None</span>
+	<span class="n">next_id</span> <span class="o">=</span> <span class="kc">None</span>
+
+	<span class="k">class</span> <span class="nc">RowType</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Helpful parent class for row objects.  Also used as the</span>
+<span class="sd">		default row class by Table instances.  Provides an</span>
+<span class="sd">		__init__() method that accepts keyword arguments from which</span>
+<span class="sd">		the object&#39;s attributes are initialized.</span>
+
+<span class="sd">		Example:</span>
+
+<span class="sd">		&gt;&gt;&gt; x = Table.RowType(a = 0.0, b = &quot;test&quot;, c = True)</span>
+<span class="sd">		&gt;&gt;&gt; x.a</span>
+<span class="sd">		0.0</span>
+<span class="sd">		&gt;&gt;&gt; x.b</span>
+<span class="sd">		&#39;test&#39;</span>
+<span class="sd">		&gt;&gt;&gt; x.c</span>
+<span class="sd">		True</span>
+
+<span class="sd">		Also provides .__getstate__() and .__setstate__() methods</span>
+<span class="sd">		to allow row objects to be pickled (otherwise, because they</span>
+<span class="sd">		all use __slots__ to reduce their memory footprint, they</span>
+<span class="sd">		aren&#39;t pickleable).</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+			<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+				<span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+		<span class="k">def</span> <span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+			<span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__slots__</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+
+		<span class="k">def</span> <span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+			<span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">state</span><span class="p">)</span>
+
+
+	<span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Initialize</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">columnnames</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">columntypes</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">columnpytypes</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+	<span class="c1">#</span>
+	<span class="c1"># Table retrieval</span>
+	<span class="c1">#</span>
+
+
+	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">getTablesByName</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">elem</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Return a list of Table elements named name under elem.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">name</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">TableName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">elem</span><span class="o">.</span><span class="n">getElements</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">tagName</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">tagName</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">Name</span> <span class="o">==</span> <span class="n">name</span><span class="p">))</span>
+
+	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">get_table</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">xmldoc</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Equivalent to the module-level function get_table(), but</span>
+<span class="sd">		uses the .tableName attribute of this class to provide the</span>
+<span class="sd">		name of the table to search for.  The Table parent class</span>
+<span class="sd">		does not provide a .tableName attribute, but sub-classes,</span>
+<span class="sd">		especially those in lsctables.py, do provide a value for</span>
+<span class="sd">		that attribute, and in those cases this class method</span>
+<span class="sd">		provides a cleaner way to retrieve them.</span>
+
+<span class="sd">		Example:</span>
+
+<span class="sd">		&gt;&gt;&gt; from . import ligolw, lsctables</span>
+<span class="sd">		&gt;&gt;&gt; xmldoc = ligolw.Document()</span>
+<span class="sd">		&gt;&gt;&gt; xmldoc.appendChild(ligolw.LIGO_LW()).appendChild(lsctables.New(lsctables.SnglInspiralTable))</span>
+<span class="sd">		[]</span>
+<span class="sd">		&gt;&gt;&gt; sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="n">get_table</span><span class="p">(</span><span class="n">xmldoc</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">tableName</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Construct and return a new Table document subtree whose</span>
+<span class="sd">		structure is the same as this table, that is it has the</span>
+<span class="sd">		same columns etc..  The rows are not copied.  Note that a</span>
+<span class="sd">		fair amount of metadata is shared between the original and</span>
+<span class="sd">		new tables.  In particular, a copy of the Table object</span>
+<span class="sd">		itself is created (but with no rows), and copies of the</span>
+<span class="sd">		child nodes are created.  All other object references are</span>
+<span class="sd">		shared between the two instances, such as the RowType</span>
+<span class="sd">		attribute on the Table object.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">new</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="n">new</span><span class="o">.</span><span class="n">childNodes</span> <span class="o">=</span> <span class="p">[]</span>	<span class="c1"># got reference to original list</span>
+		<span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">childNodes</span><span class="p">:</span>
+			<span class="n">new</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+		<span class="k">del</span> <span class="n">new</span><span class="p">[:]</span>
+		<span class="n">new</span><span class="o">.</span><span class="n">_end_of_columns</span><span class="p">()</span>
+		<span class="n">new</span><span class="o">.</span><span class="n">_end_of_rows</span><span class="p">()</span>
+		<span class="k">return</span> <span class="n">new</span>
+
+
+	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">CheckElement</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">elem</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Return True if element is a Table element whose Name</span>
+<span class="sd">		attribute matches the .tableName attribute of this class ;</span>
+<span class="sd">		return False otherwise.  See also .CheckProperties().</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">CheckProperties</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">tagName</span><span class="p">,</span> <span class="n">elem</span><span class="o">.</span><span class="n">attributes</span><span class="p">)</span>
+
+
+	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">CheckProperties</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tagname</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Return True if tagname and attrs are the XML tag name and</span>
+<span class="sd">		element attributes, respectively, of a Table element whose</span>
+<span class="sd">		Name attribute matches the .tableName attribute of this</span>
+<span class="sd">		class;  return False otherwise.  The Table parent class</span>
+<span class="sd">		does not provide a .tableName attribute, but sub-classes,</span>
+<span class="sd">		especially those in lsctables.py, do provide a value for</span>
+<span class="sd">		that attribute.  See also .CheckElement()</span>
+
+<span class="sd">		Example:</span>
+
+<span class="sd">		&gt;&gt;&gt; from . import lsctables</span>
+<span class="sd">		&gt;&gt;&gt; lsctables.ProcessTable.CheckProperties(u&quot;Table&quot;, {u&quot;Name&quot;: u&quot;process:table&quot;})</span>
+<span class="sd">		True</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="n">tagname</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">tagName</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="n">TableName</span><span class="p">(</span><span class="n">attrs</span><span class="p">[</span><span class="sa">u</span><span class="s2">&quot;Name&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="bp">cls</span><span class="o">.</span><span class="n">tableName</span>
+
+
+	<span class="c1">#</span>
+	<span class="c1"># Column access</span>
+	<span class="c1">#</span>
+
+	<span class="k">def</span> <span class="nf">getColumnByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Retrieve and return the Column child element named name.</span>
+<span class="sd">		The comparison is done using the stripped names.  Raises</span>
+<span class="sd">		KeyError if this table has no column by that name.</span>
+
+<span class="sd">		Example:</span>
+
+<span class="sd">		&gt;&gt;&gt; from . import lsctables</span>
+<span class="sd">		&gt;&gt;&gt; tbl = lsctables.New(lsctables.SnglInspiralTable)</span>
+<span class="sd">		&gt;&gt;&gt; col = tbl.getColumnByName(&quot;mass1&quot;)</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">col</span><span class="p">,</span> <span class="o">=</span> <span class="n">Column</span><span class="o">.</span><span class="n">getColumnsByName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+		<span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+			<span class="c1"># did not find exactly 1 matching child</span>
+			<span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">col</span>
+
+
+	<span class="k">def</span> <span class="nf">appendColumn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Append a Column element named &quot;name&quot; to the table.  Returns</span>
+<span class="sd">		the new child.  Raises ValueError if the table already has</span>
+<span class="sd">		a column by that name, and KeyError if the validcolumns</span>
+<span class="sd">		attribute of this table does not contain an entry for a</span>
+<span class="sd">		column by that name.</span>
+
+<span class="sd">		Note that the name string is assumed to be &quot;pre-stripped&quot;,</span>
+<span class="sd">		that is it is the significant portion of the elements Name</span>
+<span class="sd">		attribute.  The Column element&#39;s Name attribute will be</span>
+<span class="sd">		constructed by pre-pending the stripped Table element&#39;s</span>
+<span class="sd">		name and a colon.</span>
+
+<span class="sd">		Example:</span>
+
+<span class="sd">		&gt;&gt;&gt; from . import lsctables</span>
+<span class="sd">		&gt;&gt;&gt; process_table = lsctables.New(lsctables.ProcessTable, [])</span>
+<span class="sd">		&gt;&gt;&gt; col = process_table.appendColumn(&quot;program&quot;)</span>
+<span class="sd">		&gt;&gt;&gt; assert col.getAttribute(&quot;Name&quot;) == &#39;process:program&#39;</span>
+<span class="sd">		&gt;&gt;&gt; assert col.Name == &#39;program&#39;</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">getColumnByName</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+			<span class="c1"># if we get here the table already has that column</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;duplicate Column &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+		<span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+			<span class="k">pass</span>
+		<span class="n">column</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">AttributesImpl</span><span class="p">({</span><span class="sa">u</span><span class="s2">&quot;Name&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">:</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="sa">u</span><span class="s2">&quot;Type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">validcolumns</span><span class="p">[</span><span class="n">name</span><span class="p">]}))</span>
+		<span class="n">streams</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Stream</span><span class="o">.</span><span class="n">tagName</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">streams</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">insertBefore</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">streams</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">appendChild</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">column</span>
+
+
+	<span class="c1">#</span>
+	<span class="c1"># Row access</span>
+	<span class="c1">#</span>
+
+	<span class="k">def</span> <span class="nf">appendRow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Create and append a new row to this table, then return it</span>
+
+<span class="sd">		All positional and keyword arguments are passed to the RowType</span>
+<span class="sd">		constructor for this table.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="n">row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">RowType</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">row</span>
+
+
+	<span class="c1">#</span>
+	<span class="c1"># Element methods</span>
+	<span class="c1">#</span>
+
+	<span class="k">def</span> <span class="nf">_update_column_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Used for validation during parsing, and additional</span>
+<span class="sd">		book-keeping.  For internal use only.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">columnnames</span><span class="p">[:]</span>
+		<span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">columntypes</span><span class="p">[:]</span>
+		<span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">columnpytypes</span><span class="p">[:]</span>
+		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getElementsByTagName</span><span class="p">(</span><span class="n">ligolw</span><span class="o">.</span><span class="n">Column</span><span class="o">.</span><span class="n">tagName</span><span class="p">):</span>
+			<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">validcolumns</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">try</span><span class="p">:</span>
+					<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">validcolumns</span><span class="p">[</span><span class="n">child</span><span class="o">.</span><span class="n">Name</span><span class="p">]</span> <span class="o">!=</span> <span class="n">child</span><span class="o">.</span><span class="n">Type</span><span class="p">:</span>
+						<span class="k">raise</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">ElementError</span><span class="p">(</span><span class="s2">&quot;invalid type &#39;</span><span class="si">%s</span><span class="s2">&#39; for Column &#39;</span><span class="si">%s</span><span class="s2">&#39; in Table &#39;</span><span class="si">%s</span><span class="s2">&#39;, expected type &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">Type</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">validcolumns</span><span class="p">[</span><span class="n">child</span><span class="o">.</span><span class="n">Name</span><span class="p">]))</span>
+				<span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+					<span class="k">raise</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">ElementError</span><span class="p">(</span><span class="s2">&quot;invalid Column &#39;</span><span class="si">%s</span><span class="s2">&#39; for Table &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">)))</span>
+			<span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">Name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">columnnames</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">ElementError</span><span class="p">(</span><span class="s2">&quot;duplicate Column &#39;</span><span class="si">%s</span><span class="s2">&#39; in Table &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">)))</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">columnnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">Name</span><span class="p">)</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">columntypes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">Type</span><span class="p">)</span>
+			<span class="k">try</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">columnpytypes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ligolwtypes</span><span class="o">.</span><span class="n">ToPyType</span><span class="p">[</span><span class="n">child</span><span class="o">.</span><span class="n">Type</span><span class="p">])</span>
+			<span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">ElementError</span><span class="p">(</span><span class="s2">&quot;unrecognized Type &#39;</span><span class="si">%s</span><span class="s2">&#39; for Column &#39;</span><span class="si">%s</span><span class="s2">&#39; in Table &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">Type</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">)))</span>
+
+	<span class="k">def</span> <span class="nf">_verifyChildren</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Used for validation during parsing, and additional</span>
+<span class="sd">		book-keeping.  For internal use only.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_verifyChildren</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+		<span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">childNodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+		<span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">tagName</span> <span class="o">==</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Column</span><span class="o">.</span><span class="n">tagName</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_update_column_info</span><span class="p">()</span>
+		<span class="k">elif</span> <span class="n">child</span><span class="o">.</span><span class="n">tagName</span> <span class="o">==</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Stream</span><span class="o">.</span><span class="n">tagName</span><span class="p">:</span>
+			<span class="c1"># require agreement of non-stripped strings</span>
+			<span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">ElementError</span><span class="p">(</span><span class="s2">&quot;Stream name &#39;</span><span class="si">%s</span><span class="s2">&#39; does not match Table name &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">)))</span>
+
+	<span class="k">def</span> <span class="nf">_end_of_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Called during parsing to indicate that the last Column</span>
+<span class="sd">		child element has been added.  Subclasses can override this</span>
+<span class="sd">		to perform any special action that should occur following</span>
+<span class="sd">		the addition of the last Column element.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+
+	<span class="k">def</span> <span class="nf">_end_of_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Called during parsing to indicate that the last row has</span>
+<span class="sd">		been added.  Subclasses can override this to perform any</span>
+<span class="sd">		special action that should occur following the addition of</span>
+<span class="sd">		the last row.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+
+	<span class="k">def</span> <span class="nf">removeChild</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Remove a child from this element.  The child element is</span>
+<span class="sd">		returned, and it&#39;s parentNode element is reset.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">removeChild</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">tagName</span> <span class="o">==</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Column</span><span class="o">.</span><span class="n">tagName</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_update_column_info</span><span class="p">()</span>
+		<span class="k">return</span> <span class="n">child</span>
+
+	<span class="k">def</span> <span class="nf">unlink</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Break internal references within the document tree rooted</span>
+<span class="sd">		on this element to promote garbage collection.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="nb">super</span><span class="p">(</span><span class="n">Table</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+		<span class="k">del</span> <span class="bp">self</span><span class="p">[:]</span>
+
+	<span class="k">def</span> <span class="nf">endElement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="c1"># Table elements are allowed to contain 0 Stream children,</span>
+		<span class="c1"># but _end_of_columns() and _end_of_rows() hooks must be</span>
+		<span class="c1"># called regardless, so we do that here if needed.</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">childNodes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tagName</span> <span class="o">!=</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Stream</span><span class="o">.</span><span class="n">tagName</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_end_of_columns</span><span class="p">()</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_end_of_rows</span><span class="p">()</span>
+
+	<span class="c1">#</span>
+	<span class="c1"># Row ID manipulation</span>
+	<span class="c1">#</span>
+
+	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">get_next_id</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Returns the current value of the next_id class attribute,</span>
+<span class="sd">		and increments the next_id class attribute by 1.  Raises</span>
+<span class="sd">		ValueError if the table does not have an ID generator</span>
+<span class="sd">		associated with it.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c1"># = None if no ID generator</span>
+		<span class="nb">id</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">next_id</span>
+		<span class="bp">cls</span><span class="o">.</span><span class="n">next_id</span> <span class="o">+=</span> <span class="mi">1</span>
+		<span class="k">return</span> <span class="nb">id</span>
+
+	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">set_next_id</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Sets the value of the next_id class attribute.  This is a</span>
+<span class="sd">		convenience function to help prevent accidentally assigning</span>
+<span class="sd">		a value to an instance attribute instead of the class</span>
+<span class="sd">		attribute.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">cls</span><span class="o">.</span><span class="n">next_id</span> <span class="o">=</span> <span class="nb">id</span>
+
+	<span class="nd">@classmethod</span>
+	<span class="k">def</span> <span class="nf">reset_next_id</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		If the current value of the next_id class attribute is not</span>
+<span class="sd">		None then set it to 0, otherwise it is left unmodified.</span>
+
+<span class="sd">		Example:</span>
+
+<span class="sd">		&gt;&gt;&gt; from . import lsctables</span>
+<span class="sd">		&gt;&gt;&gt; for cls in lsctables.TableByName.values(): cls.reset_next_id()</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">next_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="bp">cls</span><span class="o">.</span><span class="n">set_next_id</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">next_id</span><span class="p">)(</span><span class="mi">0</span><span class="p">))</span>
+
+	<span class="k">def</span> <span class="nf">sync_next_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Determines the highest-numbered ID in this table, and sets</span>
+<span class="sd">		the table&#39;s .next_id attribute to the next highest ID in</span>
+<span class="sd">		sequence.  If the .next_id attribute is already set to a</span>
+<span class="sd">		value greater than the highest value found, then it is left</span>
+<span class="sd">		unmodified.  The return value is the ID identified by this</span>
+<span class="sd">		method.  If the table&#39;s .next_id attribute is None, then</span>
+<span class="sd">		this function is a no-op.</span>
+
+<span class="sd">		Note that tables of the same name typically share a common</span>
+<span class="sd">		.next_id attribute (it is a class attribute, not an</span>
+<span class="sd">		attribute of each instance) so that IDs can be generated</span>
+<span class="sd">		that are unique across all tables in the document.  Running</span>
+<span class="sd">		sync_next_id() on all the tables in a document that are of</span>
+<span class="sd">		the same type will have the effect of setting the ID to the</span>
+<span class="sd">		next ID higher than any ID in any of those tables.</span>
+
+<span class="sd">		Example:</span>
+
+<span class="sd">		&gt;&gt;&gt; from . import lsctables</span>
+<span class="sd">		&gt;&gt;&gt; tbl = lsctables.New(lsctables.ProcessTable)</span>
+<span class="sd">		&gt;&gt;&gt; print(tbl.sync_next_id())</span>
+<span class="sd">		process:process_id:0</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+				<span class="n">n</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getColumnByName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_id</span><span class="o">.</span><span class="n">column_name</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">n</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_id</span><span class="p">)(</span><span class="mi">0</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_id</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">set_next_id</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_id</span>
+
+	<span class="k">def</span> <span class="nf">updateKeyMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Used as the first half of the row key reassignment</span>
+<span class="sd">		algorithm.  Accepts a dictionary mapping old key --&gt; new</span>
+<span class="sd">		key.  Iterates over the rows in this table, using the</span>
+<span class="sd">		table&#39;s next_id attribute to assign a new ID to each row,</span>
+<span class="sd">		recording the changes in the mapping.  Returns the mapping.</span>
+<span class="sd">		Raises ValueError if the table&#39;s next_id attribute is None.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+		<span class="k">try</span><span class="p">:</span>
+			<span class="n">column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getColumnByName</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_id</span><span class="o">.</span><span class="n">column_name</span><span class="p">)</span>
+		<span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+			<span class="c1"># table is missing its ID column, this is a no-op</span>
+			<span class="k">return</span> <span class="n">mapping</span>
+		<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">old</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">column</span><span class="p">):</span>
+			<span class="k">if</span> <span class="n">old</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+				<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;null row ID encountered in Table &#39;</span><span class="si">%s</span><span class="s2">&#39;, row </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getAttribute</span><span class="p">(</span><span class="s2">&quot;Name&quot;</span><span class="p">),</span> <span class="n">i</span><span class="p">))</span>
+			<span class="k">if</span> <span class="n">old</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">:</span>
+				<span class="n">column</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="n">old</span><span class="p">]</span>
+			<span class="k">else</span><span class="p">:</span>
+				<span class="n">column</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="n">old</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_next_id</span><span class="p">()</span>
+		<span class="k">return</span> <span class="n">mapping</span>
+
+	<span class="k">def</span> <span class="nf">applyKeyMapping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mapping</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Used as the second half of the key reassignment algorithm.</span>
+<span class="sd">		Loops over each row in the table, replacing references to</span>
+<span class="sd">		old row keys with the new values from the mapping.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">for</span> <span class="n">coltype</span><span class="p">,</span> <span class="n">colname</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columntypes</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">columnnames</span><span class="p">):</span>
+			<span class="k">if</span> <span class="n">coltype</span> <span class="ow">in</span> <span class="n">ligolwtypes</span><span class="o">.</span><span class="n">IDTypes</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">next_id</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">colname</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_id</span><span class="o">.</span><span class="n">column_name</span><span class="p">):</span>
+				<span class="n">column</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getColumnByName</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span>
+				<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">old</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">column</span><span class="p">):</span>
+					<span class="k">try</span><span class="p">:</span>
+						<span class="n">column</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">[</span><span class="n">old</span><span class="p">]</span>
+					<span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+						<span class="k">pass</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                               Content Handler</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># Override portions of a ligolw.LIGOLWContentHandler class</span>
+<span class="c1">#</span>
+
+
+<span class="k">def</span> <span class="nf">use_in</span><span class="p">(</span><span class="n">ContentHandler</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Modify ContentHandler, a sub-class of</span>
+<span class="sd">	glue.ligolw.LIGOLWContentHandler, to cause it to use the Table,</span>
+<span class="sd">	Column, and Stream classes defined in this module when parsing XML</span>
+<span class="sd">	documents.</span>
+
+<span class="sd">	Example:</span>
+
+<span class="sd">	&gt;&gt;&gt; from glue.ligolw import ligolw</span>
+<span class="sd">	&gt;&gt;&gt; class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):</span>
+<span class="sd">	...	pass</span>
+<span class="sd">	...</span>
+<span class="sd">	&gt;&gt;&gt; use_in(LIGOLWContentHandler)</span>
+<span class="sd">	&lt;class &#39;glue.ligolw.table.LIGOLWContentHandler&#39;&gt;</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">def</span> <span class="nf">startColumn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">Column</span><span class="p">(</span><span class="n">attrs</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">startStream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">attrs</span><span class="p">,</span> <span class="n">__orig_startStream</span> <span class="o">=</span> <span class="n">ContentHandler</span><span class="o">.</span><span class="n">startStream</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">parent</span><span class="o">.</span><span class="n">tagName</span> <span class="o">==</span> <span class="n">ligolw</span><span class="o">.</span><span class="n">Table</span><span class="o">.</span><span class="n">tagName</span><span class="p">:</span>
+			<span class="n">parent</span><span class="o">.</span><span class="n">_end_of_columns</span><span class="p">()</span>
+			<span class="k">return</span> <span class="n">TableStream</span><span class="p">(</span><span class="n">attrs</span><span class="p">)</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">__orig_startStream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">attrs</span><span class="p">)</span>
+
+	<span class="k">def</span> <span class="nf">startTable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+		<span class="k">return</span> <span class="n">Table</span><span class="p">(</span><span class="n">attrs</span><span class="p">)</span>
+
+	<span class="n">ContentHandler</span><span class="o">.</span><span class="n">startColumn</span> <span class="o">=</span> <span class="n">startColumn</span>
+	<span class="n">ContentHandler</span><span class="o">.</span><span class="n">startStream</span> <span class="o">=</span> <span class="n">startStream</span>
+	<span class="n">ContentHandler</span><span class="o">.</span><span class="n">startTable</span> <span class="o">=</span> <span class="n">startTable</span>
+
+	<span class="k">return</span> <span class="n">ContentHandler</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

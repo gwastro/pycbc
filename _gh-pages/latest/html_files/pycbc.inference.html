@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.inference package &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pycbc.inference.io package" href="pycbc.inference.io.html" />
+    <link rel="prev" title="pycbc.frame package" href="pycbc.frame.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">pycbc</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pycbc.html">pycbc package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="pycbc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="pycbc.catalog.html">pycbc.catalog package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.distributions.html">pycbc.distributions package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.events.html">pycbc.events package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.fft.html">pycbc.fft package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.filter.html">pycbc.filter package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.frame.html">pycbc.frame package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">pycbc.inference package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.inject.html">pycbc.inject package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.io.html">pycbc.io package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.noise.html">pycbc.noise package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.population.html">pycbc.population package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.psd.html">pycbc.psd package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.results.html">pycbc.results package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.strain.html">pycbc.strain package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.tmpltbank.html">pycbc.tmpltbank package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.types.html">pycbc.types package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.vetoes.html">pycbc.vetoes package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.waveform.html">pycbc.waveform package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pycbc.workflow.html">pycbc.workflow package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.bin_utils">pycbc.bin_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.boundaries">pycbc.boundaries module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.conversions">pycbc.conversions module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.coordinates">pycbc.coordinates module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.cosmology">pycbc.cosmology module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.detector">pycbc.detector module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.dq">pycbc.dq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.libutils">pycbc.libutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.mchirp_area">pycbc.mchirp_area module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.opt">pycbc.opt module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pnutils">pycbc.pnutils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.pool">pycbc.pool module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.rate">pycbc.rate module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.scheme">pycbc.scheme module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.sensitivity">pycbc.sensitivity module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.transforms">pycbc.transforms module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc.version">pycbc.version module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pycbc.html#module-pycbc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">pycbc</a> &raquo;</li>
+          <li><a href="pycbc.html">pycbc package</a> &raquo;</li>
+      <li>pycbc.inference package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pycbc.inference.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="pycbc-inference-package">
+<h1>pycbc.inference package<a class="headerlink" href="#pycbc-inference-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pycbc.inference.io.html">pycbc.inference.io package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.base_hdf">pycbc.inference.io.base_hdf module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.base_mcmc">pycbc.inference.io.base_mcmc module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.base_multitemper">pycbc.inference.io.base_multitemper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.base_nested_sampler">pycbc.inference.io.base_nested_sampler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.base_sampler">pycbc.inference.io.base_sampler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.dynesty">pycbc.inference.io.dynesty module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.emcee">pycbc.inference.io.emcee module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.emcee_pt">pycbc.inference.io.emcee_pt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.epsie">pycbc.inference.io.epsie module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.multinest">pycbc.inference.io.multinest module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.posterior">pycbc.inference.io.posterior module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.ptemcee">pycbc.inference.io.ptemcee module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.txt">pycbc.inference.io.txt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io.ultranest">pycbc.inference.io.ultranest module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.io.html#module-pycbc.inference.io">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pycbc.inference.jump.html">pycbc.inference.jump package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.jump.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.jump.html#module-pycbc.inference.jump.angular">pycbc.inference.jump.angular module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.jump.html#module-pycbc.inference.jump.bounded_normal">pycbc.inference.jump.bounded_normal module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.jump.html#module-pycbc.inference.jump.discrete">pycbc.inference.jump.discrete module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.jump.html#module-pycbc.inference.jump.normal">pycbc.inference.jump.normal module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.jump.html#module-pycbc.inference.jump">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pycbc.inference.models.html">pycbc.inference.models package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.analytic">pycbc.inference.models.analytic module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.base">pycbc.inference.models.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.base_data">pycbc.inference.models.base_data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.brute_marg">pycbc.inference.models.brute_marg module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.data_utils">pycbc.inference.models.data_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.gated_gaussian_noise">pycbc.inference.models.gated_gaussian_noise module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.gaussian_noise">pycbc.inference.models.gaussian_noise module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.marginalized_gaussian_noise">pycbc.inference.models.marginalized_gaussian_noise module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.relbin">pycbc.inference.models.relbin module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.relbin_cpu">pycbc.inference.models.relbin_cpu module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models.single_template">pycbc.inference.models.single_template module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.models.html#module-pycbc.inference.models">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pycbc.inference.sampler.html">pycbc.inference.sampler package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.base">pycbc.inference.sampler.base module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.base_cube">pycbc.inference.sampler.base_cube module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.base_mcmc">pycbc.inference.sampler.base_mcmc module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.base_multitemper">pycbc.inference.sampler.base_multitemper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.dynesty">pycbc.inference.sampler.dynesty module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.emcee">pycbc.inference.sampler.emcee module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.emcee_pt">pycbc.inference.sampler.emcee_pt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.epsie">pycbc.inference.sampler.epsie module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.multinest">pycbc.inference.sampler.multinest module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.ptemcee">pycbc.inference.sampler.ptemcee module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler.ultranest">pycbc.inference.sampler.ultranest module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pycbc.inference.sampler.html#module-pycbc.inference.sampler">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pycbc.inference.burn_in">
+<span id="pycbc-inference-burn-in-module"></span><h2>pycbc.inference.burn_in module<a class="headerlink" href="#module-pycbc.inference.burn_in" title="Permalink to this headline">¶</a></h2>
+<p>This modules provides classes and functions for determining when Markov Chains
+have burned in.</p>
+<dl class="class">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests">
+<em class="property">class </em><code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">BaseBurnInTests</code><span class="sig-paren">(</span><em>sampler</em>, <em>burn_in_test</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Base class for burn in tests.</p>
+<dl class="attribute">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.available_tests">
+<code class="descname">available_tests</code><em class="property"> = ('halfchain', 'min_iterations', 'max_posterior', 'posterior_step', 'nacl')</em><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.available_tests" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.burn_in_index">
+<code class="descname">burn_in_index</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests.burn_in_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.burn_in_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>The burn in index (retrieved from the iteration).</p>
+<p>This is an abstract method because how this is evaluated depends on
+if this is an ensemble MCMC or not.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.evaluate">
+<code class="descname">evaluate</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs all tests and evaluates the results to determine if and
+when all tests pass.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.from_config">
+<em class="property">classmethod </em><code class="descname">from_config</code><span class="sig-paren">(</span><em>cp</em>, <em>sampler</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests.from_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.from_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads burn in from section [sampler-burn_in].</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.halfchain">
+<code class="descname">halfchain</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests.halfchain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.halfchain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Just uses half the chain as the burn-in iteration.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.max_posterior">
+<code class="descname">max_posterior</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests.max_posterior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.max_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Carries out the max posterior test and stores the results.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.min_iterations">
+<code class="descname">min_iterations</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests.min_iterations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.min_iterations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Just checks that the sampler has been run for the minimum number
+of iterations.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.nacl">
+<code class="descname">nacl</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests.nacl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.nacl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Carries out the nacl test and stores the results.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.posterior_step">
+<code class="descname">posterior_step</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests.posterior_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.posterior_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Carries out the posterior step test and stores the results.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.BaseBurnInTests.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>fp</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#BaseBurnInTests.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.BaseBurnInTests.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes burn-in info to an open HDF file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fp</strong> (<em>pycbc.inference.io.base.BaseInferenceFile</em>) – Open HDF file to write the data to. The HDF file should be an
+instance of a pycbc BaseInferenceFile.</li>
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – Path in the HDF file to write the data to. Default is (None) is
+to write to the path given by the file’s <code class="docutils literal notranslate"><span class="pre">sampler_group</span></code>
+attribute.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycbc.inference.burn_in.EnsembleMCMCBurnInTests">
+<em class="property">class </em><code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">EnsembleMCMCBurnInTests</code><span class="sig-paren">(</span><em>sampler</em>, <em>burn_in_test</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#EnsembleMCMCBurnInTests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.inference.burn_in.BaseBurnInTests" title="pycbc.inference.burn_in.BaseBurnInTests"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.burn_in.BaseBurnInTests</span></code></a></p>
+<p>Provides methods for estimating burn-in of an ensemble MCMC.</p>
+<dl class="attribute">
+<dt id="pycbc.inference.burn_in.EnsembleMCMCBurnInTests.available_tests">
+<code class="descname">available_tests</code><em class="property"> = ('halfchain', 'min_iterations', 'max_posterior', 'posterior_step', 'nacl', 'ks_test')</em><a class="headerlink" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.available_tests" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.EnsembleMCMCBurnInTests.burn_in_index">
+<code class="descname">burn_in_index</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#EnsembleMCMCBurnInTests.burn_in_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.burn_in_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>The burn in index (retrieved from the iteration).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.EnsembleMCMCBurnInTests.evaluate">
+<code class="descname">evaluate</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#EnsembleMCMCBurnInTests.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs all of the burn-in tests.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.EnsembleMCMCBurnInTests.ks_test">
+<code class="descname">ks_test</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#EnsembleMCMCBurnInTests.ks_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.ks_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies ks burn-in test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.EnsembleMCMCBurnInTests.max_posterior">
+<code class="descname">max_posterior</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#EnsembleMCMCBurnInTests.max_posterior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.max_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies max posterior test to self.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.EnsembleMCMCBurnInTests.nacl">
+<code class="descname">nacl</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#EnsembleMCMCBurnInTests.nacl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.nacl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the <a class="reference internal" href="#pycbc.inference.burn_in.nacl" title="pycbc.inference.burn_in.nacl"><code class="xref py py-func docutils literal notranslate"><span class="pre">nacl()</span></code></a> test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.EnsembleMCMCBurnInTests.posterior_step">
+<code class="descname">posterior_step</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#EnsembleMCMCBurnInTests.posterior_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.posterior_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the posterior-step test.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycbc.inference.burn_in.EnsembleMultiTemperedMCMCBurnInTests">
+<em class="property">class </em><code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">EnsembleMultiTemperedMCMCBurnInTests</code><span class="sig-paren">(</span><em>sampler</em>, <em>burn_in_test</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#EnsembleMultiTemperedMCMCBurnInTests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.EnsembleMultiTemperedMCMCBurnInTests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests" title="pycbc.inference.burn_in.EnsembleMCMCBurnInTests"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.burn_in.EnsembleMCMCBurnInTests</span></code></a></p>
+<p>Adds support for multiple temperatures to
+<a class="reference internal" href="#pycbc.inference.burn_in.EnsembleMCMCBurnInTests" title="pycbc.inference.burn_in.EnsembleMCMCBurnInTests"><code class="xref py py-class docutils literal notranslate"><span class="pre">EnsembleMCMCBurnInTests</span></code></a>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pycbc.inference.burn_in.MCMCBurnInTests">
+<em class="property">class </em><code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">MCMCBurnInTests</code><span class="sig-paren">(</span><em>sampler</em>, <em>burn_in_test</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#MCMCBurnInTests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.MCMCBurnInTests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.inference.burn_in.BaseBurnInTests" title="pycbc.inference.burn_in.BaseBurnInTests"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.burn_in.BaseBurnInTests</span></code></a></p>
+<p>Burn-in tests for collections of independent MCMC chains.</p>
+<p>This differs from EnsembleMCMCBurnInTests in that chains are treated as
+being independent of each other. The <code class="docutils literal notranslate"><span class="pre">is_burned_in</span></code> attribute will be
+True if <cite>any</cite> chain passes the burn in tests (whereas in MCMCBurnInTests,
+all chains must pass the burn in tests). In other words, independent
+samples can be collected even if all of the chains are not burned in.</p>
+<dl class="method">
+<dt id="pycbc.inference.burn_in.MCMCBurnInTests.burn_in_index">
+<code class="descname">burn_in_index</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#MCMCBurnInTests.burn_in_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.MCMCBurnInTests.burn_in_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>The burn in index (retrieved from the iteration).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.MCMCBurnInTests.evaluate">
+<code class="descname">evaluate</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#MCMCBurnInTests.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.MCMCBurnInTests.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs all of the burn-in tests.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.MCMCBurnInTests.max_posterior">
+<code class="descname">max_posterior</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#MCMCBurnInTests.max_posterior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.MCMCBurnInTests.max_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies max posterior test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.MCMCBurnInTests.nacl">
+<code class="descname">nacl</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#MCMCBurnInTests.nacl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.MCMCBurnInTests.nacl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the <a class="reference internal" href="#pycbc.inference.burn_in.nacl" title="pycbc.inference.burn_in.nacl"><code class="xref py py-func docutils literal notranslate"><span class="pre">nacl()</span></code></a> test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.MCMCBurnInTests.posterior_step">
+<code class="descname">posterior_step</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#MCMCBurnInTests.posterior_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.MCMCBurnInTests.posterior_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the posterior-step test.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycbc.inference.burn_in.MCMCBurnInTests.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>fp</em>, <em>path=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#MCMCBurnInTests.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.MCMCBurnInTests.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes burn-in info to an open HDF file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>fp</strong> (<em>pycbc.inference.io.base.BaseInferenceFile</em>) – Open HDF file to write the data to. The HDF file should be an
+instance of a pycbc BaseInferenceFile.</li>
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – Path in the HDF file to write the data to. Default is (None) is
+to write to the path given by the file’s <code class="docutils literal notranslate"><span class="pre">sampler_group</span></code>
+attribute.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pycbc.inference.burn_in.MultiTemperedMCMCBurnInTests">
+<em class="property">class </em><code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">MultiTemperedMCMCBurnInTests</code><span class="sig-paren">(</span><em>sampler</em>, <em>burn_in_test</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#MultiTemperedMCMCBurnInTests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.MultiTemperedMCMCBurnInTests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.inference.burn_in.MCMCBurnInTests" title="pycbc.inference.burn_in.MCMCBurnInTests"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.burn_in.MCMCBurnInTests</span></code></a></p>
+<p>Adds support for multiple temperatures to
+<a class="reference internal" href="#pycbc.inference.burn_in.MCMCBurnInTests" title="pycbc.inference.burn_in.MCMCBurnInTests"><code class="xref py py-class docutils literal notranslate"><span class="pre">MCMCBurnInTests</span></code></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.burn_in.evaluate_tests">
+<code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">evaluate_tests</code><span class="sig-paren">(</span><em>burn_in_test</em>, <em>test_is_burned_in</em>, <em>test_burn_in_iter</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#evaluate_tests"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.evaluate_tests" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates burn in data from multiple tests.</p>
+<p>The iteration to use for burn-in depends on the logic in the burn-in
+test string. For example, if the test was ‘max_posterior | nacl’ and
+max_posterior burned-in at iteration 5000 while nacl burned in at
+iteration 6000, we’d want to use 5000 as the burn-in iteration.
+However, if the test was ‘max_posterior &amp; nacl’, we’d want to use
+6000 as the burn-in iteration. This function handles all cases by
+doing the following: first, take the collection of burn in iterations
+from all the burn in tests that were applied.  Next, cycle over the
+iterations in increasing order, checking which tests have burned in
+by that point. Then evaluate the burn-in string at that point to see
+if it passes, and if so, what the iteration is. The first point that
+the test passes is used as the burn-in iteration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>burn_in_test</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – The test to apply; e.g., <code class="docutils literal notranslate"><span class="pre">'max_posterior</span> <span class="pre">&amp;</span> <span class="pre">nacl'</span></code>.</li>
+<li><strong>test_is_burned_in</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Dictionary of test name -&gt; boolean indicating whether a specific burn
+in test has passed.</li>
+<li><strong>test_burn_in_iter</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Dictionary of test name -&gt; int indicating when a specific test burned
+in.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>is_burned_in</strong> (<em>bool</em>) – Whether or not the data passes all burn in tests.</li>
+<li><em>burn_in_iteration</em> – The iteration at which all the tests pass. If the tests did not all
+pass (<code class="docutils literal notranslate"><span class="pre">is_burned_in</span></code> is false), then returns
+<code class="xref py py-data docutils literal notranslate"><span class="pre">NOT_BURNED_IN_ITER</span></code>.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.burn_in.ks_test">
+<code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">ks_test</code><span class="sig-paren">(</span><em>samples1</em>, <em>samples2</em>, <em>threshold=0.9</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#ks_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.ks_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a KS test to determine if two sets of samples are the same.</p>
+<p>The ks test is applied parameter-by-parameter. If the two-tailed p-value
+returned by the test is greater than <code class="docutils literal notranslate"><span class="pre">threshold</span></code>, the samples are
+considered to be the same.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>samples1</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Dictionary of mapping parameters to the first set of samples.</li>
+<li><strong>samples2</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Dictionary of mapping parameters to the second set of samples.</li>
+<li><strong>threshold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The thershold to use for the p-value. Default is 0.9.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Dictionary mapping parameter names to booleans indicating whether the
+given parameter passes the KS test.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.burn_in.max_posterior">
+<code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">max_posterior</code><span class="sig-paren">(</span><em>lnps_per_walker</em>, <em>dim</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#max_posterior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.max_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Burn in based on samples being within dim/2 of maximum posterior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>lnps_per_walker</strong> (<em>2D array</em>) – Array of values that are proportional to the log posterior values. Must
+have shape <code class="docutils literal notranslate"><span class="pre">nwalkers</span> <span class="pre">x</span> <span class="pre">niterations</span></code>.</li>
+<li><strong>dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The dimension of the parameter space.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>burn_in_idx</strong> (<em>array of int</em>) – The burn in indices of each walker. If a walker is not burned in, its
+index will be be equal to the length of the chain.</li>
+<li><strong>is_burned_in</strong> (<em>array of bool</em>) – Whether or not a walker is burned in.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.burn_in.nacl">
+<code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">nacl</code><span class="sig-paren">(</span><em>nsamples</em>, <em>acls</em>, <em>nacls=5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#nacl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.nacl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Burn in based on ACL.</p>
+<p>This applies the following test to determine burn in:</p>
+<ol class="arabic simple">
+<li>The first half of the chain is ignored.</li>
+<li>An ACL is calculated from the second half.</li>
+<li>If <code class="docutils literal notranslate"><span class="pre">nacls</span></code> times the ACL is &lt; the length of the chain / 2,
+the chain is considered to be burned in at the half-way point.</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>nsamples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The number of samples of in the chain(s).</li>
+<li><strong>acls</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Dictionary of parameter -&gt; ACL(s). The ACLs for each parameter may
+be an integer or an array of integers (for multiple chains).</li>
+<li><strong>nacls</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – The number of ACLs the chain(s) must have gone past the halfway point
+in order to be considered burned in. Default is 5.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Dictionary of parameter -&gt; boolean(s) indicating if the chain(s) pass
+the test. If an array of values was provided for the acls, the values
+will be arrays of booleans.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.burn_in.posterior_step">
+<code class="descclassname">pycbc.inference.burn_in.</code><code class="descname">posterior_step</code><span class="sig-paren">(</span><em>logposts</em>, <em>dim</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/burn_in.html#posterior_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.burn_in.posterior_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the last time a chain made a jump &gt; dim/2.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>logposts</strong> (<em>array</em>) – 1D array of values that are proportional to the log posterior values.</li>
+<li><strong>dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The dimension of the parameter space.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The index of the last time the logpost made a jump &gt; dim/2. If that
+never happened, returns 0.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)">int</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.inference.entropy">
+<span id="pycbc-inference-entropy-module"></span><h2>pycbc.inference.entropy module<a class="headerlink" href="#module-pycbc.inference.entropy" title="Permalink to this headline">¶</a></h2>
+<p>The module contains functions for calculating the
+Kullback-Leibler divergence.</p>
+<dl class="function">
+<dt id="pycbc.inference.entropy.check_hist_params">
+<code class="descclassname">pycbc.inference.entropy.</code><code class="descname">check_hist_params</code><span class="sig-paren">(</span><em>samples</em>, <em>hist_min</em>, <em>hist_max</em>, <em>hist_bins</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/entropy.html#check_hist_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.entropy.check_hist_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the bound values given for the histogram are consistent,
+returning the range if they are or raising an error if they are not.
+Also checks that if hist_bins is a str, it corresponds to a method
+available in numpy.histogram</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>samples</strong> (<em>numpy.array</em>) – Set of samples to get the min/max if only one of the bounds is given.</li>
+<li><strong>hist_min</strong> (<em>numpy.float64</em>) – Minimum value for the histogram.</li>
+<li><strong>hist_max</strong> (<em>numpy.float64</em>) – Maximum value for the histogram.</li>
+<li><strong>hist_bins</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – If int, number of equal-width bins to use in numpy.histogram. If str,
+it should be one of the methods to calculate the optimal bin width
+available in numpy.histogram: [‘auto’, ‘fd’, ‘doane’, ‘scott’, ‘stone’,
+‘rice’, ‘sturges’, ‘sqrt’]. Default is ‘fd’ (Freedman Diaconis
+Estimator). This option will be ignored if <cite>kde=True</cite>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>hist_range</strong> (<em>tuple or None</em>) – The bounds (hist_min, hist_max) or None.</li>
+<li><strong>hist_bins</strong> (<em>int or str</em>) – Number of bins or method for optimal width bin calculation.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.entropy.compute_pdf">
+<code class="descclassname">pycbc.inference.entropy.</code><code class="descname">compute_pdf</code><span class="sig-paren">(</span><em>samples</em>, <em>method</em>, <em>bins</em>, <em>hist_min</em>, <em>hist_max</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/entropy.html#compute_pdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.entropy.compute_pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the probability density function for a set of samples.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>samples</strong> (<em>numpy.array</em>) – Set of samples to calculate the pdf.</li>
+<li><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Method to calculate the pdf. Options are ‘kde’ for the Kernel Density
+Estimator, and ‘hist’ to use numpy.histogram</li>
+<li><strong>bins</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – This option will be ignored if method is <cite>kde</cite>.
+If int, number of equal-width bins to use when calculating probability
+density function from a set of samples of the distribution. If str, it
+should be one of the methods to calculate the optimal bin width
+available in numpy.histogram: [‘auto’, ‘fd’, ‘doane’, ‘scott’, ‘stone’,
+‘rice’, ‘sturges’, ‘sqrt’]. Default is ‘fd’ (Freedman Diaconis
+Estimator).</li>
+<li><strong>hist_min</strong> (<em>numpy.float64</em><em>, </em><em>optional</em>) – Minimum of the distributions’ values to use. This will be ignored if
+<cite>kde=True</cite>.</li>
+<li><strong>hist_max</strong> (<em>numpy.float64</em><em>, </em><em>optional</em>) – Maximum of the distributions’ values to use. This will be ignored if
+<cite>kde=True</cite>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>pdf</strong> – Discrete probability distribution calculated from samples.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.entropy.entropy">
+<code class="descclassname">pycbc.inference.entropy.</code><code class="descname">entropy</code><span class="sig-paren">(</span><em>pdf1</em>, <em>base=2.718281828459045</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/entropy.html#entropy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.entropy.entropy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the information entropy for a single parameter
+from one probability density function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pdf1</strong> (<em>numpy.array</em>) – Probability density function.</li>
+<li><strong>base</strong> (<em>{numpy.e</em><em>, </em><em>numpy.float64}</em><em>, </em><em>optional</em>) – The logarithmic base to use (choose base 2 for information measured
+in bits, default is nats).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The information entropy value.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.float64</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.entropy.js">
+<code class="descclassname">pycbc.inference.entropy.</code><code class="descname">js</code><span class="sig-paren">(</span><em>samples1</em>, <em>samples2</em>, <em>kde=False</em>, <em>bins=None</em>, <em>hist_min=None</em>, <em>hist_max=None</em>, <em>base=2.718281828459045</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/entropy.html#js"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.entropy.js" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the Jensen-Shannon divergence for a single parameter
+from two distributions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>samples1</strong> (<em>numpy.array</em>) – Samples.</li>
+<li><strong>samples2</strong> (<em>numpy.array</em>) – Samples.</li>
+<li><strong>kde</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – Set to <cite>True</cite> to estimate the probability density function using
+kernel density estimation (KDE).</li>
+<li><strong>bins</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – If int, number of equal-width bins to use when calculating probability
+density function from a set of samples of the distribution. If str, it
+should be one of the methods to calculate the optimal bin width
+available in numpy.histogram: [‘auto’, ‘fd’, ‘doane’, ‘scott’, ‘stone’,
+‘rice’, ‘sturges’, ‘sqrt’]. Default is ‘fd’ (Freedman Diaconis
+Estimator). This option will be ignored if <cite>kde=True</cite>.</li>
+<li><strong>hist_min</strong> (<em>numpy.float64</em>) – Minimum of the distributions’ values to use. This will be ignored if
+<cite>kde=True</cite>.</li>
+<li><strong>hist_max</strong> (<em>numpy.float64</em>) – Maximum of the distributions’ values to use. This will be ignored if
+<cite>kde=True</cite>.</li>
+<li><strong>base</strong> (<em>numpy.float64</em>) – The logarithmic base to use (choose base 2 for information measured
+in bits, default is nats).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The Jensen-Shannon divergence value.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.float64</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.entropy.kl">
+<code class="descclassname">pycbc.inference.entropy.</code><code class="descname">kl</code><span class="sig-paren">(</span><em>samples1</em>, <em>samples2</em>, <em>pdf1=False</em>, <em>pdf2=False</em>, <em>kde=False</em>, <em>bins=None</em>, <em>hist_min=None</em>, <em>hist_max=None</em>, <em>base=2.718281828459045</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/entropy.html#kl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.entropy.kl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the Kullback-Leibler divergence for a single parameter
+from two distributions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>samples1</strong> (<em>numpy.array</em>) – Samples or probability density function (for the latter must also set
+<cite>pdf1=True</cite>).</li>
+<li><strong>samples2</strong> (<em>numpy.array</em>) – Samples or probability density function (for the latter must also set
+<cite>pdf2=True</cite>).</li>
+<li><strong>pdf1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – Set to <cite>True</cite> if <cite>samples1</cite> is a probability density funtion already.</li>
+<li><strong>pdf2</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – Set to <cite>True</cite> if <cite>samples2</cite> is a probability density funtion already.</li>
+<li><strong>kde</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – Set to <cite>True</cite> if at least one of <cite>pdf1</cite> or <cite>pdf2</cite> is <cite>False</cite> to
+estimate the probability density function using kernel density
+estimation (KDE).</li>
+<li><strong>bins</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – If int, number of equal-width bins to use when calculating probability
+density function from a set of samples of the distribution. If str, it
+should be one of the methods to calculate the optimal bin width
+available in numpy.histogram: [‘auto’, ‘fd’, ‘doane’, ‘scott’, ‘stone’,
+‘rice’, ‘sturges’, ‘sqrt’]. Default is ‘fd’ (Freedman Diaconis
+Estimator). This option will be ignored if <cite>kde=True</cite>.</li>
+<li><strong>hist_min</strong> (<em>numpy.float64</em>) – Minimum of the distributions’ values to use. This will be ignored if
+<cite>kde=True</cite>.</li>
+<li><strong>hist_max</strong> (<em>numpy.float64</em>) – Maximum of the distributions’ values to use. This will be ignored if
+<cite>kde=True</cite>.</li>
+<li><strong>base</strong> (<em>numpy.float64</em>) – The logarithmic base to use (choose base 2 for information measured
+in bits, default is nats).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The Kullback-Leibler divergence value.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.float64</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.inference.evidence">
+<span id="pycbc-inference-evidence-module"></span><h2>pycbc.inference.evidence module<a class="headerlink" href="#module-pycbc.inference.evidence" title="Permalink to this headline">¶</a></h2>
+<p>This modules provides functions for estimating the marginal
+likelihood or evidence of a model.</p>
+<dl class="function">
+<dt id="pycbc.inference.evidence.arithmetic_mean_estimator">
+<code class="descclassname">pycbc.inference.evidence.</code><code class="descname">arithmetic_mean_estimator</code><span class="sig-paren">(</span><em>log_likelihood</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/evidence.html#arithmetic_mean_estimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.evidence.arithmetic_mean_estimator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the log evidence via the prior arithmetic mean estimator (AME).</p>
+<p>The logarithm form of AME is used. This is the most basic
+evidence estimator, and often requires O(billions) of samples
+from the prior.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>log_likelihood</strong> (<em>1d array of floats</em>) – The log likelihood of the data sampled from the prior
+distribution.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Estimation of the log of the evidence.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.evidence.harmonic_mean_estimator">
+<code class="descclassname">pycbc.inference.evidence.</code><code class="descname">harmonic_mean_estimator</code><span class="sig-paren">(</span><em>log_likelihood</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/evidence.html#harmonic_mean_estimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.evidence.harmonic_mean_estimator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the log evidence via posterior harmonic mean estimator (HME).</p>
+<p>The logarithm form of HME is used. This method is not
+recommended for general use. It is very slow to converge,
+formally, has infinite variance, and very error prone.</p>
+<p>Not recommended for general use.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>log_likelihood</strong> (<em>1d array of floats</em>) – The log likelihood of the data sampled from the posterior
+distribution.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Estimation of the log of the evidence.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.evidence.stepping_stone_algorithm">
+<code class="descclassname">pycbc.inference.evidence.</code><code class="descname">stepping_stone_algorithm</code><span class="sig-paren">(</span><em>log_likelihood</em>, <em>betas</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/evidence.html#stepping_stone_algorithm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.evidence.stepping_stone_algorithm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the log evidence of the model via stepping stone algorithm.
+Also returns an estimated standard deviation for the log evidence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>log_likelihood</strong> (<em>3d array of shape</em><em> (</em><em>betas</em><em>, </em><em>walker</em><em>, </em><em>iteration</em><em>)</em>) – The log likelihood for each temperature separated by
+temperature, walker, and iteration.</li>
+<li><strong>betas</strong> (<em>1d array</em>) – The inverse temperatures used in the MCMC.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>log_evidence</strong> (<em>float</em>) – Estimation of the log of the evidence.</li>
+<li><strong>mcmc_std</strong> (<em>float</em>) – The standard deviation of the log evidence estimate from
+Monte-Carlo spread.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.evidence.thermodynamic_integration">
+<code class="descclassname">pycbc.inference.evidence.</code><code class="descname">thermodynamic_integration</code><span class="sig-paren">(</span><em>log_likelihood</em>, <em>betas</em>, <em>method='simpsons'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/evidence.html#thermodynamic_integration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.evidence.thermodynamic_integration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the log evidence of the model via thermodynamic integration.
+Also returns an estimated standard deviation for the log evidence.</p>
+<p>Current options are integration through the trapezoid rule, a
+first-order corrected trapezoid rule, and Simpson’s rule.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>log_likelihood</strong> (<em>3d array of shape</em><em> (</em><em>betas</em><em>, </em><em>walker</em><em>, </em><em>iteration</em><em>)</em>) – The log likelihood for each temperature separated by
+temperature, walker, and iteration.</li>
+<li><strong>betas</strong> (<em>1d array</em>) – The inverse temperatures used in the MCMC.</li>
+<li><strong>method</strong> (<em>{&quot;trapzoid&quot;</em><em>, </em><em>&quot;trapezoid_corrected&quot;</em><em>, </em><em>&quot;simpsons&quot;}</em><em>,</em>) – optional.
+The numerical integration method to use for the
+thermodynamic integration. Choices include: “trapezoid”,
+“trapezoid_corrected”, “simpsons”, for the trapezoid rule,
+the first-order correction to the trapezoid rule, and
+Simpson’s rule. [Default = “simpsons”]</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>log_evidence</strong> (<em>float</em>) – Estimation of the log of the evidence.</li>
+<li><strong>mcmc_std</strong> (<em>float</em>) – The standard deviation of the log evidence estimate from
+Monte-Carlo spread.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.inference.gelman_rubin">
+<span id="pycbc-inference-gelman-rubin-module"></span><h2>pycbc.inference.gelman_rubin module<a class="headerlink" href="#module-pycbc.inference.gelman_rubin" title="Permalink to this headline">¶</a></h2>
+<p>This modules provides functions for evaluating the Gelman-Rubin convergence
+diagnostic statistic.</p>
+<dl class="function">
+<dt id="pycbc.inference.gelman_rubin.gelman_rubin">
+<code class="descclassname">pycbc.inference.gelman_rubin.</code><code class="descname">gelman_rubin</code><span class="sig-paren">(</span><em>chains</em>, <em>auto_burn_in=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/gelman_rubin.html#gelman_rubin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.gelman_rubin.gelman_rubin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the univariate Gelman-Rubin convergence statistic
+which compares the evolution of multiple chains in a Markov-Chain Monte
+Carlo process and computes their difference to determine their convergence.
+The between-chain and within-chain variances are computed for each sampling
+parameter, and a weighted combination of the two is used to determine the
+convergence. As the chains converge, the point scale reduction factor
+should go to 1.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>chains</strong> (<em>iterable</em>) – An iterable of numpy.array instances that contain the samples
+for each chain. Each chain has shape (nparameters, niterations).</li>
+<li><strong>auto_burn_in</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – If True, then only use later half of samples provided.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>psrf</strong> – A numpy.array of shape (nparameters) that has the point estimates of
+the potential scale reduction factor.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">numpy.array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.gelman_rubin.walk">
+<code class="descclassname">pycbc.inference.gelman_rubin.</code><code class="descname">walk</code><span class="sig-paren">(</span><em>chains</em>, <em>start</em>, <em>end</em>, <em>step</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/gelman_rubin.html#walk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.gelman_rubin.walk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates Gelman-Rubin conervergence statistic along chains of data.
+This function will advance along the chains and calculate the
+statistic for each step.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>chains</strong> (<em>iterable</em>) – An iterable of numpy.array instances that contain the samples
+for each chain. Each chain has shape (nparameters, niterations).</li>
+<li><strong>start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Start index of blocks to calculate all statistics.</li>
+<li><strong>end</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Last index of blocks to calculate statistics.</li>
+<li><strong>step</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – Step size to take for next block.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>starts</strong> (<em>numpy.array</em>) – 1-D array of start indexes of calculations.</li>
+<li><strong>ends</strong> (<em>numpy.array</em>) – 1-D array of end indexes of caluclations.</li>
+<li><strong>stats</strong> (<em>numpy.array</em>) – Array with convergence statistic. It has
+shape (nparameters, ncalculations).</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.inference.geweke">
+<span id="pycbc-inference-geweke-module"></span><h2>pycbc.inference.geweke module<a class="headerlink" href="#module-pycbc.inference.geweke" title="Permalink to this headline">¶</a></h2>
+<p>Functions for computing the Geweke convergence statistic.</p>
+<dl class="function">
+<dt id="pycbc.inference.geweke.geweke">
+<code class="descclassname">pycbc.inference.geweke.</code><code class="descname">geweke</code><span class="sig-paren">(</span><em>x</em>, <em>seg_length</em>, <em>seg_stride</em>, <em>end_idx</em>, <em>ref_start</em>, <em>ref_end=None</em>, <em>seg_start=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/geweke.html#geweke"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.geweke.geweke" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates Geweke conervergence statistic for a chain of data.
+This function will advance along the chain and calculate the
+statistic for each step.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> (<em>numpy.array</em>) – A one-dimensional array of data.</li>
+<li><strong>seg_length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Number of samples to use for each Geweke calculation.</li>
+<li><strong>seg_stride</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Number of samples to advance before next Geweke calculation.</li>
+<li><strong>end_idx</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Index of last start.</li>
+<li><strong>ref_start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Index of beginning of end reference segment.</li>
+<li><strong>ref_end</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Index of end of end reference segment. Default is None which
+will go to the end of the data array.</li>
+<li><strong>seg_start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – What index to start computing the statistic. Default is 0 which
+will go to the beginning of the data array.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>starts</strong> (<em>numpy.array</em>) – The start index of the first segment in the chain.</li>
+<li><strong>ends</strong> (<em>numpy.array</em>) – The end index of the first segment in the chain.</li>
+<li><strong>stats</strong> (<em>numpy.array</em>) – The Geweke convergence diagnostic statistic for the segment.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.inference.option_utils">
+<span id="pycbc-inference-option-utils-module"></span><h2>pycbc.inference.option_utils module<a class="headerlink" href="#module-pycbc.inference.option_utils" title="Permalink to this headline">¶</a></h2>
+<p>This module contains standard options used for inference-related programs.</p>
+<dl class="class">
+<dt id="pycbc.inference.option_utils.ParseLabelArg">
+<em class="property">class </em><code class="descclassname">pycbc.inference.option_utils.</code><code class="descname">ParseLabelArg</code><span class="sig-paren">(</span><em>type=&lt;class 'str'&gt;</em>, <em>nargs=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/option_utils.html#ParseLabelArg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.option_utils.ParseLabelArg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Action" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">argparse.Action</span></code></a></p>
+<p>Argparse action that will parse arguments that can accept labels.</p>
+<p>This assumes that the values set on the command line for its assigned
+argument are strings formatted like <code class="docutils literal notranslate"><span class="pre">PARAM[:LABEL]</span></code>. When the arguments
+are parsed, the <code class="docutils literal notranslate"><span class="pre">LABEL</span></code> bit is stripped off and added to a dictionary
+mapping <code class="docutils literal notranslate"><span class="pre">PARAM</span> <span class="pre">-&gt;</span> <span class="pre">LABEL</span></code>. This dictionary is stored to the parsed
+namespace called <code class="docutils literal notranslate"><span class="pre">{dest}_labels</span></code>, where <code class="docutils literal notranslate"><span class="pre">{dest}</span></code> is the argument’s
+<code class="docutils literal notranslate"><span class="pre">dest</span></code> setting (by default, this is the same as the option string).
+Likewise, the argument’s <code class="docutils literal notranslate"><span class="pre">dest</span></code> in the parsed namespace is updated so
+that it is just <code class="docutils literal notranslate"><span class="pre">PARAM</span></code>.</p>
+<p>If no <code class="docutils literal notranslate"><span class="pre">LABEL</span></code> is provided, then <code class="docutils literal notranslate"><span class="pre">PARAM</span></code> will be used for <code class="docutils literal notranslate"><span class="pre">LABEL</span></code>.</p>
+<p>This action can work on arguments that have <code class="docutils literal notranslate"><span class="pre">nargs</span> <span class="pre">!=</span> <span class="pre">0</span></code> and <code class="docutils literal notranslate"><span class="pre">type</span></code> set
+to <code class="docutils literal notranslate"><span class="pre">str</span></code>.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pycbc.inference.option_utils.ParseParametersArg">
+<em class="property">class </em><code class="descclassname">pycbc.inference.option_utils.</code><code class="descname">ParseParametersArg</code><span class="sig-paren">(</span><em>type=&lt;class 'str'&gt;</em>, <em>nargs=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/option_utils.html#ParseParametersArg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.option_utils.ParseParametersArg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycbc.inference.option_utils.ParseLabelArg" title="pycbc.inference.option_utils.ParseLabelArg"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycbc.inference.option_utils.ParseLabelArg</span></code></a></p>
+<p>Argparse action that will parse parameters and labels from an opton.</p>
+<p>Does the same as <code class="docutils literal notranslate"><span class="pre">ParseLabelArg</span></code>, with the additional functionality that
+if <code class="docutils literal notranslate"><span class="pre">LABEL</span></code> is a known parameter in <code class="docutils literal notranslate"><span class="pre">pycbc.waveform.parameters</span></code>, then
+the label attribute there will be used in the labels dictionary.
+Otherwise, <code class="docutils literal notranslate"><span class="pre">LABEL</span></code> will be used.</p>
+<p class="rubric">Examples</p>
+<p>Create a parser and add two arguments that use this action (note that the
+first argument accepts multiple inputs while the second only accepts a
+single input):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">argparse</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--parameters&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+<span class="go">                        action=ParseParametersArg)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--z-arg&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">ParseParametersArg</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Parse a command line that uses these options:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shlex</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cli</span> <span class="o">=</span> <span class="s2">&quot;--parameters &#39;mass1+mass2:mtotal&#39; ra ni --z-arg foo:bar&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">cli</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">parameters</span>
+<span class="go">[&#39;mass1+mass2&#39;, &#39;ra&#39;, &#39;ni&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">parameters_labels</span>
+<span class="go">{&#39;mass1+mass2&#39;: &#39;$M~(\mathrm{M}_\odot)$&#39;, &#39;ni&#39;: &#39;ni&#39;, &#39;ra&#39;: &#39;$\alpha$&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">z_arg</span>
+<span class="go">&#39;foo&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opts</span><span class="o">.</span><span class="n">z_arg_labels</span>
+<span class="go">{&#39;foo&#39;: &#39;bar&#39;}</span>
+</pre></div>
+</div>
+<p>In the above, the first argument to <code class="docutils literal notranslate"><span class="pre">--parameters</span></code> was <code class="docutils literal notranslate"><span class="pre">mtotal</span></code>. Since
+this is a recognized parameter in <code class="docutils literal notranslate"><span class="pre">pycbc.waveform.parameters</span></code>, the label
+dictionary contains the latex string associated with the <code class="docutils literal notranslate"><span class="pre">mtotal</span></code>
+parameter. A label was not provided for the second argument, and so <code class="docutils literal notranslate"><span class="pre">ra</span></code>
+was used. Since <code class="docutils literal notranslate"><span class="pre">ra</span></code> is also a recognized parameter, its associated latex
+string was used in the labels dictionary. Since <code class="docutils literal notranslate"><span class="pre">ni</span></code> and <code class="docutils literal notranslate"><span class="pre">bar</span></code> (the
+label for <code class="docutils literal notranslate"><span class="pre">z-arg</span></code>) are not recognized parameters, they were just used
+as-is in the labels dictionaries.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.option_utils.add_density_option_group">
+<code class="descclassname">pycbc.inference.option_utils.</code><code class="descname">add_density_option_group</code><span class="sig-paren">(</span><em>parser</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/option_utils.html#add_density_option_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.option_utils.add_density_option_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the options needed to configure contours and density colour map.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – ArgumentParser instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.option_utils.add_injsamples_map_opt">
+<code class="descclassname">pycbc.inference.option_utils.</code><code class="descname">add_injsamples_map_opt</code><span class="sig-paren">(</span><em>parser</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/option_utils.html#add_injsamples_map_opt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.option_utils.add_injsamples_map_opt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds option to parser to specify a mapping between injection parameters
+an sample parameters.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.option_utils.add_plot_posterior_option_group">
+<code class="descclassname">pycbc.inference.option_utils.</code><code class="descname">add_plot_posterior_option_group</code><span class="sig-paren">(</span><em>parser</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/option_utils.html#add_plot_posterior_option_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.option_utils.add_plot_posterior_option_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the options needed to configure plots of posterior results.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – ArgumentParser instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.option_utils.add_scatter_option_group">
+<code class="descclassname">pycbc.inference.option_utils.</code><code class="descname">add_scatter_option_group</code><span class="sig-paren">(</span><em>parser</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/option_utils.html#add_scatter_option_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.option_utils.add_scatter_option_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the options needed to configure scatter plots.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>parser</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><em>object</em></a>) – ArgumentParser instance.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.option_utils.expected_parameters_from_cli">
+<code class="descclassname">pycbc.inference.option_utils.</code><code class="descname">expected_parameters_from_cli</code><span class="sig-paren">(</span><em>opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/option_utils.html#expected_parameters_from_cli"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.option_utils.expected_parameters_from_cli" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the –expected-parameters arguments from the <cite>plot_posterior</cite>
+option group.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opts</strong> (<em>ArgumentParser</em>) – The parsed arguments from the command line.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary of parameter name -&gt; expected value. Only parameters that
+were specified in the –expected-parameters option will be included; if
+no parameters were provided, will return an empty dictionary.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.option_utils.plot_ranges_from_cli">
+<code class="descclassname">pycbc.inference.option_utils.</code><code class="descname">plot_ranges_from_cli</code><span class="sig-paren">(</span><em>opts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/option_utils.html#plot_ranges_from_cli"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.option_utils.plot_ranges_from_cli" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses the mins and maxs arguments from the <cite>plot_posterior</cite> option
+group.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>opts</strong> (<em>ArgumentParser</em>) – The parsed arguments from the command line.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li><strong>mins</strong> (<em>dict</em>) – Dictionary of parameter name -&gt; specified mins. Only parameters that
+were specified in the –mins option will be included; if no parameters
+were provided, will return an empty dictionary.</li>
+<li><strong>maxs</strong> (<em>dict</em>) – Dictionary of parameter name -&gt; specified maxs. Only parameters that
+were specified in the –mins option will be included; if no parameters
+were provided, will return an empty dictionary.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pycbc.inference.option_utils.prior_from_config">
+<code class="descclassname">pycbc.inference.option_utils.</code><code class="descname">prior_from_config</code><span class="sig-paren">(</span><em>cp</em>, <em>prior_section='prior'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pycbc/inference/option_utils.html#prior_from_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pycbc.inference.option_utils.prior_from_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads a prior distribution from the given config file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cp</strong> (<em>pycbc.workflow.WorkflowConfigParser</em>) – The config file to read.</li>
+<li><strong>sections</strong> (<em>list of str</em><em>, </em><em>optional</em>) – The sections to retrieve the prior from. If <code class="docutils literal notranslate"><span class="pre">None</span></code> (the default),
+will look in sections starting with ‘prior’.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The prior distribution.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">distributions.JointDistribution</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pycbc.inference">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pycbc.inference" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pycbc.frame.html" class="btn btn-neutral float-left" title="pycbc.frame package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pycbc.inference.io.html" class="btn btn-neutral float-right" title="pycbc.inference.io package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

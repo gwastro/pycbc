@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_include/psd_models-table.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <table border="1" class="docutils">
+<colgroup>
+<col width="37%" />
+<col width="63%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Function</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">AdVBNSOptimizedSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.AdVBNSOptimizedSensitivityP1200087" title="pycbc.psd.analytical.AdVBNSOptimizedSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVBNSOptimizedSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">AdVDesignSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.AdVDesignSensitivityP1200087" title="pycbc.psd.analytical.AdVDesignSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVDesignSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">AdVEarlyHighSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.AdVEarlyHighSensitivityP1200087" title="pycbc.psd.analytical.AdVEarlyHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVEarlyHighSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">AdVEarlyLowSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.AdVEarlyLowSensitivityP1200087" title="pycbc.psd.analytical.AdVEarlyLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVEarlyLowSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">AdVLateHighSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.AdVLateHighSensitivityP1200087" title="pycbc.psd.analytical.AdVLateHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVLateHighSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">AdVLateLowSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.AdVLateLowSensitivityP1200087" title="pycbc.psd.analytical.AdVLateLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVLateLowSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">AdVMidHighSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.AdVMidHighSensitivityP1200087" title="pycbc.psd.analytical.AdVMidHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVMidHighSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">AdVMidLowSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.AdVMidLowSensitivityP1200087" title="pycbc.psd.analytical.AdVMidLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdVMidLowSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">AdvVirgo</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.AdvVirgo" title="pycbc.psd.analytical.AdvVirgo"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.AdvVirgo()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">CosmicExplorerP1600143</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.CosmicExplorerP1600143" title="pycbc.psd.analytical.CosmicExplorerP1600143"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.CosmicExplorerP1600143()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">CosmicExplorerPessimisticP1600143</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.CosmicExplorerPessimisticP1600143" title="pycbc.psd.analytical.CosmicExplorerPessimisticP1600143"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.CosmicExplorerPessimisticP1600143()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">CosmicExplorerWidebandP1600143</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.CosmicExplorerWidebandP1600143" title="pycbc.psd.analytical.CosmicExplorerWidebandP1600143"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.CosmicExplorerWidebandP1600143()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">EinsteinTelescopeP1600143</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.EinsteinTelescopeP1600143" title="pycbc.psd.analytical.EinsteinTelescopeP1600143"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.EinsteinTelescopeP1600143()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">GEOHF</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.GEOHF" title="pycbc.psd.analytical.GEOHF"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.GEOHF()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">GEO</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.GEO" title="pycbc.psd.analytical.GEO"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.GEO()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">KAGRADesignSensitivityT1600593</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.KAGRADesignSensitivityT1600593" title="pycbc.psd.analytical.KAGRADesignSensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRADesignSensitivityT1600593()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">KAGRAEarlySensitivityT1600593</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.KAGRAEarlySensitivityT1600593" title="pycbc.psd.analytical.KAGRAEarlySensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRAEarlySensitivityT1600593()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">KAGRALateSensitivityT1600593</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.KAGRALateSensitivityT1600593" title="pycbc.psd.analytical.KAGRALateSensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRALateSensitivityT1600593()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">KAGRAMidSensitivityT1600593</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.KAGRAMidSensitivityT1600593" title="pycbc.psd.analytical.KAGRAMidSensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRAMidSensitivityT1600593()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">KAGRAOpeningSensitivityT1600593</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.KAGRAOpeningSensitivityT1600593" title="pycbc.psd.analytical.KAGRAOpeningSensitivityT1600593"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRAOpeningSensitivityT1600593()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">KAGRA</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.KAGRA" title="pycbc.psd.analytical.KAGRA"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.KAGRA()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">TAMA</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.TAMA" title="pycbc.psd.analytical.TAMA"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.TAMA()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">Virgo</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.Virgo" title="pycbc.psd.analytical.Virgo"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.Virgo()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOAPlusDesignSensitivityT1800042</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOAPlusDesignSensitivityT1800042" title="pycbc.psd.analytical.aLIGOAPlusDesignSensitivityT1800042"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOAPlusDesignSensitivityT1800042()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOAdVO3LowT1800545</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOAdVO3LowT1800545" title="pycbc.psd.analytical.aLIGOAdVO3LowT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOAdVO3LowT1800545()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOAdVO4IntermediateT1800545</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOAdVO4IntermediateT1800545" title="pycbc.psd.analytical.aLIGOAdVO4IntermediateT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOAdVO4IntermediateT1800545()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOAdVO4T1800545</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOAdVO4T1800545" title="pycbc.psd.analytical.aLIGOAdVO4T1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOAdVO4T1800545()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOBHBH20DegGWINC</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOBHBH20DegGWINC" title="pycbc.psd.analytical.aLIGOBHBH20DegGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOBHBH20DegGWINC()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOBHBH20Deg</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOBHBH20Deg" title="pycbc.psd.analytical.aLIGOBHBH20Deg"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOBHBH20Deg()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOBNSOptimizedSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOBNSOptimizedSensitivityP1200087" title="pycbc.psd.analytical.aLIGOBNSOptimizedSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOBNSOptimizedSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGODesignSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGODesignSensitivityP1200087" title="pycbc.psd.analytical.aLIGODesignSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGODesignSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOEarlyHighSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOEarlyHighSensitivityP1200087" title="pycbc.psd.analytical.aLIGOEarlyHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOEarlyHighSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOEarlyLowSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOEarlyLowSensitivityP1200087" title="pycbc.psd.analytical.aLIGOEarlyLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOEarlyLowSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOHighFrequencyGWINC</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOHighFrequencyGWINC" title="pycbc.psd.analytical.aLIGOHighFrequencyGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOHighFrequencyGWINC()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOHighFrequency</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOHighFrequency" title="pycbc.psd.analytical.aLIGOHighFrequency"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOHighFrequency()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOKAGRA128MpcT1800545</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOKAGRA128MpcT1800545" title="pycbc.psd.analytical.aLIGOKAGRA128MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOKAGRA128MpcT1800545()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOKAGRA25MpcT1800545</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOKAGRA25MpcT1800545" title="pycbc.psd.analytical.aLIGOKAGRA25MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOKAGRA25MpcT1800545()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOKAGRA80MpcT1800545</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOKAGRA80MpcT1800545" title="pycbc.psd.analytical.aLIGOKAGRA80MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOKAGRA80MpcT1800545()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOLateHighSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOLateHighSensitivityP1200087" title="pycbc.psd.analytical.aLIGOLateHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOLateHighSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOLateLowSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOLateLowSensitivityP1200087" title="pycbc.psd.analytical.aLIGOLateLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOLateLowSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOMidHighSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOMidHighSensitivityP1200087" title="pycbc.psd.analytical.aLIGOMidHighSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOMidHighSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOMidLowSensitivityP1200087</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOMidLowSensitivityP1200087" title="pycbc.psd.analytical.aLIGOMidLowSensitivityP1200087"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOMidLowSensitivityP1200087()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGONSNSOptGWINC</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGONSNSOptGWINC" title="pycbc.psd.analytical.aLIGONSNSOptGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONSNSOptGWINC()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGONSNSOpt</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGONSNSOpt" title="pycbc.psd.analytical.aLIGONSNSOpt"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONSNSOpt()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGONoSRMHighPower</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGONoSRMHighPower" title="pycbc.psd.analytical.aLIGONoSRMHighPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONoSRMHighPower()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGONoSRMLowPowerGWINC</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGONoSRMLowPowerGWINC" title="pycbc.psd.analytical.aLIGONoSRMLowPowerGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONoSRMLowPowerGWINC()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGONoSRMLowPower</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGONoSRMLowPower" title="pycbc.psd.analytical.aLIGONoSRMLowPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGONoSRMLowPower()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumBHBH20Deg</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumBHBH20Deg" title="pycbc.psd.analytical.aLIGOQuantumBHBH20Deg"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumBHBH20Deg()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumHighFrequency</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumHighFrequency" title="pycbc.psd.analytical.aLIGOQuantumHighFrequency"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumHighFrequency()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumNSNSOpt</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumNSNSOpt" title="pycbc.psd.analytical.aLIGOQuantumNSNSOpt"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumNSNSOpt()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumNoSRMHighPower</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumNoSRMHighPower" title="pycbc.psd.analytical.aLIGOQuantumNoSRMHighPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumNoSRMHighPower()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumNoSRMLowPower</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumNoSRMLowPower" title="pycbc.psd.analytical.aLIGOQuantumNoSRMLowPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumNoSRMLowPower()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumZeroDetHighPower</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumZeroDetHighPower" title="pycbc.psd.analytical.aLIGOQuantumZeroDetHighPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumZeroDetHighPower()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOQuantumZeroDetLowPower</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOQuantumZeroDetLowPower" title="pycbc.psd.analytical.aLIGOQuantumZeroDetLowPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOQuantumZeroDetLowPower()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOThermal</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOThermal" title="pycbc.psd.analytical.aLIGOThermal"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOThermal()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOZeroDetHighPowerGWINC</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetHighPowerGWINC" title="pycbc.psd.analytical.aLIGOZeroDetHighPowerGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOZeroDetHighPowerGWINC()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOZeroDetHighPower</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetHighPower" title="pycbc.psd.analytical.aLIGOZeroDetHighPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOZeroDetHighPower()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOZeroDetLowPowerGWINC</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetLowPowerGWINC" title="pycbc.psd.analytical.aLIGOZeroDetLowPowerGWINC"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOZeroDetLowPowerGWINC()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOZeroDetLowPower</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOZeroDetLowPower" title="pycbc.psd.analytical.aLIGOZeroDetLowPower"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOZeroDetLowPower()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOaLIGO140MpcT1800545</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGO140MpcT1800545" title="pycbc.psd.analytical.aLIGOaLIGO140MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOaLIGO140MpcT1800545()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOaLIGO175MpcT1800545</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGO175MpcT1800545" title="pycbc.psd.analytical.aLIGOaLIGO175MpcT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOaLIGO175MpcT1800545()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">aLIGOaLIGODesignSensitivityT1800044</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGODesignSensitivityT1800044" title="pycbc.psd.analytical.aLIGOaLIGODesignSensitivityT1800044"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOaLIGODesignSensitivityT1800044()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">aLIGOaLIGOO3LowT1800545</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.aLIGOaLIGOO3LowT1800545" title="pycbc.psd.analytical.aLIGOaLIGOO3LowT1800545"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.aLIGOaLIGOO3LowT1800545()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">eLIGOModel</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.eLIGOModel" title="pycbc.psd.analytical.eLIGOModel"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.eLIGOModel()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">eLIGOShot</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.eLIGOShot" title="pycbc.psd.analytical.eLIGOShot"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.eLIGOShot()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">flat_unity</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.flat_unity" title="pycbc.psd.analytical.flat_unity"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.flat_unity()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">iLIGOModel</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.iLIGOModel" title="pycbc.psd.analytical.iLIGOModel"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOModel()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">iLIGOSRD</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.iLIGOSRD" title="pycbc.psd.analytical.iLIGOSRD"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOSRD()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">iLIGOSeismic</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.iLIGOSeismic" title="pycbc.psd.analytical.iLIGOSeismic"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOSeismic()</span></code></a></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">iLIGOShot</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.iLIGOShot" title="pycbc.psd.analytical.iLIGOShot"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOShot()</span></code></a></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">iLIGOThermal</span></code></td>
+<td><a class="reference internal" href="../pycbc.psd.html#pycbc.psd.analytical.iLIGOThermal" title="pycbc.psd.analytical.iLIGOThermal"><code class="xref py py-func docutils literal notranslate"><span class="pre">pycbc.psd.analytical.iLIGOThermal()</span></code></a></td>
+</tr>
+</tbody>
+</table>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+pycbc.io package
+================
+
+Submodules
+----------
+
+pycbc.io.hdf module
+-------------------
+
+.. automodule:: pycbc.io.hdf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.io.live module
+--------------------
+
+.. automodule:: pycbc.io.live
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.io.record module
+----------------------
+
+.. automodule:: pycbc.io.record
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.io
+    :members:
+    :undoc-members:
+    :show-inheritance:

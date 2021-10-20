@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.single &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../pycbc.html">pycbc</a> &raquo;</li>
+      <li>pycbc.events.single</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.single</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; utilities for assigning FAR to single detector triggers</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pycbc.events</span> <span class="kn">import</span> <span class="n">ranking</span><span class="p">,</span> <span class="n">trigger_fits</span> <span class="k">as</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">pycbc.types</span> <span class="kn">import</span> <span class="n">MultiDetOptionAction</span>
+<span class="kn">from</span> <span class="nn">pycbc</span> <span class="kn">import</span> <span class="n">conversions</span> <span class="k">as</span> <span class="n">conv</span>
+<span class="kn">from</span> <span class="nn">pycbc</span> <span class="kn">import</span> <span class="n">bin_utils</span>
+
+<div class="viewcode-block" id="LiveSingle"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle">[docs]</a><span class="k">class</span> <span class="nc">LiveSingle</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span>
+                 <span class="n">newsnr_threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+                 <span class="n">reduced_chisq_threshold</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                 <span class="n">duration_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">fit_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">sngl_ifar_est_dist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">fixed_ifar</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifo</span> <span class="o">=</span> <span class="n">ifo</span>
+        <span class="k">if</span> <span class="n">sngl_ifar_est_dist</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;fixed&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+            <span class="n">fit_bins</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">fit_rates</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">fit_thresh</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">fit_coeffs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">fit_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fit_file</span><span class="p">:</span>
+                <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">fit_file</span><span class="p">[</span><span class="s1">&#39;bins_edges&#39;</span><span class="p">][:]</span>
+                <span class="n">fit_bins</span> <span class="o">=</span> <span class="n">bin_utils</span><span class="o">.</span><span class="n">IrregularBins</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span>
+                <span class="n">dist_grp</span> <span class="o">=</span> <span class="n">fit_file</span><span class="p">[</span><span class="n">ifo</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">sngl_ifar_est_dist</span><span class="p">]</span>
+                <span class="n">live_time</span> <span class="o">=</span> <span class="n">fit_file</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;live_time&#39;</span><span class="p">]</span>
+                <span class="n">fit_rates</span> <span class="o">=</span> <span class="n">dist_grp</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">][:]</span> <span class="o">/</span> <span class="n">live_time</span>
+                <span class="n">fit_coeffs</span> <span class="o">=</span> <span class="n">dist_grp</span><span class="p">[</span><span class="s1">&#39;fit_coeff&#39;</span><span class="p">][:]</span>
+                <span class="n">fit_thresh</span> <span class="o">=</span> <span class="n">fit_file</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;fit_threshold&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;newsnr&quot;</span><span class="p">:</span> <span class="n">newsnr_threshold</span><span class="p">,</span>
+            <span class="s2">&quot;reduced_chisq&quot;</span><span class="p">:</span> <span class="n">reduced_chisq_threshold</span><span class="p">,</span>
+            <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="n">duration_threshold</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_info</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;fixed_ifar&quot;</span><span class="p">:</span> <span class="n">fixed_ifar</span><span class="p">,</span>
+            <span class="s2">&quot;bins&quot;</span><span class="p">:</span> <span class="n">fit_bins</span><span class="p">,</span>
+            <span class="s2">&quot;rates&quot;</span><span class="p">:</span> <span class="n">fit_rates</span><span class="p">,</span>
+            <span class="s2">&quot;coeffs&quot;</span><span class="p">:</span> <span class="n">fit_coeffs</span><span class="p">,</span>
+            <span class="s2">&quot;thresh&quot;</span><span class="p">:</span> <span class="n">fit_thresh</span><span class="p">}</span>
+
+<div class="viewcode-block" id="LiveSingle.insert_args"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle.insert_args">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">insert_args</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-newsnr-threshold&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Newsnr min threshold for single triggers. &#39;</span>
+                                 <span class="s1">&#39;Can be given as a single value or as &#39;</span>
+                                 <span class="s1">&#39;detector-value pairs, e.g. H1:6 L1:7 V1:6.5&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-reduced-chisq-threshold&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum reduced chi-squared threshold for &#39;</span>
+                                 <span class="s1">&#39;single triggers. Can be given as a single &#39;</span>
+                                 <span class="s1">&#39;value or as detector-value pairs, e.g. &#39;</span>
+                                 <span class="s1">&#39;H1:2 L1:2 V1:3&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-duration-threshold&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum duration threshold for single &#39;</span>
+                                 <span class="s1">&#39;triggers. Can be given as a single value &#39;</span>
+                                 <span class="s1">&#39;or as detector-value pairs, e.g. H1:6 L1:6 &#39;</span>
+                                 <span class="s1">&#39;V1:8&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-fixed-ifar&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;A fixed value for IFAR, still uses cuts &#39;</span>
+                                 <span class="s1">&#39;defined by command line. Can be given as &#39;</span>
+                                 <span class="s1">&#39;a single value or as detector-value pairs, &#39;</span>
+                                 <span class="s1">&#39;e.g. H1:0.001 L1:0.001 V1:0.0005&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-fit-file&#39;</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;File which contains definitons of fit &#39;</span>
+                                 <span class="s1">&#39;coefficients and counts for specific &#39;</span>
+                                 <span class="s1">&#39;single trigger IFAR fitting.&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--sngl-ifar-est-dist&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="n">default</span><span class="o">=</span><span class="s1">&#39;conservative&#39;</span><span class="p">,</span>
+                            <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;conservative&#39;</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;fixed&#39;</span><span class="p">],</span>
+                            <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Which trigger distribution to use when &#39;</span>
+                                 <span class="s1">&#39;calculating IFAR of single triggers. &#39;</span>
+                                 <span class="s1">&#39;Default conservative. Can be given as &#39;</span>
+                                 <span class="s1">&#39;a single value or as detector-value pairs, &#39;</span>
+                                 <span class="s1">&#39;e.g. H1:mean L1:mean V1:conservative&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LiveSingle.from_cli"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle.from_cli">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cli</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">ifo</span><span class="p">):</span>
+        <span class="n">sngl_opts_required</span> <span class="o">=</span> <span class="nb">all</span><span class="p">([</span><span class="n">args</span><span class="o">.</span><span class="n">single_fit_file</span><span class="p">,</span>
+                                  <span class="n">args</span><span class="o">.</span><span class="n">single_reduced_chisq_threshold</span><span class="p">,</span>
+                                  <span class="n">args</span><span class="o">.</span><span class="n">single_duration_threshold</span><span class="p">,</span>
+                                  <span class="n">args</span><span class="o">.</span><span class="n">single_newsnr_threshold</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">enable_single_detector_background</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">sngl_opts_required</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Single detector trigger options &quot;</span>
+                               <span class="s2">&quot;(--single-fit-file, &quot;</span>
+                               <span class="s2">&quot;--single-reduced-chisq-threshold, &quot;</span>
+                               <span class="s2">&quot;--single-duration-threshold, &quot;</span>
+                               <span class="s2">&quot;--single-newsnr-threshold) &quot;</span>
+                               <span class="s2">&quot;must ALL be given if single detector &quot;</span>
+                               <span class="s2">&quot;background is enabled&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+           <span class="n">ifo</span><span class="p">,</span> <span class="n">newsnr_threshold</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_newsnr_threshold</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+           <span class="n">reduced_chisq_threshold</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_reduced_chisq_threshold</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+           <span class="n">duration_threshold</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_duration_threshold</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+           <span class="n">fixed_ifar</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_fixed_ifar</span><span class="p">,</span>
+           <span class="n">fit_file</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_fit_file</span><span class="p">,</span>
+           <span class="n">sngl_ifar_est_dist</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+           <span class="p">)</span></div>
+
+<div class="viewcode-block" id="LiveSingle.check"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle.check">[docs]</a>    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigs</span><span class="p">,</span> <span class="n">data_reader</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Look for a single detector trigger that passes the thresholds in</span>
+<span class="sd">        the current data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># Apply cuts to trigs before clustering</span>
+        <span class="c1"># Cut on snr so that triggers which could not reach newsnr</span>
+        <span class="c1"># threshold do not have newsnr calculated</span>
+        <span class="n">valid_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;template_duration&#39;</span><span class="p">]</span> <span class="o">&gt;</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;duration&#39;</span><span class="p">])</span> <span class="o">&amp;</span> \
+                    <span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">]</span> <span class="o">&lt;</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;reduced_chisq&#39;</span><span class="p">])</span> <span class="o">&amp;</span> \
+                    <span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">]</span> <span class="o">&gt;</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;newsnr&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid_idx</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">cutdurchi_trigs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">trigs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">valid_idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trigs</span><span class="p">}</span>
+
+        <span class="c1"># This uses the pycbc live convention of chisq always meaning the</span>
+        <span class="c1"># reduced chisq.</span>
+        <span class="n">nsnr_all</span> <span class="o">=</span> <span class="n">ranking</span><span class="o">.</span><span class="n">newsnr</span><span class="p">(</span><span class="n">cutdurchi_trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">],</span>
+                                  <span class="n">cutdurchi_trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">])</span>
+        <span class="n">nsnr_idx</span> <span class="o">=</span> <span class="n">nsnr_all</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;newsnr&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">nsnr_idx</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">cutall_trigs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">cutdurchi_trigs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">nsnr_idx</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trigs</span><span class="p">}</span>
+
+        <span class="c1"># &#39;cluster&#39; by taking the maximal newsnr value over the trigger set</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">nsnr_all</span><span class="p">[</span><span class="n">nsnr_idx</span><span class="p">]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+
+        <span class="n">nsnr</span> <span class="o">=</span> <span class="n">nsnr_all</span><span class="p">[</span><span class="n">nsnr_idx</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">dur</span> <span class="o">=</span> <span class="n">cutall_trigs</span><span class="p">[</span><span class="s1">&#39;template_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="c1"># create the coincidence</span>
+        <span class="n">fake_coinc</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;foreground/</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                      <span class="n">cutall_trigs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trigs</span><span class="p">}</span>
+        <span class="n">fake_coinc</span><span class="p">[</span><span class="s1">&#39;foreground/stat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nsnr</span>
+        <span class="n">fake_coinc</span><span class="p">[</span><span class="s1">&#39;foreground/ifar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_ifar</span><span class="p">(</span><span class="n">nsnr</span><span class="p">,</span> <span class="n">dur</span><span class="p">)</span>
+        <span class="n">fake_coinc</span><span class="p">[</span><span class="s1">&#39;HWINJ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_reader</span><span class="o">.</span><span class="n">near_hwinj</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">fake_coinc</span></div>
+
+<div class="viewcode-block" id="LiveSingle.calculate_ifar"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle.calculate_ifar">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_ifar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newsnr</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;fixed_ifar&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;fixed_ifar&#39;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo</span><span class="p">]</span>
+        <span class="n">dur_bin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;bins&#39;</span><span class="p">][</span><span class="n">duration</span><span class="p">]</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;rates&#39;</span><span class="p">][</span><span class="n">dur_bin</span><span class="p">]</span>
+        <span class="n">coeff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;coeffs&#39;</span><span class="p">][</span><span class="n">dur_bin</span><span class="p">]</span>
+        <span class="n">rate_louder</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">fits</span><span class="o">.</span><span class="n">cum_fit</span><span class="p">(</span><span class="s1">&#39;exponential&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">newsnr</span><span class="p">],</span>
+                                          <span class="n">coeff</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;thresh&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># apply a trials factor of the number of duration bins</span>
+        <span class="n">rate_louder</span> <span class="o">*=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;rates&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">conv</span><span class="o">.</span><span class="n">sec_to_year</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">rate_louder</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

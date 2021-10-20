@@ -1,0 +1,574 @@
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Index &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li></li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+
+<h1 id="index">Index &ndash; M</h1>
+
+<table style="width: 100%" class="indextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.make_analysis_dir">make_analysis_dir() (in module pycbc.workflow.core)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.psd.make_average_psd">make_average_psd() (in module pycbc.workflow.psd)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_binned_hist">make_binned_hist() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_coinc_info">make_coinc_info() (in module pycbc.workflow.minifollowups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_coinc_snrchi_plot">make_coinc_snrchi_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_diagnostic_plots">make_diagnostic_plots() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.make_external_call">make_external_call() (in module pycbc.workflow.core)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.grb_utils.make_exttrig_file">make_exttrig_file() (in module pycbc.workflow.grb_utils)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.coincidence.make_foreground_censored_veto">make_foreground_censored_veto() (in module pycbc.workflow.coincidence)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_foreground_table">make_foreground_table() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_foundmissed_plot">make_foundmissed_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.filter.html#pycbc.filter.matchedfilter.make_frequency_series">make_frequency_series() (in module pycbc.filter.matchedfilter)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.grb_utils.make_gating_node">make_gating_node() (in module pycbc.workflow.grb_utils)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_gating_plot">make_gating_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.results.html#pycbc.results.legacy_grb.make_grb_segments_plot">make_grb_segments_plot() (in module pycbc.results.legacy_grb)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_ifar_plot">make_ifar_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_acceptance_rate_plot">make_inference_acceptance_rate_plot() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_dynesty_run_plot">make_inference_dynesty_run_plot() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_dynesty_trace_plot">make_inference_dynesty_trace_plot() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_inj_recovery_plot">make_inference_inj_recovery_plot() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_plot">make_inference_plot() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_plot_mcmc_history">make_inference_plot_mcmc_history() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_posterior_plot">make_inference_posterior_plot() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_pp_plot">make_inference_pp_plot() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_pp_table">make_inference_pp_table() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_prior_plot">make_inference_prior_plot() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_samples_plot">make_inference_samples_plot() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_skymap">make_inference_skymap() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_inference_summary_table">make_inference_summary_table() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_inj_info">make_inj_info() (in module pycbc.workflow.minifollowups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_inj_table">make_inj_table() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.eventmgr.EventManager.make_output_dir">make_output_dir() (pycbc.events.eventmgr.EventManager method)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_plot_waveform_plot">make_plot_waveform_plot() (in module pycbc.workflow.minifollowups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.inference_followups.make_posterior_workflow">make_posterior_workflow() (in module pycbc.workflow.inference_followups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.psd.make_psd_file">make_psd_file() (in module pycbc.workflow.psd)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.live.make_psd_xmldoc">make_psd_xmldoc() (in module pycbc.io.live)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_qscan_plot">make_qscan_plot() (in module pycbc.workflow.minifollowups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_range_plot">make_range_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_results_web_page">make_results_web_page() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_seg_plot">make_seg_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_seg_table">make_seg_table() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_segments_plot">make_segments_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_sensitivity_plot">make_sensitivity_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_single_hist">make_single_hist() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_single_template_plots">make_single_template_plots() (in module pycbc.workflow.minifollowups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_singles_plot">make_singles_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_singles_timefreq">make_singles_timefreq() (in module pycbc.workflow.minifollowups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_skipped_html">make_skipped_html() (in module pycbc.workflow.minifollowups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_sngl_ifo">make_sngl_ifo() (in module pycbc.workflow.minifollowups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_snrchi_plot">make_snrchi_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_snrifar_plot">make_snrifar_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_snrratehist_plot">make_snrratehist_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_spectrum_plot">make_spectrum_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.inject.html#pycbc.inject.inject.CBCHDFInjectionSet.make_strain_from_inj_object">make_strain_from_inj_object() (pycbc.inject.inject.CBCHDFInjectionSet method)</a>
+
+      <ul>
+        <li><a href="pycbc.inject.html#pycbc.inject.inject.IncoherentFromFileHDFInjectionSet.make_strain_from_inj_object">(pycbc.inject.inject.IncoherentFromFileHDFInjectionSet method)</a>
+</li>
+        <li><a href="pycbc.inject.html#pycbc.inject.inject.RingdownHDFInjectionSet.make_strain_from_inj_object">(pycbc.inject.inject.RingdownHDFInjectionSet method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_template_plot">make_template_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_throughput_plot">make_throughput_plot() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.minifollowups.make_trigger_timeseries">make_trigger_timeseries() (in module pycbc.workflow.minifollowups)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.plotting.make_veto_table">make_veto_table() (in module pycbc.workflow.plotting)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.makedir">makedir() (in module pycbc)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pool.BroadcastPool.map">map() (pycbc.pool.BroadcastPool method)</a>
+
+      <ul>
+        <li><a href="pycbc.html#pycbc.pool.SinglePool.map">(pycbc.pool.SinglePool method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.map_file">map_file (pycbc.transforms.LambdaFromMultipleTOVFiles attribute)</a>
+</li>
+      <li><a href="pycbc.strain.html#pycbc.strain.calibration.Recalibrate.map_to_adjust">map_to_adjust() (pycbc.strain.calibration.Recalibrate method)</a>
+
+      <ul>
+        <li><a href="pycbc.strain.html#pycbc.strain.recalibrate.PhysicalModel.map_to_adjust">(pycbc.strain.recalibrate.PhysicalModel method)</a>
+</li>
+        <li><a href="pycbc.strain.html#pycbc.strain.recalibrate.Recalibrate.map_to_adjust">(pycbc.strain.recalibrate.Recalibrate method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedHMPolPhase">MarginalizedHMPolPhase (class in pycbc.inference.models.marginalized_gaussian_noise)</a>
+</li>
+      <li><a href="pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise">MarginalizedPhaseGaussianNoise (class in pycbc.inference.models.marginalized_gaussian_noise)</a>
+</li>
+      <li><a href="pycbc.inference.models.html#pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPolarization">MarginalizedPolarization (class in pycbc.inference.models.marginalized_gaussian_noise)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.hdf.FileData.mask">mask (pycbc.io.hdf.FileData attribute)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.hdf.SingleDetTriggers.mask_to_n_loudest_clustered_events">mask_to_n_loudest_clustered_events() (pycbc.io.hdf.SingleDetTriggers method)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.hdf.SingleDetTriggers.mass1">mass1 (pycbc.io.hdf.SingleDetTriggers attribute)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass1_from_mass2_eta">mass1_from_mass2_eta() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass1_from_mchirp_eta">mass1_from_mchirp_eta() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass1_from_mchirp_q">mass1_from_mchirp_q() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass1_from_mtotal_eta">mass1_from_mtotal_eta() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass1_from_mtotal_q">mass1_from_mtotal_q() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass1_from_tau0_tau3">mass1_from_tau0_tau3() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma">mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.mass1_mass2_to_mchirp_eta">mass1_mass2_to_mchirp_eta() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.mass1_mass2_to_mtotal_eta">mass1_mass2_to_mtotal_eta() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.mass1_mass2_to_tau0_tau3">mass1_mass2_to_tau0_tau3() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpEta">Mass1Mass2ToMchirpEta (class in pycbc.transforms)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.transforms.Mass1Mass2ToMchirpQ">Mass1Mass2ToMchirpQ (class in pycbc.transforms)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.hdf.SingleDetTriggers.mass2">mass2 (pycbc.io.hdf.SingleDetTriggers attribute)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass2_from_mass1_eta">mass2_from_mass1_eta() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass2_from_mchirp_eta">mass2_from_mchirp_eta() (in module pycbc.conversions)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="pycbc.html#pycbc.conversions.mass2_from_mchirp_q">mass2_from_mchirp_q() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass2_from_mtotal_eta">mass2_from_mtotal_eta() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass2_from_mtotal_q">mass2_from_mtotal_q() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mass2_from_tau0_tau3">mass2_from_tau0_tau3() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.mass_data">mass_data (pycbc.transforms.LambdaFromTOVFile attribute)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.transforms.LambdaFromMultipleTOVFiles.mass_param">mass_param (pycbc.transforms.LambdaFromMultipleTOVFiles attribute)</a>
+
+      <ul>
+        <li><a href="pycbc.html#pycbc.transforms.LambdaFromTOVFile.mass_param">(pycbc.transforms.LambdaFromTOVFile attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.massRangeParameters">massRangeParameters (class in pycbc.tmpltbank.option_utils)</a>
+</li>
+      <li><a href="pycbc.filter.html#pycbc.filter.matchedfilter.match">match() (in module pycbc.filter.matchedfilter)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.frequencyseries.FrequencySeries.match">(pycbc.types.frequencyseries.FrequencySeries method)</a>
+</li>
+        <li><a href="pycbc.types.html#pycbc.types.timeseries.TimeSeries.match">(pycbc.types.timeseries.TimeSeries method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.filter.html#pycbc.filter.matchedfilter.matched_filter">matched_filter() (in module pycbc.filter.matchedfilter)</a>
+</li>
+      <li><a href="pycbc.filter.html#pycbc.filter.matchedfilter.matched_filter_core">matched_filter_core() (in module pycbc.filter.matchedfilter)</a>
+</li>
+      <li><a href="pycbc.filter.html#pycbc.filter.matchedfilter.MatchedFilterControl">MatchedFilterControl (class in pycbc.filter.matchedfilter)</a>
+</li>
+      <li><a href="pycbc.filter.html#pycbc.filter.matchedfilter.MatchedFilterSkyMaxControl">MatchedFilterSkyMaxControl (class in pycbc.filter.matchedfilter)</a>
+</li>
+      <li><a href="pycbc.filter.html#pycbc.filter.matchedfilter.MatchedFilterSkyMaxControlNoPhase">MatchedFilterSkyMaxControlNoPhase (class in pycbc.filter.matchedfilter)</a>
+</li>
+      <li><a href="pycbc.strain.html#pycbc.strain.lines.matching_line">matching_line() (in module pycbc.strain.lines)</a>
+</li>
+      <li><a href="pycbc.results.html#pycbc.results.str_utils.mathjax_html_header">mathjax_html_header() (in module pycbc.results.str_utils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.boundaries.Bounds.max">max (pycbc.boundaries.Bounds attribute)</a>, <a href="pycbc.html#pycbc.boundaries.Bounds.max">[1]</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.array_cpu.max">max() (in module pycbc.types.array_cpu)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.array.Array.max">(pycbc.types.array.Array method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.types.html#pycbc.types.array_cpu.max_loc">max_loc() (in module pycbc.types.array_cpu)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.array.Array.max_loc">(pycbc.types.array.Array method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.inference.html#pycbc.inference.burn_in.max_posterior">max_posterior() (in module pycbc.inference.burn_in)</a>
+
+      <ul>
+        <li><a href="pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.max_posterior">(pycbc.inference.burn_in.BaseBurnInTests method)</a>
+</li>
+        <li><a href="pycbc.inference.html#pycbc.inference.burn_in.EnsembleMCMCBurnInTests.max_posterior">(pycbc.inference.burn_in.EnsembleMCMCBurnInTests method)</a>
+</li>
+        <li><a href="pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests.max_posterior">(pycbc.inference.burn_in.MCMCBurnInTests method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.max_samples_per_chain">max_samples_per_chain (pycbc.inference.sampler.base_mcmc.BaseMCMC attribute)</a>, <a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base_mcmc.BaseMCMC.max_samples_per_chain">[1]</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.hdf.SingleDetTriggers.mchirp">mchirp (pycbc.io.hdf.SingleDetTriggers attribute)</a>
+
+      <ul>
+        <li><a href="pycbc.io.html#pycbc.io.record.WaveformArray.mchirp">(pycbc.io.record.WaveformArray attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.compress.mchirp_compression">mchirp_compression() (in module pycbc.waveform.compress)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.mchirp_eta_to_mass1_mass2">mchirp_eta_to_mass1_mass2() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mchirp_from_mass1_mass2">mchirp_from_mass1_mass2() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.mchirp_mass1_to_mass2">mchirp_mass1_to_mass2() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.mchirp_q_to_mass1_mass2">mchirp_q_to_mass1_mass2() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.population.html#pycbc.population.rates_functions.mchirp_sampler_flat">mchirp_sampler_flat() (in module pycbc.population.rates_functions)</a>
+</li>
+      <li><a href="pycbc.population.html#pycbc.population.rates_functions.mchirp_sampler_imf">mchirp_sampler_imf() (in module pycbc.population.rates_functions)</a>
+</li>
+      <li><a href="pycbc.population.html#pycbc.population.rates_functions.mchirp_sampler_lnm">mchirp_sampler_lnm() (in module pycbc.population.rates_functions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.transforms.MchirpEtaToMass1Mass2">MchirpEtaToMass1Mass2 (class in pycbc.transforms)</a>
+</li>
+      <li><a href="pycbc.distributions.html#pycbc.distributions.mass.MchirpfromUniformMass1Mass2">MchirpfromUniformMass1Mass2 (class in pycbc.distributions.mass)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.transforms.MchirpQToMass1Mass2">MchirpQToMass1Mass2 (class in pycbc.transforms)</a>
+</li>
+      <li><a href="pycbc.inference.html#pycbc.inference.burn_in.MCMCBurnInTests">MCMCBurnInTests (class in pycbc.inference.burn_in)</a>
+</li>
+      <li><a href="pycbc.inference.io.html#pycbc.inference.io.base_mcmc.MCMCMetadataIO">MCMCMetadataIO (class in pycbc.inference.io.base_mcmc)</a>
+</li>
+      <li><a href="pycbc.distributions.html#pycbc.distributions.gaussian.Gaussian.mean">mean (pycbc.distributions.gaussian.Gaussian attribute)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.rate.mean_efficiency_volume">mean_efficiency_volume() (in module pycbc.rate)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.coinc.mean_if_greater_than_zero">mean_if_greater_than_zero() (in module pycbc.events.coinc)</a>
+</li>
+      <li><a href="pycbc.psd.html#pycbc.psd.variation.mean_square">mean_square() (in module pycbc.psd.variation)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.meco2">meco2() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.meco_velocity">meco_velocity() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.catalog.html#pycbc.catalog.Catalog.median1d">median1d() (pycbc.catalog.Catalog method)</a>
+
+      <ul>
+        <li><a href="pycbc.catalog.html#pycbc.catalog.Merger.median1d">(pycbc.catalog.Merger method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.psd.html#pycbc.psd.estimate.median_bias">median_bias() (in module pycbc.psd.estimate)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.pnutils.megaparsecs_to_meters">megaparsecs_to_meters() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.psd.merge_psds">merge_psds() (in module pycbc.workflow.psd)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.coincidence.merge_single_detector_hdf_files">merge_single_detector_hdf_files() (in module pycbc.workflow.coincidence)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.core.Executable.MERGED_TRIGGERS">MERGED_TRIGGERS (pycbc.workflow.core.Executable attribute)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.coincidence.MergeExecutable">MergeExecutable (class in pycbc.workflow.coincidence)</a>
+</li>
+      <li><a href="pycbc.catalog.html#pycbc.catalog.Merger">Merger (class in pycbc.catalog)</a>
+</li>
+      <li><a href="pycbc.results.html#pycbc.results.metadata.MetaParser">MetaParser (class in pycbc.results.metadata)</a>
+</li>
+      <li><a href="pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.metricParameters.metric">metric (pycbc.tmpltbank.option_utils.metricParameters attribute)</a>
+</li>
+      <li><a href="pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.metricParameters">metricParameters (class in pycbc.tmpltbank.option_utils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.boundaries.Bounds.min">min (pycbc.boundaries.Bounds attribute)</a>, <a href="pycbc.html#pycbc.boundaries.Bounds.min">[1]</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.array_cpu.min">min() (in module pycbc.types.array_cpu)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.array.Array.min">(pycbc.types.array.Array method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.inference.html#pycbc.inference.burn_in.BaseBurnInTests.min_iterations">min_iterations() (pycbc.inference.burn_in.BaseBurnInTests method)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.compress.CompressedWaveform.mismatch">mismatch (pycbc.waveform.compress.CompressedWaveform attribute)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.scheme.MKLScheme">MKLScheme (class in pycbc.scheme)</a>
+</li>
+      <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler.model_stats">model_stats (pycbc.inference.sampler.base.BaseSampler attribute)</a>
+
+      <ul>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.dynesty.DynestySampler.model_stats">(pycbc.inference.sampler.dynesty.DynestySampler attribute)</a>
+</li>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.emcee.EmceeEnsembleSampler.model_stats">(pycbc.inference.sampler.emcee.EmceeEnsembleSampler attribute)</a>
+</li>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.emcee_pt.EmceePTSampler.model_stats">(pycbc.inference.sampler.emcee_pt.EmceePTSampler attribute)</a>
+</li>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.epsie.EpsieSampler.model_stats">(pycbc.inference.sampler.epsie.EpsieSampler attribute)</a>
+</li>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.multinest.MultinestSampler.model_stats">(pycbc.inference.sampler.multinest.MultinestSampler attribute)</a>
+</li>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.ptemcee.PTEmceeSampler.model_stats">(pycbc.inference.sampler.ptemcee.PTEmceeSampler attribute)</a>
+</li>
+        <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.ultranest.UltranestSampler.model_stats">(pycbc.inference.sampler.ultranest.UltranestSampler attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.inference.models.html#pycbc.inference.models.base.ModelStats">ModelStats (class in pycbc.inference.models.base)</a>
+</li>
+      <li><a href="pycbc.tmpltbank.html#pycbc.tmpltbank.option_utils.metricParameters.moments">moments (pycbc.tmpltbank.option_utils.metricParameters attribute)</a>
+</li>
+      <li><a href="pycbc.results.html#pycbc.results.mpld3_utils.MPLSlide">MPLSlide (class in pycbc.results.mpld3_utils)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.hdf.SingleDetTriggers.mtotal">mtotal (pycbc.io.hdf.SingleDetTriggers attribute)</a>
+
+      <ul>
+        <li><a href="pycbc.io.html#pycbc.io.record.WaveformArray.mtotal">(pycbc.io.record.WaveformArray attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.html#pycbc.pnutils.mtotal_eta_to_mass1_mass2">mtotal_eta_to_mass1_mass2() (in module pycbc.pnutils)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mtotal_from_mass1_mass2">mtotal_from_mass1_mass2() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mtotal_from_mchirp_eta">mtotal_from_mchirp_eta() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.html#pycbc.conversions.mtotal_from_tau0_tau3">mtotal_from_tau0_tau3() (in module pycbc.conversions)</a>
+</li>
+      <li><a href="pycbc.workflow.html#pycbc.workflow.jobsetup.multi_ifo_coherent_job_setup">multi_ifo_coherent_job_setup() (in module pycbc.workflow.jobsetup)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.multiband.multiband_fd_waveform">multiband_fd_waveform() (in module pycbc.waveform.multiband)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.optparse.MultiDetMultiColonOptionAction">MultiDetMultiColonOptionAction (class in pycbc.types.optparse)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.optparse.MultiDetOptionAction">MultiDetOptionAction (class in pycbc.types.optparse)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.optparse.MultiDetOptionActionSpecial">MultiDetOptionActionSpecial (class in pycbc.types.optparse)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.optparse.MultiDetOptionAppendAction">MultiDetOptionAppendAction (class in pycbc.types.optparse)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.coinc_rate.multiifo_noise_coincident_area">multiifo_noise_coincident_area() (in module pycbc.events.coinc_rate)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.coinc_rate.multiifo_noise_lograte">multiifo_noise_lograte() (in module pycbc.events.coinc_rate)</a>
+</li>
+      <li><a href="pycbc.events.html#pycbc.events.coinc_rate.multiifo_signal_coincident_area">multiifo_signal_coincident_area() (in module pycbc.events.coinc_rate)</a>
+</li>
+      <li><a href="pycbc.io.html#pycbc.io.hdf.MultiifoStatmapData">MultiifoStatmapData (class in pycbc.io.hdf)</a>
+</li>
+      <li><a href="pycbc.waveform.html#pycbc.waveform.ringdown.multimode_base">multimode_base() (in module pycbc.waveform.ringdown)</a>
+</li>
+      <li><a href="pycbc.inference.io.html#pycbc.inference.io.multinest.MultinestFile">MultinestFile (class in pycbc.inference.io.multinest)</a>
+</li>
+      <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.multinest.MultinestSampler">MultinestSampler (class in pycbc.inference.sampler.multinest)</a>
+</li>
+      <li><a href="pycbc.types.html#pycbc.types.array_cpu.multiply_and_add">multiply_and_add() (in module pycbc.types.array_cpu)</a>
+
+      <ul>
+        <li><a href="pycbc.types.html#pycbc.types.array.Array.multiply_and_add">(pycbc.types.array.Array method)</a>
+</li>
+      </ul></li>
+      <li><a href="pycbc.events.html#pycbc.events.coinc.MultiRingBuffer">MultiRingBuffer (class in pycbc.events.coinc)</a>
+</li>
+      <li><a href="pycbc.inference.html#pycbc.inference.burn_in.MultiTemperedMCMCBurnInTests">MultiTemperedMCMCBurnInTests (class in pycbc.inference.burn_in)</a>
+</li>
+      <li><a href="pycbc.inference.sampler.html#pycbc.inference.sampler.base_multitemper.MultiTemperedSupport">MultiTemperedSupport (class in pycbc.inference.sampler.base_multitemper)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

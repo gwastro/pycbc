@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.workflow.configuration &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../pycbc.html">pycbc</a> &raquo;</li>
+      <li>pycbc.workflow.configuration</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.workflow.configuration</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2013,2017 Ian Harry, Duncan Brown</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                   Preamble</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides a wrapper to the ConfigParser utilities for pycbc</span>
+<span class="sd">workflow construction. This module is described in the page here:</span>
+<span class="sd">https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">stat</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">distutils.spawn</span>
+<span class="kn">import</span> <span class="nn">six</span>
+<span class="kn">from</span> <span class="nn">pycbc.types.config</span> <span class="kn">import</span> <span class="n">InterpolatingConfigParser</span>
+<span class="kn">from</span> <span class="nn">six.moves.urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="n">http_cookiejar</span> <span class="k">as</span> <span class="n">cookielib</span>
+<span class="kn">from</span> <span class="nn">six.moves.http_cookiejar</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_warn_unhandled_exception</span><span class="p">,</span>
+    <span class="n">LoadError</span><span class="p">,</span>
+    <span class="n">Cookie</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+
+
+<span class="k">def</span> <span class="nf">_really_load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">ignore_discard</span><span class="p">,</span> <span class="n">ignore_expires</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is required to monkey patch MozillaCookieJar&#39;s _really_load</span>
+<span class="sd">    function which does not understand the curl format cookie file created</span>
+<span class="sd">    by ecp-cookie-init. It patches the code so that #HttpOnly_ get loaded.</span>
+
+<span class="sd">    https://bugs.python.org/issue2190</span>
+<span class="sd">    https://bugs.python.org/file37625/httponly.patch</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="n">magic</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">magic_re</span><span class="p">,</span> <span class="n">magic</span><span class="p">):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="n">LoadError</span><span class="p">(</span>
+            <span class="s2">&quot;</span><span class="si">%r</span><span class="s2"> does not look like a Netscape format cookies file&quot;</span> <span class="o">%</span> <span class="n">filename</span>
+        <span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="c1"># last field may be absent, so keep any trailing tab</span>
+            <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">sline</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="c1"># support HttpOnly cookies (as stored by curl or old Firefox).</span>
+            <span class="k">if</span> <span class="n">sline</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#HttpOnly_&quot;</span><span class="p">):</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">sline</span><span class="p">[</span><span class="mi">10</span><span class="p">:]</span>
+            <span class="c1"># skip comments and blank lines ... what is $ for?</span>
+            <span class="k">elif</span> <span class="n">sline</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">&quot;#&quot;</span><span class="p">,</span> <span class="s2">&quot;$&quot;</span><span class="p">))</span> <span class="ow">or</span> <span class="n">sline</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="p">(</span>
+                <span class="n">domain</span><span class="p">,</span>
+                <span class="n">domain_specified</span><span class="p">,</span>
+                <span class="n">path</span><span class="p">,</span>
+                <span class="n">secure</span><span class="p">,</span>
+                <span class="n">expires</span><span class="p">,</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">value</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">secure</span> <span class="o">=</span> <span class="n">secure</span> <span class="o">==</span> <span class="s2">&quot;TRUE&quot;</span>
+            <span class="n">domain_specified</span> <span class="o">=</span> <span class="n">domain_specified</span> <span class="o">==</span> <span class="s2">&quot;TRUE&quot;</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="c1"># cookies.txt regards &#39;Set-Cookie: foo&#39; as a cookie</span>
+                <span class="c1"># with no name, whereas cookielib regards it as a</span>
+                <span class="c1"># cookie with no value.</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="n">initial_dot</span> <span class="o">=</span> <span class="n">domain</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">domain_specified</span> <span class="o">==</span> <span class="n">initial_dot</span>
+
+            <span class="n">discard</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">expires</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">expires</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">discard</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># assume path_specified is false</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">Cookie</span><span class="p">(</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">value</span><span class="p">,</span>
+                <span class="kc">None</span><span class="p">,</span>
+                <span class="kc">False</span><span class="p">,</span>
+                <span class="n">domain</span><span class="p">,</span>
+                <span class="n">domain_specified</span><span class="p">,</span>
+                <span class="n">initial_dot</span><span class="p">,</span>
+                <span class="n">path</span><span class="p">,</span>
+                <span class="kc">False</span><span class="p">,</span>
+                <span class="n">secure</span><span class="p">,</span>
+                <span class="n">expires</span><span class="p">,</span>
+                <span class="n">discard</span><span class="p">,</span>
+                <span class="kc">None</span><span class="p">,</span>
+                <span class="kc">None</span><span class="p">,</span>
+                <span class="p">{},</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_discard</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">discard</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_expires</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">is_expired</span><span class="p">(</span><span class="n">now</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_cookie</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+        <span class="k">raise</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">_warn_unhandled_exception</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="n">LoadError</span><span class="p">(</span>
+            <span class="s2">&quot;invalid Netscape format cookies file </span><span class="si">%r</span><span class="s2">: </span><span class="si">%r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+        <span class="p">)</span>
+
+
+<span class="c1"># Now monkey patch the code</span>
+<span class="n">cookielib</span><span class="o">.</span><span class="n">MozillaCookieJar</span><span class="o">.</span><span class="n">_really_load</span> <span class="o">=</span> <span class="n">_really_load</span>  <span class="c1"># noqa</span>
+
+<span class="n">ecp_cookie_error</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;The attempt to download the file at</span>
+
+<span class="si">{}</span><span class="s2"></span>
+
+<span class="s2">was redirected to the git.ligo.org sign-in page. This means that you likely</span>
+<span class="s2">forgot to initialize your ECP cookie or that your LIGO.ORG credentials are</span>
+<span class="s2">otherwise invalid. Create a valid ECP cookie for git.ligo.org by running</span>
+
+<span class="s2">ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback albert.einstein</span>
+
+<span class="s2">before attempting to download files from git.ligo.org.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="istext"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.istext">[docs]</a><span class="k">def</span> <span class="nf">istext</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">text_characters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.3</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines if the string is a set of binary data or a text file.</span>
+<span class="sd">    This is done by checking if a large proportion of characters are &gt; 0X7E</span>
+<span class="sd">    (0x7F is &lt;DEL&gt; and unprintable) or low bit control codes. In other words</span>
+<span class="sd">    things that you wouldn&#39;t see (often) in a text file. (ASCII past 0x7F</span>
+<span class="sd">    might appear, but rarely).</span>
+
+<span class="sd">    Code modified from</span>
+<span class="sd">    https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch01s12.html</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># if s contains any null, it&#39;s not text:</span>
+    <span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY2</span> <span class="ow">and</span> <span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="c1"># an &quot;empty&quot; string is &quot;text&quot; (arbitrary but reasonable choice):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="n">text_characters</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">chr</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">127</span><span class="p">)))</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\r\t\b</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY2</span><span class="p">:</span>
+        <span class="n">_null_trans</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">maketrans</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="c1"># Get the substring of s made up of non-text characters</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">_null_trans</span><span class="p">,</span> <span class="n">text_characters</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Not yet sure how to deal with this in python3. Will need example.</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="c1"># trans = str.maketrans(&#39;&#39;, &#39;&#39;, text_characters)</span>
+        <span class="c1"># t = s.translate(trans)</span>
+
+    <span class="c1"># s is &#39;text&#39; if less than 30% of its characters are non-text ones:</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="n">threshold</span></div>
+
+
+<div class="viewcode-block" id="resolve_url"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.resolve_url">[docs]</a><span class="k">def</span> <span class="nf">resolve_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">permissions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">copy_to_cwd</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Resolves a URL to a local file, and returns the path to that file.</span>
+
+<span class="sd">    If a URL is given, the file will be copied to the current working</span>
+<span class="sd">    directory. If a local file path is given, the file will only be copied</span>
+<span class="sd">    to the current working directory if ``copy_to_cwd`` is ``True``</span>
+<span class="sd">    (the default).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">u</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+    <span class="c1"># determine whether the file exists locally</span>
+    <span class="n">islocal</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">u</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s2">&quot;file&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">islocal</span> <span class="ow">or</span> <span class="n">copy_to_cwd</span><span class="p">:</span>
+        <span class="c1"># create the name of the destination file</span>
+        <span class="k">if</span> <span class="n">directory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">path</span>
+
+    <span class="k">if</span> <span class="n">islocal</span><span class="p">:</span>
+        <span class="c1"># check that the file exists</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">errmsg</span> <span class="o">=</span> <span class="s2">&quot;Cannot open file </span><span class="si">%s</span><span class="s2"> from URL </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+        <span class="c1"># for regular files, make a direct copy if requested</span>
+        <span class="k">elif</span> <span class="n">copy_to_cwd</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+                <span class="c1"># check to see if src and dest are the same file</span>
+                <span class="n">src_inode</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">path</span><span class="p">)[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_INO</span><span class="p">]</span>
+                <span class="n">dst_inode</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_INO</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">src_inode</span> <span class="o">!=</span> <span class="n">dst_inode</span><span class="p">:</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">u</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s2">&quot;http&quot;</span> <span class="ow">or</span> <span class="n">u</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s2">&quot;https&quot;</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">Session</span><span class="p">()</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">scheme</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;://&quot;</span><span class="p">,</span> <span class="n">requests</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">HTTPAdapter</span><span class="p">(</span><span class="n">max_retries</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># look for an ecp cookie file and load the cookies</span>
+        <span class="n">cookie_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">ecp_file</span> <span class="o">=</span> <span class="s2">&quot;/tmp/ecpcookie.u</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">os</span><span class="o">.</span><span class="n">getuid</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">ecp_file</span><span class="p">):</span>
+            <span class="n">cj</span> <span class="o">=</span> <span class="n">cookielib</span><span class="o">.</span><span class="n">MozillaCookieJar</span><span class="p">()</span>
+            <span class="n">cj</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ecp_file</span><span class="p">,</span> <span class="n">ignore_discard</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_expires</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cj</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cj</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">domain</span> <span class="o">==</span> <span class="n">u</span><span class="o">.</span><span class="n">netloc</span><span class="p">:</span>
+                <span class="c1"># load cookies for this server</span>
+                <span class="n">cookie_dict</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">elif</span> <span class="p">(</span>
+                <span class="n">u</span><span class="o">.</span><span class="n">netloc</span> <span class="o">==</span> <span class="s2">&quot;code.pycbc.phy.syr.edu&quot;</span>
+                <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">domain</span> <span class="o">==</span> <span class="s2">&quot;git.ligo.org&quot;</span>
+            <span class="p">):</span>
+                <span class="c1"># handle the redirect for code.pycbc to git.ligo.org</span>
+                <span class="n">cookie_dict</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">cookies</span><span class="o">=</span><span class="n">cookie_dict</span><span class="p">,</span> <span class="n">allow_redirects</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="n">errmsg</span> <span class="o">=</span> <span class="s2">&quot;Unable to download </span><span class="si">%s</span><span class="se">\n</span><span class="s2">Error code = </span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">url</span><span class="p">,</span>
+                <span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+
+        <span class="c1"># if we are downloading from git.ligo.org, check that we</span>
+        <span class="c1"># did not get redirected to the sign-in page</span>
+        <span class="k">if</span> <span class="n">u</span><span class="o">.</span><span class="n">netloc</span> <span class="o">==</span> <span class="s2">&quot;git.ligo.org&quot;</span> <span class="ow">or</span> <span class="n">u</span><span class="o">.</span><span class="n">netloc</span> <span class="o">==</span> <span class="s2">&quot;code.pycbc.phy.syr.edu&quot;</span><span class="p">:</span>
+            <span class="c1"># Check if we have downloaded a binary file.</span>
+            <span class="k">if</span> <span class="n">istext</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">):</span>
+                <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+                <span class="n">desc</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">findAll</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;property&quot;</span><span class="p">:</span> <span class="s2">&quot;og:url&quot;</span><span class="p">})</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">desc</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="n">desc</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+                    <span class="o">==</span> <span class="s2">&quot;https://git.ligo.org/users/sign_in&quot;</span>
+                <span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">ecp_cookie_error</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+
+        <span class="n">output_fp</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span>
+        <span class="n">output_fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">output_fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># TODO: We could support other schemes such as gsiftp by</span>
+        <span class="c1"># calling out to globus-url-copy</span>
+        <span class="n">errmsg</span> <span class="o">=</span> <span class="s2">&quot;Unknown URL scheme: </span><span class="si">%s</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">scheme</span><span class="p">)</span>
+        <span class="n">errmsg</span> <span class="o">+=</span> <span class="s2">&quot;Currently supported are: file, http, and https.&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+        <span class="n">errmsg</span> <span class="o">=</span> <span class="s2">&quot;Error trying to create file </span><span class="si">%s</span><span class="s2"> from </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">permissions</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">permissions</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># check that the file has at least the permissions requested</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="n">stat</span><span class="o">.</span><span class="n">ST_MODE</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">&amp;</span> <span class="n">permissions</span><span class="p">)</span> <span class="o">!=</span> <span class="n">permissions</span><span class="p">:</span>
+                <span class="n">errmsg</span> <span class="o">=</span> <span class="s2">&quot;Could not change permissions on </span><span class="si">%s</span><span class="s2"> (read-only)&quot;</span> <span class="o">%</span> <span class="n">url</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">filename</span></div>
+
+
+<div class="viewcode-block" id="add_workflow_command_line_group"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.add_workflow_command_line_group">[docs]</a><span class="k">def</span> <span class="nf">add_workflow_command_line_group</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The standard way of initializing a ConfigParser object in workflow will be</span>
+<span class="sd">    to do it from the command line. This is done by giving a</span>
+
+<span class="sd">    --local-config-files filea.ini fileb.ini filec.ini</span>
+
+<span class="sd">    command. You can also set config file override commands on the command</span>
+<span class="sd">    line. This will be most useful when setting (for example) start and</span>
+<span class="sd">    end times, or active ifos. This is done by</span>
+
+<span class="sd">    --config-overrides section1:option1:value1 section2:option2:value2 ...</span>
+
+<span class="sd">    This can also be given as</span>
+
+<span class="sd">    --config-overrides section1:option1</span>
+
+<span class="sd">    where the value will be left as &#39;&#39;.</span>
+
+<span class="sd">    To remove a configuration option, use the command line argument</span>
+
+<span class="sd">    --config-delete section1:option1</span>
+
+<span class="sd">    which will delete option1 from [section1] or</span>
+
+<span class="sd">    --config-delete section1</span>
+
+<span class="sd">    to delete all of the options in [section1]</span>
+
+<span class="sd">    Deletes are implemented before overrides.</span>
+
+<span class="sd">    This function returns an argparse OptionGroup to ensure these options are</span>
+<span class="sd">    parsed correctly and can then be sent directly to initialize an</span>
+<span class="sd">    WorkflowConfigParser.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    parser : argparse.ArgumentParser instance</span>
+<span class="sd">        The initialized argparse instance to add the workflow option group to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">workflowArgs</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span>
+        <span class="s2">&quot;Configuration&quot;</span><span class="p">,</span> <span class="s2">&quot;Options needed for parsing &quot;</span> <span class="s2">&quot;config file(s).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">workflowArgs</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--config-files&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;CONFIGFILE&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;List of config files to be used in &quot;</span> <span class="s2">&quot;analysis.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">workflowArgs</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--config-overrides&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECTION:OPTION:VALUE&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;List of section,option,value combinations to &quot;</span>
+        <span class="s2">&quot;add into the configuration file. Normally the gps &quot;</span>
+        <span class="s2">&quot;start and end times might be provided this way, &quot;</span>
+        <span class="s2">&quot;and user specific locations (ie. output directories). &quot;</span>
+        <span class="s2">&quot;This can also be provided as SECTION:OPTION or &quot;</span>
+        <span class="s2">&quot;SECTION:OPTION: both of which indicate that the &quot;</span>
+        <span class="s2">&quot;corresponding value is left blank.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">workflowArgs</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--config-delete&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;SECTION:OPTION&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;List of section,option combinations to delete &quot;</span>
+        <span class="s2">&quot;from the configuration file. This can also be &quot;</span>
+        <span class="s2">&quot;provided as SECTION which deletes the enture section&quot;</span>
+        <span class="s2">&quot; from the configuration file or SECTION:OPTION &quot;</span>
+        <span class="s2">&quot;which deletes a specific option from a given &quot;</span>
+        <span class="s2">&quot;section.&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WorkflowConfigParser"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.WorkflowConfigParser">[docs]</a><span class="k">class</span> <span class="nc">WorkflowConfigParser</span><span class="p">(</span><span class="n">InterpolatingConfigParser</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a sub-class of InterpolatingConfigParser, which lets</span>
+<span class="sd">    us add a few additional helper features that are useful in workflows.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">configFiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">overrideTuples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">parsedFilePath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">deleteTuples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">copy_to_cwd</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an WorkflowConfigParser. This reads the input configuration</span>
+<span class="sd">        files, overrides values if necessary and performs the interpolation.</span>
+<span class="sd">        See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        configFiles : Path to .ini file, or list of paths</span>
+<span class="sd">            The file(s) to be read in and parsed.</span>
+<span class="sd">        overrideTuples : List of (section, option, value) tuples</span>
+<span class="sd">            Add the (section, option, value) triplets provided</span>
+<span class="sd">            in this list to the provided .ini file(s). If the section, option</span>
+<span class="sd">            pair is already present, it will be overwritten.</span>
+<span class="sd">        parsedFilePath : Path, optional (default=None)</span>
+<span class="sd">            If given, write the parsed .ini file back to disk at this location.</span>
+<span class="sd">        deleteTuples : List of (section, option) tuples</span>
+<span class="sd">            Delete the (section, option) pairs provided</span>
+<span class="sd">            in this list from provided .ini file(s). If the section only</span>
+<span class="sd">            is provided, the entire section will be deleted.</span>
+<span class="sd">        copy_to_cwd : bool, optional</span>
+<span class="sd">            Copy the configuration files to the current working directory if</span>
+<span class="sd">            they are not already there, even if they already exist locally.</span>
+<span class="sd">            If False, files will only be copied to the current working</span>
+<span class="sd">            directory if they are remote. Default is False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        WorkflowConfigParser</span>
+<span class="sd">            Initialized WorkflowConfigParser instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">configFiles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">configFiles</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">resolve_url</span><span class="p">(</span><span class="n">cFile</span><span class="p">,</span> <span class="n">copy_to_cwd</span><span class="o">=</span><span class="n">copy_to_cwd</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">cFile</span> <span class="ow">in</span> <span class="n">configFiles</span>
+            <span class="p">]</span>
+
+        <span class="n">InterpolatingConfigParser</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">configFiles</span><span class="p">,</span>
+            <span class="n">overrideTuples</span><span class="p">,</span>
+            <span class="n">parsedFilePath</span><span class="p">,</span>
+            <span class="n">deleteTuples</span><span class="p">,</span>
+            <span class="n">skip_extended</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># expand executable which statements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">perform_exe_expansion</span><span class="p">()</span>
+
+        <span class="c1"># Check for any substitutions that can be made</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">perform_extended_interpolation</span><span class="p">()</span>
+
+        <span class="c1"># Resolve any URLs needing resolving</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curr_resolved_files</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolve_urls</span><span class="p">()</span>
+
+<div class="viewcode-block" id="WorkflowConfigParser.perform_exe_expansion"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.WorkflowConfigParser.perform_exe_expansion">[docs]</a>    <span class="k">def</span> <span class="nf">perform_exe_expansion</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function will look through the executables section of the</span>
+<span class="sd">        ConfigParser object and replace any values using macros with full paths.</span>
+
+<span class="sd">        For any values that look like</span>
+
+<span class="sd">        ${which:lalapps_tmpltbank}</span>
+
+<span class="sd">        will be replaced with the equivalent of which(lalapps_tmpltbank)</span>
+
+<span class="sd">        Otherwise values will be unchanged.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Only works on executables section</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_section</span><span class="p">(</span><span class="s2">&quot;executables&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="s2">&quot;executables&quot;</span><span class="p">):</span>
+                <span class="c1"># Check the value</span>
+                <span class="n">newStr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolate_exe</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">newStr</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;executables&quot;</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">newStr</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkflowConfigParser.interpolate_exe"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.WorkflowConfigParser.interpolate_exe">[docs]</a>    <span class="k">def</span> <span class="nf">interpolate_exe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">testString</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replace testString with a path to an executable based on the format.</span>
+
+<span class="sd">        If this looks like</span>
+
+<span class="sd">        ${which:lalapps_tmpltbank}</span>
+
+<span class="sd">        it will return the equivalent of which(lalapps_tmpltbank)</span>
+
+<span class="sd">        Otherwise it will return an unchanged string.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        testString : string</span>
+<span class="sd">            The input string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        newString : string</span>
+<span class="sd">            The output string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># First check if any interpolation is needed and abort if not</span>
+        <span class="n">testString</span> <span class="o">=</span> <span class="n">testString</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">testString</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;${&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">testString</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">testString</span>
+
+        <span class="c1"># This may not be an exe interpolation, so even if it has ${ ... } form</span>
+        <span class="c1"># I may not have to do anything</span>
+        <span class="n">newString</span> <span class="o">=</span> <span class="n">testString</span>
+
+        <span class="c1"># Strip the ${ and }</span>
+        <span class="n">testString</span> <span class="o">=</span> <span class="n">testString</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">testList</span> <span class="o">=</span> <span class="n">testString</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Maybe we can add a few different possibilities for substitution</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">testList</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">testList</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;which&quot;</span><span class="p">:</span>
+                <span class="n">newString</span> <span class="o">=</span> <span class="n">distutils</span><span class="o">.</span><span class="n">spawn</span><span class="o">.</span><span class="n">find_executable</span><span class="p">(</span><span class="n">testList</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">newString</span><span class="p">:</span>
+                    <span class="n">errmsg</span> <span class="o">=</span> <span class="s2">&quot;Cannot find exe </span><span class="si">%s</span><span class="s2"> in your path &quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">testList</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">errmsg</span> <span class="o">+=</span> <span class="s2">&quot;and you specified ${which:</span><span class="si">%s</span><span class="s2">}.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">testList</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">newString</span></div>
+
+<div class="viewcode-block" id="WorkflowConfigParser.section_to_cli"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.WorkflowConfigParser.section_to_cli">[docs]</a>    <span class="k">def</span> <span class="nf">section_to_cli</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">skip_opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Converts a section into a command-line string.</span>
+
+<span class="sd">        For example:</span>
+
+<span class="sd">        .. code::</span>
+
+<span class="sd">            [section_name]</span>
+<span class="sd">            foo =</span>
+<span class="sd">            bar = 10</span>
+
+<span class="sd">        yields: `&#39;--foo --bar 10&#39;`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section : str</span>
+<span class="sd">            The name of the section to convert.</span>
+<span class="sd">        skip_opts : list, optional</span>
+<span class="sd">            List of options to skip. Default (None) results in all options</span>
+<span class="sd">            in the section being converted.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str :</span>
+<span class="sd">            The options as a command-line string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">skip_opts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">skip_opts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">read_opts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">opt</span> <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">)</span> <span class="k">if</span> <span class="n">opt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip_opts</span>
+        <span class="p">]</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">read_opts</span><span class="p">:</span>
+            <span class="n">opts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;--</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opt</span><span class="p">))</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">opt</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkflowConfigParser.get_cli_option"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.WorkflowConfigParser.get_cli_option">[docs]</a>    <span class="k">def</span> <span class="nf">get_cli_option</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">option_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return option using CLI action parsing</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        section: str</span>
+<span class="sd">            Section to find option to parse</span>
+<span class="sd">        option_name: str</span>
+<span class="sd">            Name of the option to parse from the config file</span>
+<span class="sd">        kwds: keywords</span>
+<span class="sd">            Additional keywords are passed directly to the argument parser.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        value:</span>
+<span class="sd">            The parsed value for this option</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">argparse</span>
+
+        <span class="n">optstr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">section_to_cli</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;--&quot;</span> <span class="o">+</span> <span class="n">option_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+        <span class="n">args</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">(</span><span class="n">optstr</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">option_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkflowConfigParser.resolve_urls"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.WorkflowConfigParser.resolve_urls">[docs]</a>    <span class="k">def</span> <span class="nf">resolve_urls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function will look through all sections of the</span>
+<span class="sd">        ConfigParser object and replace any URLs that are given the resolve</span>
+<span class="sd">        magic flag with a path on the local drive.</span>
+
+<span class="sd">        Specifically for any values that look like</span>
+
+<span class="sd">        ${resolve:https://git.ligo.org/detchar/SOME_GATING_FILE.txt}</span>
+
+<span class="sd">        the file will be replaced with the output of resolve_url(URL)</span>
+
+<span class="sd">        Otherwise values will be unchanged.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Only works on executables section</span>
+        <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sections</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">section</span><span class="p">):</span>
+                <span class="c1"># Check the value</span>
+                <span class="n">new_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolve_file_url</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">new_str</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">new_str</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">new_str</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="WorkflowConfigParser.resolve_file_url"><a class="viewcode-back" href="../../../workflow/initialization.html#pycbc.workflow.configuration.WorkflowConfigParser.resolve_file_url">[docs]</a>    <span class="k">def</span> <span class="nf">resolve_file_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">test_string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replace test_string with a path to an executable based on the format.</span>
+
+<span class="sd">        If this looks like</span>
+
+<span class="sd">        ${which:lalapps_tmpltbank}</span>
+
+<span class="sd">        it will return the equivalent of which(lalapps_tmpltbank)</span>
+
+<span class="sd">        Otherwise it will return an unchanged string.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        -----------</span>
+<span class="sd">        test_string : string</span>
+<span class="sd">            The input string</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        --------</span>
+<span class="sd">        new_string : string</span>
+<span class="sd">            The output string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># First check if any interpolation is needed and abort if not</span>
+        <span class="n">test_string</span> <span class="o">=</span> <span class="n">test_string</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">test_string</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;${&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">test_string</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;}&quot;</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">test_string</span>
+
+        <span class="c1"># This may not be a &quot;resolve&quot; interpolation, so even if it has</span>
+        <span class="c1"># ${ ... } form I may not have to do anything</span>
+
+        <span class="c1"># Strip the ${ and }</span>
+        <span class="n">test_string</span> <span class="o">=</span> <span class="n">test_string</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">test_list</span> <span class="o">=</span> <span class="n">test_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">test_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;resolve&quot;</span><span class="p">:</span>
+                <span class="n">curr_lfn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">test_list</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">curr_lfn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">curr_resolved_files</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">curr_resolved_files</span><span class="p">[</span><span class="n">curr_lfn</span><span class="p">]</span>
+                <span class="n">local_url</span> <span class="o">=</span> <span class="n">resolve_url</span><span class="p">(</span><span class="n">test_list</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">curr_resolved_files</span><span class="p">[</span><span class="n">curr_lfn</span><span class="p">]</span> <span class="o">=</span> <span class="n">local_url</span>
+                <span class="k">return</span> <span class="n">local_url</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.frame.frame &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../pycbc.html">pycbc</a> &raquo;</li>
+          <li><a href="../frame.html">pycbc.frame</a> &raquo;</li>
+      <li>pycbc.frame.frame</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.frame.frame</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2014 Andrew Miller, Alex Nitz, Tito Dal Canton, Christopher M. Biwer</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Generals</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This modules contains functions for reading in data from frame files or caches</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">lalframe</span><span class="o">,</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">lal</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">os.path</span><span class="o">,</span> <span class="nn">glob</span><span class="o">,</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">gwdatafind</span>
+<span class="kn">import</span> <span class="nn">pycbc</span>
+<span class="kn">from</span> <span class="nn">six.moves.urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+<span class="kn">from</span> <span class="nn">pycbc.types</span> <span class="kn">import</span> <span class="n">TimeSeries</span><span class="p">,</span> <span class="n">zeros</span>
+
+
+<span class="c1"># map LAL series types to corresponding functions and Numpy types</span>
+<span class="n">_fr_type_map</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">lal</span><span class="o">.</span><span class="n">S_TYPE_CODE</span><span class="p">:</span> <span class="p">[</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamReadREAL4TimeSeries</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL4TimeSeries</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetREAL4TimeSeriesMetadata</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL4Sequence</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrameAddREAL4TimeSeriesProcData</span>
+    <span class="p">],</span>
+    <span class="n">lal</span><span class="o">.</span><span class="n">D_TYPE_CODE</span><span class="p">:</span> <span class="p">[</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamReadREAL8TimeSeries</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8TimeSeries</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetREAL8TimeSeriesMetadata</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateREAL8Sequence</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrameAddREAL8TimeSeriesProcData</span>
+    <span class="p">],</span>
+    <span class="n">lal</span><span class="o">.</span><span class="n">C_TYPE_CODE</span><span class="p">:</span> <span class="p">[</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamReadCOMPLEX8TimeSeries</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">complex64</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateCOMPLEX8TimeSeries</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetCOMPLEX8TimeSeriesMetadata</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateCOMPLEX8Sequence</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrameAddCOMPLEX8TimeSeriesProcData</span>
+    <span class="p">],</span>
+    <span class="n">lal</span><span class="o">.</span><span class="n">Z_TYPE_CODE</span><span class="p">:</span> <span class="p">[</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamReadCOMPLEX16TimeSeries</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">complex128</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateCOMPLEX16TimeSeries</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetCOMPLEX16TimeSeriesMetadata</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateCOMPLEX16Sequence</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrameAddCOMPLEX16TimeSeriesProcData</span>
+    <span class="p">],</span>
+    <span class="n">lal</span><span class="o">.</span><span class="n">U4_TYPE_CODE</span><span class="p">:</span> <span class="p">[</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamReadUINT4TimeSeries</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">uint32</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateUINT4TimeSeries</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetUINT4TimeSeriesMetadata</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateUINT4Sequence</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrameAddUINT4TimeSeriesProcData</span>
+    <span class="p">],</span>
+    <span class="n">lal</span><span class="o">.</span><span class="n">I4_TYPE_CODE</span><span class="p">:</span> <span class="p">[</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamReadINT4TimeSeries</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateINT4TimeSeries</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetINT4TimeSeriesMetadata</span><span class="p">,</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CreateINT4Sequence</span><span class="p">,</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrameAddINT4TimeSeriesProcData</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">_read_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Get channel using lalframe &quot;&quot;&quot;</span>
+    <span class="n">channel_type</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetTimeSeriesType</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+    <span class="n">read_func</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">channel_type</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">d_type</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">channel_type</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">read_func</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">start</span><span class="p">,</span>
+                      <span class="n">dtype</span><span class="o">=</span><span class="n">d_type</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_is_gwf</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Test if a file is a frame file by checking if its contents begins with</span>
+<span class="sd">    the magic string &#39;IGWD&#39;.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;IGWD&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">locations_to_cache</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">latest</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return a cumulative cache file build from the list of locations</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    locations : list</span>
+<span class="sd">        A list of strings containing files, globs, or cache files used to build</span>
+<span class="sd">    a combined lal cache file object.</span>
+<span class="sd">    latest : Optional, {False, Boolean}</span>
+<span class="sd">        Only return a cache with the most recent frame in the locations.</span>
+<span class="sd">        If false, all results are returned.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cache : lal.Cache</span>
+<span class="sd">        A cumulative lal cache object containing the files derived from the</span>
+<span class="sd">    list of locations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cum_cache</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">Cache</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">locations</span><span class="p">:</span>
+        <span class="n">flist</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">latest</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">relaxed_getctime</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+                <span class="c1"># when building a cache from a directory of temporary</span>
+                <span class="c1"># low-latency frames, files might disappear between</span>
+                <span class="c1"># the glob() and getctime() calls</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getctime</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="mi">0</span>
+            <span class="n">flist</span> <span class="o">=</span> <span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="n">flist</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">relaxed_getctime</span><span class="p">)]</span>
+
+        <span class="k">for</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="n">flist</span><span class="p">:</span>
+            <span class="n">dir_name</span><span class="p">,</span> <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">file_extension</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">file_extension</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;.lcf&quot;</span><span class="p">,</span> <span class="s2">&quot;.cache&quot;</span><span class="p">]:</span>
+                <span class="n">cache</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CacheImport</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">file_extension</span> <span class="o">==</span> <span class="s2">&quot;.gwf&quot;</span> <span class="ow">or</span> <span class="n">_is_gwf</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+                <span class="n">cache</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FrOpen</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">dir_name</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_name</span><span class="p">))</span><span class="o">.</span><span class="n">cache</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Invalid location name&quot;</span><span class="p">)</span>
+
+            <span class="n">cum_cache</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">CacheMerge</span><span class="p">(</span><span class="n">cum_cache</span><span class="p">,</span> <span class="n">cache</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cum_cache</span>
+
+<div class="viewcode-block" id="read_frame"><a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.frame.read_frame">[docs]</a><span class="k">def</span> <span class="nf">read_frame</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">end_time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">check_integrity</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">sieve</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read time series from frame data.</span>
+
+<span class="sd">    Using the `location`, which can either be a frame file &quot;.gwf&quot; or a</span>
+<span class="sd">    frame cache &quot;.gwf&quot;, read in the data for the given channel(s) and output</span>
+<span class="sd">    as a TimeSeries or list of TimeSeries.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    location : string</span>
+<span class="sd">        A source of gravitational wave frames. Either a frame filename</span>
+<span class="sd">        (can include pattern), a list of frame files, or frame cache file.</span>
+<span class="sd">    channels : string or list of strings</span>
+<span class="sd">        Either a string that contains the channel name or a list of channel</span>
+<span class="sd">        name strings.</span>
+<span class="sd">    start_time : {None, LIGOTimeGPS}, optional</span>
+<span class="sd">        The gps start time of the time series. Defaults to reading from the</span>
+<span class="sd">        beginning of the available frame(s).</span>
+<span class="sd">    end_time : {None, LIGOTimeGPS}, optional</span>
+<span class="sd">        The gps end time of the time series. Defaults to the end of the frame.</span>
+<span class="sd">        Note, this argument is incompatible with `duration`.</span>
+<span class="sd">    duration : {None, float}, optional</span>
+<span class="sd">        The amount of data to read in seconds. Note, this argument is</span>
+<span class="sd">        incompatible with `end`.</span>
+<span class="sd">    check_integrity : {True, bool}, optional</span>
+<span class="sd">        Test the frame files for internal integrity.</span>
+<span class="sd">    sieve : string, optional</span>
+<span class="sd">        Selects only frames where the frame URL matches the regular</span>
+<span class="sd">        expression sieve</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Frame Data: TimeSeries or list of TimeSeries</span>
+<span class="sd">        A TimeSeries or a list of TimeSeries, corresponding to the data from</span>
+<span class="sd">        the frame file/cache for a given channel or channels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">end_time</span> <span class="ow">and</span> <span class="n">duration</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;end time and duration are mutually exclusive&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">location</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="n">location</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">locations</span> <span class="o">=</span> <span class="p">[</span><span class="n">location</span><span class="p">]</span>
+
+    <span class="n">cum_cache</span> <span class="o">=</span> <span class="n">locations_to_cache</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sieve</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using frames that match regexp: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">sieve</span><span class="p">)</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CacheSieve</span><span class="p">(</span><span class="n">cum_cache</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sieve</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Before sieving, check if this is sane. Otherwise it will fail later.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">end_time</span><span class="p">))</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_time</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Negative or null duration&quot;</span><span class="p">)</span>
+        <span class="n">lal</span><span class="o">.</span><span class="n">CacheSieve</span><span class="p">(</span><span class="n">cum_cache</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_time</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">end_time</span><span class="p">)),</span>
+                       <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamCacheOpen</span><span class="p">(</span><span class="n">cum_cache</span><span class="p">)</span>
+    <span class="n">stream</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FR_STREAM_VERBOSE_MODE</span>
+
+    <span class="k">if</span> <span class="n">check_integrity</span><span class="p">:</span>
+        <span class="n">stream</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">mode</span> <span class="o">|</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FR_STREAM_CHECKSUM_MODE</span><span class="p">)</span>
+
+    <span class="n">lalframe</span><span class="o">.</span><span class="n">FrSetMode</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+
+    <span class="c1"># determine duration of data</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">first_channel</span> <span class="o">=</span> <span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">first_channel</span> <span class="o">=</span> <span class="n">channels</span>
+
+    <span class="n">data_length</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetVectorLength</span><span class="p">(</span><span class="n">first_channel</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+    <span class="n">channel_type</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetTimeSeriesType</span><span class="p">(</span><span class="n">first_channel</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+    <span class="n">create_series_func</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">channel_type</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">get_series_metadata_func</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">channel_type</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="n">create_series_func</span><span class="p">(</span><span class="n">first_channel</span><span class="p">,</span> <span class="n">stream</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+                                <span class="n">lal</span><span class="o">.</span><span class="n">ADCCountUnit</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">get_series_metadata_func</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+    <span class="n">data_duration</span> <span class="o">=</span> <span class="n">data_length</span> <span class="o">*</span> <span class="n">series</span><span class="o">.</span><span class="n">deltaT</span>
+
+    <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">epoch</span><span class="o">*</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">end_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">+</span> <span class="n">data_duration</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">lal</span><span class="o">.</span><span class="n">LIGOTimeGPS</span><span class="p">:</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">LIGOTimeGPS</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">end_time</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">lal</span><span class="o">.</span><span class="n">LIGOTimeGPS</span><span class="p">:</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">lal</span><span class="o">.</span><span class="n">LIGOTimeGPS</span><span class="p">(</span><span class="n">end_time</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
+
+    <span class="c1"># lalframe behaves dangerously with invalid duration so catch it here</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Negative or null duration&quot;</span><span class="p">)</span>
+    <span class="c1">#if duration &gt; data_duration:</span>
+    <span class="c1">#    raise ValueError(&quot;Requested duration longer than available data&quot;)</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">all_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">channels</span><span class="p">:</span>
+            <span class="n">channel_data</span> <span class="o">=</span> <span class="n">_read_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
+            <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamSeek</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">start_time</span><span class="p">)</span>
+            <span class="n">all_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">channel_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">all_data</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_read_channel</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="datafind_connection"><a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.frame.datafind_connection">[docs]</a><span class="k">def</span> <span class="nf">datafind_connection</span><span class="p">(</span><span class="n">server</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return a connection to the datafind server</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    -----------</span>
+<span class="sd">    server : {SERVER:PORT, string}, optional</span>
+<span class="sd">       A string representation of the server and port.</span>
+<span class="sd">       The port may be ommitted.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    --------</span>
+<span class="sd">    connection</span>
+<span class="sd">        The open connection to the datafind server.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">gwdatafind</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">server</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="frame_paths"><a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.frame.frame_paths">[docs]</a><span class="k">def</span> <span class="nf">frame_paths</span><span class="p">(</span><span class="n">frame_type</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">server</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">url_type</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the paths to a span of frame files</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    frame_type : string</span>
+<span class="sd">        The string representation of the frame type (ex. &#39;H1_ER_C00_L1&#39;)</span>
+<span class="sd">    start_time : int</span>
+<span class="sd">        The start time that we need the frames to span.</span>
+<span class="sd">    end_time : int</span>
+<span class="sd">        The end time that we need the frames to span.</span>
+<span class="sd">    server : {None, SERVER:PORT string}, optional</span>
+<span class="sd">        Optional string to specify the datafind server to use. By default an</span>
+<span class="sd">        attempt is made to use a local datafind server.</span>
+<span class="sd">    url_type : string</span>
+<span class="sd">        Returns only frame URLs with a particular scheme or head such</span>
+<span class="sd">        as &quot;file&quot; or &quot;gsiftp&quot;. Default is &quot;file&quot;, which queries locally</span>
+<span class="sd">        stored frames. Option can be disabled if set to None.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    paths : list of paths</span>
+<span class="sd">        The list of paths to the frame files.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; paths = frame_paths(&#39;H1_LDAS_C02_L2&#39;, 968995968, 968995968+2048)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">site</span> <span class="o">=</span> <span class="n">frame_type</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">datafind_connection</span><span class="p">(</span><span class="n">server</span><span class="p">)</span>
+    <span class="n">connection</span><span class="o">.</span><span class="n">find_times</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">frame_type</span><span class="p">,</span>
+                          <span class="n">gpsstart</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">gpsend</span><span class="o">=</span><span class="n">end_time</span><span class="p">)</span>
+    <span class="n">cache</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">find_frame_urls</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">frame_type</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span><span class="n">urltype</span><span class="o">=</span><span class="n">url_type</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">urlparse</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span><span class="o">.</span><span class="n">path</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="query_and_read_frame"><a class="viewcode-back" href="../../../pycbc.frame.html#pycbc.frame.frame.query_and_read_frame">[docs]</a><span class="k">def</span> <span class="nf">query_and_read_frame</span><span class="p">(</span><span class="n">frame_type</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span>
+                         <span class="n">sieve</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">check_integrity</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read time series from frame data.</span>
+
+<span class="sd">    Query for the locatin of physical frames matching the frame type. Return</span>
+<span class="sd">    a time series containing the channel between the given start and end times.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    frame_type : string</span>
+<span class="sd">        The type of frame file that we are looking for.</span>
+<span class="sd">    channels : string or list of strings</span>
+<span class="sd">        Either a string that contains the channel name or a list of channel</span>
+<span class="sd">        name strings.</span>
+<span class="sd">    start_time : LIGOTimeGPS or int</span>
+<span class="sd">        The gps start time of the time series. Defaults to reading from the</span>
+<span class="sd">        beginning of the available frame(s).</span>
+<span class="sd">    end_time : LIGOTimeGPS or int</span>
+<span class="sd">        The gps end time of the time series. Defaults to the end of the frame.</span>
+<span class="sd">    sieve : string, optional</span>
+<span class="sd">        Selects only frames where the frame URL matches the regular</span>
+<span class="sd">        expression sieve</span>
+<span class="sd">    check_integrity : boolean</span>
+<span class="sd">        Do an expensive checksum of the file before returning.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Frame Data: TimeSeries or list of TimeSeries</span>
+<span class="sd">        A TimeSeries or a list of TimeSeries, corresponding to the data from</span>
+<span class="sd">        the frame file/cache for a given channel or channels.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; ts = query_and_read_frame(&#39;H1_LDAS_C02_L2&#39;, &#39;H1:LDAS-STRAIN&#39;,</span>
+<span class="sd">    &gt;&gt;&gt;                               968995968, 968995968+2048)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Allows compatibility with our standard tools</span>
+    <span class="c1"># We may want to place this into a higher level frame getting tool</span>
+    <span class="k">if</span> <span class="n">frame_type</span> <span class="o">==</span> <span class="s1">&#39;LOSC_STRAIN&#39;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">pycbc.frame.losc</span> <span class="kn">import</span> <span class="n">read_strain_losc</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">channels</span> <span class="o">=</span> <span class="p">[</span><span class="n">channels</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">read_strain_losc</span><span class="p">(</span><span class="n">c</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">channels</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">frame_type</span> <span class="o">==</span> <span class="s1">&#39;LOSC&#39;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">pycbc.frame.losc</span> <span class="kn">import</span> <span class="n">read_frame_losc</span>
+        <span class="k">return</span> <span class="n">read_frame_losc</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span>
+
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;querying datafind server&#39;</span><span class="p">)</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="n">frame_paths</span><span class="p">(</span><span class="n">frame_type</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_time</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">end_time</span><span class="p">)))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;found files: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">paths</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">read_frame</span><span class="p">(</span><span class="n">paths</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span>
+                      <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
+                      <span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">,</span>
+                      <span class="n">sieve</span><span class="o">=</span><span class="n">sieve</span><span class="p">,</span>
+                      <span class="n">check_integrity</span><span class="o">=</span><span class="n">check_integrity</span><span class="p">)</span></div>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;read_frame&#39;</span><span class="p">,</span> <span class="s1">&#39;frame_paths&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;datafind_connection&#39;</span><span class="p">,</span>
+           <span class="s1">&#39;query_and_read_frame&#39;</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">write_frame</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">timeseries</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write a list of time series to a single frame file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    location : string</span>
+<span class="sd">        A frame filename.</span>
+<span class="sd">    channels : string or list of strings</span>
+<span class="sd">        Either a string that contains the channel name or a list of channel</span>
+<span class="sd">        name strings.</span>
+<span class="sd">    timeseries: TimeSeries</span>
+<span class="sd">        A TimeSeries or list of TimeSeries, corresponding to the data to be</span>
+<span class="sd">        written to the frame file for a given channel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check if a single channel or a list of channels</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">timeseries</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span>
+        <span class="n">timeseries</span> <span class="o">=</span> <span class="n">timeseries</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="p">[</span><span class="n">channels</span><span class="p">]</span>
+        <span class="n">timeseries</span> <span class="o">=</span> <span class="p">[</span><span class="n">timeseries</span><span class="p">]</span>
+
+    <span class="c1"># check that timeseries have the same start and end time</span>
+    <span class="n">gps_start_times</span> <span class="o">=</span> <span class="p">{</span><span class="n">series</span><span class="o">.</span><span class="n">start_time</span> <span class="k">for</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">timeseries</span><span class="p">}</span>
+    <span class="n">gps_end_times</span> <span class="o">=</span> <span class="p">{</span><span class="n">series</span><span class="o">.</span><span class="n">end_time</span> <span class="k">for</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">timeseries</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gps_start_times</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">gps_end_times</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Start and end times of TimeSeries must be identical.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check that start, end time, and duration are integers</span>
+    <span class="n">gps_start_time</span> <span class="o">=</span> <span class="n">gps_start_times</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="n">gps_end_time</span> <span class="o">=</span> <span class="n">gps_end_times</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gps_end_time</span> <span class="o">-</span> <span class="n">gps_start_time</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">gps_start_time</span> <span class="o">%</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">gps_end_time</span> <span class="o">%</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Start and end times of TimeSeries must be integer seconds.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># create frame</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FrameNew</span><span class="p">(</span><span class="n">epoch</span><span class="o">=</span><span class="n">gps_start_time</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+                              <span class="n">project</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">frnum</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                              <span class="n">detectorFlags</span><span class="o">=</span><span class="n">lal</span><span class="o">.</span><span class="n">LALDETECTORTYPE_ABSENT</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">tseries</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">timeseries</span><span class="p">):</span>
+        <span class="c1"># get data type</span>
+        <span class="k">for</span> <span class="n">seriestype</span> <span class="ow">in</span> <span class="n">_fr_type_map</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">seriestype</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">tseries</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+                <span class="n">create_series_func</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">seriestype</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">create_sequence_func</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">seriestype</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span>
+                <span class="n">add_series_func</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">seriestype</span><span class="p">][</span><span class="mi">5</span><span class="p">]</span>
+                <span class="k">break</span>
+
+        <span class="c1"># add time series to frame</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">create_series_func</span><span class="p">(</span><span class="n">channels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">tseries</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+                       <span class="mi">0</span><span class="p">,</span> <span class="n">tseries</span><span class="o">.</span><span class="n">delta_t</span><span class="p">,</span> <span class="n">lal</span><span class="o">.</span><span class="n">ADCCountUnit</span><span class="p">,</span>
+                       <span class="nb">len</span><span class="p">(</span><span class="n">tseries</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+        <span class="n">series</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">create_sequence_func</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tseries</span><span class="o">.</span><span class="n">numpy</span><span class="p">()))</span>
+        <span class="n">series</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">tseries</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">add_series_func</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">series</span><span class="p">)</span>
+
+    <span class="c1"># write frame</span>
+    <span class="n">lalframe</span><span class="o">.</span><span class="n">FrameWrite</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">location</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">DataBuffer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;A linear buffer that acts as a FILO for reading in frame data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frame_src</span><span class="p">,</span>
+                 <span class="n">channel_name</span><span class="p">,</span>
+                 <span class="n">start_time</span><span class="p">,</span>
+                 <span class="n">max_buffer</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+                 <span class="n">force_update_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">increment_update_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">float64</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create a rolling buffer of frame data</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ---------</span>
+<span class="sd">        frame_src: str of list of strings</span>
+<span class="sd">            Strings that indicate where to read from files from. This can be a</span>
+<span class="sd">        list of frame files, a glob, etc.</span>
+<span class="sd">        channel_name: str</span>
+<span class="sd">            Name of the channel to read from the frame files</span>
+<span class="sd">        start_time:</span>
+<span class="sd">            Time to start reading from.</span>
+<span class="sd">        max_buffer: {int, 2048}, Optional</span>
+<span class="sd">            Length of the buffer in seconds</span>
+<span class="sd">        dtype: {dtype, numpy.float32}, Optional</span>
+<span class="sd">            Data type to use for the interal buffer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_src</span> <span class="o">=</span> <span class="n">frame_src</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span> <span class="o">=</span> <span class="n">channel_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span> <span class="o">=</span> <span class="n">start_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">force_update_cache</span> <span class="o">=</span> <span class="n">force_update_cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">increment_update_cache</span> <span class="o">=</span> <span class="n">increment_update_cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span> <span class="o">=</span> <span class="n">channel_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_metadata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="p">)</span>
+
+        <span class="n">raw_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span> <span class="o">*</span> <span class="n">max_buffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span> <span class="o">=</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">zeros</span><span class="p">(</span><span class="n">raw_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">),</span>
+                                     <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                     <span class="n">epoch</span><span class="o">=</span><span class="n">start_time</span> <span class="o">-</span> <span class="n">max_buffer</span><span class="p">,</span>
+                                     <span class="n">delta_t</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">update_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reset the lal cache. This can be used to update the cache if the</span>
+<span class="sd">        result may change due to more files being added to the filesystem,</span>
+<span class="sd">        for example.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="n">locations_to_cache</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_src</span><span class="p">,</span> <span class="n">latest</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamCacheOpen</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_retrieve_metadata</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve basic metadata by reading the first file in the cache</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        stream: lal stream object</span>
+<span class="sd">            Stream containing a channel we want to learn about</span>
+<span class="sd">        channel_name: str</span>
+<span class="sd">            The name of the channel we want to know the dtype and sample rate of</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        channel_type: lal type enum</span>
+<span class="sd">            Enum value which indicates the dtype of the channel</span>
+<span class="sd">        sample_rate: int</span>
+<span class="sd">            The sample rate of the data within this channel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetVectorLength</span><span class="p">(</span><span class="n">channel_name</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+        <span class="n">channel_type</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamGetTimeSeriesType</span><span class="p">(</span><span class="n">channel_name</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+        <span class="n">create_series_func</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">channel_type</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">get_series_metadata_func</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="n">channel_type</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">series</span> <span class="o">=</span> <span class="n">create_series_func</span><span class="p">(</span><span class="n">channel_name</span><span class="p">,</span> <span class="n">stream</span><span class="o">.</span><span class="n">epoch</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+                            <span class="n">lal</span><span class="o">.</span><span class="n">ADCCountUnit</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">get_series_metadata_func</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">stream</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">channel_type</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">series</span><span class="o">.</span><span class="n">deltaT</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_read_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Try to read the block of data blocksize seconds long</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        data: TimeSeries</span>
+<span class="sd">            TimeSeries containg &#39;blocksize&#39; seconds of frame data</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError:</span>
+<span class="sd">            If data cannot be read for any reason</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">read_func</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_type</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">_fr_type_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_type</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">read_func</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="p">,</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">blocksize</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">TimeSeries</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">delta_t</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">deltaT</span><span class="p">,</span>
+                              <span class="n">epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span><span class="p">,</span>
+                              <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Cannot read </span><span class="si">{0}</span><span class="s1"> frame data&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">null_advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Advance and insert zeros</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="o">-</span><span class="nb">int</span><span class="p">(</span><span class="n">blocksize</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span> <span class="o">+=</span> <span class="n">blocksize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">blocksize</span>
+
+    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add blocksize seconds more to the buffer, push blocksize seconds</span>
+<span class="sd">        from the beginning.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_frame</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="p">):]</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_pos</span> <span class="o">+=</span> <span class="n">blocksize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+=</span> <span class="n">blocksize</span>
+        <span class="k">return</span> <span class="n">ts</span>
+
+    <span class="k">def</span> <span class="nf">update_cache_by_increment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update the internal cache by starting from the first frame</span>
+<span class="sd">        and incrementing.</span>
+
+<span class="sd">        Guess the next frame file name by incrementing from the first found</span>
+<span class="sd">        one. This allows a pattern to be used for the GPS folder of the file,</span>
+<span class="sd">        which is indicated by `GPSX` where x is the number of digits to use.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            Number of seconds to increment the next frame file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">end_time</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">blocksize</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;dur&#39;</span><span class="p">):</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_src</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fname</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">beg</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">fname</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fname</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fname</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dur</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fname</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="n">fstart</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">floor</span><span class="p">((</span><span class="n">start</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dur</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dur</span><span class="p">)</span>
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">fstart</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dur</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">starts</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">increment_update_cache</span>
+            <span class="k">if</span> <span class="s1">&#39;GPS&#39;</span> <span class="ow">in</span> <span class="n">pattern</span><span class="p">:</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pattern</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">pattern</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;GPS&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)])</span>
+                <span class="n">pattern</span> <span class="o">=</span> <span class="n">pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;GPS</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">])</span>
+
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">-</span><span class="si">%s</span><span class="s1">.gwf&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">beg</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dur</span><span class="p">)</span>
+            <span class="c1"># check that file actually exists, else abort now</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span>
+
+            <span class="n">keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="n">locations_to_cache</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+        <span class="n">stream</span> <span class="o">=</span> <span class="n">lalframe</span><span class="o">.</span><span class="n">FrStreamCacheOpen</span><span class="p">(</span><span class="n">cache</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">stream</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_sample_rate</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_metadata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">attempt_advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Attempt to advance the frame buffer. Retry upon failure, except</span>
+<span class="sd">        if the frame file is beyond the timeout limit.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+<span class="sd">        timeout: {int, 10}, Optional</span>
+<span class="sd">            Number of seconds before giving up on reading a frame</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        data: TimeSeries</span>
+<span class="sd">            TimeSeries containg &#39;blocksize&#39; seconds of frame data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_update_cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">increment_update_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_cache_by_increment</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">DataBuffer</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pycbc</span><span class="o">.</span><span class="n">gps_now</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">timeout</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">end_time</span><span class="p">:</span>
+                <span class="c1"># The frame is not there and it should be by now, so we give up</span>
+                <span class="c1"># and treat it as zeros</span>
+                <span class="n">DataBuffer</span><span class="o">.</span><span class="n">null_advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># I am too early to give up on this frame, so we should try again</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">attempt_advance</span><span class="p">(</span><span class="n">blocksize</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">StatusBuffer</span><span class="p">(</span><span class="n">DataBuffer</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot; Read state vector or DQ information from a frame file &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frame_src</span><span class="p">,</span>
+                       <span class="n">channel_name</span><span class="p">,</span>
+                       <span class="n">start_time</span><span class="p">,</span>
+                       <span class="n">max_buffer</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+                       <span class="n">valid_mask</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                       <span class="n">force_update_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">increment_update_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">valid_on_zero</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create a rolling buffer of status data from a frame</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ---------</span>
+<span class="sd">        frame_src: str of list of strings</span>
+<span class="sd">            Strings that indicate where to read from files from. This can be a</span>
+<span class="sd">            list of frame files, a glob, etc.</span>
+<span class="sd">        channel_name: str</span>
+<span class="sd">            Name of the channel to read from the frame files</span>
+<span class="sd">        start_time:</span>
+<span class="sd">            Time to start reading from.</span>
+<span class="sd">        max_buffer: {int, 2048}, Optional</span>
+<span class="sd">            Length of the buffer in seconds</span>
+<span class="sd">        valid_mask: {int, HOFT_OK | SCIENCE_INTENT}, Optional</span>
+<span class="sd">            Set of flags that must be on to indicate valid frame data.</span>
+<span class="sd">        valid_on_zero: bool</span>
+<span class="sd">            If True, `valid_mask` is ignored and the status is considered</span>
+<span class="sd">            &quot;good&quot; simply when the channel is zero.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">DataBuffer</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frame_src</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span>
+                            <span class="n">max_buffer</span><span class="o">=</span><span class="n">max_buffer</span><span class="p">,</span>
+                            <span class="n">force_update_cache</span><span class="o">=</span><span class="n">force_update_cache</span><span class="p">,</span>
+                            <span class="n">increment_update_cache</span><span class="o">=</span><span class="n">increment_update_cache</span><span class="p">,</span>
+                            <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span> <span class="o">=</span> <span class="n">valid_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid_on_zero</span> <span class="o">=</span> <span class="n">valid_on_zero</span>
+
+    <span class="k">def</span> <span class="nf">check_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if the data contains any non-valid status information</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        values: pycbc.types.Array</span>
+<span class="sd">            Array of status information</span>
+<span class="sd">        flag: str, optional</span>
+<span class="sd">            Override the default valid mask with a user defined mask.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        status: boolean</span>
+<span class="sd">            Returns True if all of the status information if valid,</span>
+<span class="sd">             False if any is not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_on_zero</span><span class="p">:</span>
+            <span class="n">valid</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">flag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">flag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span>
+            <span class="n">valid</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">flag</span><span class="p">)</span> <span class="o">==</span> <span class="n">flag</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">valid</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">is_extent_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if the duration contains any non-valid frames</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        start_time: int</span>
+<span class="sd">            Beginning of the duration to check in gps seconds</span>
+<span class="sd">        duration: int</span>
+<span class="sd">            Number of seconds after the start_time to check</span>
+<span class="sd">        flag: str, optional</span>
+<span class="sd">            Override the default valid mask with a user defined mask.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        status: boolean</span>
+<span class="sd">            Returns True if all of the status information if valid,</span>
+<span class="sd">            False if any is not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">sample_rate</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">start_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">start_time</span><span class="p">)</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">s</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_valid</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="n">flag</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">indices_of_flag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return the indices of the times lying in the flagged region</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        start_time: int</span>
+<span class="sd">            Beginning time to request for</span>
+<span class="sd">        duration: int</span>
+<span class="sd">            Number of seconds to check.</span>
+<span class="sd">        padding: float</span>
+<span class="sd">            Number of seconds to add around flag inactive times to be considered</span>
+<span class="sd">        inactive as well.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        indices: numpy.ndarray</span>
+<span class="sd">            Array of indices marking the location of triggers within valid</span>
+<span class="sd">        time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">pycbc.events.veto</span> <span class="kn">import</span> <span class="n">indices_outside_times</span>
+        <span class="n">sr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">sample_rate</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">start_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="o">.</span><span class="n">start_time</span> <span class="o">-</span> <span class="n">padding</span><span class="p">)</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">s</span> <span class="o">+</span> <span class="nb">int</span><span class="p">((</span><span class="n">duration</span> <span class="o">+</span> <span class="n">padding</span><span class="p">)</span> <span class="o">*</span> <span class="n">sr</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_buffer</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="n">stamps</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">sample_times</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_on_zero</span><span class="p">:</span>
+            <span class="n">invalid</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">invalid</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span><span class="p">)</span> \
+                    <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_mask</span>
+
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">stamps</span><span class="p">[</span><span class="n">invalid</span><span class="p">]</span> <span class="o">-</span> <span class="n">padding</span>
+        <span class="n">ends</span> <span class="o">=</span> <span class="n">starts</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">sr</span> <span class="o">+</span> <span class="n">padding</span> <span class="o">*</span> <span class="mf">2.0</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">indices_outside_times</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">idx</span>
+
+    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Add blocksize seconds more to the buffer, push blocksize seconds</span>
+<span class="sd">        from the beginning.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        blocksize: int</span>
+<span class="sd">            The number of seconds to attempt to read from the channel</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        status: boolean</span>
+<span class="sd">            Returns True if all of the status information if valid,</span>
+<span class="sd">            False if any is not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">increment_update_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_cache_by_increment</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">DataBuffer</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blocksize</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_valid</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">null_advance</span><span class="p">(</span><span class="n">blocksize</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

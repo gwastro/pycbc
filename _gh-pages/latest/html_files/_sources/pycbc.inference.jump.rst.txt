@@ -1,0 +1,46 @@
+pycbc.inference.jump package
+============================
+
+Submodules
+----------
+
+pycbc.inference.jump.angular module
+-----------------------------------
+
+.. automodule:: pycbc.inference.jump.angular
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.jump.bounded\_normal module
+-------------------------------------------
+
+.. automodule:: pycbc.inference.jump.bounded_normal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.jump.discrete module
+------------------------------------
+
+.. automodule:: pycbc.inference.jump.discrete
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.jump.normal module
+----------------------------------
+
+.. automodule:: pycbc.inference.jump.normal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.inference.jump
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Running on an analytic distribution &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Running on an analytic distribution</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/inference/examples/analytic.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="running-on-an-analytic-distribution">
+<span id="inference-example-analytic"></span><h1>Running on an analytic distribution<a class="headerlink" href="#running-on-an-analytic-distribution" title="Permalink to this headline">¶</a></h1>
+<p>Several analytic distributions are available to run tests on. These can be run
+quickly on a laptop to check that a sampler is working properly.</p>
+<p>This example demonstrates how to sample a 2D normal distribution with the
+<code class="docutils literal notranslate"><span class="pre">emcee</span></code> sampler. First, we create the following configuration file:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[model]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">test_normal</span>
+
+<span class="k">[sampler]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">emcee</span>
+<span class="na">nwalkers</span> <span class="o">=</span> <span class="s">5000</span>
+<span class="na">niterations</span> <span class="o">=</span> <span class="s">100</span>
+
+<span class="k">[variable_params]</span>
+<span class="na">x</span> <span class="o">=</span>
+<span class="na">y</span> <span class="o">=</span>
+
+<span class="k">[prior-x]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">uniform</span>
+<span class="na">min-x</span> <span class="o">=</span> <span class="s">-10</span>
+<span class="na">max-x</span> <span class="o">=</span> <span class="s">10</span>
+
+<span class="k">[prior-y]</span>
+<span class="na">name</span> <span class="o">=</span> <span class="s">uniform</span>
+<span class="na">min-y</span> <span class="o">=</span> <span class="s">-10</span>
+<span class="na">max-y</span> <span class="o">=</span> <span class="s">10</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/e547b7b3cecb87e5916f99b1c5ee4514/normal2d.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>By setting the model name to <code class="docutils literal notranslate"><span class="pre">test_normal</span></code> we are using
+<a class="reference internal" href="../../pycbc.inference.models.html#pycbc.inference.models.analytic.TestNormal" title="pycbc.inference.models.analytic.TestNormal"><code class="xref py py-class docutils literal notranslate"><span class="pre">TestNormal</span></code></a>.
+The number of dimensions of the distribution is set by the number of
+<code class="docutils literal notranslate"><span class="pre">variable_params</span></code>. The names of the parameters do not matter, just that just
+that the prior sections use the same names.</p>
+<p>Now run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+pycbc_inference --verbose <span class="se">\</span>
+        --config-files normal2d.ini <span class="se">\</span>
+        --output-file normal2d.hdf <span class="se">\</span>
+        --nprocesses <span class="m">2</span> <span class="se">\</span>
+        --seed <span class="m">10</span> <span class="se">\</span>
+        --force
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/8001541e2266711c6a53df6df747965f/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will run the <code class="docutils literal notranslate"><span class="pre">emcee</span></code> sampler on the 2D analytic normal distribution with
+5000 walkers for 100 iterations. When it is done, you will have a file called
+<code class="docutils literal notranslate"><span class="pre">normal2d.hdf</span></code> which contains the results. It should take about a minute to
+run. If you have a computer with more cores, you can increase the
+parallelization by changing the <code class="docutils literal notranslate"><span class="pre">nprocesses</span></code> argument.</p>
+<p>To plot the posterior distribution after the last iteration, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+pycbc_inference_plot_posterior --verbose <span class="se">\</span>
+        --input-file normal2d.hdf <span class="se">\</span>
+        --output-file posterior-normal2d.png <span class="se">\</span>
+        --plot-scatter <span class="se">\</span>
+        --plot-contours <span class="se">\</span>
+        --plot-marginal <span class="se">\</span>
+        --z-arg <span class="s1">&#39;loglikelihood:$\log p(h|\vartheta)$&#39;</span> <span class="se">\</span>
+        --iteration -1
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/620fc28cb25c6569d0164310d5c0c43d/plot.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>This will create the following plot:</p>
+<a class="reference internal image-reference" href="../../_images/posterior-normal2d.png"><img alt="../../_images/posterior-normal2d.png" class="align-center" src="../../_images/posterior-normal2d.png" style="width: 464.4px; height: 378.9px;" /></a>
+<p>The scatter points show each walker’s position after the last iteration. The
+points are colored by the log likelihood at that point, with the 50th and 90th
+percentile contours drawn.</p>
+<p>See below for more information about using <code class="docutils literal notranslate"><span class="pre">pycbc_inference_plot_posterior</span></code>.</p>
+<p>To make a movie showing how the walkers evolved, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+pycbc_inference_plot_movie --verbose <span class="se">\</span>
+        --nprocesses <span class="m">4</span> <span class="se">\</span>
+        --input-file normal2d.hdf <span class="se">\</span>
+        --output-prefix frames-normal2d <span class="se">\</span>
+        --movie-file normal2d_mcmc_evolution.mp4 <span class="se">\</span>
+        --cleanup <span class="se">\</span>
+        --plot-scatter <span class="se">\</span>
+        --plot-contours <span class="se">\</span>
+        --plot-marginal <span class="se">\</span>
+        --z-arg <span class="s1">&#39;loglikelihood:$\log p(h|\vartheta)$&#39;</span> <span class="se">\</span>
+        --frame-step <span class="m">1</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/e49ab4cabdce027f84556eb775ac3b2f/make_movie.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">You need <code class="docutils literal notranslate"><span class="pre">ffmpeg</span></code> installed for the mp4 to be created.</p>
+</div>
+<p><a class="reference internal" href="../viz.html#inference-make-movie"><span class="std std-ref">For more information on pycbc_inference_plot_movie</span></a>.</p>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

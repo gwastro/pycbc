@@ -1,0 +1,30 @@
+pycbc.population package
+========================
+
+Submodules
+----------
+
+pycbc.population.rates\_functions module
+----------------------------------------
+
+.. automodule:: pycbc.population.rates_functions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.population.scale\_injections module
+-----------------------------------------
+
+.. automodule:: pycbc.population.scale_injections
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.population
+    :members:
+    :undoc-members:
+    :show-inheritance:

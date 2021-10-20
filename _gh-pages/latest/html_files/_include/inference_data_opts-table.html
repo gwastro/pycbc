@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+        <script type="text/javascript" src="../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_include/inference_data_opts-table.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <table border="1" class="docutils">
+<colgroup>
+<col width="26%" />
+<col width="28%" />
+<col width="46%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Name</th>
+<th class="head">Syntax</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">instruments</span></code></td>
+<td>INSTRUMENTS [INSTRUMENTS …]</td>
+<td>Instruments to analyze, eg. H1 L1.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">trigger-time</span></code></td>
+<td>TRIGGER_TIME</td>
+<td>Reference GPS time (at geocenter) from which the
+(anlaysis|psd)-(start|end)-time options are measured.
+The integer seconds will be used. Default is 0; i.e.,
+if not provided, the analysis and psd times should be
+in GPS seconds.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">analysis-start-time</span></code></td>
+<td>IFO:TIME [IFO:TIME …]</td>
+<td>The start time to use for the analysis, measured with
+respect to the trigger-time. If psd-inverse-length is
+provided, the given start time will be padded by half
+that length to account for wrap-around effects.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">analysis-end-time</span></code></td>
+<td>IFO:TIME [IFO:TIME …]</td>
+<td>The end time to use for the analysis, measured with
+respect to the trigger-time. If psd-inverse-length is
+provided, the given end time will be padded by half
+that length to account for wrap-around effects.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">psd-start-time</span></code></td>
+<td>IFO:TIME [IFO:TIME …]</td>
+<td>Start time to use for PSD estimation, measured with
+respect to the trigger-time.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">psd-end-time</span></code></td>
+<td>IFO:TIME [IFO:TIME …]</td>
+<td>End time to use for PSD estimation, measured with
+respect to the trigger-time.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">data-conditioning-low-freq</span></code></td>
+<td>IFO:FLOW [IFO:FLOW …]</td>
+<td>Low frequency cutoff of the data. Needed for PSD
+estimation and when creating fake strain. If not
+provided, will use the model’s low-frequency-cutoff.</td>
+</tr>
+<tr class="row-odd"><td colspan="3">Options to select the method of PSD generation:
+The options <code class="docutils literal notranslate"><span class="pre">psd-model</span></code>, <code class="docutils literal notranslate"><span class="pre">psd-file</span></code>, <code class="docutils literal notranslate"><span class="pre">asd-file</span></code>, and <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code> are
+mutually exclusive.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">psd-model</span></code></td>
+<td>IFO:MODEL [IFO:MODEL …]</td>
+<td>Get PSD from given analytical model. Choose from any
+available PSD model.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">psd-file</span></code></td>
+<td>IFO:FILE [IFO:FILE …]</td>
+<td>Get PSD using given PSD ASCII file</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">asd-file</span></code></td>
+<td>IFO:FILE [IFO:FILE …]</td>
+<td>Get PSD using given ASD ASCII file</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code></td>
+<td>IFO:FILE [IFO:FILE …]</td>
+<td>Measure PSD from the data, using given average method.
+Choose from mean, median or median-mean.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">psd-segment-length</span></code></td>
+<td>IFO:LENGTH [IFO:LENGTH …]</td>
+<td>(Required for <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code>) The segment length for
+PSD estimation (s)</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">psd-segment-stride</span></code></td>
+<td>IFO:STRIDE [IFO:STRIDE …]</td>
+<td>(Required for <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code>) The separation between
+consecutive segments (s)</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">psd-num-segments</span></code></td>
+<td>IFO:NUM [IFO:NUM …]</td>
+<td>(Optional, used only with <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code>). If given
+PSDs will be estimated using only this number of
+segments. If more data is given than needed to make
+this number of segments than excess data will not be
+used in the PSD estimate. If not enough data is given
+the code will fail.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">psd-inverse-length</span></code></td>
+<td>IFO:LENGTH [IFO:LENGTH …]</td>
+<td>(Optional) The maximum length of the impulse response
+of the overwhitening filter (s)</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">invpsd-trunc-method</span></code></td>
+<td>{hann}</td>
+<td>(Optional) What truncation method to use when applying
+psd-inverse-length. If not provided, a hard truncation
+will be used.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">psd-output</span></code></td>
+<td>IFO:FILE [IFO:FILE …]</td>
+<td>(Optional) Write PSD to specified file</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">psdvar-segment</span></code></td>
+<td>SECONDS</td>
+<td>Length of segment when calculating the PSD
+variability.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">psdvar-short-segment</span></code></td>
+<td>SECONDS</td>
+<td>Length of short segment for outliers removal in PSD
+variability calculation.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">psdvar-long-segment</span></code></td>
+<td>SECONDS</td>
+<td>Length of long segment when calculating the PSD
+variability.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">psdvar-psd-duration</span></code></td>
+<td>SECONDS</td>
+<td>Duration of short segments for PSD estimation.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">psdvar-psd-stride</span></code></td>
+<td>SECONDS</td>
+<td>Separation between PSD estimation segments.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">psdvar-low-freq</span></code></td>
+<td>HERTZ</td>
+<td>Minimum frequency to consider in strain bandpass.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">psdvar-high-freq</span></code></td>
+<td>HERTZ</td>
+<td>Maximum frequency to consider in strain bandpass.</td>
+</tr>
+<tr class="row-odd"><td colspan="3">Options for obtaining h(t):
+These options are used for generating h(t) either by reading from a file
+or by generating it. This is only needed if the PSD is to be estimated
+from the data, ie. if the <code class="docutils literal notranslate"><span class="pre">psd-estimation</span></code> option is given. This group
+supports reading from multiple ifos simultaneously.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">strain-high-pass</span></code></td>
+<td>IFO:FREQUENCY [IFO:FREQUENCY …]</td>
+<td>High pass frequency</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">strain-low-pass</span></code></td>
+<td>IFO:FREQUENCY [IFO:FREQUENCY …]</td>
+<td>Low pass frequency</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">pad-data</span></code></td>
+<td>IFO:LENGTH [IFO:LENGTH …]</td>
+<td>Extra padding to remove highpass corruption (integer
+seconds)</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">taper-data</span></code></td>
+<td>IFO:LENGTH [IFO:LENGTH …]</td>
+<td>Taper ends of data to zero using the supplied length
+as a window (integer seconds)</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">sample-rate</span></code></td>
+<td>IFO:RATE [IFO:RATE …]</td>
+<td>The sample rate to use for h(t) generation (integer
+Hz).</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">channel-name</span></code></td>
+<td>IFO:CHANNEL [IFO:CHANNEL …]</td>
+<td>The channel containing the gravitational strain data</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">frame-cache</span></code></td>
+<td>IFO:FRAME_CACHE [IFO:FRAME_CACHE
+…]</td>
+<td>Cache file containing the frame locations.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">frame-files</span></code></td>
+<td>IFO:FRAME_FILES [IFO:FRAME_FILES
+…]</td>
+<td>list of frame files</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">hdf-store</span></code></td>
+<td>IFO:HDF_STORE_FILE
+[IFO:HDF_STORE_FILE …]</td>
+<td>Store of time series data in hdf format</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">frame-type</span></code></td>
+<td>IFO:FRAME_TYPE [IFO:FRAME_TYPE
+…]</td>
+<td>(optional) Replaces frame-files. Use datafind to get
+the needed frame file(s) of this type.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">frame-sieve</span></code></td>
+<td>IFO:FRAME_SIEVE [IFO:FRAME_SIEVE
+…]</td>
+<td>(optional), Only use frame files where the URL matches
+the regular expression given.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">fake-strain</span></code></td>
+<td>IFO:CHOICE [IFO:CHOICE …]</td>
+<td>Name of model PSD for generating fake gaussian noise.
+Choose from any available PSD model, or <code class="docutils literal notranslate"><span class="pre">zeroNoise</span></code>.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">fake-strain-seed</span></code></td>
+<td>IFO:SEED [IFO:SEED …]</td>
+<td>Seed value for the generation of fake colored gaussian
+noise</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">fake-strain-from-file</span></code></td>
+<td>IFO:FILE [IFO:FILE …]</td>
+<td>File containing ASD for generating fake noise from it.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">fake-strain-flow</span></code></td>
+<td>FAKE_STRAIN_FLOW [FAKE_STRAIN_FLOW
+…]</td>
+<td>Low frequency cutoff of the fake strain</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">fake-strain-filter-duration</span></code></td>
+<td>FAKE_STRAIN_FILTER_DURATION
+[FAKE_STRAIN_FILTER_DURATION …]</td>
+<td>Duration in seconds of the fake data coloring filter</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">fake-strain-sample-rate</span></code></td>
+<td>FAKE_STRAIN_SAMPLE_RATE
+[FAKE_STRAIN_SAMPLE_RATE …]</td>
+<td>Sample rate of the fake data generation</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">injection-file</span></code></td>
+<td>IFO:FILE [IFO:FILE …]</td>
+<td>(optional) Injection file containing parametersof CBC
+signals to be added to the strain</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">sgburst-injection-file</span></code></td>
+<td>IFO:FILE [IFO:FILE …]</td>
+<td>(optional) Injection file containing parametersof
+sine-Gaussian burst signals to add to the strain</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">injection-scale-factor</span></code></td>
+<td>IFO:VAL [IFO:VAL …]</td>
+<td>Divide injections by this factor before adding to the
+strain data</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">injection-sample-rate</span></code></td>
+<td>IFO:VAL [IFO:VAL …]</td>
+<td>Sample rate to use for injections (integer Hz).
+Typically similar to the strain data sample rate.If
+not provided, the strain sample rate will be used</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">injection-f-ref</span></code></td>
+<td>IFO:VALUE [IFO:VALUE …]</td>
+<td>Reference frequency in Hz for creating CBC injections
+from an XML file</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">injection-f-final</span></code></td>
+<td>IFO:VALUE [IFO:VALUE …]</td>
+<td>Override the f_final field of a CBC XML injection file
+(frequency in Hz)</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">gating-file</span></code></td>
+<td>IFO:FILE [IFO:FILE …]</td>
+<td>(optional) Text file of gating segments to apply.
+Format of each line (units s) : gps_time
+zeros_half_width pad_half_width</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">autogating-threshold</span></code></td>
+<td>IFO:SIGMA [IFO:SIGMA …]</td>
+<td>If given, find and gate glitches producing a deviation
+larger than SIGMA in the whitened strain time series</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">autogating-max-iterations</span></code></td>
+<td>SIGMA</td>
+<td>If given, iteratively apply autogating</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">autogating-cluster</span></code></td>
+<td>IFO:SECONDS [IFO:SECONDS …]</td>
+<td>Length of clustering window for detecting glitches for
+autogating.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">autogating-width</span></code></td>
+<td>IFO:SECONDS [IFO:SECONDS …]</td>
+<td>Half-width of the gating window.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">autogating-taper</span></code></td>
+<td>IFO:SECONDS [IFO:SECONDS …]</td>
+<td>Taper the strain before and after each gating window
+over a duration of SECONDS.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">autogating-pad</span></code></td>
+<td>IFO:SECONDS [IFO:SECONDS …]</td>
+<td>Ignore the given length of whitened strain at the ends
+of a segment, to avoid filters ringing.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">gating-method</span></code></td>
+<td>{hard,taper,paint}
+[{hard,taper,paint} …]</td>
+<td>Choose the method for gating. Default: <cite>taper</cite></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">normalize-strain</span></code></td>
+<td>IFO:VALUE [IFO:VALUE …]</td>
+<td>(optional) Divide frame data by constant.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">zpk-z</span></code></td>
+<td>IFO:VALUE [IFO:VALUE …]</td>
+<td>(optional) Zero-pole-gain (zpk) filter strain. A list
+of zeros for transfer function</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">zpk-p</span></code></td>
+<td>IFO:VALUE [IFO:VALUE …]</td>
+<td>(optional) Zero-pole-gain (zpk) filter strain. A list
+of poles for transfer function</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">zpk-k</span></code></td>
+<td>IFO:VALUE [IFO:VALUE …]</td>
+<td>(optional) Zero-pole-gain (zpk) filter strain.
+Transfer function gain</td>
+</tr>
+<tr class="row-odd"><td colspan="3">Options for gating data:</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">gate</span></code></td>
+<td>IFO:CENTRALTIME:HALFDUR:TAPERDUR
+[IFO:CENTRALTIME:HALFDUR:TAPERDUR
+…]</td>
+<td>Apply one or more gates to the data before filtering.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">gate-overwhitened</span></code></td>
+<td>&#160;</td>
+<td>Overwhiten data first, then apply the gates specified
+in <code class="docutils literal notranslate"><span class="pre">gate</span></code>. Overwhitening allows for sharper tapers to
+be used, since lines are not blurred.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">psd-gate</span></code></td>
+<td>IFO:CENTRALTIME:HALFDUR:TAPERDUR
+[IFO:CENTRALTIME:HALFDUR:TAPERDUR
+…]</td>
+<td>Apply one or more gates to the data used for computing
+the PSD. Gates are applied prior to FFT-ing the data
+for PSD estimation.</td>
+</tr>
+<tr class="row-odd"><td colspan="3">Options for quering data quality (DQ):</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">dq-segment-name</span></code></td>
+<td>DQ_SEGMENT_NAME</td>
+<td>The status flag to query for data quality. Default is
+“DATA”.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">dq-source</span></code></td>
+<td>{any,GWOSC,dqsegdb}</td>
+<td>Where to look for DQ information. If “any” (the
+default) will first try GWOSC, then dqsegdb.</td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">dq-server</span></code></td>
+<td>DQ_SERVER</td>
+<td>The server to use for dqsegdb.</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">veto-definer</span></code></td>
+<td>VETO_DEFINER</td>
+<td>Path to a veto definer file that defines groups of
+flags, which themselves define a set of DQ segments.</td>
+</tr>
+</tbody>
+</table>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

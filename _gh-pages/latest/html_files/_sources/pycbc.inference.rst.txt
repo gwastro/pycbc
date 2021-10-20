@@ -1,0 +1,72 @@
+pycbc.inference package
+=======================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    pycbc.inference.io
+    pycbc.inference.jump
+    pycbc.inference.models
+    pycbc.inference.sampler
+
+Submodules
+----------
+
+pycbc.inference.burn\_in module
+-------------------------------
+
+.. automodule:: pycbc.inference.burn_in
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.entropy module
+------------------------------
+
+.. automodule:: pycbc.inference.entropy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.evidence module
+-------------------------------
+
+.. automodule:: pycbc.inference.evidence
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.gelman\_rubin module
+------------------------------------
+
+.. automodule:: pycbc.inference.gelman_rubin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.geweke module
+-----------------------------
+
+.. automodule:: pycbc.inference.geweke
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycbc.inference.option\_utils module
+------------------------------------
+
+.. automodule:: pycbc.inference.option_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pycbc.inference
+    :members:
+    :undoc-members:
+    :show-inheritance:

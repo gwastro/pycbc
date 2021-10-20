@@ -1,0 +1,42 @@
+----------------
+GW150914 example
+----------------
+
+To run on GW150914, we can use the same :download:`sampler
+<../../../examples/inference/samplers/emcee_pt-gw150914_like.ini>`, :download:`prior
+and model <../../../examples/inference/priors/gw150914_like.ini>` configuration files
+as was :ref:`used for the simulated BBH example<inference_example_bbh>`. We only need to change the
+data configuration file, so that we will run on real gravitational-wave data.
+
+First, we need to download the data from the `Gravitational Wave Open Science
+Center <https://www.gw-openscience.org>`_. Run:
+
+  .. code-block:: bash
+
+     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/H-H1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/L-L1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+
+This will download the appropriate data ("frame") files to your current working
+directory.  You can now use the following data configuration file:
+
+.. literalinclude:: ../../../examples/inference/gw150914/data.ini
+   :language: ini
+
+:download:`Download <../../../examples/inference/gw150914/data.ini>`
+
+The ``frame-files`` argument points to the data files that we just downloaded
+from GWOSC. If you downloaded the files to a different directory, modify this
+argument accordingly to point to the correct location.
+
+.. note::
+   If you are running on a cluster that has a ``LIGO_DATAFIND_SERVER`` (e.g.,
+   LIGO Data Grid clusters, Atlas) you do not need to copy frame
+   files. Instead, replace the ``frame-files`` argument with ``frame-type``,
+   and set it to ``H1:H1_LOSC_16_V1 L1:L1_LOSC_16_V1``.
+
+Now run:
+
+.. literalinclude:: ../../../examples/inference/gw150914/run.sh
+   :language: bash
+
+:download:`Download <../../../examples/inference/gw150914/run.sh>`

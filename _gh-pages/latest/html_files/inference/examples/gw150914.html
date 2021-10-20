@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GW150914 example &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>GW150914 example</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/inference/examples/gw150914.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="gw150914-example">
+<h1>GW150914 example<a class="headerlink" href="#gw150914-example" title="Permalink to this headline">¶</a></h1>
+<p>To run on GW150914, we can use the same <a class="reference download internal" download="" href="../../_downloads/d5d8578ba3c68d3348ec1c4c0b9643f2/emcee_pt-gw150914_like.ini"><code class="xref download docutils literal notranslate"><span class="pre">sampler</span></code></a>, <a class="reference download internal" download="" href="../../_downloads/3b1db852b5f76eedce1bdb5f6e2f9945/gw150914_like.ini"><code class="xref download docutils literal notranslate"><span class="pre">prior</span>
+<span class="pre">and</span> <span class="pre">model</span></code></a> configuration files
+as was <a class="reference internal" href="bbh.html#inference-example-bbh"><span class="std std-ref">used for the simulated BBH example</span></a>. We only need to change the
+data configuration file, so that we will run on real gravitational-wave data.</p>
+<p>First, we need to download the data from the <a class="reference external" href="https://www.gw-openscience.org">Gravitational Wave Open Science
+Center</a>. Run:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/H-H1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/L-L1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+</pre></div>
+</div>
+</div></blockquote>
+<p>This will download the appropriate data (“frame”) files to your current working
+directory.  You can now use the following data configuration file:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[data]</span>
+<span class="na">instruments</span> <span class="o">=</span> <span class="s">H1 L1</span>
+<span class="na">trigger-time</span> <span class="o">=</span> <span class="s">1126259462.43</span>
+<span class="c1">; See the documentation at</span>
+<span class="c1">; http://pycbc.org/pycbc/latest/html/inference.html#simulated-bbh-example</span>
+<span class="c1">; for details on the following settings:</span>
+<span class="na">analysis-start-time</span> <span class="o">=</span> <span class="s">-6</span>
+<span class="na">analysis-end-time</span> <span class="o">=</span> <span class="s">2</span>
+<span class="na">psd-estimation</span> <span class="o">=</span> <span class="s">median-mean</span>
+<span class="na">psd-start-time</span> <span class="o">=</span> <span class="s">-256</span>
+<span class="na">psd-end-time</span> <span class="o">=</span> <span class="s">256</span>
+<span class="na">psd-inverse-length</span> <span class="o">=</span> <span class="s">8</span>
+<span class="na">psd-segment-length</span> <span class="o">=</span> <span class="s">8</span>
+<span class="na">psd-segment-stride</span> <span class="o">=</span> <span class="s">4</span>
+<span class="c1">; The frame files must be downloaded from GWOSC before running. Here, we</span>
+<span class="c1">; assume that the files have been downloaded to the same directory. Adjust</span>
+<span class="c1">; the file path as necessary if not.</span>
+<span class="na">frame-files</span> <span class="o">=</span> <span class="s">H1:H-H1_GWOSC_16KHZ_R1-1126257415-4096.gwf L1:L-L1_GWOSC_16KHZ_R1-1126257415-4096.gwf</span>
+<span class="na">channel-name</span> <span class="o">=</span> <span class="s">H1:GWOSC-16KHZ_R1_STRAIN L1:GWOSC-16KHZ_R1_STRAIN</span>
+<span class="c1">; this will cause the data to be resampled to 2048 Hz:</span>
+<span class="na">sample-rate</span> <span class="o">=</span> <span class="s">2048</span>
+<span class="c1">; We&#39;ll use a high-pass filter so as not to get numerical errors from the large</span>
+<span class="c1">; amplitude low frequency noise. Here we use 15 Hz, which is safely below the</span>
+<span class="c1">; low frequency cutoff of our likelihood integral (20 Hz)</span>
+<span class="na">strain-high-pass</span> <span class="o">=</span> <span class="s">15</span>
+<span class="c1">; The pad-data argument is for the high-pass filter: 8s are added to the</span>
+<span class="c1">; beginning/end of the analysis/psd times when the data is loaded. After the</span>
+<span class="c1">; high pass filter is applied, the additional time is discarded. This pad is</span>
+<span class="c1">; *in addition to* the time added to the analysis start/end time for the PSD</span>
+<span class="c1">; inverse length. Since it is discarded before the data is transformed for the</span>
+<span class="c1">; likelihood integral, it has little affect on the run time.</span>
+<span class="na">pad-data</span> <span class="o">=</span> <span class="s">8</span>
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/8f4052a3451b2f5e0d5f4a152b21b4b7/data.ini"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">frame-files</span></code> argument points to the data files that we just downloaded
+from GWOSC. If you downloaded the files to a different directory, modify this
+argument accordingly to point to the correct location.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you are running on a cluster that has a <code class="docutils literal notranslate"><span class="pre">LIGO_DATAFIND_SERVER</span></code> (e.g.,
+LIGO Data Grid clusters, Atlas) you do not need to copy frame
+files. Instead, replace the <code class="docutils literal notranslate"><span class="pre">frame-files</span></code> argument with <code class="docutils literal notranslate"><span class="pre">frame-type</span></code>,
+and set it to <code class="docutils literal notranslate"><span class="pre">H1:H1_LOSC_16_V1</span> <span class="pre">L1:L1_LOSC_16_V1</span></code>.</p>
+</div>
+<p>Now run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/bin/sh</span>
+
+<span class="c1"># configuration files</span>
+<span class="nv">PRIOR_CONFIG</span><span class="o">=</span>gw150914_like.ini
+<span class="nv">DATA_CONFIG</span><span class="o">=</span>data.ini
+<span class="nv">SAMPLER_CONFIG</span><span class="o">=</span>emcee_pt-gw150914_like.ini
+
+<span class="nv">OUTPUT_PATH</span><span class="o">=</span>inference.hdf
+
+<span class="c1"># the following sets the number of cores to use; adjust as needed to</span>
+<span class="c1"># your computer&#39;s capabilities</span>
+<span class="nv">NPROCS</span><span class="o">=</span><span class="m">10</span>
+
+<span class="c1"># run sampler</span>
+<span class="c1"># Running with OMP_NUM_THREADS=1 stops lalsimulation</span>
+<span class="c1"># from spawning multiple jobs that would otherwise be used</span>
+<span class="c1"># by pycbc_inference and cause a reduced runtime.</span>
+<span class="nv">OMP_NUM_THREADS</span><span class="o">=</span><span class="m">1</span> <span class="se">\</span>
+pycbc_inference --verbose <span class="se">\</span>
+    --seed <span class="m">1897234</span> <span class="se">\</span>
+    --config-file <span class="si">${</span><span class="nv">PRIOR_CONFIG</span><span class="si">}</span> <span class="si">${</span><span class="nv">DATA_CONFIG</span><span class="si">}</span> <span class="si">${</span><span class="nv">SAMPLER_CONFIG</span><span class="si">}</span> <span class="se">\</span>
+    --output-file <span class="si">${</span><span class="nv">OUTPUT_PATH</span><span class="si">}</span> <span class="se">\</span>
+    --nprocesses <span class="si">${</span><span class="nv">NPROCS</span><span class="si">}</span> <span class="se">\</span>
+    --force
+</pre></div>
+</div>
+<p><a class="reference download internal" download="" href="../../_downloads/f9c2c5b6a1ca2df8529e2d5e60ec4e23/run.sh"><code class="xref download docutils literal notranslate"><span class="pre">Download</span></code></a></p>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

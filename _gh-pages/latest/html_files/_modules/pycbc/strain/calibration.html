@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.strain.calibration &mdash; PyCBC 0.0a8230 documentation</title><link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/plot_directive.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/graphviz.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/terminal.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/theme_overrides.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script type="text/javascript" src="../../../_static/typed.min.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> PyCBC
+          </a>
+              <div class="version">
+                1.18.3
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../docker.html">Running PyCBC under Docker</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_psd_estimation_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_psd_estimation_workflow</span></code>: A workflow generator for noise estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pycbc_make_coinc_search_workflow.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_coinc_search_workflow</span></code>: A workflow to search for gravitational waves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow/pygrb.html"><code class="docutils literal notranslate"><span class="pre">pycbc_make_offline_grb_workflow</span></code>: A GRB triggered CBC analysis workflow generator</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tmpltbank.html">PyCBC template bank generation documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.tmpltbank</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../hwinj.html">Hardware injection waveform generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../banksim.html">Calculating the Effectualness (Fitting Factor) of Template Banks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../faithsim.html">Dag Generator for Doing Faithfulness Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../upload_to_gracedb.html">Uploading triggers to gracedb</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform_plugin.html">Making new waveform approximants available to PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../catalog.html">Catalog of Observed Gravitational-wave Mergers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataquality.html">Query times of valid data, hardware injections, and more.</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../frame.html">Reading Gravitational-wave Frames</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fft.html">Performing FFTs in PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gw150914.html">Signal Processing with GW150914</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../detector.html">Gravitational-wave Detectors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../psd.html">Handling PSDs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../noise.html">Generating Noise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../waveform.html">Waveforms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../filter.html">Filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../distributions.html">Using PyCBC Distributions from PyCBC Inference</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../building_bundled_executables.html">Building Bundled Executables</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">Documenting PyCBC code</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../release.html">Creating Releases of PyCBC</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../formats/hdf_format.html">HDF files within the PyCBC workflow</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflow.html">Workflow: the inspiral analysis workflow generator (<code class="docutils literal notranslate"><span class="pre">pycbc.workflow</span></code>)</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">pycbc</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+          <li><a href="../../pycbc.html">pycbc</a> &raquo;</li>
+          <li><a href="../strain.html">pycbc.strain</a> &raquo;</li>
+      <li>pycbc.strain.calibration</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.strain.calibration</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2018 Colm Talbot</span>
+<span class="c1">#</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+<span class="sd">&quot;&quot;&quot; Functions for adding calibration factors to waveform templates.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">UnivariateSpline</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="p">(</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">six</span> <span class="kn">import</span> <span class="n">add_metaclass</span>
+
+
+<div class="viewcode-block" id="Recalibrate"><a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.calibration.Recalibrate">[docs]</a><span class="nd">@add_metaclass</span><span class="p">(</span><span class="n">ABCMeta</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Recalibrate</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ifo_name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifo_name</span> <span class="o">=</span> <span class="n">ifo_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Recalibrate.apply_calibration"><a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.calibration.Recalibrate.apply_calibration">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">apply_calibration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Apply calibration model</span>
+
+<span class="sd">        This method should be overwritten by subclasses</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : FrequencySeries</span>
+<span class="sd">            The strain to be recalibrated.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        strain_adjusted : FrequencySeries</span>
+<span class="sd">            The recalibrated strain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="Recalibrate.map_to_adjust"><a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.calibration.Recalibrate.map_to_adjust">[docs]</a>    <span class="k">def</span> <span class="nf">map_to_adjust</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;recalib_&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Map an input dictionary of sampling parameters to the</span>
+<span class="sd">        adjust_strain function by filtering the dictionary for the</span>
+<span class="sd">        calibration parameters, then calling adjust_strain.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : FrequencySeries</span>
+<span class="sd">            The strain to be recalibrated.</span>
+<span class="sd">        prefix: str</span>
+<span class="sd">            Prefix for calibration parameter names</span>
+<span class="sd">        params : dict</span>
+<span class="sd">            Dictionary of sampling parameters which includes</span>
+<span class="sd">            calibration parameters.</span>
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        strain_adjusted : FrequencySeries</span>
+<span class="sd">            The recalibrated strain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+            <span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]:</span> <span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">params</span> <span class="k">if</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifo_name</span> <span class="ow">in</span> <span class="n">key</span><span class="p">})</span>
+
+        <span class="n">strain_adjusted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_calibration</span><span class="p">(</span><span class="n">strain</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">strain_adjusted</span></div>
+
+<div class="viewcode-block" id="Recalibrate.from_config"><a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.calibration.Recalibrate.from_config">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read a config file to get calibration options and transfer</span>
+<span class="sd">        functions which will be used to intialize the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cp : WorkflowConfigParser</span>
+<span class="sd">            An open config file.</span>
+<span class="sd">        ifo : string</span>
+<span class="sd">            The detector (H1, L1) for which the calibration model will</span>
+<span class="sd">            be loaded.</span>
+<span class="sd">        section : string</span>
+<span class="sd">            The section name in the config file from which to retrieve</span>
+<span class="sd">            the calibration options.</span>
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        instance</span>
+<span class="sd">            An instance of the class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">all_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">items</span><span class="p">(</span><span class="n">section</span><span class="p">))</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">ifo</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:]:</span> <span class="n">all_params</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                  <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">all_params</span> <span class="k">if</span> <span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">key</span><span class="p">}</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)</span>
+        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ifo_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ifo</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">all_models</span><span class="p">[</span><span class="n">model</span><span class="p">](</span><span class="o">**</span><span class="n">params</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="CubicSpline"><a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.calibration.CubicSpline">[docs]</a><span class="k">class</span> <span class="nc">CubicSpline</span><span class="p">(</span><span class="n">Recalibrate</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;cubic_spline&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimum_frequency</span><span class="p">,</span> <span class="n">maximum_frequency</span><span class="p">,</span> <span class="n">n_points</span><span class="p">,</span>
+                 <span class="n">ifo_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cubic spline recalibration</span>
+
+<span class="sd">        see https://dcc.ligo.org/LIGO-T1400682/public</span>
+
+<span class="sd">        This assumes the spline points follow</span>
+<span class="sd">        np.logspace(np.log(minimum_frequency), np.log(maximum_frequency),</span>
+<span class="sd">                    n_points)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        minimum_frequency: float</span>
+<span class="sd">            minimum frequency of spline points</span>
+<span class="sd">        maximum_frequency: float</span>
+<span class="sd">            maximum frequency of spline points</span>
+<span class="sd">        n_points: int</span>
+<span class="sd">            number of spline points</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Recalibrate</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ifo_name</span><span class="o">=</span><span class="n">ifo_name</span><span class="p">)</span>
+        <span class="n">minimum_frequency</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">minimum_frequency</span><span class="p">)</span>
+        <span class="n">maximum_frequency</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">maximum_frequency</span><span class="p">)</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_points</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_points</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Use at least 4 spline points for calibration model&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_points</span> <span class="o">=</span> <span class="n">n_points</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spline_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">minimum_frequency</span><span class="p">),</span>
+                                         <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">maximum_frequency</span><span class="p">),</span> <span class="n">n_points</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CubicSpline.apply_calibration"><a class="viewcode-back" href="../../../pycbc.strain.html#pycbc.strain.calibration.CubicSpline.apply_calibration">[docs]</a>    <span class="k">def</span> <span class="nf">apply_calibration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Apply calibration model</span>
+
+<span class="sd">        This applies cubic spline calibration to the strain.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain : FrequencySeries</span>
+<span class="sd">            The strain to be recalibrated.</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        strain_adjusted : FrequencySeries</span>
+<span class="sd">            The recalibrated strain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">amplitude_parameters</span> <span class="o">=</span>\
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;amplitude_</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo_name</span><span class="p">,</span> <span class="n">ii</span><span class="p">)]</span>
+             <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_points</span><span class="p">)]</span>
+        <span class="n">amplitude_spline</span> <span class="o">=</span> <span class="n">UnivariateSpline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spline_points</span><span class="p">,</span>
+                                            <span class="n">amplitude_parameters</span><span class="p">)</span>
+        <span class="n">delta_amplitude</span> <span class="o">=</span> <span class="n">amplitude_spline</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+
+        <span class="n">phase_parameters</span> <span class="o">=</span>\
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;phase_</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo_name</span><span class="p">,</span> <span class="n">ii</span><span class="p">)]</span>
+             <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_points</span><span class="p">)]</span>
+        <span class="n">phase_spline</span> <span class="o">=</span> <span class="n">UnivariateSpline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spline_points</span><span class="p">,</span> <span class="n">phase_parameters</span><span class="p">)</span>
+        <span class="n">delta_phase</span> <span class="o">=</span> <span class="n">phase_spline</span><span class="p">(</span><span class="n">strain</span><span class="o">.</span><span class="n">sample_frequencies</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+
+        <span class="n">strain_adjusted</span> <span class="o">=</span> <span class="n">strain</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">delta_amplitude</span><span class="p">)</span>\
+            <span class="o">*</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">delta_phase</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">delta_phase</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">strain_adjusted</span></div></div>
+
+
+<span class="n">all_models</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">CubicSpline</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">CubicSpline</span>
+<span class="p">}</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 20, 2021.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
