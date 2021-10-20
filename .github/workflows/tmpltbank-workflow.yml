@@ -1,4 +1,4 @@
-name: run small search using pegasus + condor
+name: run small template bank generation using pegasus + condor
 
 on: [push, pull_request]
 
@@ -29,23 +29,16 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools
         pip install -r requirements.txt
+        pip install sbank
         pip install .
-    - name: retrieving frame data
-      run: bash -e examples/search/get.sh
-    - name: generating template bank
-      run: bash -e examples/search/bank.sh
-    - name: generating statistic files
-      run: bash -e examples/search/stats.sh
-    - name: generating workflow
+    - name: generating, submitting and running workflow
+      env:
+          _CONDOR_DAGMAN_USE_STRICT: "0"
       run: |
-        cp examples/search/*.ini ./
-        bash -e examples/search/gen.sh
-        cp *.gwf output/
-    - name: running workflow
-      run: |
+        cp examples/tmpltbank/bank_workflow_test/*.ini ./
+        bash -e examples/tmpltbank/bank_workflow_test/gen.sh
         condor_status
         cd output
-        bash -e ../examples/search/submit.sh
         ./status
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
@@ -55,8 +48,3 @@ jobs:
       with:
         name: logs
         path: output/submitdir/work
-    - name: store result page
-      uses: actions/upload-artifact@v2
-      with:
-        name: results
-        path: html

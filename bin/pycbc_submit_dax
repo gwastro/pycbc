@@ -396,7 +396,7 @@ echo ${DASHBOARD_URL} > workflow/pegasus-dashboard-url.txt
 shopt -s nullglob
 DASHBOARD_GLOB=(results/*_workflow/*DASHBOARD*.html)
 DASHBOARD_PATH=${DASHBOARD_GLOB[0]}
-if [ -e ${DASHBOARD_PATH} ] ; then
+if [[ -e ${DASHBOARD_PATH} ]] ; then
   DASHBOARD_COPY=workflow/`basename ${DASHBOARD_PATH}`.orig
   if [ -e ${DASHBOARD_COPY} ] ; then
     cp ${DASHBOARD_COPY} ${DASHBOARD_PATH}
