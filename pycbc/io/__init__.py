@@ -1,6 +1,5 @@
 import logging
 from astropy.utils.data import download_file
-import .ligolw
 from .hdf import *
 from .record import *
 

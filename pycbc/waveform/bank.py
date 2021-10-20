@@ -38,7 +38,8 @@ import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
-import pycbc.io.ligolw
+from pycbc.io.ligolw import legacy_row_id_converter \
+        as legacy_ligolw_row_id_converter
 import hashlib
 
 def sigma_cached(self, psd):
@@ -99,7 +100,7 @@ def sigma_cached(self, psd):
     return self._sigmasq[key]
 
 # dummy class needed for loading LIGOLW files
-@pycbc.io.ligolw.legacy_row_id_converter
+@legacy_ligolw_row_id_converter
 @lsctables.use_in
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
