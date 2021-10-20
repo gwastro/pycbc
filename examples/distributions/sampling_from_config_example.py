@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# from pycbc.distributions.sampling_from_config import draw_samples_from_config
-import sys
-sys.path.append(".")
-from sampling_from_config import draw_samples_from_config
+from pycbc.distributions.utils import draw_samples_from_config
 
 
 # A path to the .ini file.
