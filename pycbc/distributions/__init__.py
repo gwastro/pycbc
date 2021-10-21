@@ -1,4 +1,5 @@
-# Copyright (C)  2016 Collin Capano, Christopher M. Biwer, Alex Nitz
+# Copyright (C)  2016  Collin Capano, Christopher M. Biwer, Alex Nitz,
+#                2021  Yifan Wang, Shichao Wu
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -22,6 +23,7 @@ from pycbc.distributions import constraints
 from pycbc import VARARGS_DELIM as _VARARGS_DELIM
 
 # Promote some classes/functions to the distributions name space
+from pycbc.distributions.utils import draw_samples_from_config
 from pycbc.distributions.angular import UniformAngle, SinAngle, CosAngle, \
                                         UniformSolidAngle
 from pycbc.distributions.arbitrary import Arbitrary, FromFile

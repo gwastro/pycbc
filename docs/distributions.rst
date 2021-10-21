@@ -4,6 +4,16 @@ Using PyCBC Distributions from PyCBC Inference
 
 The aim of this page is to demonstrate some simple uses of the distributions available from the distributions.py module available at :py:mod:`pycbc.distributions`.
 
+============================================================
+Generating samples in a Python script by using the .ini file
+============================================================
+
+This example shows how to generate samples in a Python script by using a standalone .ini :download:`file <../examples/distributions/pycbc_bbh_prior.ini>`, 
+in this example, we can also learn that when we draw samples from source-frame masses and comoving volume uniformly, the distributions of detector-frame masses are not uniform.
+
+.. plot:: ../examples/distributions/sampling_from_config_example.py
+   :include-source:
+
 =========================================
 Making Mass Distributions in M1 and M2
 =========================================
