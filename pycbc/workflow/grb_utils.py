@@ -180,7 +180,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
             continue
         if cols[entry] in ['real_4', 'real_8']:
             setattr(row, entry, 0.)
-        elif cols[entry] == ['int_4s', 'int_8s']:
+        elif cols[entry] in ['int_4s', 'int_8s']:
             setattr(row, entry, 0)
         elif cols[entry] == 'lstring':
             setattr(row, entry, '')

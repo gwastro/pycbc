@@ -75,7 +75,7 @@ def return_search_summary(start_time=0, end_time=0, nevents=0,
     for entry in cols.keys():
         if cols[entry] in ['real_4', 'real_8']:
             setattr(search_summary, entry, 0.)
-        elif cols[entry] == ['int_4s', 'int_8s']:
+        elif cols[entry] in ['int_4s', 'int_8s']:
             setattr(search_summary, entry, 0)
         elif cols[entry] == 'lstring':
             setattr(search_summary, entry, '')
