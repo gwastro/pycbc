@@ -46,14 +46,17 @@ from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import segments as ligolw_segments
 from ligo.lw.utils import process as ligolw_process
 from pycbc import makedir
+from pycbc.io.ligolw import legacy_row_id_converter \
+        as legacy_ligolw_row_id_converter
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import add_site
 
+
+@legacy_ligolw_row_id_converter
+@lsctables.use_in
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
-
-lsctables.use_in(ContentHandler)
 
 
 def make_analysis_dir(path):
