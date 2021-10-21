@@ -828,9 +828,8 @@ class Workflow(pegasus_workflow.Workflow):
             err_msg += os.path.join(self.out_dir, ini_file)
             raise ValueError(err_msg)
 
-        fp = open(ini_file, 'w')
-        self.cp.write(fp)
-        fp.close()
+        with open(ini_file, 'w') as fp:
+            self.cp.write(fp)
 
         # save the dax file
         super(Workflow, self).save(filename=filename,
@@ -1832,9 +1831,8 @@ class SegFile(File):
         """
         # load xmldocument and SegmentDefTable and SegmentTables
         fp = open(xml_file, 'rb')
-        xmldoc, _ = ligolw_utils.load_fileobj(fp,
-                                              gz=xml_file.endswith(".gz"),
-                                              contenthandler=ContentHandler)
+        xmldoc = ligolw_utils.load_fileobj(fp, compress='auto',
+                                           contenthandler=ContentHandler)
 
         seg_def_table = table.get_table(xmldoc,
                                         lsctables.SegmentDefTable.tableName)

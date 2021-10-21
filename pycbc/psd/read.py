@@ -157,10 +157,11 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
     import lal.series
     from ligo.lw import utils as ligolw_utils
 
-    fp = open(filename, 'rb')
-    ct_handler = lal.series.PSDContentHandler
-    fileobj, _ = ligolw_utils.load_fileobj(fp, contenthandler=ct_handler)
-    psd_dict = lal.series.read_psd_xmldoc(fileobj, root_name=root_name)
+    with open(filename, 'rb') as fp:
+        ct_handler = lal.series.PSDContentHandler
+        xml_doc = ligolw_utils.load_fileobj(fp, compress='auto',
+                                            contenthandler=ct_handler)
+        psd_dict = lal.series.read_psd_xmldoc(xml_doc, root_name=root_name)
 
     if ifo_string is not None:
         psd_freq_series = psd_dict[ifo_string]
