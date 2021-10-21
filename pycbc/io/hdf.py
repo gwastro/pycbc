@@ -958,8 +958,8 @@ class ForegroundTriggers(object):
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
             coinc_event_row.nevents = len(triggered_ifos)
-            coinc_event_row.instruments = ','.join(triggered_ifos)
-            coinc_inspiral_row.set_ifos(triggered_ifos)
+            coinc_event_row.instruments = triggered_ifos
+            coinc_inspiral_row.instruments = triggered_ifos
             coinc_event_row.time_slide_id = time_slide_id
             coinc_event_row.process_id = proc_id
             coinc_event_row.coinc_event_id = coinc_id
