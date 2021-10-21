@@ -29,7 +29,6 @@ http://pycbc.org/pycbc/latest/html/workflow.html
 """
 
 from __future__ import print_function
-import sys
 import os
 import shutil
 from six.moves.urllib.request import pathname2url
@@ -177,20 +176,20 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
 
     # Fill in all empty rows
     for entry in cols.keys():
-        if not hasattr(row, entry):
-            if cols[entry] in ['real_4','real_8']:
-                setattr(row,entry,0.)
-            elif cols[entry] == 'int_4s':
-                setattr(row,entry,0)
-            elif cols[entry] == 'lstring':
-                setattr(row,entry,'')
-            elif entry == 'process_id':
-                row.process_id = ilwd.ilwdchar("external_trigger:process_id:0")
-            elif entry == 'event_id':
-                row.event_id = ilwd.ilwdchar("external_trigger:event_id:0")
-            else:
-                print("Column %s not recognized" %(entry), file=sys.stderr)
-                raise ValueError
+        if hasattr(row, entry):
+            continue
+        if cols[entry] in ['real_4', 'real_8']:
+            setattr(row, entry, 0.)
+        elif cols[entry] == ['int_4s', 'int_8s']:
+            setattr(row, entry, 0)
+        elif cols[entry] == 'lstring':
+            setattr(row, entry, '')
+        elif entry == 'process_id':
+            row.process_id = ilwd.ilwdchar("external_trigger:process_id:0")
+        elif entry == 'event_id':
+            row.event_id = ilwd.ilwdchar("external_trigger:event_id:0")
+        else:
+            raise ValueError("Column %s not recognized" % entry)
 
     # Save file
     xml_file_name = "triggerGRB%s.xml" % str(cp.get("workflow",
