@@ -73,20 +73,21 @@ def return_search_summary(start_time=0, end_time=0, nevents=0,
     search_summary = lsctables.SearchSummary()
     cols = lsctables.SearchSummaryTable.validcolumns
     for entry in cols.keys():
-        if cols[entry] in ['real_4','real_8']:
-            setattr(search_summary,entry,0.)
-        elif cols[entry] == 'int_4s':
-            setattr(search_summary,entry,0)
+        if cols[entry] in ['real_4', 'real_8']:
+            setattr(search_summary, entry, 0.)
+        elif cols[entry] == ['int_4s', 'int_8s']:
+            setattr(search_summary, entry, 0)
         elif cols[entry] == 'lstring':
-            setattr(search_summary,entry,'')
+            setattr(search_summary, entry, '')
         elif entry == 'process_id':
+            # old glue-style LIGOLW with non-integer IDs
             search_summary.process_id = ilwd.ilwdchar("process:process_id:0")
         else:
-            raise ValueError("Column %s not recognized" %(entry) )
+            raise ValueError("Column %s not recognized" % entry)
 
     # fill in columns
     if len(ifos):
-        search_summary.ifos = ','.join(ifos)
+        search_summary.ifos = ','.join(sorted(ifos))
     if nevents:
         search_summary.nevents = nevents
     if start_time and end_time:
@@ -111,7 +112,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
     params : iterable
         Each entry in the params iterable should be a sequence of
         [mass1, mass2, spin1z, spin2z] in that order
-    proc_id : ilwd char
+    proc_id : int
         Process ID to add to each row of the sngl_inspiral table
 
     Returns
