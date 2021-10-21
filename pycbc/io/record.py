@@ -703,7 +703,7 @@ class FieldArray(numpy.recarray):
     Convert a LIGOLW xml table:
 
     >>> type(sim_table)
-        glue.ligolw.lsctables.SimInspiralTable
+        ligo.lw.lsctables.SimInspiralTable
     >>> sim_array = FieldArray.from_ligolw_table(sim_table)
     >>> sim_array.mass1
     array([ 2.27440691,  1.85058105,  1.61507106, ...,  2.0504961 ,
