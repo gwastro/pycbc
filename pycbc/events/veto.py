@@ -202,7 +202,10 @@ def get_segment_definer_comments(xml_file, include_version=True):
     """Returns a dict with the comment column as the value for each segment"""
 
     from ligo.lw.ligolw import LIGOLWContentHandler as h
+    from pycbc.io.ligolw import legacy_row_id_converter
+
     lsctables.use_in(h)
+    legacy_row_id_converter(h)
 
     # read segment definer table
     xmldoc = ligolw_utils.load_fileobj(xml_file,
