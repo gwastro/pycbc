@@ -1077,7 +1077,7 @@ class File(pegasus_workflow.File):
         exe_name: string
             A short description of the executable description, tagging
             only the program that ran this job.
-        segs : glue.segment or glue.segmentlist
+        segs : ligo.segments.segment or ligo.segments.segmentlist
             The time span that the OutFile is valid for. Note that this is
             *not* the same as the data that the job that made the file reads in.
             Lalapps_inspiral jobs do not analyse the first an last 72s of the
@@ -1390,7 +1390,7 @@ class FileList(list):
         -----------
         ifo : string
            Name of the ifo (or ifos) that the File should correspond to
-        current_segment : glue.segment.segment
+        current_segment : ligo.segments.segment
            The segment of time that files must intersect.
 
         Returns
@@ -1794,7 +1794,8 @@ class SegFile(File):
                 try:
                     valid_segment = segmentlistdict.extent_all()
                 except:
-                    # Numpty probably didn't supply a glue.segmentlistdict
+                    # Numpy probably didn't supply a
+                    # ligo.segments.segmentlistdict
                     segmentlistdict=segments.segmentlistdict(segmentlistdict)
                     try:
                         valid_segment = segmentlistdict.extent_all()

@@ -45,7 +45,7 @@ def setup_psd_workflow(workflow, science_segs, datafind_outs,
     ----------
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
-    science_segs : Keyed dictionary of glue.segmentlist objects
+    science_segs : Keyed dictionary of ligo.segments.segmentlist objects
         scienceSegs[ifo] holds the science segments to be analysed for each
         ifo.
     datafind_outs : pycbc.workflow.core.FileList
