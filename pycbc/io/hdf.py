@@ -958,7 +958,9 @@ class ForegroundTriggers(object):
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
             coinc_event_row.nevents = len(triggered_ifos)
-            coinc_event_row.instruments = triggered_ifos
+            # note that simply `coinc_event_row.instruments = triggered_ifos`
+            # does not lead to a correct result with ligo.lw 1.7.1
+            coinc_event_row.instruments = ','.join(sorted(triggered_ifos))
             coinc_inspiral_row.instruments = triggered_ifos
             coinc_event_row.time_slide_id = time_slide_id
             coinc_event_row.process_id = proc_id

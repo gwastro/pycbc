@@ -31,6 +31,9 @@ def return_empty_sngl(nones=False):
     if nones:
         for entry in cols:
             setattr(sngl, entry, None)
+        # FIXME this prevents an AttributeError when ligo.lw writes the XML
+        # file, but I do not understand the logic
+        setattr(sngl, 'process_id', None)
     else:
         for entry in cols.keys():
             if cols[entry] in ['real_4', 'real_8']:
@@ -47,6 +50,9 @@ def return_empty_sngl(nones=False):
                 sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
             else:
                 raise ValueError("Column %s not recognized" % entry)
+        # FIXME this prevents an AttributeError when ligo.lw writes the XML
+        # file, but I do not understand the logic
+        setattr(sngl, 'process_id', 0)
     return sngl
 
 def return_search_summary(start_time=0, end_time=0, nevents=0,
@@ -84,6 +90,10 @@ def return_search_summary(start_time=0, end_time=0, nevents=0,
             search_summary.process_id = ilwd.ilwdchar("process:process_id:0")
         else:
             raise ValueError("Column %s not recognized" % entry)
+
+    # FIXME this prevents an AttributeError when ligo.lw writes the XML file,
+    # but I do not understand the logic
+    setattr(search_summary, 'process_id', 0)
 
     # fill in columns
     if len(ifos):
