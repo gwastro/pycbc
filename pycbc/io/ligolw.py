@@ -1,4 +1,4 @@
-# Copyright (C) 2020  Leo Singer
+# Copyright (C) 2020 Leo Singer, 2021 Tito Dal Canton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,19 +13,110 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Tools for adapting LIGO-LW row ID formats."""
+"""Tools for dealing with LIGOLW XML files."""
 
+from ligo.lw import lsctables
 from ligo.lw.ligolw import Param
 from ligo.lw.lsctables import TableByName
 from ligo.lw.table import Column, TableStream
 from ligo.lw.types import FormatFunc, FromPyType, IDTypes, ToPyType
 
-__all__ = ('legacy_row_id_converter',)
+__all__ = ('default_null_value',
+           'return_empty_sngl',
+           'return_search_summary',
+           'legacy_row_id_converter')
 
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
 
+
+def default_null_value(col_name, col_type):
+    """
+    Associate a sensible "null" default value to a given LIGOLW column type.
+    """
+    if col_type in ['real_4', 'real_8']:
+        return 0.
+    if col_type in ['int_4s', 'int_8s']:
+        # this case includes row IDs
+        return 0
+    if col_type == 'lstring':
+        return ''
+    raise NotImplementedError(('Do not know how to initialize column '
+                               '{} of type {}').format(col_name, col_type))
+
+def return_empty_sngl(nones=False):
+    """
+    Function to create a SnglInspiral object where all columns are populated
+    but all are set to values that test False (ie. strings to '', floats/ints
+    to 0, ...). This avoids errors when you try to create a table containing
+    columns you don't care about, but which still need populating. NOTE: This
+    will also produce a process_id and event_id with 0 values. For most
+    applications these should be set to their correct values.
+
+    Parameters
+    ----------
+    nones : bool (False)
+        If True, just set all columns to None.
+
+    Returns
+    --------
+    lsctables.SnglInspiral
+        The "empty" SnglInspiral object.
+    """
+
+    sngl = lsctables.SnglInspiral()
+    cols = lsctables.SnglInspiralTable.validcolumns
+    for entry in cols:
+        col_name = Column.ColumnName(entry)
+        value = None if nones else default_null_value(col_name, cols[entry])
+        setattr(sngl, col_name, value)
+    return sngl
+
+def return_search_summary(start_time=0, end_time=0, nevents=0,
+                          ifos=None, **kwargs):
+    """
+    Function to create a SearchSummary object where all columns are populated
+    but all are set to values that test False (ie. strings to '', floats/ints
+    to 0, ...). This avoids errors when you try to create a table containing
+    columns you don't care about, but which still need populating. NOTE: This
+    will also produce a process_id with 0 values. For most applications these
+    should be set to their correct values.
+
+    It then populates columns if given them as options.
+
+    Returns
+    --------
+    lsctables.SeachSummary
+        The "empty" SearchSummary object.
+    """
+    if ifos is None:
+        ifos = []
+
+    # create an empty search summary
+    search_summary = lsctables.SearchSummary()
+    cols = lsctables.SearchSummaryTable.validcolumns
+    for entry in cols:
+        col_name = Column.ColumnName(entry)
+        value = default_null_value(col_name, cols[entry])
+        setattr(search_summary, col_name, value)
+
+    # fill in columns
+    if ifos:
+        search_summary.instruments = ifos
+    if nevents:
+        search_summary.nevents = nevents
+    if start_time and end_time:
+        search_summary.in_start_time = int(start_time)
+        search_summary.in_start_time_ns = int(start_time % 1 * 1e9)
+        search_summary.in_end_time = int(end_time)
+        search_summary.in_end_time_ns = int(end_time % 1 * 1e9)
+        search_summary.out_start_time = int(start_time)
+        search_summary.out_start_time_ns = int(start_time % 1 * 1e9)
+        search_summary.out_end_time = int(end_time)
+        search_summary.out_end_time_ns = int(end_time % 1 * 1e9)
+
+    return search_summary
 
 def legacy_row_id_converter(ContentHandler):
     """Convert from old-style to new-style row IDs on the fly.

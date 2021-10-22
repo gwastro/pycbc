@@ -20,8 +20,7 @@ from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import process as ligolw_process
 
 from pycbc import version as pycbc_version
-from pycbc.tmpltbank import return_search_summary
-from pycbc.tmpltbank import return_empty_sngl
+from pycbc.io.ligolw import return_search_summary, return_empty_sngl
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events import mean_if_greater_than_zero

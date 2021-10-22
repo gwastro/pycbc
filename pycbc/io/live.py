@@ -12,7 +12,7 @@ from ligo.lw.param import Param as LIGOLWParam
 from ligo.lw.array import Array as LIGOLWArray
 from pycbc import version as pycbc_version
 from pycbc import pnutils
-from pycbc.tmpltbank import return_empty_sngl
+from pycbc.io.ligolw import return_empty_sngl
 from pycbc.results import ifo_color
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
