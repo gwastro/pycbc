@@ -29,7 +29,6 @@ import string
 from pycbc.results.legacy_grb import *
 from pylal import git_version
 
-
 __author__  = "Andrew Williamson <andrew.williamson@ligo.org>"
 __version__ = "git id %s" % git_version.id
 __date__    = git_version.date
