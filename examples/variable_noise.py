@@ -30,13 +30,13 @@ function.
 @email: gaebel.sebastian@gmail.com
 """
 
-import matplotlib.pyplot as plt
-import numpy as np
 from numpy import log
 from scipy.interpolate import interp1d
 from pycbc.types import FrequencySeries
 from pycbc.noise.reproduceable import \
     generate_psd_fn_linear_in_log_transition, variable_noise
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 if __name__ == '__main__':

@@ -21,13 +21,13 @@
 #
 # =============================================================================
 #
-import numpy, pycbc.psd
-from pycbc.types import TimeSeries, FrequencySeries, complex_same_precision_as
+from pycbc.types import TimeSeries, complex_same_precision_as
 from numpy.random import RandomState
-np = numpy
 from numpy import log
 from scipy.interpolate import interp1d
 from scipy.signal import firwin2
+import numpy, pycbc.psd
+np = numpy
 
 # This constant need to be constant to be able to recover identical results.
 BLOCK_SAMPLES = 1638400
@@ -250,8 +250,9 @@ def _compute_FIR_coefficients(freqs, amps, nyquist, n_taps):
     # not an expert on the details, but firwin2 requires the frequencies to
     #   go from 0 to 1 (nyquist scale) and the gain to be 0 at the endpoints
     f_scaled = freqs / nyquist  # firwin2 works in units of nyquist
-    f_scaled[0] = 0. # similarly, frequencies need to start at 0
-    f_scaled[-1] = 1.  # brute force the frequency value, floating point math sucks
+    f_scaled[0] = 0.  # similarly, frequencies need to start at 0
+    # brute force the frequency value, floating point math is annoying
+    f_scaled[-1] = 1.
     amps[0] = 0.
     amps[-1] = 0.
     assert f_scaled[-1] == 1., repr(f_scaled[-1])  # last element should be 1
@@ -389,7 +390,8 @@ def variable_noise(
             coeffs = coeffs[::-1]
             assert coeffs.size == n_taps
         # select the chunk of the time series which is used by the filter
-        chunk = zero_pad_left(white_time_series[max(idx-n_taps, 0)+1 : idx+1],
+        #   i.e. the n_taps elements before the current one
+        chunk = zero_pad_left(white_time_series[max(idx-n_taps, 0)+1:idx+1],
                               n_taps)
         #   max-term : avoid selecting before element 0
         #   idx+1 : the current sample needs to be included
@@ -452,7 +454,7 @@ def generate_psd_fn_linear_in_log_transition(psd_0, psd_1,
                              fill_value=log(psd_fill_value))
 
     def psd_fn(freqs, tau):
-        assert 0. <= tau, repr(tau)
+        assert tau >= 0., repr(tau)
         assert tau <= 1., repr(tau)
         return np.exp(tau * interpolant_0(log(freqs))
                       + (1. - tau) * interpolant_1(log(freqs)))
