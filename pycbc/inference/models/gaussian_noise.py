@@ -812,12 +812,29 @@ class GaussianNoise(BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
-        # create the waveform generator
-        self.waveform_generator = create_waveform_generator(
-            self.variable_params, self.data,
-            waveform_transforms=self.waveform_transforms,
-            recalibration=self.recalibration,
-            gates=self.gates, **self.static_params)
+        # Determine if all data have the same length and delta_f/t
+        dts = numpy.array([d.delta_t for d in self.data.values()])
+        dfs = numpy.array([d.delta_f for d in self.data.values()])
+        startts = numpy.array([d.start_time for d in self.data.values()])
+        endts = numpy.array([d.end_time for d in self.data.values()])
+        if all([dts == dts[0], dfs == dfs[0], startts == startts[0], endts == endts[0]]):
+            self.all_ifodata_same_length = True
+            # create the waveform generator
+            self.waveform_generator = create_waveform_generator(
+                self.variable_params, self.data,
+                waveform_transforms=self.waveform_transforms,
+                recalibration=self.recalibration,
+                gates=self.gates, **self.static_params)
+        else:
+            self.all_ifodata_same_length = False
+            # create the waveform generator
+            for (det, d) in self.data.items():
+                self.waveform_generator[det] = create_waveform_generator(
+                    self.variable_params, self.data[det],
+                    waveform_transforms=self.waveform_transforms,
+                    recalibration=self.recalibration,
+                    gates=self.gates, **self.static_params)
+
 
     @property
     def _extra_stats(self):
@@ -856,7 +873,12 @@ class GaussianNoise(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self.waveform_generator.generate(**params)
+            if self.all_ifodata_same_length == True:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
         except NoWaveformError:
             return self._nowaveform_loglr()
         except FailedWaveformError as e:
@@ -1053,9 +1075,6 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
         for (sec, opt, replace_val) in replace_params:
             cp.set(sec, opt, replace_val)
     return replace_params
-
-def multidf_create_waveform_generator
-
 
 def create_waveform_generator(
                 variable_params, data, waveform_transforms=None,
