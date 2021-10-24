@@ -140,15 +140,15 @@ class BaseGaussianNoise(BaseDataModel):
                     "which will be used for all detectors")
 
         # check that the data sets all have the same delta fs and delta ts
-        #dts = numpy.array([d.delta_t for d in self.data.values()])
-        #dfs = numpy.array([d.delta_f for d in self.data.values()])
-        #if not all(dts == dts[0]):
-        #    raise ValueError("all data must have the same sample rate")
-        #if not all(dfs == dfs[0]):
-        #    raise ValueError("all data must have the same segment length")
+        dts = numpy.array([d.delta_t for d in self.data.values()])
+        dfs = numpy.array([d.delta_f for d in self.data.values()])
+        if all(dts == dts[0]) and all(dfs == dfs[0]):
+            self.all_ifodata_same_rate_length = True
+        else:
+            self.all_ifodata_same_rate_length = False
+            logging.info("You are using different data segment lengths or sampling rates for different IFOs")
 
         # store the number of samples in the time domain
-        # self._N = int(1./(dts[0]*dfs[0]))
         self._N = {}
         for (det, d) in self._data.items():
             self._N[det] = int(1./(d.delta_f*d.delta_t)) 
@@ -812,22 +812,16 @@ class GaussianNoise(BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
-        # Determine if all data have the same length and delta_f/t
-        dts = numpy.array([d.delta_t for d in self.data.values()])
-        dfs = numpy.array([d.delta_f for d in self.data.values()])
-        startts = numpy.array([d.start_time for d in self.data.values()])
-        endts = numpy.array([d.end_time for d in self.data.values()])
-        if all(dts == dts[0]) and all(dfs == dfs[0]) and all(startts == startts[0]) and all(endts == endts[0]):
-            self.all_ifodata_same_length = True
-            # create a single waveform generator for all ifos
+        # Determine if all data have the same sampling rate and segment length
+        if self.all_ifodata_same_rate_length == True:
+            # create a waveform generator for all ifos
             self.waveform_generator = create_waveform_generator(
                 self.variable_params, self.data,
                 waveform_transforms=self.waveform_transforms,
                 recalibration=self.recalibration,
                 gates=self.gates, **self.static_params)
         else:
-            self.all_ifodata_same_length = False
-            # create the waveform generator for each ifo
+            # create a waveform generator for each ifo respestively
             self.waveform_generator = {}
             for det in self.data:
                 self.waveform_generator[det] = create_waveform_generator(
@@ -835,7 +829,6 @@ class GaussianNoise(BaseGaussianNoise):
                     waveform_transforms=self.waveform_transforms,
                     recalibration=self.recalibration,
                     gates=self.gates, **self.static_params)
-
 
     @property
     def _extra_stats(self):
@@ -874,7 +867,7 @@ class GaussianNoise(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            if self.all_ifodata_same_length == True:
+            if self.all_ifodata_same_rate_length == True:
                 wfs = self.waveform_generator.generate(**params)
             else:
                 wfs = {}
