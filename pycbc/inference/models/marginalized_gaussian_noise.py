@@ -213,13 +213,25 @@ class MarginalizedPolarization(BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
-        # create the waveform generator
-        self.waveform_generator = create_waveform_generator(
-            self.variable_params, self.data,
-            waveform_transforms=self.waveform_transforms,
-            recalibration=self.recalibration,
-            generator_class=generator.FDomainDetFrameTwoPolGenerator,
-            gates=self.gates, **self.static_params)
+        # Determine if all data have the same sampling rate and segment length
+        if self.all_ifodata_same_rate_length == True:
+            # create a waveform generator for all ifos
+            self.waveform_generator = create_waveform_generator(
+                self.variable_params, self.data,
+                waveform_transforms=self.waveform_transforms,
+                recalibration=self.recalibration,
+                generator_class=generator.FDomainDetFrameTwoPolGenerator,
+                gates=self.gates, **self.static_params)
+        else:
+            # create a waveform generator for each ifo respestively
+            self.waveform_generator = {}
+            for det in self.data:
+                self.waveform_generator[det] = create_waveform_generator(
+                    self.variable_params, {det:self.data[det]},
+                    waveform_transforms=self.waveform_transforms,
+                    recalibration=self.recalibration,
+                    generator_class=generator.FDomainDetFrameTwoPolGenerator,
+                    gates=self.gates, **self.static_params)
 
         self.polarization_samples = polarization_samples
         self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
@@ -262,7 +274,12 @@ class MarginalizedPolarization(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self.waveform_generator.generate(**params)
+            if self.all_ifodata_same_rate_length == True:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
         except NoWaveformError:
             return self._nowaveform_loglr()
         except FailedWaveformError as e:
