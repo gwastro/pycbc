@@ -817,9 +817,9 @@ class GaussianNoise(BaseGaussianNoise):
         dfs = numpy.array([d.delta_f for d in self.data.values()])
         startts = numpy.array([d.start_time for d in self.data.values()])
         endts = numpy.array([d.end_time for d in self.data.values()])
-        if all([dts == dts[0], dfs == dfs[0], startts == startts[0], endts == endts[0]]):
+        if all(dts == dts[0]) and all(dfs == dfs[0]) and all(startts == startts[0]) and all(endts == endts[0]):
             self.all_ifodata_same_length = True
-            # create the waveform generator
+            # create a single waveform generator for all ifos
             self.waveform_generator = create_waveform_generator(
                 self.variable_params, self.data,
                 waveform_transforms=self.waveform_transforms,
@@ -827,10 +827,11 @@ class GaussianNoise(BaseGaussianNoise):
                 gates=self.gates, **self.static_params)
         else:
             self.all_ifodata_same_length = False
-            # create the waveform generator
-            for (det, d) in self.data.items():
+            # create the waveform generator for each ifo
+            self.waveform_generator = {}
+            for det in self.data:
                 self.waveform_generator[det] = create_waveform_generator(
-                    self.variable_params, self.data[det],
+                    self.variable_params, {det:self.data[det]},
                     waveform_transforms=self.waveform_transforms,
                     recalibration=self.recalibration,
                     gates=self.gates, **self.static_params)
@@ -1149,6 +1150,3 @@ def create_waveform_generator(
         recalib=recalibration, gates=gates,
         **static_params)
     return waveform_generator
-    #Rather, return a list of waveform_generator
-    # Two sets of mapping: det --> delta_f
-                        # delta_f --> waveform_generator
