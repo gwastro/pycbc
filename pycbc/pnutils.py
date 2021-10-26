@@ -1011,3 +1011,60 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
 
 
 jframe_to_l0frame.__doc__ = _formatdocstr(jframe_to_l0frame.__doc__)
+
+
+def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
+                      spin1x=0., spin1y=0., spin1z=0.,
+                      spin2x=0., spin2y=0., spin2z=0.):
+    """Converts L0-frame parameters to J-frame.
+
+    Parameters
+    ----------
+    {mass1}
+    {mass2}
+    {f_ref}
+    phiref : float
+        The orbital phase at ``f_ref``.
+    {inclination}
+    {spin1x}
+    {spin1y}
+    {spin1z}
+    {spin2x}
+    {spin2y}
+    {spin2z}
+
+    Returns
+    -------
+    dict :
+        Dictionary of:
+        * thetajn : float
+            Angle between the line of sight and the total angular momentume J.
+        * phijl : float
+            Azimuthal angle of L on its cone about J.
+        * {spin1_a}
+        * {spin2_a}
+        * spin1_polar : float
+            Angle between L and the spin magnitude of the larger object.
+        * spin2_polar : float
+            Angle betwen L and the spin magnitude of the smaller object.
+        * spin12_deltaphi : float
+            Difference between the azimuthal angles of the spin of the larger
+            object (S1) and the spin of the smaller object (S2).
+    """
+    # Note: unlike other LALSimulation functions, this one takes masses in
+    # solar masses
+    thetajn, phijl, s1pol, s2pol, s12_deltaphi, spin1_a, spin2_a = \
+        lalsimulation.SimInspiralTransformPrecessingWvf2PE(
+            inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+            mass1, mass2, f_ref, phiref)
+    out = {'thetajn': thetajn,
+           'phijl': phijl,
+           'spin1_polar': s1pol,
+           'spin2_polar': s2pol,
+           'spin12_deltaphi': s12_deltaphi,
+           'spin1_a': spin1_a,
+           'spin2_a': spin2_a}
+    return out
+
+
+l0frame_to_jframe.__doc__ = _formatdocstr(l0frame_to_jframe.__doc__)
