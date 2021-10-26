@@ -480,14 +480,6 @@ class Workflow(object):
                     node.transformation.name = tform.name
                     break
             else:
-                #node.executable.in_workflow = True
-                tform_site = list(node.transformation.sites.keys())[0]
-                if tform_site not in self.sites:
-                    # This block should never be accessed in the way things
-                    # are set up. However, it might be possible to hit this if
-                    # certain overrides are allowed.
-                    raise ValueError("Do not know site {}".format(tform_site))
-
                 self._transformations += [node.transformation]
                 lgc = (hasattr(node, 'executable')
                        and node.executable.container is not None

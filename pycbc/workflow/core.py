@@ -696,9 +696,19 @@ class Workflow(pegasus_workflow.Workflow):
     def sites(self):
         """List of all possible exucution sites for jobs in this workflow"""
         sites = set()
-        for trans in self._transformations:
-            tform_site = list(node.transformation.sites.keys())[0]
-            sites.add(tform_site)
+        sites.add('local')
+        if self.cp.has_option('pegasus_profile', 'pycbc|primary_site'):
+            site = self.cp.get('pegasus_profile', 'pycbc|primary_site')
+        else:
+            # The default if not chosen
+            site = 'condorpool_symlink'
+        sites.add(site)
+        subsections = [sec for sec in self.cp.sections()
+                       if sec.startswith('pegasus_profile-')]
+        for subsec in subsections:
+            if self.cp.has_option(subsec, 'pycbc|site'):
+                site = self.cp.get(subsec, 'pycbc|site')
+                sites.add(site)
         return list(sites)
 
     @property
@@ -714,14 +724,11 @@ class Workflow(pegasus_workflow.Workflow):
 
     @property
     def staging_site_str(self):
-        return ','.join(['='.join(x) for x in self._staging_site.items()])
+        return ','.join(['='.join(x) for x in self.staging_site.items()])
 
     @property
     def exec_sites_str(self):
-        sites = self.sites
-        #FIXME, why is the following done?? It isn't done for submitting now!
-        sites.remove('local')
-        return ','.join(sites)
+        return ','.join(self.sites)
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine

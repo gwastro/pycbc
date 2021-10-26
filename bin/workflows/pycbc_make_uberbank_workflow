@@ -54,28 +54,27 @@ class GeomBankExecutable(wf.Executable):
     """
     # This outputs a dax file.
     current_retention_level = wf.Executable.FINAL_RESULT
- 
+
     def create_node(self, analysis_time, geom_out_file, config_file,
                     out_storage_path, pegasus_base_dir,
                     workflow_name='geom_bank'):
         node = wf.Executable.create_node(self)
-        
+
         # Output file: This one is done weirdly because this job doesn't
         # actually produce this file, the resulting dax will do that.
         node.add_opt('--output-file', geom_out_file.storage_path)
-      
+
         node.add_input_opt('--supplement-config-file', config_file)
 
         node.add_opt('--workflow-name', workflow_name)
-        node.add_opt('--storage-path-base', out_storage_path)      
-        node.add_opt('--is-sub-workflow','')
+        node.add_opt('--storage-path-base', out_storage_path)
 
         # Intermediate outputs and dax files
         node.new_output_file_opt(analysis_time, '.hdf',
                                  '--intermediate-data-file',
                                  tags=self.tags + ['INTERMEDIATE'])
         node.new_output_file_opt(analysis_time, '.xml',
-                                 '--metadata-file', 
+                                 '--metadata-file',
                                  tags=self.tags + ['METADATA'])
         node.new_output_file_opt(analysis_time, '.dax',
                                  '--dax-file',
@@ -83,7 +82,6 @@ class GeomBankExecutable(wf.Executable):
         node.new_output_file_opt(analysis_time, '.map',
                                  '--output-map',
                                  tags=self.tags + ['MAP'])
-        node.add_opt('--main-workflow-directory', pegasus_base_dir)
         return node
 
 class SbankDaxGenerator(wf.Executable):
@@ -106,7 +104,6 @@ class SbankDaxGenerator(wf.Executable):
 
         node.add_opt('--workflow-name', workflow_name)
         node.add_opt('--output-dir', out_storage_path)
-        node.add_opt('--is-sub-workflow','')
 
         if sub_wf_tags is not None:
             node.add_opt('--tags', ' '.join(sub_wf_tags))
@@ -123,7 +120,7 @@ class SbankDaxGenerator(wf.Executable):
 
         if len(config_overrides):
             node.add_opt('--config-overrides', ' '.join(config_overrides))
-                                       
+
 
         node.new_output_file_opt(analysis_time, '.dax',
                                  '--dax-file',
@@ -131,8 +128,6 @@ class SbankDaxGenerator(wf.Executable):
         node.new_output_file_opt(analysis_time, '.map',
                                  '--output-map',
                                  tags=self.tags + sub_wf_tags + ['MAP'])
-        node.add_opt('--main-workflow-directory', pegasus_base_dir)
-
         return node
 
 ##############################################################################
@@ -140,7 +135,7 @@ class SbankDaxGenerator(wf.Executable):
 ##############################################################################
 
 
-# Use the standard workflow command-line parsing routines. Things like a 
+# Use the standard workflow command-line parsing routines. Things like a
 # configuration file are specified within the "workflow command line group"
 # so run this with --help to see what options are added.
 _desc = __doc__[1:]
