@@ -1794,7 +1794,7 @@ class SegFile(File):
                 try:
                     valid_segment = segmentlistdict.extent_all()
                 except:
-                    # Numpy probably didn't supply a
+                    # Numpty probably didn't supply a
                     # ligo.segments.segmentlistdict
                     segmentlistdict=segments.segmentlistdict(segmentlistdict)
                     try:
