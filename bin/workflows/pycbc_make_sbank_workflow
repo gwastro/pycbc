@@ -184,8 +184,6 @@ args = parser.parse_args()
 # Create the workflow object
 workflow = wf.Workflow(args)
 wf.makedir(args.output_dir)
-os.chdir(args.output_dir)
-args.output_dir = '.'
 
 ##############################################################################
 # Do I have a seed bank provided and will this be used for chirp mass        #
