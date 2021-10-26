@@ -677,10 +677,6 @@ class Workflow(pegasus_workflow.Workflow):
         self._inputs = FileList([])
         self._outputs = FileList([])
 
-        # Setup staging site links
-        self._staging_site = {}
-        self.add_sites_from_config()
-
     # FIXME: Should this be in pegasus_workflow?
     @property
     def output_map(self):
@@ -697,8 +693,24 @@ class Workflow(pegasus_workflow.Workflow):
         return path
 
     @property
+    def sites(self):
+        """List of all possible exucution sites for jobs in this workflow"""
+        sites = set()
+        for trans in self._transformations:
+            tform_site = list(node.transformation.sites.keys())[0]
+            sites.add(tform_site)
+        return list(sites)
+
+    @property
     def staging_site(self):
-        return self._staging_site
+        """Site to use for staging to/from each site"""
+        staging_site = {}
+        for site in self.sites:
+            if site in ['condorpool_shared']:
+                staging_site[site] = site
+            else:
+                staging_site[site] = 'local'
+        return staging_site
 
     @property
     def staging_site_str(self):
@@ -706,44 +718,10 @@ class Workflow(pegasus_workflow.Workflow):
 
     @property
     def exec_sites_str(self):
-        sites = list(self._sc.sites)
+        sites = self.sites
+        #FIXME, why is the following done?? It isn't done for submitting now!
         sites.remove('local')
         return ','.join(sites)
-
-    def add_sites_from_config(self):
-        # FIXME: It would be nice to be able to override site properties here.
-        #        We do want a mechanism to change things from the command line.
-        #        Perhaps read options from some reserved config section to do
-        #        this, which can then be accessed through command line?
-        add_site(self._sc, 'local', self.cp, out_dir=self.out_dir)
-        if self.cp.has_option('pegasus_profile', 'pycbc|primary_site'):
-            site = self.cp.get('pegasus_profile', 'pycbc|primary_site')
-        else:
-            # The default if not chosen
-            site = 'condorpool_symlink'
-        add_site(self._sc, site, self.cp, out_dir=self.out_dir)
-        # NOTE: For now we *always* stage from local or the site itself.
-        #       This doesn't have to always be true though.
-        # FIXME: Don't want to hardcode this!
-        if site in ['condorpool_shared']:
-            self._staging_site[site] = site
-        else:
-            self._staging_site[site] = 'local'
-
-        subsections = [sec for sec in self.cp.sections()
-                       if sec.startswith('pegasus_profile-')]
-
-        for subsec in subsections:
-            if self.cp.has_option(subsec, 'pycbc|site'):
-                site = self.cp.get(subsec, 'pycbc|site')
-                if site not in self._sc.sites:
-                    add_site(self._sc, site, self.cp, out_dir=self.out_dir)
-                    # NOTE: For now we *always* stage from local. This doesn't
-                    #       have to always be true though.
-                    if site in ['condorpool_shared']:
-                        self._staging_site[site] = site
-                    else:
-                        self._staging_site[site] = 'local'
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
@@ -825,16 +803,18 @@ class Workflow(pegasus_workflow.Workflow):
         with open(ini_file, 'w') as fp:
             self.cp.write(fp)
 
+        # save the sites file
+        #FIXME change to just check for submit_now if we drop pycbc_submit_dax
+        if not self.in_workflow:
+            catalog_path = os.path.join(self.out_dir, 'sites.yml')
+            make_catalog(self.cp, self.out_dir).write(catalog_path)
+
+
         # save the dax file
         super(Workflow, self).save(filename=filename,
                                    output_map_path=output_map_path,
                                    submit_now=self.args.submit_now,
                                    plan_now=self.args.plan_now)
-
-        # save the sites file
-        if not self.in_workflow:
-            catalog_path = os.path.join(self.out_dir, 'sites.yml')
-            make_catalog(self.cp, self.out_dir).write(catalog_path)
 
     def save_config(self, fname, output_dir, cp=None):
         """ Writes configuration file to disk and returns a pycbc.workflow.File

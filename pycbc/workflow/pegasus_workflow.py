@@ -347,7 +347,6 @@ class Workflow(object):
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
-        self._sc = dax.SiteCatalog()
 
         if directory is None:
             self.out_dir = os.getcwd()
@@ -483,7 +482,7 @@ class Workflow(object):
             else:
                 #node.executable.in_workflow = True
                 tform_site = list(node.transformation.sites.keys())[0]
-                if tform_site not in self._sc.sites:
+                if tform_site not in self.sites:
                     # This block should never be accessed in the way things
                     # are set up. However, it might be possible to hit this if
                     # certain overrides are allowed.
@@ -580,9 +579,9 @@ class Workflow(object):
             self._as_job.add_inputs(*self._swinputs)
 
         self._adag.add_replica_catalog(self._rc)
-        # Add TC and SC into workflow
+
+        # Add TC into workflow
         self._adag.add_transformation_catalog(self._tc)
-        #self._adag.add_site_catalog(self._sc)
 
         with open(output_map_path, 'w') as f:
             for out in self._outputs:
@@ -650,7 +649,7 @@ class Workflow(object):
         planner_args['output_sites'] = ['local']
 
         # Site options
-        planner_args['sites'] = list(self._sc.sites)
+        planner_args['sites'] = self.sites
         planner_args['staging_sites'] = self.staging_site
 
         # Make tmpdir for submitfiles
