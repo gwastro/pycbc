@@ -22,13 +22,12 @@
 #
 # =============================================================================
 #
-from time import sleep
 
 import sys
 from numpy import complex64,float32
 from optparse import OptionParser
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import table, lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import table, lsctables
 
 from pycbc.utils import mass1_mass2_to_mchirp_eta
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants

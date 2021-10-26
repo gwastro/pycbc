@@ -4,15 +4,15 @@ import pycbc
 import numpy
 import lal
 import json
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw.param import Param as LIGOLWParam
-from glue.ligolw.array import Array as LIGOLWArray
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
+from ligo.lw.param import Param as LIGOLWParam
+from ligo.lw.array import Array as LIGOLWArray
 from pycbc import version as pycbc_version
 from pycbc import pnutils
-from pycbc.tmpltbank import return_empty_sngl
+from pycbc.io.ligolw import return_empty_sngl
 from pycbc.results import ifo_color
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
@@ -142,11 +142,13 @@ class SingleCoincForGraceDB(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
+        # ligo.lw does not like `cvs_entry_time` being an empty string
+        cvs_entry_time = pycbc_version.date or None
         proc_id = ligolw_process.register_to_xmldoc(
-            outdoc, 'pycbc', {}, ifos=usable_ifos, comment='',
+            outdoc, 'pycbc', {}, instruments=usable_ifos, comment='',
             version=pycbc_version.version,
             cvs_repository='pycbc/'+pycbc_version.git_branch,
-            cvs_entry_time=pycbc_version.date).process_id
+            cvs_entry_time=cvs_entry_time).process_id
 
         # Set up coinc_definer table
         coinc_def_table = lsctables.New(lsctables.CoincDefTable)
@@ -190,7 +192,7 @@ class SingleCoincForGraceDB(object):
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
                 if name == 'end_time':
                     val += self.time_offset
-                    sngl.set_end(lal.LIGOTimeGPS(val))
+                    sngl.end = lal.LIGOTimeGPS(val)
                 else:
                     try:
                         setattr(sngl, name, val)
@@ -231,7 +233,7 @@ class SingleCoincForGraceDB(object):
             if sngl.ifo in followup_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
-                sngl.set_end(lal.LIGOTimeGPS(self.merger_time))
+                sngl.end = lal.LIGOTimeGPS(self.merger_time)
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
@@ -279,7 +281,7 @@ class SingleCoincForGraceDB(object):
             self.probabilities = None
 
         self.outdoc = outdoc
-        self.time = sngl_populated.get_end()
+        self.time = sngl_populated.end
 
     def save(self, filename):
         """Write this trigger to gracedb compatible xml format

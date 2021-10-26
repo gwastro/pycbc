@@ -1,103 +1,12 @@
 from __future__ import division
 import numpy
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
-from glue.ligolw import ligolw, lsctables, ilwd, utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw, lsctables, utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
+from pycbc.io.ligolw import return_empty_sngl, return_search_summary
 
-def return_empty_sngl(nones=False):
-    """
-    Function to create a SnglInspiral object where all columns are populated
-    but all are set to values that test False (ie. strings to '', floats/ints
-    to 0, ...). This avoids errors when you try to create a table containing
-    columns you don't care about, but which still need populating. NOTE: This
-    will also produce a process_id and event_id with 0 values. For most
-    applications these should be set to their correct values.
-
-    Parameters
-    ----------
-    nones : bool (False)
-        If True, just set all columns to None.
-
-    Returns
-    --------
-    lsctables.SnglInspiral
-        The "empty" SnglInspiral object.
-    """
-
-    sngl = lsctables.SnglInspiral()
-    cols = lsctables.SnglInspiralTable.validcolumns
-    if nones:
-        for entry in cols:
-            setattr(sngl, entry, None)
-    else:
-        for entry in cols.keys():
-            if cols[entry] in ['real_4','real_8']:
-                setattr(sngl,entry,0.)
-            elif cols[entry] == 'int_4s':
-                setattr(sngl,entry,0)
-            elif cols[entry] == 'lstring':
-                setattr(sngl,entry,'')
-            elif entry == 'process_id':
-                sngl.process_id = ilwd.ilwdchar("process:process_id:0")
-            elif entry == 'event_id':
-                sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
-            else:
-                raise ValueError("Column %s not recognized" %(entry) )
-    return sngl
-
-def return_search_summary(start_time=0, end_time=0, nevents=0,
-                          ifos=None, **kwargs):
-    """
-    Function to create a SearchSummary object where all columns are populated
-    but all are set to values that test False (ie. strings to '', floats/ints
-    to 0, ...). This avoids errors when you try to create a table containing
-    columns you don't care about, but which still need populating. NOTE: This
-    will also produce a process_id with 0 values. For most applications these
-    should be set to their correct values.
-
-    It then populates columns if given them as options.
-
-    Returns
-    --------
-    lsctables.SeachSummary
-        The "empty" SearchSummary object.
-    """
-    if ifos is None:
-        ifos = []
-
-    # create an empty search summary
-    search_summary = lsctables.SearchSummary()
-    cols = lsctables.SearchSummaryTable.validcolumns
-    for entry in cols.keys():
-        if cols[entry] in ['real_4','real_8']:
-            setattr(search_summary,entry,0.)
-        elif cols[entry] == 'int_4s':
-            setattr(search_summary,entry,0)
-        elif cols[entry] == 'lstring':
-            setattr(search_summary,entry,'')
-        elif entry == 'process_id':
-            search_summary.process_id = ilwd.ilwdchar("process:process_id:0")
-        else:
-            raise ValueError("Column %s not recognized" %(entry) )
-
-    # fill in columns
-    if len(ifos):
-        search_summary.ifos = ','.join(ifos)
-    if nevents:
-        search_summary.nevents = nevents
-    if start_time and end_time:
-        search_summary.in_start_time = int(start_time)
-        search_summary.in_start_time_ns = int(start_time % 1 * 1e9)
-        search_summary.in_end_time = int(end_time)
-        search_summary.in_end_time_ns = int(end_time % 1 * 1e9)
-        search_summary.out_start_time = int(start_time)
-        search_summary.out_start_time_ns = int(start_time % 1 * 1e9)
-        search_summary.out_end_time = int(end_time)
-        search_summary.out_end_time_ns = int(end_time % 1 * 1e9)
-
-    return search_summary
 
 def convert_to_sngl_inspiral_table(params, proc_id):
     '''
@@ -109,7 +18,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
     params : iterable
         Each entry in the params iterable should be a sequence of
         [mass1, mass2, spin1z, spin2z] in that order
-    proc_id : ilwd char
+    proc_id : int
         Process ID to add to each row of the sngl_inspiral table
 
     Returns
@@ -336,8 +245,9 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
         if optDict['channel_name'] is not None:
             ifos = [optDict['channel_name'][0:2]]
 
-    proc_id = ligolw_process.register_to_xmldoc(outdoc, programName, optDict,
-                                                ifos=ifos, **kwargs).process_id
+    proc_id = ligolw_process.register_to_xmldoc(
+            outdoc, programName, optDict,
+            instruments=ifos, **kwargs).process_id
     sngl_inspiral_table = convert_to_sngl_inspiral_table(tempBank, proc_id)
     # Calculate Gamma components if needed
     if ethincaParams is not None:

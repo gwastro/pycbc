@@ -27,7 +27,7 @@ import glob
 import os
 import copy
 import logging
-from glue.ligolw import lsctables
+from ligo.lw import lsctables
 import pycbc.version
 from pycbc.results.pygrb_plotting_utils import *
 plt.switch_backend('Agg')

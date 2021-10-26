@@ -30,10 +30,10 @@ import h5py
 import pycbc
 import lal
 import lal.series
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import ligolw
+from ligo.lw import table
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
 from pycbc.io.live import gracedb_tag_with_version
 
@@ -182,12 +182,12 @@ for event in coinc_table:
                     " ".join(args.psd_files), sngl.ifo))
 
             try:
-                psd = psd[psd.find(sngl.get_end())].psd
+                psd = psd[psd.find(sngl.end)].psd
             except ValueError:
                 parser.error(
                     "--psd-files {0}: no PSD found for detector {1} "
                     "at GPS time {2}".format(
-                    " ".join(args.psd_files), sngl.ifo, sngl.get_end()))
+                    " ".join(args.psd_files), sngl.ifo, sngl.end))
 
             flow = psd.file.attrs['low_frequency_cutoff']
             df = psd.attrs["delta_f"]

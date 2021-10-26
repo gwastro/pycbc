@@ -4,7 +4,7 @@ files.
 """
 
 import argparse, h5py, logging, types, numpy, os.path
-from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
 from ligo import segments
 from pycbc import events
 from pycbc.events import indices_within_segments

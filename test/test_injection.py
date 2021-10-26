@@ -26,9 +26,9 @@ from pycbc.inject import InjectionSet
 import unittest
 import numpy
 import itertools
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
 from utils import parse_args_cpu_only, simple_exit
 
 # Injection tests only need to happen on the CPU
@@ -122,8 +122,8 @@ class TestInjection(unittest.TestCase):
         for i in range(len(self.injections)):
             row = sim_table.RowType()
             self.injections[i].fill_sim_inspiral_row(row)
-            row.process_id = 'process:process_id:0'
-            row.simulation_id = 'sim_inspiral:simulation_id:%d' % i
+            row.process_id = 0
+            row.simulation_id = i
             sim_table.append(row)
 
         # write document to temp file

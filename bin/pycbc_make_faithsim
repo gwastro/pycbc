@@ -146,7 +146,7 @@ f = open("scripts/pycbc_faithsim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
 from numpy import *
-from glue.ligolw import utils, table, lsctables, ligolw
+from ligo.lw import utils, table, lsctables, ligolw
 import glob
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -220,7 +220,7 @@ import matplotlib.cm
 import pylab
 from os.path import isfile
 from numpy import *
-from glue.ligolw import utils, table, lsctables
+from ligo.lw import utils, table, lsctables
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import glob
 

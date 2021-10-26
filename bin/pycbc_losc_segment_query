@@ -6,16 +6,13 @@ import logging
 import json
 import argparse
 import shutil
-try:
-    from urllib.request import urlopen
-except ImportError:   # python < 3
-    from urllib2 import urlopen
+from urllib.request import urlopen
 
 import ligo.segments
 from glue import git_version
-from glue.ligolw import ligolw
-from glue.ligolw import utils
-from glue.ligolw.utils import process
+from ligo.lw import ligolw
+from ligo.lw import utils
+from ligo.lw.utils import process
 from glue.segmentdb import segmentdb_utils
 from dqsegdb import clientutils
 

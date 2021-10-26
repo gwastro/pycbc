@@ -41,19 +41,22 @@ import lal.utils
 import Pegasus.api  # Try and move this into pegasus_workflow
 from glue import lal as gluelal
 from ligo import segments
-from glue.ligolw import table, lsctables, ligolw
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import segments as ligolw_segments
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import table, lsctables, ligolw
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import segments as ligolw_segments
+from ligo.lw.utils import process as ligolw_process
 from pycbc import makedir
+from pycbc.io.ligolw import legacy_row_id_converter \
+        as legacy_ligolw_row_id_converter
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import add_site
 
+
+@legacy_ligolw_row_id_converter
+@lsctables.use_in
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
-
-lsctables.use_in(ContentHandler)
 
 
 def make_analysis_dir(path):
@@ -825,9 +828,8 @@ class Workflow(pegasus_workflow.Workflow):
             err_msg += os.path.join(self.out_dir, ini_file)
             raise ValueError(err_msg)
 
-        fp = open(ini_file, 'w')
-        self.cp.write(fp)
-        fp.close()
+        with open(ini_file, 'w') as fp:
+            self.cp.write(fp)
 
         # save the dax file
         super(Workflow, self).save(filename=filename,
@@ -1829,9 +1831,8 @@ class SegFile(File):
         """
         # load xmldocument and SegmentDefTable and SegmentTables
         fp = open(xml_file, 'rb')
-        xmldoc, _ = ligolw_utils.load_fileobj(fp,
-                                              gz=xml_file.endswith(".gz"),
-                                              contenthandler=ContentHandler)
+        xmldoc = ligolw_utils.load_fileobj(fp, compress='auto',
+                                           contenthandler=ContentHandler)
 
         seg_def_table = table.get_table(xmldoc,
                                         lsctables.SegmentDefTable.tableName)

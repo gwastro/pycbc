@@ -51,8 +51,8 @@ def parse_veto_definer(veto_def_filename, ifos):
         Returns a dictionary first indexed by ifo, then category level, and
         finally a list of veto definitions.
     """
-    from glue.ligolw import table, lsctables, utils as ligolw_utils
-    from glue.ligolw.ligolw import LIGOLWContentHandler as h
+    from ligo.lw import table, lsctables, utils as ligolw_utils
+    from ligo.lw.ligolw import LIGOLWContentHandler as h
     lsctables.use_in(h)
 
     data = {}

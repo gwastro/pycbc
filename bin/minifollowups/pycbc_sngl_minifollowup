@@ -18,8 +18,8 @@
 """
 import os, argparse, logging, h5py
 import numpy
-from glue.ligolw import lsctables, table
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import lsctables, table
+from ligo.lw import utils as ligolw_utils
 from pycbc.results import layout
 from pycbc.events import select_segments_by_definer
 import pycbc.workflow.minifollowups as mini
@@ -128,7 +128,7 @@ trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
                               None, args.instrument, premask=snr_mask)
 
 if args.non_coinc_time_only:
-    from glue.ligolw.ligolw import LIGOLWContentHandler as h
+    from ligo.lw.ligolw import LIGOLWContentHandler as h
     lsctables.use_in(h)
     segs_doc = ligolw_utils.load_filename(args.inspiral_segments,
                                           contenthandler=h)
