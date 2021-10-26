@@ -73,8 +73,7 @@ def return_empty_sngl(nones=False):
         setattr(sngl, col_name, value)
     return sngl
 
-def return_search_summary(start_time=0, end_time=0, nevents=0,
-                          ifos=None, **kwargs):
+def return_search_summary(start_time=0, end_time=0, nevents=0, ifos=None):
     """
     Function to create a SearchSummary object where all columns are populated
     but all are set to values that test False (ie. strings to '', floats/ints
