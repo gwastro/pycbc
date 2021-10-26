@@ -152,7 +152,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
     Returns
     ---------
-    segments: glue.segments.segmentlist
+    segments: ligo.segments.segmentlist
         List of segments
     """
     flag_segments = segmentlist([])
@@ -279,7 +279,7 @@ def query_cumulative_flags(ifo, segment_names, start_time, end_time,
 
     Returns
     ---------
-    segments: glue.segments.segmentlist
+    segments: ligo.segments.segmentlist
         List of segments
     """
     total_segs = segmentlist([])

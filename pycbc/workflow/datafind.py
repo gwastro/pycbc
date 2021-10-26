@@ -62,7 +62,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
     ----------
     workflow: pycbc.workflow.core.Workflow
         The workflow class that stores the jobs that will be run.
-    scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -88,7 +88,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
         SegFile containing the analysable time after checks in the datafind
         module are applied to the input segment list. For production runs this
         is expected to be equal to the input segment list.
-    scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
         This contains the times that the workflow is expected to analyse. If
         the updateSegmentTimes kwarg is given this will be updated to reflect
         any instances of missing data.
@@ -375,7 +375,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -455,7 +455,7 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -580,7 +580,7 @@ def setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -630,7 +630,7 @@ def setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
     cp : ConfigParser.ConfigParser instance
         This contains a representation of the information stored within the
         workflow configuration files
-    scienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+    scienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
         This contains the times that the workflow is expected to analyse.
     outputDir : path
         All output files written by datafind processes will be written to this
@@ -791,7 +791,7 @@ def get_science_segs_from_datafind_outs(datafindcaches):
 
     Returns
     --------
-    newScienceSegs : Dictionary of ifo keyed glue.segment.segmentlist instances
+    newScienceSegs : Dictionary of ifo keyed ligo.segments.segmentlist instances
         The times covered by the frames found in datafindOuts.
     """
     newScienceSegs = {}
@@ -819,7 +819,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
 
     Returns
     --------
-    missingFrameSegs : Dict. of ifo keyed glue.segment.segmentlist instances
+    missingFrameSegs : Dict. of ifo keyed ligo.segments.segmentlist instances
         The times corresponding to missing frames found in datafindOuts.
     missingFrames: Dict. of ifo keyed lal.Cache instances
         The list of missing frames
