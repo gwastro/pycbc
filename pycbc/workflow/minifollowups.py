@@ -105,7 +105,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
-    
+
     workflow += node
 
     # execute this in a sub-workflow

@@ -368,13 +368,13 @@ class Workflow(object):
             self.filename = self.name + '.dax'
         else:
             self.filename = dax_file_name
-        self._adag = dax.Workflow(self.filename)       
-        
+        self._adag = dax.Workflow(self.filename)
+
         # A pegasus job version of this workflow for use if it isncluded
         # within a larger workflow
         self._as_job = SubWorkflow(self.filename, is_planned=False,
                                   _id=self.name)
-        self._swinputs = [] 
+        self._swinputs = []
 
     def add_workflow(self, workflow):
         """ Add a sub-workflow to this workflow
@@ -846,7 +846,7 @@ class File(dax.File):
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
             if os.path.isfile(urlparts.path):
                 path = os.path.abspath(urlparts.path)
-                path = urljoin('file:', pathname2url(path)) 
+                path = urljoin('file:', pathname2url(path))
                 site = 'local'
 
         fil = cls(os.path.basename(path))
