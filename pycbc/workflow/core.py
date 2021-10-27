@@ -52,6 +52,7 @@ from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
 
+
 @legacy_ligolw_row_id_converter
 @lsctables.use_in
 class ContentHandler(ligolw.LIGOLWContentHandler):
