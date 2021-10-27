@@ -50,8 +50,7 @@ from pycbc.io.ligolw import legacy_row_id_converter \
         as legacy_ligolw_row_id_converter
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
-from .pegasus_sites import make_catalog, add_site
-
+from .pegasus_sites import make_catalog
 
 @legacy_ligolw_row_id_converter
 @lsctables.use_in
@@ -2212,4 +2211,3 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
         wfgrp.add_argument("--output-map", default="output.map",
                            help="Path to an output map file. Default is "
                                 "output.map.")
-

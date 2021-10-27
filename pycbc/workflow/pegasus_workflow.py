@@ -372,7 +372,7 @@ class Workflow(object):
         # A pegasus job version of this workflow for use if it isncluded
         # within a larger workflow
         self._as_job = SubWorkflow(self.filename, is_planned=False,
-                                  _id=self.name)
+                                   _id=self.name)
         self._swinputs = []
 
     def add_workflow(self, workflow):

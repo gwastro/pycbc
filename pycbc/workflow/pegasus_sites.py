@@ -236,6 +236,7 @@ def add_site(sitecat, sitename, cp, out_dir=None):
     else:
         raise ValueError("Do not recognize site {}".format(sitename))
 
+
 def make_catalog(cp, out_dir):
     """Make combined catalog of built-in known sites"""
     catalog = SiteCatalog()
