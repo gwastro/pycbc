@@ -34,7 +34,7 @@ jobs:
       run: bash -e examples/inference/single/get.sh
     - name: generating, submitting and running workflow
       run: |
-        cp examples/workflows/inference/small_test/*.ini ./
+        cp examples/workflow/inference/small_test/*.ini ./
         bash -e examples/workflow/inference/small_test/gen.sh
         condor_status
         cd gw_output
