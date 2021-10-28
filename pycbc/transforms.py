@@ -102,7 +102,8 @@ class BaseTransform(object):
             raise TypeError("Input type must be FieldArray or dict.")
 
     @classmethod
-    def from_config(cls, cp, section, outputs, skip_opts=None, additional_opts=None):
+    def from_config(cls, cp, section, outputs, 
+                    skip_opts=None, additional_opts=None):
         """Initializes a transform from the given section.
 
         Parameters
@@ -301,7 +302,8 @@ class CustomTransform(BaseTransform):
         """
         tag = outputs
         outputs = set(outputs.split(VARARGS_DELIM))
-        inputs = map(str.strip, cp.get_opt_tag(section, "inputs", tag).split(","))
+        inputs = map(str.strip, 
+                     cp.get_opt_tag(section, "inputs", tag).split(","))
         # get the functions for each output
         transform_functions = {}
         for var in outputs:
@@ -650,7 +652,7 @@ class AlignTotalSpin(BaseTransform):
         newmaps = maps.add_fields([numpy.zeros(len(maps))]*len(newfields),
                                   names=newfields)
         for item in newmaps:
-            if not all(s == 0.0 for s in 
+            if not all(s == 0.0 for s in
                        [item[parameters.spin1x], item[parameters.spin1y],
                         item[parameters.spin2x], item[parameters.spin2y]]):
 
@@ -793,7 +795,8 @@ class SphericalSpin1ToCartesianSpin1(SphericalToCartesian):
             )
         )
         super(SphericalSpin1ToCartesianSpin1, self).__init__(
-            "spin1x", "spin1y", "spin1z", "spin1_a", "spin1_azimuthal", "spin1_polar"
+            "spin1x", "spin1y", "spin1z", "spin1_a",
+            "spin1_azimuthal", "spin1_polar"
         )
 
 
@@ -819,7 +822,8 @@ class SphericalSpin2ToCartesianSpin2(SphericalToCartesian):
             )
         )
         super(SphericalSpin2ToCartesianSpin2, self).__init__(
-            "spin2x", "spin2y", "spin2z", "spin2_a", "spin2_azimuthal", "spin2_polar"
+            "spin2x", "spin2y", "spin2z",
+            "spin2_a", "spin2_azimuthal", "spin2_polar"
         )
 
 
@@ -914,7 +918,8 @@ class AlignedMassSpinToCartesianSpin(BaseTransform):
         mass2 = maps[parameters.mass2]
         spin2z = maps[parameters.spin2z]
         out = {
-            parameters.chi_eff: conversions.chi_eff(mass1, mass2, spin1z, spin2z),
+            parameters.chi_eff: 
+            conversions.chi_eff(mass1, mass2, spin1z, spin2z),
             "chi_a": conversions.chi_a(mass1, mass2, spin1z, spin2z),
         }
         return self.format_output(maps, out)
@@ -924,7 +929,8 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
     """Converts mass-weighted spins to cartesian x-y plane spins."""
 
     name = "precession_mass_spin_to_cartesian_spin"
-    _inputs = [parameters.mass1, parameters.mass2, "xi1", "xi2", "phi_a", "phi_s"]
+    _inputs = [parameters.mass1, parameters.mass2, 
+               "xi1", "xi2", "phi_a", "phi_s"]
     _outputs = [
         parameters.mass1,
         parameters.mass2,
