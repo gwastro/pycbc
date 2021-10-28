@@ -29,6 +29,7 @@ urllib.parse.uses_netloc.append('gsiftp')
 KNOWN_SITES = ['local', 'condorpool_symlink',
                'condorpool_copy', 'condorpool_shared', 'osg']
 
+
 def add_site_pegasus_profile(site, cp):
     """Add options from [pegasus_profile] in configparser to site"""
     # Add global profile information
