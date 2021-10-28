@@ -681,6 +681,7 @@ class Workflow(pegasus_workflow.Workflow):
     @property
     def output_map(self):
         args = self.args
+
         if hasattr(args, 'output_map') and args.output_map is not None:
             return args.output_map
 
@@ -773,11 +774,11 @@ class Workflow(pegasus_workflow.Workflow):
                         site='local')
 
     def save(self, filename=None, output_map_path=None):
-
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
 
         if output_map_path is None:
             output_map_path = self.output_map
+
         output_map_file = pegasus_workflow.File(os.path.basename(output_map_path))
         output_map_file.add_pfn(output_map_path, site='local')
         self.output_map_file = output_map_file
@@ -816,7 +817,6 @@ class Workflow(pegasus_workflow.Workflow):
         if not self.in_workflow:
             catalog_path = os.path.join(self.out_dir, 'sites.yml')
             make_catalog(self.cp, self.out_dir).write(catalog_path)
-
 
         # save the dax file
         super(Workflow, self).save(filename=filename,
@@ -2210,6 +2210,5 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
                             "output directory with name "
                             "{workflow-name}.dax.")
     if include_subdax_opts:
-        wfgrp.add_argument("--output-map", default="output.map",
-                           help="Path to an output map file. Default is "
-                                "output.map.")
+        wfgrp.add_argument("--output-map", default=None,
+                           help="Path to an output map file.")
