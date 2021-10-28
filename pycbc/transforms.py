@@ -640,8 +640,8 @@ class AlignTotalSpin(BaseTransform):
         Rigidly rotate binary so that the total angular momentum has the given
         inclination (iota) instead of the orbital angular momentum. Return
         the new inclination, s1, and s2. s1 and s2 are dimensionless spin.
-        Note: the spins are assumed to be given in the frame defined by the orbital
-        angular momentum.
+        Note: the spins are assumed to be given in the frame defined by the
+        orbital angular momentum.
         """
 
         if isinstance(maps, dict):
@@ -650,9 +650,9 @@ class AlignTotalSpin(BaseTransform):
         newmaps = maps.add_fields([numpy.zeros(len(maps))]*len(newfields),
                                   names=newfields)
         for item in newmaps:
-            if not all(s == 0.0 for s in
-                    [item[parameters.spin1x], item[parameters.spin1y],
-                     item[parameters.spin2x], item[parameters.spin2y]]):
+            if not all(s == 0.0 for s in 
+                       [item[parameters.spin1x], item[parameters.spin1y],
+                        item[parameters.spin2x], item[parameters.spin2y]]):
 
                 # Calculate the quantities required by jframe_to_l0frame
                 s1_a, s1_az, s1_pol = coordinates.cartesian_to_spherical(
