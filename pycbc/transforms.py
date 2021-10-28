@@ -2297,7 +2297,7 @@ common_cbc_inverse_transforms.extend(
 )
 
 common_cbc_transforms = common_cbc_forward_transforms + \
-common_cbc_inverse_transforms
+                        common_cbc_inverse_transforms
 
 
 def get_common_cbc_transforms(requested_params, variable_args, valid_params=None):
@@ -2349,7 +2349,7 @@ def get_common_cbc_transforms(requested_params, variable_args, valid_params=None
     from_base_c = []
     for converter in common_cbc_inverse_transforms:
         if converter.outputs.issubset(variable_args) or \
-        converter.outputs.isdisjoint(requested_params):
+           converter.outputs.isdisjoint(requested_params):
             continue
         intersect = converter.outputs.intersection(requested_params)
         if (
