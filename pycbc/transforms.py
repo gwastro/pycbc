@@ -2296,8 +2296,7 @@ common_cbc_inverse_transforms.extend(
     ]
 )
 
-common_cbc_transforms = common_cbc_forward_transforms/
-                        + common_cbc_inverse_transforms
+common_cbc_transforms = common_cbc_forward_transforms + common_cbc_inverse_transforms
 
 
 def get_common_cbc_transforms(requested_params, variable_args, valid_params=None):
