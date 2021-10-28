@@ -3,6 +3,7 @@ import time
 time.sleep(30)
 while 1:
     time.sleep(5)
+    subprocess.run(["condor_q", "-bet"])
     subprocess.run(["pegasus-status", "submitdir/work/"])
     out = subprocess.check_output(["pegasus-status", "submitdir/work/"])
     out = str(out)
