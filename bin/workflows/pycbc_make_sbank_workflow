@@ -203,7 +203,7 @@ if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
         # NOTE: Be careful that the seed-file will not exist when the
         #       dax file is generated if this is a sub-workflow.
         #       Don't run anything that assumes it will be there
-        seed_file = wf.File.from_path(seed_bank, store_file=Fase)
+        seed_file = wf.File.from_path(seed_bank, store_file=False)
         seed_files.append(seed_file)
     if len(seed_files) == 1:
         seed_file = seed_files[0]
