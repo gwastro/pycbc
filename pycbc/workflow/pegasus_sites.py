@@ -26,6 +26,8 @@ from Pegasus.api import Arch, OS, SiteCatalog
 urllib.parse.uses_relative.append('gsiftp')
 urllib.parse.uses_netloc.append('gsiftp')
 
+KNOWN_SITES = ['local', 'condorpool_symlink',
+               'condorpool_copy', 'condorpool_shared', 'osg']
 
 def add_site_pegasus_profile(site, cp):
     """Add options from [pegasus_profile] in configparser to site"""
@@ -240,7 +242,6 @@ def add_site(sitecat, sitename, cp, out_dir=None):
 def make_catalog(cp, out_dir):
     """Make combined catalog of built-in known sites"""
     catalog = SiteCatalog()
-    for site in ['local', 'condorpool_symlink',
-                 'condorpool_copy', 'condorpool_shared', 'osg']:
+    for site in KNOWN_SITES:
         add_site(catalog, site, cp, out_dir=out_dir)
     return catalog
