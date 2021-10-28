@@ -102,7 +102,7 @@ class BaseTransform(object):
             raise TypeError("Input type must be FieldArray or dict.")
 
     @classmethod
-    def from_config(cls, cp, section, outputs, 
+    def from_config(cls, cp, section, outputs,
                     skip_opts=None, additional_opts=None):
         """Initializes a transform from the given section.
 
@@ -302,7 +302,7 @@ class CustomTransform(BaseTransform):
         """
         tag = outputs
         outputs = set(outputs.split(VARARGS_DELIM))
-        inputs = map(str.strip, 
+        inputs = map(str.strip,
                      cp.get_opt_tag(section, "inputs", tag).split(","))
         # get the functions for each output
         transform_functions = {}
@@ -918,7 +918,7 @@ class AlignedMassSpinToCartesianSpin(BaseTransform):
         mass2 = maps[parameters.mass2]
         spin2z = maps[parameters.spin2z]
         out = {
-            parameters.chi_eff: 
+            parameters.chi_eff:
             conversions.chi_eff(mass1, mass2, spin1z, spin2z),
             "chi_a": conversions.chi_a(mass1, mass2, spin1z, spin2z),
         }
@@ -929,7 +929,7 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
     """Converts mass-weighted spins to cartesian x-y plane spins."""
 
     name = "precession_mass_spin_to_cartesian_spin"
-    _inputs = [parameters.mass1, parameters.mass2, 
+    _inputs = [parameters.mass1, parameters.mass2,
                "xi1", "xi2", "phi_a", "phi_s"]
     _outputs = [
         parameters.mass1,
@@ -1610,7 +1610,8 @@ class Logit(BaseTransform):
         self._outputvar = outputvar
         self._inputs = [inputvar]
         self._outputs = [outputvar]
-        self._bounds = Bounds(domain[0], domain[1], btype_min="open", btype_max="open")
+        self._bounds = Bounds(domain[0], domain[1],
+                              btype_min="open", btype_max="open")
         # shortcuts for quick access later
         self._a = domain[0]
         self._b = domain[1]
@@ -1798,7 +1799,8 @@ class Logit(BaseTransform):
         return expx * (self._b - self._a) / (1.0 + expx) ** 2.0
 
     @classmethod
-    def from_config(cls, cp, section, outputs, skip_opts=None, additional_opts=None):
+    def from_config(cls, cp, section, outputs,
+                    skip_opts=None, additional_opts=None):
         """Initializes a Logit transform from the given section.
 
         The section must specify an input and output variable name. The domain
@@ -1989,7 +1991,8 @@ class CartesianSpin1ToSphericalSpin1(CartesianToSpherical):
             )
         )
         super(CartesianSpin1ToSphericalSpin1, self).__init__(
-            "spin1x", "spin1y", "spin1z", "spin1_a", "spin1_azimuthal", "spin1_polar"
+            "spin1x", "spin1y", "spin1z",
+            "spin1_a", "spin1_azimuthal", "spin1_polar"
         )
 
 
@@ -2013,7 +2016,8 @@ class CartesianSpin2ToSphericalSpin2(CartesianToSpherical):
             )
         )
         super(CartesianSpin2ToSphericalSpin2, self).__init__(
-            "spin2x", "spin2y", "spin2z", "spin2_a", "spin2_azimuthal", "spin2_polar"
+            "spin2x", "spin2y", "spin2z",
+            "spin2_a", "spin2_azimuthal", "spin2_polar"
         )
 
 
@@ -2115,7 +2119,8 @@ class Logistic(Logit):
         return self._bounds
 
     @classmethod
-    def from_config(cls, cp, section, outputs, skip_opts=None, additional_opts=None):
+    def from_config(cls, cp, section, outputs,
+                    skip_opts=None, additional_opts=None):
         """Initializes a Logistic transform from the given section.
 
         The section must specify an input and output variable name. The
@@ -2291,7 +2296,8 @@ common_cbc_inverse_transforms.extend(
     ]
 )
 
-common_cbc_transforms = common_cbc_forward_transforms + common_cbc_inverse_transforms
+common_cbc_transforms = common_cbc_forward_transforms + \
+common_cbc_inverse_transforms
 
 
 def get_common_cbc_transforms(requested_params, variable_args, valid_params=None):
@@ -2342,9 +2348,8 @@ def get_common_cbc_transforms(requested_params, variable_args, valid_params=None
     # calculated from base parameters
     from_base_c = []
     for converter in common_cbc_inverse_transforms:
-        if converter.outputs.issubset(variable_args) or converter.outputs.isdisjoint(
-            requested_params
-        ):
+        if converter.outputs.issubset(variable_args) or \
+        converter.outputs.isdisjoint(requested_params):
             continue
         intersect = converter.outputs.intersection(requested_params)
         if (
