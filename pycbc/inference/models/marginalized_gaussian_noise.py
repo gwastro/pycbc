@@ -214,7 +214,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
         # Determine if all data have the same sampling rate and segment length
-        if self.all_ifodata_same_rate_length == True:
+        if self.all_ifodata_same_rate_length:
             # create a waveform generator for all ifos
             self.waveform_generator = create_waveform_generator(
                 self.variable_params, self.data,

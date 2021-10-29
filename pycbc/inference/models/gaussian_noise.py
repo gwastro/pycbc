@@ -148,7 +148,8 @@ class BaseGaussianNoise(BaseDataModel):
         else:
             self.all_ifodata_same_rate_length = False
             logging.info(
-                "You are using different data segment lengths or sampling rates for different IFOs")
+                "You are using different data segment lengths or "
+                "sampling rates for different IFOs")
 
         # store the number of samples in the time domain
         self._N = {}
@@ -870,7 +871,7 @@ class GaussianNoise(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            if self.all_ifodata_same_rate_length == True:
+            if self.all_ifodata_same_rate_length:
                 wfs = self.waveform_generator.generate(**params)
             else:
                 wfs = {}
