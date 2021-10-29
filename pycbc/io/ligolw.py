@@ -16,15 +16,18 @@
 """Tools for dealing with LIGOLW XML files."""
 
 from ligo.lw import lsctables
-from ligo.lw.ligolw import Param
+from ligo.lw.ligolw import Param, LIGOLWContentHandler \
+    as OrigLIGOLWContentHandler
 from ligo.lw.lsctables import TableByName
 from ligo.lw.table import Column, TableStream
 from ligo.lw.types import FormatFunc, FromPyType, IDTypes, ToPyType
 
+
 __all__ = ('default_null_value',
            'return_empty_sngl',
            'return_search_summary',
-           'legacy_row_id_converter')
+           'legacy_row_id_converter',
+           'LIGOLWContentHandler')
 
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
@@ -205,3 +208,10 @@ def legacy_row_id_converter(ContentHandler):
     ContentHandler.startStream = startStream
 
     return ContentHandler
+
+
+@legacy_row_id_converter
+@lsctables.use_in
+class LIGOLWContentHandler(OrigLIGOLWContentHandler):
+    "Dummy class needed for loading LIGOLW files"
+    pass

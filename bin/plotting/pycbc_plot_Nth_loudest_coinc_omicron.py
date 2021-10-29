@@ -9,19 +9,16 @@ import h5py
 import numpy as np
 import argparse
 import glob
-from ligo.lw import ligolw, lsctables, table, utils
+from ligo.lw import lsctables, table, utils
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pycbc.events
 from pycbc.waveform import get_td_waveform, frequency_from_polarizations, amplitude_from_polarizations
+from pycbc.io.ligolw import LIGOLWContentHandler
 
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-
-class DefaultContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(DefaultContentHandler)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--coinc-file', type=str, required=True,
@@ -106,7 +103,7 @@ for era in eras:
 
     # Parse trigger files into SNR, time, and frequency for Omicron triggers
     for file_name in file_list:
-        omicron_xml = utils.load_filename(file_name, contenthandler=DefaultContentHandler)
+        omicron_xml = utils.load_filename(file_name, contenthandler=LIGOLWContentHandler)
         snglburst_table = table.get_table(omicron_xml, lsctables.SnglBurstTable.tableName)
 
         for row in snglburst_table:

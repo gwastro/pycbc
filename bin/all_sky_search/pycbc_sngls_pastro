@@ -12,9 +12,10 @@ coincidences.
 
 import pycbc, pycbc.io, copy
 import argparse, logging, numpy as np
-from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
+from ligo.lw import table, lsctables, utils as ligolw_utils
 from pycbc import conversions as conv
 from pycbc.events import veto, stat, ranking, coinc, single as sngl
+from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.segments import segment, segmentlist
 import pycbc.version
 import matplotlib
@@ -22,10 +23,6 @@ matplotlib.use('agg')
 from matplotlib import pyplot as plt
 from scipy.stats import gaussian_kde as gk
 
-# dummy class for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(LIGOLWContentHandler)
 
 d_power = {
     'log': 3.,
