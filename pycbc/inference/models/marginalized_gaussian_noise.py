@@ -227,7 +227,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
             self.waveform_generator = {}
             for det in self.data:
                 self.waveform_generator[det] = create_waveform_generator(
-                    self.variable_params, {det:self.data[det]},
+                    self.variable_params, {det: self.data[det]},
                     waveform_transforms=self.waveform_transforms,
                     recalibration=self.recalibration,
                     generator_class=generator.FDomainDetFrameTwoPolGenerator,
@@ -274,7 +274,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            if self.all_ifodata_same_rate_length == True:
+            if self.all_ifodata_same_rate_length:
                 wfs = self.waveform_generator.generate(**params)
             else:
                 wfs = {}
@@ -445,7 +445,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
     def _extra_stats(self):
         """Adds ``maxl_polarization`` and the ``maxl_phase``
         """
-        return ['maxl_polarization', 'maxl_phase',]
+        return ['maxl_polarization', 'maxl_phase', ]
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.

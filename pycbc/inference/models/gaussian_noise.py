@@ -112,6 +112,7 @@ class BaseGaussianNoise(BaseDataModel):
     normalize
     lognorm
     """
+
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, ignore_failed_waveforms=False,
@@ -146,12 +147,13 @@ class BaseGaussianNoise(BaseDataModel):
             self.all_ifodata_same_rate_length = True
         else:
             self.all_ifodata_same_rate_length = False
-            logging.info("You are using different data segment lengths or sampling rates for different IFOs")
+            logging.info(
+                "You are using different data segment lengths or sampling rates for different IFOs")
 
         # store the number of samples in the time domain
         self._N = {}
         for (det, d) in self._data.items():
-            self._N[det] = int(1./(d.delta_f*d.delta_t)) 
+            self._N[det] = int(1./(d.delta_f*d.delta_t))
 
         # set lower/upper frequency cutoff
         if high_frequency_cutoff is None:
@@ -464,7 +466,7 @@ class BaseGaussianNoise(BaseDataModel):
             # computation as an attribute if one was provided the user
             if self._f_upper[det] is not None:
                 fp.attrs['{}_likelihood_high_freq'.format(det)] = \
-                                                        self._f_upper[det]
+                    self._f_upper[det]
 
     @staticmethod
     def _fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict):
@@ -580,7 +582,8 @@ class BaseGaussianNoise(BaseDataModel):
                                              _tdict[det].end_time)
             # gate overwhitened if desired
             if opts.gate_overwhitened and opts.gate is not None:
-                stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
+                stilde_dict = gate_overwhitened_data(
+                    stilde_dict, psds, opts.gate)
             data = stilde_dict
         args.update({'data': data, 'psds': psds})
         # any extra args
@@ -813,7 +816,7 @@ class GaussianNoise(BaseGaussianNoise):
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
         # Determine if all data have the same sampling rate and segment length
-        if self.all_ifodata_same_rate_length == True:
+        if self.all_ifodata_same_rate_length:
             # create a waveform generator for all ifos
             self.waveform_generator = create_waveform_generator(
                 self.variable_params, self.data,
@@ -825,7 +828,7 @@ class GaussianNoise(BaseGaussianNoise):
             self.waveform_generator = {}
             for det in self.data:
                 self.waveform_generator[det] = create_waveform_generator(
-                    self.variable_params, {det:self.data[det]},
+                    self.variable_params, {det: self.data[det]},
                     waveform_transforms=self.waveform_transforms,
                     recalibration=self.recalibration,
                     gates=self.gates, **self.static_params)
@@ -1070,11 +1073,12 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
             cp.set(sec, opt, replace_val)
     return replace_params
 
+
 def create_waveform_generator(
-                variable_params, data, waveform_transforms=None,
-                recalibration=None, gates=None,
-                generator_class=generator.FDomainDetFrameGenerator,
-                **static_params):
+        variable_params, data, waveform_transforms=None,
+        recalibration=None, gates=None,
+        generator_class=generator.FDomainDetFrameGenerator,
+        **static_params):
     r"""Creates a waveform generator for use with a model.
 
     Parameters
