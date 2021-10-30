@@ -28,6 +28,7 @@ from pycbc.detector import Detector
 from .gaussian_noise import (BaseGaussianNoise,
                              create_waveform_generator,
                              GaussianNoise)
+from .tools import marginalize_likelihood
 
 
 class MarginalizedPhaseGaussianNoise(GaussianNoise):
@@ -189,9 +190,8 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh_i)
             hh += hh_i
             hd += hd_i
-        hd = abs(hd)
         self._current_stats.maxl_phase = numpy.angle(hd)
-        return numpy.log(special.i0e(hd)) + hd - 0.5*hh
+        return marginalize_likelihood(hd, hh)
 
 
 class MarginalizedPolarization(BaseGaussianNoise):
