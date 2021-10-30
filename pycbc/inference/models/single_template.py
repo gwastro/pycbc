@@ -143,4 +143,11 @@ class SingleTemplate(BaseGaussianNoise):
             sh_total += sh
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
-        return marginalize_likelihood(sh_total, hh_total, phase=True)
+        if not hasattr(self, 'dists'):
+            self.dists = numpy.linspace(10, 60, int(1e4))
+            self.dist_weights = self.dists**2.0
+            self.dist_weights /= self.dist_weights.sum()
+        dmarg = (1, self.dists, self.dist_weights)
+        return marginalize_likelihood(sh_total, hh_total,
+                                      phase=True,
+                                      distance=dmarg)

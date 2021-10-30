@@ -1,7 +1,7 @@
 """ Common utility functions for calculation of likelihoods
 """
 import numpy
-import scipy.special
+from scipy.special import logsumexp, i0e
 from scipy.integrate import quad
 
 def marginalize_likelihood(sh, hh,
@@ -24,7 +24,7 @@ def marginalize_likelihood(sh, hh,
     else:
         sh = sh.flatten()
         hh = hh.flatten()
-        clogweights = numpy.log(len(vloglr))
+        clogweights = numpy.log(len(sh))
         
     vweights = 1
     if distance:
@@ -32,13 +32,16 @@ def marginalize_likelihood(sh, hh,
         # scale = dref / dists
         dref, dists, dist_weights = distance
         scale = dref / dists
+        
         sh = numpy.multiply.outer(sh, scale) 
         hh = numpy.multiply.outer(hh, scale ** 2.0)
         if len(sh.shape) == 2:
-            vweights = numpy.resize(vweights, (sh.shape[1], sh.shape[0])).T
+            vweights = numpy.resize(dist_weights, (sh.shape[1], sh.shape[0])).T
+        else:
+            vweights = dist_weights
     
     if phase:
-        vloglr = numpy.log(scipy.special.i0e(abs(sh)))
+        vloglr = numpy.log(i0e(abs(sh)))
         vloglr += abs(sh) - 0.5 * hh
     else:
         vloglr = sh.real - 0.5 * hh 
