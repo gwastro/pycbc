@@ -36,7 +36,7 @@ import Pegasus.api as dax
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
                                       'pegasus_files')
 
-PEGASUS_START_TEMPLATE = '''#!/bin/bash
+GRID_START_TEMPLATE = '''#!/bin/bash
 
 if [ -f /tmp/x509up_u`id -u` ] ; then
   unset X509_USER_PROXY
@@ -680,8 +680,9 @@ class Workflow(object):
             fp.write('pegasus-remove {}/work $@'.format(submitdir))
 
         with open('start', 'w') as fp:
-            fp.write(PEGASUS_START_TEMPLATE)
-            fp.write('\n')
+            if self.cp.has_option('pegasus_profile', 'pycbc|check-grid'):
+                fp.write(GRID_START_TEMPLATE)
+                fp.write('\n')
             fp.write('pegasus-run {}/work $@'.format(submitdir))
 
         os.chmod('status', 0o755)
