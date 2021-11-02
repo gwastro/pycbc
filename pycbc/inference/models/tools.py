@@ -41,10 +41,11 @@ def marginalize_likelihood(sh, hh,
             vweights = dist_weights
     
     if phase:
-        vloglr = numpy.log(i0e(abs(sh)))
-        vloglr += abs(sh) - 0.5 * hh
+        sh = numpy.log(i0e(abs(sh))) + abs(sh)
     else:
-        vloglr = sh.real - 0.5 * hh 
+        sh = sh.real
+
+    vloglr = sh.real - 0.5 * hh 
     
     if isinstance(vloglr, float):
         vloglr = float(vloglr)
