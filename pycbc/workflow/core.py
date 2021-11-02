@@ -50,7 +50,7 @@ from pycbc.io.ligolw import legacy_row_id_converter \
         as legacy_ligolw_row_id_converter
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
-from .pegasus_sites import add_site
+from .pegasus_sites import make_catalog
 
 
 @legacy_ligolw_row_id_converter
@@ -629,7 +629,7 @@ class Workflow(pegasus_workflow.Workflow):
     functions for finding input files using time and keywords. It can also
     generate cache files from the inputs.
     """
-    def __init__(self, args, **kwargs):
+    def __init__(self, args, name=None):
         """
         Create a pycbc workflow
 
@@ -642,22 +642,16 @@ class Workflow(pegasus_workflow.Workflow):
         self.cp = WorkflowConfigParser.from_cli(args)
         self.args = args
 
-        if hasattr(args, 'main_workflow_directory'):
-            wflow_dir = args.main_workflow_directory or args.output_dir
-        else:
-            wflow_dir = args.output_dir
-
         if hasattr(args, 'dax_file'):
             dax_file = args.dax_file or None
         else:
             dax_file = None
 
         super(Workflow, self).__init__(
-            name=args.workflow_name,
-            directory=wflow_dir,
+            name=name if name is not None else args.workflow_name,
+            directory=args.output_dir,
             cache_file=args.cache_file,
             dax_file_name=dax_file,
-            **kwargs
         )
 
         # Set global values
@@ -683,10 +677,6 @@ class Workflow(pegasus_workflow.Workflow):
         self._inputs = FileList([])
         self._outputs = FileList([])
 
-        # Setup staging site links
-        self._staging_site = {}
-        self.add_sites_from_config()
-
     # FIXME: Should this be in pegasus_workflow?
     @property
     def output_map(self):
@@ -703,53 +693,42 @@ class Workflow(pegasus_workflow.Workflow):
         return path
 
     @property
-    def staging_site(self):
-        return self._staging_site
-
-    @property
-    def staging_site_str(self):
-        return ','.join(['='.join(x) for x in self._staging_site.items()])
-
-    @property
-    def exec_sites_str(self):
-        sites = list(self._sc.sites)
-        sites.remove('local')
-        return ','.join(sites)
-
-    def add_sites_from_config(self):
-        # FIXME: It would be nice to be able to override site properties here.
-        #        We do want a mechanism to change things from the command line.
-        #        Perhaps read options from some reserved config section to do
-        #        this, which can then be accessed through command line?
-        add_site(self._sc, 'local', self.cp, out_dir=self.out_dir)
+    def sites(self):
+        """List of all possible exucution sites for jobs in this workflow"""
+        sites = set()
+        sites.add('local')
         if self.cp.has_option('pegasus_profile', 'pycbc|primary_site'):
             site = self.cp.get('pegasus_profile', 'pycbc|primary_site')
         else:
             # The default if not chosen
             site = 'condorpool_symlink'
-        add_site(self._sc, site, self.cp, out_dir=self.out_dir)
-        # NOTE: For now we *always* stage from local or the site itself.
-        #       This doesn't have to always be true though.
-        # FIXME: Don't want to hardcode this!
-        if site in ['condorpool_shared']:
-            self._staging_site[site] = site
-        else:
-            self._staging_site[site] = 'local'
-
+        sites.add(site)
         subsections = [sec for sec in self.cp.sections()
                        if sec.startswith('pegasus_profile-')]
-
         for subsec in subsections:
             if self.cp.has_option(subsec, 'pycbc|site'):
                 site = self.cp.get(subsec, 'pycbc|site')
-                if site not in self._sc.sites:
-                    add_site(self._sc, site, self.cp, out_dir=self.out_dir)
-                    # NOTE: For now we *always* stage from local. This doesn't
-                    #       have to always be true though.
-                    if site in ['condorpool_shared']:
-                        self._staging_site[site] = site
-                    else:
-                        self._staging_site[site] = 'local'
+                sites.add(site)
+        return list(sites)
+
+    @property
+    def staging_site(self):
+        """Site to use for staging to/from each site"""
+        staging_site = {}
+        for site in self.sites:
+            if site in ['condorpool_shared']:
+                staging_site[site] = site
+            else:
+                staging_site[site] = 'local'
+        return staging_site
+
+    @property
+    def staging_site_str(self):
+        return ','.join(['='.join(x) for x in self.staging_site.items()])
+
+    @property
+    def exec_sites_str(self):
+        return ','.join(self.sites)
 
     def execute_node(self, node, verbatim_exe = False):
         """ Execute this node immediately on the local machine
@@ -803,13 +782,13 @@ class Workflow(pegasus_workflow.Workflow):
         output_map_file.add_pfn(output_map_path, site='local')
         self.output_map_file = output_map_file
 
-        if self._asdag is not None:
-            self._asdag.set_subworkflow_properties(
+        if self.in_workflow:
+            self._as_job.set_subworkflow_properties(
                 output_map_file,
                 staging_site=self.staging_site,
                 cache_file=self.cache_file
             )
-            self._asdag.add_planner_args(**self._asdag.pycbc_planner_args)
+            self._as_job.add_planner_args(**self._as_job.pycbc_planner_args)
 
         # add transformations to dax
         for transform in self._transformations:
@@ -830,6 +809,14 @@ class Workflow(pegasus_workflow.Workflow):
 
         with open(ini_file, 'w') as fp:
             self.cp.write(fp)
+
+        # save the sites file
+        #FIXME change to check also for submit_now if we drop pycbc_submit_dax
+        # this would prevent sub-workflows from making extra unused sites.yml
+        if not self.in_workflow:
+            catalog_path = os.path.join(self.out_dir, 'sites.yml')
+            make_catalog(self.cp, self.out_dir).write(catalog_path)
+
 
         # save the dax file
         super(Workflow, self).save(filename=filename,
@@ -2218,24 +2205,11 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
     wfgrp.add_argument("--submit-now", default=False, action='store_true',
                        help="If given, workflow will immediately be submitted "
                             "on completion of workflow generation")
-
+    wfgrp.add_argument("--dax-file", default=None,
+                       help="Path to DAX file. Default is to write to the "
+                            "output directory with name "
+                            "{workflow-name}.dax.")
     if include_subdax_opts:
         wfgrp.add_argument("--output-map", default="output.map",
                            help="Path to an output map file. Default is "
                                 "output.map.")
-        wfgrp.add_argument("--dax-file", default=None,
-                           help="Path to DAX file. Default is to write to the "
-                                "output directory with name "
-                                "{workflow-name}.dax.")
-        wfgrp.add_argument('--main-workflow-directory', default=None,
-                           required=False,
-                           help="Supply the location that the main workflow "
-                                "was generated in. Only needed if running "
-                                "this job within a workflow, and then "
-                                "identifies where the local-site-scratch is")
-        wfgrp.add_argument("--is-sub-workflow", default=False,
-                           action="store_true",
-                           help="Only give this option if this code is being "
-                                "run as a sub-workflow within pegasus. If "
-                                "this means nothing to you, do not give this "
-                                "option.")

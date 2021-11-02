@@ -18,13 +18,16 @@ import urllib.parse
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
-from Pegasus.api import Arch, OS
+from Pegasus.api import Arch, OS, SiteCatalog
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
 # We can add schemes explicitly, as below, but be careful with this!
 urllib.parse.uses_relative.append('gsiftp')
 urllib.parse.uses_netloc.append('gsiftp')
+
+KNOWN_SITES = ['local', 'condorpool_symlink',
+               'condorpool_copy', 'condorpool_shared', 'osg']
 
 
 def add_site_pegasus_profile(site, cp):
@@ -235,3 +238,11 @@ def add_site(sitecat, sitename, cp, out_dir=None):
         add_osg_site(sitecat, cp)
     else:
         raise ValueError("Do not recognize site {}".format(sitename))
+
+
+def make_catalog(cp, out_dir):
+    """Make combined catalog of built-in known sites"""
+    catalog = SiteCatalog()
+    for site in KNOWN_SITES:
+        add_site(catalog, site, cp, out_dir=out_dir)
+    return catalog
