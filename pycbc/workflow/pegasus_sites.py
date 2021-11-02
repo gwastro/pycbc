@@ -225,7 +225,14 @@ def add_site(sitecat, sitename, cp, out_dir=None):
     """Add site sitename to sitecatalog"""
     if out_dir is None:
         out_dir = os.getcwd()
-    local_url = urljoin('file://', pathname2url(out_dir))
+    
+    # Allow local site scratch to be overriden for any site which uses it
+    sec = 'pegasus_profile-{}'.format(sitename)
+    opt = 'pycbc|local-site-scratch'
+    if cp.has_option(sec, opt):
+        local_url = cp.get(sec, opt)
+    else:
+        local_url = urljoin('file://', pathname2url(out_dir))
     if sitename == 'local':
         add_local_site(sitecat, cp, out_dir, local_url)
     elif sitename == 'condorpool_symlink':

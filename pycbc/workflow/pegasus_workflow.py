@@ -647,7 +647,13 @@ class Workflow(object):
         planner_args['staging_sites'] = self.staging_site
 
         # Make tmpdir for submitfiles
-        submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_')
+        # default directory is the system default, but is overrideable
+        # This should probably be moved to core.py?
+        submit_opts = 'pegasus_profile', 'pycbc|submit-directory'
+        submit_dir = None
+        if self.cp.has_option(*submit_opts):
+            submit_dir = self.cp.get(*submit_opts)
+        submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_', dir=submit_dir)
         os.chmod(submitdir, 0o755)
         try:
             os.remove('submitdir')
