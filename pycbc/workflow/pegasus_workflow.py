@@ -680,7 +680,7 @@ class Workflow(object):
             fp.write('pegasus-remove {}/work $@'.format(submitdir))
 
         with open('start', 'w') as fp:
-            if self.cp.has_option('pegasus_profile', 'pycbc|check-grid'):
+            if self.cp.has_option('pegasus_profile', 'pycbc|check_grid'):
                 fp.write(GRID_START_TEMPLATE)
                 fp.write('\n')
             fp.write('pegasus-run {}/work $@'.format(submitdir))
