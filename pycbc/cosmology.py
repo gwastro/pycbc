@@ -517,15 +517,6 @@ def distance_from_comoving_volume(vc, interp=True, **kwargs):
     return dist
 
 
-def madau_dickinson_2014(z):
-    """ The madau-dickinson 2014 stellar-formation rate
-    """
-    # stellar-formation rate density from https://arxiv.org/pdf/1403.0007.pdf
-    # units are M⊙ year−1 Mpc−3
-    val = 0.015 * (1 + z) ** 2.7 / (1 + ((1 + z) / 2.9) ** 5.6)
-    return val * units.year ** -1 * units.Mpc**3 * units.solMass
-
-
 def rate_from_redshift(z, rate_density, **kwargs):
     """Total rate of occurances out to some redshift
 
