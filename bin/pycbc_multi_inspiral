@@ -161,7 +161,7 @@ def pycbc_reweight_snr(network_snr, network_chisq, a = 3, b = 1. / 6.):
                           trigger
             network_chisq: A chisq value for each trigger 
     """
-    denom = ((1 + network_chisq)**a) / 2
+    denom = (1 + (network_chisq)**a) / 2
     reweighted_snr = network_snr / denom**b
     return reweighted_snr
 
@@ -279,7 +279,7 @@ def coincident_snr(snr_dict, index, threshold, time_delay_idx):
 
 
 def null_snr(rho_coh, rho_coinc, null_min=5.25, null_grad=0.2, null_step=20.,
-             index={}, snrv={}):
+             index={}, snrv={}, nullcut=False):
     """
     Output: null: null snr for surviving triggers
             rho_coh: Coherent snr for surviving triggers
@@ -308,11 +308,14 @@ def null_snr(rho_coh, rho_coinc, null_min=5.25, null_grad=0.2, null_step=20.,
     keep2 = np.logical_and(null < (rho_coh * null_grad + null_min),
                           rho_coh > null_step)
     keep = np.logical_or(keep1, keep2)
-    index = index[keep]
-    rho_coh  = rho_coh[keep]
-    snrv = {ifo : snrv[ifo][keep] for ifo in snrv.keys()}
-    rho_coinc = rho_coinc[keep]
-    null = null[keep]
+    if nullcut==True:
+        index = index[keep]
+        rho_coh  = rho_coh[keep]
+        snrv = {ifo : snrv[ifo][keep] for ifo in snrv.keys()}
+        rho_coinc = rho_coinc[keep]
+        null = null[keep]
+    else:
+        logging.info("nullcut is not applied")
     return null, rho_coh, rho_coinc, index, snrv
 
 
@@ -529,9 +532,6 @@ with ctx:
             wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
             projection_matrix = get_projection_matrix(wp,wc)
             LCprojection_matrix, RCprojection_matrix = circular_projection_matrix(wp, wc)
-            logging.info("projection matrix ={0}".format(projection_matrix))
-            logging.info("LCprojection matrix ={0}".format(LCprojection_matrix))
-            logging.info("RCprojection matrix ={0}".format(RCprojection_matrix)) 
             if s_num==0:
                 event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
             if not analyse_segment: continue
@@ -622,7 +622,6 @@ with ctx:
             
             if len(coinc_idx) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
-              ######## changing choice of projection tensor
                 if opt.projection_type == 'left':
                     logging.info("%s choice of projection matrix is "
                             % str(opt.projection_type))
@@ -678,8 +677,6 @@ with ctx:
                 # Calculate network chisq value
                 network_chisq_dict = network_chisq(chisq, chisq_dof, 
                                               coherent_ifo_triggers)
-                for i in range(len(network_chisq_dict)):
-                    logging.info("netwrkchisquare ={0}".format(network_chisq_dict[i]))
 
                 # Calculate chisq reweighted SNR
                 if nifo > 2:
@@ -740,7 +737,7 @@ with ctx:
                                 [network_out_vals[n] for n in network_names])
         event_mgr.cluster_template_network_events(
             "time_index",
-            "reweighted_snr",
+            "coherent_snr",
             cluster_window
             )
         event_mgr.finalize_template_events()
