@@ -8,8 +8,8 @@ import numpy as np
 import h5py
 import pycbc
 from pycbc.io import FieldArray
-from glue.ligolw.utils import load_filename as load_xml_doc
-from glue.ligolw import ligolw, lsctables
+from ligo.lw.utils import load_filename as load_xml_doc
+from ligo.lw import ligolw, lsctables
 
 
 # dummy class needed for loading LIGOLW files

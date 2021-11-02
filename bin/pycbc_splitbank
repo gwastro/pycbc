@@ -38,11 +38,11 @@ __program__ = "pycbc_splitbank"
 import time
 import argparse
 from glue import gpstime
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import table
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 from pycbc import version
 from numpy import random, ceil
 
@@ -160,7 +160,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     outdoc.appendChild(ligolw.LIGO_LW())
 
     proc_id = ligolw_process.register_to_xmldoc(outdoc, 
-                    __program__, args.__dict__, ifos=["G1"],
+                    __program__, args.__dict__, instruments=["G1"],
                     version=version.version, cvs_repository=version.git_branch,
                     cvs_entry_time=version.date).process_id
 

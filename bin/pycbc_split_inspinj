@@ -2,8 +2,8 @@
 
 # Copyright (C) 2014 Andrew Lundgren
 import argparse
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import ligolw, lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import ligolw, lsctables
 from itertools import cycle
 import pycbc.version
 
@@ -54,7 +54,7 @@ new_inj_tables = [lsctables.New(tabletype, columns=allinjs.columnnames) \
                   for idx in range(num_splits)]
 
 table_cycle = cycle(new_inj_tables)
-for inj in sorted(allinjs, key=lambda x: x.get_time_geocent()):
+for inj in sorted(allinjs, key=lambda x: x.time_geocent):
     next(table_cycle).append(inj)
 
 if not args.output_files:

@@ -31,13 +31,15 @@ import os.path
 import h5py
 from copy import copy
 import numpy as np
-from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
+from pycbc.io.ligolw import legacy_row_id_converter \
+        as legacy_ligolw_row_id_converter
 import hashlib
 
 def sigma_cached(self, psd):
@@ -98,9 +100,10 @@ def sigma_cached(self, psd):
     return self._sigmasq[key]
 
 # dummy class needed for loading LIGOLW files
+@legacy_ligolw_row_id_converter
+@lsctables.use_in
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
-lsctables.use_in(LIGOLWContentHandler)
 
 # helper function for parsing approximant strings
 def boolargs_from_apprxstr(approximant_strs):
@@ -923,3 +926,9 @@ class FilterBankSkyMax(TemplateBank):
         hcross._sigmasq = {}
 
         return hplus, hcross
+
+
+__all__ = ('sigma_cached', 'boolargs_from_apprxstr', 'add_approximant_arg',
+           'parse_approximant_arg', 'tuple_to_hash', 'TemplateBank',
+           'LiveFilterBank', 'FilterBank', 'find_variable_start_frequency',
+           'FilterBankSkyMax')

@@ -28,8 +28,8 @@ import sys
 import logging
 from numpy import loadtxt,complex64,float32
 import argparse
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import table, lsctables, ligolw
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import table, lsctables, ligolw
 
 import pycbc.version
 import pycbc.strain

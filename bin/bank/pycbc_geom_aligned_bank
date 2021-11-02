@@ -34,12 +34,12 @@ import distutils.spawn
 import h5py
 import configparser
 from scipy import spatial
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import table
+from ligo.lw import lsctables
+from ligo.lw import ilwd
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 import pycbc
 import pycbc.psd
 import pycbc.strain
@@ -236,7 +236,7 @@ cmds_file_name = opts.metadata_file
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
 ligolw_process.register_to_xmldoc(outdoc, __program__, vars(opts), comment="",
-                            ifos="", version=pycbc.version.git_hash,
+                            instruments="", version=pycbc.version.git_hash,
                             cvs_repository='pycbc/'+pycbc.version.git_branch,
                             cvs_entry_time=pycbc.version.date)
 ligolw_utils.write_filename(outdoc, cmds_file_name)

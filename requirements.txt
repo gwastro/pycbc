@@ -21,7 +21,7 @@ gwdatafind
 pegasus-wms >= 5.0.1
 
 # Requirements for ligoxml access needed by some workflows
-python-ligo-lw
+python-ligo-lw >= 1.7.0
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1

@@ -29,11 +29,11 @@ import h5py
 import pycbc
 import pycbc.inject
 import pycbc.psd
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import utils as ligolw_utils
 from pycbc.filter import sigma, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, \
                         MultiDetOptionAction, load_frequencyseries
-from glue.ligolw import lsctables
+from ligo.lw import lsctables
 import pycbc.version
 
 

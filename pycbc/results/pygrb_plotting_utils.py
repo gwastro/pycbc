@@ -32,8 +32,8 @@ import numpy
 from pycbc.results import save_fig_with_metadata
 # TODO: imports to fix/remove
 try:
-    from glue import segments
-    from glue.ligolw import utils, lsctables, ligolw, table
+    from ligo import segments
+    from ligo.lw import utils, lsctables, ligolw, table
 except ImportError:
     pass
 try:

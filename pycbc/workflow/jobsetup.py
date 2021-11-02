@@ -360,7 +360,7 @@ def identify_needed_data(curr_exe_job):
     dataLength : float
         The amount of data (in seconds) that each instance of the job must read
         in.
-    valid_chunk : glue.segment.segment
+    valid_chunk : ligo.segments.segment
         The times within dataLength for which that jobs output **can** be
         valid (ie. for inspiral this is (72, dataLength-72) as, for a standard
         setup the inspiral job cannot look for triggers in the first 72 or
@@ -852,7 +852,7 @@ class PyCBCTmpltbankExecutable(Executable):
 
         Parameters
         -----------
-        valid_seg : glue.segment
+        valid_seg : ligo.segments.segment
             The segment over which to declare the node valid. Usually this
             would be the duration of the analysis.
 

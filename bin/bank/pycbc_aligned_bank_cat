@@ -28,9 +28,9 @@ import argparse
 import numpy
 import pycbc.version
 import h5py
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils
 from pycbc import tmpltbank
 from numpy import loadtxt
 import pycbc

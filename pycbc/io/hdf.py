@@ -14,14 +14,13 @@ from six import raise_from
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 
 from pycbc import version as pycbc_version
-from pycbc.tmpltbank import return_search_summary
-from pycbc.tmpltbank import return_empty_sngl
+from pycbc.io.ligolw import return_search_summary, return_empty_sngl
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events import mean_if_greater_than_zero
@@ -826,7 +825,7 @@ class ForegroundTriggers(object):
 
         ifos = list(self.sngl_files.keys())
         proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
-                     {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
+                     {}, instruments=ifos, comment='', version=pycbc_version.git_hash,
                      cvs_repository='pycbc/'+pycbc_version.git_branch,
                      cvs_entry_time=pycbc_version.date).process_id
 
@@ -925,7 +924,7 @@ class ForegroundTriggers(object):
                 for name in sngl_col_names:
                     val = sngl_col_vals[name][ifo][0][idx]
                     if name == 'end_time':
-                        sngl.set_end(LIGOTimeGPS(val))
+                        sngl.end = LIGOTimeGPS(val)
                     else:
                         setattr(sngl, name, val)
                 for name in bank_col_names:
@@ -958,17 +957,17 @@ class ForegroundTriggers(object):
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
             coinc_event_row.nevents = len(triggered_ifos)
-            coinc_event_row.instruments = ','.join(triggered_ifos)
-            coinc_inspiral_row.set_ifos(triggered_ifos)
+            # note that simply `coinc_event_row.instruments = triggered_ifos`
+            # does not lead to a correct result with ligo.lw 1.7.1
+            coinc_event_row.instruments = ','.join(sorted(triggered_ifos))
+            coinc_inspiral_row.instruments = triggered_ifos
             coinc_event_row.time_slide_id = time_slide_id
             coinc_event_row.process_id = proc_id
             coinc_event_row.coinc_event_id = coinc_id
             coinc_inspiral_row.coinc_event_id = coinc_id
             coinc_inspiral_row.mchirp = sngl_combined_mchirp
             coinc_inspiral_row.mass = sngl_combined_mtot
-            coinc_inspiral_row.set_end(
-                LIGOTimeGPS(coinc_event_vals['time'][idx])
-            )
+            coinc_inspiral_row.end = LIGOTimeGPS(coinc_event_vals['time'][idx])
             coinc_inspiral_row.snr = net_snrsq**0.5
             coinc_inspiral_row.false_alarm_rate = coinc_event_vals['fap'][idx]
             coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
@@ -1390,3 +1389,12 @@ def load_state(fp, path=None, dsetname='state'):
         fp = fp[path]
     bdata = fp[dsetname][()].tobytes()
     return pickle.load(BytesIO(bdata))
+
+
+__all__ = ('HFile', 'DictArray', 'StatmapData', 'MultiifoStatmapData',
+           'FileData', 'DataFromFiles', 'SingleDetTriggers',
+           'ForegroundTriggers', 'ReadByTemplate', 'chisq_choices',
+           'get_chisq_from_file_choice', 'save_dict_to_hdf5',
+           'recursively_save_dict_contents_to_group', 'load_hdf5_to_dict',
+           'combine_and_copy', 'name_all_datasets', 'get_all_subkeys',
+           'dump_state', 'dump_pickle_to_hdf', 'load_state')

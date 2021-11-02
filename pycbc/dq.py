@@ -51,8 +51,8 @@ def parse_veto_definer(veto_def_filename, ifos):
         Returns a dictionary first indexed by ifo, then category level, and
         finally a list of veto definitions.
     """
-    from glue.ligolw import table, lsctables, utils as ligolw_utils
-    from glue.ligolw.ligolw import LIGOLWContentHandler as h
+    from ligo.lw import table, lsctables, utils as ligolw_utils
+    from ligo.lw.ligolw import LIGOLWContentHandler as h
     lsctables.use_in(h)
 
     data = {}
@@ -152,7 +152,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
     Returns
     ---------
-    segments: glue.segments.segmentlist
+    segments: ligo.segments.segmentlist
         List of segments
     """
     flag_segments = segmentlist([])
@@ -279,7 +279,7 @@ def query_cumulative_flags(ifo, segment_names, start_time, end_time,
 
     Returns
     ---------
-    segments: glue.segments.segmentlist
+    segments: ligo.segments.segmentlist
         List of segments
     """
     total_segs = segmentlist([])
