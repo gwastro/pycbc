@@ -517,64 +517,6 @@ def distance_from_comoving_volume(vc, interp=True, **kwargs):
     return dist
 
 
-def rate_from_redshift(z, rate_density, **kwargs):
-    """Total rate of occurances out to some redshift
-
-    Parameters
-    ----------
-    z : float
-        The redshift.
-    rate_density : function
-        The rate density per unit volume as a function of redshift.
-    \**kwargs :
-        All other keyword args are passed to :py:func:`get_cosmology` to
-        select a cosmology. If none provided, will use
-        :py:attr:`DEFAULT_COSMOLOGY`.
-
-    Returns
-    -------
-    rate: float
-        The total rate of occurances out to some redshift
-    """
-    cosmology = get_cosmology(**kwargs)
-    def diff_rate(z):
-        dr = cosmology.differential_comoving_volume(z) / (1 + z)
-        return (dr * 4 * numpy.pi * rate_density(z)).value
-    return integrate.quad(diff_rate, 0, z)[0]
-
-
-def distance_from_rate(vc, rate_density, **kwargs):
-    r"""Returns the luminosity distance from the given total rate value
-
-    Parameters
-    ----------
-    vc : float
-        The total rate
-    \**kwargs :
-        All other keyword args are passed to :py:func:`get_cosmology` to
-        select a cosmology. If none provided, will use
-        :py:attr:`DEFAULT_COSMOLOGY`.
-
-    Returns
-    -------
-    float :
-        The luminosity distance at the given comoving volume.
-    """
-    cosmology = get_cosmology(**kwargs)
-    if not hasattr(rate_density, 'dist_interp'):
-        rate_density.dist_interp = {}
-
-    if cosmology.name not in rate_density.dist_interp:
-        def rate_func(z):
-            return rate_from_redshift(z, rate_density) * rate_density(0.5).unit
-
-        rate_density.dist_interp[cosmology.name] = ComovingVolInterpolator(
-                                        'luminosity_distance',
-                                        vol_func=rate_func,
-                                        cosmology=cosmology)
-    return rate_density.dist_interp[cosmology.name](vc)
-
-
 def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
                                         **kwargs):
     r"""Returns the value of a cosmological quantity (e.g., age) at a redshift.
@@ -607,7 +549,7 @@ def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
     return val
 
 
-__all__ = ['rate_from_redshift', 'redshift', 'redshift_from_comoving_volume',
-           'distance_from_comoving_volume', 'distance_from_rate',
+__all__ = ['redshift', 'redshift_from_comoving_volume',
+           'distance_from_comoving_volume',
            'cosmological_quantity_from_redshift',
            ]
