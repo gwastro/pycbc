@@ -48,7 +48,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: logs
-        path: output/submitdir/work
+        path: gw_output/submitdir/work
     - name: store result page
       uses: actions/upload-artifact@v2
       with:
