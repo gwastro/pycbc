@@ -58,7 +58,7 @@ def sfr_grb_2008(z):
     eta = -10
 
     rho_z = rho_local*((1+z)**(3.4*eta) + ((1+z)/5000)**(-0.3*eta) +
-                ((1+z)/9)**(-3.5*eta))**(1./eta)
+                    ((1+z)/9)**(-3.5*eta))**(1./eta)
 
     return rho_z
 
@@ -127,12 +127,6 @@ def sfr_madau_fragos_2017(z, k_imf=0.66, mode='high'):
     return rho_z
 
 
-H_0 = 67.8 * (3.0856776E+19)**(-1) / (1/24/3600/365*1e-9)  # Gyr^-1
-OMEGA_LAMBDA = 0.692
-OMEGA_M = 0.308
-c = 3e10  # cm/s
-
-
 def derivative_lookback_time(z):
     r""" The derivative of lookback time t(z)
             with respect to redshit z.
@@ -152,6 +146,9 @@ def derivative_lookback_time(z):
          Pease see Eq.(A3) in <arXiv:2011.02717v3> for more details.
     """
 
+    H_0 = 67.8 * (3.0856776E+19)**(-1) / (1/24/3600/365*1e-9)  # Gyr^-1
+    OMEGA_LAMBDA = 0.692
+    OMEGA_M = 0.308
     dt_dz = 1/H_0/(1+z)/sp.sqrt((OMEGA_LAMBDA+OMEGA_M*(1+z)**3))
     return dt_dz
 
@@ -182,7 +179,7 @@ def p_tau(tau, td_model="inverse"):
         t_ln = 2.9  # Gyr
         sigma_ln = 0.2
         p_t = sp.exp(-(sp.log(tau)-sp.log(t_ln))**2/(2*sigma_ln**2)) / \
-                (sp.sqrt(2*np.pi)*sigma_ln)
+                    (sp.sqrt(2*np.pi)*sigma_ln)
     elif td_model == "gaussian":
         t_g = 2  # Gyr
         sigma_g = 0.3
@@ -199,7 +196,7 @@ def p_tau(tau, td_model="inverse"):
     return p_t
 
 
-def _convolution_converter(z_value, sfr_func, derivative_lookback_time, td_model):
+def convolution_trans(z_value, sfr_func, derivative_lookback_time, td_model):
     r""" This function is used in a symbolic integral, which to calculate
         the merger rate density of CBC sources. This function converts the
         convolution of the star formation rate SFR(tau) and the time delay
@@ -240,7 +237,7 @@ def merger_rate_density(z_array, sfr_func, td_model, rho_local):
         the merger rate density of CBC sources. This function converts the
         convolution of the star formation rate SFR(tau) and the time delay
         probability P(tau) on the time delay 'tau' into the convolution on
-        the redshift 'z'. This function relies on `_convolution_converter`.
+        the redshift 'z'. This function relies on `convolution_trans`.
 
     Parameters
     ----------
@@ -269,13 +266,14 @@ def merger_rate_density(z_array, sfr_func, td_model, rho_local):
 
     # This 'for' loop needs optimization.
     for i in tqdm(range(len(z_array))):
-        func = sp.lambdify(z, _convolution_converter(
+        func = sp.lambdify(z, convolution_trans(
                     z_value=z_array[i],
                     sfr_func=sfr_func,
                     derivative_lookback_time=derivative_lookback_time,
                     td_model=td_model), 'scipy')
 
-        f_z[i] = scipy_integrate.quad(func, z_array[i], np.inf, epsabs=1.49e-3)[0]
+        f_z[i] = scipy_integrate.quad(
+                    func, z_array[i], np.inf, epsabs=1.49e-3)[0]
 
     f_z = f_z/f_z[0]*rho_local  # Normalize & Rescale
     rho_z = scipy_interpolate.interp1d(z_array, f_z)
@@ -312,14 +310,16 @@ def coalescence_rate_per_z_bin(z_array, sfr_func, td_model, rho_local):
 
     rate_list = []
     for redshift in z_array:
-        rate_z = total_rate_upto_redshift(z=redshift, rate_density=density_func)
+        rate_z = total_rate_upto_redshift(
+                    z=redshift, rate_density=density_func)
         rate_list.append(rate_z)
     cumulative_rate_func = scipy_interpolate.interp1d(
                     z_array, rate_list, fill_value='extrapolate')
 
     dr_dz_list = []
     for redshift in z_array:
-        dr_dz_list.append(scipy_derivative(cumulative_rate_func, redshift, dx=1e-6))
+        dr_dz_list.append(
+                    scipy_derivative(cumulative_rate_func, redshift, dx=1e-6))
     dr_dz_array = np.array(dr_dz_list)
 
     return dr_dz_array
@@ -353,7 +353,8 @@ def norm_redshift_distribution(z_array, sfr_func, td_model, rho_local):
     """
 
     dr_dz = coalescence_rate_per_z_bin(z_array, sfr_func, td_model, rho_local)
-    lambd = average_time_between_signals(z_array, sfr_func, td_model, rho_local)
+    lambd = average_time_between_signals(
+                z_array, sfr_func, td_model, rho_local)
     morm_dr_dz_array = lambd/(365*24*3600)*np.array(dr_dz)
 
     return morm_dr_dz_array
@@ -385,9 +386,9 @@ def total_rate_upto_redshift(z, rate_density, **kwargs):
 
     def diff_rate(z):
         dr = cosmology.differential_comoving_volume(z) / (1+z)
-        return (dr * 4*np.pi*units.sr * rate_density(z)*(units.Mpc)**(-3)).value
-    return scipy_integrate.quad(diff_rate, 0, z, 
-                epsabs=1.00e-4, epsrel=1.00e-4, limit=1000)[0]
+        return (dr*4*np.pi*units.sr*rate_density(z)*(units.Mpc)**(-3)).value
+    return scipy_integrate.quad(diff_rate, 0, z,
+                    epsabs=1.00e-4, epsrel=1.00e-4, limit=1000)[0]
 
 
 def distance_from_rate(total_rate, rate_density, **kwargs):

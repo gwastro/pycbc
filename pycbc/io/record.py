@@ -30,7 +30,7 @@ waves.
 
 import types, re, copy, numpy, inspect
 from ligo.lw import types as ligolw_types
-from pycbc import coordinates, conversions, cosmology
+from pycbc import coordinates, conversions, cosmology, population
 from pycbc.waveform import parameters
 
 # what functions are given to the eval in FieldArray's __getitem__:
@@ -483,7 +483,7 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
 
 # We'll include functions in various pycbc modules in FieldArray's function
 # library. All modules used must have an __all__ list defined.
-_modules_for_functionlib = [conversions, coordinates, cosmology, 
+_modules_for_functionlib = [conversions, coordinates, cosmology,
                             population.population_models]
 _fieldarray_functionlib = {_funcname : getattr(_mod, _funcname)
                               for _mod in _modules_for_functionlib
