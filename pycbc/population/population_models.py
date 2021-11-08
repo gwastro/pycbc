@@ -31,6 +31,7 @@ import scipy.integrate as scipy_integrate
 import scipy.interpolate as scipy_interpolate
 from scipy.misc import derivative as scipy_derivative
 import sympy as sp
+sp.init_printing(use_latex=False)
 from astropy import units
 from tqdm import tqdm
 from pycbc.cosmology import get_cosmology, ComovingVolInterpolator
