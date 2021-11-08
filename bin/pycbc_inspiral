@@ -236,7 +236,7 @@ def template_triggers(t_num):
     """ Get the triggers for a specific template
     """
     template = None
-    tparm = None
+    tparam = None
     out_vals_all = []
     for s_num, stilde in enumerate(segments):
         # Filter check checks the 'inj_filter_rejector' options to
