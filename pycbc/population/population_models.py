@@ -30,8 +30,9 @@ import numpy as np
 import scipy.integrate as scipy_integrate
 import scipy.interpolate as scipy_interpolate
 from scipy.misc import derivative as scipy_derivative
-import sympy as sp
-sp.init_printing(use_latex=False)
+from sympy import symbols, lambdify, integrate, exp, log, sqrt \
+        as sympy_symbols, sympy_lambdify, sympy_integrate, \
+            sympy_exp, sympy_log, sympy_sqrt
 from astropy import units
 from tqdm import tqdm
 from pycbc.cosmology import get_cosmology, ComovingVolInterpolator
@@ -150,7 +151,7 @@ def derivative_lookback_time(z):
     H_0 = 67.8 * (3.0856776E+19)**(-1) / (1/24/3600/365*1e-9)  # Gyr^-1
     OMEGA_LAMBDA = 0.692
     OMEGA_M = 0.308
-    dt_dz = 1/H_0/(1+z)/sp.sqrt((OMEGA_LAMBDA+OMEGA_M*(1+z)**3))
+    dt_dz = 1/H_0/(1+z)/sympy_sqrt((OMEGA_LAMBDA+OMEGA_M*(1+z)**3))
     return dt_dz
 
 
@@ -179,12 +180,12 @@ def p_tau(tau, td_model="inverse"):
     if td_model == "log_normal":
         t_ln = 2.9  # Gyr
         sigma_ln = 0.2
-        p_t = sp.exp(-(sp.log(tau)-sp.log(t_ln))**2/(2*sigma_ln**2)) / \
-                    (sp.sqrt(2*np.pi)*sigma_ln)
+        p_t = sympy_exp(-(sympy_log(tau)-sympy_log(t_ln))**2/(2*sigma_ln**2)) / \
+                    (sympy_sqrt(2*np.pi)*sigma_ln)
     elif td_model == "gaussian":
         t_g = 2  # Gyr
         sigma_g = 0.3
-        p_t = sp.exp(-(tau-t_g)**2/(2*sigma_g**2)) / (sp.sqrt(2*np.pi)*sigma_g)
+        p_t = sympy_exp(-(tau-t_g)**2/(2*sigma_g**2)) / (sympy_sqrt(2*np.pi)*sigma_g)
     elif td_model == "power_law":
         alpha_t = 0.81
         p_t = tau**(-alpha_t)
@@ -226,8 +227,8 @@ def convolution_trans(z_value, sfr_func, derivative_lookback_time, td_model):
          Pease see Eq.(A2) in <arXiv:2011.02717v3> for more details.
     """
 
-    z = sp.symbols('z')
-    tau = sp.integrate(derivative_lookback_time(z), (z, z_value, z))
+    z = sympy_symbols('z')
+    tau = sympy_integrate(derivative_lookback_time(z), (z, z_value, z))
     func = sfr_func(z) * p_tau(tau, td_model) * derivative_lookback_time(z)
 
     return func
@@ -262,12 +263,12 @@ def merger_rate_density(z_array, sfr_func, td_model, rho_local):
          Pease see Eq.(A1), Eq.(A2) in <arXiv:2011.02717v3> for more details.
     """
 
-    z = sp.symbols('z')
+    z = sympy_symbols('z')
     f_z = np.zeros(len(z_array))
 
     # This 'for' loop needs optimization.
     for i in tqdm(range(len(z_array))):
-        func = sp.lambdify(z, convolution_trans(
+        func = sympy_lambdify(z, convolution_trans(
                     z_value=z_array[i],
                     sfr_func=sfr_func,
                     derivative_lookback_time=derivative_lookback_time,
@@ -387,7 +388,7 @@ def total_rate_upto_redshift(z, rate_density, **kwargs):
 
     def diff_rate(z):
         dr = cosmology.differential_comoving_volume(z) / (1+z)
-        return (dr*4*np.pi*units.sr*rate_density(z)*(units.Mpc)**(-3)).value
+        return float((dr*4*np.pi*units.sr*rate_density(z)*(units.Mpc)**(-3)).value)
     return scipy_integrate.quad(diff_rate, 0, z,
                     epsabs=1.00e-4, epsrel=1.00e-4, limit=1000)[0]
 
