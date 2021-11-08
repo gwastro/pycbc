@@ -28,7 +28,7 @@ from pycbc.detector import Detector
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 
 
-class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
+class MarginalizedPhaseGaussianNoise(GaussianNoise):
     r"""The likelihood is analytically marginalized over phase.
 
     This class can be used with signal models that can be written as:
@@ -117,12 +117,6 @@ class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
-        # create the waveform generator
-        self.waveform_generator = create_waveform_generator(
-            self.variable_params, self.data,
-            waveform_transforms=self.waveform_transforms,
-            recalibration=self.recalibration,
-            gates=self.gates, **self.static_params)
 
     @property
     def _extra_stats(self):
@@ -156,7 +150,13 @@ class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self.waveform_generator.generate(**params)
+            if self.all_ifodata_same_rate_length:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
+
         except NoWaveformError:
             return self._nowaveform_loglr()
         except FailedWaveformError as e:
