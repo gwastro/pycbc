@@ -29,12 +29,9 @@ def marginalize_likelihood(sh, hh,
     vweights = 1
     if distance:
         # brute force distance path
-        # scale = dref / dists
-        dref, dists, dist_weights = distance
-        scale = dref / dists
-        
-        sh = numpy.multiply.outer(sh, scale) 
-        hh = numpy.multiply.outer(hh, scale ** 2.0)
+        dist_rescale, dist_weights = distance       
+        sh = numpy.multiply.outer(sh, dist_rescale) 
+        hh = numpy.multiply.outer(hh, dist_rescale ** 2.0)
         if len(sh.shape) == 2:
             vweights = numpy.resize(dist_weights, (sh.shape[1], sh.shape[0])).T
         else:

@@ -69,8 +69,10 @@ class SingleTemplate(BaseGaussianNoise):
                  polarization_samples=None,
                  marginalize_distance=False,
                  marginalize_distance_param='distance',
+                 marginalize_distance_samples=int(1e4),
                  **kwargs):
-                 
+            
+        self.distance_marginalization = False     
         if marginalize_distance:
             logging.info('Marginalizing over distance')
             
@@ -81,15 +83,38 @@ class SingleTemplate(BaseGaussianNoise):
             dists = [d for d in old_prior.distributions \
                      if marginalize_distance_param not in d.params]
             dprior = [d for d in old_prior.distributions \
-                     if marginalize_distance_param in d.params]
+                     if marginalize_distance_param in d.params][0]
             prior = JointDistribution(variable_params, *dists,
                                                 **old_prior.kwargs)
-            kwargs['prior']
+            kwargs['prior'] = prior
+            
+            if len(dprior.params) != 1 or not hasattr(dprior, 'bounds'):
+                raise ValueError('Distance Marginalization requires a '
+                                 'univariate and bounded prior')                 
             
             # Set up distance prior vector and samples
-            dsamples = dprior.rvs(
-            self.marg_dist = numpy.geomspace(
-                 
+            # (1) prior is using distance
+            if dprior.params[0] == 'distance':
+                logging.info("Prior is directly on distance, setting up "
+                             "%s grid weights", marginalize_distance_samples)
+                dmin, dmax = dprior.bounds['distance']
+                dist_locs = numpy.linspace(dmin, dmax, 
+                                           int(marginalize_distance_samples))
+                dist_weights = [dprior.pdf(distance=l) for l in dist_locs]
+                dist_weights = numpy.array(dist_weights)
+
+            # (2) prior is univariate and can be converted to distance
+            # TODO
+            elif marginalize_distance_param != 'distance':
+                pass
+            else:
+                raise ValueError("No prior seems to determine the distance")
+            
+            dist_weights /= dist_weights.sum()
+            dist_ref = 0.5 * (dmax + dmin)
+            self.distance_marginalization = dist_ref / dist_locs, dist_weights 
+            kwargs['static_params']['distance'] = dist_ref
+            
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
 
@@ -168,4 +193,5 @@ class SingleTemplate(BaseGaussianNoise):
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
         return marginalize_likelihood(sh_total, hh_total,
-                                      phase=True)
+                                      phase=True,
+                                      distance=self.distance_marginalization)
