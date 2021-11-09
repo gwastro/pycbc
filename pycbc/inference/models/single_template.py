@@ -16,6 +16,7 @@
 """This module provides model classes that assume the noise is Gaussian.
 """
 
+import logging
 import numpy
 import scipy.special
 from scipy.special import logsumexp
@@ -23,6 +24,7 @@ from scipy.special import logsumexp
 from pycbc import filter as pyfilter
 from pycbc.waveform import get_fd_waveform
 from pycbc.detector import Detector
+from pycbc.distributions import JointDistribution
 
 from .gaussian_noise import BaseGaussianNoise
 from .tools import marginalize_likelihood
@@ -65,7 +67,29 @@ class SingleTemplate(BaseGaussianNoise):
     def __init__(self, variable_params, data, low_frequency_cutoff,
                  sample_rate=32768,
                  polarization_samples=None,
+                 marginalize_distance=False,
+                 marginalize_distance_param='distance',
                  **kwargs):
+                 
+        if marginalize_distance:
+            logging.info('Marginalizing over distance')
+            
+            # Take distance out of the variable params since we'll handle it
+            # manually now
+            variable_params.remove(marginalize_distance_param)
+            old_prior = kwargs['prior']
+            dists = [d for d in old_prior.distributions \
+                     if marginalize_distance_param not in d.params]
+            dprior = [d for d in old_prior.distributions \
+                     if marginalize_distance_param in d.params]
+            prior = JointDistribution(variable_params, *dists,
+                                                **old_prior.kwargs)
+            kwargs['prior']
+            
+            # Set up distance prior vector and samples
+            dsamples = dprior.rvs(
+            self.marg_dist = numpy.geomspace(
+                 
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
 
@@ -143,11 +167,5 @@ class SingleTemplate(BaseGaussianNoise):
             sh_total += sh
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
-        if not hasattr(self, 'dists'):
-            self.dists = numpy.linspace(10, 60, int(1e4))
-            self.dist_weights = self.dists**2.0
-            self.dist_weights /= self.dist_weights.sum()
-        dmarg = (1, self.dists, self.dist_weights)
         return marginalize_likelihood(sh_total, hh_total,
-                                      phase=True,
-                                      distance=dmarg)
+                                      phase=True)
