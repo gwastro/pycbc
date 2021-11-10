@@ -136,8 +136,9 @@ class BaseSampler(object):
         pass
 
     @abstractmethod
-    def finalize(self):
-        """Do any finalization to the samples file before exiting."""
+    def write_results(self, filename):
+        """The sampler must have a method to write results to file
+        """
         pass
 
     @abstractmethod

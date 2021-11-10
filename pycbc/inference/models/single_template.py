@@ -18,22 +18,16 @@
 
 import logging
 import numpy
-import scipy.special
-from scipy.special import logsumexp
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import get_fd_waveform
 from pycbc.detector import Detector
-from pycbc.distributions import JointDistribution
 
 from .gaussian_noise import BaseGaussianNoise
-from .tools import marginalize_likelihood
-
-# In this model we only calculate terms up to a constant.
-# We are primarily interested in the posterior result
+from .tools import DistMarg
 
 
-class SingleTemplate(BaseGaussianNoise):
+class SingleTemplate(DistMarg, BaseGaussianNoise):
     r"""Model that assumes we know all the intrinsic parameters.
 
     This model assumes we know all the intrinsic parameters, and are only
@@ -67,54 +61,12 @@ class SingleTemplate(BaseGaussianNoise):
     def __init__(self, variable_params, data, low_frequency_cutoff,
                  sample_rate=32768,
                  polarization_samples=None,
-                 marginalize_distance=False,
-                 marginalize_distance_param='distance',
-                 marginalize_distance_samples=int(1e4),
                  **kwargs):
             
-        self.distance_marginalization = False     
-        if marginalize_distance:
-            logging.info('Marginalizing over distance')
-            
-            # Take distance out of the variable params since we'll handle it
-            # manually now
-            variable_params.remove(marginalize_distance_param)
-            old_prior = kwargs['prior']
-            dists = [d for d in old_prior.distributions \
-                     if marginalize_distance_param not in d.params]
-            dprior = [d for d in old_prior.distributions \
-                     if marginalize_distance_param in d.params][0]
-            prior = JointDistribution(variable_params, *dists,
-                                                **old_prior.kwargs)
-            kwargs['prior'] = prior
-            
-            if len(dprior.params) != 1 or not hasattr(dprior, 'bounds'):
-                raise ValueError('Distance Marginalization requires a '
-                                 'univariate and bounded prior')                 
-            
-            # Set up distance prior vector and samples
-            # (1) prior is using distance
-            if dprior.params[0] == 'distance':
-                logging.info("Prior is directly on distance, setting up "
-                             "%s grid weights", marginalize_distance_samples)
-                dmin, dmax = dprior.bounds['distance']
-                dist_locs = numpy.linspace(dmin, dmax, 
-                                           int(marginalize_distance_samples))
-                dist_weights = [dprior.pdf(distance=l) for l in dist_locs]
-                dist_weights = numpy.array(dist_weights)
-
-            # (2) prior is univariate and can be converted to distance
-            # TODO
-            elif marginalize_distance_param != 'distance':
-                pass
-            else:
-                raise ValueError("No prior seems to determine the distance")
-            
-            dist_weights /= dist_weights.sum()
-            dist_ref = 0.5 * (dmax + dmin)
-            self.distance_marginalization = dist_ref / dist_locs, dist_weights 
-            kwargs['static_params']['distance'] = dist_ref
-            
+        variable_params, kwargs = self.setup_distance_marginalization(
+                                       variable_params,
+                                       marginalize_phase=True,
+                                        **kwargs)      
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
 
@@ -192,6 +144,4 @@ class SingleTemplate(BaseGaussianNoise):
             sh_total += sh
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
-        return marginalize_likelihood(sh_total, hh_total,
-                                      phase=True,
-                                      distance=self.distance_marginalization)
+        return self.marginalize_loglr(sh_total, hh_total)
