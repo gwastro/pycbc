@@ -28,7 +28,8 @@ from pycbc.detector import Detector
 from .gaussian_noise import (BaseGaussianNoise,
                              create_waveform_generator,
                              GaussianNoise)
-from .tools import marginalize_likelihood
+from .tools import marginalize_likelihood, DistMarg
+
 
 
 class MarginalizedPhaseGaussianNoise(GaussianNoise):
@@ -194,7 +195,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
         return marginalize_likelihood(hd, hh)
 
 
-class MarginalizedPolarization(BaseGaussianNoise):
+class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
     r""" This likelihood numerically marginalizes over polarization angle
 
     This class implements the Gaussian likelihood with an explicit numerical
@@ -210,6 +211,9 @@ class MarginalizedPolarization(BaseGaussianNoise):
                  high_frequency_cutoff=None, normalize=False,
                  polarization_samples=1000,
                  static_params=None, **kwargs):
+
+        variable_params, kwargs = self.setup_distance_marginalization(
+                               variable_params, **kwargs)
         # set up the boiler-plate attributes
         super(MarginalizedPolarization, self).__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
@@ -290,7 +294,7 @@ class MarginalizedPolarization(BaseGaussianNoise):
             else:
                 raise e
 
-        lr = 0.
+        lr = sh_total = hh_total = 0.
         for det, (hp, hc) in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
@@ -329,8 +333,10 @@ class MarginalizedPolarization(BaseGaussianNoise):
             hh = fp * fp * hphp + fc * fc * hchc + fp * fc * (hphc + hchp)
             # store
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh)
-            lr += cplx_hd.real - 0.5 * hh
+            sh_total += cplx_hd
+            hh_total += hh
 
+        lr = self.marginalize_loglr(sh_total, hh_total, skip_vector=True)
         lr_total = special.logsumexp(lr) - numpy.log(len(self.pol))
 
         # store the maxl polarization

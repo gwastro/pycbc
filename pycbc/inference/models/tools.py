@@ -73,11 +73,12 @@ class DistMarg(object):
         kwargs['static_params']['distance'] = dist_ref
         return variable_params, kwargs
 
-    def marginalize_loglr(sh_total, hh_total):
+    def marginalize_loglr(self, sh_total, hh_total, skip_vector=False):
         return marginalize_likelihood(sh_total, hh_total,
                               phase=self.marginalize_phase,
                               interpolator=self.distance_interpolator,
-                              distance=self.distance_marginalization)            
+                              distance=self.distance_marginalization,
+                              skip_vector=skip_vector)            
 
 def setup_distance_marg_interpolant(dist_marg,
                                     phase=False,
@@ -97,8 +98,8 @@ def setup_distance_marg_interpolant(dist_marg,
         The number of samples in either dimension of the 2d interpolant
     """
     (dist_rescale, dist_weights) = dist_marg
-    logging.info("Interpolator valid for SNRs in", snr_range)
-    logging.info("Interpolator using grid", density)
+    logging.info("Interpolator valid for SNRs in %s", snr_range)
+    logging.info("Interpolator using grid %s", density)
     # approximate maximum shr and hhr values, assuming the true SNR is
     # within the indicated range (and neglecting noise fluctuations)
     snr_min, snr_max = snr_range
@@ -128,6 +129,7 @@ def setup_distance_marg_interpolant(dist_marg,
 def marginalize_likelihood(sh, hh,
                            phase=False,
                            distance=False,
+                           skip_vector=False,
                            interpolator=None):
     """ Return the marginalized likelihood
     
@@ -157,6 +159,9 @@ def marginalize_likelihood(sh, hh,
     if interpolator:
         # pre-calculated result for this function
         vloglr = interpolator(sh, hh)
+        
+        if skip_vector:
+            return vloglr
     else:
         #explicit calculation
         if distance:
