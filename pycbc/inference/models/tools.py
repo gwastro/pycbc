@@ -61,14 +61,15 @@ class DistMarg(object):
             pname = dprior.params[0]
             logging.info("Settings up transform,  prior is in terms of"
                          " %s", pname)
-            wtrans = [d for d in waveform_transform if 'distance' not in d.outputs]
+            wtrans = [d for d in waveform_transforms if 'distance' not in d.outputs]
             dtrans = [d for d in waveform_transforms if 'distance' in d.outputs][0]
             v = dprior.rvs(int(1e8))    
             d = dtrans.transform({pname:v[pname]})['distance']
             d.sort()
             cdf = numpy.arange(1, len(d)+1) / len(d)
             i = interp1d(d, cdf)  
-            dmin, dmax = d.min(), d.max()      
+            dmin, dmax = d.min(), d.max()  
+            logging.info('Distance range %s-%s', dmin, dmax)    
             x = numpy.linspace(dmin, dmax, int(marginalize_distance_samples) + 1)
             xl = x[:-1]
             xr = x[1:]
