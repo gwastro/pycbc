@@ -5,7 +5,7 @@ import tqdm
 import logging
 from scipy.special import logsumexp, i0e
 from scipy.integrate import quad
-from scipy.interpolate import RectBivariateSpline
+from scipy.interpolate import RectBivariateSpline, interp1d
 from pycbc.distributions import JointDistribution
 
 
@@ -54,11 +54,25 @@ class DistMarg(object):
                                        int(marginalize_distance_samples))
             dist_weights = [dprior.pdf(distance=l) for l in dist_locs]
             dist_weights = numpy.array(dist_weights)
-
         # (2) prior is univariate and can be converted to distance
         # TODO
         elif marginalize_distance_param != 'distance':
-            pass
+            waveform_transforms = kwargs['waveform_transforms']
+            pname = dprior.params[0]
+            logging.info("Settings up transform,  prior is in terms of"
+                         " %s", pname)
+            dtrans = [d for d in waveform_transforms if 'distance' in d.outputs][0]
+            v = dprior.rvs(int(1e8))    
+            d = dtrans.transform({pname:v[pname]})['distance']
+            d.sort()
+            cdf = numpy.arange(1, len(d)+1) / len(d)
+            i = interp1d(d, cdf)  
+            dmin, dmax = d.min(), d.max()      
+            x = numpy.linspace(dmin, dmax, int(marginalize_distance_samples) + 1)
+            xl = x[:-1]
+            xr = x[1:]
+            dist_locs = 0.5 * (xr + xl)
+            dist_weights = i(xr) - i(xl)
         else:
             raise ValueError("No prior seems to determine the distance")
 
