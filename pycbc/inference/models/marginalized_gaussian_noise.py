@@ -25,7 +25,7 @@ from scipy import special
 from pycbc.waveform import generator
 from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.detector import Detector
-from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
+from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator, GaussianNoise)
 
 
 class MarginalizedPhaseGaussianNoise(GaussianNoise):
