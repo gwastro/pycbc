@@ -123,16 +123,17 @@ logging.info("Smoothing ...")
 # optimize computational performance.
 if len(parvals) == 1:
     sort = parvals[0].argsort()
-    parvals[0] = parvals[0][sort]
+    parvals_0 = parvals[0][sort]
     ntotal = ntotal[sort]
     nabove = nabove[sort]
     invalphan = invalphan[sort]
 
     # For each template, find the range of nearby templates which fall within
     # the chosen window.
-    left = numpy.searchsorted(parvals[0], parvals[0] - args.smoothing_width[0])
-    right = numpy.searchsorted(parvals[0], parvals[0] + args.smoothing_width[0]) - 1
+    left = numpy.searchsorted(parvals_0, parvals[0] - args.smoothing_width[0])
+    right = numpy.searchsorted(parvals_0, parvals[0] + args.smoothing_width[0]) - 1
 
+    del parvals_0
     # Precompute the sums so we can quickly look up differences between
     # templates
     ntsum = ntotal.cumsum()
