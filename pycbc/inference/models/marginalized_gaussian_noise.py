@@ -213,7 +213,8 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
                  static_params=None, **kwargs):
 
         variable_params, kwargs = self.setup_distance_marginalization(
-                               variable_params, **kwargs)
+                               variable_params,
+                               static_param=static_params, **kwargs)
         # set up the boiler-plate attributes
         super(MarginalizedPolarization, self).__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
