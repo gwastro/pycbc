@@ -39,7 +39,7 @@ class DistMarg(object):
         prior = JointDistribution(variable_params, *dists,
                                             **old_prior.kwargs)
         kwargs['prior'] = prior
-
+        wtrans = []
         if len(dprior.params) != 1 or not hasattr(dprior, 'bounds'):
             raise ValueError('Distance Marginalization requires a '
                              'univariate and bounded prior')                 
@@ -61,6 +61,7 @@ class DistMarg(object):
             pname = dprior.params[0]
             logging.info("Settings up transform,  prior is in terms of"
                          " %s", pname)
+            wtrans = [d for d in waveform_transform if 'distance' not in d.outputs]
             dtrans = [d for d in waveform_transforms if 'distance' in d.outputs][0]
             v = dprior.rvs(int(1e8))    
             d = dtrans.transform({pname:v[pname]})['distance']
@@ -85,6 +86,7 @@ class DistMarg(object):
                                                 phase=self.marginalize_phase)
             self.distance_interpolator = i
         kwargs['static_params']['distance'] = dist_ref
+        kwargs['waveform_transforms'] = wtrans
         return variable_params, kwargs
 
     def marginalize_loglr(self, sh_total, hh_total, skip_vector=False):
