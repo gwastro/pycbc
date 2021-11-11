@@ -39,7 +39,6 @@ _catalogs = {'GWTC-1-confident': 'LVC',
              'O1_O2-Preliminary': 'LVC',
              'O3_Discovery_Papers': 'LVC',
              'GWTC-2': 'LVC',
-             'GWTC-2.1': 'LVC',
              'GWTC-2.1-confident': 'LVC',
              'GWTC-2.1-marginal': 'LVC',
              'GWTC-3-confident': 'LVC',
@@ -49,6 +48,7 @@ _catalogs = {'GWTC-1-confident': 'LVC',
 _aliases = {}
 _aliases['gwtc-1'] = 'GWTC-1-confident'
 _aliases['gwtc-2'] = 'GWTC-2'
+_aliases['gwtc-2.1'] = 'GWTC-2.1-confident'
 _aliases['gwtc-3'] = 'GWTC-3-confident'
 
 
