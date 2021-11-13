@@ -218,7 +218,26 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
         super(MarginalizedPolarization, self).__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
-            **kwargs)
+            static_params=static_params, **kwargs)
+        # Determine if all data have the same sampling rate and segment length
+        if self.all_ifodata_same_rate_length:
+            # create a waveform generator for all ifos
+            self.waveform_generator = create_waveform_generator(
+                self.variable_params, self.data,
+                waveform_transforms=self.waveform_transforms,
+                recalibration=self.recalibration,
+                generator_class=generator.FDomainDetFrameTwoPolGenerator,
+                gates=self.gates, **self.static_params)
+        else:
+            # create a waveform generator for each ifo respestively
+            self.waveform_generator = {}
+            for det in self.data:
+                self.waveform_generator[det] = create_waveform_generator(
+                    self.variable_params, {det: self.data[det]},
+                    waveform_transforms=self.waveform_transforms,
+                    recalibration=self.recalibration,
+                    generator_class=generator.FDomainDetFrameTwoPolGenerator,
+                    gates=self.gates, **self.static_params)
 
         self.polarization_samples = int(polarization_samples)
         self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
