@@ -8,6 +8,8 @@ from scipy.integrate import quad
 from scipy.interpolate import RectBivariateSpline, interp1d
 from pycbc.distributions import JointDistribution
 
+def str_to_tuple(sval):
+    return tuple(float(x) for x in sval.split(','))
 
 class DistMarg(object):
     """Help class to add bookkeeping for distance marginalization"""
@@ -19,12 +21,22 @@ class DistMarg(object):
          marginalize_distance_param='distance',
          marginalize_distance_samples=int(1e4),
          marginalize_distance_interpolator=False,
+         marginalize_distance_snr_range=None,
+         marginalize_distance_density=None,
          **kwargs):
 
         self.marginalize_phase = marginalize_phase
         self.distance_marginalization = False
         if not marginalize_distance:
             return variable_params, kwargs
+
+        if isinstance(marginalize_distance_snr_range, str):
+            marginalize_distance_snr_range = \
+                str_to_tuple(marginalize_distance_snr_range)
+
+        if isinstance(marginalize_distance_density, str):
+            marginalize_distance_density = \
+                str_to_tuple(marginalize_distance_density)
 
         logging.info('Marginalizing over distance')
 
@@ -114,6 +126,12 @@ def setup_distance_marg_interpolant(dist_marg,
         for.
     density: tuple of (float, float)
         The number of samples in either dimension of the 2d interpolant
+
+    Returns
+    -------
+    interp: function
+        Function which returns the precalculated likelihood for a given
+        inner product sh/hh.
     """
     (dist_rescale, dist_weights) = dist_marg
     logging.info("Interpolator valid for SNRs in %s", snr_range)
@@ -153,8 +171,20 @@ def marginalize_likelihood(sh, hh,
 
     Parameters
     ----------
-    sh: complex float or array
-    hh: array
+    sh: complex float or numpy.ndarray
+        The data-template inner product
+    hh: complex float or numpy.ndarray
+        The template-template inner product
+    phase: bool, False
+        Enable phase marginalization. Only use if orbital phase can be related
+        to just a single overall phase (e.g. not true for waveform with
+        sub-dominant modes)
+    skip_vector: bool, False
+        Don't apply marginalization of vector component of input (i.e. leave
+        as vector).
+    interpolator: function, None
+        If provided, internal calculation is skipped in favor of a precalculated
+        interpolating function which takes in sh/hh and returns the likelihood.
 
     Returns
     -------
