@@ -13,6 +13,7 @@ possible to implement a new site, but not sure how that would work in practice.
 """
 
 import os.path
+import tempfile
 import distutils
 import urllib.parse
 from urllib.parse import urljoin
@@ -228,6 +229,14 @@ def add_site(sitecat, sitename, cp, out_dir=None):
     opt = 'pycbc|site-scratch'
     if cp.has_option(sec, opt):
         out_dir = os.path.abspath(cp.get(sec, opt))
+        if cp.has_option(sec, 'pycbc|unique-scratch'):
+            scratchdir = tempfile.mkdtemp(prefix='pycbc-tmp_', dir=out_dir)
+            os.chmod(scratchdir, 0o755)
+            try:
+                os.symlink(scratchdir, '{}-site-scratch'.format(sitename))
+            except:
+                pass
+            out_dir = scratchdir
     elif out_dir is None:
         out_dir = os.getcwd()
     local_url = urljoin('file://', pathname2url(out_dir))
