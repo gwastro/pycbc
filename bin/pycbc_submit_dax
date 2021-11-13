@@ -15,7 +15,6 @@ exec > >(tee -a workflow/pycbc-submit-dax-log.txt)
 # I did not want to steal from him by simply adding his answer to mine.
 exec 2>&1
 
-DAX_FILE=""
 CACHE_FILE=0
 LOCAL_PEGASUS_DIR=""
 PEGASUS_PROPERTIES=""
@@ -46,11 +45,6 @@ eval set -- "$GETOPT_CMD"
 
 while true ; do
   case "$1" in
-    -d|--dax)
-      case "$2" in
-        "") shift 2 ;;
-        *) DAX_FILE=$2 ; shift 2 ;;
-      esac ;;
     -c|--cache-file)
       case "$2" in
         "") shift 2 ;;
@@ -143,11 +137,6 @@ EOF`
   esac
 done
 
-if [ "x$DAX_FILE" == "x" ]; then
-  echo "Error: --dax must be specified. Use --help for options."
-   exit 1
-fi
-
 if [ $NO_CREATE_PROXY == 0 ]; then
   # Force the user to create a new grid proxy
   LIGO_USER_NAME=""
@@ -228,7 +217,7 @@ fi
 # it deserves!
 STORED_PLANNER_ARGS=`cat additional_planner_args.dat`
 
-pegasus-plan --conf ./pegasus-properties.conf ${STORED_PLANNER_ARGS} --dir $SUBMIT_DIR ${CACHE_OPTION} $SUBMIT_DAX $NO_GRID $DAX_FILE
+pegasus-plan --conf ./pegasus-properties.conf ${STORED_PLANNER_ARGS} --dir $SUBMIT_DIR ${CACHE_OPTION} $SUBMIT_DAX $NO_GRID
 
 echo
 

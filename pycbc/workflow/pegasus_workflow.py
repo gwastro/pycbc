@@ -600,6 +600,7 @@ class Workflow(object):
                     if self.cache_file is not None:
                         f.write('--cache {} '.format(self.cache_file))
 
+                    f.write('--dax {}'.format(filename))
                     f.write('--output-sites local ')
                     f.write('--sites {} '.format(exec_sites))
                     f.write('--staging-site {} '.format(stage_site_str))
