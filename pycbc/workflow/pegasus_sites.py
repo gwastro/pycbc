@@ -234,7 +234,7 @@ def add_site(sitecat, sitename, cp, out_dir=None):
             os.chmod(scratchdir, 0o755)
             try:
                 os.symlink(scratchdir, '{}-site-scratch'.format(sitename))
-            except:
+            except OSError:
                 pass
             out_dir = scratchdir
     elif out_dir is None:
