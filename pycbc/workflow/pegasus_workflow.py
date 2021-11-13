@@ -600,7 +600,6 @@ class Workflow(object):
                     if self.cache_file is not None:
                         f.write('--cache {} '.format(self.cache_file))
 
-                    f.write('--dax {}'.format(filename))
                     f.write('--output-sites local ')
                     f.write('--sites {} '.format(exec_sites))
                     f.write('--staging-site {} '.format(stage_site_str))
@@ -610,6 +609,7 @@ class Workflow(object):
                     # --dir is not being set here because it might be easier to
                     # set this in submit_dax still?
                     f.write('-vvv ')
+                    f.write('--dax {}'.format(filename))
 
     def plan_and_submit(self, submit_now=True):
         """ Plan and submit the workflow now.

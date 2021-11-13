@@ -217,7 +217,7 @@ fi
 # it deserves!
 STORED_PLANNER_ARGS=`cat additional_planner_args.dat`
 
-pegasus-plan --conf ./pegasus-properties.conf ${STORED_PLANNER_ARGS} --dir $SUBMIT_DIR ${CACHE_OPTION} $SUBMIT_DAX $NO_GRID
+pegasus-plan --conf ./pegasus-properties.conf --dir $SUBMIT_DIR ${CACHE_OPTION} $SUBMIT_DAX $NO_GRID ${STORED_PLANNER_ARGS}
 
 echo
 
