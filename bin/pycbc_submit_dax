@@ -382,13 +382,4 @@ echo "is parsed by the dashboard. The delay can be on the order of one hour for 
 echo "workflows."
 echo
 
-# If the workflow results directory exists, copy the files there
-for dir in planning dax input_map output_map
-do
-  RESULT_DIR=results/*_workflow/*_${dir}
-  if [ -d ${RESULT_DIR} ] ; then
-    cp workflow/${dir}/* ${RESULT_DIR}
-  fi
-done
-
 exit 0
