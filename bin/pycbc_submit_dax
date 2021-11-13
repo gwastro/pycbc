@@ -273,33 +273,6 @@ echo "pegasus-run $SUBMIT_DIR/work \$@" > start
 
 chmod 755 start
 
-# Copy planning information into workflow directory so it can be displayed on the results page
-cp pegasus-properties.conf workflow/planning
-cp $SUBMIT_DIR/work/braindump.yml workflow/planning
-
-mkdir -p workflow/input_map
-cp _reuse.cache workflow/input_map/reuse.cache
-
-mkdir -p workflow/dax
-mkdir -p workflow/output_map
-
-# copy the main dax and output.map to the workflow directory
-cp $DAX_FILE workflow/dax
-if [ -e output.map ] ; then
-  cp output.map workflow/output_map
-fi
-
-# ugly shell to extract the sub-dax names from the uberdax xml
-for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do
-  if [ -e ${dax} ] ; then
-    cp ${dax} workflow/dax
-  fi
-  map=`basename ${dax} .dax`.map
-  if [ -e ${map} ] ; then
-    cp ${map} workflow/output_map
-  fi
-done
-
 if [ -z ${SUBMIT_DAX} ] ; then
   echo
   echo "WARNING: DAX planned but not submitted. No dashboard entry has been created and"
