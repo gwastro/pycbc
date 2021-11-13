@@ -41,8 +41,8 @@ jobs:
         cp examples/search/*.ini ./
         bash -e examples/search/gen.sh
         cp *.gwf output/
-        condor_status
         cd output
+        bash -e examples/search/submit.sh
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
