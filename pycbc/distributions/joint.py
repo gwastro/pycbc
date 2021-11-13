@@ -83,7 +83,7 @@ class JointDistribution(object):
         # distributions list
         self._constraints = kwargs["constraints"] \
                                   if "constraints" in kwargs.keys() else []
-        
+
         # store kwargs
         self.kwargs = kwargs
 

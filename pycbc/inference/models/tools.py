@@ -11,7 +11,7 @@ from pycbc.distributions import JointDistribution
 
 class DistMarg(object):
     """Help class to add bookkeeping for distance marginalization"""
-    
+
     def setup_distance_marginalization(self,
          variable_params,
          marginalize_phase=False,
@@ -22,10 +22,10 @@ class DistMarg(object):
          **kwargs):
 
         self.marginalize_phase = marginalize_phase
-        self.distance_marginalization = False     
+        self.distance_marginalization = False
         if not marginalize_distance:
             return variable_params, kwargs
-            
+
         logging.info('Marginalizing over distance')
 
         # Take distance out of the variable params since we'll handle it
@@ -41,7 +41,7 @@ class DistMarg(object):
         kwargs['prior'] = prior
         if len(dprior.params) != 1 or not hasattr(dprior, 'bounds'):
             raise ValueError('Distance Marginalization requires a '
-                             'univariate and bounded prior')                 
+                             'univariate and bounded prior')
 
         # Set up distance prior vector and samples
         # (1) prior is using distance
@@ -49,7 +49,7 @@ class DistMarg(object):
             logging.info("Prior is directly on distance, setting up "
                          "%s grid weights", marginalize_distance_samples)
             dmin, dmax = dprior.bounds['distance']
-            dist_locs = numpy.linspace(dmin, dmax, 
+            dist_locs = numpy.linspace(dmin, dmax,
                                        int(marginalize_distance_samples))
             dist_weights = [dprior.pdf(distance=l) for l in dist_locs]
             dist_weights = numpy.array(dist_weights)
@@ -65,13 +65,13 @@ class DistMarg(object):
                 wtrans = None
             kwargs['waveform_transforms'] = wtrans
             dtrans = [d for d in waveform_transforms if 'distance' in d.outputs][0]
-            v = dprior.rvs(int(1e8))    
+            v = dprior.rvs(int(1e8))
             d = dtrans.transform({pname:v[pname]})['distance']
             d.sort()
             cdf = numpy.arange(1, len(d)+1) / len(d)
-            i = interp1d(d, cdf)  
-            dmin, dmax = d.min(), d.max()  
-            logging.info('Distance range %s-%s', dmin, dmax)    
+            i = interp1d(d, cdf)
+            dmin, dmax = d.min(), d.max()
+            logging.info('Distance range %s-%s', dmin, dmax)
             x = numpy.linspace(dmin, dmax, int(marginalize_distance_samples) + 1)
             xl = x[:-1]
             xr = x[1:]
@@ -82,7 +82,7 @@ class DistMarg(object):
 
         dist_weights /= dist_weights.sum()
         dist_ref = 0.5 * (dmax + dmin)
-        self.distance_marginalization = dist_ref / dist_locs, dist_weights 
+        self.distance_marginalization = dist_ref / dist_locs, dist_weights
         self.distance_interpolator = None
         if marginalize_distance_interpolator:
             i = setup_distance_marg_interpolant(self.distance_marginalization,
@@ -96,14 +96,14 @@ class DistMarg(object):
                               phase=self.marginalize_phase,
                               interpolator=self.distance_interpolator,
                               distance=self.distance_marginalization,
-                              skip_vector=skip_vector)            
+                              skip_vector=skip_vector)
 
 def setup_distance_marg_interpolant(dist_marg,
                                     phase=False,
                                     snr_range=(1, 50),
                                     density=(1000, 1000)):
     """ Create the interpolant for distance marginalization
-    
+
     Parameters
     ----------
     dist_marg: tuple of two arrays
@@ -139,7 +139,7 @@ def setup_distance_marg_interpolant(dist_marg,
                                                  distance=dist_marg,
                                                  phase=phase)
     interp = RectBivariateSpline(shr, hhr, lvals)
-    
+
     def interp_wrapper(x, y):
         return interp(x, y, grid=False)
     return interp_wrapper
@@ -150,17 +150,17 @@ def marginalize_likelihood(sh, hh,
                            skip_vector=False,
                            interpolator=None):
     """ Return the marginalized likelihood
-    
+
     Parameters
     ----------
     sh: complex float or array
     hh: array
-    
+
     Returns
     -------
     loglr: float
         The marginalized loglikehood ratio
-    """  
+    """
     if isinstance(sh, float):
         clogweights = 0
     else:
@@ -177,7 +177,7 @@ def marginalize_likelihood(sh, hh,
     if interpolator:
         # pre-calculated result for this function
         vloglr = interpolator(sh, hh)
-        
+
         if skip_vector:
             return vloglr
     else:
@@ -185,23 +185,23 @@ def marginalize_likelihood(sh, hh,
         if distance:
             # brute force distance path
             dist_rescale, dist_weights = distance
-            
-            sh = numpy.multiply.outer(sh, dist_rescale) 
+
+            sh = numpy.multiply.outer(sh, dist_rescale)
             hh = numpy.multiply.outer(hh, dist_rescale ** 2.0)
             if len(sh.shape) == 2:
                 vweights = numpy.resize(dist_weights,
                                         (sh.shape[1], sh.shape[0])).T
             else:
                 vweights = dist_weights
-        
+
         if phase:
             sh = numpy.log(i0e(sh)) + sh
         else:
             sh = sh.real
-            
+
         # Calculate loglikelihood ratio
-        vloglr = sh - 0.5 * hh 
-    
+        vloglr = sh - 0.5 * hh
+
     # Do brute-force marginalization if loglr is a vector
     if isinstance(vloglr, float):
         vloglr = float(vloglr)
