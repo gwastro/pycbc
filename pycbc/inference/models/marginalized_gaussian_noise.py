@@ -31,7 +31,6 @@ from .gaussian_noise import (BaseGaussianNoise,
 from .tools import marginalize_likelihood, DistMarg
 
 
-
 class MarginalizedPhaseGaussianNoise(GaussianNoise):
     r"""The likelihood is analytically marginalized over phase.
 
@@ -218,7 +217,7 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
         super(MarginalizedPolarization, self).__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
-            static_params=static_params, **kwargs)
+            **kwargs)
         # Determine if all data have the same sampling rate and segment length
         if self.all_ifodata_same_rate_length:
             # create a waveform generator for all ifos
@@ -227,7 +226,7 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
                 waveform_transforms=self.waveform_transforms,
                 recalibration=self.recalibration,
                 generator_class=generator.FDomainDetFrameTwoPolGenerator,
-                gates=self.gates, **self.static_params)
+                gates=self.gates, **kwargs['static_params'])
         else:
             # create a waveform generator for each ifo respestively
             self.waveform_generator = {}
@@ -237,7 +236,7 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
                     waveform_transforms=self.waveform_transforms,
                     recalibration=self.recalibration,
                     generator_class=generator.FDomainDetFrameTwoPolGenerator,
-                    gates=self.gates, **self.static_params)
+                    gates=self.gates, **kwargs['static_params'])
 
         self.polarization_samples = int(polarization_samples)
         self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)

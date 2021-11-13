@@ -16,7 +16,6 @@
 """This module provides model classes that assume the noise is Gaussian.
 """
 
-import logging
 import numpy
 
 from pycbc import filter as pyfilter
@@ -66,7 +65,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         variable_params, kwargs = self.setup_distance_marginalization(
                                        variable_params,
                                        marginalize_phase=True,
-                                        **kwargs)
+                                       **kwargs)
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
 

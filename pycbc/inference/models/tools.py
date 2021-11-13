@@ -1,29 +1,34 @@
 """ Common utility functions for calculation of likelihoods
 """
+
+import logging
 import numpy
 import tqdm
-import logging
+
 from scipy.special import logsumexp, i0e
 from scipy.integrate import quad
 from scipy.interpolate import RectBivariateSpline, interp1d
 from pycbc.distributions import JointDistribution
 
-def str_to_tuple(sval):
-    return tuple(float(x) for x in sval.split(','))
 
-class DistMarg(object):
+def str_to_tuple(sval, ftype):
+    """ Convenience parsing to convert str to tuple"""
+    return tuple(ftype(x) for x in sval.split(','))
+
+
+class DistMarg():
     """Help class to add bookkeeping for distance marginalization"""
 
     def setup_distance_marginalization(self,
-         variable_params,
-         marginalize_phase=False,
-         marginalize_distance=False,
-         marginalize_distance_param='distance',
-         marginalize_distance_samples=int(1e4),
-         marginalize_distance_interpolator=False,
-         marginalize_distance_snr_range=None,
-         marginalize_distance_density=None,
-         **kwargs):
+                                       variable_params,
+                                       marginalize_phase=False,
+                                       marginalize_distance=False,
+                                       marginalize_distance_param='distance',
+                                       marginalize_distance_samples=int(1e4),
+                                       marginalize_distance_interpolator=False,
+                                       marginalize_distance_snr_range=None,
+                                       marginalize_distance_density=None,
+                                       **kwargs):
 
         self.marginalize_phase = marginalize_phase
         self.distance_marginalization = False
@@ -32,11 +37,11 @@ class DistMarg(object):
 
         if isinstance(marginalize_distance_snr_range, str):
             marginalize_distance_snr_range = \
-                str_to_tuple(marginalize_distance_snr_range)
+                str_to_tuple(marginalize_distance_snr_range, float)
 
         if isinstance(marginalize_distance_density, str):
             marginalize_distance_density = \
-                str_to_tuple(marginalize_distance_density)
+                str_to_tuple(marginalize_distance_density, int)
 
         logging.info('Marginalizing over distance')
 
@@ -56,6 +61,7 @@ class DistMarg(object):
                              'univariate and bounded prior')
 
         # Set up distance prior vector and samples
+
         # (1) prior is using distance
         if dprior.params[0] == 'distance':
             logging.info("Prior is directly on distance, setting up "
@@ -65,8 +71,8 @@ class DistMarg(object):
                                        int(marginalize_distance_samples))
             dist_weights = [dprior.pdf(distance=l) for l in dist_locs]
             dist_weights = numpy.array(dist_weights)
+
         # (2) prior is univariate and can be converted to distance
-        # TODO
         elif marginalize_distance_param != 'distance':
             waveform_transforms = kwargs['waveform_transforms']
             pname = dprior.params[0]
@@ -78,15 +84,14 @@ class DistMarg(object):
             kwargs['waveform_transforms'] = wtrans
             dtrans = [d for d in waveform_transforms if 'distance' in d.outputs][0]
             v = dprior.rvs(int(1e8))
-            d = dtrans.transform({pname:v[pname]})['distance']
+            d = dtrans.transform({pname: v[pname]})['distance']
             d.sort()
             cdf = numpy.arange(1, len(d)+1) / len(d)
             i = interp1d(d, cdf)
             dmin, dmax = d.min(), d.max()
             logging.info('Distance range %s-%s', dmin, dmax)
             x = numpy.linspace(dmin, dmax, int(marginalize_distance_samples) + 1)
-            xl = x[:-1]
-            xr = x[1:]
+            xl, xr = x[:-1], x[1:]
             dist_locs = 0.5 * (xr + xl)
             dist_weights = i(xr) - i(xl)
         else:
@@ -97,8 +102,14 @@ class DistMarg(object):
         self.distance_marginalization = dist_ref / dist_locs, dist_weights
         self.distance_interpolator = None
         if marginalize_distance_interpolator:
+            setup_args = {}
+            if marginalize_distance_snr_range:
+                setup_args['snr_range'] = marginalize_distance_snr_range
+            if marginalize_distance_density:
+                setup_args['density'] = marginalize_distance_density
             i = setup_distance_marg_interpolant(self.distance_marginalization,
-                                                phase=self.marginalize_phase)
+                                                phase=self.marginalize_phase,
+                                                **setup_args)
             self.distance_interpolator = i
         kwargs['static_params']['distance'] = dist_ref
         return variable_params, kwargs
@@ -158,8 +169,19 @@ def setup_distance_marg_interpolant(dist_marg,
                                                  phase=phase)
     interp = RectBivariateSpline(shr, hhr, lvals)
 
-    def interp_wrapper(x, y):
-        return interp(x, y, grid=False)
+    def interp_wrapper(x, y, bounds_check=True):
+        k = None
+        if bounds_check:
+            if isinstance(x, float):
+                if x > shr_max or x < shr_min or y > hhr_max or y < hhr_min:
+                    return -numpy.inf
+            else:
+                k = (x > shr_max) | (x < shr_min) | (y > hhr_max) | (y < hhr_min)
+
+        v = interp(x, y, grid=False)
+        if k is not None:
+            v[k] = -numpy.inf
+        return v
     return interp_wrapper
 
 def marginalize_likelihood(sh, hh,
