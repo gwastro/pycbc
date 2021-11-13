@@ -109,7 +109,9 @@ def exit_cleaning():
             pass
 atexit.register(exit_cleaning)
 
-unique_tids = numpy.arange(0, num_templates)
+# Which templates might have triggers, initially we'll assume they all might
+tids_with_trigs = numpy.arange(0, num_templates)
+
 for i in range(len(args.trigger_files)):
     if args.stage_input:
         dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + '.hdf')
@@ -129,11 +131,10 @@ for i in range(len(args.trigger_files)):
     ifo = reader.ifo
     trigs.ifos.append(ifo)
     
-    # We don't have that many triggers compared to num templates so
-    # likely many zeros which can be pre-culled
-    if len(reader.file[ifo]['template_id']) < num_templates * 10:
+    # We don't have that many triggers, see if we can skip some templates
+    if len(reader.file[ifo]['template_id']) < 2**27:
         uniq = numpy.unique(reader.file[ifo]['template_id'][:])
-        unique_tids = numpy.intersect1d(unique_tids, uniq)
+        tids_with_trigs = numpy.intersect1d(tids_with_trigs, uniq)
 
     # time shift is subtracted from pivot ifo time
     trigs.to_shift.append(-1 if ifo == args.pivot_ifo else 0)
@@ -171,7 +172,9 @@ if args.randomize_template_order:
 else:
     template_ids = range(tmin, tmax)
 
-template_ids = numpy.intersect1d(unique_tids, template_ids)
+# Only analyze templates which might have triggers based on
+# our 'tids_with_trigs'
+template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
 
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and
