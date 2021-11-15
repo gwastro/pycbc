@@ -1,6 +1,6 @@
-`which python` -m cProfile -o log /home/ahnitz/projects/pycbc/bin/inference/pycbc_inference \
+pycbc_inference \
 --config-file `dirname "$0"`/single.ini \
---nprocesses=1 \
+--nprocesses=4 \
 --output-file single.hdf \
 --seed 0 \
 --force \
