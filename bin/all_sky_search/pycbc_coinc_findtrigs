@@ -110,7 +110,7 @@ def exit_cleaning():
 atexit.register(exit_cleaning)
 
 # Which templates might have triggers, initially we'll assume they all might
-tids_with_trigs = numpy.arange(0, num_templates)
+tids_with_trigs = None
 
 for i in range(len(args.trigger_files)):
     if args.stage_input:
@@ -174,7 +174,8 @@ else:
 
 # Only analyze templates which might have triggers based on
 # our 'tids_with_trigs'
-template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
+if tids_with_trigs is not None:
+    template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
 
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and
