@@ -134,6 +134,8 @@ for i in range(len(args.trigger_files)):
     # We don't have that many triggers, see if we can skip some templates
     if len(reader.file[ifo]['template_id']) < 2**27:
         uniq = numpy.unique(reader.file[ifo]['template_id'][:])
+        if tids_with_trigs is None:
+            tids_with_trigs = numpy.arange(0, num_templates)
         tids_with_trigs = numpy.intersect1d(tids_with_trigs, uniq)
 
     # time shift is subtracted from pivot ifo time
@@ -174,8 +176,7 @@ else:
 
 # Only analyze templates which might have triggers based on
 # our 'tids_with_trigs'
-if tids_with_trigs is not None:
-    template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
+template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
 
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and
