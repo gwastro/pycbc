@@ -103,8 +103,10 @@ for era in eras:
 
     # Parse trigger files into SNR, time, and frequency for Omicron triggers
     for file_name in file_list:
-        omicron_xml = utils.load_filename(file_name, contenthandler=LIGOLWContentHandler)
-        snglburst_table = table.get_table(omicron_xml, lsctables.SnglBurstTable.tableName)
+        omicron_xml = utils.load_filename(
+                file_name, contenthandler=LIGOLWContentHandler)
+        snglburst_table = table.get_table(
+                omicron_xml, lsctables.SnglBurstTable.tableName)
 
         for row in snglburst_table:
             if (row.snr > args.omicron_snr_thresh and
