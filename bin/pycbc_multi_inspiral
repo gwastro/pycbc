@@ -106,8 +106,7 @@ parser.add_argument("--null-step", type=float, default=20., help="""
                     according to the null_grad and null_min.""")
 parser.add_argument("--trigger-time", type=int, help="""
                     Time of the GRB, used to set the antenna patterns.""")
-
-parser.add_argument("--projection-type", default='standard', type=str, help="""Choice of projection matrix with standard, left circular or right circular""")
+parser.add_argument("--projection-type", default="standard", choices=["standard", "left", "right", "left+right"], help="""Choice of projection matrix. 'Left'  and 'Right' corresponds to face-away and face-on""")
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
 strain.StrainSegments.insert_segment_option_group_multi_ifo(parser)
@@ -138,7 +137,6 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli_multi_ifos(opt,opt.instruments)
 ctx = scheme.from_cli(opt)
-
 
 def network_chisq(chisq, chisq_dof, snr_dict):
     ifos = sorted(snr_dict.keys())
