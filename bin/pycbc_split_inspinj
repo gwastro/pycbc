@@ -3,14 +3,11 @@
 # Copyright (C) 2014 Andrew Lundgren
 import argparse
 from ligo.lw import utils as ligolw_utils
-from ligo.lw import ligolw, lsctables
+from ligo.lw import lsctables
 from itertools import cycle
 import pycbc.version
+from pycbc.io.ligolw import LIGOLWContentHandler
 
-
-# The following is required for reasons
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 # Parse command line
 parser = argparse.ArgumentParser()
@@ -31,12 +28,9 @@ args = parser.parse_args()
 if args.output_files and args.output_dir:
     parser.error("Provide only one of --output-dir or --output-files")
 
-# The XML reading will hang if you forget this line
-lsctables.use_in(LIGOLWContentHandler)
-
 # Read in input file
-xmldoc = ligolw_utils.load_filename\
-    (args.input_file, verbose=True, contenthandler=LIGOLWContentHandler)
+xmldoc = ligolw_utils.load_filename(
+        args.input_file, verbose=True, contenthandler=LIGOLWContentHandler)
 tabletype = lsctables.SimInspiralTable
 allinjs = tabletype.get_table(xmldoc)
 
