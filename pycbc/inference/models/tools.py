@@ -32,6 +32,7 @@ class DistMarg():
 
         self.marginalize_phase = marginalize_phase
         self.distance_marginalization = False
+        self.distance_interpolator = None
         if not marginalize_distance:
             return variable_params, kwargs
 
@@ -257,6 +258,8 @@ def marginalize_likelihood(sh, hh,
     # Do brute-force marginalization if loglr is a vector
     if isinstance(vloglr, float):
         vloglr = float(vloglr)
+    elif skip_vector:
+        return vloglr
     else:
         vloglr = float(logsumexp(vloglr, b=vweights)) - clogweights
 
