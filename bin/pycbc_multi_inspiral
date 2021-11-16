@@ -231,7 +231,7 @@ def get_projection_matrix(wp, wc, projection_type='standard'):
                             % str(projection_type))
         return right_projection_matrix
 
-    elif projection_type=='left_right':
+    elif projection_type=='left+right':
         logging.info("choice of projection matrix is %s"
                             % str(projection_type))
         return left_projection_matrix, right_projection_matrix
@@ -649,22 +649,22 @@ with ctx:
             
             if len(coinc_idx) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
-                if opt.projection_type=='left_right':
-                    Lc, Rc = get_projection_matrix(wp,wc, projection_type=opt.projection_type)
+                if opt.projection_type=='left+right':
+                    Lproject, Rproject = get_projection_matrix(wp,wc, projection_type=opt.projection_type)
                     Lrho_coh, Lcoinc_idx, Lcoinc_triggers, Lrho_coinc = coherent_snr(
                                            coinc_triggers, coinc_idx, opt.coinc_threshold,
-                                           Lc, rho_coinc)
+                                           Lproject, rho_coinc)
                     Rrho_coh, Rcoinc_idx, Rcoinc_triggers, Rrho_coinc = coherent_snr(
                                            coinc_triggers, coinc_idx, opt.coinc_threshold,
-                                           Rc, rho_coinc)
+                                           Rproject, rho_coinc)
                     if Rrho_coh > Lrho_coh:
                         rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
                                            coinc_triggers, coinc_idx, opt.coinc_threshold,
-                                           Rc, rho_coinc)
+                                           Rproject, rho_coinc)
                     else:
                         rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
                                            coinc_triggers, coinc_idx, opt.coinc_threshold,
-                                           Lc, rho_coinc) 
+                                           Lproject, rho_coinc) 
                 else:
                     projection_matrix = get_projection_matrix(wp,wc, projection_type=opt.projection_type)
                     rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
