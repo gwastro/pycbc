@@ -218,26 +218,26 @@ def get_projection_matrix(wp, wc, projection_type='standard'):
  
     if projection_type=='standard':
         logging.info("choice of projection matrix is %s"
-                            % str(projection_type))
+                            % projection_type)
         return standard_projection_matrix
 
     elif projection_type=='left':
         logging.info("choice of projection matrix is %s"
-                            % str(projection_type))
+                            % projection_type)
         return left_projection_matrix
 
     elif projection_type=='right':
         logging.info("choice of projection matrix is %s"
-                            % str(projection_type))
+                            % projection_type)
         return right_projection_matrix
 
     elif projection_type=='left+right':
         logging.info("choice of projection matrix is %s"
-                            % str(projection_type))
+                            % projection_type)
         return left_projection_matrix, right_projection_matrix
 
     else:
-        logging.info("choice of projection matrix is not available")
+        raise ValueError('unknown projection type ' + str(projection_type))
          
  
 
