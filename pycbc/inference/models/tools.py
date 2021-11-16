@@ -6,7 +6,6 @@ import numpy
 import tqdm
 
 from scipy.special import logsumexp, i0e
-from scipy.integrate import quad
 from scipy.interpolate import RectBivariateSpline, interp1d
 from pycbc.distributions import JointDistribution
 
@@ -19,6 +18,10 @@ def str_to_tuple(sval, ftype):
 class DistMarg():
     """Help class to add bookkeeping for distance marginalization"""
 
+    marginalize_phase = None
+    distance_marginalization = None
+    distance_interpolator = None
+
     def setup_distance_marginalization(self,
                                        variable_params,
                                        marginalize_phase=False,
@@ -29,7 +32,42 @@ class DistMarg():
                                        marginalize_distance_snr_range=None,
                                        marginalize_distance_density=None,
                                        **kwargs):
+        """ Setup the model for use with distance marginalization
 
+        This function sets up precalculations for distance / phase
+        marginalization. For distance margininalization it modifies the
+        model to internally remove distance as a parameter.
+
+        Parameters
+        ----------
+        variable_params: list of strings
+            The set of variable parameters
+        marginalize_phase: bool, False
+            Do analytic marginalization (appopriate only for 22 mode waveforms).
+        marginalize_distance: bool, False
+            Marginalize over distance
+        marginalize_distance_param: str
+            Name of the parameter that is used to determine the distance.
+            This might be 'distance' or a parameter which can be converted
+            to distance by a provided univariate transformation.
+        marginalize_distance_interpolator: bool
+            Use a pre-calculated interpolating function for the distance
+            marginalized likelihood.
+        marginalize_distance_snr_range: tuple of floats, (1, 50)
+            The SNR range for the interpolating function to be defined in.
+            If a sampler goes outside this range, the logl will be returned
+            as -numpy.inf.
+        marginalize_distance_density: tuple of intes, (1000, 1000)
+            The dimensions of the interpolation grid over (sh, hh).
+
+        Returns
+        -------
+        variable_params: list of strings
+            Set of variable params (missing distance-related parameter).
+        kwags: dict
+            The keyword arguments to the model initialization, may be modified
+            from the original set by this function.
+        """
         self.marginalize_phase = marginalize_phase
         self.distance_marginalization = False
         self.distance_interpolator = None
@@ -50,12 +88,12 @@ class DistMarg():
         # manually now
         variable_params.remove(marginalize_distance_param)
         old_prior = kwargs['prior']
-        dists = [d for d in old_prior.distributions \
+        dists = [d for d in old_prior.distributions
                  if marginalize_distance_param not in d.params]
-        dprior = [d for d in old_prior.distributions \
-                 if marginalize_distance_param in d.params][0]
+        dprior = [d for d in old_prior.distributions
+                  if marginalize_distance_param in d.params][0]
         prior = JointDistribution(variable_params, *dists,
-                                            **old_prior.kwargs)
+                                  **old_prior.kwargs)
         kwargs['prior'] = prior
         if len(dprior.params) != 1 or not hasattr(dprior, 'bounds'):
             raise ValueError('Distance Marginalization requires a '
@@ -79,11 +117,13 @@ class DistMarg():
             pname = dprior.params[0]
             logging.info("Settings up transform,  prior is in terms of"
                          " %s", pname)
-            wtrans = [d for d in waveform_transforms if 'distance' not in d.outputs]
+            wtrans = [d for d in waveform_transforms
+                      if 'distance' not in d.outputs]
             if len(wtrans) == 0:
                 wtrans = None
             kwargs['waveform_transforms'] = wtrans
-            dtrans = [d for d in waveform_transforms if 'distance' in d.outputs][0]
+            dtrans = [d for d in waveform_transforms
+                      if 'distance' in d.outputs][0]
             v = dprior.rvs(int(1e8))
             d = dtrans.transform({pname: v[pname]})['distance']
             d.sort()
@@ -91,7 +131,8 @@ class DistMarg():
             i = interp1d(d, cdf)
             dmin, dmax = d.min(), d.max()
             logging.info('Distance range %s-%s', dmin, dmax)
-            x = numpy.linspace(dmin, dmax, int(marginalize_distance_samples) + 1)
+            x = numpy.linspace(dmin, dmax,
+                               int(marginalize_distance_samples) + 1)
             xl, xr = x[:-1], x[1:]
             dist_locs = 0.5 * (xr + xl)
             dist_weights = i(xr) - i(xl)
@@ -116,11 +157,24 @@ class DistMarg():
         return variable_params, kwargs
 
     def marginalize_loglr(self, sh_total, hh_total, skip_vector=False):
+        """ Return the marginal likelihood
+
+        Parameters
+        -----------
+        sh_total: float or ndarray
+            The total <s|h> inner product summed over detectors
+        hh_total: float or ndarray
+            The total <h|h> inner product summed over detectors
+        skip_vector: bool, False
+            If true, and input is a vector, do not marginalize over that
+            vector, instead return the likelihood values as a vector.
+        """
         return marginalize_likelihood(sh_total, hh_total,
-                              phase=self.marginalize_phase,
-                              interpolator=self.distance_interpolator,
-                              distance=self.distance_marginalization,
-                              skip_vector=skip_vector)
+                                      phase=self.marginalize_phase,
+                                      interpolator=self.distance_interpolator,
+                                      distance=self.distance_marginalization,
+                                      skip_vector=skip_vector)
+
 
 def setup_distance_marg_interpolant(dist_marg,
                                     phase=False,
@@ -145,7 +199,7 @@ def setup_distance_marg_interpolant(dist_marg,
         Function which returns the precalculated likelihood for a given
         inner product sh/hh.
     """
-    (dist_rescale, dist_weights) = dist_marg
+    dist_rescale, _ = dist_marg
     logging.info("Interpolator valid for SNRs in %s", snr_range)
     logging.info("Interpolator using grid %s", density)
     # approximate maximum shr and hhr values, assuming the true SNR is
@@ -177,13 +231,15 @@ def setup_distance_marg_interpolant(dist_marg,
                 if x > shr_max or x < shr_min or y > hhr_max or y < hhr_min:
                     return -numpy.inf
             else:
-                k = (x > shr_max) | (x < shr_min) | (y > hhr_max) | (y < hhr_min)
+                k = (x > shr_max) | (x < shr_min)
+                k = k | (y > hhr_max) | (y < hhr_min)
 
         v = interp(x, y, grid=False)
         if k is not None:
             v[k] = -numpy.inf
         return v
     return interp_wrapper
+
 
 def marginalize_likelihood(sh, hh,
                            phase=False,
@@ -206,8 +262,9 @@ def marginalize_likelihood(sh, hh,
         Don't apply marginalization of vector component of input (i.e. leave
         as vector).
     interpolator: function, None
-        If provided, internal calculation is skipped in favor of a precalculated
-        interpolating function which takes in sh/hh and returns the likelihood.
+        If provided, internal calculation is skipped in favor of a
+        precalculated interpolating function which takes in sh/hh
+        and returns the likelihood.
 
     Returns
     -------
@@ -234,7 +291,7 @@ def marginalize_likelihood(sh, hh,
         if skip_vector:
             return vloglr
     else:
-        #explicit calculation
+        # explicit calculation
         if distance:
             # brute force distance path
             dist_rescale, dist_weights = distance
