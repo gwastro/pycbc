@@ -110,7 +110,7 @@ def exit_cleaning():
 atexit.register(exit_cleaning)
 
 # If some templates have no triggers one or more ifos, there can be no
-# coincs so we track which templates contains triggers in all ifos
+# coincs: so, track which templates contain triggers in all ifos
 tids_with_trigs = None
 
 for i in range(len(args.trigger_files)):
