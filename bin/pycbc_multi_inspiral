@@ -202,30 +202,44 @@ def get_projection_matrix(wp, wc, projection_type='standard'):
                    polarisations respectively
             projection_type: standard, left or right
     """
-    if projection_type=='standard':
-        logging.info("%s choice of projection matrix is "
-                            % str(projection_type))
-        denominator = np.dot(wp, wp) * np.dot(wc, wc) - np.dot(wp, wc)**2
-        projection_matrix = (np.dot(wc, wc)*np.outer(wp, wp) +
-                             np.dot(wp, wp)*np.outer(wc, wc) -
-                             np.dot(wp, wc)*(np.outer(wp, wc) +
-                             np.outer(wc, wp))) / denominator
-    elif projection_type=='left':
-        logging.info("%s choice of projection matrix is "
-                            % str(projection_type))
-        denominator = np.dot(wp, wp) + np.dot(wc, wc)
-        projection_matrix = (np.outer(wp, wp) + np.outer(wc, wc) + 
-                             (np.outer(wp, wc) - np.outer(wc, wp))
-                             *1j) / denominator
-    elif projection_type=='right':
-        logging.info("%s choice of projection matrix is "
-                            % str(projection_type))
-        denominator = np.dot(wp, wp) + np.dot(wc, wc)
-        projection_matrix = (np.outer(wp, wp) + np.outer(wc, wc) + 
-                             (np.outer(wc, wp) - np.outer(wp, wc))
-                             *1j) / denominator                 
-    return projection_matrix
+    standard_denominator = np.dot(wp, wp) * np.dot(wc, wc) - np.dot(wp, wc)**2
+    standard_projection_matrix = (np.dot(wc, wc)*np.outer(wp, wp) +
+                                  np.dot(wp, wp)*np.outer(wc, wc) -
+                                  np.dot(wp, wc)*(np.outer(wp, wc) +
+                                  np.outer(wc, wp))) / standard_denominator
 
+    side_denominator = np.dot(wp, wp) + np.dot(wc, wc)
+    left_projection_matrix = (np.outer(wp, wp) + np.outer(wc, wc) +
+                              (np.outer(wp, wc) - np.outer(wc, wp))
+                              *1j) / side_denominator
+    right_projection_matrix = (np.outer(wp, wp) + np.outer(wc, wc) +
+                               (np.outer(wc, wp) - np.outer(wp, wc))
+                               *1j) / side_denominator
+ 
+    if projection_type=='standard':
+        logging.info("choice of projection matrix is %s"
+                            % str(projection_type))
+        return standard_projection_matrix
+
+    elif projection_type=='left':
+        logging.info("choice of projection matrix is %s"
+                            % str(projection_type))
+        return left_projection_matrix
+
+    elif projection_type=='right':
+        logging.info("choice of projection matrix is %s"
+                            % str(projection_type))
+        return right_projection_matrix
+
+    elif projection_type=='left_right':
+        logging.info("choice of projection matrix is %s"
+                            % str(projection_type))
+        return left_projection_matrix, right_projection_matrix
+
+    else:
+        logging.info("choice of projection matrix is not available")
+         
+ 
 
 #remove it and fix the rest of the code
 def circular_projection_matrix(wp, wc):
@@ -635,8 +649,25 @@ with ctx:
             
             if len(coinc_idx) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
-                projection_matrix = get_projection_matrix(wp,wc, projection_type=opt.projection_type)
-                rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
+                if opt.projection_type=='left_right':
+                    Lc, Rc = get_projection_matrix(wp,wc, projection_type=opt.projection_type)
+                    Lrho_coh, Lcoinc_idx, Lcoinc_triggers, Lrho_coinc = coherent_snr(
+                                           coinc_triggers, coinc_idx, opt.coinc_threshold,
+                                           Lc, rho_coinc)
+                    Rrho_coh, Rcoinc_idx, Rcoinc_triggers, Rrho_coinc = coherent_snr(
+                                           coinc_triggers, coinc_idx, opt.coinc_threshold,
+                                           Rc, rho_coinc)
+                    if Rrho_coh > Lrho_coh:
+                        rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
+                                           coinc_triggers, coinc_idx, opt.coinc_threshold,
+                                           Rc, rho_coinc)
+                    else:
+                        rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
+                                           coinc_triggers, coinc_idx, opt.coinc_threshold,
+                                           Lc, rho_coinc) 
+                else:
+                    projection_matrix = get_projection_matrix(wp,wc, projection_type=opt.projection_type)
+                    rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
                     coinc_triggers, coinc_idx, opt.coinc_threshold,
                     projection_matrix, rho_coinc)
                 logging.info("%s points above coherent threshold"
