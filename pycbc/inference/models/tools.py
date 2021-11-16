@@ -43,7 +43,7 @@ class DistMarg():
         variable_params: list of strings
             The set of variable parameters
         marginalize_phase: bool, False
-            Do analytic marginalization (appopriate only for 22 mode waveforms).
+            Do analytic marginalization (appopriate only for 22 mode waveforms)
         marginalize_distance: bool, False
             Marginalize over distance
         marginalize_distance_param: str
