@@ -109,7 +109,8 @@ def exit_cleaning():
             pass
 atexit.register(exit_cleaning)
 
-# Which templates might have triggers, initially we'll assume they all might
+# If some templates have no triggers one or more ifos, there can be no
+# coincs so we track which templates contains triggers in all ifos
 tids_with_trigs = None
 
 for i in range(len(args.trigger_files)):
@@ -174,8 +175,7 @@ if args.randomize_template_order:
 else:
     template_ids = range(tmin, tmax)
 
-# Only analyze templates which might have triggers based on
-# our 'tids_with_trigs'
+# Only analyze templates which might have coincs
 if tids_with_trigs is not None:
     template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
 
