@@ -657,7 +657,7 @@ with ctx:
                     Rrho_coh, Rcoinc_idx, Rcoinc_triggers, Rrho_coinc = coherent_snr(
                                            coinc_triggers, coinc_idx, opt.coinc_threshold,
                                            Rproject, rho_coinc)
-                    if Rrho_coh > Lrho_coh:
+                    if max(Rrho_coh) > max(Lrho_coh):
                         rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
                                            coinc_triggers, coinc_idx, opt.coinc_threshold,
                                            Rproject, rho_coinc)
