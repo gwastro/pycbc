@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, argparse, logging, h5py
+import os, argparse, logging
 import numpy
 from ligo.lw import lsctables, table
 from ligo.lw import utils as ligolw_utils
@@ -128,8 +128,8 @@ trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
                               None, args.instrument, premask=snr_mask)
 
 if args.non_coinc_time_only:
-    from ligo.lw.ligolw import LIGOLWContentHandler as h
-    lsctables.use_in(h)
+    from pycbc.io.ligolw import LIGOLWContentHandler as h
+
     segs_doc = ligolw_utils.load_filename(args.inspiral_segments,
                                           contenthandler=h)
     seg_def_table = table.get_table(segs_doc, 'segment_definer')

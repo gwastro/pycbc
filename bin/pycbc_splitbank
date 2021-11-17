@@ -25,9 +25,7 @@
 # =============================================================================
 #
 
-"""
-Splits a table in an xml file into multiple pieces
-"""
+"""Splits a table in an xml file into multiple pieces."""
 
 import pycbc, pycbc.version, pycbc.pnutils
 __author__  = "Alex Nitz <alex.nitz@ligo.org>"
@@ -44,16 +42,12 @@ from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import process as ligolw_process
 from pycbc import version
+from pycbc.io.ligolw import LIGOLWContentHandler
 from numpy import random, ceil
-
-class ContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(ContentHandler)
 
  
 # Command line parsing
-_desc = __doc__[1:]
-parser = argparse.ArgumentParser(description=_desc)
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=__version__)
 
 group = parser.add_mutually_exclusive_group(required=True)
@@ -100,7 +94,7 @@ if args.output_filenames:
     args.number_of_banks = len(args.output_filenames)
 
 indoc = ligolw_utils.load_filename(args.bank_file, verbose=args.verbose,
-                                   contenthandler=ContentHandler)
+                                   contenthandler=LIGOLWContentHandler)
 
 try:
   template_bank_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)

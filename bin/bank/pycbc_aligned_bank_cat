@@ -17,28 +17,25 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Programe for concatenating the output of the geometric aligned bank dagman.
+Program for concatenating the output of the geometric aligned bank dagman.
 This will gather all the meta-output files and create a valid template bank
 xml file.
 """
 import logging
-import fileinput
 import glob
 import argparse
 import numpy
 import pycbc.version
 import h5py
-from ligo.lw import ligolw
-from ligo.lw import lsctables
 from ligo.lw import utils
 from pycbc import tmpltbank
-from numpy import loadtxt
 import pycbc
 import pycbc.psd
 import pycbc.strain
 import pycbc.version
-import pycbc.tmpltbank
 from pycbc.waveform import get_waveform_filter_length_in_time
+from pycbc.io.ligolw import LIGOLWContentHandler
+
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
@@ -46,9 +43,7 @@ __date__    = pycbc.version.date
 __program__ = "pycbc_aligned_bank_cat"
 
 # Read command line options
-usage = """usage: %prog [options]"""
-_desc = __doc__[1:]
-parser = argparse.ArgumentParser(description=_desc,
+parser = argparse.ArgumentParser(description=__doc__,
            formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 parser.add_argument("--version", action="version", version=__version__)
@@ -163,12 +158,9 @@ temp_bank = numpy.array([mass1,mass2,spin1z,spin2z]).T
 # needed for any reason, this code would have to be able to recalculate the
 # moments (or read them in) and use the correct value of f0 and pn-order
 if options.metadata_file:
-    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-        pass
-    lsctables.use_in(LIGOLWContentHandler)
-    outdoc = utils.load_filename(options.metadata_file,\
-                                     gz = options.metadata_file.endswith("gz"),
-                                     contenthandler=LIGOLWContentHandler)
+    outdoc = utils.load_filename(options.metadata_file,
+                                 compress='auto',
+                                 contenthandler=LIGOLWContentHandler)
 else:
     outdoc = None
 if options.output_file.endswith(('.xml','.xml.gz','.xmlgz')):

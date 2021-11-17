@@ -31,16 +31,16 @@ import os.path
 import h5py
 from copy import copy
 import numpy as np
-from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
+from ligo.lw import table, lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
-from pycbc.io.ligolw import legacy_row_id_converter \
-        as legacy_ligolw_row_id_converter
+from pycbc.io.ligolw import LIGOLWContentHandler
 import hashlib
+
 
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
@@ -99,11 +99,6 @@ def sigma_cached(self, psd):
             self._sigmasq[key] = self.sigma_view.inner(psd.invsqrt[self.sslice])
     return self._sigmasq[key]
 
-# dummy class needed for loading LIGOLW files
-@legacy_ligolw_row_id_converter
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 # helper function for parsing approximant strings
 def boolargs_from_apprxstr(approximant_strs):

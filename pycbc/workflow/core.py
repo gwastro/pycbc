@@ -46,17 +46,10 @@ from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import segments as ligolw_segments
 from ligo.lw.utils import process as ligolw_process
 from pycbc import makedir
-from pycbc.io.ligolw import legacy_row_id_converter \
-        as legacy_ligolw_row_id_converter
+from pycbc.io.ligolw import LIGOLWContentHandler
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
-
-
-@legacy_ligolw_row_id_converter
-@lsctables.use_in
-class ContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 
 def make_analysis_dir(path):
@@ -1818,8 +1811,8 @@ class SegFile(File):
         """
         # load xmldocument and SegmentDefTable and SegmentTables
         fp = open(xml_file, 'rb')
-        xmldoc = ligolw_utils.load_fileobj(fp, compress='auto',
-                                           contenthandler=ContentHandler)
+        xmldoc = ligolw_utils.load_fileobj(
+                fp, compress='auto', contenthandler=LIGOLWContentHandler)
 
         seg_def_table = table.get_table(xmldoc,
                                         lsctables.SegmentDefTable.tableName)
