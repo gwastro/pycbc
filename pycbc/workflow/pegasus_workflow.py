@@ -375,6 +375,24 @@ class Workflow(object):
                                    _id=self.name)
         self._swinputs = []
 
+    def _make_root_dependency(self, inp):
+        def root_path(v):
+            path = [v]
+            while v.in_workflow:
+                path += [v.in_workflow]
+                v = v.in_workflow
+            return path
+        workflow_root = root_path(self)
+        input_root = root_path(inp)
+        for step in workflow_root:
+            if step in input_root:
+                common = step
+                break
+
+        parent = input_root[input_root.index(common)-1]
+        child = workflow_root[workflow_root.index(common)-1]
+        common.add_subworkflow_dependancy(parent, child)
+
     def add_workflow(self, workflow):
         """ Add a sub-workflow to this workflow
 
@@ -388,8 +406,10 @@ class Workflow(object):
         """
         workflow.in_workflow = self
         self.sub_workflows += [workflow]
-
         self._adag.add_jobs(workflow._as_job)
+
+        for inp in workflow._swinputs:
+            workflow._make_root_dependency(inp.node)
 
         return self
 
@@ -499,6 +519,7 @@ class Workflow(object):
             if inp.node is not None and inp.node.in_workflow == self:
                 # Standard case: File produced within the same workflow.
                 # Don't need to do anything here.
+                print(inp, "PATH1")
                 continue
 
             elif inp.node is not None and not inp.node.in_workflow:
@@ -509,6 +530,7 @@ class Workflow(object):
                                  'workflow first.')
 
             elif inp.node is None:
+                print(inp, "PATH2")
                 # File is external to the workflow (e.g. a pregenerated
                 # template bank). (if inp.node is None)
                 if inp not in self._inputs:
@@ -520,7 +542,7 @@ class Workflow(object):
                 if inp not in self._inputs:
                     self._inputs += [inp]
                     self._swinputs += [inp]
-
+                print(inp, "PATH3", self._inputs, self._swinputs)
             else:
                 err_msg = ("I don't understand how to deal with an input file "
                            "here. Ian doesn't think this message should be "
@@ -564,6 +586,7 @@ class Workflow(object):
 
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:
+            print(fil)
             fil.insert_into_dax(self._rc, self._tc)
 
         # Is a sub-workflow, add the _swinputs as needed.
