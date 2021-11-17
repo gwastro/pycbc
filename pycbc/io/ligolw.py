@@ -214,4 +214,3 @@ def legacy_row_id_converter(ContentHandler):
 @lsctables.use_in
 class LIGOLWContentHandler(OrigLIGOLWContentHandler):
     "Dummy class needed for loading LIGOLW files"
-    pass
