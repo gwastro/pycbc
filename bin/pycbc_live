@@ -108,6 +108,7 @@ class LiveEventManager(object):
                 self.fu_cores = 1
 
     def commit_results(self, results):
+        logging.info('Committing triggers')
         self.comm.gather(results, root=0)
 
     def barrier(self):
@@ -121,28 +122,28 @@ class LiveEventManager(object):
         contiguous sets of arrays.
         """
 
-        if self.rank == 0:
-            all_results = self.comm.gather(None, root=0)
-            data_ends = [a[1] for a in all_results if a is not None]
-            results = [a[0] for a in all_results if a is not None]
+        if self.rank != 0:
+            raise RuntimeError('Not root process')
 
-            combined = {}
-            for ifo in results[0]:
+        logging.info('Gathering triggers')
+        all_results = self.comm.gather(None, root=0)
+        data_ends = [a[1] for a in all_results if a is not None]
+        results = [a[0] for a in all_results if a is not None]
 
-                # check if any of the results returned invalid
-                try:
-                    for r in results:
-                        if r[ifo] is False:
-                            raise ValueError
-                except ValueError:
-                    continue
-                combined[ifo] = {}
-                for key in results[0][ifo]:
-                    combined[ifo][key] = numpy.concatenate([r[ifo][key] for r in results])
+        combined = {}
+        for ifo in results[0]:
+            # check if any of the results returned invalid
+            try:
+                for r in results:
+                    if r[ifo] is False:
+                        raise ValueError
+            except ValueError:
+                continue
+            combined[ifo] = {}
+            for key in results[0][ifo]:
+                combined[ifo][key] = numpy.concatenate([r[ifo][key] for r in results])
 
-            return combined, data_ends[0]
-        else:
-            raise RuntimeError("Not root process")
+        return combined, data_ends[0]
 
     def compute_followup_data(self, ifos, triggers, data_readers, bank,
                               followup_ifos=None, recalculate_ifar=False):
