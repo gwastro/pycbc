@@ -583,9 +583,7 @@ class Workflow(object):
                     # There was no storage path
                     pass
 
-        if not (submit_now or plan_now):
-            self._adag.write(filename)
-
+        self._adag.write(filename)
         if not self.in_workflow:
             if submit_now or plan_now:
                 self.plan_and_submit(submit_now=submit_now)
@@ -611,6 +609,7 @@ class Workflow(object):
                     # --dir is not being set here because it might be easier to
                     # set this in submit_dax still?
                     f.write('-vvv ')
+                    f.write('--dax {}'.format(filename))
 
     def plan_and_submit(self, submit_now=True):
         """ Plan and submit the workflow now.
@@ -647,7 +646,13 @@ class Workflow(object):
         planner_args['staging_sites'] = self.staging_site
 
         # Make tmpdir for submitfiles
-        submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_')
+        # default directory is the system default, but is overrideable
+        # This should probably be moved to core.py?
+        submit_opts = 'pegasus_profile', 'pycbc|submit-directory'
+        submit_dir = None
+        if self.cp.has_option(*submit_opts):
+            submit_dir = self.cp.get(*submit_opts)
+        submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_', dir=submit_dir)
         os.chmod(submitdir, 0o755)
         try:
             os.remove('submitdir')

@@ -36,17 +36,13 @@ jobs:
       run: bash -e examples/search/bank.sh
     - name: generating statistic files
       run: bash -e examples/search/stats.sh
-    - name: generating workflow
+    - name: running workflow
       run: |
         cp examples/search/*.ini ./
         bash -e examples/search/gen.sh
         cp *.gwf output/
-    - name: running workflow
-      run: |
-        condor_status
         cd output
         bash -e ../examples/search/submit.sh
-        ./status
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
