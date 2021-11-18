@@ -4,9 +4,11 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     strategy:
-        max-parallel: 60
+      max-parallel: 60
+      matrix:
+        os: [ubuntu-20.04]
         test-type: [simple_subworkflow_data, multilevel_subworkflow_data]
     steps:
     - uses: actions/checkout@v1
