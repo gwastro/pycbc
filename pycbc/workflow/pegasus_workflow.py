@@ -550,38 +550,27 @@ class Workflow(object):
                 path += [v.in_workflow]
                 v = v.in_workflow
             return path
-        
-        for inp in self._swinputs: 
+
+        for inp in self._swinputs:
             workflow_root = root_path(self)
             input_root = root_path(inp.node.in_workflow)
             for step in workflow_root:
                 if step in input_root:
                     common = step
                     break
-              
-            # Set our needed file as output so that it gets staged upwards    
-            # to a workflow that contains the job which needs it.    
+
+            # Set our needed file as output so that it gets staged upwards
+            # to a workflow that contains the job which needs it.
             for wf in input_root[:input_root.index(common)]:
-                print("OUT", inp, wf.name)
                 if inp not in wf._as_job.get_outputs():
                     wf._as_job.add_outputs(inp, stage_out=False)
-                    
-                    #if inp.storage_path is None:
-                    #    raise ValueError("Any file that is used between "
-                    #                     "workflows must have a storage "
-                    #                     "path.")
-                    # Ensure this output gets written to the explicit
-                    # output mapper file for each level of the workflow
-                    #if inp not in wf._outputs:
-                    #    wf._outputs.append(inp)
-            
-            # Set out needed file so it gets staged downwards towards the 
+
+            # Set out needed file so it gets staged downwards towards the
             # job that needs it.
             for wf in workflow_root[:workflow_root.index(common)]:
-                print("IN", inp, wf.name)
                 if inp not in wf._as_job.get_inputs():
                     wf._as_job.add_inputs(inp)
-            
+
         for wf in self.sub_workflows:
             wf.traverse_workflow_io()
 
@@ -594,13 +583,12 @@ class Workflow(object):
 
         if output_map_path is None:
             output_map_path = 'output.map'
-        
+
         # Handle setting up io for inter-workflow file use ahead of time
         # so that when daxes are saved the metadata is complete
-        if root:            
+        if root:
             self.traverse_workflow_io()
-                
-            
+
         for sub in self.sub_workflows:
             sub.save(root=False)
             # FIXME: If I'm now putting output_map here, all output_map stuff
