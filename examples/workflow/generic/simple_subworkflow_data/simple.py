@@ -7,6 +7,7 @@ import os
 
 pycbc.init_logging(True)
 parser = argparse.ArgumentParser(description=__doc__[1:])
+parser.add_argument("--multilevel", action='store_true', default=False)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
@@ -21,7 +22,7 @@ sub2 = wf.Workflow(args, 'sub2')
 
 exe1 = wf.Executable(cont.cp, 'exe1')
 
-SUBSUB = True
+SUBSUB = args.multilevel
 
 # Subworkflow 1: generate file that will be needed later
 
