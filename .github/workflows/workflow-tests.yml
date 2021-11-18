@@ -38,6 +38,7 @@ jobs:
     - name: running workflow
       run: |
         cd examples/workflow/generic/${{matrix.test-type}}
+        bash -e run.sh
         python ../../../../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
