@@ -342,8 +342,9 @@ class ComovingVolInterpolator(object):
         The maximum z to interpolate up to before falling back to calling
         astropy directly. Default is 10.
     numpoints : int, optional
-        The number of points to use in the linear interpolation between 0 to 1
-        and 1 to ``default_maxz``. Default is 1000.
+        The number of points to use in the linear interpolation between 1 to
+         ``default_maxz``. Default is 1000. For the linear interpolation 
+         between 0 to 1, the number of points is 0.5*numpoints.
     vol_func: function, optional
         Optionally set how the volume is calculated by providing a function
     \**kwargs :
@@ -371,8 +372,12 @@ class ComovingVolInterpolator(object):
     def _create_interpolant(self, minz, maxz):
         minlogv = numpy.log(self.vol_func(minz).value)
         maxlogv = numpy.log(self.vol_func(maxz).value)
-        logvs = numpy.linspace(minlogv, maxlogv, num=self.numpoints)
-        zs = z_at_value(self.vol_func, numpy.exp(logvs), self.vol_units)
+        if maxz <= 1:
+            logvs = numpy.linspace(minlogv, maxlogv, num=int(self.numpoints/2))
+        else:
+            logvs = numpy.linspace(minlogv, maxlogv, num=self.numpoints)
+
+        zs = z_at_value(self.vol_func, numpy.exp(logvs), self.vol_units, maxz)
 
         if self.parameter != 'redshift':
             ys = cosmological_quantity_from_redshift(zs, self.parameter)
@@ -389,7 +394,7 @@ class ComovingVolInterpolator(object):
         maxz = 1.
         self.nearby_interp = self._create_interpolant(minz, maxz)
         # for computing far away (z > 1) redshifts
-        minz = 1.
+        minz = 1.001
         maxz = self.default_maxz
         self.faraway_interp = self._create_interpolant(minz, maxz)
         # store the default maximum volume
