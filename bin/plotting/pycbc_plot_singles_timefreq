@@ -92,7 +92,7 @@ median_psd_tile = np.tile(np.array([median_psd]).T, (1, len(t)))
 del median_psd
 Pxx /= median_psd_tile
 del median_psd_tile
-norm = LogNorm(vmin=1, vmax=100)
+norm = LogNorm(vmin=1, vmax=1000)
 pc = ax.pcolormesh(t + opts.gps_start_time - center_time, freq, Pxx,
                    norm=norm, cmap='afmhot_r')
 del freq, Pxx
