@@ -111,7 +111,6 @@ else:
     tcount = False
 
 nabove = fits['count_above_thresh'][:]
-nabove = nabove/np.mean(nabove)
 if tcount: ntotal = fits['count_in_template'][:]
 # for an exponential fit 1/alpha is linear in the trigger statistic values
 # so taking weighted sums/averages of 1/alpha is appropriate
