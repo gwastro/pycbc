@@ -26,7 +26,7 @@ python-ligo-lw >= 1.7.0
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
 dynesty
-epsie>=0.6
+epsie==0.7.1
 
 # For LDG service access
 dqsegdb2>=1.0.1
