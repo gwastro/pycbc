@@ -1,7 +1,8 @@
-import pylab
+import matplotlib.pyplot as pp
 from pycbc.waveform import get_td_waveform
 
-for apx in ['SEOBNRv2', 'IMRPhenomC']:
+
+for apx in ['SEOBNRv4', 'IMRPhenomD']:
     hp, hc = get_td_waveform(approximant=apx,
                                  mass1=10,
                                  mass2=10,
@@ -9,9 +10,9 @@ for apx in ['SEOBNRv2', 'IMRPhenomC']:
                                  delta_t=1.0/4096,
                                  f_lower=40)
 
-    pylab.plot(hp.sample_times, hp, label=apx)
+    pp.plot(hp.sample_times, hp, label=apx)
 
-pylab.ylabel('Strain')
-pylab.xlabel('Time (s)')
-pylab.legend()
-pylab.show()
+pp.ylabel('Strain')
+pp.xlabel('Time (s)')
+pp.legend()
+pp.show()
