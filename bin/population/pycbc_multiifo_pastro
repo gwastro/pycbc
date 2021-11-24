@@ -17,9 +17,9 @@ use('Agg')
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
 
-import pycbc.population as poputils
+from pycbc.population import fgmc_functions as utils
+from pycbc.population import fgmc_laguerre as fgmcl
 from pycbc.population import fgmc_plots
-#import pycbc.population.fgmc_laguerre as fgmcl
 
 
 rcParams.update({'axes.labelsize': 12,
@@ -73,7 +73,7 @@ parser.add_argument('--max-mchirp', type=float, required=True,
 parser.add_argument('--power-law-prior', default=-0.5, type=float,
                     help='Power-law prior on foreground count parameter, '
                          'default -0.5 ("Jeffreys")')
-parser.add_argument('--laguerre-degree', required=True, type=int, default=20,
+parser.add_argument('--laguerre-degree', type=int, default=20,
                     help='Degree of polynomial used for generalized L-G quadrature')
 parser.add_argument('--ntop', type=int, default=15,
                     help='Number of loudest events listed, default 15')
@@ -122,11 +122,11 @@ zl_inputs = zip(args.full_data_files, args.bank_files)
 
 if args.verbose:
     print('Setting up zerolag')
-fg = poputils.ForegroundEvents(args, args.coinc_times,
+fg = utils.ForegroundEvents(args, args.coinc_times,
                             bin_lo=args.min_mchirp, bin_hi=args.max_mchirp)
 if args.verbose:
     print('Setting up background')
-bg = poputils.BackgroundEventRate(args, args.coinc_times,
+bg = utils.BackgroundEventRate(args, args.coinc_times,
                                bin_lo=args.min_mchirp, bin_hi=args.max_mchirp)
 
 for fd, b in zl_inputs:
@@ -163,7 +163,7 @@ if args.verbose:
     print('Total expected bg count ' + str(bg.norm))
     print('Actual zerolag event count ' + str(len(fg.stat)))
 inj_inputs = zip(args.injection_files, args.bank_files, args.full_data_files)
-sg = poputils.SignalEventRate(args, args.coinc_times,
+sg = utils.SignalEventRate(args, args.coinc_times,
                            bin_lo=args.min_mchirp, bin_hi=args.max_mchirp)
 
 for jf, b, fd in inj_inputs:
@@ -249,20 +249,20 @@ else:  # no prior events!
                   'bayes_factor': np.array([])}
 
 # do the calculation
-foreground_count_distribution = \
-      poputils.count_posterior(allfgbg, laguerre_n=args.laguerre_degree,
-                               Lambda0=bg.norm, name='foreground count posterior',
-                               prior=args.power_law_prior)
+foreground_count_dist = \
+      fgmcl.count_posterior(allfgbg, laguerre_n=args.laguerre_degree,
+                            Lambda0=bg.norm, name='foreground count posterior',
+                            prior=args.power_law_prior)
 
 # Roulet et al. argue that information on rate scales with sum (p_astro^2)
 if args.verbose:
-    print('sum of p_astro^2', ((1 - foreground_count_distribution.p_bg(allfgbg)) ** 2.).sum())
+    print('sum of p_astro^2', ((1 - foreground_count_dist.p_bg(allfgbg)) ** 2.).sum())
 
 fgmc_plots.odds_summary(
     args,
     np.append(fg.stat, prior_info['stat']),
     np.append(fg.ifar, prior_info['ifar']),
-    foreground_count_distribution.p_bg(allfgbg),
+    foreground_count_dist.p_bg(allfgbg),
     args.ntop,
     times=np.append(fg.gpst, prior_info['gps']),
     name='foreground events',
@@ -272,7 +272,7 @@ fgmc_plots.odds_summary(
 args.plot_limits = None
 cmed, cminus, cplus = fgmc_plots.dist_summary(
     args,
-    foreground_count_distribution,
+    foreground_count_dist,
     plot_extensions=['.png'],
     middle='median',
     credible_intervals=[0.90],
@@ -291,11 +291,11 @@ if args.vt_mean:
     import rate_functions
     fracerr = args.vt_err / args.vt_mean
     # attr that can arbitrarily rescale counts in rate calculation : don't do this
-    foreground_count_distribution.scale = 1.
+    foreground_count_dist.scale = 1.
     # we want a Jeffreys type prior: this is already supplied by the default value
     # of the --power-law-prior option (see above) so leave a uniform prior on rate
     rate_distribution = \
-        rate_functions.rate_posterior(foreground_count_distribution, args.vt_mean,
+        rate_functions.rate_posterior(foreground_count_dist, args.vt_mean,
                                       fracerr, unit=args.rate_units, texunit='')
     median, minus, plus = fgmc_plots.dist_summary(args, rate_distribution,
           plot_extensions=None, credible_intervals=[0.9])
@@ -308,7 +308,7 @@ elif args.vt_err:
 # if injections are to be evaluated 'like zerolag', read them in
 if args.rank_injections:
     assert args.p_astro_inj is not None
-    inj = poputils.ForegroundEvents(args, args.coinc_times,
+    inj = utils.ForegroundEvents(args, args.coinc_times,
                                  bin_lo=args.min_mchirp, bin_hi=args.max_mchirp)
 
     # assume that we use the same bank all through
@@ -370,7 +370,7 @@ if args.rank_injections:
         plt.close()
 
     # evaluate p_astro using zerolag signal rate
-    inj_pbg = foreground_count_distribution.p_bg(injfgbg)
+    inj_pbg = foreground_count_dist.p_bg(injfgbg)
 
     # make a special txt format output file
     np.savetxt(args.p_astro_inj,
