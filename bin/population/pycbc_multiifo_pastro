@@ -8,8 +8,8 @@
 # option) any later version.
 
 
-from __future__ import division
 import argparse
+import logging
 import numpy as np
 
 from matplotlib import use
@@ -17,6 +17,7 @@ use('Agg')
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
 
+from pycbc import init_logging
 from pycbc.population import fgmc_functions as utils
 from pycbc.population import fgmc_laguerre as fgmcl
 from pycbc.population import fgmc_plots
@@ -30,8 +31,11 @@ rcParams.update({'axes.labelsize': 12,
                  'text.usetex': True,
                 })
 
+
 parser = argparse.ArgumentParser()
-parser.add_argument('--verbose', action='store_true', default=False)
+parser.add_argument('-V', '--verbose', action='store_true', default=False)
+parser.add_argument('--diagnostic-plots', action='store_true', default=False,
+                    help='Make extra diagnostic scatter plots')
 parser.add_argument('--full-data-files', nargs='+',
                     help='hdf5 file(s) (space-separated) containing zerolag events'
                          'and (decimated/undecimated) timeslide background')
@@ -97,15 +101,19 @@ parser.add_argument('--plot-bg-hist', action='store_true',
                     help='Make diagnostic background PDF plots')
 parser.add_argument('--plot-inj-hist', action='store_true',
                     help='Make diagnostic injection PDF plots')
-parser.add_argument('--plot-dir', required=True)
+parser.add_argument('--plot-dir', required=True, help='Destination for plots, '
+                    'must include final "/"')
 parser.add_argument('--plot-tag', help='String for plot filenames')
 
 args = parser.parse_args()
+
 assert args.plot_dir.endswith('/')
 if args.bg_bin_width is not None and args.bg_log_bin_width is not None:
     raise RuntimeError("Can't have both linear and log background bins!")
 if args.inj_bin_width is not None and args.inj_log_bin_width is not None:
     raise RuntimeError("Can't have both linear and log injection bins!")
+
+init_logging(args.verbose)
 
 # prepare to read in zerolag and background data
 nchunks = len(args.full_data_files)
@@ -120,29 +128,26 @@ if len(args.bank_files) != nchunks:
 tot_exp_bg = 0
 zl_inputs = zip(args.full_data_files, args.bank_files)
 
-if args.verbose:
-    print('Setting up zerolag')
+logging.info('Setting up zerolag')
 fg = utils.ForegroundEvents(args, args.coinc_times,
                             bin_lo=args.min_mchirp, bin_hi=args.max_mchirp)
-if args.verbose:
-    print('Setting up background')
+
+logging.info('Setting up background')
 bg = utils.BackgroundEventRate(args, args.coinc_times,
                                bin_lo=args.min_mchirp, bin_hi=args.max_mchirp)
 
 for fd, b in zl_inputs:
-    if args.verbose:
-        print('Adding bank info from ' + b)
+    logging.info('Adding bank info from ' + b)
     fg.add_bank(b)
     fg.filter_templates()
     bg.add_bank(b)
     bg.filter_templates()
 
-    if args.verbose:
-        print('Adding event info from ' + fd)
+    logging.info('Adding event info from ' + fd)
     fg.add_zerolag(fd)
     bg.add_background(fd)
 
-if args.verbose:
+if args.diagnostic_plots:
     plt.plot(fg.stat, fg.masspars, '+b', ms=3)
     plt.grid(True)
     plt.ylim(ymax=1.1 * fg.masspars.max())
@@ -159,16 +164,16 @@ if args.plot_bg_hist:
 
 # normalize and count expected bg events
 bg.get_norms()
-if args.verbose:
-    print('Total expected bg count ' + str(bg.norm))
-    print('Actual zerolag event count ' + str(len(fg.stat)))
+logging.info('Total expected bg count ' + str(bg.norm))
+logging.info('Actual zerolag event count ' + str(len(fg.stat)))
+
+# Read signal (injection) data
 inj_inputs = zip(args.injection_files, args.bank_files, args.full_data_files)
 sg = utils.SignalEventRate(args, args.coinc_times,
                            bin_lo=args.min_mchirp, bin_hi=args.max_mchirp)
 
 for jf, b, fd in inj_inputs:
-    if args.verbose:
-        print('Adding inj info from' + jf)
+    logging.info('Adding inj info from' + jf)
     sg.add_bank(b)
     sg.filter_templates()
     sg.add_injections(jf, fd)
@@ -177,8 +182,7 @@ if args.plot_inj_hist:
     sg.plot_inj()
 
 sg.get_norms()
-if args.verbose:
-    print('Total number of inj used ' + str(sg.norm))
+logging.info('Total number of inj used ' + str(sg.norm))
 
 fg.get_bg_pdf(bg)
 fg.get_sg_pdf(sg)
@@ -186,7 +190,7 @@ fg.get_sg_pdf(sg)
 allfgbg = fg.sg_pdf - fg.bg_pdf
 
 # make diagnostic plots
-if args.verbose:
+if args.diagnostic_plots:
     print('ln Bayes factors from', min(allfgbg), max(allfgbg))
     col = {'H1L1': 'r', 'H1L1V1': 'b', 'H1V1': 'm', 'L1V1': 'g'}
     for cty in col:
@@ -239,7 +243,7 @@ if args.verbose:
 
 # add in prior event info
 if args.prior_event_info:
-    print('Adding events from', args.prior_event_info)
+    logging.warn('Adding events from', args.prior_event_info)
     prior_info = np.genfromtxt(args.prior_event_info, names=True)
     allfgbg = np.append(allfgbg, prior_info['ln_bayes_factor'])
 else:  # no prior events!
@@ -255,8 +259,8 @@ foreground_count_dist = \
                             prior=args.power_law_prior)
 
 # Roulet et al. argue that information on rate scales with sum (p_astro^2)
-if args.verbose:
-    print('sum of p_astro^2', ((1 - foreground_count_dist.p_bg(allfgbg)) ** 2.).sum())
+logging.info('sum of p_astro^2',
+             ((1 - foreground_count_dist.p_bg(allfgbg)) ** 2.).sum())
 
 fgmc_plots.odds_summary(
     args,
@@ -281,10 +285,9 @@ cmed, cminus, cplus = fgmc_plots.dist_summary(
 # if VT and error are provided, convert signal PDF to rate PDF
 if args.vt_mean:
     if args.vt_err is None:
-        print('NB : no VT error provided, will use 0!')
+        logging.warn('NB : no VT error provided, will use 0!')
         args.vt_err = 0.
-    if args.verbose:
-        print('Rate in units of ' + args.rate_units + ' ...')
+    logging.info('Rate in units of ' + args.rate_units + ' ...')
     print('Rate without VT uncertainty :')
     print('%.1f_{-%.1f}^{+%.1f}' % (
         cmed / args.vt_mean, abs(cminus) / args.vt_mean, cplus / args.vt_mean))
@@ -314,13 +317,11 @@ if args.rank_injections:
     # assume that we use the same bank all through
     banks = [args.bank_files[0]] * len(args.rank_injections)
     for i, b in zip(args.rank_injections, banks):
-        if args.verbose:
-            print('Adding bank info from ' + b)
+        logging.info('Adding bank info from ' + b)
         inj.add_bank(b)
         inj.filter_templates()
 
-        if args.verbose:
-           print('Adding event info from ' + i)
+        logging.info('Adding event info from ' + i)
         inj.add_zerolag(i)
 
     # get densities for injections as if zerolag
@@ -329,7 +330,7 @@ if args.rank_injections:
     # Bayes factor for each injection event
     injfgbg = inj.sg_pdf - inj.bg_pdf
 
-    if args.verbose:
+    if args.diagnostic_plots:
         col = {'H1L1': 'r', 'H1L1V1': 'b', 'H1V1': 'm', 'L1V1': 'g'}
         for cty in col:
             in_type = inj.ctype == cty
@@ -382,7 +383,8 @@ if args.rank_injections:
                fmt=['%.3f', '%e', '%e', '%6f', '%.6f'],
                delimiter=',',
                header='geocent_end_time,FAR,IFAR,detection_statistic,p_astro')
-    if args.verbose:
+
+    if args.diagnostic_plots:
         plt.loglog(inj.stat, (1. - inj_pbg) / inj_pbg, 'k.', ms=3)
         plt.grid(True)
         plt.xlabel('Ranking statistic')
@@ -391,6 +393,4 @@ if args.rank_injections:
         plt.savefig(args.plot_dir + 'injection_events_odds.png')
         plt.close()
 
-
-if args.verbose:
-    print('Done!')
+logging.info('Done!')
