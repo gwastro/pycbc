@@ -3,7 +3,7 @@ from pycbc.waveform import get_td_waveform
 from pycbc.detector import Detector
 
 
-apx = 'IMRPhenomD'
+apx = 'SEOBNRv4'
 # NOTE: Inclination runs from 0 to pi, with poles at 0 and pi
 #       coa_phase runs from 0 to 2 pi.
 hp, hc = get_td_waveform(approximant=apx,
