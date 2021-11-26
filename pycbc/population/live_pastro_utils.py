@@ -1,0 +1,88 @@
+from pycbc.population import live_pastro as livepa
+
+def insert_live_pastro_option_group(parser):
+    """ Add low-latency p astro options to the argparser object.
+
+    Parameters
+    ----------
+    parser : object
+        ArgumentParser instance.
+
+    Returns
+    -------
+    live_pastro_group :
+        Argument group object
+    """
+
+    live_pastro_group = parser.add_argument_group('Options for live p_astro ',
+          'calculation.')
+
+    # Only one choice so far, allow for more later
+    live_pastro_group.add_argument('--p-astro-method', choices=
+          ['template_mchirp_bins'])
+    live_pastro_group.add_argument('--p-astro-spec-data', help='File '
+          'containing information to set up p_astro calculation')
+
+    return live_pastro_group
+
+
+def verify_live_pastro_options(args):
+    """ Input check for live p astro options
+
+    Parameters
+    ----------
+    args : argparse Namespace object
+        Populated namespace output by parse_args()
+
+    Returns
+    -------
+    args : argparse Namespace object
+    """
+
+    # Convenience attr do_p_astro
+    if args.p_astro_method is None:
+        args.do_p_astro = False
+    else:
+        args.do_p_astro = True
+
+    if args.do_p_astro and args.p_astro_spec_data is None:
+        raise RuntimeError('Need a p astro data spec file for method %s! ' %
+                           args.p_astro_method)
+
+    return args
+
+
+_read_spec = {
+      'template_mchirp_bins': livepa.read_template_mchirp_bin_data
+}
+
+_read_bank = {
+      'template_mchirp_bins': livepa.read_template_bank_mchirp
+}
+
+_do_calc = {
+      'template_mchirp_bins': livepa.template_mchirp_bin_calc
+}
+
+
+class PAstroData(object):
+    """ Class for managing live p_astro calculation persistent info """
+    def __init__(self, args, bank):
+        """ Describe """
+        if args.do_p_astro:
+            self.do = True
+            self.method = args.p_astro_method
+            self.spec_data = _read_spec[method](args.p_astro_spec_data)
+            self.bank_data = _read_bank[method](self.spec_data, bank)
+        else:
+            self.do = False
+
+
+def do_pastro_calc(padata, trigger_data):
+    """ Describe """
+    if not padata.do:
+        return None
+    method = padata.method
+    p_astro = _do_calc[method](padata, trigger_data)
+    return p_astro
+

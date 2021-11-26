@@ -15,6 +15,8 @@ import os.path
 import itertools
 import platform
 import subprocess
+from matplotlib import use
+use('agg')
 from shutil import which
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
@@ -31,6 +33,7 @@ from pycbc.io.hdf import recursively_save_dict_contents_to_group
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
+from pycbc.population import live_pastro_utils as livepau
 from pycbc import mchirp_area
 from pycbc.detector import ppdets
 
@@ -63,7 +66,7 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
 
 
 class LiveEventManager(object):
-    def __init__(self, output_path, mc_area_args,
+    def __init__(self, output_path, mc_area_args, p_astro_data,
                  use_date_prefix=False,
                  ifar_upload_threshold=None,
                  pval_livetime=None,
@@ -72,6 +75,7 @@ class LiveEventManager(object):
                  run_snr_optimization=False):
         self.path = output_path
         self.mc_area_args = mc_area_args
+        self.padata = p_astro_data
 
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
@@ -342,7 +346,7 @@ class LiveEventManager(object):
                      data_readers, bank):
         """ Perform any followup and save zerolag triggers to a coinc xml file
         """
-        #check for hardware injection
+        # Check for hardware injection
         for ifo in ifos:
             if data_readers[ifo].near_hwinj():
                 coinc_results['HWINJ'] = True
@@ -381,6 +385,7 @@ class LiveEventManager(object):
             low_frequency_cutoff=f_low,
             channel_names=args.channel_name,
             mc_area_args=self.mc_area_args,
+            p_astro_data=self.padata
         )
 
         fname = 'coinc-{}-{}.xml.gz'.format(
@@ -390,7 +395,7 @@ class LiveEventManager(object):
         fname = os.path.join(self.path, fname)
         logging.info('Coincident candidate! Saving as %s', fname)
 
-        # verbally explain some details not obvious from the other info
+        # Verbally explain some details not obvious from the other info
         comment = ('Trigger produced as a {} coincidence. '
                    'FAR is based on all listed detectors.<br />'
                    'Two-detector ranking statistic: {}<br />'
@@ -430,7 +435,6 @@ class LiveEventManager(object):
                 gid
             )
 
-
     def check_singles(self, results, data_reader, psds, f_low):
         active = [k for k in results if results[k] is not None]
         for ifo in active:
@@ -444,7 +448,7 @@ class LiveEventManager(object):
                                              bank, followup_ifos=followup_ifos,
                                              recalculate_ifar=False)
             ifar = single['foreground/ifar']
-            # apply a trials factor of the number of active detectors
+            # Apply a trials factor of the number of active detectors
             ifar /= len(active)
             single['foreground/ifar'] = ifar
 
@@ -455,14 +459,14 @@ class LiveEventManager(object):
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
                                           mc_area_args=self.mc_area_args,
-                                          )
+                                          p_astro_data=self.padata)
 
             fname = 'single-{}-{}-{}.xml.gz'.format(ifo, event.merger_time,
                                                     pycbc.random_string(6))
             fname = os.path.join(self.path, fname)
             logging.info('Single-detector candidate! Saving as %s', fname)
 
-            # verbally explain some details not obvious from the other info
+            # Verbally explain some details not obvious from the other info
             comment = ('Trigger produced as a {0} single. '
                        'FAR is based on {0} only.<br />'
                        'Followup detectors: {1}')
@@ -743,9 +747,12 @@ fft.insert_fft_option_group(parser)
 Coincer.insert_args(parser)
 SingleDetSGChisq.insert_option_group(parser)
 mchirp_area.insert_args(parser)
+livepau.insert_live_pastro_option_group(parser)
+
 args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
+livepau.verify_live_pastro_options(args)
 
 if args.output_background is not None and len(args.output_background) != 2:
     parser.error('--output-background takes two parameters: period and path')
@@ -756,6 +763,7 @@ pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
+padata = livepau.PAstroData(args, args.bank_file)
 
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
@@ -773,13 +781,14 @@ ifos = set(args.channel_name.keys())
 logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
 evnt = LiveEventManager(args.output_path,
+                        mchirp_area.from_cli(args),
+                        padata,
                         use_date_prefix=args.day_hour_output_prefix,
                         ifar_upload_threshold=args.ifar_upload_threshold,
                         pval_livetime=args.pvalue_combination_livetime,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
-                        run_snr_optimization=args.run_snr_optimization,
-                        mc_area_args=mchirp_area.from_cli(args))
+                        run_snr_optimization=args.run_snr_optimization)
 
 # include MPI rank and functional description into proctitle
 task_name = 'root' if evnt.rank == 0 else 'filtering'
