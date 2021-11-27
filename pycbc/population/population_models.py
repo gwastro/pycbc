@@ -364,8 +364,9 @@ def total_rate_upto_redshift(z, merger_rate):
         for redshift in z:
             total_rate.append(
                 scipy_integrate.quad(
-                merger_rate, 0, redshift,
-                epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0])
+                    merger_rate, 0, redshift,
+                    epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0]
+            )
     else:
         raise ValueError("'z' must be 'int', 'float', 'tuple', \
                             'numpy.ndarray' or 'list'.")
@@ -453,6 +454,14 @@ def distance_from_rate(
     float :
         The luminosity distance at the given total rate value.
         In the unit of "Mpc".
+
+    Notes
+    -----
+         The can be used in a population-informed prior for redshift
+         and luminosity distance of CBC sources. When this used in
+         low redshift range, please set `maxz` to the corresponding
+         value and change `npoints` to a much lower value, this function
+         is slow.
     """
 
     cosmology = get_cosmology(**kwargs)
