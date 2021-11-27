@@ -30,6 +30,8 @@ from functools import partial
 import numpy as np
 import scipy.integrate as scipy_integrate
 import scipy.interpolate as scipy_interpolate
+from sympy import init_printing
+init_printing(use_latex=False)
 from sympy import symbols, sqrt, exp, log, integrate, lambdify
 from astropy import units
 from pycbc.cosmology import get_cosmology, ComovingVolInterpolator
