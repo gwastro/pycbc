@@ -26,8 +26,8 @@ This module provides functions for star formation rate, merger rate density,
 and population models of BBH/BNS/NSBH.
 """
 
-import numpy as np
 from functools import partial
+import numpy as np
 import scipy.integrate as scipy_integrate
 import scipy.interpolate as scipy_interpolate
 from sympy import symbols, sqrt, exp, log, integrate, lambdify
@@ -57,7 +57,7 @@ def sfr_grb_2008(z):
     eta = -10
 
     rho_z = rho_local*((1+z)**(3.4*eta) + ((1+z)/5000)**(-0.3*eta) +
-                    ((1+z)/9)**(-3.5*eta))**(1./eta)
+            ((1+z)/9)**(-3.5*eta))**(1./eta)
 
     return rho_z
 
@@ -151,7 +151,7 @@ def diff_lookback_time(z, **kwargs):
 
     cosmology = get_cosmology(**kwargs)
     H0 = cosmology.H0.value * \
-            (3.0856776E+19)**(-1)/(1/24/3600/365*1e-9)  # Gyr^-1
+         (3.0856776E+19)**(-1)/(1/24/3600/365*1e-9)  # Gyr^-1
     dt_dz = 1/H0/(1+z)/sqrt((cosmology.Ode0+cosmology.Om0*(1+z)**3))
     return dt_dz
 
@@ -182,7 +182,7 @@ def p_tau(tau, td_model="inverse"):
         t_ln = 2.9  # Gyr
         sigma_ln = 0.2
         p_t = exp(-(log(tau)-log(t_ln))**2/(2*sigma_ln**2)) / \
-                    (sqrt(2*np.pi)*sigma_ln)
+                 (sqrt(2*np.pi)*sigma_ln)
     elif td_model == "gaussian":
         t_g = 2  # Gyr
         sigma_g = 0.3
@@ -233,16 +233,14 @@ def convolution_trans(sfr, diff_lookback_t, model_td, **kwargs):
     if model_td not in ['log_normal', 'gaussian', 'power_law', 'inverse']:
         raise ValueError("'model_td' must choose from \
         ['log_normal', 'gaussian', 'power_law', 'inverse'].")
-    else: pass
 
-    # Fix the cosmology, set 'z/z_0' to be the only 
+    # Fix the cosmology, set 'z/z_0' to be the only
     # parameter in the symbolic integration.
     diff_lookback_time_z = partial(diff_lookback_t, **kwargs)
     z = symbols('z')
     z_0 = symbols('z_0')
     tau = integrate(diff_lookback_time_z(z), (z, z_0, z))
-    func = sfr(z) * p_tau(tau, model_td) * \
-                diff_lookback_time_z(z)
+    func = sfr(z) * p_tau(tau, model_td) * diff_lookback_time_z(z)
 
     return func
 
@@ -268,7 +266,7 @@ def merger_rate_density(z_array, sfr_func, td_model, rho_local, **kwargs):
     \**kwargs :
         All other keyword args are passed to :py:func:`get_cosmology` to
         select a cosmology. If none provided, will use
-        :py:attr:`DEFAULT_COSMOLOGY`.            
+        :py:attr:`DEFAULT_COSMOLOGY`.
 
     Returns
     -------
@@ -283,14 +281,14 @@ def merger_rate_density(z_array, sfr_func, td_model, rho_local, **kwargs):
     if td_model not in ['log_normal', 'gaussian', 'power_law', 'inverse']:
         raise ValueError("'td_model' must choose from \
         ['log_normal', 'gaussian', 'power_law', 'inverse'].")
-    else: pass
 
     z = symbols('z')
     z_0 = symbols('z_0')
     f_z = np.zeros(len(z_array))
 
-    func_1 = convolution_trans(sfr=sfr_func, diff_lookback_t=diff_lookback_time,
-                        model_td=td_model, **kwargs)
+    func_1 = convolution_trans(
+                sfr=sfr_func, diff_lookback_t=diff_lookback_time,
+                model_td=td_model, **kwargs)
     for i in range(len(z_array)):
         func_2 = lambdify(z, func_1.subs(z_0, z_array[i]), 'scipy')
         f_z[i] = scipy_integrate.quad(
@@ -339,14 +337,14 @@ def coalescence_rate(z_array, rate_den, **kwargs):
     return coalescence_rate_interp
 
 
-def total_rate_upto_redshift(z, coalescence_rate):
+def total_rate_upto_redshift(z, merger_rate):
     r"""Total rate of occurrences out to some redshift.
 
     Parameters
     ----------
     z : int, float, tuple, numpy.ndarray or list
             The redshift.
-    coalescence_rate : scipy.interpolate.interp1d or function
+    merger_rate : scipy.interpolate.interp1d or function
             The coalescence rate. Provided by users or calculated by
             the `coalescence_rate` function.
 
@@ -357,21 +355,24 @@ def total_rate_upto_redshift(z, coalescence_rate):
         unit of "yr^-1".
     """
 
-    if isinstance(z, float) or isinstance(z, int):
-        total_rate = scipy_integrate.quad(coalescence_rate, 0, z,
+    if isinstance(z, (float, int)):
+        total_rate = scipy_integrate.quad(
+                        merger_rate, 0, z,
                         epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0]
-    elif isinstance(z, tuple) or isinstance(z, np.ndarray) or isinstance(z, list):
+    elif isinstance(z, (tuple, np.ndarray, list)):
         total_rate = []
         for redshift in z:
-            total_rate.append(scipy_integrate.quad(coalescence_rate, 0, redshift,
-                        epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0])
-    else: raise ValueError("'z' must be 'int', 'float', 'tuple', \
+            total_rate.append(
+                scipy_integrate.quad(merger_rate, 0, redshift,
+                epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0])
+    else: 
+        raise ValueError("'z' must be 'int', 'float', 'tuple', \
                             'numpy.ndarray' or 'list'.")
 
     return total_rate
 
 
-def average_time_between_signals(z_array, coalescence_rate):
+def average_time_between_signals(z_array, merger_rate):
     r""" This function calculates the average time interval
         of a certain type of CBC source.
 
@@ -379,7 +380,7 @@ def average_time_between_signals(z_array, coalescence_rate):
     ----------
     z_array : numpy.array
             The array of redshift.
-    coalescence_rate : scipy.interpolate.interp1d or function
+    merger_rate : scipy.interpolate.interp1d or function
             The coalescence rate. Provided by users or calculated by
             the `coalescence_rate` function.
 
@@ -390,13 +391,13 @@ def average_time_between_signals(z_array, coalescence_rate):
     """
 
     total_rate = total_rate_upto_redshift(
-            z_array[-1], coalescence_rate)  # yr^-1
+            z_array[-1], merger_rate)  # yr^-1
     average_time = 1./total_rate * 365*24*3600  # s
 
     return average_time
 
 
-def norm_redshift_distribution(z_array, coalescence_rate):
+def norm_redshift_distribution(z_array, merger_rate):
     r""" This function calculates the normalized redshift distribution
         of a certain type of CBC source.
 
@@ -404,7 +405,7 @@ def norm_redshift_distribution(z_array, coalescence_rate):
     ----------
     z_array : numpy.array
             The array of redshift.
-    coalescence_rate : scipy.interpolate.interp1d or function
+    merger_rate : scipy.interpolate.interp1d or function
             The coalescence rate. Provided by users or calculated by
             the `coalescence_rate` function.
 
@@ -419,26 +420,26 @@ def norm_redshift_distribution(z_array, coalescence_rate):
          and luminosity distance of CBC sources.
     """
 
-    lambd = average_time_between_signals(z_array, coalescence_rate)
-    norm_coalescence_rate = lambd/(365*24*3600) * coalescence_rate(z_array)
+    lambd = average_time_between_signals(z_array, merger_rate)
+    norm_coalescence_rate = lambd/(365*24*3600) * merger_rate(z_array)
 
     return norm_coalescence_rate
 
 
-def distance_from_rate(total_rate, coalescence_rate, maxz=10, npoints=7000, **kwargs):
+def distance_from_rate(total_rate,merger_rate,maxz=10,npoints=7000,**kwargs):
     r"""Returns the luminosity distance from the given total rate value.
 
     Parameters
     ----------
     total_rate : float
         The total rate.
-    coalescence_rate : scipy.interpolate.interp1d or function
+    merger_rate : scipy.interpolate.interp1d or function
             The coalescence rate. Provided by users or calculated by
             the `coalescence_rate` function.
     maxz : float
         The max redshift in the interpolation, the default value is 10.
     npoints : int
-        The number of points used in the interpolation, the default value 
+        The number of points used in the interpolation, the default value
         is 1000.
     \**kwargs :
         All other keyword args are passed to :py:func:`get_cosmology` to
@@ -453,18 +454,18 @@ def distance_from_rate(total_rate, coalescence_rate, maxz=10, npoints=7000, **kw
     """
 
     cosmology = get_cosmology(**kwargs)
-    if not hasattr(coalescence_rate, 'dist_interp'):
-        coalescence_rate.dist_interp = {}
+    if not hasattr(merger_rate, 'dist_interp'):
+        merger_rate.dist_interp = {}
 
-    if cosmology.name not in coalescence_rate.dist_interp:
+    if cosmology.name not in merger_rate.dist_interp:
         def rate_func(redshift):
             return total_rate_upto_redshift(
-                redshift, coalescence_rate) * (units.yr)**(-1)
+                redshift, merger_rate) * (units.yr)**(-1)
 
-        coalescence_rate.dist_interp[cosmology.name] = ComovingVolInterpolator(
+        merger_rate.dist_interp[cosmology.name] = ComovingVolInterpolator(
                 default_maxz=maxz, numpoints=npoints, cosmology=cosmology,
-                parameter = 'luminosity_distance', vol_func=rate_func)
-    return coalescence_rate.dist_interp[cosmology.name](total_rate)
+                parameter='luminosity_distance', vol_func=rate_func)
+    return merger_rate.dist_interp[cosmology.name](total_rate)
 
 
 __all__ = ['sfr_grb_2008', 'sfr_madau_dickinson_2014',

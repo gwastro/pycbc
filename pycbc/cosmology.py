@@ -343,7 +343,7 @@ class ComovingVolInterpolator(object):
         astropy directly. Default is 10.
     numpoints : int, optional
         The number of points to use in the linear interpolation between 1 to
-         ``default_maxz``. Default is 1000. For the linear interpolation 
+         ``default_maxz``. Default is 1000. For the linear interpolation
          between 0 to 1, the number of points is 0.5*numpoints.
     vol_func: function, optional
         Optionally set how the volume is calculated by providing a function
