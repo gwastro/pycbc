@@ -394,7 +394,7 @@ class ComovingVolInterpolator(object):
         maxz = 1.
         self.nearby_interp = self._create_interpolant(minz, maxz)
         # for computing far away (z > 1) redshifts
-        minz = 1.001
+        minz = 1.
         maxz = self.default_maxz
         self.faraway_interp = self._create_interpolant(minz, maxz)
         # store the default maximum volume
