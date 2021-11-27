@@ -1,4 +1,4 @@
-name: run small search using pegasus + condor
+name: run small inference workflow using pegasus + condor
 
 on: [push, pull_request]
 
@@ -30,19 +30,17 @@ jobs:
         python -m pip install --upgrade pip setuptools
         pip install -r requirements.txt
         pip install .
-    - name: retrieving frame data
-      run: bash -e examples/search/get.sh
-    - name: generating template bank
-      run: bash -e examples/search/bank.sh
-    - name: generating statistic files
-      run: bash -e examples/search/stats.sh
-    - name: running workflow
+    - name: retrieving data
+      run: bash -e examples/inference/single/get.sh
+    - name: generating, submitting and running workflow
       run: |
-        cp examples/search/*.ini ./
-        bash -e examples/search/gen.sh
-        cp *.gwf output/
-        cd output
+        cp examples/inference/single/single.ini ./
+        cp examples/workflow/inference/small_test/*.ini ./
+        bash -e examples/workflow/inference/small_test/gen.sh
+        condor_status
+        cd gw_output
         bash -e ../examples/search/submit.sh
+        ./status
         python ../examples/search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
@@ -50,7 +48,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: logs
-        path: output/submitdir/work
+        path: gw_output/submitdir/work
     - name: store result page
       uses: actions/upload-artifact@v2
       with:

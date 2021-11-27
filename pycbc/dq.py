@@ -51,9 +51,8 @@ def parse_veto_definer(veto_def_filename, ifos):
         Returns a dictionary first indexed by ifo, then category level, and
         finally a list of veto definitions.
     """
-    from ligo.lw import table, lsctables, utils as ligolw_utils
-    from ligo.lw.ligolw import LIGOLWContentHandler as h
-    lsctables.use_in(h)
+    from ligo.lw import table, utils as ligolw_utils
+    from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     data = {}
     for ifo_name in ifos:

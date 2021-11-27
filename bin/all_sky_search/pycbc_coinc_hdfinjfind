@@ -4,19 +4,15 @@ files.
 """
 
 import argparse, h5py, logging, types, numpy, os.path
-from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
+from ligo.lw import table, lsctables, utils as ligolw_utils
 from ligo import segments
 from pycbc import events
 from pycbc.events import indices_within_segments
 from pycbc.types import MultiDetOptionAction
 from pycbc.inject import CBCHDFInjectionSet
 import pycbc.version
+from pycbc.io.ligolw import LIGOLWContentHandler
 
-
-# dummy class needed for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(LIGOLWContentHandler)
 
 def hdf_append(f, key, value):
     if key in f:

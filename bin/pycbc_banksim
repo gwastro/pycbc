@@ -24,11 +24,6 @@ from numpy import complex64, array
 from argparse import ArgumentParser
 from ligo.lw import utils as ligolw_utils
 from ligo.lw import table, lsctables
-from ligo.lw.ligolw import LIGOLWContentHandler
-class mycontenthandler(LIGOLWContentHandler):
-    pass
-lsctables.use_in(mycontenthandler)
-
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
 from pycbc.pnutils import nearest_larger_binary_number
@@ -37,6 +32,7 @@ from pycbc.waveform.utils import taper_timeseries
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, TimeSeries, zeros, complex_same_precision_as
 from pycbc.filter import match, sigmasq
+from pycbc.io.ligolw import LIGOLWContentHandler
 from math import ceil, log
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain, pycbc.version
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
@@ -289,7 +285,7 @@ logging.info("  %d templates", len(template_table))
 
 logging.info('Reading simulation list')
 indoc = ligolw_utils.load_filename(options.sim_file, False,
-                                   contenthandler=mycontenthandler)
+                                   contenthandler=LIGOLWContentHandler)
 try:
     signal_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
 except ValueError:

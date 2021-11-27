@@ -29,11 +29,10 @@ import logging
 import argparse
 import copy
 import numpy
-from pycbc.results import save_fig_with_metadata
 # TODO: imports to fix/remove
 try:
     from ligo import segments
-    from ligo.lw import utils, lsctables, ligolw, table
+    from ligo.lw import utils, lsctables, table
 except ImportError:
     pass
 try:
@@ -53,6 +52,8 @@ if 'matplotlib.backends' not in sys.modules:  # nopep8
     matplotlib.use('agg')
 from matplotlib import rc
 from matplotlib import pyplot as plt
+from pycbc.results import save_fig_with_metadata
+from pycbc.io.ligolw import LIGOLWContentHandler
 
 
 # =============================================================================
@@ -351,8 +352,7 @@ def load_xml_file(filename):
     """Wrapper to ligolw's utils.load_filename"""
 
     xml_doc = utils.load_filename(filename, gz=filename.endswith("gz"),
-                                  contenthandler=lsctables.use_in(
-                                      ligolw.LIGOLWContentHandler))
+                                  contenthandler=LIGOLWContentHandler)
 
     return xml_doc
 

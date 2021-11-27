@@ -26,8 +26,8 @@ def start_end_from_segments(segment_file):
     start: numpy.ndarray
     end: numpy.ndarray
     """
-    from ligo.lw.ligolw import LIGOLWContentHandler as h
-    lsctables.use_in(h)
+    from pycbc.io.ligolw import LIGOLWContentHandler as h
+
     indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=h)
     segment_table  = table.get_table(indoc, lsctables.SegmentTable.tableName)
     start = numpy.array(segment_table.getColumnByName('start_time'))
@@ -106,7 +106,8 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
     -------
     seg: list of segments
     """
-    from ligo.lw.ligolw import LIGOLWContentHandler as h; lsctables.use_in(h)
+    from pycbc.io.ligolw import LIGOLWContentHandler as h
+
     indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=h)
     segment_table  = table.get_table(indoc, 'segment')
 
@@ -201,11 +202,7 @@ def indices_outside_segments(times, segment_files, ifo=None, segment_name=None):
 def get_segment_definer_comments(xml_file, include_version=True):
     """Returns a dict with the comment column as the value for each segment"""
 
-    from ligo.lw.ligolw import LIGOLWContentHandler as h
-    from pycbc.io.ligolw import legacy_row_id_converter
-
-    lsctables.use_in(h)
-    legacy_row_id_converter(h)
+    from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     # read segment definer table
     xmldoc = ligolw_utils.load_fileobj(xml_file,

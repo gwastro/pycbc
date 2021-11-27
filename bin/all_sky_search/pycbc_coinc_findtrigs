@@ -109,6 +109,10 @@ def exit_cleaning():
             pass
 atexit.register(exit_cleaning)
 
+# If some templates have no triggers one or more ifos, there can be no
+# coincs: so, track which templates contain triggers in all ifos
+tids_with_trigs = None
+
 for i in range(len(args.trigger_files)):
     if args.stage_input:
         dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + '.hdf')
@@ -127,6 +131,14 @@ for i in range(len(args.trigger_files)):
                             args.gating_veto_windows)
     ifo = reader.ifo
     trigs.ifos.append(ifo)
+    
+    # We don't have that many triggers, see if we can skip some templates
+    if len(reader.file[ifo]['template_id']) < 2**27:
+        uniq = numpy.unique(reader.file[ifo]['template_id'][:])
+        if tids_with_trigs is None:
+            tids_with_trigs = numpy.arange(0, num_templates)
+        tids_with_trigs = numpy.intersect1d(tids_with_trigs, uniq)
+
     # time shift is subtracted from pivot ifo time
     trigs.to_shift.append(-1 if ifo == args.pivot_ifo else 0)
     logging.info('Applying time shift multiple %i to ifo %s' %
@@ -162,6 +174,10 @@ if args.randomize_template_order:
     template_ids = template_ids[tmin:tmax]
 else:
     template_ids = range(tmin, tmax)
+
+# Only analyze templates which might have coincs
+if tids_with_trigs is not None:
+    template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
 
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and

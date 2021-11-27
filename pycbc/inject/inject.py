@@ -30,6 +30,7 @@ import numpy as np
 import lal
 import copy
 import logging
+from six import add_metaclass
 from abc import ABCMeta, abstractmethod
 import lalsimulation as sim
 import h5py
@@ -43,29 +44,14 @@ from pycbc.detector import Detector
 from pycbc.conversions import tau0_from_mass1_mass2
 from pycbc.filter import resample_to_delta_t
 import pycbc.io
-from pycbc.io.ligolw import legacy_row_id_converter \
-        as legacy_ligolw_row_id_converter
+from pycbc.io.ligolw import LIGOLWContentHandler
+from ligo.lw import utils as ligolw_utils, ligolw, table, lsctables
 
-from six import add_metaclass
 
 injection_func_map = {
     np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
     np.dtype(float64): sim.SimAddInjectionREAL8TimeSeries
 }
-
-
-#
-# Remove everything between the dashed lines once we get rid of xml
-# -----------------------------------------------------------------------------
-#
-from ligo.lw import utils as ligolw_utils
-from ligo.lw import ligolw, table, lsctables
-
-# dummy class needed for loading LIGOLW files
-@legacy_ligolw_row_id_converter
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 
 # Map parameter names used in pycbc to names used in the sim_inspiral

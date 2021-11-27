@@ -12,19 +12,23 @@ most use cases. You can override individual details here. It should also be
 possible to implement a new site, but not sure how that would work in practice.
 """
 
-import os
+import os.path
+import tempfile
 import distutils
 import urllib.parse
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
-from Pegasus.api import Arch, OS
+from Pegasus.api import Arch, OS, SiteCatalog
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
 # We can add schemes explicitly, as below, but be careful with this!
 urllib.parse.uses_relative.append('gsiftp')
 urllib.parse.uses_netloc.append('gsiftp')
+
+KNOWN_SITES = ['local', 'condorpool_symlink',
+               'condorpool_copy', 'condorpool_shared', 'osg']
 
 
 def add_site_pegasus_profile(site, cp):
@@ -220,7 +224,20 @@ def add_osg_site(sitecat, cp):
 
 def add_site(sitecat, sitename, cp, out_dir=None):
     """Add site sitename to sitecatalog"""
-    if out_dir is None:
+    # Allow local site scratch to be overriden for any site which uses it
+    sec = 'pegasus_profile-{}'.format(sitename)
+    opt = 'pycbc|site-scratch'
+    if cp.has_option(sec, opt):
+        out_dir = os.path.abspath(cp.get(sec, opt))
+        if cp.has_option(sec, 'pycbc|unique-scratch'):
+            scratchdir = tempfile.mkdtemp(prefix='pycbc-tmp_', dir=out_dir)
+            os.chmod(scratchdir, 0o755)
+            try:
+                os.symlink(scratchdir, '{}-site-scratch'.format(sitename))
+            except OSError:
+                pass
+            out_dir = scratchdir
+    elif out_dir is None:
         out_dir = os.getcwd()
     local_url = urljoin('file://', pathname2url(out_dir))
     if sitename == 'local':
@@ -235,3 +252,11 @@ def add_site(sitecat, sitename, cp, out_dir=None):
         add_osg_site(sitecat, cp)
     else:
         raise ValueError("Do not recognize site {}".format(sitename))
+
+
+def make_catalog(cp, out_dir):
+    """Make combined catalog of built-in known sites"""
+    catalog = SiteCatalog()
+    for site in KNOWN_SITES:
+        add_site(catalog, site, cp, out_dir=out_dir)
+    return catalog

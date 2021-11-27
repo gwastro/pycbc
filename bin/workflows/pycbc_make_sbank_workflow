@@ -165,7 +165,7 @@ class CombineHDFBanksExecutable(wf.Executable):
 ##############################################################################
 
 
-# Use the standard workflow command-line parsing routines. Things like a 
+# Use the standard workflow command-line parsing routines. Things like a
 # configuration file are specified within the "workflow command line group"
 # so run this with --help to see what options are added.
 _desc = __doc__[1:]
@@ -182,12 +182,8 @@ wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 # Create the workflow object
-workflow = wf.Workflow(args) 
-
-if not args.is_sub_workflow:
-    wf.makedir(args.output_dir)
-    os.chdir(args.output_dir)
-    args.output_dir = '.'
+workflow = wf.Workflow(args)
+wf.makedir(args.output_dir)
 
 ##############################################################################
 # Do I have a seed bank provided and will this be used for chirp mass        #
@@ -197,7 +193,7 @@ if not args.is_sub_workflow:
 seed_file = None
 bins_inp_file = None
 if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
-    # If a seed bank is provided register it as a File object 
+    # If a seed bank is provided register it as a File object
     seed_banks = workflow.cp.get_opt_tags('workflow', 'seed-bank', args.tags)
     seed_banks = seed_banks.split(' ')
     if len(seed_banks) == 0:
@@ -207,11 +203,7 @@ if workflow.cp.has_option_tags('workflow', 'seed-bank', args.tags):
         # NOTE: Be careful that the seed-file will not exist when the
         #       dax file is generated if this is a sub-workflow.
         #       Don't run anything that assumes it will be there
-        if not args.is_sub_workflow:
-            seed_file = wf.resolve_url_to_file(seed_bank)
-        else:
-            seed_file = wf.File.from_path(os.path.basename(seed_bank),
-                                          store_file=False)
+        seed_file = wf.File.from_path(seed_bank, store_file=False)
         seed_files.append(seed_file)
     if len(seed_files) == 1:
         seed_file = seed_files[0]
@@ -302,7 +294,7 @@ for cycle_idx in range(num_cycles):
     nbanks = workflow.cp.get_opt_tags('workflow', 'nbanks',
                                       tags=[cycle_tag]+args.tags)
     nbanks = int(nbanks)
-    
+
     #############
     # MASS BINS #
     #############

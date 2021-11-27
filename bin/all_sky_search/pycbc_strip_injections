@@ -1,18 +1,15 @@
 #!/bin/env python
 import numpy, argparse, pycbc.version, pycbc.pnutils, logging
 from pycbc.events import veto
-from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
+from pycbc.io.ligolw import LIGOLWContentHandler
+from ligo.lw import ligolw, table, utils as ligolw_utils
+
 
 effd = {"H1":"eff_dist_h", "L1":"eff_dist_l", "V1":"eff_dist_v"}
 def remove(l, i):
     to_remove = [l[t] for t in i]
     for r in to_remove:
         l.remove(r)
-
-# dummy class needed for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(LIGOLWContentHandler)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)

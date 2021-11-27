@@ -8,13 +8,10 @@ import numpy as np
 import h5py
 import pycbc
 from pycbc.io import FieldArray
+from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw.utils import load_filename as load_xml_doc
-from ligo.lw import ligolw, lsctables
+from ligo.lw import lsctables
 
-
-# dummy class needed for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 def close(a, b, c):
     return abs(a - b) <= c
@@ -194,8 +191,6 @@ parser.add_argument('--detectors', type=str, required=True, nargs='+')
 args = parser.parse_args()
 
 log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
-
-lsctables.use_in(LIGOLWContentHandler)
 
 single_fail = check_single_results(args)
 coinc_fail = check_coinc_results(args)

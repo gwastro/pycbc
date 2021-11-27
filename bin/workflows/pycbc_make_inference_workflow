@@ -75,12 +75,12 @@ def read_events_from_config(cp):
 
     .. code-block:: ini
 
-       [event-gw150914]                                                                
-       label = GW150914+09:50:45UTC                                                    
-       config-files = sampler.ini                                    
-                      gw150914_like.ini                              
-                      o1_data.ini                                    
-       config-overrides = data:trigger-time:1126259462.43                              
+       [event-gw150914]
+       label = GW150914+09:50:45UTC
+       config-files = sampler.ini
+                      gw150914_like.ini
+                      o1_data.ini
+       config-overrides = data:trigger-time:1126259462.43
        nruns = 3
 
     Parameters
@@ -187,10 +187,8 @@ logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
 container = core.Workflow(opts, opts.workflow_name)
-workflow = core.Workflow(opts, subworkflow_name="main",
-                         is_subworkflow=True)
-finalize_workflow = core.Workflow(opts, subworkflow_name="finalization",
-                                  is_subworkflow=True)
+workflow = core.Workflow(opts, 'main')
+finalize_workflow = core.Workflow(opts, "finalization")
 
 # read the events to analyze
 events, labels, cpopts, nruns = read_events_from_config(workflow.cp)
@@ -244,8 +242,7 @@ for num_event, event in enumerate(events):
     # we need to go back to the original directory to do this for all the file
     # references to work correctly
     os.chdir(origdir)
-    sub_workflow = core.Workflow(opts, subworkflow_name=event,
-                                 is_subworkflow=True)
+    sub_workflow = core.Workflow(opts, event)
     # load the inference config file
     cp = configuration.WorkflowConfigParser.from_cli(cpopt)
 

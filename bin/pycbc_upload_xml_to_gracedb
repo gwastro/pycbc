@@ -30,12 +30,13 @@ import h5py
 import pycbc
 import lal
 import lal.series
-from ligo.lw import ligolw
 from ligo.lw import table
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
 from pycbc.io.live import gracedb_tag_with_version
+from pycbc.io.ligolw import LIGOLWContentHandler
+
 
 def check_gracedb_for_event(gdb_handle, query, far):
     """
@@ -59,8 +60,6 @@ def check_gracedb_for_event(gdb_handle, query, far):
                  'query: "%s"', ifar, query)
     return False
 
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -107,8 +106,6 @@ if args.production_server:
     gracedb = GraceDb()
 else:
     gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
-
-lsctables.use_in(LIGOLWContentHandler)
 
 xmldoc = ligolw_utils.load_filename(args.input_file,
                              contenthandler=LIGOLWContentHandler)

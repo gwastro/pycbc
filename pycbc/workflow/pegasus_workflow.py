@@ -36,7 +36,7 @@ import Pegasus.api as dax
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
                                       'pegasus_files')
 
-PEGASUS_START_TEMPLATE = '''#!/bin/bash
+GRID_START_TEMPLATE = '''#!/bin/bash
 
 if [ -f /tmp/x509up_u`id -u` ] ; then
   unset X509_USER_PROXY
@@ -342,15 +342,11 @@ class Node(ProfileShortcuts):
 class Workflow(object):
     """
     """
-    def __init__(self, name='my_workflow', is_subworkflow=False,
-                 subworkflow_name='swflow', directory=None, cache_file=None,
+    def __init__(self, name='my_workflow', directory=None, cache_file=None,
                  dax_file_name=None):
         self.name = name
-        if is_subworkflow:
-            self.name += '_' + subworkflow_name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
-        self._sc = dax.SiteCatalog()
 
         if directory is None:
             self.out_dir = os.getcwd()
@@ -372,13 +368,12 @@ class Workflow(object):
         else:
             self.filename = dax_file_name
         self._adag = dax.Workflow(self.filename)
-        if is_subworkflow:
-            self._asdag = SubWorkflow(self.filename, is_planned=False,
-                                      _id=self.name)
-            self._swinputs = []
-        else:
-            self._asdag = None
-            self._swinputs = None
+
+        # A pegasus job version of this workflow for use if it isncluded
+        # within a larger workflow
+        self._as_job = SubWorkflow(self.filename, is_planned=False,
+                                   _id=self.name)
+        self._swinputs = []
 
     def add_workflow(self, workflow):
         """ Add a sub-workflow to this workflow
@@ -394,7 +389,7 @@ class Workflow(object):
         workflow.in_workflow = self
         self.sub_workflows += [workflow]
 
-        self._adag.add_jobs(workflow._asdag)
+        self._adag.add_jobs(workflow._as_job)
 
         return self
 
@@ -415,7 +410,6 @@ class Workflow(object):
         """
         self._adag.add_dependency(parent._dax_node, children=[child._dax_node])
 
-
     def add_subworkflow_dependancy(self, parent_workflow, child_workflow):
         """
         Add a dependency between two sub-workflows in this workflow
@@ -435,8 +429,8 @@ class Workflow(object):
             The sub-workflow to add as the child dependence.
             Must be a sub-workflow of this workflow.
         """
-        self._adag.add_dependency(parent_workflow._asdag,
-                                  children=[child_workflow._asdag])
+        self._adag.add_dependency(parent_workflow._as_job,
+                                  children=[child_workflow._as_job])
 
     def add_transformation(self, tranformation):
         """ Add a transformation to this workflow
@@ -486,14 +480,6 @@ class Workflow(object):
                     node.transformation.name = tform.name
                     break
             else:
-                #node.executable.in_workflow = True
-                tform_site = list(node.transformation.sites.keys())[0]
-                if tform_site not in self._sc.sites:
-                    # This block should never be accessed in the way things
-                    # are set up. However, it might be possible to hit this if
-                    # certain overrides are allowed.
-                    raise ValueError("Do not know site {}".format(tform_site))
-
                 self._transformations += [node.transformation]
                 lgc = (hasattr(node, 'executable')
                        and node.executable.container is not None
@@ -580,14 +566,14 @@ class Workflow(object):
         for fil in self._inputs:
             fil.insert_into_dax(self._rc, self._tc)
 
-        if self._asdag is not None:
-            # Is a sub-workflow, add the _swinputs as needed.
-            self._asdag.add_inputs(*self._swinputs)
+        # Is a sub-workflow, add the _swinputs as needed.
+        if self.in_workflow is not None:
+            self._as_job.add_inputs(*self._swinputs)
 
         self._adag.add_replica_catalog(self._rc)
-        # Add TC and SC into workflow
+
+        # Add TC into workflow
         self._adag.add_transformation_catalog(self._tc)
-        self._adag.add_site_catalog(self._sc)
 
         with open(output_map_path, 'w') as f:
             for out in self._outputs:
@@ -597,11 +583,11 @@ class Workflow(object):
                     # There was no storage path
                     pass
 
-        if (submit_now or plan_now) and self._asdag is None:
-            self.plan_and_submit(submit_now=submit_now)
-        else:
-            self._adag.write(filename)
-            if self._asdag is None:
+        self._adag.write(filename)
+        if not self.in_workflow:
+            if submit_now or plan_now:
+                self.plan_and_submit(submit_now=submit_now)
+            else:
                 with open('additional_planner_args.dat', 'w') as f:
                     stage_site_str = self.staging_site_str
                     exec_sites = self.exec_sites_str
@@ -623,6 +609,7 @@ class Workflow(object):
                     # --dir is not being set here because it might be easier to
                     # set this in submit_dax still?
                     f.write('-vvv ')
+                    f.write('--dax {}'.format(filename))
 
     def plan_and_submit(self, submit_now=True):
         """ Plan and submit the workflow now.
@@ -655,11 +642,17 @@ class Workflow(object):
         planner_args['output_sites'] = ['local']
 
         # Site options
-        planner_args['sites'] = list(self._sc.sites)
+        planner_args['sites'] = self.sites
         planner_args['staging_sites'] = self.staging_site
 
         # Make tmpdir for submitfiles
-        submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_')
+        # default directory is the system default, but is overrideable
+        # This should probably be moved to core.py?
+        submit_opts = 'pegasus_profile', 'pycbc|submit-directory'
+        submit_dir = None
+        if self.cp.has_option(*submit_opts):
+            submit_dir = self.cp.get(*submit_opts)
+        submitdir = tempfile.mkdtemp(prefix='pycbc-tmp_', dir=submit_dir)
         os.chmod(submitdir, 0o755)
         try:
             os.remove('submitdir')
@@ -692,8 +685,9 @@ class Workflow(object):
             fp.write('pegasus-remove {}/work $@'.format(submitdir))
 
         with open('start', 'w') as fp:
-            fp.write(PEGASUS_START_TEMPLATE)
-            fp.write('\n')
+            if self.cp.has_option('pegasus_profile', 'pycbc|check_grid'):
+                fp.write(GRID_START_TEMPLATE)
+                fp.write('\n')
             fp.write('pegasus-run {}/work $@'.format(submitdir))
 
         os.chmod('status', 0o755)
@@ -712,7 +706,7 @@ class Workflow(object):
 
 
 class SubWorkflow(dax.SubWorkflow):
-    """Workflow representation of a SubWorkflow.
+    """Workflow job representation of a SubWorkflow.
 
     This follows the Pegasus nomenclature where there are Workflows, Jobs and
     SubWorkflows. Be careful though! A SubWorkflow is actually a Job, not a
@@ -851,7 +845,7 @@ class File(dax.File):
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
             if os.path.isfile(urlparts.path):
                 path = os.path.abspath(urlparts.path)
-                path = urljoin('file:', pathname2url(path)) 
+                path = urljoin('file:', pathname2url(path))
                 site = 'local'
 
         fil = cls(os.path.basename(path))

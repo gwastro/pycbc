@@ -563,14 +563,8 @@ else:
 stack_exe = GeomAligned2DStackExecutable(workflow.cp, 'aligned2dstack',
                                          ifos=workflow.ifos, out_dir=curr_dir)
 num_banks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
-if not opts.is_sub_workflow:
-    input_h5file = wf.File.from_path(opts.intermediate_data_file)
-else:
-    # Basically, if this is a sub-workflow do not store a PFN, as it will be
-    # some meaningless temporary path, but instead tell the uber-workflow
-    # that these files are outputs and used within the sub-dax and let it
-    # handle the rest.
-    input_h5file = pwf.File(os.path.basename(opts.intermediate_data_file))
+input_h5file = wf.File.from_path(opts.intermediate_data_file)
+
 
 
 all_outs = wf.FileList([])
@@ -593,11 +587,7 @@ else:
 
 combine_exe = AlignedBankCatExecutable(workflow.cp, 'alignedbankcat',
                                         ifos=workflow.ifos, out_dir=curr_dir)
-if not opts.is_sub_workflow:
-    metadata_file = wf.File.from_path(cmds_file_name)
-else:
-    metadata_file = pwf.File(os.path.basename(cmds_file_name))
-
+metadata_file = wf.File.from_path(cmds_file_name)
 combine_node = combine_exe.create_node(all_outs, metadata_file,
                                        workflow.analysis_time,
                                        output_file_path=opts.output_file)

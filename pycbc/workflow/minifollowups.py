@@ -105,7 +105,6 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
-    node.add_opt('--main-workflow-directory', workflow.out_dir)
 
     workflow += node
 
@@ -113,7 +112,6 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     fil = node.output_files[0]
 
     # determine if a staging site has been specified
-
     job = SubWorkflow(fil.name, is_planned=False)
     input_files = [tmpltbank_file, coinc_file, insp_segs] + single_triggers
     job.add_inputs(*input_files)
@@ -207,7 +205,6 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
-    node.add_opt('--main-workflow-directory', workflow.out_dir)
 
     workflow += node
 
@@ -298,7 +295,6 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
-    node.add_opt('--main-workflow-directory', workflow.out_dir)
 
     workflow += node
 
