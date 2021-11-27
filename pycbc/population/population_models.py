@@ -364,7 +364,8 @@ def total_rate_upto_redshift(z, merger_rate):
         for redshift in z:
             total_rate.append(
                         scipy_integrate.quad(merger_rate, 0, redshift,
-                        epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0])
+                        epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0]
+            )
     else:
         raise ValueError("'z' must be 'int', 'float', 'tuple', \
                             'numpy.ndarray' or 'list'.")
@@ -427,7 +428,7 @@ def norm_redshift_distribution(z_array, merger_rate):
 
 
 def distance_from_rate(
-    total_rate, merger_rate, maxz=10, npoints=7000, **kwargs):
+        total_rate, merger_rate, maxz=10, npoints=7000, **kwargs):
     r"""Returns the luminosity distance from the given total rate value.
 
     Parameters
