@@ -57,7 +57,7 @@ def sfr_grb_2008(z):
     eta = -10
 
     rho_z = rho_local*((1+z)**(3.4*eta) + ((1+z)/5000)**(-0.3*eta) +
-            ((1+z)/9)**(-3.5*eta))**(1./eta)
+                       ((1+z)/9)**(-3.5*eta))**(1./eta)
 
     return rho_z
 
@@ -151,7 +151,7 @@ def diff_lookback_time(z, **kwargs):
 
     cosmology = get_cosmology(**kwargs)
     H0 = cosmology.H0.value * \
-         (3.0856776E+19)**(-1)/(1/24/3600/365*1e-9)  # Gyr^-1
+        (3.0856776E+19)**(-1)/(1/24/3600/365*1e-9)  # Gyr^-1
     dt_dz = 1/H0/(1+z)/sqrt((cosmology.Ode0+cosmology.Om0*(1+z)**3))
     return dt_dz
 
@@ -363,9 +363,9 @@ def total_rate_upto_redshift(z, merger_rate):
         total_rate = []
         for redshift in z:
             total_rate.append(
-                scipy_integrate.quad(merger_rate, 0, redshift,
-                epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0])
-    else: 
+                        scipy_integrate.quad(merger_rate, 0, redshift,
+                        epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0])
+    else:
         raise ValueError("'z' must be 'int', 'float', 'tuple', \
                             'numpy.ndarray' or 'list'.")
 
@@ -426,7 +426,8 @@ def norm_redshift_distribution(z_array, merger_rate):
     return norm_coalescence_rate
 
 
-def distance_from_rate(total_rate,merger_rate,maxz=10,npoints=7000,**kwargs):
+def distance_from_rate(
+    total_rate, merger_rate, maxz=10, npoints=7000, **kwargs):
     r"""Returns the luminosity distance from the given total rate value.
 
     Parameters
