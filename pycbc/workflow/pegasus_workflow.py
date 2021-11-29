@@ -805,7 +805,7 @@ class SubWorkflow(dax.SubWorkflow):
         #       having this file created differently. Note that all other
         #       inputs might be generated within the workflow, and then pegasus
         #       data transfer is needed, so these must be File objects.
-        caches = ['_reuse.cache']
+        caches = [os.path.join(os.getcwd(), '_reuse.cache')]
         if cache_file:
             caches.append(cache_file)
         self.add_planner_arg('cache', caches)
