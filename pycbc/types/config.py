@@ -32,7 +32,7 @@ from six.moves import StringIO
 from six.moves import configparser as ConfigParser
 
 
-class DeepCopyableConfigParser(ConfigParser.SafeConfigParser):
+class DeepCopyableConfigParser(ConfigParser.ConfigParser):
     """
     The standard SafeConfigParser no longer supports deepcopy() as of python
     2.7 (see http://bugs.python.org/issue16058). This subclass restores that
