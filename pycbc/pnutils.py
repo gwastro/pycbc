@@ -1009,10 +1009,6 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
            'spin2z': spin2z}
     return out
 
-
-jframe_to_l0frame.__doc__ = _formatdocstr(jframe_to_l0frame.__doc__)
-
-
 def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
                       spin1x=0., spin1y=0., spin1z=0.,
                       spin2x=0., spin2y=0., spin2z=0.):
@@ -1065,6 +1061,3 @@ def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
            'spin1_a': spin1_a,
            'spin2_a': spin2_a}
     return out
-
-
-l0frame_to_jframe.__doc__ = _formatdocstr(l0frame_to_jframe.__doc__)
