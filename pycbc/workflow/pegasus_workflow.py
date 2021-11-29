@@ -87,7 +87,7 @@ class ProfileShortcuts(object):
         self.add_profile('condor', 'request_cpus', number)
 
     def set_universe(self, universe):
-        if universe is 'standard':
+        if universe == 'standard':
             self.add_profile("pegasus", "gridstart", "none")
 
         self.add_profile("condor", "universe", universe)
