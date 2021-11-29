@@ -63,6 +63,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         parsedFilePath=None,
         deleteTuples=None,
         skip_extended=False,
+        sanitize_newline=True,
     ):
         """
          Initialize an InterpolatingConfigParser. This reads the input configuration
@@ -163,6 +164,11 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         # Check for any substitutions that can be made
         if not skip_extended:
             self.perform_extended_interpolation()
+
+        # replace newlines in input with spaces
+        # this enables command line conversion compatibility
+        if sanitize_newline:
+            self.sanitize_newline()
 
         # Check for duplicate options in sub-sections
         self.sanity_check_subsections()
@@ -287,6 +293,19 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 new_str = self.interpolate_string(value, section)
                 if new_str != value:
                     self.set(section, option, new_str)
+
+    def sanitize_newlin(self):
+        """
+        Filter through an ini file and replace all examples of
+        newlines with spaces. This is useful for command line conversion
+        and allow multiline configparser inputs without added backslashes
+        """
+
+        # Do not allow any interpolation of the section names
+        for section in self.sections():
+            for option, value in self.items(section):
+                new_value = value.replace('\n', ' ').replace('\r', ' ')
+                self.set(section, option, new_value)
 
     def interpolate_string(self, test_string, section):
         """
