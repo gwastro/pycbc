@@ -561,9 +561,12 @@ class Workflow(object):
 
             # Set our needed file as output so that it gets staged upwards
             # to a workflow that contains the job which needs it.
-            for wf in input_root[:input_root.index(common)]:
-                if inp not in wf._as_job.get_outputs():
-                    wf._as_job.add_outputs(inp, stage_out=False)
+            for idx in range(input_root.index(common)):
+                child_wflow = input_root[idx]
+                parent_wflow = input_root[idx+1]
+                if inp not in child_wflow._as_job.get_outputs():
+                    child_wflow._as_job.add_outputs(inp, stage_out=True)
+                    parent_wflow._outputs += [inp]
 
             # Set out needed file so it gets staged downwards towards the
             # job that needs it.
