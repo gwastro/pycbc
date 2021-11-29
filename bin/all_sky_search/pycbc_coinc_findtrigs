@@ -39,11 +39,15 @@ parser.add_argument("--coinc-threshold", type=float, default=0.0,
 parser.add_argument("--timeslide-interval", type=float,
                     help="Interval between timeslides in seconds. Timeslides are"
                          " disabled if the option is omitted.")
-parser.add_argument("--loudest-keep-values", type=str, nargs='*',
-                    default=['6:1'],
-                    help="Apply successive multiplicative levels of decimation"
-                         " to coincs with stat value below the given thresholds"
-                         " Ex. 9:10 8.5:30 8:30 7.5:30. Default: no decimation")
+parser.add_argument("--loudest-keep-values",
+                    default='[6:1]',
+                    help="Apply successive multiplicative levels of"
+                         " decimation to coincs with stat value below the"
+                         " given thresholds. Supply as a comma-separated list"
+                         " of threshold:decimation value pairs surrounded by"
+                         " square brackets."
+                         " Ex. [9:10,8.5:30,8:30,7.5:30]."
+                         " Default: no decimation")
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. Format"
                          " PART/NUM_PARTS")
@@ -187,16 +191,25 @@ for ifo in trigs.ifos:
     data['%s/time' % ifo] = []
     data['%s/trigger_id' % ifo] = []
 
-total_factors = [1]
+factors = [1]
 threshes = [numpy.inf]
-for decstr in args.loudest_keep_values:
+loudest_keep_vals = args.loudest_keep_values.strip('[]').split(',')
+
+for decstr in loudest_keep_vals:
     thresh, factor = decstr.split(':')
     if int(factor) == 1:
         continue
     threshes.append(float(thresh))
-    # throws an error if 'factor' is not the string representation
-    # of an integer
-    total_factors.append(total_factors[-1] * int(factor))
+    factors.append(int(factor))
+
+# Sort the threshes into descending order
+# - allows decimation factors to be given in any order
+threshorder = numpy.argsort(threshes)[::-1]
+threshes = numpy.array(threshes)[threshorder]
+factors = numpy.array(factors)[threshorder]
+
+# Make total factors value - this is the cumulative product of the factors in order
+total_factors = numpy.cumprod(factors)
 
 # Gather the coincs from a single template
 def process_template(tnum):
