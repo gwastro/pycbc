@@ -294,7 +294,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 if new_str != value:
                     self.set(section, option, new_str)
 
-    def sanitize_newlin(self):
+    def sanitize_newline(self):
         """
         Filter through an ini file and replace all examples of
         newlines with spaces. This is useful for command line conversion
