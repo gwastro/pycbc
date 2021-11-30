@@ -87,9 +87,10 @@ opts = parser.parse_args()
 # set mpl style
 set_style_from_cli(opts)
 
-# get any kdeargs
+# get any kdeargs; we'll always pass through the kde max samples
+kdeargs = {'max_kde_samples': opts.max_kde_samples}
+# add any other options that were specified
 if opts.kde_args is not None:
-    kdeargs = {}
     for opt in opts.kde_args:
         opt, val = opt.split(':')
         try:
@@ -100,8 +101,6 @@ if opts.kde_args is not None:
         except TypeError:
             pass
         kdeargs[opt] = val
-else:
-    kdeargs = None
 
 if opts.plot_maxl:
     # add loglikelihood to list of parameters
