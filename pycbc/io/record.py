@@ -903,21 +903,27 @@ class FieldArray(numpy.recarray):
                 self._code_cache[item] = (code, itemvars, item_dict)
 
             code, itemvars, item_dict = self._code_cache[item]
+            added = {}
             for it in itemvars:
                 if it in self.fieldnames:
                     # pull out the fields: note, by getting the parent fields
                     # we also get the sub fields name
-                    item_dict[it] = self.__getbaseitem__(it)
+                    added[it] = self.__getbaseitem__(it)
                 elif (it in self.__dict__) or (it in self._virtualfields):
                     # pull out any needed attributes
-                    item_dict[it] = self.__getattribute__(it, no_fallback=True)
+                    added[it] = self.__getattribute__(it, no_fallback=True)
                 else:
                     # add any aliases
                     aliases = self.aliases
                     if it in aliases:
-                        item_dict[it] = self.__getbaseitem__(aliases[it])
+                        added[it] = self.__getbaseitem__(aliases[it])
+            if item_dict is not None:
+                item_dict.update(added)
 
-            return eval(code, {"__builtins__": None}, item_dict)
+            ans = eval(code, {"__builtins__": None}, item_dict)
+            for k in added:
+                item_dict.pop(k)
+            return ans
 
     def __contains__(self, field):
         """Returns True if the given field name is in self's fields."""
