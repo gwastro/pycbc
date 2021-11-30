@@ -252,6 +252,7 @@ def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
     -------
     dict :
         Dictionary of:
+
         * thetajn : float
             Angle between the line of sight and the total angular momentume J.
         * phijl : float
