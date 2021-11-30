@@ -45,7 +45,8 @@ parser.add_argument("--loudest-keep-values",
                          " decimation to coincs with stat value below the"
                          " given thresholds. Supply as a comma-separated list"
                          " of threshold:decimation value pairs surrounded by"
-                         " square brackets."
+                         " square brackets. Decimation values must be"
+                         " positive integers."
                          " Ex. [9:10,8.5:30,8:30,7.5:30]."
                          " Default: no decimation")
 parser.add_argument("--template-fraction-range", default="0/1",
@@ -197,6 +198,10 @@ loudest_keep_vals = args.loudest_keep_values.strip('[]').split(',')
 
 for decstr in loudest_keep_vals:
     thresh, factor = decstr.split(':')
+    if float(factor) % 1:
+        raise RuntimeError("Non-integer decimation is not supported") 
+    if int(factor) < 1:
+        raise RuntimeError("Negative or zero decimation does not make sense")
     if int(factor) == 1:
         continue
     threshes.append(float(thresh))
@@ -208,7 +213,7 @@ threshorder = numpy.argsort(threshes)[::-1]
 threshes = numpy.array(threshes)[threshorder]
 factors = numpy.array(factors)[threshorder]
 
-# Make total factors value - this is the cumulative product of the factors in order
+# Decimation factors are applied successively in descending order of threshold
 total_factors = numpy.cumprod(factors)
 
 # Gather the coincs from a single template
