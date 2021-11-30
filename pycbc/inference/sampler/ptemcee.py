@@ -282,6 +282,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
 
     def run_mcmc(self, niterations):
         """Advance the ensemble for a number of samples.
+
         Parameters
         ----------
         niterations : int
@@ -293,7 +294,8 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
     def calculate_logevidence(cls, filename, thin_start=None, thin_end=None,
                               thin_interval=None):
         """Calculates the log evidence from the given file.
-        This uese ``ptemcee``'s thermodynamic integration.
+        This uses ``ptemcee``'s thermodynamic integration.
+
         Parameters
         ----------
         filename : str
@@ -310,6 +312,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         thin_end : int
             Index of the last sample to read. If not given then
             `fp.niterations` is used.
+
         Returns
         -------
         lnZ : float
@@ -379,7 +382,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         function for details.
 
         Parameters
-        -----------
+        ----------
         filename : str
             Name of a samples file to compute ACLs for.
         \**kwargs :
@@ -555,7 +558,7 @@ class PTEmceeSampler(EnsembleSupport, BaseMCMC, BaseSampler):
         to the given file.
 
         Parameters
-        -----------
+        ----------
         filename : str
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
