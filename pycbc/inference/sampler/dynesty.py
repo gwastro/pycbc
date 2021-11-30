@@ -203,7 +203,8 @@ class DynestySampler(BaseSampler):
         dynesty documentation for more details on these.
 
         The following options are retrieved in the ``[sampler]`` section:
-        * ``name = STR`` :
+
+        * ``name = STR``:
             Required. This must match the sampler's name.
         * ``maxiter = INT``:
             The maximum number of iterations to run.
@@ -243,9 +244,9 @@ class DynestySampler(BaseSampler):
             factor.
         * ``maxcall = INT``:
             The maximum number of calls before checking if we should checkpoint
-        * ``checkpoint_time_interval`` :
+        * ``checkpoint_time_interval``:
             Sets the time in seconds between checkpointing.
-        * ``loglikelihood-function`` :
+        * ``loglikelihood-function``:
             The attribute of the model to use for the loglikelihood. If
             not provided, will default to ``loglikelihood``.
 
