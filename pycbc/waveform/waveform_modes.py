@@ -257,8 +257,10 @@ def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
             Angle between the line of sight and the total angular momentume J.
         * phijl : float
             Azimuthal angle of L on its cone about J.
-        * {spin1_a}
-        * {spin2_a}
+        * spin1_a : float
+            The dimensionless spin magnitude :math:`|\\vec{{s}}_1/m^2_1|`.
+        * spin2_a : float
+            The dimensionless spin magnitude :math:`|\\vec{{s}}_2/m^2_2|`.
         * spin1_polar : float
             Angle between L and the spin magnitude of the larger object.
         * spin2_polar : float
