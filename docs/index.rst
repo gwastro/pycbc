@@ -61,7 +61,7 @@ Installation
 
 Note, if you are a LIGO / Virgo member with access to LDG resources, PyCBC is *already*
 installed on your cluster through CVMFS! Instructions to source any release of PyCBC
-is available from the `releases page <https://github.com/ligo-cbc/pycbc/releases>`_.
+is available from the `releases page <https://github.com/gwastro/pycbc/releases>`_.
 
 You may also install PyCBC directly with pip. You may ommit `lalsuite` if you have
 your own build.
@@ -76,6 +76,8 @@ Full detailed installation instructions which covers other installation cases:
    :maxdepth: 1
 
    install
+   install_virtualenv
+   install_lalsuite
 
 ====================================================
 Parameter Estimation of Gravitational-wave Sources
@@ -199,6 +201,13 @@ Full Module Documentation is available at:
    :maxdepth: 1
 
    modules
+
+Instructions for building the GitHub pages documentation are at:
+
+.. toctree::
+   :maxdepth: 1
+
+   build_gh_pages
 
 ===================
 Indexes and Tables

@@ -986,7 +986,7 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
 
     will cause ``mass1`` to be retrieved from the injection file, while:
 
-    .. code-black:: ini
+    .. code-block:: ini
 
        mass1 = FROM_INJECTION:'primary_mass(mass1, mass2)'
 

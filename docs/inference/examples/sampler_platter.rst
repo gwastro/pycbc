@@ -65,9 +65,9 @@ configurations which can analyze this simple problem.
 The following are also supported, but require either python3 support only (cpnest)
 or an external package (multinest).
    
-===============================================
+================================================
 `cpnest <https://github.com/johnveitch/cpnest>`_
-===============================================
+================================================
    
 .. literalinclude:: ../../../examples/inference/samplers/cpnest_stub.ini
    :language: ini
