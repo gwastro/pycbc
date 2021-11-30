@@ -168,7 +168,10 @@ def construct_kde(samples_array, use_kombine=False, kdeargs=None):
     numpy.random.seed(0)
     numpy.random.shuffle(samples_array)
     # if kde arg specifies a maximum number of samples, limit them
-    kdeargs = kdeargs.copy()
+    if kdeargs is None:
+        kdeargs = {}
+    else:
+        kdeargs = kdeargs.copy()
     max_nsamples = kdeargs.pop('max_kde_samples', None)
     samples_array = samples_array[:max_nsamples]
     if use_kombine:
