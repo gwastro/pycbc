@@ -796,19 +796,8 @@ class SubWorkflow(dax.SubWorkflow):
         self.add_planner_arg('cluster', ['label', 'horizontal'])
         self.add_planner_arg('verbose', 3)
 
-        # NOTE: The _reuse.cache file is produced during submit_dax and would
-        #       be sent to all sub-workflows. Currently we do not declare this
-        #       as a proper File, as this is a special case. While the use-case
-        #       is that this is always created during submit_dax then this is
-        #       the right thing to do. pegasus-plan must run on local site, and
-        #       this is guaranteed to be visible. However, we could consider
-        #       having this file created differently. Note that all other
-        #       inputs might be generated within the workflow, and then pegasus
-        #       data transfer is needed, so these must be File objects.
-        caches = [os.path.join(os.getcwd(), '_reuse.cache')]
         if cache_file:
-            caches.append(cache_file)
-        self.add_planner_arg('cache', caches)
+            self.add_planner_arg('cache', [cache_file])
 
         if staging_site:
             self.add_planner_arg('staging_sites', staging_site)
