@@ -37,6 +37,11 @@ The following command downloads a 64 s segment of gravitational-wave data from
         --frame-duration 16 \
         --output-strain-file 'H1-STRAIN-{start}-{duration}.gwf'
 
+Note that the strings ``{start}`` and ``{duration}`` in the output file name
+should be literally given like that. They are automatically replaced with the
+right values by ``pycbc_condition_strain`` when the ``--frame-duration``
+option is used.
+
 ==========================
 Conditioning existing data
 ==========================
@@ -52,7 +57,7 @@ a high-pass filter with corner frequency of 15 Hz, downsamples the data to
         --channel-name H1:GWOSC-16KHZ_R1_STRAIN \
         --strain-high-pass 15 \
         --sample-rate 2048 \
-        --output-strain-file 'H1-STRAIN_CONDITIONED-1242442818-64.gwf'
+        --output-strain-file H1-STRAIN_CONDITIONED-1242442818-64.gwf
 
 ==============================================
 Injecting simulated signals into existing data
@@ -89,7 +94,7 @@ in the O4 run), adds one or more simulated signals to it (specified by the
         --gps-end-time 1242442882 \
         --channel-name V1:SIMULATED_STRAIN \
         --injection-file injections.hdf \
-        --output-strain-file 'V1-SIMULATED_STRAIN-1242442818-64.gwf'
+        --output-strain-file V1-SIMULATED_STRAIN-1242442818-64.gwf
 
 =======
 Caveats
