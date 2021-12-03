@@ -661,7 +661,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             action=MultiDetOptionAction,
                             type=int, metavar='IFO:LENGTH',
                             help="Extra padding to remove highpass corruption "
-                                "(integer seconds)")
+                                "(integer seconds, default 8)")
     data_reading_group_multi.add_argument("--taper-data", nargs='+',
                             action=MultiDetOptionAction,
                             type=int, default=0, metavar='IFO:LENGTH',
