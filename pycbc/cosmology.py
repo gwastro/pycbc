@@ -37,6 +37,7 @@ from astropy import units
 from astropy.cosmology.core import CosmologyError
 import pycbc.conversions
 
+
 DEFAULT_COSMOLOGY = 'Planck15'
 
 
@@ -140,9 +141,18 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
             zs[ii] = astropy.cosmology.z_at_value(func, val*unit, zmax=zmax,
                                                   **kwargs)
         except CosmologyError:
-            # we'll get this if the z was larger than zmax; in that case we'll
-            # try bumping up zmax later to get a value
-            zs[ii] = numpy.inf
+            if ii == len(zs)-1:
+                # if zs[ii] is less than but very close to zmax, let's say zs[ii]
+                # is the last element in the [zmin, zmax], `z_at_value` will also 
+                # returns "CosmologyError", please see
+                # (https://docs.astropy.org/en/stable/api/astropy.cosmology.
+                # z_at_value.html), in order to avoid bumping up zmax, just 
+                # set zs equals to previous value, we assume the `func` is smooth.
+                zs[ii] = zs[ii-1]
+            else:
+                # we'll get this if the z was larger than zmax; in that case we'll
+                # try bumping up zmax later to get a value
+                zs[ii] = numpy.inf
     # check if there were any zs > zmax
     replacemask = numpy.isinf(zs)
     # try bumping up zmax to get a result
@@ -342,9 +352,8 @@ class ComovingVolInterpolator(object):
         The maximum z to interpolate up to before falling back to calling
         astropy directly. Default is 10.
     numpoints : int, optional
-        The number of points to use in the linear interpolation between 1 to
-         ``default_maxz``. Default is 1000. For the linear interpolation
-         between 0 to 1, the number of points is 0.5*numpoints.
+    The number of points to use in the linear interpolation between 0 to 1
+        and 1 to ``default_maxz``. Default is 1000.
     vol_func: function, optional
         Optionally set how the volume is calculated by providing a function
     \**kwargs :
@@ -372,10 +381,7 @@ class ComovingVolInterpolator(object):
     def _create_interpolant(self, minz, maxz):
         minlogv = numpy.log(self.vol_func(minz).value)
         maxlogv = numpy.log(self.vol_func(maxz).value)
-        if maxz <= 1:
-            logvs = numpy.linspace(minlogv, maxlogv, num=int(self.numpoints/2))
-        else:
-            logvs = numpy.linspace(minlogv, maxlogv, num=self.numpoints)
+        logvs = numpy.linspace(minlogv, maxlogv, num=self.numpoints)
 
         zs = z_at_value(self.vol_func, numpy.exp(logvs), self.vol_units, maxz)
 
@@ -383,7 +389,8 @@ class ComovingVolInterpolator(object):
             ys = cosmological_quantity_from_redshift(zs, self.parameter)
         else:
             ys = zs
-        return interpolate.interp1d(logvs, ys, kind='linear',
+
+        return interpolate.interp1d(logvs, ys, kind='linear', 
                                     bounds_error=False)
 
     def setup_interpolant(self):
