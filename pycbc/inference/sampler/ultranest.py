@@ -198,7 +198,7 @@ class UltranestSampler(BaseSampler):
         to the given file.
 
         Parameters
-        -----------
+        ----------
         filename : str
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
@@ -216,16 +216,12 @@ class UltranestSampler(BaseSampler):
 
     @property
     def logz(self):
-        """
-        return bayesian evidence estimated by
-        ultranest sampler
+        """Return bayesian evidence estimated by ultranest sampler.
         """
         return self.result['logz']
 
     @property
     def logz_err(self):
-        """
-        return error in bayesian evidence estimated by
-        ultranest sampler
+        """Return error in bayesian evidence estimated by ultranest sampler.
         """
         return self.result['logzerr']

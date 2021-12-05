@@ -87,7 +87,7 @@ class ProfileShortcuts(object):
         self.add_profile('condor', 'request_cpus', number)
 
     def set_universe(self, universe):
-        if universe is 'standard':
+        if universe == 'standard':
             self.add_profile("pegasus", "gridstart", "none")
 
         self.add_profile("condor", "universe", universe)
@@ -388,9 +388,7 @@ class Workflow(object):
         """
         workflow.in_workflow = self
         self.sub_workflows += [workflow]
-
         self._adag.add_jobs(workflow._as_job)
-
         return self
 
     def add_explicit_dependancy(self, parent, child):
@@ -520,7 +518,6 @@ class Workflow(object):
                 if inp not in self._inputs:
                     self._inputs += [inp]
                     self._swinputs += [inp]
-
             else:
                 err_msg = ("I don't understand how to deal with an input file "
                            "here. Ian doesn't think this message should be "
@@ -541,9 +538,47 @@ class Workflow(object):
         else:
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
+    def traverse_workflow_io(self):
+        """ If input is needed from another workflow within a larger
+        hierarchical workflow, determine the path for the file to reach
+        the destination and add the file to workflows input / output as
+        needed.
+        """
+        def root_path(v):
+            path = [v]
+            while v.in_workflow:
+                path += [v.in_workflow]
+                v = v.in_workflow
+            return path
+
+        for inp in self._swinputs:
+            workflow_root = root_path(self)
+            input_root = root_path(inp.node.in_workflow)
+            for step in workflow_root:
+                if step in input_root:
+                    common = step
+                    break
+
+            # Set our needed file as output so that it gets staged upwards
+            # to a workflow that contains the job which needs it.
+            for idx in range(input_root.index(common)):
+                child_wflow = input_root[idx]
+                parent_wflow = input_root[idx+1]
+                if inp not in child_wflow._as_job.get_outputs():
+                    child_wflow._as_job.add_outputs(inp, stage_out=True)
+                    parent_wflow._outputs += [inp]
+
+            # Set out needed file so it gets staged downwards towards the
+            # job that needs it.
+            for wf in workflow_root[:workflow_root.index(common)]:
+                if inp not in wf._as_job.get_inputs():
+                    wf._as_job.add_inputs(inp)
+
+        for wf in self.sub_workflows:
+            wf.traverse_workflow_io()
 
     def save(self, filename=None, submit_now=False, plan_now=False,
-             output_map_path=None):
+             output_map_path=None, root=True):
         """ Write this workflow to DAX file
         """
         if filename is None:
@@ -552,8 +587,13 @@ class Workflow(object):
         if output_map_path is None:
             output_map_path = 'output.map'
 
+        # Handle setting up io for inter-workflow file use ahead of time
+        # so that when daxes are saved the metadata is complete
+        if root:
+            self.traverse_workflow_io()
+
         for sub in self.sub_workflows:
-            sub.save()
+            sub.save(root=False)
             # FIXME: If I'm now putting output_map here, all output_map stuff
             #        should move here.
             sub.output_map_file.insert_into_dax(self._rc, self._tc)
@@ -565,10 +605,6 @@ class Workflow(object):
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:
             fil.insert_into_dax(self._rc, self._tc)
-
-        # Is a sub-workflow, add the _swinputs as needed.
-        if self.in_workflow is not None:
-            self._as_job.add_inputs(*self._swinputs)
 
         self._adag.add_replica_catalog(self._rc)
 
@@ -760,17 +796,8 @@ class SubWorkflow(dax.SubWorkflow):
         self.add_planner_arg('cluster', ['label', 'horizontal'])
         self.add_planner_arg('verbose', 3)
 
-        # NOTE: The _reuse.cache file is produced during submit_dax and would
-        #       be sent to all sub-workflows. Currently we do not declare this
-        #       as a proper File, as this is a special case. While the use-case
-        #       is that this is always created during submit_dax then this is
-        #       the right thing to do. pegasus-plan must run on local site, and
-        #       this is guaranteed to be visible. However, we could consider
-        #       having this file created differently. Note that all other
-        #       inputs might be generated within the workflow, and then pegasus
-        #       data transfer is needed, so these must be File objects.
         if cache_file:
-            self.add_planner_arg('cache', cache_file)
+            self.add_planner_arg('cache', [cache_file])
 
         if staging_site:
             self.add_planner_arg('staging_sites', staging_site)

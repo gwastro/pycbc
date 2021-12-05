@@ -352,6 +352,12 @@ def add_density_option_group(parser):
              "suggest setting --kde-args 'max_samples:20000' or smaller if "
              "using this. Requires kombine to be installed.")
     density_group.add_argument(
+        '--max-kde-samples', type=int, default=None,
+        help="Limit the number of samples used for KDE construction to the "
+             "given value. This can substantially speed up plot generation "
+             "(particularly when plotting multiple parameters). Suggested "
+             "values: 5000 to 10000.")
+    density_group.add_argument(
         '--kde-args', metavar="ARG:VALUE", nargs='+', default=None,
         help="Pass the given argrument, value pairs to the KDE function "
              "(either scipy's or kombine's) when setting it up.")

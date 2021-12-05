@@ -1091,7 +1091,7 @@ class ReadByTemplate(object):
         self.valid = veto.segments_to_start_end(self.segs)
 
     def get_data(self, col, num):
-        """ Get a column of data for template with id 'num'
+        """Get a column of data for template with id 'num'.
 
         Parameters
         ----------
@@ -1109,16 +1109,17 @@ class ReadByTemplate(object):
         return self.file['%s/%s' % (self.ifo, col)][ref]
 
     def set_template(self, num):
-        """ Set the active template to read from
+        """Set the active template to read from.
 
-        Parameters        ----------
+        Parameters
+        ----------
         num: int
-            The template id to read triggers for
+            The template id to read triggers for.
 
         Returns
         -------
         trigger_id: numpy.ndarray
-            The indices of this templates triggers
+            The indices of this templates triggers.
         """
         self.template_num = num
         times = self.get_data('end_time', num)

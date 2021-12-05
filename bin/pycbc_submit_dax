@@ -15,7 +15,6 @@ exec > >(tee -a workflow/pycbc-submit-dax-log.txt)
 # I did not want to steal from him by simply adding his answer to mine.
 exec 2>&1
 
-CACHE_FILE=0
 LOCAL_PEGASUS_DIR=""
 PEGASUS_PROPERTIES=""
 NO_CREATE_PROXY=0
@@ -40,48 +39,11 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:p:P:K:Q:n:l:G:h --long dax:,cache-file:,pegasus-properties:,append-pegasus-property:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o p:P:K:Q:n:l:G:h --long pegasus-properties:,append-pegasus-property:,no-create-proxy,no-query-db,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
   case "$1" in
-    -c|--cache-file)
-      case "$2" in
-        "") shift 2 ;;
-        *) CACHE_FILE=1
-           OLD_IFS=${IFS}
-           IFS=","
-           set +e
-           for URL in $2; do
-              FOUND_URL=1
-              # strip of any leading file:// URI and see if the file exists
-              FILE_URL=${URL##file://}
-              if [ -f ${FILE_URL} ] ; then
-                 cat ${FILE_URL} >> _reuse.cache
-                 FOUND_URL=0
-              else
-                 # otherwise try and get the file using resolve_url
-                 DOWNLOADED_FILE=`python - <<EOF
-from pycbc.workflow import resolve_url
-import os
-filename = resolve_url("${FILE_URL}")
-print(filename)
-EOF`
-                 FOUND_URL=${?}
-                 if [ ${FOUND_URL} -eq 0 ] ; then
-                   cat $DOWNLOADED_FILE >> _reuse.cache
-                   rm -f $DOWNLOADED_FILE
-                 fi
-              fi
-              if [ ${FOUND_URL} -ne 0 ] ; then
-                 echo "$URL not found!"
-                 exit
-              fi
-              IFS=${OLD_IFS}
-           done
-           set -e
-           shift 2 ;;
-      esac ;;
     -p|--pegasus-properties)
       case "$2" in
         "") shift 2 ;;
@@ -102,14 +64,10 @@ EOF`
       esac ;;
     -G|--no-grid) NO_GRID="--forward nogrid" ; shift ;;
     -h|--help)
-      echo "usage: pycbc_submit_dax [-h] --dax DAX [optional arguments]"
-      echo
-      echo "required arguments:"
-      echo "  -d, --dax DAX           name of the dax file to plan"
+      echo "usage: pycbc_submit_dax [-h] [optional arguments]"
       echo
       echo "optional arguments:"
       echo "  -h, --help              show this help message and exit"
-      echo "  -c, --cache-file FILE   replica cache file for data reuse"
       echo "  -p, --pegasus-properties FILE use the specified file as"
       echo "                               the pegasus properties file"
       echo "  -P, --append-pegasus-property STRING add the extra property"
@@ -117,8 +75,8 @@ EOF`
       echo "  -K, --no-create-proxy   Do not run ligo-proxy-init and assume"
       echo "                             that the user has a valid grid proxy"
       echo "  -n, --no-submit         Plan the DAX but do not submit it"
-      echo "  -Q, --no-query-db       Don't query the pegasus DB."
       echo "  -l, --local-dir         Directory to put condor files under"
+      echo "  -Q, --no-query-db       Don't query the pegasus DB."
       echo "  -G, --no-grid           Disable checks for grid proxy and"
       echo "                             GLOBUS_LOCATION in pegasus-plan"
       echo
@@ -207,17 +165,12 @@ fi
 echo >> pegasus-properties.conf
 cat extra-properties.conf >> pegasus-properties.conf
 
-if [ $CACHE_FILE == 0 ]; then
-  CACHE_OPTION=''
-else
-  CACHE_OPTION='--cache _reuse.cache'
-fi
 
 # Ian's bash-fu is not good enough to wrap this in the nice error handling that
 # it deserves!
 STORED_PLANNER_ARGS=`cat additional_planner_args.dat`
 
-pegasus-plan --conf ./pegasus-properties.conf --dir $SUBMIT_DIR ${CACHE_OPTION} $SUBMIT_DAX $NO_GRID ${STORED_PLANNER_ARGS}
+pegasus-plan --conf ./pegasus-properties.conf --dir $SUBMIT_DIR $SUBMIT_DAX $NO_GRID ${STORED_PLANNER_ARGS}
 
 echo
 
