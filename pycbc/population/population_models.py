@@ -429,7 +429,7 @@ def norm_redshift_distribution(z_array, merger_rate):
 
 
 def distance_from_rate(
-        total_rate, merger_rate, maxz=10, npoints=8000, **kwargs):
+        total_rate, merger_rate, maxz=2, npoints=1000, **kwargs):
     r"""Returns the luminosity distance from the given total rate value.
 
     Parameters
@@ -440,7 +440,7 @@ def distance_from_rate(
             The coalescence rate. Provided by users or calculated by
             the `coalescence_rate` function.
     maxz : float
-        The max redshift in the interpolation, the default value is 10.
+        The max redshift in the interpolation, the default value is 2.
     npoints : int
         The number of points used in the interpolation, the default value
         is 1000.
@@ -457,11 +457,15 @@ def distance_from_rate(
 
     Notes
     -----
-         The can be used in a population-informed prior for redshift
+         This can be used in a population-informed prior for redshift
          and luminosity distance of CBC sources. When this used in
-         low redshift range, please set `maxz` to the corresponding
-         value and change `npoints` to a much lower value, this function
-         is slow.
+         high redshift range, please first use the `total_rate_upto_redshift`
+         function to plot the curve and find the point where the curve
+         starts to stay almost horizontal, then set `maxz` to the
+         corresponding value and change `npoints` to a reasonable value,
+         because `ComovingVolInterpolator` will be dominated by numerical
+         errors in the region where the function is almost constant.
+         Besides, this function is slow.
     """
 
     cosmology = get_cosmology(**kwargs)
