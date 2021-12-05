@@ -51,7 +51,7 @@ uniform in source masses. As we will be using the ``IMRPhenomPv2`` waveform
 approximant, we will use the ``marginalized_phase`` Gaussian noise model.
 
 This workflow will produce a results page that looks like the example
-`here <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/inference/inference-gw150914_gw170814/>`_.
+`inference-gw150914_gw170814 <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/inference/inference-gw150914_gw170814/>`_.
 
 The inference configuration files we will use can all be found in the pycbc
 ``examples`` directory. Below, we provide instructions on what files need
@@ -227,7 +227,8 @@ Results page
 
 When the workflow has completed successfully it will write out the results
 page to the directory you specified in the ``create_workflow.sh`` script.
-You can see what the result page will look like `here <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/inference/inference-gw150914_gw170814/>`_.
+You can see what the result page will look like the example
+`inference-gw150914_gw170814 <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/inference/inference-gw150914_gw170814/>`_.
 
 
 ===============================================
@@ -277,4 +278,4 @@ it using the same ``create_workflow.sh`` script and ``pycbc_submit_dax``
 commands as above, making sure to change the ``WORKFLOW_NAME`` and ``SEED``.
 
 This will produce a results page that looks like the example
-`here <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/inference/inference-dynesty-gw150914_gw170814/>`_.
+`inference-dynesty-gw150914_gw170814 <https://www.atlas.aei.uni-hannover.de/~work-cdcapano/scratch/inference_workflow_docs/inference/inference-dynesty-gw150914_gw170814/>`_.

@@ -118,9 +118,9 @@ def intmc(mc, x_min, x_max):
 
 
 def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
-    """
-    Returns the area under the chirp mass contour in a region of the m1m2
-    plane (m1 > m2)
+    """Returns the area under the chirp mass contour in a region of the m1-m2
+    plane (m1 > m2).
+
     Parameters
     ----------
     trig_mc : sequence of two values
@@ -130,6 +130,7 @@ def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
         upper and lower horizontal limits of the region (limits on m2)
     lim_v1, lim_v2 : floats
         right and left vertical limits of the region (limits on m1)
+
     Returns
     -------
     area : float

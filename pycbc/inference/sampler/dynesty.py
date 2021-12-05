@@ -203,7 +203,8 @@ class DynestySampler(BaseSampler):
         dynesty documentation for more details on these.
 
         The following options are retrieved in the ``[sampler]`` section:
-        * ``name = STR`` :
+
+        * ``name = STR``:
             Required. This must match the sampler's name.
         * ``maxiter = INT``:
             The maximum number of iterations to run.
@@ -243,9 +244,9 @@ class DynestySampler(BaseSampler):
             factor.
         * ``maxcall = INT``:
             The maximum number of calls before checking if we should checkpoint
-        * ``checkpoint_time_interval`` :
+        * ``checkpoint_time_interval``:
             Sets the time in seconds between checkpointing.
-        * ``loglikelihood-function`` :
+        * ``loglikelihood-function``:
             The attribute of the model to use for the loglikelihood. If
             not provided, will default to ``loglikelihood``.
 
@@ -579,12 +580,13 @@ def sample_rwalk_mod(args):
 
 
 def estimate_nmcmc(accept_ratio, old_act, maxmcmc, safety=5, tau=None):
-    """ Estimate autocorrelation length of chain using acceptance fraction
+    """Estimate autocorrelation length of chain using acceptance fraction
 
     Using ACL = (2/acc) - 1 multiplied by a safety margin. Code adapated from
     CPNest:
-        - https://github.com/johnveitch/cpnest/blob/master/cpnest/sampler.py
-        - http://github.com/farr/Ensemble.jl
+
+    * https://github.com/johnveitch/cpnest/blob/master/cpnest/sampler.py
+    * https://github.com/farr/Ensemble.jl
 
     Parameters
     ----------
@@ -598,7 +600,6 @@ def estimate_nmcmc(accept_ratio, old_act, maxmcmc, safety=5, tau=None):
         A safety factor applied in the calculation
     tau: int (optional)
         The ACT, if given, otherwise estimated.
-
     """
     if tau is None:
         tau = maxmcmc / safety

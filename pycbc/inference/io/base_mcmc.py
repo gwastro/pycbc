@@ -921,7 +921,7 @@ def nsamples_in_chain(start_iter, interval, niterations):
 
     Returns
     -------
-    numpy.int_
+    num_samples : (array of) numpy.int
         The number of samples in a chain, >= 0.
     """
     # this is written in a slightly wonky way so that it will work with either

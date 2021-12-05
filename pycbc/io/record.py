@@ -44,8 +44,8 @@ _numpy_function_lib = {_x: _y for _x,_y in numpy.__dict__.items()
 #
 # =============================================================================
 #
-# add ligolw_types to numpy typeDict
-numpy.typeDict.update(ligolw_types.ToNumPyType)
+# add ligolw_types to numpy sctypeDict
+numpy.sctypeDict.update(ligolw_types.ToNumPyType)
 
 # Annoyingly, numpy has no way to store NaNs in an integer field to indicate
 # the equivalent of None. This can be problematic for fields that store ids:
@@ -118,8 +118,8 @@ def lstring_as_obj(true_or_false=None):
     """
     if true_or_false is not None:
         _default_types_status['lstring_as_obj'] = true_or_false
-        # update the typeDict
-        numpy.typeDict[u'lstring'] = numpy.object_ \
+        # update the sctypeDict
+        numpy.sctypeDict[u'lstring'] = numpy.object_ \
             if _default_types_status['lstring_as_obj'] \
             else 'S%i' % _default_types_status['default_strlen']
     return _default_types_status['lstring_as_obj']
@@ -130,7 +130,7 @@ def ilwd_as_int(true_or_false=None):
     """
     if true_or_false is not None:
         _default_types_status['ilwd_as_int'] = true_or_false
-        numpy.typeDict[u'ilwd:char'] = int \
+        numpy.sctypeDict[u'ilwd:char'] = int \
             if _default_types_status['ilwd_as_int'] \
             else 'S%i' % default_strlen
     return _default_types_status['ilwd_as_int']
@@ -141,7 +141,7 @@ def default_strlen(strlen=None):
     """
     if strlen is not None:
         _default_types_status['default_strlen'] = strlen
-        # update the typeDicts as needed
+        # update the sctypeDicts as needed
         lstring_as_obj(_default_types_status['lstring_as_obj'])
         ilwd_as_int(_default_types_status['ilwd_as_int'])
     return _default_types_status['default_strlen']
@@ -904,21 +904,27 @@ class FieldArray(numpy.recarray):
                 self._code_cache[item] = (code, itemvars, item_dict)
 
             code, itemvars, item_dict = self._code_cache[item]
+            added = {}
             for it in itemvars:
                 if it in self.fieldnames:
                     # pull out the fields: note, by getting the parent fields
                     # we also get the sub fields name
-                    item_dict[it] = self.__getbaseitem__(it)
+                    added[it] = self.__getbaseitem__(it)
                 elif (it in self.__dict__) or (it in self._virtualfields):
                     # pull out any needed attributes
-                    item_dict[it] = self.__getattribute__(it, no_fallback=True)
+                    added[it] = self.__getattribute__(it, no_fallback=True)
                 else:
                     # add any aliases
                     aliases = self.aliases
                     if it in aliases:
-                        item_dict[it] = self.__getbaseitem__(aliases[it])
+                        added[it] = self.__getbaseitem__(aliases[it])
+            if item_dict is not None:
+                item_dict.update(added)
 
-            return eval(code, {"__builtins__": None}, item_dict)
+            ans = eval(code, {"__builtins__": None}, item_dict)
+            for k in added:
+                item_dict.pop(k)
+            return ans
 
     def __contains__(self, field):
         """Returns True if the given field name is in self's fields."""

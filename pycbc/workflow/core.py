@@ -766,7 +766,7 @@ class Workflow(pegasus_workflow.Workflow):
             fil.add_pfn(urljoin('file:', pathname2url(fil.storage_path)),
                         site='local')
 
-    def save(self, filename=None, output_map_path=None):
+    def save(self, filename=None, output_map_path=None, root=True):
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
 
         if output_map_path is None:
@@ -815,7 +815,8 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).save(filename=filename,
                                    output_map_path=output_map_path,
                                    submit_now=self.args.submit_now,
-                                   plan_now=self.args.plan_now)
+                                   plan_now=self.args.plan_now,
+                                   root=root)
 
     def save_config(self, fname, output_dir, cp=None):
         """ Writes configuration file to disk and returns a pycbc.workflow.File

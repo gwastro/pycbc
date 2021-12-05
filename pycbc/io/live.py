@@ -291,8 +291,7 @@ class SingleCoincForGraceDB(object):
         filename: str
             Name of file to write to disk.
         """
-        gz = filename.endswith('.gz')
-        ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
+        ligolw_utils.write_filename(self.outdoc, filename, compress='auto')
 
         # save source probabilities in a json file
         if self.probabilities is not None:

@@ -59,11 +59,13 @@ class Parameter(str):
         <prefix>``name`` : {``default``, ``dtype``}
         <prefix>   ``description`` Label: ``label``.
         """
-        outstr = "%s%s : {%s, %s}\n" %(prefix, self.name, str(self.default),
-            str(self.dtype).replace("<type '", '').replace("'>", '')) + \
-            "%s    %s" %(prefix, self.description)
+        dtype_str = str(self.dtype).replace("<type '", '').replace("'>", '')
+        dtype_str = dtype_str.replace("<class '", '')
+        outstr = "%s%s : {%s, %s}\n%s    %s" % (
+                prefix, self.name, str(self.default), dtype_str, prefix,
+                self.description)
         if include_label:
-            outstr += " Label: %s" %(self.label)
+            outstr += " Label: %s" % (self.label)
         return outstr
 
 
