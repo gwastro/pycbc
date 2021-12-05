@@ -322,6 +322,7 @@ class SingleCoincForGraceDB(object):
         import matplotlib
         matplotlib.use('Agg')
         import pylab as pl
+        pl.rcParams.update({"text.usetex": False})
 
         # first of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
