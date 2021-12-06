@@ -142,12 +142,13 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
                                                   **kwargs)
         except CosmologyError:
             if ii == len(zs)-1:
-                # if zs[ii] is less than but very close to zmax, let's say zs[ii]
-                # is the last element in the [zmin, zmax], `z_at_value` will also 
-                # returns "CosmologyError", please see
-                # (https://docs.astropy.org/en/stable/api/astropy.cosmology.
-                # z_at_value.html), in order to avoid bumping up zmax, just 
-                # set zs equals to previous value, we assume the `func` is smooth.
+                # if zs[ii] is less than but very close to zmax, let's say
+                # zs[ii] is the last element in the [zmin, zmax],
+                # `z_at_value` will also returns "CosmologyError", please
+                # see (https://docs.astropy.org/en/stable/api/astropy.
+                # cosmology.z_at_value.html), in order to avoid bumping up
+                # zmax, just set zs equals to previous value, we assume
+                # the `func` is smooth.
                 zs[ii] = zs[ii-1]
             else:
                 # we'll get this if the z was larger than zmax; in that case we'll
@@ -390,7 +391,7 @@ class ComovingVolInterpolator(object):
         else:
             ys = zs
 
-        return interpolate.interp1d(logvs, ys, kind='linear', 
+        return interpolate.interp1d(logvs, ys, kind='linear',
                                     bounds_error=False)
 
     def setup_interpolant(self):
