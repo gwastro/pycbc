@@ -24,14 +24,15 @@ from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
 
-try: 
+try:
     import pyswarms as ps
 except:
     ps = None
 
-
+    
 Nfeval = 0
 start_time = time.time()
+
 
 def callback_func(Xi, convergence=0):
     global Nfeval
@@ -40,7 +41,8 @@ def callback_func(Xi, convergence=0):
         return True
     Nfeval += 1
 
-# Define the function for computing network snr
+
+# Function for computing network snr
 def compute_network_snr_core(v, *argv):
     data = argv[0]
     coinc_times = argv[1]
@@ -98,15 +100,18 @@ def compute_network_snr_core(v, *argv):
         snr_series = snr[onsource_slice] * norm
         snr_series_dict[ifo] = snr * norm
         snr_series_dict['sigmasq_' + ifo] = sigmasq
-        network_snrsq += max(abs(snr_series._data))**2
-    return (network_snrsq**0.5), snr_series_dict
+        network_snrsq += max(abs(snr_series._data)) ** 2.
+
+    return network_snrsq ** 0.5, snr_series_dict
+
 
 def compute_network_snr(v, *argv):
     if len(argv) == 1:
         argv = argv[0]
     nsnr, _ = compute_network_snr_core(v, *argv)
     return -nsnr
- 
+
+
 def compute_network_snr_pso(v, *argv, **kwargs):
     argv = kwargs['args']
     nsnr_array = numpy.array([-compute_network_snr_core(v_i, *argv)[0] for v_i in v])
@@ -120,21 +125,21 @@ parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--params-file', required=True,
                     help='Location of the attributes file created by PyCBC '
                          'Live')
-parser.add_argument("--data-files", type=str, nargs='+',
+parser.add_argument('--data-files', type=str, nargs='+',
                     action=MultiDetOptionAction,
                     metavar='IFO:DATA_FILE',
-                    help="Locations of the overwhitened data files produced "
-                         "by PyCBC Live.")
-parser.add_argument("--psd-files", type=str, nargs='+',
+                    help='Locations of the overwhitened data files produced '
+                         'by PyCBC Live.")
+parser.add_argument('--psd-files', type=str, nargs='+',
                     action=MultiDetOptionAction,
                     metavar='IFO:PSD_FILE',
-                    help="Locations of the PSD files produced "
-                         "by PyCBC Live.")
-parser.add_argument("--approximant", required=True,
-                    help="Waveform approximant string.")
-parser.add_argument("--snr-threshold", default=4.0,
-                    help="If the SNR in ifo X is below this threshold do not "
-                         "consider it part of the coincidence.")
+                    help='Locations of the PSD files produced '
+                         'by PyCBC Live.")
+parser.add_argument('--approximant', required=True,
+                    help='Waveform approximant string.')
+parser.add_argument('--snr-threshold', default=4.0,
+                    help='If the SNR in ifo X is below this threshold do not '
+                         'consider it part of the coincidence. Not implemented')
 parser.add_argument('--gracedb-server', metavar='URL',
                     help='URL of GraceDB server API for uploading events. '
                          'If not provided, the default URL is used.')
@@ -154,13 +159,14 @@ parser.add_argument('--optimizer', type=str, default='differential_evolution',
                     help='The optimizer to use, differential_evolution, shgo or pso')
 parser.add_argument('--di-maxiter', type=int, default=50,
                     help='Only relevant for --optimizer differential_evolution: '
-                    'The maximum number of generations over which the entire population is evolved.')
+                    'The maximum number of generations over which the entire '
+                    'population is evolved.')
 parser.add_argument('--di-popsize', type=int, default=100,
                     help='Only relevant for --optimizer differential_evolution: '
                          'A multiplier for setting the total population size.')
 parser.add_argument('--shgo-samples', type=int, default=76,
                     help='Only relevant for --optimizer shgo: '
-                    'Number of sampling points used in the construction of the simplicial complex. ')
+                    'Number of sampling points used in the construction of the simplicial complex.')
 parser.add_argument('--shgo-iters', type=int, default=3,
                     help='Only relevant for --optimizer shgo: '
                     'Number of iterations used in the construction of the simplicial complex.')
@@ -179,14 +185,18 @@ parser.add_argument('--pso-c2', type=float, default=2.0,
 parser.add_argument('--pso-w', type=float, default=0.01,
                     help='Only relevant for --optimizer pso: '
                     'The hyperparameter w: the intertia parameter.')
-                    
 
+# Input checking
 args = parser.parse_args()
+if args.snr_threshold != 4:
+    raise NotImplementedError("Sorry, the SNR threshold option doesn't '
+                              "work yet")
 pycbc.init_logging(args.verbose)
 
 if args.optimizer == 'pso' and ps == None:
     parser.error('You need to install pyswarms to use the pso optimizer.')
 
+                    
 logging.info('Starting optimize SNR')
 
 data = {}
@@ -196,7 +206,16 @@ for ifo in args.data_files.keys():
 
 fp = h5py.File(args.params_file, 'r')
 ifos = list(data.keys())
-original_gid = fp['gid'][()]
+try:
+    original_gid = fp['gid'][()]
+except KeyError as gdberr:
+    if args.enable_gracedb_upload:
+        print('Need original gracedb ID to upload followup!', gdberr)
+        raise
+    else:
+        original_gid = None
+if original_gid:
+    logging.info('Following up GID %s', original_gid)
 
 coinc_times = {}
 for ifo in ifos:
@@ -204,10 +223,8 @@ for ifo in ifos:
         coinc_times[ifo] = fp['coinc_times'][ifo][()]
     except KeyError:
         pass
-
 coinc_ifos = list(coinc_times.keys())
 
-logging.info('Following up GID %s', original_gid)
 flen = fp['flen'][()]
 approximant = args.approximant
 flow = float(fp['flow'][()])
@@ -230,11 +247,11 @@ maxchirp = mchirp * (1 + mchirp / 50.0)
 minchirp = 1 if minchirp < 1 else minchirp
 maxchirp = 80 if maxchirp > 80 else maxchirp
 
-#Different optimizers have different bound definitions
+# Different optimizers have different bound definitions
 
-if args.optimizer == 'pso': 
+if args.optimizer == 'pso':
     min_bound = [minchirp, 0.01, -0.9, -0.9]
-    max_bound = [maxchirp, 0.2499, 0.9, 0.9] 
+    max_bound = [maxchirp, 0.2499, 0.9, 0.9]
     bounds = (min_bound, max_bound)
 else:
     bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
@@ -249,16 +266,16 @@ if args.optimizer == 'differential_evolution':
                                  args=extra_args)
 
 elif args.optimizer == 'shgo':
-    results = shgo(compute_network_snr, bounds=bounds, args=extra_args, 
+    results = shgo(compute_network_snr, bounds=bounds, args=extra_args,
                 iters=args.shgo_iters, n=args.shgo_samples, sampling_method="sobol")
-                
+
 elif args.optimizer == 'pso':
     options = {'c1': args.pso_c1, 'c2': args.pso_c2, 'w':args.pso_w}
-    optimizer = ps.single.GlobalBestPSO(n_particles=args.pso_particles, 
+    optimizer = ps.single.GlobalBestPSO(n_particles=args.pso_particles,
                                         dimensions=4, options=options, bounds=bounds)
     cost, results = optimizer.optimize(compute_network_snr_pso, iters=args.pso_iters,
                                        n_processes=args.cores, **extra_kwargs)
-                
+
 logging.info('Optimization complete')
 
 if args.optimizer == 'pso':
@@ -272,9 +289,7 @@ mass2 = mass2_from_mtotal_eta(mtotal, opt_params[1])
 spin1z = opt_params[2]
 spin2z = opt_params[3]
 
-
 fup_ifos = set(ifos) - set(coinc_ifos)
-
 for ifo in fup_ifos:
     coinc_times[ifo] = coinc_times[coinc_ifos[0]]
 
