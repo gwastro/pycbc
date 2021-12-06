@@ -238,7 +238,7 @@ while True:
         if old_samples is None:
             tstart = opts.gps_start_time
         else:
-            tstart = old_samples['tc'].max()
+            tstart = old_samples['tc'].max() + opts.time_step
 
         tc = numpy.arange(0, draw_size) * opts.time_step + tstart
         tc += uniform(0, high=opts.time_window, size=draw_size).cumsum()
