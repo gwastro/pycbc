@@ -994,26 +994,26 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
     -------
     dict :
         Dictionary of:
-        * inclination :
+        * inclination : float
             Inclination (rad), defined as the angle between
             the orbital angular momentum L and the
             line-of-sight at the reference frequency.
-        * spin1x :
+        * spin1x : float
             The x component of the first binary component's
             dimensionless spin.
-        * spin1y :
+        * spin1y : float
             The y component of the first binary component's
             dimensionless spin.
-        * spin1z :
+        * spin1z : float
             The z component of the first binary component's
             dimensionless spin.
-        * spin2x :
+        * spin2x : float
             The x component of the second binary component's
             dimensionless spin.
-        * spin2y :
+        * spin2y : float
             The y component of the second binary component's
             dimensionless spin.
-        * spin2z :
+        * spin2z : float
             The z component of the second binary component's
             dimensionless spin.
     """
@@ -1048,26 +1048,26 @@ def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
         The reference frequency.
     phiref : float
         The orbital phase at ``f_ref``.
-    inclination :
+    inclination : float
         Inclination (rad), defined as the angle between
         the orbital angular momentum L and the
         line-of-sight at the reference frequency.
-    spin1x :
+    spin1x : float
         The x component of the first binary component's
         dimensionless spin.
-    spin1y :
+    spin1y : float
         The y component of the first binary component's
         dimensionless spin.
-    spin1z :
+    spin1z : float
         The z component of the first binary component's
         dimensionless spin.
-    spin2x :
+    spin2x : float
         The x component of the second binary component's
         dimensionless spin.
-    spin2y :
+    spin2y : float
         The y component of the second binary component's
         dimensionless spin.
-    spin2z :
+    spin2z : float
         The z component of the second binary component's
         dimensionless spin.
 
