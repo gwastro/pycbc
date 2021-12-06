@@ -29,7 +29,7 @@ try:
 except:
     ps = None
 
-    
+
 Nfeval = 0
 start_time = time.time()
 
@@ -195,14 +195,12 @@ parser.add_argument('--pso-w', type=float, default=0.01,
 # Input checking
 args = parser.parse_args()
 if args.snr_threshold != 4:
-    raise NotImplementedError("Sorry, the SNR threshold option doesn't '
-                              "work yet")
-pycbc.init_logging(args.verbose)
-
+    parser.error("Sorry, the SNR threshold option doesn't work yet")
 if args.optimizer == 'pso' and ps == None:
     parser.error('You need to install pyswarms to use the pso optimizer.')
+pycbc.init_logging(args.verbose)
 
-                    
+
 logging.info('Starting optimize SNR')
 
 data = {}
@@ -212,12 +210,11 @@ for ifo in args.data_files.keys():
 
 fp = h5py.File(args.params_file, 'r')
 ifos = list(data.keys())
-try:
+if 'gid' in fp:
     original_gid = fp['gid'][()]
-except KeyError as gdberr:
+else:
     if args.enable_gracedb_upload:
-        print('Need original gracedb ID to upload followup!', gdberr)
-        raise
+        logging.error('Need original gracedb ID to upload followup!', gdberr)
     else:
         original_gid = None
 if original_gid:
@@ -254,7 +251,6 @@ minchirp = 1 if minchirp < 1 else minchirp
 maxchirp = 80 if maxchirp > 80 else maxchirp
 
 # Different optimizers have different bound definitions
-
 if args.optimizer == 'pso':
     min_bound = [minchirp, 0.01, -0.9, -0.9]
     max_bound = [maxchirp, 0.2499, 0.9, 0.9]
@@ -262,6 +258,7 @@ if args.optimizer == 'pso':
 else:
     bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
 
+    
 logging.info('Starting optimization')
 
 if args.optimizer == 'differential_evolution':
