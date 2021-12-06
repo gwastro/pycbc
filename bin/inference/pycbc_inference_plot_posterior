@@ -34,6 +34,7 @@ import numpy
 
 import matplotlib
 from matplotlib import (patches, use)
+matplotlib.rcParams['text.usetex'] = False
 
 import pycbc
 import pycbc.version
