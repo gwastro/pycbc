@@ -148,11 +148,11 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
                 # see (https://docs.astropy.org/en/stable/api/astropy.
                 # cosmology.z_at_value.html), in order to avoid bumping up
                 # zmax, just set zs equals to previous value, we assume
-                # the `func` is smooth.
+                # the `func` is smooth
                 zs[ii] = zs[ii-1]
             else:
-                # we'll get this if the z was larger than zmax; in that case we'll
-                # try bumping up zmax later to get a value
+                # we'll get this if the z was larger than zmax; in that
+                # case we'll try bumping up zmax later to get a value
                 zs[ii] = numpy.inf
     # check if there were any zs > zmax
     replacemask = numpy.isinf(zs)
