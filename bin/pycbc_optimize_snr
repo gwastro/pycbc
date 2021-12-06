@@ -33,7 +33,6 @@ except:
 Nfeval = 0
 start_time = time.time()
 
-
 def callback_func(Xi, convergence=0):
     global Nfeval
     logging.info("Currently at %d %s", Nfeval, convergence)
@@ -42,8 +41,11 @@ def callback_func(Xi, convergence=0):
     Nfeval += 1
 
 
-# Function for computing network snr
-def compute_network_snr_core(v, *argv):
+def compute_network_snr_core(v, *argv, raise_err=False):
+    """
+    Compute network SNR as a function over mchirp, eta and two aligned
+    spin components, as stored in the list v
+    """    
     data = argv[0]
     coinc_times = argv[1]
     ifos = argv[2]
@@ -70,9 +72,12 @@ def compute_network_snr_core(v, *argv):
                 f_lower=flow, f_final=f_end, delta_f=delta_f,
                 delta_t=1.0/sample_rate, distance=distance)
     except RuntimeError:
+        if raise_err:
+            raise
         # assume a failure in the waveform approximant
         # due to the choice of parameters
-        return -numpy.inf, {}
+        else:
+            return -numpy.inf, {}
 
     if not hasattr(htilde, 'params'):
         htilde.params = dict(mass1=mass1, mass2=mass2,
@@ -129,12 +134,12 @@ parser.add_argument('--data-files', type=str, nargs='+',
                     action=MultiDetOptionAction,
                     metavar='IFO:DATA_FILE',
                     help='Locations of the overwhitened data files produced '
-                         'by PyCBC Live.")
+                         'by PyCBC Live.')
 parser.add_argument('--psd-files', type=str, nargs='+',
                     action=MultiDetOptionAction,
                     metavar='IFO:PSD_FILE',
                     help='Locations of the PSD files produced '
-                         'by PyCBC Live.")
+                         'by PyCBC Live.')
 parser.add_argument('--approximant', required=True,
                     help='Waveform approximant string.')
 parser.add_argument('--snr-threshold', default=4.0,
@@ -166,7 +171,8 @@ parser.add_argument('--di-popsize', type=int, default=100,
                          'A multiplier for setting the total population size.')
 parser.add_argument('--shgo-samples', type=int, default=76,
                     help='Only relevant for --optimizer shgo: '
-                    'Number of sampling points used in the construction of the simplicial complex.')
+                    'Number of sampling points used in the construction of the '
+                    'simplicial complex.')
 parser.add_argument('--shgo-iters', type=int, default=3,
                     help='Only relevant for --optimizer shgo: '
                     'Number of iterations used in the construction of the simplicial complex.')
@@ -264,11 +270,9 @@ if args.optimizer == 'differential_evolution':
                                  popsize=args.di_popsize, mutation=(0.5,1),
                                  recombination=0.7, callback=callback_func,
                                  args=extra_args)
-
 elif args.optimizer == 'shgo':
     results = shgo(compute_network_snr, bounds=bounds, args=extra_args,
                 iters=args.shgo_iters, n=args.shgo_samples, sampling_method="sobol")
-
 elif args.optimizer == 'pso':
     options = {'c1': args.pso_c1, 'c2': args.pso_c2, 'w':args.pso_w}
     optimizer = ps.single.GlobalBestPSO(n_particles=args.pso_particles,
