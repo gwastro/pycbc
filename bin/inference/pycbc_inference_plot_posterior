@@ -34,7 +34,6 @@ import numpy
 
 import matplotlib
 from matplotlib import (patches, use)
-matplotlib.rcParams['text.usetex'] = False
 
 import pycbc
 import pycbc.version
@@ -49,6 +48,7 @@ from pycbc.inference import (option_utils, io)
 from pycbc.results.scatter_histograms import create_multidim_plot
 
 use('agg')
+matplotlib.rcParams['text.usetex'] = False
 
 # add options to command line
 parser = io.ResultsArgumentParser()
