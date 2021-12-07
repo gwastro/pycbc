@@ -30,9 +30,9 @@ from functools import partial
 import numpy as np
 import scipy.integrate as scipy_integrate
 import scipy.interpolate as scipy_interpolate
-from sympy import symbols, sqrt, exp, log, integrate, lambdify
 from astropy import units
 from pycbc.cosmology import get_cosmology, ComovingVolInterpolator
+from pycbc.cosmology import cosmological_quantity_from_redshift
 
 
 def sfr_grb_2008(z):
@@ -148,6 +148,7 @@ def diff_lookback_time(z, **kwargs):
     -----
          Pease see Eq.(A3) in <arXiv:2011.02717v3> for more details.
     """
+    from sympy import sqrt
 
     cosmology = get_cosmology(**kwargs)
     H0 = cosmology.H0.value * \
@@ -177,6 +178,7 @@ def p_tau(tau, td_model="inverse"):
     -----
          Pease see the Appendix in <arXiv:2011.02717v3> for more details.
     """
+    from sympy import sqrt, exp, log
 
     if td_model == "log_normal":
         t_ln = 2.9  # Gyr
@@ -229,6 +231,7 @@ def convolution_trans(sfr, diff_lookback_t, model_td, **kwargs):
     -----
          Pease see Eq.(A2) in <arXiv:2011.02717v3> for more details.
     """
+    from sympy import integrate, symbols
 
     if model_td not in ['log_normal', 'gaussian', 'power_law', 'inverse']:
         raise ValueError("'model_td' must choose from \
@@ -241,11 +244,12 @@ def convolution_trans(sfr, diff_lookback_t, model_td, **kwargs):
     z_0 = symbols('z_0')
     tau = integrate(diff_lookback_time_z(z), (z, z_0, z))
     func = sfr(z) * p_tau(tau, model_td) * diff_lookback_time_z(z)
-
     return func
 
+_merger_rate_densities = {}
 
-def merger_rate_density(z_array, sfr_func, td_model, rho_local, **kwargs):
+def merger_rate_density(sfr_func, td_model, rho_local, maxz=2.0,
+                        npoints=10000, zarray=None, **kwargs):
     r""" This function uses the symbolic integral to calculate
         the merger rate density of CBC sources. This function converts the
         convolution of the star formation rate SFR(tau) and the time delay
@@ -277,6 +281,10 @@ def merger_rate_density(z_array, sfr_func, td_model, rho_local, **kwargs):
     -----
          Pease see Eq.(A1), Eq.(A2) in <arXiv:2011.02717v3> for more details.
     """
+    from sympy import symbols, lambdify
+
+    if zarray is None:
+        zarray = np.linspace(0, maxz, npoints)
 
     if td_model not in ['log_normal', 'gaussian', 'power_law', 'inverse']:
         raise ValueError("'td_model' must choose from \
@@ -284,19 +292,18 @@ def merger_rate_density(z_array, sfr_func, td_model, rho_local, **kwargs):
 
     z = symbols('z')
     z_0 = symbols('z_0')
-    f_z = np.zeros(len(z_array))
+    f_z = np.zeros(len(zarray))
 
     func_1 = convolution_trans(
                 sfr=sfr_func, diff_lookback_t=diff_lookback_time,
                 model_td=td_model, **kwargs)
-    for i in range(len(z_array)):
-        func_2 = lambdify(z, func_1.subs(z_0, z_array[i]), 'scipy')
+    for i in range(len(zarray)):
+        func_2 = lambdify(z, func_1.subs(z_0, zarray[i]), 'scipy')
         f_z[i] = scipy_integrate.quad(
-                    func_2, z_array[i], np.inf, epsabs=1.49e-3)[0]
+                    func_2, zarray[i], np.inf, epsabs=1.49e-3)[0]
 
     f_z = f_z/f_z[0]*rho_local  # Normalize & Rescale
-    rho_z = scipy_interpolate.interp1d(z_array, f_z)
-
+    rho_z = scipy_interpolate.interp1d(zarray, f_z)
     return rho_z
 
 
@@ -331,22 +338,23 @@ def coalescence_rate(z_array, rate_den, **kwargs):
     for z in z_array:
         dr = cosmology.differential_comoving_volume(z) / (1+z)
         dr_dz.append((dr*4*np.pi*units.sr*rate_den(z)*(units.Mpc)**(-3)).value)
+
     coalescence_rate_interp = scipy_interpolate.interp1d(
                 z_array, dr_dz, fill_value='extrapolate')
 
     return coalescence_rate_interp
 
 
-def total_rate_upto_redshift(z, merger_rate):
+def total_rate_upto_redshift(z, merger_rate, **kwargs):
     r"""Total rate of occurrences out to some redshift.
 
     Parameters
     ----------
     z : int, float, tuple, numpy.ndarray or list
             The redshift.
-    merger_rate : scipy.interpolate.interp1d or function
-            The coalescence rate. Provided by users or calculated by
-            the `coalescence_rate` function.
+    merger_rate : function
+        The local merger rate density. Function should take the redshift as
+        a single argument.
 
     Returns
     -------
@@ -354,17 +362,23 @@ def total_rate_upto_redshift(z, merger_rate):
         The total rate of occurrences out to some redshift. In the
         unit of "yr^-1".
     """
+    cosmology = get_cosmology(**kwargs)
+
+    def drdz(z):
+        dr = cosmology.differential_comoving_volume(z) / (1 + z)
+        return (dr * 4 * np.pi * units.sr *
+                merger_rate(z) * (units.Mpc)**(-3)).value
 
     if isinstance(z, (float, int)):
         total_rate = scipy_integrate.quad(
-                        merger_rate, 0, z,
+                        drdz, 0, z,
                         epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0]
     elif isinstance(z, (tuple, np.ndarray, list)):
         total_rate = []
         for redshift in z:
             total_rate.append(
                 scipy_integrate.quad(
-                    merger_rate, 0, redshift,
+                    drdz, 0, redshift,
                     epsabs=2.00e-4, epsrel=2.00e-4, limit=1000)[0]
             )
     else:
@@ -424,12 +438,11 @@ def norm_redshift_distribution(z_array, merger_rate):
 
     lambd = average_time_between_signals(z_array, merger_rate)
     norm_coalescence_rate = lambd/(365*24*3600) * merger_rate(z_array)
-
     return norm_coalescence_rate
 
 
 def distance_from_rate(
-        total_rate, merger_rate, maxz=2, npoints=1000, **kwargs):
+        total_rate, merger_rate, maxz=2, npoints=10000, **kwargs):
     r"""Returns the luminosity distance from the given total rate value.
 
     Parameters
@@ -443,7 +456,7 @@ def distance_from_rate(
         The max redshift in the interpolation, the default value is 2.
     npoints : int
         The number of points used in the interpolation, the default value
-        is 1000.
+        is 10000.
     \**kwargs :
         All other keyword args are passed to :py:func:`get_cosmology` to
         select a cosmology. If none provided, will use
@@ -467,20 +480,27 @@ def distance_from_rate(
          errors in the region where the function is almost constant.
          Besides, this function is slow.
     """
-
     cosmology = get_cosmology(**kwargs)
+
     if not hasattr(merger_rate, 'dist_interp'):
         merger_rate.dist_interp = {}
 
-    if cosmology.name not in merger_rate.dist_interp:
+    if ((cosmology.name not in merger_rate.dist_interp) or
+       (len(merger_rate.dist_interp[cosmology.name].x) != npoints)):
         def rate_func(redshift):
-            return total_rate_upto_redshift(
-                redshift, merger_rate) * (units.yr)**(-1)
+            return total_rate_upto_redshift(redshift, merger_rate)
 
-        merger_rate.dist_interp[cosmology.name] = ComovingVolInterpolator(
-                default_maxz=maxz, numpoints=npoints, cosmology=cosmology,
-                parameter='luminosity_distance', vol_func=rate_func)
-    return merger_rate.dist_interp[cosmology.name](total_rate)
+        zarray = np.linspace(0, maxz, npoints)
+        dists = cosmological_quantity_from_redshift(zarray,
+                                               'luminosity_distance', **kwargs)
+        total_rates = rate_func(zarray)
+        interp = scipy_interpolate.interp1d(total_rates, dists)
+        merger_rate.dist_interp[cosmology.name] = interp
+
+    v = merger_rate.dist_interp[cosmology.name](total_rate)
+    if np.isscalar(v):
+        v = float(v)
+    return v
 
 
 __all__ = ['sfr_grb_2008', 'sfr_madau_dickinson_2014',
