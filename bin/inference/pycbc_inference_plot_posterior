@@ -48,7 +48,6 @@ from pycbc.inference import (option_utils, io)
 from pycbc.results.scatter_histograms import create_multidim_plot
 
 use('agg')
-matplotlib.rcParams['text.usetex'] = False
 
 # add options to command line
 parser = io.ResultsArgumentParser()
