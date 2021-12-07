@@ -44,7 +44,7 @@ def callback_func(Xi, convergence=0):
 def compute_network_snr_core(v, *argv, raise_err=False):
     """
     Compute network SNR as a function over mchirp, eta and two aligned
-    spin components, as stored in the list v
+    spin components, stored in that order in the sequence v
     """    
     data = argv[0]
     coinc_times = argv[1]
@@ -334,7 +334,7 @@ for ifo in ifos:
         loudest_ifo = ifo
         loudest_snr_time_allifos = loudest_snr_times[ifo]
 
-# Now we can create the snr_series_dict
+# Now create the snr_series_dict
 for ifo in ifos:
     # Find loudest SNR within coincidence window of the largest peak
     snr_peak = abs(loudest_snrs[ifo])
