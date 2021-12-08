@@ -311,7 +311,8 @@ def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
     return rho_z
 
 
-def coalescence_rate(rate_den, maxz=10.0, npoints=10000, z_array=None, **kwargs):
+def coalescence_rate(rate_den, maxz=10.0, npoints=10000,
+                     z_array=None, **kwargs):
     r""" This function calculates the coalescence(merger) rate at the redshift z.
 
     Parameters
