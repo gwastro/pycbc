@@ -204,20 +204,19 @@ pycbc.init_logging(args.verbose)
 logging.info('Starting optimize SNR')
 
 data = {}
-for ifo in args.data_files.keys():
+ifos = list(data.keys())
+for ifo in ifos:
     data[ifo] = load_frequencyseries(args.data_files[ifo])
     data[ifo].psd = load_frequencyseries(args.psd_files[ifo])
 
 fp = h5py.File(args.params_file, 'r')
-ifos = list(data.keys())
 if 'gid' in fp:
     original_gid = fp['gid'][()]
 else:
-    if args.enable_gracedb_upload:
-        logging.error('Params must include original gracedb ID in order '
-                      'to upload followup!')
-    else:
-        original_gid = None
+    original_gid = None
+if args.enable_gracedb_upload and not original_gid:
+    raise RuntimeError('Params must include original gracedb ID in order '
+                       'to upload followup!')
 if original_gid:
     logging.info('Following up GID %s', original_gid)
 
