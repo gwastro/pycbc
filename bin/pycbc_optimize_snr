@@ -214,7 +214,8 @@ if 'gid' in fp:
     original_gid = fp['gid'][()]
 else:
     if args.enable_gracedb_upload:
-        logging.error('Need original gracedb ID to upload followup!', gdberr)
+        logging.error('Params must include original gracedb ID in order '
+                      'to upload followup!')
     else:
         original_gid = None
 if original_gid:
