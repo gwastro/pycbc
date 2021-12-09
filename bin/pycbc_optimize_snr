@@ -204,7 +204,7 @@ pycbc.init_logging(args.verbose)
 logging.info('Starting optimize SNR')
 
 data = {}
-ifos = list(data.keys())
+ifos = list(args.data_files.keys())
 for ifo in ifos:
     data[ifo] = load_frequencyseries(args.data_files[ifo])
     data[ifo].psd = load_frequencyseries(args.psd_files[ifo])
