@@ -796,9 +796,10 @@ def snr_from_loglr(loglr):
     if singleval:
         loglr = numpy.array([loglr])
     # temporarily quiet sqrt(-1) warnings
-    numpysettings = numpy.seterr(invalid='ignore')
+    orig_settings = numpy.geterr()
+    numpy.seterr(invalid='ignore')
     snrs = numpy.sqrt(2*loglr)
-    numpy.seterr(**numpysettings)
+    numpy.seterr(**orig_settings)
     snrs[numpy.isnan(snrs)] = 0.
     if singleval:
         snrs = snrs[0]

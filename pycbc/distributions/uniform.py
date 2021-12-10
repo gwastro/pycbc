@@ -96,11 +96,12 @@ class Uniform(bounded.BoundedDist):
         super(Uniform, self).__init__(**params)
         # compute the norm and save
         # temporarily suppress numpy divide by 0 warning
+        old_settings = numpy.geterr()
         numpy.seterr(divide='ignore')
         self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
                                     for bnd in self._bounds.values()])
         self._norm = numpy.exp(self._lognorm)
-        numpy.seterr(divide='warn')
+        numpy.seterr(**old_settings)
 
     @property
     def norm(self):
