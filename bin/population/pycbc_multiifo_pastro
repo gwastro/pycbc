@@ -8,6 +8,7 @@
 # option) any later version.
 
 
+import os
 import argparse
 import logging
 import numpy as np
@@ -107,7 +108,10 @@ parser.add_argument('--plot-tag', help='String for plot filenames')
 
 args = parser.parse_args()
 
-assert args.plot_dir.endswith('/')
+if not args.plot_dir.endswith('/'):
+    args.plot_dir += '/'
+if not os.path.exists(args.plot_dir):
+    raise RuntimeError("Output dir %s doesn't exist!" % args.plot_dir)
 if args.bg_bin_width is not None and args.bg_log_bin_width is not None:
     raise RuntimeError("Can't have both linear and log background bins!")
 if args.inj_bin_width is not None and args.inj_log_bin_width is not None:
@@ -293,7 +297,7 @@ if args.vt_mean:
         cmed / args.vt_mean, abs(cminus) / args.vt_mean, cplus / args.vt_mean))
     import rate_functions
     fracerr = args.vt_err / args.vt_mean
-    # attr that can arbitrarily rescale counts in rate calculation : don't do this
+    # attr to arbitrarily rescale counts in rate calculation : here, don't rescale
     foreground_count_dist.scale = 1.
     # we want a Jeffreys type prior: this is already supplied by the default value
     # of the --power-law-prior option (see above) so leave a uniform prior on rate
