@@ -393,8 +393,6 @@ for idx, ifo in enumerate(ifos):
     coinc_results['foreground/'+ifo+'/snr_series'] = snr_series_dict[ifo]
     coinc_results['foreground/'+ifo+'/psd_series'] = data[ifo].psd
     coinc_results['foreground/'+ifo+'/delta_f'] = delta_f
-    coinc_results['foreground/'+ifo+'/event_id'] = \
-        'sngl_inspiral:event_id:'+str(idx)
     coinc_results['foreground/'+ifo+'/snr'] = abs(loudest_snr)
     netsnr += abs(loudest_snr)**2
     coinc_results['foreground/'+ifo+'/sigmasq'] \
