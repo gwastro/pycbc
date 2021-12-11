@@ -121,7 +121,9 @@ init_logging(args.verbose)
 
 # prepare to read in zerolag and background data
 nchunks = len(args.full_data_files)
+MANY_BANKS = True
 if len(args.bank_files) != nchunks:
+    MANY_BANKS = False
     if len(args.bank_files) != 1:
         raise RuntimeError('Either need the same number of banks as chunks, '\
                            + str(nchunks) + ', or exactly 1 bank!')
@@ -318,8 +320,13 @@ if args.rank_injections:
     inj = utils.ForegroundEvents(args, args.coinc_times,
                                  bin_lo=args.min_mchirp, bin_hi=args.max_mchirp)
 
-    # assume that we use the same bank all through
-    banks = [args.bank_files[0]] * len(args.rank_injections)
+    # if using the same single input file for all results
+    if not MANY_BANKS:
+        banks = [args.bank_files[0]] * len(args.rank_injections)
+    # otherwise need banks to match up with injs
+    else:
+        assert len(args.rank_injections) = len(args.bank_files)
+        banks = args.bank_files
     for i, b in zip(args.rank_injections, banks):
         logging.info('Adding bank info from ' + b)
         inj.add_bank(b)
