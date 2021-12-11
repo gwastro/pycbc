@@ -325,7 +325,7 @@ if args.rank_injections:
         banks = [args.bank_files[0]] * len(args.rank_injections)
     # otherwise need banks to match up with injs
     else:
-        assert len(args.rank_injections) = len(args.bank_files)
+        assert len(args.rank_injections) == len(args.bank_files)
         banks = args.bank_files
     for i, b in zip(args.rank_injections, banks):
         logging.info('Adding bank info from ' + b)
