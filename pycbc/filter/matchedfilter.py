@@ -475,7 +475,7 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
                                                       analyse_slice=None):
     """
     Matched filter maximised over polarization and orbital phase.
-    
+
     This implements the statistic derived in 1603.02444. It is encouraged
     to read that work to understand the limitations and assumptions implicit
     in this statistic before using it.
@@ -666,7 +666,7 @@ def compute_max_snr_over_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
                                                analyse_slice=None):
     """
     Matched filter maximised over polarization phase.
-    
+
     This implements the statistic derived in 1709.09181. It is encouraged
     to read that work to understand the limitations and assumptions implicit
     in this statistic before using it.
