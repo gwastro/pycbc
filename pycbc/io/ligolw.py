@@ -138,7 +138,7 @@ def legacy_row_id_converter(ContentHandler):
         """Convert values of <Param> elements from ilwdchar to int."""
         if isinstance(self.current, Param) and self.current.Type in IDTypes:
             old_type = ToPyType[self.current.Type]
-            old_val = old_type(self.current.pcdata)
+            old_val = str(old_type(self.current.pcdata))
             new_value = ROWID_PYTYPE(old_val.split(":")[-1])
             self.current.Type = ROWID_TYPE
             self.current.pcdata = ROWID_FORMATFUNC(new_value)
@@ -164,7 +164,7 @@ def legacy_row_id_converter(ContentHandler):
             old_type = ToPyType[result.Type]
 
             def converter(old_value):
-                return ROWID_PYTYPE(old_type(old_value).split(":")[-1])
+                return ROWID_PYTYPE(str(old_type(old_value)).split(":")[-1])
 
             remapped[(id(parent), result.Name)] = converter
             result.Type = ROWID_TYPE
