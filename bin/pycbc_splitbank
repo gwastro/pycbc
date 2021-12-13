@@ -37,7 +37,6 @@ import time
 import argparse
 from glue import gpstime
 from ligo.lw import ligolw
-from ligo.lw import table
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import process as ligolw_process
@@ -97,10 +96,10 @@ indoc = ligolw_utils.load_filename(args.bank_file, verbose=args.verbose,
                                    contenthandler=LIGOLWContentHandler)
 
 try:
-  template_bank_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
+  template_bank_table = lsctables.SnglInspiralTable.get_table(indoc)
   tabletype = lsctables.SnglInspiralTable
 except:
-  template_bank_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+  template_bank_table = lsctables.SimInspiralTable.get_table(indoc)
   tabletype = lsctables.SimInspiralTable
 
 length = len(template_bank_table)
@@ -166,7 +165,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
        sngl_inspiral_table.append(row) 
     
     # write the xml doc to disk
-    proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
+    proctable = lsctables.ProcessTable.get_table(outdoc)
     proctable[0].end_time = gpstime.GpsSecondsFromPyUTC(time.time())
 
     if args.output_filenames:

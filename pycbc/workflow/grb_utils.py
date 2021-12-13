@@ -34,7 +34,7 @@ import shutil
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
 from ligo import segments
-from ligo.lw import ligolw, lsctables, utils, ilwd
+from ligo.lw import ligolw, lsctables, utils
 from pycbc.workflow.core import File, FileList, resolve_url_to_file
 from pycbc.workflow.jobsetup import select_generic_executable
 
@@ -185,9 +185,9 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
         elif cols[entry] == 'lstring':
             setattr(row, entry, '')
         elif entry == 'process_id':
-            row.process_id = ilwd.ilwdchar("external_trigger:process_id:0")
+            row.process_id = 0
         elif entry == 'event_id':
-            row.event_id = ilwd.ilwdchar("external_trigger:event_id:0")
+            row.event_id = 0
         else:
             raise ValueError("Column %s not recognized" % entry)
 

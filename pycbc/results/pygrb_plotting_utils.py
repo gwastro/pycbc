@@ -32,7 +32,7 @@ import numpy
 # TODO: imports to fix/remove
 try:
     from ligo import segments
-    from ligo.lw import utils, lsctables, table
+    from ligo.lw import utils, lsctables
 except ImportError:
     pass
 try:
@@ -366,8 +366,7 @@ def extract_ifos(trig_file):
 
     # Load search summary
     xml_doc = load_xml_file(trig_file)
-    search_summ = table.get_table(xml_doc,
-                                  lsctables.SearchSummaryTable.tableName)
+    search_summ = lsctables.SearchSummaryTable.get_table(xml_doc)
 
     # Extract IFOs
     ifos = sorted(map(str, search_summ[0].get_ifos()))
@@ -448,7 +447,7 @@ def load_injections(inj_file, vetoes):
 
     # Load injection file
     xml_doc = load_xml_file(inj_file)
-    multis = table.get_table(xml_doc, lsctables.MultiInspiralTable.tableName)
+    multis = lsctables.MultiInspiralTable.get_table(xml_doc)
 
     # Extract injections
     injs = lsctables.New(lsctables.MultiInspiralTable,

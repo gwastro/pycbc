@@ -176,7 +176,7 @@ if __name__ == "__main__":
             bname = "bank/bank" + btag + ".xml"
             if bname not in btables:
                 indoc = utils.load_filename(bname, False, contenthandler=LIGOLWContentHandler)
-                btables[bname] = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
+                btables[bname] = lsctables.SimInspiralTable.get_table(indoc)
             bt = btables[bname]
             try:      
                 md = loadtxt(part, dtype=dtypem)

@@ -23,7 +23,7 @@ import logging
 from numpy import complex64, float32, sqrt, argmax, real, array
 from argparse import ArgumentParser
 from ligo.lw import utils as ligolw_utils
-from ligo.lw import table, lsctables
+from ligo.lw import lsctables
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta, f_SchwarzISCO
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
@@ -311,9 +311,9 @@ logging.info('Reading simulation list')
 indoc = ligolw_utils.load_filename(options.sim_file, False,
                                    contenthandler=LIGOLWContentHandler)
 try:
-    signal_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
+    signal_table = lsctables.SimInspiralTable.get_table(indoc)
 except ValueError:
-    signal_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
+    signal_table = lsctables.SnglInspiralTable.get_table(indoc)
 logging.info("  %d signal waveforms", len(signal_table))
 
 logging.info("Matches will be written to %s", options.out_file)
