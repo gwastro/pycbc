@@ -61,16 +61,18 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     popd
 
     # run PyCBC Live test
-    pushd examples/live
-    bash -e run.sh
-    if test $? -ne 0 ; then
-        RESULT=1
-        echo -e "    FAILED!"
-        echo -e "---------------------------------------------------------"
-    else
-        echo -e "    Pass."
+    if ((${PYTHON_MINOR_VERSION} > 7)); then
+      pushd examples/live
+      bash -e run.sh
+      if test $? -ne 0 ; then
+          RESULT=1
+          echo -e "    FAILED!"
+          echo -e "---------------------------------------------------------"
+      else
+          echo -e "    Pass."
+      fi
+      popd
     fi
-    popd
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
