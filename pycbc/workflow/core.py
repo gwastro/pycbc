@@ -41,7 +41,7 @@ import lal.utils
 import Pegasus.api  # Try and move this into pegasus_workflow
 from glue import lal as gluelal
 from ligo import segments
-from ligo.lw import table, lsctables, ligolw
+from ligo.lw import lsctables, ligolw
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import segments as ligolw_segments
 from ligo.lw.utils import process as ligolw_process
@@ -1815,11 +1815,9 @@ class SegFile(File):
         xmldoc = ligolw_utils.load_fileobj(
                 fp, compress='auto', contenthandler=LIGOLWContentHandler)
 
-        seg_def_table = table.get_table(xmldoc,
-                                        lsctables.SegmentDefTable.tableName)
-        seg_table = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
-        seg_sum_table = table.get_table(xmldoc,
-                                        lsctables.SegmentSumTable.tableName)
+        seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
+        seg_table = lsctables.SegmentTable.get_table(xmldoc)
+        seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
 
         segs = segments.segmentlistdict()
         seg_summ = segments.segmentlistdict()

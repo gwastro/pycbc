@@ -31,7 +31,7 @@ import os.path
 import h5py
 from copy import copy
 import numpy as np
-from ligo.lw import table, lsctables, utils as ligolw_utils
+from ligo.lw import lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
@@ -270,8 +270,7 @@ class TemplateBank(object):
             self.filehandler = None
             self.indoc = ligolw_utils.load_filename(
                 filename, False, contenthandler=LIGOLWContentHandler)
-            self.table = table.get_table(
-                self.indoc, lsctables.SnglInspiralTable.tableName)
+            self.table = lsctables.SnglInspiralTable.get_table(self.indoc)
             self.table = pycbc.io.WaveformArray.from_ligolw_table(self.table,
                 columns=parameters)
 

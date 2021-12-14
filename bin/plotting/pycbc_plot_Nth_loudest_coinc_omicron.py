@@ -9,7 +9,7 @@ import h5py
 import numpy as np
 import argparse
 import glob
-from ligo.lw import lsctables, table, utils
+from ligo.lw import lsctables, utils
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -105,8 +105,7 @@ for era in eras:
     for file_name in file_list:
         omicron_xml = utils.load_filename(
                 file_name, contenthandler=LIGOLWContentHandler)
-        snglburst_table = table.get_table(
-                omicron_xml, lsctables.SnglBurstTable.tableName)
+        snglburst_table = lsctables.SnglBurstTable.get_table(omicron_xml)
 
         for row in snglburst_table:
             if (row.snr > args.omicron_snr_thresh and

@@ -20,7 +20,7 @@ from ligo.lw.ligolw import Param, LIGOLWContentHandler \
     as OrigLIGOLWContentHandler
 from ligo.lw.lsctables import TableByName
 from ligo.lw.table import Column, TableStream
-from ligo.lw.types import FormatFunc, FromPyType, IDTypes, ToPyType
+from ligo.lw.types import FormatFunc, FromPyType, ToPyType
 
 
 __all__ = ('default_null_value',
@@ -32,6 +32,7 @@ __all__ = ('default_null_value',
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
+IDTypes = set([u"ilwd:char", u"ilwd:char_u"])
 
 
 def default_null_value(col_name, col_type):
@@ -137,7 +138,8 @@ def legacy_row_id_converter(ContentHandler):
         """Convert values of <Param> elements from ilwdchar to int."""
         if isinstance(self.current, Param) and self.current.Type in IDTypes:
             old_type = ToPyType[self.current.Type]
-            new_value = ROWID_PYTYPE(old_type(self.current.pcdata))
+            old_val = str(old_type(self.current.pcdata))
+            new_value = ROWID_PYTYPE(old_val.split(":")[-1])
             self.current.Type = ROWID_TYPE
             self.current.pcdata = ROWID_FORMATFUNC(new_value)
         __orig_endElementNS(self, uri_localname, qname)
@@ -162,7 +164,7 @@ def legacy_row_id_converter(ContentHandler):
             old_type = ToPyType[result.Type]
 
             def converter(old_value):
-                return ROWID_PYTYPE(old_type(old_value))
+                return ROWID_PYTYPE(str(old_type(old_value)).split(":")[-1])
 
             remapped[(id(parent), result.Name)] = converter
             result.Type = ROWID_TYPE

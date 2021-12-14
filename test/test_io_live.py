@@ -26,7 +26,6 @@ from pycbc.types import TimeSeries, FrequencySeries
 from pycbc.io.live import SingleCoincForGraceDB
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw import lsctables
-from ligo.lw import table
 from ligo.lw import utils as ligolw_utils
 from lal import series as lalseries
 
@@ -119,11 +118,9 @@ class TestIOLive(unittest.TestCase):
         read_coinc = ligolw_utils.load_filename(
                 coinc_file_name, verbose=False,
                 contenthandler=LIGOLWContentHandler)
-        single_table = table.get_table(
-                read_coinc, lsctables.SnglInspiralTable.tableName)
+        single_table = lsctables.SnglInspiralTable.get_table(read_coinc)
         self.assertEqual(len(single_table), len(all_ifos))
-        coinc_table = table.get_table(
-                read_coinc, lsctables.CoincInspiralTable.tableName)
+        coinc_table = lsctables.CoincInspiralTable.get_table(read_coinc)
         self.assertEqual(len(coinc_table), 1)
 
         # make sure lalseries can read the PSDs

@@ -38,7 +38,7 @@ def get_name(segment_file):
 
     indoc = ligolw_utils.load_filename(
             segment_file, False, contenthandler=LIGOLWContentHandler)
-    n = table.get_table(indoc, 'segment_definer')[0]
+    n = table.Table.get_table(indoc, 'segment_definer')[0]
     return "%s:%s:%s" % (n.ifos, n.name, n.version)
 
 def plot_segs(start, end, color=None, y=0, h=1):

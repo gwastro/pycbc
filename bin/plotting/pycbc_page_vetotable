@@ -24,7 +24,6 @@ import numpy
 import pycbc.results
 import sys
 from ligo.lw import lsctables
-from ligo.lw import table
 from ligo.lw import utils
 from pycbc.results import save_fig_with_metadata
 import pycbc.version
@@ -68,8 +67,7 @@ vetodef_xml = utils.load_filename(opts.veto_definer_file,
                                    contenthandler=LIGOLWContentHandler)
 
 # get veto_definer table
-vetodef_table = table.get_table(vetodef_xml,
-                             lsctables.VetoDefTable.tableName)
+vetodef_table = lsctables.VetoDefTable.get_table(vetodef_xml)
 
 # loop over rows in veto_definer table
 logging.info('Looping through veto_definer table and saving information')
