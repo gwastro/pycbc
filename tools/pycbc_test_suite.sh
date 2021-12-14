@@ -162,16 +162,18 @@ if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     popd
 
     ## Run pycbc_make_skymap example
-    pushd examples/make_skymap
-    bash -e simulated_data.sh
-    if test $? -ne 0 ; then
-        RESULT=1
-        echo -e "    FAILED!"
-        echo -e "---------------------------------------------------------"
-    else
-        echo -e "    Pass."
+    if ((${PYTHON_MINOR_VERSION} > 7)); then
+      pushd examples/make_skymap
+      bash -e simulated_data.sh
+      if test $? -ne 0 ; then
+          RESULT=1
+          echo -e "    FAILED!"
+          echo -e "---------------------------------------------------------"
+      else
+          echo -e "    Pass."
+      fi
+      popd
     fi
-    popd
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "docs" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
