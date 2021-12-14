@@ -994,6 +994,7 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
     -------
     dict :
         Dictionary of:
+
         * inclination : float
             Inclination (rad), defined as the angle between
             the orbital angular momentum L and the
@@ -1075,6 +1076,7 @@ def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
     -------
     dict :
         Dictionary of:
+
         * thetajn : float
             Angle between the line of sight and the total angular momentume J.
         * phijl : float
