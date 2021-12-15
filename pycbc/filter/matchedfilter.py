@@ -474,7 +474,11 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
                                                       out=None, thresh=0,
                                                       analyse_slice=None):
     """
-    Compute the maximized over sky location statistic.
+    Matched filter maximised over polarization and orbital phase.
+
+    This implements the statistic derived in 1603.02444. It is encouraged
+    to read that work to understand the limitations and assumptions implicit
+    in this statistic before using it.
 
     Parameters
     -----------
@@ -661,9 +665,13 @@ def compute_max_snr_over_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
                                                out=None, thresh=0,
                                                analyse_slice=None):
     """
-    Compute the match maximized over polarization phase.
+    Matched filter maximised over polarization phase.
 
-    In contrast to compute_max_snr_over_sky_loc_stat_no_phase this function
+    This implements the statistic derived in 1709.09181. It is encouraged
+    to read that work to understand the limitations and assumptions implicit
+    in this statistic before using it.
+
+    In contrast to compute_max_snr_over_sky_loc_stat this function
     performs no maximization over orbital phase, treating that as an intrinsic
     parameter. In the case of aligned-spin 2,2-mode only waveforms, this
     collapses to the normal statistic (at twice the computational cost!)
