@@ -19,6 +19,3 @@ https://github.com/willvousden/ptemcee/archive/master.tar.gz
 
 # useful to look at PyCBC Live with htop
 setproctitle
-
-# Needed for `population_models` module
-sympy>=1.9
