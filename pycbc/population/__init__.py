@@ -3,4 +3,3 @@ from pycbc.population.scale_injections import *
 from pycbc.population.fgmc_functions import *
 from pycbc.population.fgmc_laguerre import *
 from pycbc.population.fgmc_plots import *
-from pycbc.population.population_models import *

@@ -27,7 +27,7 @@ import argparse
 import logging
 import numpy
 import h5py
-from ligo.lw import table, lsctables, utils as ligolw_utils
+from ligo.lw import lsctables, utils as ligolw_utils
 import pycbc
 import pycbc.version
 from pycbc import tmpltbank, psd, strain
@@ -196,8 +196,7 @@ logging.info("Reading template bank.")
 if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
     indoc = ligolw_utils.load_filename(opts.input_bank,
                                        contenthandler=LIGOLWContentHandler)
-    template_list = table.get_table(indoc,
-                                    lsctables.SnglInspiralTable.tableName)
+    template_list = lsctables.SnglInspiralTable.get_table(indoc)
 
     partitioned_bank_object.add_tmpltbank_from_xml_table\
         (template_list, vary_fupper=opts.vary_fupper)

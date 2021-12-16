@@ -92,15 +92,15 @@ def mkdir(dir_name):
         
 def mc_min_max_from_sorted_file(fname):
     from ligo.lw.utils import load_filename
-    from ligo.lw.table import get_table
+    from ligo.lw.table import Table
     from pycbc.pnutils import mass1_mass2_to_mchirp_eta
     from pycbc.io.ligolw import LIGOLWContentHandler
 
     doc = load_filename(fname, False, contenthandler=LIGOLWContentHandler)
     try:
-        t = get_table(doc, "sngl_inspiral")
+        t = Table.get_table(doc, "sngl_inspiral")
     except:
-        t = get_table(doc, "sim_inspiral")
+        t = Table.get_table(doc, "sim_inspiral")
     mc_max, et = mass1_mass2_to_mchirp_eta(t[0].mass1, t[0].mass2)
     mc_min, et = mass1_mass2_to_mchirp_eta(t[-1].mass1, t[-1].mass2)
     return mc_min, mc_max

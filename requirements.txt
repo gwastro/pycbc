@@ -13,7 +13,7 @@ requests>=1.2.1
 beautifulsoup4>=4.6.0
 six>1.10.0
 cython
-lalsuite
+lalsuite!=7.2
 lscsoft-glue>=1.59.3
 ligo-segments
 tqdm
