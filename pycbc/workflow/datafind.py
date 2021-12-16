@@ -906,7 +906,7 @@ def get_segment_summary_times(scienceFile, segmentName):
                              contenthandler=LIGOLWContentHandler)
 
     # Get the segment_def_id for the segmentName
-    segmentDefTable = table.get_table(xmldoc, "segment_definer")
+    segmentDefTable = table.Table.get_table(xmldoc, "segment_definer")
     for entry in segmentDefTable:
         if (entry.ifos == ifo) and (entry.name == channel):
             if len(segmentName) == 2 or (entry.version==version):
@@ -917,7 +917,7 @@ def get_segment_summary_times(scienceFile, segmentName):
                          %(segmentName))
 
     # Get the segmentlist corresponding to this segmentName in segment_summary
-    segmentSummTable = table.get_table(xmldoc, "segment_summary")
+    segmentSummTable = table.Table.get_table(xmldoc, "segment_summary")
     summSegList = segments.segmentlist([])
     for entry in segmentSummTable:
         if entry.segment_def_id == segDefID:

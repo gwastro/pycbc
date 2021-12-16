@@ -187,9 +187,9 @@ print("STARTING THE BANKSIM")
 # Load in the template bank file
 indoc = ligolw_utils.load_filename(options.bank_file, False)
 try :
-    template_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
+    template_table = lsctables.SnglInspiralTable.get_table(indoc)
 except ValueError:
-    template_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+    template_table = lsctables.SimInspiralTable.get_table(indoc)
 
 # open the output file where the max overlaps over the bank are stored
 fout = open(options.out_file, "w")
@@ -201,9 +201,9 @@ print("Writing recovered template in " + options.out_file+".found")
 # Load in the simulation list
 indoc = ligolw_utils.load_filename(options.sim_file, False)
 try:
-    signal_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+    signal_table = lsctables.SimInspiralTable.get_table(indoc)
 except ValueError:
-    signal_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
+    signal_table = lsctables.SnglInspiralTable.get_table(indoc)
 
 def outside_mchirp_window(template,signal,w):
     template_mchirp,et = mass1_mass2_to_mchirp_eta(template.mass1,template.mass2)

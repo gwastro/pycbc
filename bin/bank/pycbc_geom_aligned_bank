@@ -37,7 +37,6 @@ from scipy import spatial
 from ligo.lw import ligolw
 from ligo.lw import table
 from ligo.lw import lsctables
-from ligo.lw import ilwd
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import process as ligolw_process
 import pycbc

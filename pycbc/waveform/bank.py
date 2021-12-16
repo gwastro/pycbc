@@ -31,7 +31,7 @@ import os.path
 import h5py
 from copy import copy
 import numpy as np
-from ligo.lw import table, lsctables, utils as ligolw_utils
+from ligo.lw import lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
@@ -164,6 +164,7 @@ def add_approximant_arg(parser, default=None, help=None):
                         metavar='APPRX[:COND]',
                         help=help)
 
+
 def parse_approximant_arg(approximant_arg, warray):
     """Given an approximant arg (see add_approximant_arg) and a field
     array, figures out what approximant to use for each template in the array.
@@ -204,6 +205,7 @@ def tuple_to_hash(tuple_to_be_hashed):
                         digest_size=8)
     return np.fromstring(h.digest(), dtype=int)[0]
 
+
 class TemplateBank(object):
     """Class to provide some basic helper functions and information
     about elements of a template bank.
@@ -241,7 +243,6 @@ class TemplateBank(object):
         Any additional keyword arguments are stored to the `extra_args`
         attribute.
 
-
     Attributes
     ----------
     table : WaveformArray
@@ -269,8 +270,7 @@ class TemplateBank(object):
             self.filehandler = None
             self.indoc = ligolw_utils.load_filename(
                 filename, False, contenthandler=LIGOLWContentHandler)
-            self.table = table.get_table(
-                self.indoc, lsctables.SnglInspiralTable.tableName)
+            self.table = lsctables.SnglInspiralTable.get_table(self.indoc)
             self.table = pycbc.io.WaveformArray.from_ligolw_table(self.table,
                 columns=parameters)
 
@@ -487,7 +487,6 @@ class TemplateBank(object):
         indices_unique= np.unique(indices_combined)
         self.table = self.table[indices_unique]
 
-
     def ensure_standard_filter_columns(self, low_frequency_cutoff=None):
         """ Initialize FilterBank common fields
 
@@ -513,6 +512,7 @@ class TemplateBank(object):
         self.min_f_lower = min(self.table['f_lower'])
         if self.f_lower is None and self.min_f_lower == 0.:
             raise ValueError('Invalid low-frequency cutoff settings')
+
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
@@ -581,7 +581,6 @@ class LiveFilterBank(TemplateBank):
         return self.get_template(index)
 
     def get_template(self, index, min_buffer=None):
-
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
         flow = self.table[index].f_lower
@@ -596,6 +595,8 @@ class LiveFilterBank(TemplateBank):
         p = props(self.table[index])
         p.pop('approximant')
         buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, **p)
+        if not buff_size:
+            raise RuntimeError('Template waveform %s not recognized!' % approximant)
 
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = int(tlen / 2 + 1)
@@ -603,17 +604,17 @@ class LiveFilterBank(TemplateBank):
         delta_f = self.sample_rate / float(tlen)
 
         if f_end is None or f_end >= (flen * delta_f):
-            f_end = (flen-1) * delta_f
+            f_end = (flen - 1) * delta_f
 
         logging.info("Generating %s, %ss, %i, starting from %s Hz",
-                     approximant, 1.0/delta_f, index, flow)
+                     approximant, 1.0 / delta_f, index, flow)
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
             zeros(flen, dtype=np.complex64), self.table[index],
             approximant=approximant, f_lower=flow, f_final=f_end,
-            delta_f=delta_f, delta_t=1.0/self.sample_rate, distance=distance,
+            delta_f=delta_f, delta_t=1.0 / self.sample_rate, distance=distance,
             **self.extra_args)
 
         # If available, record the total duration (which may
@@ -813,6 +814,7 @@ class FilterBank(TemplateBank):
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
         return htilde
+
 
 def find_variable_start_frequency(approximant, parameters, f_start, max_length,
                                   delta_f = 1):

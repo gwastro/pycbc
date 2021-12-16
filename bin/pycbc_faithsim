@@ -28,7 +28,7 @@ import logging
 from numpy import complex64
 import argparse
 from ligo.lw import utils as ligolw_utils
-from ligo.lw import table, lsctables
+from ligo.lw import lsctables
 
 import pycbc.version
 import pycbc.strain
@@ -163,9 +163,9 @@ else:
 indoc = ligolw_utils.load_filename(options.bank_file, False,
                                    contenthandler=LIGOLWContentHandler)
 try :
-    waveform_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName) 
+    waveform_table = lsctables.SnglInspiralTable.get_table(indoc)
 except ValueError:
-    waveform_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+    waveform_table = lsctables.SimInspiralTable.get_table(indoc)
 
 # open the output file where the max overlaps over the bank are stored 
 fout = open(options.out_file, "w")

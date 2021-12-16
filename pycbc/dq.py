@@ -63,7 +63,7 @@ def parse_veto_definer(veto_def_filename, ifos):
 
     indoc = ligolw_utils.load_filename(veto_def_filename, False,
                                        contenthandler=h)
-    veto_table = table.get_table(indoc, 'veto_definer')
+    veto_table = table.Table.get_table(indoc, 'veto_definer')
 
     ifo = veto_table.getColumnByName('ifo')
     name = veto_table.getColumnByName('name')

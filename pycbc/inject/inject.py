@@ -45,7 +45,7 @@ from pycbc.conversions import tau0_from_mass1_mass2
 from pycbc.filter import resample_to_delta_t
 import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
-from ligo.lw import utils as ligolw_utils, ligolw, table, lsctables
+from ligo.lw import utils as ligolw_utils, ligolw, lsctables
 
 
 injection_func_map = {
@@ -153,7 +153,7 @@ class _XMLInjectionSet(object):
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
+        self.table = lsctables.SimInspiralTable.get_table(self.indoc)
         self.extra_args = kwds
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
@@ -1182,8 +1182,7 @@ class SGBurstInjectionSet(object):
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(
-            self.indoc, lsctables.SimBurstTable.tableName)
+        self.table = lsctables.SimBurstTable.get_table(self.indoc)
         self.extra_args = kwds
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1):

@@ -18,7 +18,7 @@
 """
 import os, argparse, logging
 import numpy
-from ligo.lw import lsctables, table
+from ligo.lw import table
 from ligo.lw import utils as ligolw_utils
 from pycbc.results import layout
 from pycbc.events import select_segments_by_definer
@@ -132,7 +132,7 @@ if args.non_coinc_time_only:
 
     segs_doc = ligolw_utils.load_filename(args.inspiral_segments,
                                           contenthandler=h)
-    seg_def_table = table.get_table(segs_doc, 'segment_definer')
+    seg_def_table = table.Table.get_table(segs_doc, 'segment_definer')
     def_ifos = seg_def_table.getColumnByName('ifos')
     def_ifos = [str(ifo) for ifo in def_ifos]
     ifo_list = list(set(def_ifos))
