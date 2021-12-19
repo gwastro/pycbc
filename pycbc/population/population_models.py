@@ -149,7 +149,7 @@ def diff_lookback_time(z, **kwargs):
          Pease see Eq.(A3) in <arXiv:2011.02717v3> for more details.
     """
     from sympy import init_printing
-    init_printing(use_latex=False)
+    init_printing(use_latex='matplotlib')
     from sympy import sqrt
 
     cosmology = get_cosmology(**kwargs)
