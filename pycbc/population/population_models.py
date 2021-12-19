@@ -148,6 +148,8 @@ def diff_lookback_time(z, **kwargs):
     -----
          Pease see Eq.(A3) in <arXiv:2011.02717v3> for more details.
     """
+    from sympy import init_printing
+    init_printing(use_latex=False)
     from sympy import sqrt
 
     cosmology = get_cosmology(**kwargs)
@@ -178,6 +180,8 @@ def p_tau(tau, td_model="inverse"):
     -----
          Pease see the Appendix in <arXiv:2011.02717v3> for more details.
     """
+    from sympy import init_printing
+    init_printing(use_latex=False)
     from sympy import sqrt, exp, log
 
     if td_model == "log_normal":
@@ -231,6 +235,8 @@ def convolution_trans(sfr, diff_lookback_t, model_td, **kwargs):
     -----
          Pease see Eq.(A2) in <arXiv:2011.02717v3> for more details.
     """
+    from sympy import init_printing
+    init_printing(use_latex=False)
     from sympy import integrate, symbols
 
     if model_td not in ['log_normal', 'gaussian', 'power_law', 'inverse']:
@@ -285,6 +291,8 @@ def merger_rate_density(sfr_func, td_model, rho_local, maxz=10.0,
     -----
          Pease see Eq.(A1), Eq.(A2) in <arXiv:2011.02717v3> for more details.
     """
+    from sympy import init_printing
+    init_printing(use_latex=False)
     from sympy import symbols, lambdify
 
     if z_array is None:
