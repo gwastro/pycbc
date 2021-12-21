@@ -58,7 +58,6 @@ def sfr_grb_2008(z):
 
     rho_z = rho_local*((1+z)**(3.4*eta) + ((1+z)/5000)**(-0.3*eta) +
                        ((1+z)/9)**(-3.5*eta))**(1./eta)
-
     return rho_z
 
 
@@ -81,7 +80,6 @@ def sfr_madau_dickinson_2014(z):
     """
 
     rho_z = 0.015 * (1+z)**2.7 / (1 + ((1+z)/2.9)**5.6)
-
     return rho_z
 
 
@@ -417,7 +415,6 @@ def average_time_between_signals(z_array, merger_rate):
     total_rate = total_rate_upto_redshift(
             z_array[-1], merger_rate)  # yr^-1
     average_time = 1./total_rate * 365*24*3600  # s
-
     return average_time
 
 
