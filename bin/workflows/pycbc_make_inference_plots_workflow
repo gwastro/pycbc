@@ -86,6 +86,11 @@ def read_events_from_config(cp):
     """
     # get the events
     events = cp.get_subsections('event')
+    # create a dummy command-line parser for getting the config files and
+    # options
+    cfparser = argparse.ArgumentParser()
+    configuration.add_workflow_command_line_group(cfparser)
+    # lists for storing output
     labels = []
     config_files = []
     samples_files = []
@@ -145,11 +150,9 @@ log_format = "%(asctime)s:%(levelname)s : %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
-container = core.Workflow(opts)
-workflow = core.Workflow(opts, subworkflow_name="main",
-                         is_subworkflow=True)
-finalize_workflow = core.Workflow(opts, subworkflow_name="finalization",
-                                  is_subworkflow=True)
+container = core.Workflow(opts, opts.workflow_name)
+workflow = core.Workflow(opts, 'main')
+finalize_workflow = core.Workflow(opts, "finalization")
 
 # get the events
 events, labels, infconfig_files, samples_files = \
