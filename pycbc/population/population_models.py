@@ -22,8 +22,8 @@
 # =============================================================================
 #
 """
-This module provides functions for star formation rate models, time delay models,
-merger rate density, and population models of BBH/BNS/NSBH.
+This module provides functions for star formation rate models, time delay
+models, merger rate density, and population models of BBH/BNS/NSBH.
 """
 
 from functools import partial
