@@ -507,7 +507,6 @@ class PyCBCInspiralExecutable(Executable):
             set_submit_subdir=False
         )
         self.cp = cp
-        self.set_memory(2000)
         self.injection_file = injection_file
         self.ext = '.hdf'
 
@@ -534,7 +533,6 @@ class PyCBCInspiralExecutable(Executable):
                      int_gps_time_to_str(data_seg[1] - pad_data))
         node.add_opt('--trig-start-time', int_gps_time_to_str(valid_seg[0]))
         node.add_opt('--trig-end-time', int_gps_time_to_str(valid_seg[1]))
-        node.set_num_cpus(self.num_threads)
 
         if self.injection_file is not None:
             node.add_input_opt('--injection-file', self.injection_file)
@@ -734,8 +732,6 @@ class PyCBCMultiInspiralExecutable(Executable):
         node.add_opt('--trig-start-time', valid_seg[0])
         node.add_opt('--trig-end-time', valid_seg[1])
 
-        node.set_num_cpus(self.num_threads)
-
         # Set the input and output files
         node.new_output_file_opt(data_seg, '.hdf', '--output',
                                  tags=tags, store_file=self.retain_files)
@@ -812,7 +808,6 @@ class PyCBCTmpltbankExecutable(Executable):
             tags = []
         super(PyCBCTmpltbankExecutable, self).__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
         self.cp = cp
-        self.set_memory(2000)
         self.write_psd = write_psd
         self.psd_files = psd_files
 
@@ -906,7 +901,6 @@ class LigolwAddExecutable(Executable):
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, *args, **kwargs):
         super(LigolwAddExecutable, self).__init__(*args, **kwargs)
-        self.set_memory(2000)
 
     def create_node(self, jobSegment, input_files, output=None,
                     use_tmp_subdirs=True, tags=None):
