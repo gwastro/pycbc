@@ -997,10 +997,9 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
     prior_plots = []
     # files for priors summary section
     if make_prior:
-		base = "priors/{}".format(label)
-		prior_plots += make_inference_prior_plot(workflow, config_file, rdir[base],
-			analysis_seg=workflow.analysis_time, tags=tags+[label])
-		layout.single_layout(rdir[base], prior_plots)
+        base = "priors/{}".format(label)
+        prior_plots += make_inference_prior_plot(workflow, config_file, rdir[base], analysis_seg=workflow.analysis_time, tags=tags+[label])
+        layout.single_layout(rdir[base], prior_plots)
     return posterior_file, summary_files, prior_plots, posterior_plots
 
 
