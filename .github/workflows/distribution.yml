@@ -21,7 +21,7 @@ jobs:
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: cp37-* cp38-* cp39-*
+          CIBW_BUILD: cp37-* cp38-* cp39-* cp310-*
       - uses: actions/upload-artifact@v2
         with:
           path: ./wheelhouse/*.whl
