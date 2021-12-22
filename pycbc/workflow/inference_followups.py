@@ -944,9 +944,8 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
 
     make_prior = ("plot_prior" in workflow.cp.options("executables"))
     _config = None
-    if make_prior :
+    if make_prior:
         _config = config_file
-
 
     # make node for running extract samples
     posterior_file = create_posterior_files(
@@ -984,7 +983,6 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
 
     summary_files += list(layout.grouper(summary_plots, 2))
 
-
     # files for posteriors summary subsection
     base = "posteriors/{}".format(label)
     posterior_plots = []
@@ -1001,9 +999,8 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
     if make_prior:
         base = "priors/{}".format(label)
         prior_plots += make_inference_prior_plot(
-                     workflow, config_file, rdir[base],
-                     analysis_seg=workflow.analysis_time, 
-					 tags=tags+[label])
+		workflow, config_file, rdir[base],
+		analysis_seg=workflow.analysis_time, tags=tags+[label])
         layout.single_layout(rdir[base], prior_plots)
     return posterior_file, summary_files, prior_plots, posterior_plots
 
