@@ -32,7 +32,7 @@ rcParams.update({'axes.labelsize': 12,
                  'legend.fontsize': 12,
                  'xtick.labelsize': 12,
                  'ytick.labelsize': 12,
-                 'text.usetex': True,
+                 'text.usetex': False,
                 })
 
 
