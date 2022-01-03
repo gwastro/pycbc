@@ -506,8 +506,98 @@ def distance_from_rate(
     return dl
 
 
+class ExternalPopulationPrior(object):
+    r"""Sampling from the external distribution by using the inverse CDF method.
+
+    Instances of this class can be called like a distribution in the .ini file,
+    when used with `pycbc.distributions.external.External`.
+
+    Parameters
+    ----------
+    parameter : {'file_path', 'column_index'}
+        The path of the external population distribution .txt file, and the
+        column index of the distribution. By default, the first column should
+        be the values of a certain parameter, such as "mass", other columns
+        should be the corresponding local event rate (as a function of
+        that parameter).
+    \**kwargs :
+        All other keyword args are passed to `scipy.integrate.quad` and
+        `numpy.linspace` to control the numerical accuracy of the inverse CDF.
+        If none provided, will use the default values in `self.__init__`.
+    """
+    def __init__(self, file_path, column_index, **kwargs):
+        self.file_path = file_path
+        self.data = np.loadtxt(self.file_path, unpack=True, skiprows=1)
+        self.lower_bound = self.data[0][0]
+        self.upper_bound = self.data[0][-1]
+        self.column_index = column_index
+        self.epsabs = kwargs.get('epsabs', 1.49e-05)
+        self.epsrel = kwargs.get('epsrel', 1.49e-05)
+        self.limit = kwargs.get('limit', 500)
+        self.linspace_num = kwargs.get('linspace_num', 1000)
+        if not file_path:
+            raise ValueError("Must provide the path to distribution file.")
+
+    def _interp(self):
+        """Create a function to store the interpolation."""
+        pass
+
+    def _pdf(self, x, interp_func=_interp, **kwargs):
+        """Calculate and interpolate the PDF by using the given distribution,
+        then return the corresponding value at the given x."""
+        if not hasattr(interp_func, 'pdf_interp'):
+            interp_func.pdf_interp = {}
+        if interp_func.pdf_interp == {}:
+            func_unnorm = scipy_interpolate.interp1d(
+                self.data[0], self.data[self.column_index])
+            norm_const = scipy_integrate.quad(
+                func_unnorm, self.lower_bound, self.upper_bound,
+                epsabs=self.epsabs, epsrel=self.epsrel, limit=self.limit,
+                **kwargs)[0]
+            interp_func.pdf_interp = scipy_interpolate.interp1d(
+                self.data[0], self.data[self.column_index]/norm_const)
+        pdf_val = np.float64(interp_func.pdf_interp(x))
+        return pdf_val
+
+    def _cdf(self, x, interp_func=_interp, **kwargs):
+        """Calculate and interpolate the CDF, then return the corresponding
+        value at the given x."""
+        if not hasattr(interp_func, 'cdf_interp'):
+            interp_func.cdf_interp = {}
+        if interp_func.cdf_interp == {}:
+            cdf_list = []
+            x_list = np.linspace(
+                self.lower_bound, self.upper_bound, self.linspace_num)
+            for x_val in x_list:
+                cdf_x = scipy_integrate.quad(
+                    self._pdf, self.lower_bound, x_val, epsabs=self.epsabs,
+                    epsrel=self.epsrel, limit=self.limit, **kwargs)[0]
+                cdf_list.append(cdf_x)
+            interp_func.cdf_interp = \
+                scipy_interpolate.interp1d(x_list, cdf_list)
+        cdf_val = np.float64(interp_func.cdf_interp(x))
+        return cdf_val
+
+    def _cdf_inv(self, y, interp_func=_interp, **kwargs):
+        """Calculate and interpolate the inverse CDF, then return the
+        corresponding value at the given y."""
+        if not hasattr(interp_func, 'cdfinv_interp'):
+            interp_func.cdfinv_interp = {}
+        if interp_func.cdfinv_interp == {}:
+            cdf_list = []
+            x_list = np.linspace(
+                self.lower_bound, self.upper_bound, self.linspace_num)
+            for x_value in x_list:
+                cdf_list.append(self._cdf(x_value))
+            interp_func.cdfinv_interp = \
+                scipy_interpolate.interp1d(cdf_list, x_list)
+        cdfinv_val = np.float64(interp_func.cdfinv_interp(y))
+        return cdfinv_val
+
+
 __all__ = ['sfr_grb_2008', 'sfr_madau_dickinson_2014',
            'sfr_madau_fragos_2017', 'diff_lookback_time',
            'p_tau', 'merger_rate_density', 'coalescence_rate',
            'norm_redshift_distribution', 'total_rate_upto_redshift',
-           'distance_from_rate', 'average_time_between_signals']
+           'distance_from_rate', 'average_time_between_signals',
+           'ExternalPopulationPrior']
