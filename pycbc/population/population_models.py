@@ -521,8 +521,8 @@ class ExternalPopulationPrior(object):
         should be the corresponding local event rate (as a function of
         that parameter).
     \**kwargs :
-        All other keyword args are passed to `scipy.integrate.quad` and
-        `numpy.linspace` to control the numerical accuracy of the inverse CDF.
+        All other keyword args are passed to `scipy.integrate.quad` to control
+        the numerical accuracy of the inverse CDF.
         If none provided, will use the default values in `self.__init__`.
     """
     def __init__(self, file_path, column_index, **kwargs):
@@ -532,7 +532,7 @@ class ExternalPopulationPrior(object):
         self.epsabs = kwargs.get('epsabs', 1.49e-05)
         self.epsrel = kwargs.get('epsrel', 1.49e-05)
         self.limit = kwargs.get('limit', 500)
-        self.linspace_num = kwargs.get('linspace_num', 1000)
+        self.x_list = np.linspace(self.data[0][0], self.data[0][-1], 1000)
         if not file_path:
             raise ValueError("Must provide the path to distribution file.")
 
@@ -564,15 +564,13 @@ class ExternalPopulationPrior(object):
             interp_func.cdf_interp = {}
         if interp_func.cdf_interp == {}:
             cdf_list = []
-            x_list = np.linspace(
-                self.data[0][0], self.data[0][-1], self.linspace_num)
-            for x_val in x_list:
+            for x_val in self.x_list:
                 cdf_x = scipy_integrate.quad(
                     self.pdf, self.data[0][0], x_val, epsabs=self.epsabs,
                     epsrel=self.epsrel, limit=self.limit, **kwargs)[0]
                 cdf_list.append(cdf_x)
             interp_func.cdf_interp = \
-                scipy_interpolate.interp1d(x_list, cdf_list)
+                scipy_interpolate.interp1d(self.x_list, cdf_list)
         cdf_val = np.float64(interp_func.cdf_interp(x))
         return cdf_val
 
@@ -583,12 +581,10 @@ class ExternalPopulationPrior(object):
             interp_func.cdfinv_interp = {}
         if interp_func.cdfinv_interp == {}:
             cdf_list = []
-            x_list = np.linspace(
-                self.data[0][0], self.data[0][-1], self.linspace_num)
-            for x_value in x_list:
+            for x_value in self.x_list:
                 cdf_list.append(self.cdf(x_value))
             interp_func.cdfinv_interp = \
-                scipy_interpolate.interp1d(cdf_list, x_list)
+                scipy_interpolate.interp1d(cdf_list, self.x_list)
         cdfinv_val = np.float64(interp_func.cdfinv_interp(y))
         return cdfinv_val
 
