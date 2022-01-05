@@ -538,7 +538,6 @@ class ExternalPopulationPrior(object):
 
     def _interp(self):
         """Create a function to store the interpolation."""
-        pass
 
     def pdf(self, x, interp_func=_interp, **kwargs):
         """Calculate and interpolate the PDF by using the given distribution,
