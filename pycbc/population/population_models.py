@@ -528,8 +528,6 @@ class ExternalPopulationPrior(object):
     def __init__(self, file_path, column_index, **kwargs):
         self.file_path = file_path
         self.data = np.loadtxt(self.file_path, unpack=True, skiprows=1)
-        self.lower_bound = self.data[0][0]
-        self.upper_bound = self.data[0][-1]
         self.column_index = column_index
         self.epsabs = kwargs.get('epsabs', 1.49e-05)
         self.epsrel = kwargs.get('epsrel', 1.49e-05)
@@ -551,7 +549,7 @@ class ExternalPopulationPrior(object):
             func_unnorm = scipy_interpolate.interp1d(
                 self.data[0], self.data[self.column_index])
             norm_const = scipy_integrate.quad(
-                func_unnorm, self.lower_bound, self.upper_bound,
+                func_unnorm, self.data[0][0], self.data[0][-1],
                 epsabs=self.epsabs, epsrel=self.epsrel, limit=self.limit,
                 **kwargs)[0]
             interp_func.pdf_interp = scipy_interpolate.interp1d(
@@ -567,10 +565,10 @@ class ExternalPopulationPrior(object):
         if interp_func.cdf_interp == {}:
             cdf_list = []
             x_list = np.linspace(
-                self.lower_bound, self.upper_bound, self.linspace_num)
+                self.data[0][0], self.data[0][-1], self.linspace_num)
             for x_val in x_list:
                 cdf_x = scipy_integrate.quad(
-                    self.pdf, self.lower_bound, x_val, epsabs=self.epsabs,
+                    self.pdf, self.data[0][0], x_val, epsabs=self.epsabs,
                     epsrel=self.epsrel, limit=self.limit, **kwargs)[0]
                 cdf_list.append(cdf_x)
             interp_func.cdf_interp = \
@@ -586,7 +584,7 @@ class ExternalPopulationPrior(object):
         if interp_func.cdfinv_interp == {}:
             cdf_list = []
             x_list = np.linspace(
-                self.lower_bound, self.upper_bound, self.linspace_num)
+                self.data[0][0], self.data[0][-1], self.linspace_num)
             for x_value in x_list:
                 cdf_list.append(self.cdf(x_value))
             interp_func.cdfinv_interp = \
