@@ -542,7 +542,7 @@ class ExternalPopulationPrior(object):
         """Create a function to store the interpolation."""
         pass
 
-    def _pdf(self, x, interp_func=_interp, **kwargs):
+    def pdf(self, x, interp_func=_interp, **kwargs):
         """Calculate and interpolate the PDF by using the given distribution,
         then return the corresponding value at the given x."""
         if not hasattr(interp_func, 'pdf_interp'):
@@ -559,7 +559,7 @@ class ExternalPopulationPrior(object):
         pdf_val = np.float64(interp_func.pdf_interp(x))
         return pdf_val
 
-    def _cdf(self, x, interp_func=_interp, **kwargs):
+    def cdf(self, x, interp_func=_interp, **kwargs):
         """Calculate and interpolate the CDF, then return the corresponding
         value at the given x."""
         if not hasattr(interp_func, 'cdf_interp'):
@@ -570,7 +570,7 @@ class ExternalPopulationPrior(object):
                 self.lower_bound, self.upper_bound, self.linspace_num)
             for x_val in x_list:
                 cdf_x = scipy_integrate.quad(
-                    self._pdf, self.lower_bound, x_val, epsabs=self.epsabs,
+                    self.pdf, self.lower_bound, x_val, epsabs=self.epsabs,
                     epsrel=self.epsrel, limit=self.limit, **kwargs)[0]
                 cdf_list.append(cdf_x)
             interp_func.cdf_interp = \
@@ -578,7 +578,7 @@ class ExternalPopulationPrior(object):
         cdf_val = np.float64(interp_func.cdf_interp(x))
         return cdf_val
 
-    def _cdf_inv(self, y, interp_func=_interp, **kwargs):
+    def cdf_inv(self, y, interp_func=_interp):
         """Calculate and interpolate the inverse CDF, then return the
         corresponding value at the given y."""
         if not hasattr(interp_func, 'cdfinv_interp'):
@@ -588,7 +588,7 @@ class ExternalPopulationPrior(object):
             x_list = np.linspace(
                 self.lower_bound, self.upper_bound, self.linspace_num)
             for x_value in x_list:
-                cdf_list.append(self._cdf(x_value))
+                cdf_list.append(self.cdf(x_value))
             interp_func.cdfinv_interp = \
                 scipy_interpolate.interp1d(cdf_list, x_list)
         cdfinv_val = np.float64(interp_func.cdfinv_interp(y))
