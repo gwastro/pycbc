@@ -39,7 +39,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   ENV_OS="x86_64_rhel_8"
   yum -y install python38 python38-devel
   yum -y groupinstall "Development Tools"
-  yum -y install which
+  yum -y install which rsync
   yum clean all
   yum makecache
   yum -y install openssl-devel
