@@ -757,19 +757,14 @@ class SubWorkflow(dax.SubWorkflow):
         super().__init__(*args, **kwargs)
         self.pycbc_planner_args = {}
 
-    def add_into_workflow(self, container_wflow, parents=None):
+    def add_into_workflow(self, container_wflow):
         """Add this Job into a container Workflow
         """
-        if parents is None:
-            parents = []
-        else:
-            # Get Pegasus objects from PyCBC objects for parent Nodes
-            parents = [n._dax_node for n in parents]
         self.add_planner_args(**self.pycbc_planner_args)
+
         # Set this to None so code will fail if more planner args are added
         self.pycbc_planner_args = None
         container_wflow._adag.add_jobs(self)
-        container_wflow._adag.add_dependency(self, parents=parents)
 
     def add_planner_arg(self, value, option):
         if self.pycbc_planner_args is None:
