@@ -528,63 +528,55 @@ class ExternalPopulationPrior(object):
     def __init__(self, file_path, column_index, **kwargs):
         self.file_path = file_path
         self.data = np.loadtxt(self.file_path, unpack=True, skiprows=1)
-        self.column_index = column_index
+        self.column_index = int(column_index)
         self.epsabs = kwargs.get('epsabs', 1.49e-05)
         self.epsrel = kwargs.get('epsrel', 1.49e-05)
-        self.limit = kwargs.get('limit', 500)
         self.x_list = np.linspace(self.data[0][0], self.data[0][-1], 1000)
+        self.interp = {'pdf':None, 'cdf':None, 'cdf_inv':None}
         if not file_path:
             raise ValueError("Must provide the path to distribution file.")
 
-    def _interp(self):
-        """Create a function to store the interpolation."""
-
-    def pdf(self, x, interp_func=_interp, **kwargs):
+    def pdf(self, x, **kwargs):
         """Calculate and interpolate the PDF by using the given distribution,
         then return the corresponding value at the given x."""
-        if not hasattr(interp_func, 'pdf_interp'):
-            interp_func.pdf_interp = {}
-        if interp_func.pdf_interp == {}:
+        if self.interp['pdf'] == None:
             func_unnorm = scipy_interpolate.interp1d(
                 self.data[0], self.data[self.column_index])
             norm_const = scipy_integrate.quad(
                 func_unnorm, self.data[0][0], self.data[0][-1],
-                epsabs=self.epsabs, epsrel=self.epsrel, limit=self.limit,
+                epsabs=self.epsabs, epsrel=self.epsrel, limit=500,
                 **kwargs)[0]
-            interp_func.pdf_interp = scipy_interpolate.interp1d(
+            self.interp['pdf'] = scipy_interpolate.interp1d(
                 self.data[0], self.data[self.column_index]/norm_const)
-        pdf_val = np.float64(interp_func.pdf_interp(x))
+        pdf_val = np.float64(self.interp['pdf'](x))
         return pdf_val
 
-    def cdf(self, x, interp_func=_interp, **kwargs):
+    def cdf(self, x, **kwargs):
         """Calculate and interpolate the CDF, then return the corresponding
         value at the given x."""
-        if not hasattr(interp_func, 'cdf_interp'):
-            interp_func.cdf_interp = {}
-        if interp_func.cdf_interp == {}:
+        if self.interp['cdf'] == None:
             cdf_list = []
             for x_val in self.x_list:
                 cdf_x = scipy_integrate.quad(
                     self.pdf, self.data[0][0], x_val, epsabs=self.epsabs,
-                    epsrel=self.epsrel, limit=self.limit, **kwargs)[0]
+                    epsrel=self.epsrel, limit=500, **kwargs)[0]
                 cdf_list.append(cdf_x)
-            interp_func.cdf_interp = \
+            self.interp['cdf'] = \
                 scipy_interpolate.interp1d(self.x_list, cdf_list)
-        cdf_val = np.float64(interp_func.cdf_interp(x))
+        cdf_val = np.float64(self.interp['cdf'](x))
         return cdf_val
 
-    def cdf_inv(self, y, interp_func=_interp):
+    def cdf_inv(self, **kwargs):
         """Calculate and interpolate the inverse CDF, then return the
         corresponding value at the given y."""
-        if not hasattr(interp_func, 'cdfinv_interp'):
-            interp_func.cdfinv_interp = {}
-        if interp_func.cdfinv_interp == {}:
+        if self.interp['cdf_inv'] == None:
             cdf_list = []
             for x_value in self.x_list:
                 cdf_list.append(self.cdf(x_value))
-            interp_func.cdfinv_interp = \
+            self.interp['cdf_inv'] = \
                 scipy_interpolate.interp1d(cdf_list, self.x_list)
-        cdfinv_val = np.float64(interp_func.cdfinv_interp(y))
+        cdfinv_val = np.float64(
+            self.interp['cdf_inv'](list(kwargs.values())[0]))
         return cdfinv_val
 
 

@@ -94,6 +94,12 @@ class External(object):
         modulestr = cp.get_opt_tag(section, 'module', tag)
 
         mod = importlib.import_module(modulestr)
+        if modulestr == "pycbc.population.population_models":
+            path = cp.get_opt_tag(section, 'file_path', tag)
+            index = cp.get_opt_tag(section, 'column_index', tag)
+            mod = mod.ExternalPopulationPrior(
+                    file_path=path, column_index=index)
+
         logpdfstr = cp.get_opt_tag(section, 'logpdf', tag)
         logpdf = getattr(mod, logpdfstr)
 
