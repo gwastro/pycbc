@@ -119,9 +119,8 @@ log_format = "%(asctime)s:%(levelname)s : %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
-workflow = core.Workflow(opts)
-finalize_workflow = core.Workflow(opts, subworkflow_name="finalization",
-                                  is_subworkflow=True)
+workflow = core.Workflow(opts, name=opts.workflow_name)
+finalize_workflow = core.Workflow(opts, name="finalization")
 
 # load the inference config file
 inference_cp, nruns = read_inference_settings_from_config(
@@ -221,8 +220,7 @@ for num_inj in range(n_injections):
     # we need to go back to the original directory to do this for all the file
     # references to work correctly
     os.chdir(origdir)
-    sub_workflow = core.Workflow(opts, subworkflow_name=event,
-                                 is_subworkflow=True)
+    sub_workflow = core.Workflow(opts, name=event)
     # now go back to the output
     os.chdir(opts.output_dir)
 
@@ -326,8 +324,7 @@ if do_pp_test:
     # we need to go back to the original directory to do this for all the file
     # references to work correctly
     os.chdir(origdir)
-    pp_workflow = core.Workflow(opts, subworkflow_name='pp_test',
-                                is_subworkflow=True)
+    pp_workflow = core.Workflow(opts, name='pp_test')
     # now go back to the output
     os.chdir(opts.output_dir)
     # create the pp summary table
