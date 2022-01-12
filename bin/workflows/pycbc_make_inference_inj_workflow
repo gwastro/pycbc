@@ -119,7 +119,7 @@ log_format = "%(asctime)s:%(levelname)s : %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
-workflow = core.Workflow(opts, name="main")
+workflow = core.Workflow(opts, name=opts.workflow_name)
 finalize_workflow = core.Workflow(opts, name="finalization")
 
 # load the inference config file
