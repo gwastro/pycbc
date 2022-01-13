@@ -506,83 +506,8 @@ def distance_from_rate(
     return dl
 
 
-class ExternalPopulationPrior(object):
-    r"""Sampling from the external distribution by using the inverse CDF method.
-
-    Instances of this class can be called like a distribution in the .ini file,
-    when used with `pycbc.distributions.external.External`.
-
-    Parameters
-    ----------
-    parameter : {'file_path', 'column_index'}
-        The path of the external population distribution .txt file, and the
-        column index of the distribution. By default, the first column should
-        be the values of a certain parameter, such as "mass", other columns
-        should be the corresponding local event rate (as a function of
-        that parameter).
-    \**kwargs :
-        All other keyword args are passed to `scipy.integrate.quad` to control
-        the numerical accuracy of the inverse CDF.
-        If none provided, will use the default values in `self.__init__`.
-    """
-    def __init__(self, file_path, column_index, **kwargs):
-        self.file_path = file_path
-        self.data = np.loadtxt(self.file_path, unpack=True, skiprows=1)
-        self.column_index = int(column_index)
-        self.epsabs = kwargs.get('epsabs', 1.49e-05)
-        self.epsrel = kwargs.get('epsrel', 1.49e-05)
-        self.x_list = np.linspace(self.data[0][0], self.data[0][-1], 1000)
-        self.interp = {'pdf':None, 'cdf':None, 'cdf_inv':None}
-        if not file_path:
-            raise ValueError("Must provide the path to distribution file.")
-
-    def pdf(self, x, **kwargs):
-        """Calculate and interpolate the PDF by using the given distribution,
-        then return the corresponding value at the given x."""
-        if self.interp['pdf'] == None:
-            func_unnorm = scipy_interpolate.interp1d(
-                self.data[0], self.data[self.column_index])
-            norm_const = scipy_integrate.quad(
-                func_unnorm, self.data[0][0], self.data[0][-1],
-                epsabs=self.epsabs, epsrel=self.epsrel, limit=500,
-                **kwargs)[0]
-            self.interp['pdf'] = scipy_interpolate.interp1d(
-                self.data[0], self.data[self.column_index]/norm_const)
-        pdf_val = np.float64(self.interp['pdf'](x))
-        return pdf_val
-
-    def cdf(self, x, **kwargs):
-        """Calculate and interpolate the CDF, then return the corresponding
-        value at the given x."""
-        if self.interp['cdf'] == None:
-            cdf_list = []
-            for x_val in self.x_list:
-                cdf_x = scipy_integrate.quad(
-                    self.pdf, self.data[0][0], x_val, epsabs=self.epsabs,
-                    epsrel=self.epsrel, limit=500, **kwargs)[0]
-                cdf_list.append(cdf_x)
-            self.interp['cdf'] = \
-                scipy_interpolate.interp1d(self.x_list, cdf_list)
-        cdf_val = np.float64(self.interp['cdf'](x))
-        return cdf_val
-
-    def cdf_inv(self, **kwargs):
-        """Calculate and interpolate the inverse CDF, then return the
-        corresponding value at the given y."""
-        if self.interp['cdf_inv'] == None:
-            cdf_list = []
-            for x_value in self.x_list:
-                cdf_list.append(self.cdf(x_value))
-            self.interp['cdf_inv'] = \
-                scipy_interpolate.interp1d(cdf_list, self.x_list)
-        cdfinv_val = np.float64(
-            self.interp['cdf_inv'](list(kwargs.values())[0]))
-        return cdfinv_val
-
-
 __all__ = ['sfr_grb_2008', 'sfr_madau_dickinson_2014',
            'sfr_madau_fragos_2017', 'diff_lookback_time',
            'p_tau', 'merger_rate_density', 'coalescence_rate',
            'norm_redshift_distribution', 'total_rate_upto_redshift',
-           'distance_from_rate', 'average_time_between_signals',
-           'ExternalPopulationPrior']
+           'distance_from_rate', 'average_time_between_signals']
