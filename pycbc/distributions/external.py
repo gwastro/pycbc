@@ -45,9 +45,9 @@ class DistributionFunctionFromFile(object):
 
     Notes
     -----
-    This class is different from `pycbc.distributions.arbitrary.FromFile`, which
-    needs samples from the hdf file to construct the PDF by using KDE. This class
-    reads in any continuous functions of the parameter.
+    This class is different from `pycbc.distributions.arbitrary.FromFile`,
+    which needs samples from the hdf file to construct the PDF by using KDE.
+    This class reads in any continuous functions of the parameter.
     """
     def __init__(self, file_path, column_index, **kwargs):
         self.file_path = file_path
@@ -56,14 +56,14 @@ class DistributionFunctionFromFile(object):
         self.epsabs = kwargs.get('epsabs', 1.49e-05)
         self.epsrel = kwargs.get('epsrel', 1.49e-05)
         self.x_list = np.linspace(self.data[0][0], self.data[0][-1], 1000)
-        self.interp = {'pdf':None, 'cdf':None, 'cdf_inv':None}
+        self.interp = {'pdf': None, 'cdf': None, 'cdf_inv': None}
         if not file_path:
             raise ValueError("Must provide the path to density function file.")
 
     def pdf(self, x, **kwargs):
         """Calculate and interpolate the PDF by using the given density function,
         then return the corresponding value at the given x."""
-        if self.interp['pdf'] == None:
+        if self.interp['pdf'] is None:
             func_unnorm = scipy_interpolate.interp1d(
                 self.data[0], self.data[self.column_index])
             norm_const = scipy_integrate.quad(
@@ -78,7 +78,7 @@ class DistributionFunctionFromFile(object):
     def cdf(self, x, **kwargs):
         """Calculate and interpolate the CDF, then return the corresponding
         value at the given x."""
-        if self.interp['cdf'] == None:
+        if self.interp['cdf'] is None:
             cdf_list = []
             for x_val in self.x_list:
                 cdf_x = scipy_integrate.quad(
@@ -93,13 +93,13 @@ class DistributionFunctionFromFile(object):
     def cdf_inv(self, **kwargs):
         """Calculate and interpolate the inverse CDF, then return the
         corresponding parameter value at the given CDF value."""
-        if self.interp['cdf_inv'] == None:
+        if self.interp['cdf_inv'] is None:
             cdf_list = []
             for x_value in self.x_list:
                 cdf_list.append(self.cdf(x_value))
             self.interp['cdf_inv'] = \
                 scipy_interpolate.interp1d(cdf_list, self.x_list)
-        cdfinv_val = {list(kwargs.keys())[0]:np.float64(
+        cdfinv_val = {list(kwargs.keys())[0]: np.float64(
             self.interp['cdf_inv'](list(kwargs.values())[0]))}
         return cdfinv_val
 
