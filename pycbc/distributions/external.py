@@ -116,6 +116,18 @@ class External(object):
         pdf = custom_function_name
         cdfinv = custom_function_name2
 
+    Or call `DistributionFunctionFromFile` in the .ini file:
+
+    .. code-block:: ini
+
+        [prior-param]
+        name = external
+        module = distribution_function_from_file
+        file_path = path
+        column_index = index
+        pdf = pdf
+        cdfinv = cdf_inv
+
     Parameters
     ----------
     params : list
@@ -161,10 +173,10 @@ class External(object):
         if self._rvs:
             return self._rvs(size=size)
 
-        draw = {}
+        samples = {}
         for param in self.params:
-            draw[param] = np.random.uniform(0, 1, size=size)
-        return self.cdfinv(**draw)
+            samples[param] = np.random.uniform(0, 1, size=size)
+        return self.cdfinv(**samples)
 
     def apply_boundary_conditions(self, **params):
         return params
