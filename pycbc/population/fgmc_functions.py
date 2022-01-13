@@ -24,6 +24,7 @@ from pycbc import events
 from pycbc.events.coinc import mean_if_greater_than_zero as coinc_meanigz
 from pycbc.events import triggers
 
+
 def filter_bin_lo_hi(values, lo, hi):
     in_bin = np.sign((values - lo) * (hi - values))
     if np.any(in_bin == 0):
