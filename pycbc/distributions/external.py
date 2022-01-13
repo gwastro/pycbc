@@ -56,52 +56,51 @@ class DistributionFunctionFromFile(object):
         self.epsabs = kwargs.get('epsabs', 1.49e-05)
         self.epsrel = kwargs.get('epsrel', 1.49e-05)
         self.x_list = np.linspace(self.data[0][0], self.data[0][-1], 1000)
-        self.interp = {'pdf_interp': None, 'cdf_interp': None,
-                        'cdfinv_interp': None}
+        self.interp = {'pdf': callable, 'cdf': callable, 'cdf_inv': callable}
         if not file_path:
             raise ValueError("Must provide the path to density function file.")
 
     def pdf(self, x, **kwargs):
         """Calculate and interpolate the PDF by using the given density function,
         then return the corresponding value at the given x."""
-        if self.interp['pdf_interp'] is None:
+        if self.interp['pdf'] == callable:
             func_unnorm = scipy_interpolate.interp1d(
                 self.data[0], self.data[self.column_index])
             norm_const = scipy_integrate.quad(
                 func_unnorm, self.data[0][0], self.data[0][-1],
                 epsabs=self.epsabs, epsrel=self.epsrel, limit=500,
                 **kwargs)[0]
-            self.interp['pdf_interp'] = scipy_interpolate.interp1d(
+            self.interp['pdf'] = scipy_interpolate.interp1d(
                 self.data[0], self.data[self.column_index]/norm_const)
-        pdf_val = np.float64(self.interp['pdf_interp'](x))
+        pdf_val = np.float64(self.interp['pdf'](x))
         return pdf_val
 
     def cdf(self, x, **kwargs):
         """Calculate and interpolate the CDF, then return the corresponding
         value at the given x."""
-        if self.interp['cdf_interp'] is None:
+        if self.interp['cdf'] == callable:
             cdf_list = []
             for x_val in self.x_list:
                 cdf_x = scipy_integrate.quad(
                     self.pdf, self.data[0][0], x_val, epsabs=self.epsabs,
                     epsrel=self.epsrel, limit=500, **kwargs)[0]
                 cdf_list.append(cdf_x)
-            self.interp['cdf_interp'] = \
+            self.interp['cdf'] = \
                 scipy_interpolate.interp1d(self.x_list, cdf_list)
-        cdf_val = np.float64(self.interp['cdf_interp'](x))
+        cdf_val = np.float64(self.interp['cdf'](x))
         return cdf_val
 
     def cdf_inv(self, **kwargs):
         """Calculate and interpolate the inverse CDF, then return the
         corresponding parameter value at the given CDF value."""
-        if self.interp['cdfinv_interp'] is None:
+        if self.interp['cdf_inv'] == callable:
             cdf_list = []
             for x_value in self.x_list:
                 cdf_list.append(self.cdf(x_value))
-            self.interp['cdfinv_interp'] = \
+            self.interp['cdf_inv'] = \
                 scipy_interpolate.interp1d(cdf_list, self.x_list)
         cdfinv_val = {list(kwargs.keys())[0]: np.float64(
-            self.interp['cdfinv_interp'](list(kwargs.values())[0]))}
+            self.interp['cdf_inv'](list(kwargs.values())[0]))}
         return cdfinv_val
 
 
