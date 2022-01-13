@@ -174,8 +174,8 @@ class External(object):
             return self._rvs(size=size)
 
         samples = {}
-        for param in self.params:
-            samples[param] = np.random.uniform(0, 1, size=size)
+        for parameter in self.params:
+            samples[parameter] = np.random.uniform(0, 1, size=size)
         return self.cdfinv(**samples)
 
     def apply_boundary_conditions(self, **params):
