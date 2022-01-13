@@ -180,8 +180,8 @@ class External(object):
 
         if modulestr == "distribution_function_from_file":
             mod = DistributionFunctionFromFile(
-                file_path = cp.get_opt_tag(section, 'file_path', tag),
-                column_index = cp.get_opt_tag(section, 'column_index', tag))
+                file_path=cp.get_opt_tag(section, 'file_path', tag),
+                column_index=cp.get_opt_tag(section, 'column_index', tag))
         else:
             mod = importlib.import_module(modulestr)
 
