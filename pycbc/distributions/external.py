@@ -13,7 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
-This modules provides classes for evaluating PDF, CDF and inverse CDF
+This modules provides classes for evaluating PDF, logPDF, CDF and inverse CDF
 from external arbitrary distributions, and drawing samples from them.
 """
 
@@ -24,8 +24,120 @@ import scipy.interpolate as scipy_interpolate
 from pycbc import VARARGS_DELIM
 
 
-class DistributionFunctionFromFile(object):
-    r"""Evaluating PDF, CDF and inverse CDF from the external density function.
+class External(object):
+    """ Distribution defined by external cdfinv and logpdf functions
+
+    To add to an inference configuration file:
+
+    .. code-block:: ini
+
+        [prior-param1+param2]
+        name = external
+        module = custom_mod
+        logpdf = custom_function_name
+        cdfinv = custom_function_name2
+
+    Or call `DistributionFunctionFromFile` in the .ini file:
+
+    .. code-block:: ini
+
+        [prior-param]
+        name = external_func_fromfile
+        module = pycbc.distributions.external
+        file_path = path
+        column_index = index
+        logpdf = logpdf
+        cdfinv = cdfinv
+
+    Parameters
+    ----------
+    params : list
+        list of parameter names
+    custom_mod : module
+        module from which logpdf and cdfinv functions can be imported
+    logpdf : function
+        function which returns the logpdf
+    cdfinv : function
+        function which applies the invcdf
+
+    Examples
+    --------
+    To instantate by hand and example of function format. You must provide
+    the logpdf function, and you may either provide the rvs or cdfinv function.
+    If the cdfinv is provided, but not the rvs, the random values will
+    be calculated using the cdfinv function.
+
+    >>> import numpy
+    >>> params = ['x', 'y']
+    >>> def logpdf(x=None, y=None):
+    ...     p = numpy.ones(len(x))
+    ...     return p
+    >>>
+    >>> def cdfinv(**kwds):
+    ...     return kwds
+    >>> e = External(['x', 'y'], logpdf, cdfinv=cdfinv)
+    >>> e.rvs(size=10)
+    """
+    name = "external"
+
+    def __init__(self, params=None, logpdf=None, rvs=None, cdfinv=None):
+        self.params = params
+        self.logpdf = logpdf
+        self.cdfinv = cdfinv
+        self._rvs = rvs
+
+        if not (rvs or cdfinv):
+            raise ValueError("Must provide either rvs or cdfinv")
+
+    def rvs(self, size=1, **kwds):
+        "Draw random value"
+        if self._rvs and not isinstance(self, DistributionFunctionFromFile):
+            return self._rvs(size=size)
+        samples = {param: np.random.uniform(0, 1, size=size)
+                   for param in self.params}
+        return self.cdfinv(**samples)
+
+    def apply_boundary_conditions(self, **params):
+        return params
+
+    def __call__(self, **kwds):
+        return self.logpdf(**kwds)
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        tag = variable_args
+        params = variable_args.split(VARARGS_DELIM)
+        modulestr = cp.get_opt_tag(section, 'module', tag)
+
+        if modulestr == "pycbc.distributions.external":
+            file_path = cp.get_opt_tag(section, 'file_path', tag)
+            column_index = cp.get_opt_tag(section, 'column_index', tag)
+            mod = DistributionFunctionFromFile(file_path=file_path,
+                                               column_index=column_index)
+        else:           
+            mod = importlib.import_module(modulestr)
+
+        logpdfstr = cp.get_opt_tag(section, 'logpdf', tag)
+        logpdf = getattr(mod, logpdfstr)
+
+        cdfinv = rvs = None
+        if cp.has_option_tag(section, 'cdfinv', tag):
+            cdfinvstr = cp.get_opt_tag(section, 'cdfinv', tag)
+            cdfinv = getattr(mod, cdfinvstr)
+
+        if cp.has_option_tag(section, 'rvs', tag):
+            rvsstr = cp.get_opt_tag(section, 'rvs', tag)
+            rvs = getattr(mod, rvsstr)
+        if modulestr == "pycbc.distributions.external":
+            return cls(params=params, file_path=file_path,
+                       column_index=mod.column_index, rvs=rvs, cdfinv=cdfinv)
+        else:
+            return cls(params=params, logpdf=logpdf, rvs=rvs, cdfinv=cdfinv)
+
+
+class DistributionFunctionFromFile(External):
+    r"""Evaluating PDF, logPDF, CDF and inverse CDF from the external
+        density function.
 
     Instances of this class can be called like a distribution in the .ini file,
     when used with `pycbc.distributions.external.External`.
@@ -43,20 +155,27 @@ class DistributionFunctionFromFile(object):
         the numerical accuracy of the inverse CDF.
         If not be provided, will use the default values in `self.__init__`.
 
+    Attributes
+    ----------
+    name : "external_func_fromfile"
+        The name of this distribution.
+
     Notes
     -----
     This class is different from `pycbc.distributions.arbitrary.FromFile`,
     which needs samples from the hdf file to construct the PDF by using KDE.
     This class reads in any continuous functions of the parameter.
     """
-    def __init__(self, file_path, column_index, **kwargs):
-        self.file_path = file_path
-        self.data = np.loadtxt(self.file_path, unpack=True, skiprows=1)
+    name = "external_func_fromfile"
+
+    def __init__(self, params=None, file_path=None, column_index=None, **kwargs):
+        self.params = params
+        self.data = np.loadtxt(file_path, unpack=True, skiprows=1)
         self.column_index = int(column_index)
         self.epsabs = kwargs.get('epsabs', 1.49e-05)
         self.epsrel = kwargs.get('epsrel', 1.49e-05)
         self.x_list = np.linspace(self.data[0][0], self.data[0][-1], 1000)
-        self.interp = {'pdf': callable, 'cdf': callable, 'cdf_inv': callable}
+        self.interp = {'pdf': callable, 'cdf': callable, 'cdfinv': callable}
         if not file_path:
             raise ValueError("Must provide the path to density function file.")
 
@@ -75,6 +194,10 @@ class DistributionFunctionFromFile(object):
         pdf_val = np.float64(self.interp['pdf'](x))
         return pdf_val
 
+    def logpdf(self, x, **kwargs):
+        """Calculate the logPDF by calling `pdf` function."""
+        return np.log(self.pdf(x, **kwargs))
+
     def cdf(self, x, **kwargs):
         """Calculate and interpolate the CDF, then return the corresponding
         value at the given x."""
@@ -90,124 +213,22 @@ class DistributionFunctionFromFile(object):
         cdf_val = np.float64(self.interp['cdf'](x))
         return cdf_val
 
-    def cdf_inv(self, **kwargs):
+    def cdfinv(self, **kwargs):
         """Calculate and interpolate the inverse CDF, then return the
         corresponding parameter value at the given CDF value."""
-        if self.interp['cdf_inv'] == callable:
+        if self.interp['cdfinv'] == callable:
             cdf_list = []
             for x_value in self.x_list:
                 cdf_list.append(self.cdf(x_value))
-            self.interp['cdf_inv'] = \
+            self.interp['cdfinv'] = \
                 scipy_interpolate.interp1d(cdf_list, self.x_list)
         cdfinv_val = {list(kwargs.keys())[0]: np.float64(
-            self.interp['cdf_inv'](list(kwargs.values())[0]))}
+            self.interp['cdfinv'](list(kwargs.values())[0]))}
         return cdfinv_val
 
-
-class External(object):
-    """ Distribution defined by external cdfinv and pdf functions
-
-    To add to an inference configuration file:
-
-    .. code-block:: ini
-
-        [prior-param1+param2]
-        module = custom_mod
-        pdf = custom_function_name
-        cdfinv = custom_function_name2
-
-    Or call `DistributionFunctionFromFile` in the .ini file:
-
-    .. code-block:: ini
-
-        [prior-param]
-        name = external
-        module = distribution_function_from_file
-        file_path = path
-        column_index = index
-        pdf = pdf
-        cdfinv = cdf_inv
-
-    Parameters
-    ----------
-    params : list
-        list of parameter names
-    custom_mod : module
-        module from which pdf and cdfinv functions can be imported
-    pdf : function
-        function which returns the pdf
-    cdfinv : function
-        function which applies the invcdf
-
-    Examples
-    --------
-    To instantate by hand and example of function format. You must provide
-    the pdf function, and you may either provide the rvs or cdfinv function.
-    If the cdfinv is provided, but not the rvs, the random values will
-    be calculated using the cdfinv function.
-
-    >>> import numpy
-    >>> params = ['x', 'y']
-    >>> def pdf(x=None, y=None):
-    ...     p = numpy.ones(len(x))
-    ...     return p
-    >>>
-    >>> def cdfinv(**kwds):
-    ...     return kwds
-    >>> e = External(['x', 'y'], pdf, cdfinv=cdfinv)
-    >>> e.rvs(size=10)
-    """
-    name = "external"
-
-    def __init__(self, params, pdf, rvs=None, cdfinv=None):
-        self.params = params
-        self.pdf = pdf
-        self.cdfinv = cdfinv
-        self._rvs = rvs
-
-        if not (rvs or cdfinv):
-            raise ValueError("Must provide either rvs or cdfinv")
-
-    def rvs(self, size=1, **kwds):
-        "Draw random value"
-        if self._rvs:
-            return self._rvs(size=size)
-        samples = {param: np.random.uniform(0, 1, size=size)
-                   for param in self.params}
-        return self.cdfinv(**samples)
-
-    def apply_boundary_conditions(self, **params):
-        return params
-
-    def __call__(self, **kwds):
-        return self.pdf(**kwds)
-
-    @classmethod
-    def from_config(cls, cp, section, variable_args):
-        tag = variable_args
-        params = variable_args.split(VARARGS_DELIM)
-        modulestr = cp.get_opt_tag(section, 'module', tag)
-
-        if modulestr == "distribution_function_from_file":
-            mod = DistributionFunctionFromFile(
-                file_path=cp.get_opt_tag(section, 'file_path', tag),
-                column_index=cp.get_opt_tag(section, 'column_index', tag))
-        else:
-            mod = importlib.import_module(modulestr)
-
-        pdfstr = cp.get_opt_tag(section, 'pdf', tag)
-        pdf = getattr(mod, pdfstr)
-
-        cdfinv = rvs = None
-        if cp.has_option_tag(section, 'cdfinv', tag):
-            cdfinvstr = cp.get_opt_tag(section, 'cdfinv', tag)
-            cdfinv = getattr(mod, cdfinvstr)
-
-        if cp.has_option_tag(section, 'rvs', tag):
-            rvsstr = cp.get_opt_tag(section, 'rvs', tag)
-            rvs = getattr(mod, rvsstr)
-
-        return cls(params, pdf, rvs=rvs, cdfinv=cdfinv)
+    def _rvs(self, **kwargs):
+        raise NotImplementedError("""This class does not support rvs.
+                                  Use `External` instead.""")
 
 
-__all__ = ['DistributionFunctionFromFile', 'External']
+__all__ = ['External', 'DistributionFunctionFromFile']
