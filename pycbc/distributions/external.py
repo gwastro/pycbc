@@ -80,7 +80,7 @@ class External(object):
     """
     name = "external"
 
-    def __init__(self, params=None, logpdf=None, 
+    def __init__(self, params=None, logpdf=None,
                  rvs=None, cdfinv=None, **kwds):
         self.params = params
         self.logpdf = logpdf
@@ -92,7 +92,7 @@ class External(object):
 
     def rvs(self, size=1, **kwds):
         "Draw random value"
-        if self._rvs and not isinstance(self, DistributionFunctionFromFile):
+        if self._rvs:
             return self._rvs(size=size)
         samples = {param: np.random.uniform(0, 1, size=size)
                    for param in self.params}
@@ -173,6 +173,7 @@ class DistributionFunctionFromFile(External):
 
     def __init__(self, params=None, file_path=None,
                  column_index=None, **kwargs):
+        super().__init__(cdfinv=not None)
         self.params = params
         self.data = np.loadtxt(file_path, unpack=True, skiprows=1)
         self.column_index = int(column_index)
@@ -229,10 +230,6 @@ class DistributionFunctionFromFile(External):
         cdfinv_val = {list(kwargs.keys())[0]: np.float64(
             self.interp['cdfinv'](list(kwargs.values())[0]))}
         return cdfinv_val
-
-    def _rvs(self, **kwargs):
-        raise NotImplementedError("""This class does not support rvs.
-                                  Use `External` instead.""")
 
 
 __all__ = ['External', 'DistributionFunctionFromFile']
