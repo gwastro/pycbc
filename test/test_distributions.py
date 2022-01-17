@@ -30,7 +30,8 @@ from pycbc.workflow import WorkflowConfigParser
 
 # distributions to exclude from one-dimensional distribution unit tests
 # some of these distributons have their own specific unit test
-EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary", "external",
+EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
+                      "external", "external_func_fromfile",
                       "uniform_solidangle", "uniform_sky",
                       "independent_chip_chieff",
                       "uniform_f0_tau", "fixed_samples"]
