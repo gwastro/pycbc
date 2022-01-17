@@ -96,8 +96,6 @@ class External(object):
             return self._rvs(size=size)
         samples = {param: np.random.uniform(0, 1, size=size)
                    for param in self.params}
-        if isinstance(self, DistributionFunctionFromFile):
-            return self._cdfinv(**samples)
         return self.cdfinv(**samples)
 
     def apply_boundary_conditions(self, **params):
@@ -173,7 +171,10 @@ class DistributionFunctionFromFile(External):
 
     def __init__(self, params=None, file_path=None,
                  column_index=None, **kwargs):
-        super().__init__(cdfinv=not None)
+        if kwargs.__contains__('cdfinv'):
+            super().__init__(cdfinv=kwargs['cdfinv'])
+        else:
+            super().__init__(cdfinv=not None)
         self.params = params
         self.data = np.loadtxt(file_path, unpack=True, skiprows=1)
         self.column_index = int(column_index)
