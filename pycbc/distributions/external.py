@@ -46,8 +46,8 @@ class External(object):
         module = pycbc.distributions.external
         file_path = path
         column_index = index
-        logpdf = logpdf
-        cdfinv = cdfinv
+        logpdf = _logpdf
+        cdfinv = _cdfinv
 
     Parameters
     ----------
@@ -141,7 +141,8 @@ class DistributionFunctionFromFile(External):
         density function.
 
     Instances of this class can be called like a distribution in the .ini file,
-    when used with `pycbc.distributions.external.External`.
+    when used with `pycbc.distributions.external.External`. Please see the
+    example in the `External` class.
 
     Parameters
     ----------
