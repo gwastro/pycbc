@@ -282,7 +282,7 @@ class TemplateBank(object):
             names = tuple([n if n!= 'alpha6' else 'f_lower' for n in names])
             self.table.dtype.names = names
 
-        elif ext.endswith(('hdf', '.h5')):
+        elif ext.endswith(('hdf', '.h5', '.hdf5')):
             self.indoc = None
             f = h5py.File(filename, 'r')
             self.filehandler = f
@@ -377,7 +377,8 @@ class TemplateBank(object):
         Parameters
         ----------
         filename : str
-            The name of the file to write to. Must end in '.hdf'.
+            The name of the file to write to. Must be a recognised HDF5
+            file extension
         start_index : If a specific slice of the template bank is to be
             written to the hdf file, this would specify the index of the
             first template in the slice
@@ -401,7 +402,7 @@ class TemplateBank(object):
         h5py.File
             The file handler to the output hdf file (left open).
         """
-        if not filename.endswith('.hdf'):
+        if not filename.endswith(('.hdf', '.h5', '.hdf5')):
             raise ValueError("Unrecoginized file extension")
         if os.path.exists(filename) and not force:
             raise IOError("File %s already exists" %(filename))
