@@ -24,7 +24,7 @@ from ligo.lw.lsctables import TableByName
 from ligo.lw.table import Column, TableStream
 from ligo.lw.types import FormatFunc, FromPyType, ToPyType
 from ligo.lw.utils import process as ligolw_process
-from pycbc import version as pycbc_version
+import pycbc.version as pycbc_version
 
 
 __all__ = ('default_null_value',

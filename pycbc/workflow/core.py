@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string
+import os, stat, subprocess, logging, math, string
 from six.moves import configparser as ConfigParser
 from six.moves import urllib
 from six.moves.urllib.request import pathname2url
