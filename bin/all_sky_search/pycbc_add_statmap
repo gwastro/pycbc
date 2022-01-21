@@ -451,7 +451,6 @@ while True:
         logging.info("Reached hierarchical removal limit of %d" %
                      args.max_hierarchical_removal)
         break
-    logging.info("Hierarchical iteration %d" % h_iterations)
 
     max_each_combo = {combo: sep_fg_data[combo].data['ifar'][:].argmax()
                       for combo in all_ifo_combos
