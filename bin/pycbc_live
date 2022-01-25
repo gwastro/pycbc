@@ -14,8 +14,8 @@ import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
 import os.path
 import itertools
 import platform
-import distutils
 import subprocess
+from shutil import which
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
@@ -291,7 +291,7 @@ class LiveEventManager(object):
                 flen = int(tlen / 2 + 1)
                 delta_f = bank.sample_rate / float(tlen)
                 cmd = 'timeout {} '.format(args.snr_opt_timeout)
-                exepath = distutils.spawn.find_executable('pycbc_optimize_snr')
+                exepath = which('pycbc_optimize_snr')
                 cmd += exepath + ' '
                 data_fils_str = '--data-files '
                 psd_fils_str = '--psd-files '

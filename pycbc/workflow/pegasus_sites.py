@@ -14,8 +14,8 @@ possible to implement a new site, but not sure how that would work in practice.
 
 import os.path
 import tempfile
-import distutils
 import urllib.parse
+from shutil import which
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
@@ -173,7 +173,7 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
                       value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     # Need to set PEGASUS_HOME
-    peg_home = distutils.spawn.find_executable('pegasus-plan')
+    peg_home = which('pegasus-plan')
     assert peg_home.endswith('bin/pegasus-plan')
     peg_home = peg_home.replace('bin/pegasus-plan', '')
     site.add_profiles(Namespace.ENV, key="PEGASUS_HOME", value=peg_home)
