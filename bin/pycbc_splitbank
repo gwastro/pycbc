@@ -27,20 +27,22 @@
 
 """Splits a table in an xml file into multiple pieces."""
 
-import pycbc, pycbc.version, pycbc.pnutils
-__author__  = "Alex Nitz <alex.nitz@ligo.org>"
-__version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
-__program__ = "pycbc_splitbank"
-
 import argparse
+from numpy import random, ceil
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import process as ligolw_process
-from pycbc import version
+from pycbc import version, gps_now
 from pycbc.io.ligolw import LIGOLWContentHandler
-from numpy import random, ceil
+from pycbc.conversions import mchirp_from_mass1_mass2
+from pycbc.pnutils import frequency_cutoff_from_name
+
+
+__author__  = "Alex Nitz <alex.nitz@ligo.org>"
+__version__ = version.git_verbose_msg
+__date__    = version.date
+__program__ = "pycbc_splitbank"
 
  
 # Command line parsing
@@ -100,27 +102,16 @@ except:
 
 length = len(template_bank_table)
 
-def mchirp_sort(x, y):
-    mc1, e1 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(x.mass1, x.mass2)
-    mc2, e2 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(y.mass1, y.mass2)
-    return cmp(mc1, mc2)
-
-def frequency_cutoff_sort(x, y):
-    p1 = pycbc.pnutils.frequency_cutoff_from_name(args.sort_frequency_cutoff,
-                                                  x.mass1, x.mass2,
-                                                  x.spin1z, x.spin2z)
-    p2 = pycbc.pnutils.frequency_cutoff_from_name(args.sort_frequency_cutoff,
-                                                  y.mass1, y.mass2,
-                                                  y.spin1z, y.spin2z)
-    return cmp(p1, p2)
-
 tt = template_bank_table
 
 if args.sort_frequency_cutoff:
-    tt = sorted(template_bank_table, cmp=frequency_cutoff_sort)
+    sort_key = lambda x: frequency_cutoff_from_name(
+            args.sort_frequency_cutoff, x.mass1, x.mass2, x.spin1z, x.spin2z)
+    tt = sorted(template_bank_table, key=sort_key)
 
 if args.sort_mchirp:
-    tt = sorted(template_bank_table, cmp=mchirp_sort)
+    sort_key = lambda x: mchirp_from_mass1_mass2(x.mass1, x.mass2)
+    tt = sorted(template_bank_table, key=sort_key)
 
 if args.random_sort:
     if args.random_seed is not None:
@@ -162,7 +153,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     
     # write the xml doc to disk
     proctable = lsctables.ProcessTable.get_table(outdoc)
-    proctable[0].end_time = pycbc.gps_now()
+    proctable[0].end_time = gps_now()
 
     if args.output_filenames:
         outname = args.output_filenames[num]
