@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (C) 2014 LIGO Scientific Collaboration
 #
@@ -63,8 +63,6 @@ group.add_argument("-O", "--output-filenames", nargs='*', default=None,
 
 parser.add_argument("-o", "--output-prefix", default=None, 
                     help="Prefix to add to the template bank name (name becomes output#.xml[.gz])" )
-parser.add_argument("-z", "--write-compress", action="store_true",
-                    help="Write compressed xml.gz files.")
 
 parser.add_argument("-V", "--verbose", action="store_true",
                     help="Print extra debugging information", default=False )
@@ -96,11 +94,11 @@ indoc = ligolw_utils.load_filename(args.bank_file, verbose=args.verbose,
                                    contenthandler=LIGOLWContentHandler)
 
 try:
-  template_bank_table = lsctables.SnglInspiralTable.get_table(indoc)
-  tabletype = lsctables.SnglInspiralTable
+    template_bank_table = lsctables.SnglInspiralTable.get_table(indoc)
+    tabletype = lsctables.SnglInspiralTable
 except:
-  template_bank_table = lsctables.SimInspiralTable.get_table(indoc)
-  tabletype = lsctables.SimInspiralTable
+    template_bank_table = lsctables.SimInspiralTable.get_table(indoc)
+    tabletype = lsctables.SimInspiralTable
 
 length = len(template_bank_table)
 
@@ -157,7 +155,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
                     version=version.version, cvs_repository=version.git_branch,
                     cvs_entry_time=version.date).process_id
 
-    sngl_inspiral_table = lsctables.New(tabletype,columns=template_bank_table.columnnames)
+    sngl_inspiral_table = lsctables.New(tabletype)
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
     for i in range(idx2-idx1):
@@ -171,10 +169,8 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     if args.output_filenames:
         outname = args.output_filenames[num]
     elif args.output_prefix:
-        outname = args.output_prefix + str(num) + '.xml'
-        if args.write_compress:
-            outname +='.gz'
+        outname = args.output_prefix + str(num) + '.xml.gz'
     else:
         errMsg = "Cannot figure out how to set output file names."
         raise ValueError(errMsg)
-    ligolw_utils.write_filename(outdoc, outname, gz=outname.endswith('.gz'))
+    ligolw_utils.write_filename(outdoc, outname)
