@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string
+import os, stat, subprocess, logging, math, string
 from six.moves import configparser as ConfigParser
 from six.moves import urllib
 from six.moves.urllib.request import pathname2url
@@ -44,9 +44,8 @@ from ligo import segments
 from ligo.lw import lsctables, ligolw
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import segments as ligolw_segments
-from ligo.lw.utils import process as ligolw_process
 from pycbc import makedir
-from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
@@ -1697,13 +1696,12 @@ class SegFile(File):
         """
         seglistdict = segments.segmentlistdict()
         seglistdict[ifo + ':' + name] = segmentlist
+        seg_summ_dict = None
         if seg_summ_list is not None:
             seg_summ_dict = segments.segmentlistdict()
             seg_summ_dict[ifo + ':' + name] = seg_summ_list
-        else:
-            seg_summ_dict = None
         return cls.from_segment_list_dict(description, seglistdict,
-                                          seg_summ_dict=None, **kwargs)
+                                          seg_summ_dict=seg_summ_dict, **kwargs)
 
     @classmethod
     def from_multi_segment_list(cls, description, segmentlists, names, ifos,
@@ -1898,7 +1896,7 @@ class SegFile(File):
         # create XML doc and add process table
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
-        process = ligolw_process.register_to_xmldoc(outdoc, sys.argv[0], {})
+        process = create_process_table(outdoc)
 
         for key, seglist in self.segment_dict.items():
             ifo, name = self.parse_segdict_key(key)

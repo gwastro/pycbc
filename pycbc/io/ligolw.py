@@ -15,12 +15,16 @@
 
 """Tools for dealing with LIGOLW XML files."""
 
+import os
+import sys
 from ligo.lw import lsctables
 from ligo.lw.ligolw import Param, LIGOLWContentHandler \
     as OrigLIGOLWContentHandler
 from ligo.lw.lsctables import TableByName
 from ligo.lw.table import Column, TableStream
 from ligo.lw.types import FormatFunc, FromPyType, ToPyType
+from ligo.lw.utils import process as ligolw_process
+import pycbc.version as pycbc_version
 
 
 __all__ = ('default_null_value',
@@ -120,6 +124,24 @@ def return_search_summary(start_time=0, end_time=0, nevents=0, ifos=None):
         search_summary.out_end_time_ns = int(end_time % 1 * 1e9)
 
     return search_summary
+
+def create_process_table(document, program_name=None, detectors=None,
+                         comment=None):
+    """Create a LIGOLW process table with sane defaults, add it to a LIGOLW
+    document, and return it.
+    """
+    if program_name is None:
+        program_name = os.path.basename(sys.argv[0])
+
+    # ligo.lw does not like `cvs_entry_time` being an empty string
+    cvs_entry_time = pycbc_version.date or None
+
+    process = ligolw_process.register_to_xmldoc(
+            document, program_name, {}, version=pycbc_version.version,
+            cvs_repository='pycbc/'+pycbc_version.git_branch,
+            cvs_entry_time=cvs_entry_time, instruments=detectors,
+            comment=comment)
+    return process
 
 def legacy_row_id_converter(ContentHandler):
     """Convert from old-style to new-style row IDs on the fly.
