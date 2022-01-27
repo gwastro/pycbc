@@ -33,9 +33,7 @@ __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "pycbc_splitbank"
 
-import time
 import argparse
-from glue import gpstime
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
@@ -164,7 +162,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     
     # write the xml doc to disk
     proctable = lsctables.ProcessTable.get_table(outdoc)
-    proctable[0].end_time = gpstime.GpsSecondsFromPyUTC(time.time())
+    proctable[0].end_time = pycbc.gps_now()
 
     if args.output_filenames:
         outname = args.output_filenames[num]
