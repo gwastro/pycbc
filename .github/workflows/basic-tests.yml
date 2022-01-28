@@ -34,10 +34,6 @@ jobs:
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
-        miniconda_global_cache <- "/usr/local/miniconda/"
-        if (dir.exists(miniconda_global_cache)) {
-          unlink(miniconda_global_cache, recursive = TRUE)
-        }
         tox -e py-${{matrix.test-type}}
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
