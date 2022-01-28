@@ -1181,7 +1181,7 @@ class FieldArray(numpy.recarray):
         # get the values
         if _default_types_status['ilwd_as_int']:
             input_array = \
-                [tuple(getattr(row, col) if dt != 'ilwd:char'
+                [tuple(getattr(row, col.split(':')[-1]) if dt != 'ilwd:char'
                        else int(getattr(row, col))
                        for col,dt in columns.items())
                  for row in table]
