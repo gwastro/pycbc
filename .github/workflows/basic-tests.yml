@@ -34,7 +34,7 @@ jobs:
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
-        sudo tox -e py-${{matrix.test-type}}
+       tox -e py-${{matrix.test-type}}
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
       uses: actions/upload-artifact@v2
