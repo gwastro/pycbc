@@ -34,6 +34,7 @@ jobs:
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
+        sudo chmod 777 /usr/local/miniconda/pkgs/cache
         tox -e py-${{matrix.test-type}}
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
