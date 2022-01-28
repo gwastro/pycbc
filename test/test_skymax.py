@@ -370,12 +370,10 @@ class TestChisq(unittest.TestCase):
         uvals_prec, _ = compute_u_val_for_sky_loc_stat\
             (I_plus.data, I_cross.data, hpc_corr_R, indices=[idx_max_prec],
              hpnorm=1., hcnorm=1.)
-        old_settings = numpy.geterr()
-        numpy.seterr(divide='ignore')
-        uvals_hom, _ = compute_u_val_for_sky_loc_stat_no_phase\
-            (I_plus.data, I_cross.data, hpc_corr_R, indices=[idx_max_hom],
-             hpnorm=1., hcnorm=1.)
-        numpy.seterr(**old_settings)
+        with numpy.errstate(divide="ignore"):
+            uvals_hom, _ = compute_u_val_for_sky_loc_stat_no_phase\
+                (I_plus.data, I_cross.data, hpc_corr_R, indices=[idx_max_hom],
+                 hpnorm=1., hcnorm=1.)
 
         ht = hplus * uvals_hom[0] + hcross
         ht_norm = sigmasq(ht, psd=self.psd,
@@ -408,12 +406,10 @@ class TestChisq(unittest.TestCase):
              low_frequency_cutoff=self.low_freq_filter, h_norm=1.)
         I_t = I_t * n_t
 
-        old_vals = numpy.geterr()
-        numpy.seterr(invalid='ignore', divide='ignore')
-        chisq, _ = self.power_chisq.values\
-            (corr_t, array([max_ds_prec]) / n_plus, n_t, self.psd,
-             array([idx_max_prec]), ht)
-        numpy.seterr(**old_vals)
+        with numpy.errstate(divide="ignore", invalid='ignore'):
+            chisq, _ = self.power_chisq.values\
+                (corr_t, array([max_ds_prec]) / n_plus, n_t, self.psd,
+                 array([idx_max_prec]), ht)
 
         self.assertAlmostEqual(abs(I_t.data[idx_max_prec]), max_ds_prec)
         self.assertEqual(idx_max_prec, abs(I_t.data).argmax())
