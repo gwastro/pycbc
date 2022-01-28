@@ -35,6 +35,7 @@ jobs:
       run: |
         export LAL_DATA_PATH=$PWD
         sudo chmod -R 777 /usr/local/miniconda/pkgs/cache
+        sudo chown 501:20 /usr/local/miniconda/pkgs/cache/b89cf7bf.json
         tox -e py-${{matrix.test-type}}
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
