@@ -44,7 +44,7 @@ __version__ = version.git_verbose_msg
 __date__    = version.date
 __program__ = "pycbc_splitbank"
 
- 
+
 # Command line parsing
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=__version__)
@@ -61,14 +61,14 @@ group.add_argument("-O", "--output-filenames", nargs='*', default=None,
                     here will dictate how to split the bank. It will be split
                     equally between all specified files.""")
 
-parser.add_argument("-o", "--output-prefix", default=None, 
+parser.add_argument("-o", "--output-prefix", default=None,
                     help="Prefix to add to the template bank name (name becomes output#.xml[.gz])" )
 
 parser.add_argument("-V", "--verbose", action="store_true",
                     help="Print extra debugging information", default=False )
 parser.add_argument("-t", "--bank-file", metavar='INPUT_FILE',
                     help='Template bank to split', required=True)
-parser.add_argument("--sort-frequency-cutoff", 
+parser.add_argument("--sort-frequency-cutoff",
                     help="Frequency cutoff to use for sorting the sub banks")
 parser.add_argument("--sort-mchirp", action="store_true", default=False,
                     help='Sort templates by chirp mass before splitting')
@@ -149,7 +149,7 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
 
-    proc_id = ligolw_process.register_to_xmldoc(outdoc, 
+    proc_id = ligolw_process.register_to_xmldoc(outdoc,
                     __program__, args.__dict__, instruments=["G1"],
                     version=version.version, cvs_repository=version.git_branch,
                     cvs_entry_time=version.date).process_id
@@ -158,9 +158,10 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
     for i in range(idx2-idx1):
-       row = tt.pop()
-       sngl_inspiral_table.append(row) 
-    
+        row = tt.pop()
+        row.process_id = proc_id
+        sngl_inspiral_table.append(row)
+
     # write the xml doc to disk
     proctable = lsctables.ProcessTable.get_table(outdoc)
     proctable[0].end_time = gps_now()
