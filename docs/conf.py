@@ -280,6 +280,7 @@ def build_includes():
                 subprocess.check_output(['python', fn])
             elif fn.endswith('.sh'):
                 subprocess.check_output(['bash', fn])
+            print('DONE with {}'.format(fn))
     os.chdir(cwd)
 
 build_includes()
