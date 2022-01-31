@@ -32,7 +32,7 @@ jobs:
     - run: sudo apt-get install *fftw3* intel-mkl*
     - name: Install pycbc
       run: |
-        python -m pip install --upgrade pip<22.0 setuptools
+        python -m pip install --upgrade 'pip<22.0' setuptools
         pip install -r requirements.txt
         pip install .
     - name: running workflow
