@@ -60,7 +60,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
 
   echo -e "\\n>> [`date`] Upgrading pip and setuptools"
-  pip install --upgrade pip setuptools pytest
+  pip install --upgrade pip<22.0 setuptools pytest
   pip install six packaging appdirs mkl
 
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
