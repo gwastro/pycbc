@@ -23,6 +23,7 @@ import argparse
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft,\
     DYN_RANGE_FAC
 from pycbc.vetoes import sgchisq
+from pycbc.events import coherent as coh, EventManagerCoherent
 from pycbc.filter import MatchedFilterControl
 from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
@@ -142,213 +143,6 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli_multi_ifos(opt,opt.instruments)
 ctx = scheme.from_cli(opt)
-
-def network_chisq(chisq, chisq_dof, snr_dict):
-    ifos = sorted(snr_dict.keys())
-    chisq_per_dof = {}
-    for ifo in ifos:
-        chisq_per_dof[ifo] = chisq[ifo] / chisq_dof[ifo]
-        chisq_per_dof[ifo][chisq_per_dof[ifo] < 1] = 1
-    snr2 = {ifo : np.real(np.array(snr_dict[ifo]) *
-                np.array(snr_dict[ifo]).conj()) for ifo in ifos}
-    coinc_snr2 = sum(snr2.values())
-    snr2_ratio = {ifo : snr2[ifo] / coinc_snr2 for ifo in ifos}
-    network_chisq = sum( [chisq_per_dof[ifo] * snr2_ratio[ifo] for ifo in ifos] )
-    return network_chisq
-
-
-def pycbc_reweight_snr(network_snr, network_chisq, a = 3, b = 1. / 6.):
-    """
-    Output: reweighted_snr: Reweighted SNR for each trigger
-    Input:  network_snr:  Dictionary of coincident or coherent SNR for each
-                          trigger
-            network_chisq: A chisq value for each trigger 
-    """
-    denom = (1 + (network_chisq)**a) / 2
-    reweighted_snr = network_snr / denom**b
-    return reweighted_snr
-
-def reweight_snr_by_null(network_snr, nullsnr):
-    """
-    Output: reweighted_snr: Reweighted SNR for each trigger
-    Input:  network_snr:  Dictionary of coincident, coherent, or reweighted
-                          SNR for each trigger
-            null: Null snr for each trigger
-    """
-    nullsnr = np.array(nullsnr)
-    nullsnr[nullsnr <= 4.25] = 4.25
-    reweighted_snr = network_snr / (nullsnr - 3.25)
-    return reweighted_snr
-
-
-def get_weighted_antenna_patterns(Fp_dict, Fc_dict, sigma_dict):
-    """
-    Output: wp: 1 x nifo of the weighted antenna response fuctions to plus
-                polarisation for each ifo
-            wc: 1 x nifo of the weighted antenna response fuctions to cross
-                polarisation for each ifo
-    Input:  Fp_dict: Dictionary of the antenna response fuctions to plus
-                     polarisation for each ifo
-            Fc_dict: Dictionary of the antenna response fuctions to cross
-                     polarisation for each ifo
-           sigma_dict: Sigma dictionary for each ifo (sensitivity of each ifo)
-    """
-    #Need the keys to be in alphabetical order
-    keys = sorted(sigma_dict.keys())
-    wp = np.array([sigma_dict[ifo]*Fp_dict[ifo] for ifo in keys])
-    wc = np.array([sigma_dict[ifo]*Fc_dict[ifo] for ifo in keys])
-    return wp, wc
-
-
-def get_projection_matrix(wp, wc, projection='standard'):
-    """
-    Output: projection_matrix: Projects the data onto the signal space
-    Input:  wp,wc: The weighted antenna response fuctions to plus and cross
-                   polarisations respectively
-            projection: standard, left or right
-    """
-    if projection=='standard':
-        denominator = np.dot(wp, wp) * np.dot(wc, wc) - np.dot(wp, wc)**2
-        projection_matrix = (np.dot(wc, wc)*np.outer(wp, wp) +
-                             np.dot(wp, wp)*np.outer(wc, wc) -
-                             np.dot(wp, wc)*(np.outer(wp, wc) +
-                             np.outer(wc, wp))) / denominator
-    elif projection=='left':
-        projection_matrix = ((np.outer(wp, wp) + np.outer(wc, wc) +
-                             (np.outer(wp, wc) - np.outer(wc, wp)) *1j)
-                             / (np.dot(wp, wp) + np.dot(wc, wc)))
-    elif projection=='right':
-        projection_matrix = ((np.outer(wp, wp) + np.outer(wc, wc) +
-                             (np.outer(wc, wp) - np.outer(wp, wc)) *1j)
-                             / (np.dot(wp, wp) + np.dot(wc, wc)))
-    else:
-        raise ValueError('Unknown projection type: {}'.format(projection))
-
-    return projection_matrix
-         
- 
-def coherent_snr(snr_triggers, index, threshold, projection_matrix,
-                coinc_snr=[]):
-    """
-    Output: rho_coh: an array of the coherent snr for the detector network
-            index  : Indexes that survive cuts
-            snrv   : Dictionary of individual ifo triggers that survive cuts
-            coinc_snr: The coincident snr value for triggers surviving the
-                       coherent cut
-    Inputs: snr_triggers: is a dictionary of the normalised complex snr time
-                          series for each ifo. The keys are the ifos (e.g.
-                          'L1','H1', and 'V1')
-            index  : An array of the indexes you want to analyse. Not used for
-                     calculations, just for book keeping
-            threshold: Triggers with rho_coh<threshold are cut
-            projection_matrix: Produced by get_projection_matrix.
-            coinc_snr: Optional- The coincident snr for each trigger.
-    """
-    #Calculate rho_coh
-    snr_array = np.array([snr_triggers[ifo]
-                         for ifo in sorted(snr_triggers.keys())])
-    x = np.inner(snr_array.conj().transpose(),projection_matrix)
-    rho_coh2 = sum(x.transpose()*snr_array)
-    rho_coh = np.sqrt(rho_coh2)
-    #Apply thresholds
-    index = index[rho_coh > threshold]
-    if len(coinc_snr) != 0: coinc_snr = coinc_snr[rho_coh > threshold]
-    snrv = {ifo : snr_triggers[ifo][rho_coh > threshold]
-           for ifo in snr_triggers.keys()}
-    rho_coh = rho_coh[rho_coh > threshold]
-    return rho_coh, index, snrv, coinc_snr
-
-
-def coincident_snr(snr_dict, index, threshold, time_delay_idx):
-    """
-    Output: rho_coinc: Coincident snr triggers
-            index    : The subset of input index that survive the cuts
-            coinc_triggers: Dictionary of individual detector SNRs at
-                            indexes that survive cuts
-    Input: snr_dict: Dictionary of individual detector SNRs
-           index   : Geocent indexes you want to find coinc SNR for
-           threshold: Indexes with coinc SNR below this threshold are cut
-           time_delay_idx: Dictionary of time delay in indices for each detector
-    """
-    #Restrict the snr timeseries to just the interesting points
-    coinc_triggers = {ifo : snr_dict[ifo][index+time_delay_idx[ifo]] for ifo in snr_dict.keys()}
-    #Calculate the coincident snr
-    snr_array = np.array([coinc_triggers[ifo]
-                        for ifo in coinc_triggers.keys()])
-    rho_coinc = np.sqrt(np.sum(snr_array * snr_array.conj(),axis=0))
-    # Apply threshold
-    thresh_indexes = rho_coinc > threshold
-    index = index[thresh_indexes]
-    coinc_triggers = {ifo : snr_dict[ifo][index+time_delay_idx[ifo]] for ifo in snr_dict.keys()}
-    rho_coinc = rho_coinc[thresh_indexes]
-    return rho_coinc, index, coinc_triggers
-
-
-def null_snr(rho_coh, rho_coinc, null_min=5.25, null_grad=0.2, null_step=20.,
-             index={}, snrv={}, nullcut=False):
-    """
-    Output: null: null snr for surviving triggers
-            rho_coh: Coherent snr for surviving triggers
-            rho_coinc: Coincident snr for suviving triggers
-            index: Indexes for surviving triggers
-            snrv: Single detector snr for surviving triggers
-    Input:  rho_coh: Numpy array of coherent snr triggers
-            rho_coinc: Numpy array of coincident snr triggers
-            null_min: Any trigger with null snr below this is cut
-            null_grad: Any trigger with null snr<(null_grad*rho_coh+null_min)
-                       is cut
-            null_step: The value for required for coherent snr to start
-                       increasing the null threshold
-            index: Optional- Indexes of triggers. If given, will remove
-                   triggers that fail cuts
-            snrv: Optional- Individual ifo snr for triggers. If given will
-                  remove triggers that fail cut
-    """
-    null2 = rho_coinc**2 - rho_coh**2
-    # Numerical errors may make this negative and break the sqrt, so set
-    # negative values to 0.
-    null2[null2 < 0] = 0
-    null = null2**0.5
-    # Make cut on null.
-    keep1 = np.logical_and(null < null_min, rho_coh <= null_step)
-    keep2 = np.logical_and(null < (rho_coh * null_grad + null_min),
-                          rho_coh > null_step)
-    keep = np.logical_or(keep1, keep2)
-    if nullcut==True:
-        index = index[keep]
-        rho_coh  = rho_coh[keep]
-        snrv = {ifo : snrv[ifo][keep] for ifo in snrv.keys()}
-        rho_coinc = rho_coinc[keep]
-        null = null[keep]
-    else:
-        logging.info("nullcut is not applied")
-    return null, rho_coh, rho_coinc, index, snrv
-
-
-def get_coinc_indexes(idx_dict, time_delay_idx):
-    """
-    Output: coinc_idx: list of indexes for triggers in geocent time that
-                       appear in multiple detectors
-    Input: idx_dict: Dictionary of indexes of triggers above threshold in
-                     each detector
-           time_delay_idx: Dictionary giving time delay index
-                           (time_delay*sample_rate) for each ifo
-    """
-    coinc_list = np.array([], dtype=int)
-    for ifo in idx_dict.keys():
-        """
-        Create list of indexes above threshold in single detector in
-        geocent time. Can then search for triggers that appear in multiple
-        detectors later.
-        """
-        if len(idx_dict[ifo]) != 0:
-            coinc_list = np.hstack([coinc_list,
-                                   idx_dict[ifo] - time_delay_idx[ifo]])
-    #Search through coinc_idx for repeated indexes. These must have
-    #been loud in at least 2 detectors.
-    coinc_idx = np.unique(coinc_list, return_counts=True)[0][
-                   np.unique(coinc_list, return_counts=True)[1]>1]
-    return coinc_idx
 
 strain_dict = strain.from_cli_multi_ifos(
     opt, opt.instruments, inj_filter_rejector,
@@ -478,7 +272,7 @@ with ctx:
                }
     network_names = sorted(network_out_vals.keys())
 
-    event_mgr = events.EventManagerCoherent(
+    event_mgr = EventManagerCoherent(
         opt, opt.instruments, ifo_names, [ifo_out_types[n] for n in ifo_names],
         network_names, [network_out_types[n] for n in network_names]
         )
@@ -500,10 +294,10 @@ with ctx:
     if not len(bank) == ntemplates:
         logging.info("Template bank size after thinning: %s", len(bank))
 
-    Fp = {}  # Antenna patterns
-    Fc = {}
+    fp = {}  # Antenna patterns
+    fc = {}
     for ifo in opt.instruments:
-        Fp[ifo], Fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(
+        fp[ifo], fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(
             opt.ra, opt.dec, polarization=0, t_gps=t_gps)
 
     for t_num, template in enumerate(bank):  # Loop over templates
@@ -585,7 +379,7 @@ with ctx:
             # Find triggers that are coincident (in geocent time) in multiple ifos.
             # If a single ifo analysis then just use the indexes from that ifo.
             if len(opt.instruments)>1:
-                coinc_idx = get_coinc_indexes(idx_dict,time_delay_idx)
+                coinc_idx = coh.get_coinc_indexes(idx_dict,time_delay_idx)
             else:
                 coinc_idx = idx_dict[opt.instruments[0]] - time_delay_idx[opt.instruments[0]]
             logging.info("Found %s coincident triggers" % str(len(coinc_idx)))
@@ -606,8 +400,8 @@ with ctx:
             # Check we have data before we try to compute the coherent snr
             if len(coinc_idx) != 0 and nifo > 1:
                 #Find coinc snr at trigger times and apply coinc snr threshold
-                rho_coinc, coinc_idx, coinc_triggers = \
-                    coincident_snr(snr, coinc_idx, opt.coinc_threshold, time_delay_idx)
+                rho_coinc, coinc_idx, coinc_triggers = coh.coincident_snr(snr,
+                        coinc_idx, opt.coinc_threshold, time_delay_idx)
                 logging.info("%s points above coincident SNR threshold" % \
                              str(len(coinc_idx)))
                 if len(coinc_idx) != 0:
@@ -626,20 +420,19 @@ with ctx:
             # If we have triggers above coinc threshold and more than 2 ifos
             # then calculate the coherent statistics
             if len(coinc_idx) != 0 and nifo > 2:
-                wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
                 if opt.projection=='left+right':
-                    project_l = get_projection_matrix(wp, wc,
-                                                      projection='left')
+                    project_l = coh.get_projection_matrix(fp, fc, sigma,
+                                                          projection='left')
                     rho_coh_l, coinc_idx_l, coinc_triggers_l, rho_coinc_l = \
-                            coherent_snr(coinc_triggers, coinc_idx,
-                                         opt.coinc_threshold, project_l,
-                                         rho_coinc)
-                    project_r = get_projection_matrix(wp, wc,
-                                                      projection='right')
+                            coh.coherent_snr(coinc_triggers, coinc_idx,
+                                             opt.coinc_threshold, project_l,
+                                             rho_coinc)
+                    project_r = coh.get_projection_matrix(fp, fc, sigma,
+                                                          projection='right')
                     rho_coh_r, coinc_idx_r, coinc_triggers_r, rho_coinc_r = \
-                            coherent_snr(coinc_triggers, coinc_idx,
-                                         opt.coinc_threshold, project_r,
-                                         rho_coinc)
+                            coh.coherent_snr(coinc_triggers, coinc_idx,
+                                             opt.coinc_threshold, project_r,
+                                             rho_coinc)
                     max_idx = np.argmax([rho_coh_l, rho_coh_r], axis=0)
                     rho_coh = np.where(max_idx==0, rho_coh_l, rho_coh_r)
                     coinc_idx = np.where(max_idx==0, coinc_idx_l, coinc_idx_r)
@@ -647,18 +440,19 @@ with ctx:
                                               coinc_triggers_r)
                     rho_coinc = np.where(max_idx==0, rho_coinc_l, rho_coinc_r)
                 else:
-                    project = get_projection_matrix(wp, wc, projection=opt.projection)
+                    project = coh.get_projection_matrix(fp, fc, sigma,
+                            projection=opt.projection)
                     rho_coh, coinc_idx, coinc_triggers, rho_coinc = \
-                            coherent_snr(coinc_triggers, coinc_idx,
-                                         opt.coinc_threshold, project,
-                                         rho_coinc)
+                            coh.coherent_snr(coinc_triggers, coinc_idx,
+                                             opt.coinc_threshold, project,
+                                             rho_coinc)
                 logging.info("%d points above coherent threshold", len(rho_coh))
                 if len(coinc_idx) != 0:
                     logging.info("Max coherent SNR = %s" % str(max(rho_coh)))
                     #Find the null snr
                     null, rho_coh, rho_coinc, coinc_idx, coinc_triggers =\
-                        null_snr(rho_coh, rho_coinc, snrv=coinc_triggers,
-                        index=coinc_idx)
+                        coh.null_snr(rho_coh, rho_coinc, snrv=coinc_triggers,
+                                     index=coinc_idx)
                     if len(coinc_idx) != 0:
                         logging.info("Max null SNR = %s" % str(max(null)))
                     logging.info("%s points above null threshold: "
@@ -689,20 +483,21 @@ with ctx:
                         template)
 
                 # Calculate network chisq value
-                network_chisq_dict = network_chisq(chisq, chisq_dof, 
-                                              coherent_ifo_triggers)
+                network_chisq_dict = coh.network_chisq(chisq, chisq_dof, 
+                                                       coherent_ifo_triggers)
 
                 # Calculate chisq reweighted SNR
                 if nifo > 2:
-                    reweighted_snr = pycbc_reweight_snr(rho_coh,
-                                                        network_chisq_dict)
+                    reweighted_snr = coh.pycbc_reweight_snr(rho_coh,
+                                                            network_chisq_dict)
                     # Calculate null reweighted SNR
-                    reweighted_snr = reweight_snr_by_null(reweighted_snr, null)
+                    reweighted_snr = coh.reweight_snr_by_null(reweighted_snr,
+                                                              null)
                 elif nifo == 2:
-                    reweighted_snr = pycbc_reweight_snr(rho_coinc,
-                                                        network_chisq_dict)
+                    reweighted_snr = coh.pycbc_reweight_snr(rho_coinc,
+                                                            network_chisq_dict)
                 else:
-                    reweighted_snr = pycbc_reweight_snr(
+                    reweighted_snr = coh.pycbc_reweight_snr(
                         abs(snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]]), network_chisq_dict)
 
                 # Need all out vals to be the same length. This means the
