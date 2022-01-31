@@ -1,6 +1,7 @@
 #!/bin/bash -v
 set -e
 cd /scratch
+python3.8 -m pip install --upgrade 'pip<22.0'
 python3.8 -m pip install -r requirements.txt
 python3.8 -m pip install .
 cd /
