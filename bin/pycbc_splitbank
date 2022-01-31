@@ -33,7 +33,7 @@ from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import process as ligolw_process
-from pycbc import version, gps_now
+from pycbc import version
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.pnutils import frequency_cutoff_from_name
@@ -149,22 +149,22 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
 
-    proc_id = ligolw_process.register_to_xmldoc(outdoc,
+    process = ligolw_process.register_to_xmldoc(outdoc,
                     __program__, args.__dict__, instruments=["G1"],
                     version=version.version, cvs_repository=version.git_branch,
-                    cvs_entry_time=version.date).process_id
+                    cvs_entry_time=version.date)
 
     sngl_inspiral_table = lsctables.New(tabletype, columns=used_columns)
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
     for i in range(idx2-idx1):
         row = tt.pop()
-        row.process_id = proc_id
+        row.process_id = process.process_id
         sngl_inspiral_table.append(row)
 
     # write the xml doc to disk
     proctable = lsctables.ProcessTable.get_table(outdoc)
-    proctable[0].end_time = gps_now()
+    proctable[0].set_end_time_now()
 
     if args.output_filenames:
         outname = args.output_filenames[num]
