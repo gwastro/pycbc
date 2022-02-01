@@ -1049,7 +1049,7 @@ class ForegroundTriggers(object):
             rchisq = chisq_vals / (2. * chisq_dof_vals - 2.)
             rchisq[np.logical_not(chisq_valid)] = -1.
             ofd.create_dataset(ifo + '_chisq', data=rchisq,
-                                   dtype=np.float64)
+                               dtype=np.float64)
 
         # Single-detector fields
         for field in ['sg_chisq', 'end_time', 'sigmasq',
@@ -1087,7 +1087,7 @@ class ForegroundTriggers(object):
                             for ifo in self.ifos]
         # This combines the ifo letters to make a single string per event
         triggered_detectors = [''.join(triggered).encode('ascii')
-                            for triggered in zip(*triggered_matrix)]
+                               for triggered in zip(*triggered_matrix)]
         ofd.create_dataset('trig', data=triggered_detectors,
                            dtype='<S3')
 
@@ -1096,7 +1096,7 @@ class ForegroundTriggers(object):
         # if the ifo was active at the event time, empty string if not
         active_matrix = [[ifo[0] if t in self.active_segments[ifo]
                           else '' for t in time]
-                        for ifo in self.ifos]
+                         for ifo in self.ifos]
         # This combines the ifo letters to make a single string per event
         active_detectors = [''.join(active_at_time).encode('ascii')
                             for active_at_time in zip(*active_matrix)]
