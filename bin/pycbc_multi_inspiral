@@ -22,6 +22,7 @@ from collections import defaultdict
 import argparse
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft,\
     DYN_RANGE_FAC
+from pycbc.vetoes import sgchisq
 from pycbc.filter import MatchedFilterControl
 from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
@@ -106,18 +107,22 @@ parser.add_argument("--null-step", type=float, default=20., help="""
                     according to the null_grad and null_min.""")
 parser.add_argument("--trigger-time", type=int, help="""
                     Time of the GRB, used to set the antenna patterns.""")
-parser.add_argument("--projection-type", default="standard", choices=["standard", "left", "right", "left+right"], help="""Choice of projection matrix. 'Left'  and 'Right' corresponds to face-away and face-on""")
+parser.add_argument("--projection", default="standard",
+                    choices=["standard", "left", "right", "left+right"],
+                    help="""Choice of projection matrix. 'Left' and 'Right' 
+                    corresponds to face-away and face-on""")
+
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
 strain.StrainSegments.insert_segment_option_group_multi_ifo(parser)
 psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
-from pycbc.vetoes.sgchisq import SingleDetSGChisq
 pycbc.opt.insert_optimization_option_group(parser)
 pycbc.inject.insert_injfilterrejector_option_group_multi_ifo(parser)
-SingleDetSGChisq.insert_option_group(parser)
+sgchisq.SingleDetSGChisq.insert_option_group(parser)
 opt = parser.parse_args()
+
 # Use the time in the middle of the segment to calculate the antenna patterns.
 t_gps = opt.trigger_time
 
@@ -195,49 +200,31 @@ def get_weighted_antenna_patterns(Fp_dict, Fc_dict, sigma_dict):
     return wp, wc
 
 
-def get_projection_matrix(wp, wc, projection_type='standard'):
+def get_projection_matrix(wp, wc, projection='standard'):
     """
     Output: projection_matrix: Projects the data onto the signal space
     Input:  wp,wc: The weighted antenna response fuctions to plus and cross
                    polarisations respectively
             projection_type: standard, left or right
     """
-    standard_denominator = np.dot(wp, wp) * np.dot(wc, wc) - np.dot(wp, wc)**2
-    standard_projection_matrix = (np.dot(wc, wc)*np.outer(wp, wp) +
-                                  np.dot(wp, wp)*np.outer(wc, wc) -
-                                  np.dot(wp, wc)*(np.outer(wp, wc) +
-                                  np.outer(wc, wp))) / standard_denominator
-
-    side_denominator = np.dot(wp, wp) + np.dot(wc, wc)
-    left_projection_matrix = (np.outer(wp, wp) + np.outer(wc, wc) +
-                              (np.outer(wp, wc) - np.outer(wc, wp))
-                              *1j) / side_denominator
-    right_projection_matrix = (np.outer(wp, wp) + np.outer(wc, wc) +
-                               (np.outer(wc, wp) - np.outer(wp, wc))
-                               *1j) / side_denominator
- 
-    if projection_type=='standard':
-        logging.info("choice of projection matrix is %s"
-                            % projection_type)
-        return standard_projection_matrix
-
-    elif projection_type=='left':
-        logging.info("choice of projection matrix is %s"
-                            % projection_type)
-        return left_projection_matrix
-
-    elif projection_type=='right':
-        logging.info("choice of projection matrix is %s"
-                            % projection_type)
-        return right_projection_matrix
-
-    elif projection_type=='left+right':
-        logging.info("choice of projection matrix is %s"
-                            % projection_type)
-        return left_projection_matrix, right_projection_matrix
-
+    if projection=='standard':
+        denominator = np.dot(wp, wp) * np.dot(wc, wc) - np.dot(wp, wc)**2
+        projection_matrix = (np.dot(wc, wc)*np.outer(wp, wp) +
+                             np.dot(wp, wp)*np.outer(wc, wc) -
+                             np.dot(wp, wc)*(np.outer(wp, wc) +
+                             np.outer(wc, wp))) / denominator
+    elif projection=='left':
+        projection_matrix = ((np.outer(wp, wp) + np.outer(wc, wc) +
+                             (np.outer(wp, wc) - np.outer(wc, wp)) *1j)
+                             / (np.dot(wp, wp) + np.dot(wc, wc)))
+    elif projection=='right':
+        projection_matrix = ((np.outer(wp, wp) + np.outer(wc, wc) +
+                             (np.outer(wc, wp) - np.outer(wp, wc)) *1j)
+                             / (np.dot(wp, wp) + np.dot(wc, wc)))
     else:
-        raise ValueError('unknown projection type ' + str(projection_type))
+        raise ValueError('Unknown projection type: {}'.format(projection))
+
+    return projection_matrix
          
  
 def coherent_snr(snr_triggers, index, threshold, projection_matrix,
@@ -418,6 +405,8 @@ with ctx:
 
     # Matched filter each ifo. Don't cluster here for a coherent search.
     # Clustering happens at the end of the template loop.
+    # FIXME: The single detector SNR threshold should not necessarily be
+    #        applied to every IFO (usually only 2 most sensitive in network)
     matched_filter = {ifo : MatchedFilterControl(
         opt.low_frequency_cutoff, None, opt.snr_threshold, tlen, delta_f,
         complex64, segments[ifo], template_mem, use_cluster=False,
@@ -624,40 +613,46 @@ with ctx:
                 if len(coinc_idx) != 0:
                     logging.info("Max coincident SNR = %s"
                                 % str(max(rho_coinc)))
+
             # If there is only one ifo, then coinc_triggers is just the
             # triggers from ifo
             elif len(coinc_idx) != 0 and nifo == 1:
                 coinc_triggers = {opt.instruments[0]:
-                                      snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]]}
+                        snr[opt.instruments[0]][\
+                                coinc_idx_det_frame[opt.instruments[0]]]}
             else:
                 coinc_triggers = {}
                 logging.info("No triggers above coincident SNR threshold")
+
             # If we have triggers above coinc threshold and more than 2 ifos
             # then calculate the coherent statistics
-            
             if len(coinc_idx) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
-                if opt.projection_type=='left+right':
-                    Lproject, Rproject = get_projection_matrix(wp,wc, projection_type=opt.projection_type)
-                    Lrho_coh, Lcoinc_idx, Lcoinc_triggers, Lrho_coinc = coherent_snr(
-                                           coinc_triggers, coinc_idx, opt.coinc_threshold,
-                                           Lproject, rho_coinc)
-                    Rrho_coh, Rcoinc_idx, Rcoinc_triggers, Rrho_coinc = coherent_snr(
-                                           coinc_triggers, coinc_idx, opt.coinc_threshold,
-                                           Rproject, rho_coinc)
-                    if max(Rrho_coh) > max(Lrho_coh):
-                        rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
-                                           coinc_triggers, coinc_idx, opt.coinc_threshold,
-                                           Rproject, rho_coinc)
-                    else:
-                        rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
-                                           coinc_triggers, coinc_idx, opt.coinc_threshold,
-                                           Lproject, rho_coinc) 
+                if opt.projection=='left+right':
+                    project_l = get_projection_matrix(wp, wc,
+                                                      projection='left')
+                    rho_coh_l, coinc_idx_l, coinc_triggers_l, rho_coinc_l = \
+                            coherent_snr(coinc_triggers, coinc_idx,
+                                         opt.coinc_threshold, project_l,
+                                         rho_coinc)
+                    project_r = get_projection_matrix(wp, wc,
+                                                      projection='right')
+                    rho_coh_r, coinc_idx_r, coinc_triggers_r, rho_coinc_r = \
+                            coherent_snr(coinc_triggers, coinc_idx,
+                                         opt.coinc_threshold, project_r,
+                                         rho_coinc)
+                    max_idx = np.argmax([rho_coh_l, rho_coh_r], axis=0)
+                    rho_coh = np.where(max_idx==0, rho_coh_l, rho_coh_r)
+                    coinc_idx = np.where(max_idx==0, coinc_idx_l, coinc_idx_r)
+                    coinc_triggers = np.where(max_idx==0, coinc_triggers_l,
+                                              coinc_triggers_r)
+                    rho_coinc = np.where(max_idx==0, rho_coinc_l, rho_coinc_r)
                 else:
-                    projection_matrix = get_projection_matrix(wp,wc, projection_type=opt.projection_type)
-                    rho_coh, coinc_idx, coinc_triggers, rho_coinc = coherent_snr(
-                    coinc_triggers, coinc_idx, opt.coinc_threshold,
-                    projection_matrix, rho_coinc)
+                    project = get_projection_matrix(wp, wc, projection=opt.projection)
+                    rho_coh, coinc_idx, coinc_triggers, rho_coinc = \
+                            coherent_snr(coinc_triggers, coinc_idx,
+                                         opt.coinc_threshold, project,
+                                         rho_coinc)
                 logging.info("%s points above coherent threshold"
                             % str(len(rho_coh)))
                 if len(coinc_idx) != 0:
