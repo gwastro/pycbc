@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (C) 2014 LIGO Scientific Collaboration
 #
@@ -25,35 +25,28 @@
 # =============================================================================
 #
 
-"""
-Splits a table in an xml file into multiple pieces
-"""
+"""Splits a table in an xml file into multiple pieces."""
 
-import pycbc, pycbc.version, pycbc.pnutils
-__author__  = "Alex Nitz <alex.nitz@ligo.org>"
-__version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
-__program__ = "pycbc_splitbank"
-
-import time
 import argparse
-from glue import gpstime
+from numpy import random, ceil
 from ligo.lw import ligolw
-from ligo.lw import table
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import process as ligolw_process
 from pycbc import version
-from numpy import random, ceil
+from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.conversions import mchirp_from_mass1_mass2
+from pycbc.pnutils import frequency_cutoff_from_name
 
-class ContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(ContentHandler)
 
- 
+__author__  = "Alex Nitz <alex.nitz@ligo.org>"
+__version__ = version.git_verbose_msg
+__date__    = version.date
+__program__ = "pycbc_splitbank"
+
+
 # Command line parsing
-_desc = __doc__[1:]
-parser = argparse.ArgumentParser(description=_desc)
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=__version__)
 
 group = parser.add_mutually_exclusive_group(required=True)
@@ -68,16 +61,14 @@ group.add_argument("-O", "--output-filenames", nargs='*', default=None,
                     here will dictate how to split the bank. It will be split
                     equally between all specified files.""")
 
-parser.add_argument("-o", "--output-prefix", default=None, 
+parser.add_argument("-o", "--output-prefix", default=None,
                     help="Prefix to add to the template bank name (name becomes output#.xml[.gz])" )
-parser.add_argument("-z", "--write-compress", action="store_true",
-                    help="Write compressed xml.gz files.")
 
 parser.add_argument("-V", "--verbose", action="store_true",
                     help="Print extra debugging information", default=False )
 parser.add_argument("-t", "--bank-file", metavar='INPUT_FILE',
                     help='Template bank to split', required=True)
-parser.add_argument("--sort-frequency-cutoff", 
+parser.add_argument("--sort-frequency-cutoff",
                     help="Frequency cutoff to use for sorting the sub banks")
 parser.add_argument("--sort-mchirp", action="store_true", default=False,
                     help='Sort templates by chirp mass before splitting')
@@ -100,38 +91,37 @@ if args.output_filenames:
     args.number_of_banks = len(args.output_filenames)
 
 indoc = ligolw_utils.load_filename(args.bank_file, verbose=args.verbose,
-                                   contenthandler=ContentHandler)
+                                   contenthandler=LIGOLWContentHandler)
 
 try:
-  template_bank_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
-  tabletype = lsctables.SnglInspiralTable
+    template_bank_table = lsctables.SnglInspiralTable.get_table(indoc)
+    tabletype = lsctables.SnglInspiralTable
 except:
-  template_bank_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
-  tabletype = lsctables.SimInspiralTable
+    template_bank_table = lsctables.SimInspiralTable.get_table(indoc)
+    tabletype = lsctables.SimInspiralTable
+
+# make a list of columns that are present in the input table.
+# The : split is needed for columns like `process:process_id`,
+# which must be listed as `process:process_id` in `lsctables.New()`,
+# but are listed as just `process_id` in the `columnnames` attribute
+used_columns = []
+for col in template_bank_table.validcolumns:
+    att = col.split(':')[-1]
+    if att in template_bank_table.columnnames:
+        used_columns.append(col)
 
 length = len(template_bank_table)
-
-def mchirp_sort(x, y):
-    mc1, e1 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(x.mass1, x.mass2)
-    mc2, e2 = pycbc.pnutils.mass1_mass2_to_mchirp_eta(y.mass1, y.mass2)
-    return cmp(mc1, mc2)
-
-def frequency_cutoff_sort(x, y):
-    p1 = pycbc.pnutils.frequency_cutoff_from_name(args.sort_frequency_cutoff,
-                                                  x.mass1, x.mass2,
-                                                  x.spin1z, x.spin2z)
-    p2 = pycbc.pnutils.frequency_cutoff_from_name(args.sort_frequency_cutoff,
-                                                  y.mass1, y.mass2,
-                                                  y.spin1z, y.spin2z)
-    return cmp(p1, p2)
 
 tt = template_bank_table
 
 if args.sort_frequency_cutoff:
-    tt = sorted(template_bank_table, cmp=frequency_cutoff_sort)
+    sort_key = lambda x: frequency_cutoff_from_name(
+            args.sort_frequency_cutoff, x.mass1, x.mass2, x.spin1z, x.spin2z)
+    tt = sorted(template_bank_table, key=sort_key)
 
 if args.sort_mchirp:
-    tt = sorted(template_bank_table, cmp=mchirp_sort)
+    sort_key = lambda x: mchirp_from_mass1_mass2(x.mass1, x.mass2)
+    tt = sorted(template_bank_table, key=sort_key)
 
 if args.random_sort:
     if args.random_seed is not None:
@@ -159,29 +149,28 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
 
-    proc_id = ligolw_process.register_to_xmldoc(outdoc, 
+    process = ligolw_process.register_to_xmldoc(outdoc,
                     __program__, args.__dict__, instruments=["G1"],
                     version=version.version, cvs_repository=version.git_branch,
-                    cvs_entry_time=version.date).process_id
+                    cvs_entry_time=version.date)
 
-    sngl_inspiral_table = lsctables.New(tabletype,columns=template_bank_table.columnnames)
+    sngl_inspiral_table = lsctables.New(tabletype, columns=used_columns)
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
     for i in range(idx2-idx1):
-       row = tt.pop()
-       sngl_inspiral_table.append(row) 
-    
+        row = tt.pop()
+        row.process_id = process.process_id
+        sngl_inspiral_table.append(row)
+
     # write the xml doc to disk
-    proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
-    proctable[0].end_time = gpstime.GpsSecondsFromPyUTC(time.time())
+    proctable = lsctables.ProcessTable.get_table(outdoc)
+    proctable[0].set_end_time_now()
 
     if args.output_filenames:
         outname = args.output_filenames[num]
     elif args.output_prefix:
-        outname = args.output_prefix + str(num) + '.xml'
-        if args.write_compress:
-            outname +='.gz'
+        outname = args.output_prefix + str(num) + '.xml.gz'
     else:
         errMsg = "Cannot figure out how to set output file names."
         raise ValueError(errMsg)
-    ligolw_utils.write_filename(outdoc, outname, gz=outname.endswith('.gz'))
+    ligolw_utils.write_filename(outdoc, outname)

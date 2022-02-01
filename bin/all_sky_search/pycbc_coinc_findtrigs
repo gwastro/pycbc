@@ -39,11 +39,16 @@ parser.add_argument("--coinc-threshold", type=float, default=0.0,
 parser.add_argument("--timeslide-interval", type=float,
                     help="Interval between timeslides in seconds. Timeslides are"
                          " disabled if the option is omitted.")
-parser.add_argument("--loudest-keep-values", type=str, nargs='*',
-                    default=['6:1'],
-                    help="Apply successive multiplicative levels of decimation"
-                         " to coincs with stat value below the given thresholds"
-                         " Ex. 9:10 8.5:30 8:30 7.5:30. Default: no decimation")
+parser.add_argument("--loudest-keep-values",
+                    default='[6:1]',
+                    help="Apply successive multiplicative levels of"
+                         " decimation to coincs with stat value below the"
+                         " given thresholds. Supply as a comma-separated list"
+                         " of threshold:decimation value pairs surrounded by"
+                         " square brackets. Decimation values must be"
+                         " positive integers."
+                         " Ex. [9:10,8.5:30,8:30,7.5:30]."
+                         " Default: no decimation")
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. Format"
                          " PART/NUM_PARTS")
@@ -109,6 +114,10 @@ def exit_cleaning():
             pass
 atexit.register(exit_cleaning)
 
+# If some templates have no triggers one or more ifos, there can be no
+# coincs: so, track which templates contain triggers in all ifos
+tids_with_trigs = None
+
 for i in range(len(args.trigger_files)):
     if args.stage_input:
         dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + '.hdf')
@@ -127,6 +136,14 @@ for i in range(len(args.trigger_files)):
                             args.gating_veto_windows)
     ifo = reader.ifo
     trigs.ifos.append(ifo)
+    
+    # We don't have that many triggers, see if we can skip some templates
+    if len(reader.file[ifo]['template_id']) < 2**27:
+        uniq = numpy.unique(reader.file[ifo]['template_id'][:])
+        if tids_with_trigs is None:
+            tids_with_trigs = numpy.arange(0, num_templates)
+        tids_with_trigs = numpy.intersect1d(tids_with_trigs, uniq)
+
     # time shift is subtracted from pivot ifo time
     trigs.to_shift.append(-1 if ifo == args.pivot_ifo else 0)
     logging.info('Applying time shift multiple %i to ifo %s' %
@@ -163,6 +180,10 @@ if args.randomize_template_order:
 else:
     template_ids = range(tmin, tmax)
 
+# Only analyze templates which might have coincs
+if tids_with_trigs is not None:
+    template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
+
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and
 # ids in each ifo
@@ -171,16 +192,29 @@ for ifo in trigs.ifos:
     data['%s/time' % ifo] = []
     data['%s/trigger_id' % ifo] = []
 
-total_factors = [1]
+factors = [1]
 threshes = [numpy.inf]
-for decstr in args.loudest_keep_values:
+loudest_keep_vals = args.loudest_keep_values.strip('[]').split(',')
+
+for decstr in loudest_keep_vals:
     thresh, factor = decstr.split(':')
+    if float(factor) % 1:
+        raise RuntimeError("Non-integer decimation is not supported") 
+    if int(factor) < 1:
+        raise RuntimeError("Negative or zero decimation does not make sense")
     if int(factor) == 1:
         continue
     threshes.append(float(thresh))
-    # throws an error if 'factor' is not the string representation
-    # of an integer
-    total_factors.append(total_factors[-1] * int(factor))
+    factors.append(int(factor))
+
+# Sort the threshes into descending order
+# - allows decimation factors to be given in any order
+threshorder = numpy.argsort(threshes)[::-1]
+threshes = numpy.array(threshes)[threshorder]
+factors = numpy.array(factors)[threshorder]
+
+# Decimation factors are applied successively in descending order of threshold
+total_factors = numpy.cumprod(factors)
 
 # Gather the coincs from a single template
 def process_template(tnum):

@@ -91,18 +91,16 @@ def mkdir(dir_name):
         pass
         
 def mc_min_max_from_sorted_file(fname):
-    from ligo.lw import lsctables
-    from ligo.lw.ligolw import LIGOLWContentHandler
-    class mycontenthandler(LIGOLWContentHandler):
-        pass
-    lsctables.use_in(mycontenthandler)
     from ligo.lw.utils import load_filename
-    from ligo.lw.table import get_table
+    from ligo.lw.table import Table
     from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+    from pycbc.io.ligolw import LIGOLWContentHandler
+
+    doc = load_filename(fname, False, contenthandler=LIGOLWContentHandler)
     try:
-        t = get_table(load_filename(fname, False, contenthandler=mycontenthandler), "sngl_inspiral")
+        t = Table.get_table(doc, "sngl_inspiral")
     except:
-        t = get_table(load_filename(fname, False, contenthandler=mycontenthandler), "sim_inspiral")
+        t = Table.get_table(doc, "sim_inspiral")
     mc_max, et = mass1_mass2_to_mchirp_eta(t[0].mass1, t[0].mass2)
     mc_min, et = mass1_mass2_to_mchirp_eta(t[-1].mass1, t[-1].mass2)
     return mc_min, mc_max
@@ -293,11 +291,7 @@ from numpy import *
 from ligo.lw import utils, table
 import glob
 
-from ligo.lw.ligolw import LIGOLWContentHandler
-from ligo.lw import lsctables
-class mycontenthandler(LIGOLWContentHandler):
-    pass
-lsctables.use_in(mycontenthandler)
+from pycbc.io.ligolw import LIGOLWContentHandler
 
 fils = glob.glob("match/match*.dat")
 
@@ -318,11 +312,13 @@ f = open("results.dat", "w")
 for row in res: 
     outstr = ""
     if row['bank'] not in btables:
-        indoc = utils.load_filename(row['bank'], False, contenthandler=mycontenthandler)
+        indoc = utils.load_filename(row['bank'], False,
+                                    contenthandler=LIGOLWContentHandler)
         btables[row['bank']] = table.get_table(indoc, "sngl_inspiral") 
 
     if row['sim'] not in itables:
-        indoc = utils.load_filename(row['sim'], False, contenthandler=mycontenthandler)
+        indoc = utils.load_filename(row['sim'], False,
+                                    contenthandler=LIGOLWContentHandler)
         itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
     
     bt = btables[row['bank']][row['bank_i']]     

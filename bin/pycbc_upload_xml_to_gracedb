@@ -30,12 +30,12 @@ import h5py
 import pycbc
 import lal
 import lal.series
-from ligo.lw import ligolw
-from ligo.lw import table
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
 from pycbc.io.live import gracedb_tag_with_version
+from pycbc.io.ligolw import LIGOLWContentHandler
+
 
 def check_gracedb_for_event(gdb_handle, query, far):
     """
@@ -59,8 +59,6 @@ def check_gracedb_for_event(gdb_handle, query, far):
                  'query: "%s"', ifar, query)
     return False
 
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -108,8 +106,6 @@ if args.production_server:
 else:
     gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
 
-lsctables.use_in(LIGOLWContentHandler)
-
 xmldoc = ligolw_utils.load_filename(args.input_file,
                              contenthandler=LIGOLWContentHandler)
 
@@ -126,14 +122,10 @@ for psd_file in args.psd_files:
     psds[ifo] = segmentlist(psd_segment(*segargs) for segargs in zip(
         psd, group["start_time"], group["end_time"]))
 
-coinc_table = table.get_table(xmldoc, lsctables.CoincTable.tableName)
-coinc_inspiral_table = table.get_table(xmldoc,
-                                       lsctables.CoincInspiralTable.tableName)
-coinc_event_map_table = table.get_table(xmldoc,
-                                        lsctables.CoincMapTable.tableName)
-
-sngl_inspiral_table = table.get_table(xmldoc,
-                                      lsctables.SnglInspiralTable.tableName)
+coinc_table = lsctables.CoincTable.get_table(xmldoc)
+coinc_inspiral_table = lsctables.CoincInspiralTable.get_table(xmldoc)
+coinc_event_map_table = lsctables.CoincMapTable.get_table(xmldoc)
+sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
 
 xmldoc.childNodes[-1].removeChild(sngl_inspiral_table)
 xmldoc.childNodes[-1].removeChild(coinc_event_map_table)

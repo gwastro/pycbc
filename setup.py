@@ -44,7 +44,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pillow',
                       'h5py>=2.10',
                       'jinja2',
-                      'lalsuite',
+                      'lalsuite!=7.2',
                       'astropy>=2.0.3,!=4.2.1,!=4.0.5',
                       'mpld3>=0.3',
                       'lscsoft-glue>=1.59.3',
@@ -123,8 +123,8 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.0.dev0'
-        vinfo.release = 'False'
+        vinfo.version = '2.0.1'
+        vinfo.release = 'True'
 
     with open('pycbc/version.py', 'wb') as f:
         f.write("# coding: utf-8\n".encode('utf-8'))

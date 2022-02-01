@@ -84,6 +84,9 @@ class JointDistribution(object):
         self._constraints = kwargs["constraints"] \
                                   if "constraints" in kwargs.keys() else []
 
+        # store kwargs
+        self.kwargs = kwargs
+
         # check that all of the supplied parameters are described by the given
         # distributions
         distparams = set()

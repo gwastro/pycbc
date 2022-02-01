@@ -36,11 +36,6 @@ Using this module requires a number of things
 * An initialized instance of the pycbc workflow class, containing the ConfigParser.
 * An ifo-keyed dictionary of ligo.segments.segmentlist instances containing the times that should be analysed for each ifo. See :ref:`workflowsegmentsmod` for documentation of the segments module, which in most cases should be used to obtain this input.
 
-The module is then called according to
-
-.. autofunction:: pycbc.workflow.setup_segment_generation
-       :noindex:
-
 -------------------------
 Configuration file setup
 -------------------------

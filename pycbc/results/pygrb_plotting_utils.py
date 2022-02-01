@@ -29,11 +29,10 @@ import logging
 import argparse
 import copy
 import numpy
-from pycbc.results import save_fig_with_metadata
 # TODO: imports to fix/remove
 try:
     from ligo import segments
-    from ligo.lw import utils, lsctables, ligolw, table
+    from ligo.lw import utils, lsctables
 except ImportError:
     pass
 try:
@@ -53,6 +52,8 @@ if 'matplotlib.backends' not in sys.modules:  # nopep8
     matplotlib.use('agg')
 from matplotlib import rc
 from matplotlib import pyplot as plt
+from pycbc.results import save_fig_with_metadata
+from pycbc.io.ligolw import LIGOLWContentHandler
 
 
 # =============================================================================
@@ -351,8 +352,7 @@ def load_xml_file(filename):
     """Wrapper to ligolw's utils.load_filename"""
 
     xml_doc = utils.load_filename(filename, gz=filename.endswith("gz"),
-                                  contenthandler=lsctables.use_in(
-                                      ligolw.LIGOLWContentHandler))
+                                  contenthandler=LIGOLWContentHandler)
 
     return xml_doc
 
@@ -366,8 +366,7 @@ def extract_ifos(trig_file):
 
     # Load search summary
     xml_doc = load_xml_file(trig_file)
-    search_summ = table.get_table(xml_doc,
-                                  lsctables.SearchSummaryTable.tableName)
+    search_summ = lsctables.SearchSummaryTable.get_table(xml_doc)
 
     # Extract IFOs
     ifos = sorted(map(str, search_summ[0].get_ifos()))
@@ -448,7 +447,7 @@ def load_injections(inj_file, vetoes):
 
     # Load injection file
     xml_doc = load_xml_file(inj_file)
-    multis = table.get_table(xml_doc, lsctables.MultiInspiralTable.tableName)
+    multis = lsctables.MultiInspiralTable.get_table(xml_doc)
 
     # Extract injections
     injs = lsctables.New(lsctables.MultiInspiralTable,

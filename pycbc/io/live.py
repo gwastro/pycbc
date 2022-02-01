@@ -7,12 +7,11 @@ import json
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
 from ligo.lw.param import Param as LIGOLWParam
 from ligo.lw.array import Array as LIGOLWArray
 from pycbc import version as pycbc_version
 from pycbc import pnutils
-from pycbc.io.ligolw import return_empty_sngl
+from pycbc.io.ligolw import return_empty_sngl, create_process_table
 from pycbc.results import ifo_color
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
@@ -142,13 +141,10 @@ class SingleCoincForGraceDB(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        # ligo.lw does not like `cvs_entry_time` being an empty string
-        cvs_entry_time = pycbc_version.date or None
-        proc_id = ligolw_process.register_to_xmldoc(
-            outdoc, 'pycbc', {}, instruments=usable_ifos, comment='',
-            version=pycbc_version.version,
-            cvs_repository='pycbc/'+pycbc_version.git_branch,
-            cvs_entry_time=cvs_entry_time).process_id
+        # FIXME is it safe (in terms of downstream operations) to let
+        # `program_name` default to the actual script name?
+        proc_id = create_process_table(outdoc, program_name='pycbc',
+                                       detectors=usable_ifos).process_id
 
         # Set up coinc_definer table
         coinc_def_table = lsctables.New(lsctables.CoincDefTable)
@@ -291,8 +287,7 @@ class SingleCoincForGraceDB(object):
         filename: str
             Name of file to write to disk.
         """
-        gz = filename.endswith('.gz')
-        ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
+        ligolw_utils.write_filename(self.outdoc, filename, compress='auto')
 
         # save source probabilities in a json file
         if self.probabilities is not None:

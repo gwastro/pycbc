@@ -1,11 +1,10 @@
+import matplotlib.pyplot as pp
+from urllib.request import urlretrieve
 from pycbc.frame import read_frame
 from pycbc.filter import highpass_fir, matched_filter
 from pycbc.waveform import get_fd_waveform
 from pycbc.psd import welch, interpolate
-try:
-    from urllib.request import urlretrieve
-except ImportError:  # python < 3
-    from urllib import urlretrieve
+
 
 # Read data and remove low frequency content
 fname = 'H-H1_LOSC_4_V2-1126259446-32.gwf'
@@ -28,10 +27,7 @@ snr = matched_filter(hp, h1, psd=psd, low_frequency_cutoff=20.0)
 # Remove regions corrupted by filter wraparound
 snr = snr[len(snr) // 4: len(snr) * 3 // 4]
 
-import pylab
-pylab.plot(snr.sample_times, abs(snr))
-pylab.ylabel('signal-to-noise')
-pylab.xlabel('GPS Time (s)')
-pylab.show()
-
-
+pp.plot(snr.sample_times, abs(snr))
+pp.ylabel('signal-to-noise')
+pp.xlabel('GPS Time (s)')
+pp.show()

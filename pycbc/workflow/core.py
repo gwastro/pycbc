@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string
+import os, stat, subprocess, logging, math, string
 from six.moves import configparser as ConfigParser
 from six.moves import urllib
 from six.moves.urllib.request import pathname2url
@@ -41,22 +41,14 @@ import lal.utils
 import Pegasus.api  # Try and move this into pegasus_workflow
 from glue import lal as gluelal
 from ligo import segments
-from ligo.lw import table, lsctables, ligolw
+from ligo.lw import lsctables, ligolw
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import segments as ligolw_segments
-from ligo.lw.utils import process as ligolw_process
 from pycbc import makedir
-from pycbc.io.ligolw import legacy_row_id_converter \
-        as legacy_ligolw_row_id_converter
+from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
-
-
-@legacy_ligolw_row_id_converter
-@lsctables.use_in
-class ContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 
 def make_analysis_dir(path):
@@ -773,7 +765,7 @@ class Workflow(pegasus_workflow.Workflow):
             fil.add_pfn(urljoin('file:', pathname2url(fil.storage_path)),
                         site='local')
 
-    def save(self, filename=None, output_map_path=None):
+    def save(self, filename=None, output_map_path=None, root=True):
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
 
         if output_map_path is None:
@@ -822,7 +814,8 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).save(filename=filename,
                                    output_map_path=output_map_path,
                                    submit_now=self.args.submit_now,
-                                   plan_now=self.args.plan_now)
+                                   plan_now=self.args.plan_now,
+                                   root=root)
 
     def save_config(self, fname, output_dir, cp=None):
         """ Writes configuration file to disk and returns a pycbc.workflow.File
@@ -1703,13 +1696,12 @@ class SegFile(File):
         """
         seglistdict = segments.segmentlistdict()
         seglistdict[ifo + ':' + name] = segmentlist
+        seg_summ_dict = None
         if seg_summ_list is not None:
             seg_summ_dict = segments.segmentlistdict()
             seg_summ_dict[ifo + ':' + name] = seg_summ_list
-        else:
-            seg_summ_dict = None
         return cls.from_segment_list_dict(description, seglistdict,
-                                          seg_summ_dict=None, **kwargs)
+                                          seg_summ_dict=seg_summ_dict, **kwargs)
 
     @classmethod
     def from_multi_segment_list(cls, description, segmentlists, names, ifos,
@@ -1818,14 +1810,12 @@ class SegFile(File):
         """
         # load xmldocument and SegmentDefTable and SegmentTables
         fp = open(xml_file, 'rb')
-        xmldoc = ligolw_utils.load_fileobj(fp, compress='auto',
-                                           contenthandler=ContentHandler)
+        xmldoc = ligolw_utils.load_fileobj(
+                fp, compress='auto', contenthandler=LIGOLWContentHandler)
 
-        seg_def_table = table.get_table(xmldoc,
-                                        lsctables.SegmentDefTable.tableName)
-        seg_table = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
-        seg_sum_table = table.get_table(xmldoc,
-                                        lsctables.SegmentSumTable.tableName)
+        seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
+        seg_table = lsctables.SegmentTable.get_table(xmldoc)
+        seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
 
         segs = segments.segmentlistdict()
         seg_summ = segments.segmentlistdict()
@@ -1906,7 +1896,7 @@ class SegFile(File):
         # create XML doc and add process table
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
-        process = ligolw_process.register_to_xmldoc(outdoc, sys.argv[0], {})
+        process = create_process_table(outdoc)
 
         for key, seglist in self.segment_dict.items():
             ifo, name = self.parse_segdict_key(key)

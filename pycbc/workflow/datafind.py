@@ -33,15 +33,12 @@ from __future__ import print_function
 import os, copy
 import logging
 from ligo import segments
-from ligo.lw import utils, table, lsctables, ligolw
+from ligo.lw import utils, table
 from glue import lal
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
+from pycbc.io.ligolw import LIGOLWContentHandler
 
-class ContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-
-lsctables.use_in(ContentHandler)
 
 def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
                             tags=None):
@@ -906,10 +903,10 @@ def get_segment_summary_times(scienceFile, segmentName):
     # Load the filename
     xmldoc = utils.load_filename(scienceFile.cache_entry.path,
                              gz=scienceFile.cache_entry.path.endswith("gz"),
-                             contenthandler=ContentHandler)
+                             contenthandler=LIGOLWContentHandler)
 
     # Get the segment_def_id for the segmentName
-    segmentDefTable = table.get_table(xmldoc, "segment_definer")
+    segmentDefTable = table.Table.get_table(xmldoc, "segment_definer")
     for entry in segmentDefTable:
         if (entry.ifos == ifo) and (entry.name == channel):
             if len(segmentName) == 2 or (entry.version==version):
@@ -920,7 +917,7 @@ def get_segment_summary_times(scienceFile, segmentName):
                          %(segmentName))
 
     # Get the segmentlist corresponding to this segmentName in segment_summary
-    segmentSummTable = table.get_table(xmldoc, "segment_summary")
+    segmentSummTable = table.Table.get_table(xmldoc, "segment_summary")
     summSegList = segments.segmentlist([])
     for entry in segmentSummTable:
         if entry.segment_def_id == segDefID:

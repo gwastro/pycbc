@@ -31,16 +31,16 @@ import os.path
 import h5py
 from copy import copy
 import numpy as np
-from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
+from ligo.lw import lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries, zeros
 import pycbc.io
-from pycbc.io.ligolw import legacy_row_id_converter \
-        as legacy_ligolw_row_id_converter
+from pycbc.io.ligolw import LIGOLWContentHandler
 import hashlib
+
 
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
@@ -99,11 +99,6 @@ def sigma_cached(self, psd):
             self._sigmasq[key] = self.sigma_view.inner(psd.invsqrt[self.sslice])
     return self._sigmasq[key]
 
-# dummy class needed for loading LIGOLW files
-@legacy_ligolw_row_id_converter
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 # helper function for parsing approximant strings
 def boolargs_from_apprxstr(approximant_strs):
@@ -169,6 +164,7 @@ def add_approximant_arg(parser, default=None, help=None):
                         metavar='APPRX[:COND]',
                         help=help)
 
+
 def parse_approximant_arg(approximant_arg, warray):
     """Given an approximant arg (see add_approximant_arg) and a field
     array, figures out what approximant to use for each template in the array.
@@ -209,6 +205,7 @@ def tuple_to_hash(tuple_to_be_hashed):
                         digest_size=8)
     return np.fromstring(h.digest(), dtype=int)[0]
 
+
 class TemplateBank(object):
     """Class to provide some basic helper functions and information
     about elements of a template bank.
@@ -246,7 +243,6 @@ class TemplateBank(object):
         Any additional keyword arguments are stored to the `extra_args`
         attribute.
 
-
     Attributes
     ----------
     table : WaveformArray
@@ -274,8 +270,7 @@ class TemplateBank(object):
             self.filehandler = None
             self.indoc = ligolw_utils.load_filename(
                 filename, False, contenthandler=LIGOLWContentHandler)
-            self.table = table.get_table(
-                self.indoc, lsctables.SnglInspiralTable.tableName)
+            self.table = lsctables.SnglInspiralTable.get_table(self.indoc)
             self.table = pycbc.io.WaveformArray.from_ligolw_table(self.table,
                 columns=parameters)
 
@@ -287,7 +282,7 @@ class TemplateBank(object):
             names = tuple([n if n!= 'alpha6' else 'f_lower' for n in names])
             self.table.dtype.names = names
 
-        elif ext.endswith(('hdf', '.h5')):
+        elif ext.endswith(('hdf', '.h5', '.hdf5')):
             self.indoc = None
             f = h5py.File(filename, 'r')
             self.filehandler = f
@@ -382,7 +377,8 @@ class TemplateBank(object):
         Parameters
         ----------
         filename : str
-            The name of the file to write to. Must end in '.hdf'.
+            The name of the file to write to. Must be a recognised HDF5
+            file extension
         start_index : If a specific slice of the template bank is to be
             written to the hdf file, this would specify the index of the
             first template in the slice
@@ -406,7 +402,7 @@ class TemplateBank(object):
         h5py.File
             The file handler to the output hdf file (left open).
         """
-        if not filename.endswith('.hdf'):
+        if not filename.endswith(('.hdf', '.h5', '.hdf5')):
             raise ValueError("Unrecoginized file extension")
         if os.path.exists(filename) and not force:
             raise IOError("File %s already exists" %(filename))
@@ -492,7 +488,6 @@ class TemplateBank(object):
         indices_unique= np.unique(indices_combined)
         self.table = self.table[indices_unique]
 
-
     def ensure_standard_filter_columns(self, low_frequency_cutoff=None):
         """ Initialize FilterBank common fields
 
@@ -518,6 +513,7 @@ class TemplateBank(object):
         self.min_f_lower = min(self.table['f_lower'])
         if self.f_lower is None and self.min_f_lower == 0.:
             raise ValueError('Invalid low-frequency cutoff settings')
+
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
@@ -586,7 +582,6 @@ class LiveFilterBank(TemplateBank):
         return self.get_template(index)
 
     def get_template(self, index, min_buffer=None):
-
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
         flow = self.table[index].f_lower
@@ -601,6 +596,8 @@ class LiveFilterBank(TemplateBank):
         p = props(self.table[index])
         p.pop('approximant')
         buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, **p)
+        if not buff_size:
+            raise RuntimeError('Template waveform %s not recognized!' % approximant)
 
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = int(tlen / 2 + 1)
@@ -608,17 +605,17 @@ class LiveFilterBank(TemplateBank):
         delta_f = self.sample_rate / float(tlen)
 
         if f_end is None or f_end >= (flen * delta_f):
-            f_end = (flen-1) * delta_f
+            f_end = (flen - 1) * delta_f
 
         logging.info("Generating %s, %ss, %i, starting from %s Hz",
-                     approximant, 1.0/delta_f, index, flow)
+                     approximant, 1.0 / delta_f, index, flow)
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
             zeros(flen, dtype=np.complex64), self.table[index],
             approximant=approximant, f_lower=flow, f_final=f_end,
-            delta_f=delta_f, delta_t=1.0/self.sample_rate, distance=distance,
+            delta_f=delta_f, delta_t=1.0 / self.sample_rate, distance=distance,
             **self.extra_args)
 
         # If available, record the total duration (which may
@@ -818,6 +815,7 @@ class FilterBank(TemplateBank):
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
         htilde._sigmasq = {}
         return htilde
+
 
 def find_variable_start_frequency(approximant, parameters, f_start, max_length,
                                   delta_f = 1):

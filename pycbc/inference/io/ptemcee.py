@@ -98,8 +98,8 @@ class PTEmceeFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
     def write_ensemble_attrs(self, ensemble):
         """Writes ensemble attributes necessary to restart from checkpoint.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         ensemble : ptemcee.Ensemble
             The ensemble to write attributes for.
         """
@@ -146,7 +146,7 @@ class PTEmceeFile(EnsembleMCMCMetadataIO, CommonMultiTemperedMetadataIO,
         function for details.
 
         Parameters
-        -----------
+        ----------
         fields : list
             The list of field names to retrieve.
         \**kwargs :

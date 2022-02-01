@@ -34,14 +34,13 @@ import argparse
 import logging
 import numpy
 import h5py
-from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
+from ligo.lw import lsctables, utils as ligolw_utils
 from pycbc import tmpltbank, psd, strain
-import matplotlib
-matplotlib.use('Agg')
+from pycbc.io.ligolw import LIGOLWContentHandler
+
 
 # Read command line option
-_desc = __doc__[1:]
-parser = argparse.ArgumentParser(description=_desc,
+parser = argparse.ArgumentParser(description=__doc__,
            formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
@@ -146,16 +145,9 @@ metricParams.evecsCV[refFreq] = evecsCV
 
 logging.info("Reading template bank.")
 if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
-    # dummy class needed for loading LIGOLW files
-    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-        pass
-
-    lsctables.use_in(LIGOLWContentHandler)
-
     indoc = ligolw_utils.load_filename(opts.input_bank,
                                        contenthandler=LIGOLWContentHandler)
-    template_list = table.get_table(indoc,
-                                    lsctables.SnglInspiralTable.tableName)
+    template_list = lsctables.SnglInspiralTable.get_table(indoc)
     mass1 = [template.mass1 for template in template_list]
     mass2 = [template.mass2 for template in template_list]
     spin1z = [template.spin1z for template in template_list]

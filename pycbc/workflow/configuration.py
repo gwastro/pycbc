@@ -34,8 +34,8 @@ import string
 import shutil
 import time
 import requests
-import distutils.spawn
 import six
+from shutil import which
 from pycbc.types.config import InterpolatingConfigParser
 from six.moves.urllib.parse import urlparse
 from six.moves import http_cookiejar as cookielib
@@ -513,7 +513,7 @@ class WorkflowConfigParser(InterpolatingConfigParser):
         # Maybe we can add a few different possibilities for substitution
         if len(testList) == 2:
             if testList[0] == "which":
-                newString = distutils.spawn.find_executable(testList[1])
+                newString = which(testList[1])
                 if not newString:
                     errmsg = "Cannot find exe %s in your path " % (testList[1])
                     errmsg += "and you specified ${which:%s}." % (testList[1])

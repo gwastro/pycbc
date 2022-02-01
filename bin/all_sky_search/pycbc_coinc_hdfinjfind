@@ -4,19 +4,15 @@ files.
 """
 
 import argparse, h5py, logging, types, numpy, os.path
-from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
+from ligo.lw import lsctables, utils as ligolw_utils
 from ligo import segments
 from pycbc import events
 from pycbc.events import indices_within_segments
 from pycbc.types import MultiDetOptionAction
 from pycbc.inject import CBCHDFInjectionSet
 import pycbc.version
+from pycbc.io.ligolw import LIGOLWContentHandler
 
-
-# dummy class needed for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(LIGOLWContentHandler)
 
 def hdf_append(f, key, value):
     if key in f:
@@ -145,7 +141,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
     if '.xml' in injection_file or '.xml.gz' in injection_file:
         indoc = ligolw_utils.load_filename(injection_file, False,
                                            contenthandler=LIGOLWContentHandler)
-        sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+        sim_table = lsctables.SimInspiralTable.get_table(indoc)
         inj_time = numpy.array(sim_table.get_column('geocent_end_time') +
                                1e-9 * sim_table.get_column('geocent_end_time_ns'),
                                dtype=numpy.float64)

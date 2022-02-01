@@ -23,29 +23,28 @@ metric approximation to the parameter space.
 
 from __future__ import division
 
+import argparse
+import logging
+import numpy
+import h5py
+from ligo.lw import lsctables, utils as ligolw_utils
 import pycbc
 import pycbc.version
+from pycbc import tmpltbank, psd, strain
+from pycbc.io.ligolw import LIGOLWContentHandler
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "pycbc_bank_verification"
 
-import argparse
-import os, sys
-import copy
-import logging
-import numpy
-import h5py
-from ligo.lw import ligolw, table, lsctables, utils as ligolw_utils
-from pycbc import tmpltbank, psd, strain, pnutils
-import matplotlib
-matplotlib.use('Agg')
-import pylab
 
 # Read command line option
-_desc = __doc__[1:]
-parser = argparse.ArgumentParser(description=_desc,
+parser = argparse.ArgumentParser(description=__doc__,
            formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
@@ -195,16 +194,9 @@ logging.info("Reading template bank.")
 
 
 if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
-    # dummy class needed for loading LIGOLW files
-    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-        pass
-
-    lsctables.use_in(LIGOLWContentHandler)
-
     indoc = ligolw_utils.load_filename(opts.input_bank,
                                        contenthandler=LIGOLWContentHandler)
-    template_list = table.get_table(indoc,
-                                    lsctables.SnglInspiralTable.tableName)
+    template_list = lsctables.SnglInspiralTable.get_table(indoc)
 
     partitioned_bank_object.add_tmpltbank_from_xml_table\
         (template_list, vary_fupper=opts.vary_fupper)

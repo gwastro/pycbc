@@ -52,7 +52,9 @@ def lfilter(coefficients, timeseries):
     # If there aren't many points just use the default scipy method
     if len(timeseries) < 2**7:
         series = scipy.signal.lfilter(coefficients, 1.0, timeseries)
-        return series
+        return TimeSeries(series,
+                          epoch=timeseries.start_time,
+                          delta_t=timeseries.delta_t)
     elif (len(timeseries) < fillen * 10) or (len(timeseries) < 2**18):
         cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
         cseries.resize(len(timeseries))

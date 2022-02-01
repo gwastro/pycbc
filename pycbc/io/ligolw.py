@@ -15,20 +15,28 @@
 
 """Tools for dealing with LIGOLW XML files."""
 
+import os
+import sys
 from ligo.lw import lsctables
-from ligo.lw.ligolw import Param
+from ligo.lw.ligolw import Param, LIGOLWContentHandler \
+    as OrigLIGOLWContentHandler
 from ligo.lw.lsctables import TableByName
 from ligo.lw.table import Column, TableStream
-from ligo.lw.types import FormatFunc, FromPyType, IDTypes, ToPyType
+from ligo.lw.types import FormatFunc, FromPyType, ToPyType
+from ligo.lw.utils import process as ligolw_process
+import pycbc.version as pycbc_version
+
 
 __all__ = ('default_null_value',
            'return_empty_sngl',
            'return_search_summary',
-           'legacy_row_id_converter')
+           'legacy_row_id_converter',
+           'LIGOLWContentHandler')
 
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
+IDTypes = set([u"ilwd:char", u"ilwd:char_u"])
 
 
 def default_null_value(col_name, col_type):
@@ -117,6 +125,24 @@ def return_search_summary(start_time=0, end_time=0, nevents=0, ifos=None):
 
     return search_summary
 
+def create_process_table(document, program_name=None, detectors=None,
+                         comment=None):
+    """Create a LIGOLW process table with sane defaults, add it to a LIGOLW
+    document, and return it.
+    """
+    if program_name is None:
+        program_name = os.path.basename(sys.argv[0])
+
+    # ligo.lw does not like `cvs_entry_time` being an empty string
+    cvs_entry_time = pycbc_version.date or None
+
+    process = ligolw_process.register_to_xmldoc(
+            document, program_name, {}, version=pycbc_version.version,
+            cvs_repository='pycbc/'+pycbc_version.git_branch,
+            cvs_entry_time=cvs_entry_time, instruments=detectors,
+            comment=comment)
+    return process
+
 def legacy_row_id_converter(ContentHandler):
     """Convert from old-style to new-style row IDs on the fly.
 
@@ -134,7 +160,8 @@ def legacy_row_id_converter(ContentHandler):
         """Convert values of <Param> elements from ilwdchar to int."""
         if isinstance(self.current, Param) and self.current.Type in IDTypes:
             old_type = ToPyType[self.current.Type]
-            new_value = ROWID_PYTYPE(old_type(self.current.pcdata))
+            old_val = str(old_type(self.current.pcdata))
+            new_value = ROWID_PYTYPE(old_val.split(":")[-1])
             self.current.Type = ROWID_TYPE
             self.current.pcdata = ROWID_FORMATFUNC(new_value)
         __orig_endElementNS(self, uri_localname, qname)
@@ -159,7 +186,7 @@ def legacy_row_id_converter(ContentHandler):
             old_type = ToPyType[result.Type]
 
             def converter(old_value):
-                return ROWID_PYTYPE(old_type(old_value))
+                return ROWID_PYTYPE(str(old_type(old_value)).split(":")[-1])
 
             remapped[(id(parent), result.Name)] = converter
             result.Type = ROWID_TYPE
@@ -205,3 +232,9 @@ def legacy_row_id_converter(ContentHandler):
     ContentHandler.startStream = startStream
 
     return ContentHandler
+
+
+@legacy_row_id_converter
+@lsctables.use_in
+class LIGOLWContentHandler(OrigLIGOLWContentHandler):
+    "Dummy class needed for loading LIGOLW files"
