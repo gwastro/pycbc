@@ -205,7 +205,7 @@ def get_projection_matrix(wp, wc, projection='standard'):
     Output: projection_matrix: Projects the data onto the signal space
     Input:  wp,wc: The weighted antenna response fuctions to plus and cross
                    polarisations respectively
-            projection_type: standard, left or right
+            projection: standard, left or right
     """
     if projection=='standard':
         denominator = np.dot(wp, wp) * np.dot(wc, wc) - np.dot(wp, wc)**2
