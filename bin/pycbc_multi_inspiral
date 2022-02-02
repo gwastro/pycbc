@@ -611,8 +611,7 @@ with ctx:
                 logging.info("%s points above coincident SNR threshold" % \
                              str(len(coinc_idx)))
                 if len(coinc_idx) != 0:
-                    logging.info("Max coincident SNR = %s"
-                                % str(max(rho_coinc)))
+                    logging.info("Max coincident SNR = %.2f", max(rho_coinc))
 
             # If there is only one ifo, then coinc_triggers is just the
             # triggers from ifo
@@ -653,8 +652,7 @@ with ctx:
                             coherent_snr(coinc_triggers, coinc_idx,
                                          opt.coinc_threshold, project,
                                          rho_coinc)
-                logging.info("%s points above coherent threshold"
-                            % str(len(rho_coh)))
+                logging.info("%d points above coherent threshold", len(rho_coh))
                 if len(coinc_idx) != 0:
                     logging.info("Max coherent SNR = %s" % str(max(rho_coh)))
                     #Find the null snr
@@ -713,7 +711,6 @@ with ctx:
                 num_events = len(reweighted_snr)
                 # the output will only be possible if len(networkchi2) == num_events
 
-                logging.info("reweghtsnr, networkchi2 ={0}, {1}".format(num_events ,len(network_chisq_dict)))
                 for ifo in opt.instruments:
                     ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
                         bank_chisq.values(template, stilde[ifo].psd, stilde[ifo],
