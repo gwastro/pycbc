@@ -354,6 +354,15 @@ class LiveEventManager(object):
                     cmd += '--enable-gracedb-upload '
 
                 cmd += '--cores {}'.format(self.fu_cores)
+                if args.processing_scheme:
+                    # we will use the cores for multiple workers of the
+                    # optimization routine, so we force the processing scheme
+                    # to a single core here.  This may be enforcing some
+                    # assumptions about the optimal way to do FFTs on the
+                    # machine.  Do we need more flexibility, and is there a
+                    # simple way to have it?
+                    opt_scheme = args.processing_scheme.split(':')[0]
+                    cmd += '--processing-scheme {}:1'.format(opt_scheme)
 
                 log_fname = \
                         fname.replace('.xml.gz', '_optimize_snr_log.dat')
