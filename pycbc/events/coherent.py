@@ -123,8 +123,8 @@ def get_projection_matrix(fp, fc, sigma, projection='standard'):
     """
     # Calculate the weighted antenna responses
     keys = sorted(sigma.keys())
-    wp = np.array([sigma[ifo] * wp[ifo] for ifo in keys])
-    wc = np.array([sigma[ifo] * wc[ifo] for ifo in keys])
+    wp = np.array([sigma[ifo] * fp[ifo] for ifo in keys])
+    wc = np.array([sigma[ifo] * fc[ifo] for ifo in keys])
 
     # Get the projection matrix associated with the requested projection
     if projection=='standard':
