@@ -366,12 +366,13 @@ class LiveEventManager(object):
                     opt_scheme = args.processing_scheme.split(':')[0]
                     cmd += '--processing-scheme {}:1 '.format(opt_scheme)
 
-                log_fname = \
-                        fname.replace('.xml.gz', '_optimize_snr_log.dat')
+                log_fname = fname.replace('.xml.gz', '_optimize_snr.log')
 
-                cmd += '>{} 2>&1'.format(log_fname)
-                logging.info('Running %s', cmd)
-                subprocess.Popen(cmd, shell=True)
+                logging.info('Running %s with log to %s', cmd, log_fname)
+                with open(log_fname, "w") as logfile:
+                    subprocess.Popen(
+                        cmd, shell=True, stdout=logfile, stderr=logfile
+                    )
 
 
     def check_singles(self, results, data_reader, psds, f_low):
