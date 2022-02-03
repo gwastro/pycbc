@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 """Followup utility to optimize the SNR of a PyCBC Live trigger."""
 
@@ -23,6 +23,7 @@ from pycbc.io import live
 from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
+from pycbc import fft
 
 try:
     import pyswarms as ps
@@ -192,6 +193,8 @@ parser.add_argument('--pso-w', type=float, default=0.01,
                     help='Only relevant for --optimizer pso: '
                     'The hyperparameter w: the intertia parameter.')
 
+fft.insert_fft_option_group(parser)
+
 # Input checking
 args = parser.parse_args()
 if args.snr_threshold != 4:
@@ -199,6 +202,9 @@ if args.snr_threshold != 4:
 if args.optimizer == 'pso' and ps == None:
     parser.error('You need to install pyswarms to use the pso optimizer.')
 pycbc.init_logging(args.verbose)
+
+fft.verify_fft_options(opt,parser)
+fft.from_cli(opt)
 
 
 logging.info('Starting optimize SNR')
