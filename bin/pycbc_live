@@ -369,7 +369,7 @@ class LiveEventManager(object):
                 log_fname = \
                         fname.replace('.xml.gz', '_optimize_snr_log.dat')
 
-                cmd += '&> {} '.format(log_fname)
+                cmd += '>{} 2>&1'.format(log_fname)
                 logging.info('Running %s', cmd)
                 subprocess.Popen(cmd, shell=True)
 
