@@ -37,36 +37,35 @@ time_init = time.time()
 parser = argparse.ArgumentParser(usage='',
     description="Find multiple detector gravitational-wave triggers.")
 parser.add_argument("-V", "--verbose", action="store_true",
-                  help="print extra debugging information", default=False )
+                    help="print extra debugging information", default=False )
 parser.add_argument("--output", type=str)
 parser.add_argument("--instruments", nargs="+", type=str, required=True,
                     help="List of instruments to analyze.")
 parser.add_argument("--bank-file", type=str)
 parser.add_argument("--snr-threshold",
-                  help="SNR threshold for trigger generation", type=float)
+                    help="SNR threshold for trigger generation", type=float)
 parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
 parser.add_argument("--low-frequency-cutoff", type=float,
-                  help="The low frequency cutoff to use for filtering (Hz)")
+                    help="The low frequency cutoff to use for filtering (Hz)")
 
 # add approximant arg
 waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--order", type=str,
-                  help="The integer half-PN order at which to generate"
+                    help="The integer half-PN order at which to generate"
                        " the approximant.")
-taper_choices = ["start","end","startend"]
-parser.add_argument("--taper-template", choices=taper_choices,
-                  help="For time-domain approximants, taper the start and/or "
-                       "end of the waveform before FFTing.")
+parser.add_argument("--taper-template", choices=["start", "end", "startend"],
+                    help="For time-domain approximants, taper the start and/or"
+                         " end of the waveform before FFTing.")
 parser.add_argument("--cluster-method", choices=["template", "window"])
 parser.add_argument("--cluster-window", type=float, default = -1,
-                  help="Length of clustering window in seconds.")
+                    help="Length of clustering window in seconds.")
 
 parser.add_argument("--bank-veto-bank-file", type=str)
 
 parser.add_argument("--chisq-bins", default=0)
 # Chisq threshold is not implemented, as event_mgr.consolidate_events() is not 
-#  called; also, it's not clear how it should be implemented for coherent events.
+# called. It's not yet clear how it should be implemented for coherent events.
 # As the option does nothing, remove it for now.
 # parser.add_argument("--chisq-threshold", type=float, default=0) 
 # parser.add_argument("--chisq-delta", type=float, default=0)
@@ -94,24 +93,24 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
 # Arguments added for the coherent stuff
 parser.add_argument("--ra", type=float, help="Right ascension, in radians")
 parser.add_argument("--dec", type=float, help="Declination, in radians")
-parser.add_argument("--coinc-threshold", type=float, default=0.0, help="""
-                    Triggers with coincident/coherent snr below this value will
-                    be discarded.""")
-parser.add_argument("--null-min", type=float, default=5.25, help="""
-                    Triggers with null_snr above this value will be
-                    discarded.""")
-parser.add_argument("--null-grad", type=float, default=0.2, help="""
-                    The gradient of the line defining the null cut after the
-                    null step.""")
-parser.add_argument("--null-step", type=float, default=20., help="""
-                    Triggers with coherent snr above null_step will be cut
-                    according to the null_grad and null_min.""")
-parser.add_argument("--trigger-time", type=int, help="""
-                    Time of the GRB, used to set the antenna patterns.""")
+parser.add_argument("--coinc-threshold", type=float, default=0.0,
+                    help="Triggers with coincident/coherent snr below this "
+                         "value will be discarded.")
+parser.add_argument("--null-min", type=float, default=5.25,
+                    help="Triggers with null_snr above this value will be"
+                         " discarded.")
+parser.add_argument("--null-grad", type=float, default=0.2,
+                    help="The gradient of the line defining the null cut after"
+                         " the null step.")
+parser.add_argument("--null-step", type=float, default=20.,
+                    help="Triggers with coherent snr above null_step will be "
+                         "cut according to the null_grad and null_min.")
+parser.add_argument("--trigger-time", type=int,
+                    help="Time of the GRB, used to set the antenna patterns.")
 parser.add_argument("--projection", default="standard",
                     choices=["standard", "left", "right", "left+right"],
-                    help="""Choice of projection matrix. 'Left' and 'Right' 
-                    corresponds to face-away and face-on""")
+                    help="Choice of projection matrix. 'left' and 'right' " 
+                         "correspond to face-away and face-on")
 
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
@@ -141,7 +140,8 @@ fft.verify_fft_options(opt,parser)
 log_level = logging.DEBUG if opt.verbose else logging.INFO
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
-inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli_multi_ifos(opt,opt.instruments)
+inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli_multi_ifos(
+    opt, opt.instruments)
 ctx = scheme.from_cli(opt)
 
 strain_dict = strain.from_cli_multi_ifos(
@@ -177,12 +177,13 @@ with ctx:
                 raise ValueError(err_msg)
 
     logging.info("Making frequency-domain data segments")
-    segments = {ifo : strain_segments_dict[ifo].fourier_segments()
-               for ifo in opt.instruments}
+    segments = {ifo: strain_segments_dict[ifo].fourier_segments()
+                for ifo in opt.instruments}
     del strain_segments_dict
     psd.associate_psds_to_multi_ifo_segments(opt, segments, strain_dict, flen,
-            delta_f, flow, opt.instruments, dyn_range_factor=DYN_RANGE_FAC,
-            precision='single')
+                                             delta_f, flow, opt.instruments,
+                                             dyn_range_factor=DYN_RANGE_FAC,
+                                             precision='single')
 
     # Currently we are using the same matched-filter parameters for all ifos.
     # Therefore only one MatchedFilterControl needed. Maybe this can change if
@@ -201,13 +202,14 @@ with ctx:
     # Clustering happens at the end of the template loop.
     # FIXME: The single detector SNR threshold should not necessarily be
     #        applied to every IFO (usually only 2 most sensitive in network)
-    matched_filter = {ifo : MatchedFilterControl(
-        opt.low_frequency_cutoff, None, opt.snr_threshold, tlen, delta_f,
-        complex64, segments[ifo], template_mem, use_cluster=False,
-        downsample_factor=opt.downsample_factor,
-        upsample_threshold=opt.upsample_threshold,
-        upsample_method=opt.upsample_method,
-        cluster_function='symmetric') for ifo in opt.instruments}
+    matched_filter = {ifo: MatchedFilterControl(
+            opt.low_frequency_cutoff, None, opt.snr_threshold, tlen, delta_f,
+            complex64, segments[ifo], template_mem, use_cluster=False,
+            downsample_factor=opt.downsample_factor,
+            upsample_threshold=opt.upsample_threshold,
+            upsample_method=opt.upsample_method,
+            cluster_function='symmetric')
+        for ifo in opt.instruments}
 
     logging.info("Initializing signal-based vetoes.")
     # The existing SingleDetPowerChisq can calculate the single detector
@@ -221,8 +223,8 @@ with ctx:
                                           approximant=opt.approximant)
     # Same here
     autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
-                                         opt.autochi_number_points,
-                                         onesided=opt.autochi_onesided)
+                                          opt.autochi_number_points,
+                                          onesided=opt.autochi_onesided)
 
     logging.info("Overwhitening frequency-domain data segments")
     for ifo in opt.instruments:
@@ -237,7 +239,7 @@ with ctx:
         'bank_chisq'     : float32,
         'bank_chisq_dof' : int,
         'cont_chisq'     : float32,
-                }
+        }
     ifo_out_vals = {
         'time_index'     : None,
         'ifo'            : None,
@@ -247,7 +249,7 @@ with ctx:
         'bank_chisq'     : None,
         'bank_chisq_dof' : None,
         'cont_chisq'     : None,
-               }
+        }
     ifo_names = sorted(ifo_out_vals.keys())
 
     network_out_types = {
@@ -259,7 +261,7 @@ with ctx:
         'nifo'          : int,
         'my_network_chisq':float32,
         'reweighted_snr' : float32
-               }
+        }
     network_out_vals = {
         'latitude'      : None,
         'longitude'     : None,
@@ -269,7 +271,7 @@ with ctx:
         'nifo'          : None,
         'my_network_chisq' : None, 
         'reweighted_snr' : None
-               }
+        }
     network_names = sorted(network_out_vals.keys())
 
     event_mgr = EventManagerCoherent(
@@ -279,20 +281,22 @@ with ctx:
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f, complex64,
-                               low_frequency_cutoff=flow, phase_order=opt.order,
+                               low_frequency_cutoff=flow,
+                               phase_order=opt.order,
                                taper=opt.taper_template,
                                approximant=opt.approximant, out=template_mem)
 
     # Use injfilterrejector to reduce the bank to only those templates that
     # might actually find something
-    ntemplates = len(bank)
+    n_bank = len(bank)
     nfilters = 0
 
-    logging.info("Full template bank size: %s", ntemplates)
+    logging.info("Full template bank size: %d", n_bank)
     for ifo in opt.instruments:
         bank.template_thinning(inj_filter_rejector[ifo])
-    if not len(bank) == ntemplates:
-        logging.info("Template bank size after thinning: %s", len(bank))
+    if not len(bank) == n_bank:
+        n_bank = len(bank)
+        logging.info("Template bank size after thinning: %d", n_bank)
 
     fp = {}  # Antenna patterns
     fc = {}
@@ -319,10 +323,10 @@ with ctx:
             for ifo in opt.instruments:
                 if not inj_filter_rejector[ifo].template_segment_checker(
                         bank, t_num, stilde[ifo]):
-                    logging.info("Skipping segment %d/%d with template %d/%d"
-                                 " as no detectable injection is present"
-                                 % (s_num + 1, len(segments[ifo]),
-                                 t_num + 1, len(bank)))
+                    logging.info("Skipping segment %d/%d with template %d/%d "
+                                 "as no detectable injection is present",
+                                 s_num + 1, len(segments[ifo]), t_num + 1,
+                                 n_bank)
                     analyse_segment = False
             #Find detector sensitivities (sigma) and make array of normalised
             sigmasq = {ifo : template.sigmasq(segments[ifo][s_num].psd)
@@ -343,16 +347,15 @@ with ctx:
             coinc_idx = np.array([])
             ifo_list = opt.instruments[:]
             for ifo in opt.instruments:
-                logging.info("Filtering template %d/%d, ifo %s" %
-                             (t_num + 1, len(bank), ifo))
+                logging.info("Filtering template %d/%d, ifo %s", t_num + 1,
+                             n_bank, ifo)
                 # No clustering in the coherent search until the end.
                 # The correlation vector is the FFT of the snr (so inverse FFT
                 # it to get the snr). 
-                snr_ts[ifo], norm_dict[ifo], corr_dict[ifo], idx[ifo],\
-                    snrv_dict[ifo] = matched_filter[ifo].matched_filter_and_cluster(
-                            s_num, template.sigmasq(stilde[ifo].psd),
-                            window=0
-                            )
+                (snr_ts[ifo], norm_dict[ifo], corr_dict[ifo], idx[ifo],
+                 snrv_dict[ifo]) = \
+                     matched_filter[ifo].matched_filter_and_cluster(
+                         s_num, template.sigmasq(stilde[ifo].psd), window=0)
 
                 #List of ifos with triggers
                 if len(idx[ifo]) == 0: ifo_list.remove(ifo)
@@ -361,28 +364,31 @@ with ctx:
             if len(ifo_list)==0: continue
 
             # Find the data we need to analyse
-            analyse_data = {ifo : matched_filter[ifo].segments[s_num].analyze
-                           for ifo in opt.instruments}
+            analyse_data = {ifo: matched_filter[ifo].segments[s_num].analyze
+                            for ifo in opt.instruments}
 
             # Restrict the snr timeseries to just this section
-            snr = {ifo : snr_ts[ifo][analyse_data[ifo]] * norm_dict[ifo]
-                  for ifo in opt.instruments}
+            snr = {ifo: snr_ts[ifo][analyse_data[ifo]] * norm_dict[ifo]
+                   for ifo in opt.instruments}
 
             # Save the indexes of triggers (if we have any)
             # Even if we have none, need to keep an empty dictionary.
             # Only do this is idx doesn't get time shifted out of the time
             # we are looking at.
-            idx_dict = {ifo : idx[ifo][np.logical_and(
-                       idx[ifo] > time_delay_idx[ifo],idx[ifo] -
-                       time_delay_idx[ifo]  < len(snr[ifo]))]
-                       for ifo in opt.instruments}
-            # Find triggers that are coincident (in geocent time) in multiple ifos.
-            # If a single ifo analysis then just use the indexes from that ifo.
+            idx_dict = {ifo: idx[ifo][
+                np.logical_and(idx[ifo] > time_delay_idx[ifo],
+                               idx[ifo] - time_delay_idx[ifo] < len(snr[ifo]))
+                ]
+                for ifo in opt.instruments}
+            # Find triggers that are coincident (in geocent time) in multiple
+            # ifos. If a single ifo analysis then just use the indexes from
+            # that ifo.
             if len(opt.instruments)>1:
                 coinc_idx = coh.get_coinc_indexes(idx_dict,time_delay_idx)
             else:
-                coinc_idx = idx_dict[opt.instruments[0]] - time_delay_idx[opt.instruments[0]]
-            logging.info("Found %s coincident triggers" % str(len(coinc_idx)))
+                coinc_idx = idx_dict[opt.instruments[0]] \
+                    - time_delay_idx[opt.instruments[0]]
+            logging.info("Found %d coincident triggers", len(coinc_idx))
 
             # Number of ifos
             nifo = len(opt.instruments)
@@ -390,20 +396,20 @@ with ctx:
             for ifo in opt.instruments:
                 # Move on if this segment has no data
                 if len(snr[ifo])==0:
-                    raise ValueError('The SNR triggers dictionary is empty.\
-                                     This should not be possible.')
+                    raise ValueError('The SNR triggers dictionary is empty. '
+                                     'This should not be possible.')
                 # Time delay is applied to indices
                 coinc_idx_det_frame = {ifo: coinc_idx + time_delay_idx[ifo]
-                                        for ifo in opt.instruments}
+                                       for ifo in opt.instruments}
 
             # Calculate the coincident and coherent snr
             # Check we have data before we try to compute the coherent snr
             if len(coinc_idx) != 0 and nifo > 1:
                 #Find coinc snr at trigger times and apply coinc snr threshold
-                rho_coinc, coinc_idx, coinc_triggers = coh.coincident_snr(snr,
-                        coinc_idx, opt.coinc_threshold, time_delay_idx)
-                logging.info("%s points above coincident SNR threshold" % \
-                             str(len(coinc_idx)))
+                rho_coinc, coinc_idx, coinc_triggers = coh.coincident_snr(
+                    snr, coinc_idx, opt.coinc_threshold, time_delay_idx)
+                logging.info("%d points above coincident SNR threshold",
+                             len(coinc_idx))
                 if len(coinc_idx) != 0:
                     logging.info("Max coincident SNR = %.2f", max(rho_coinc))
 
@@ -424,15 +430,15 @@ with ctx:
                     project_l = coh.get_projection_matrix(fp, fc, sigma,
                                                           projection='left')
                     rho_coh_l, coinc_idx_l, coinc_triggers_l, rho_coinc_l = \
-                            coh.coherent_snr(coinc_triggers, coinc_idx,
-                                             opt.coinc_threshold, project_l,
-                                             rho_coinc)
+                        coh.coherent_snr(coinc_triggers, coinc_idx,
+                                         opt.coinc_threshold, project_l,
+                                         rho_coinc)
                     project_r = coh.get_projection_matrix(fp, fc, sigma,
                                                           projection='right')
                     rho_coh_r, coinc_idx_r, coinc_triggers_r, rho_coinc_r = \
-                            coh.coherent_snr(coinc_triggers, coinc_idx,
-                                             opt.coinc_threshold, project_r,
-                                             rho_coinc)
+                        coh.coherent_snr(coinc_triggers, coinc_idx,
+                                         opt.coinc_threshold, project_r,
+                                         rho_coinc)
                     max_idx = np.argmax([rho_coh_l, rho_coh_r], axis=0)
                     rho_coh = np.where(max_idx==0, rho_coh_l, rho_coh_r)
                     coinc_idx = np.where(max_idx==0, coinc_idx_l, coinc_idx_r)
@@ -440,33 +446,35 @@ with ctx:
                                               coinc_triggers_r)
                     rho_coinc = np.where(max_idx==0, rho_coinc_l, rho_coinc_r)
                 else:
-                    project = coh.get_projection_matrix(fp, fc, sigma,
-                            projection=opt.projection)
+                    project = coh.get_projection_matrix(
+                        fp, fc, sigma, projection=opt.projection)
                     rho_coh, coinc_idx, coinc_triggers, rho_coinc = \
-                            coh.coherent_snr(coinc_triggers, coinc_idx,
-                                             opt.coinc_threshold, project,
-                                             rho_coinc)
-                logging.info("%d points above coherent threshold", len(rho_coh))
+                        coh.coherent_snr(coinc_triggers, coinc_idx,
+                                         opt.coinc_threshold, project,
+                                         rho_coinc)
+                logging.info("%d points above coherent threshold",
+                             len(rho_coh))
                 if len(coinc_idx) != 0:
-                    logging.info("Max coherent SNR = %s" % str(max(rho_coh)))
+                    logging.info("Max coherent SNR = %.2f", max(rho_coh))
                     #Find the null snr
                     null, rho_coh, rho_coinc, coinc_idx, coinc_triggers =\
                         coh.null_snr(rho_coh, rho_coinc, snrv=coinc_triggers,
                                      index=coinc_idx)
                     if len(coinc_idx) != 0:
-                        logging.info("Max null SNR = %s" % str(max(null)))
-                    logging.info("%s points above null threshold: "
-                                % str(len(null)))
+                        logging.info("Max null SNR = %.2f", max(null))
+                    logging.info("%d points above null threshold",
+                                 len(null))
 
             # We are now going to find the individual detector chi2 values.
             # To do this it is useful to find the indexes of coinc triggers
             # in the detector frame.
             if len(coinc_idx) != 0:
-                # coinc_idx_det_frame is redefined to account for the cuts to coinc_idx above
+                # coinc_idx_det_frame is redefined to account for the cuts to
+                # coinc_idx above
                 coinc_idx_det_frame = {ifo: coinc_idx + time_delay_idx[ifo]
                                        for ifo in opt.instruments}
-                coherent_ifo_triggers = {ifo: snr[ifo][coinc_idx_det_frame[ifo]]
-                                         for ifo in opt.instruments}
+                coherent_ifo_trigs = {ifo: snr[ifo][coinc_idx_det_frame[ifo]]
+                                      for ifo in opt.instruments}
 
                 # Calculate the power and autochi2 values for the coinc indexes
                 # (this uses the snr timeseries before the time delay, so we
@@ -476,53 +484,58 @@ with ctx:
                 for ifo in opt.instruments:
                     chisq[ifo], chisq_dof[ifo] = power_chisq.values(
                         corr_dict[ifo],
-                        coherent_ifo_triggers[ifo] / norm_dict[ifo],
-                        norm_dict[ifo],
-                        stilde[ifo].psd,
+                        coherent_ifo_trigs[ifo] / norm_dict[ifo],
+                        norm_dict[ifo], stilde[ifo].psd,
                         coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start,
                         template)
 
                 # Calculate network chisq value
                 network_chisq_dict = coh.network_chisq(chisq, chisq_dof, 
-                                                       coherent_ifo_triggers)
+                                                       coherent_ifo_trigs)
 
                 # Calculate chisq reweighted SNR
                 if nifo > 2:
-                    reweighted_snr = coh.pycbc_reweight_snr(rho_coh,
-                                                            network_chisq_dict)
+                    reweighted_snr = coh.reweighted_snr(rho_coh,
+                                                        network_chisq_dict)
                     # Calculate null reweighted SNR
                     reweighted_snr = coh.reweight_snr_by_null(reweighted_snr,
                                                               null)
                 elif nifo == 2:
-                    reweighted_snr = coh.pycbc_reweight_snr(rho_coinc,
-                                                            network_chisq_dict)
+                    reweighted_snr = coh.reweighted_snr(rho_coinc,
+                                                        network_chisq_dict)
                 else:
-                    reweighted_snr = coh.pycbc_reweight_snr(
-                        abs(snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]]), network_chisq_dict)
+                    rho_sngl = abs(snr[opt.instruments[0]]
+                                      [coinc_idx_det_frame[opt.instruments[0]]]
+                                      )
+                    reweighted_snr = coh.reweighted_snr(rho_sngl,
+                                                        network_chisq_dict)
 
                 # Need all out vals to be the same length. This means the
                 # entries that are single values need to be repeated once
                 # per event.
                 num_events = len(reweighted_snr)
-                # the output will only be possible if len(networkchi2) == num_events
 
+                # the output will only be possible if
+                # len(networkchi2) == num_events
                 for ifo in opt.instruments:
-                    ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
-                        bank_chisq.values(template, stilde[ifo].psd, stilde[ifo],
-                                          coherent_ifo_triggers[ifo] /
-                                          norm_dict[ifo], norm_dict[ifo],
-                                          coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start)
+                    (ifo_out_vals['bank_chisq'],
+                     ifo_out_vals['bank_chisq_dof']) = bank_chisq.values(
+                        template, stilde[ifo].psd, stilde[ifo],
+                        coherent_ifo_trigs[ifo] / norm_dict[ifo],
+                        norm_dict[ifo],
+                        coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start)
                     ifo_out_vals['cont_chisq'] = autochisq.values(
                         snr[ifo] / norm_dict[ifo], coinc_idx_det_frame[ifo],
                         template, stilde[ifo].psd, norm_dict[ifo],
                         stilde=stilde[ifo], low_frequency_cutoff=flow)
                     ifo_out_vals['chisq'] = chisq[ifo]
                     ifo_out_vals['chisq_dof'] = chisq_dof[ifo]
-                    ifo_out_vals['time_index'] = coinc_idx_det_frame[ifo] + \
-                        stilde[ifo].cumulative_index
-                    ifo_out_vals['snr'] = coherent_ifo_triggers[ifo]
+                    ifo_out_vals['time_index'] = \
+                        coinc_idx_det_frame[ifo] + stilde[ifo].cumulative_index
+                    ifo_out_vals['snr'] = coherent_ifo_trigs[ifo]
                     # IFO is stored as an int
-                    ifo_out_vals['ifo'] = [event_mgr.ifo_dict[ifo]] * num_events
+                    ifo_out_vals['ifo'] = \
+                        [event_mgr.ifo_dict[ifo]] * num_events
                     event_mgr.add_template_events_to_ifo(
                         ifo, ifo_names, [ifo_out_vals[n] for n in ifo_names])
                 if nifo>2:
@@ -532,17 +545,20 @@ with ctx:
                     network_out_vals['coherent_snr'] = np.real(rho_coinc)
                 else:
                     network_out_vals['coherent_snr'] = \
-                        abs(snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]])
+                        abs(snr[opt.instruments[0]]
+                                [coinc_idx_det_frame[opt.instruments[0]]])
                 network_out_vals['reweighted_snr'] = reweighted_snr
-                network_out_vals['my_network_chisq'] = np.real(network_chisq_dict)
+                network_out_vals['my_network_chisq'] = \
+                    np.real(network_chisq_dict)
 
                 network_out_vals['time_index'] = \
                     coinc_idx+stilde[ifo].cumulative_index
                 network_out_vals['nifo'] = [nifo] * num_events
                 network_out_vals['ra'] = [opt.ra] * num_events
                 network_out_vals['dec'] = [opt.dec] * num_events
-                event_mgr.add_template_events_to_network( network_names,
-                                [network_out_vals[n] for n in network_names])
+                event_mgr.add_template_events_to_network(
+                    network_names,
+                    [network_out_vals[n] for n in network_names])
         event_mgr.cluster_template_network_events(
             "time_index",
             "coherent_snr",
