@@ -1180,8 +1180,10 @@ class FieldArray(numpy.recarray):
             dtype = list(columns.items())
         # get the values
         if _default_types_status['ilwd_as_int']:
+            # columns like `process:process_id` have corresponding attributes
+            # with names that are only the part after the colon, so we split
             input_array = \
-                [tuple(getattr(row, col) if dt != 'ilwd:char'
+                [tuple(getattr(row, col.split(':')[-1]) if dt != 'ilwd:char'
                        else int(getattr(row, col))
                        for col,dt in columns.items())
                  for row in table]
