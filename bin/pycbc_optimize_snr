@@ -1,24 +1,26 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 """Followup utility to optimize the SNR of a PyCBC Live trigger."""
 
-import os, shutil
+import os
+import shutil
 import argparse, numpy, h5py
 import time
 import types
 import logging
 import tempfile
+from scipy.optimize import differential_evolution, shgo
 import pycbc
-from pycbc import version, waveform
+from pycbc import (
+    DYN_RANGE_FAC, fft, scheme, version, waveform
+)
 from pycbc.types import MultiDetOptionAction, zeros, load_frequencyseries
 from pycbc.filter import matched_filter_core
 import pycbc.waveform.bank
-from pycbc import DYN_RANGE_FAC
 from pycbc.conversions import (
     mchirp_from_mass1_mass2, mtotal_from_mchirp_eta,
     mass1_from_mtotal_eta, mass2_from_mtotal_eta
 )
-from scipy.optimize import differential_evolution, shgo
 from pycbc.io import live
 from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
@@ -123,6 +125,85 @@ def compute_network_snr_pso(v, *argv, **kwargs):
     return nsnr_array
 
 
+def optimize_di(bounds, cli_args, extra_args):
+    bounds = [
+        bounds['mchirp'],
+        bounds['eta'],
+        bounds['spin1z'],
+        bounds['spin2z']
+    ]
+    results = differential_evolution(
+        compute_network_snr,
+        bounds,
+        maxiter=cli_args.di_maxiter,
+        workers=(cli_args.cores or -1),
+        popsize=cli_args.di_popsize,
+        mutation=(0.5, 1),
+        recombination=0.7,
+        callback=callback_func,
+        args=extra_args
+    )
+    return results.x
+
+
+def optimize_shgo(bounds, cli_args, extra_args):
+    bounds = [
+        bounds['mchirp'],
+        bounds['eta'],
+        bounds['spin1z'],
+        bounds['spin2z']
+    ]
+    results = shgo(
+        compute_network_snr,
+        bounds=bounds,
+        args=extra_args,
+        iters=args.shgo_iters,
+        n=args.shgo_samples,
+        sampling_method="sobol"
+    )
+    return results.x
+
+
+def optimize_pso(bounds, cli_args, extra_args):
+    options = {
+        'c1': cli_args.pso_c1,
+        'c2': cli_args.pso_c2,
+        'w': cli_args.pso_w
+    }
+    min_bounds = [
+        bounds['mchirp'][0],
+        bounds['eta'][0],
+        bounds['spin1z'][0],
+        bounds['spin2z'][0]
+    ]
+    max_bounds = [
+        bounds['mchirp'][1],
+        bounds['eta'][1],
+        bounds['spin1z'][1],
+        bounds['spin2z'][1]
+    ]
+    optimizer = ps.single.GlobalBestPSO(
+        n_particles=cli_args.pso_particles,
+        dimensions=4,
+        options=options,
+        bounds=(min_bounds, max_bounds)
+    )
+    _, results = optimizer.optimize(
+        compute_network_snr_pso,
+        iters=cli_args.pso_iters,
+        n_processes=cli_args.cores,
+        args=extra_args
+    )
+    return results
+
+
+optimize_funcs = {
+    'differential_evolution': optimize_di,
+    'shgo': optimize_shgo,
+    'pso': optimize_pso
+}
+
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
                     version=version.git_verbose_msg)
@@ -160,7 +241,7 @@ parser.add_argument('--output-path', required=True,
 parser.add_argument('--cores', type=int,
                     help='Restrict calculation to given number of CPU cores')
 parser.add_argument('--optimizer', type=str, default='differential_evolution',
-                    choices=['differential_evolution', 'shgo', 'pso'],
+                    choices=sorted(optimize_funcs),
                     help='The optimizer to use, differential_evolution, shgo or pso')
 parser.add_argument('--di-maxiter', type=int, default=50,
                     help='Only relevant for --optimizer differential_evolution: '
@@ -192,6 +273,9 @@ parser.add_argument('--pso-w', type=float, default=0.01,
                     help='Only relevant for --optimizer pso: '
                     'The hyperparameter w: the intertia parameter.')
 
+scheme.insert_processing_option_group(parser)
+fft.insert_fft_option_group(parser)
+
 # Input checking
 args = parser.parse_args()
 if args.snr_threshold != 4:
@@ -200,6 +284,11 @@ if args.optimizer == 'pso' and ps == None:
     parser.error('You need to install pyswarms to use the pso optimizer.')
 pycbc.init_logging(args.verbose)
 
+scheme.verify_processing_options(args, parser)
+fft.verify_fft_options(args, parser)
+
+scheme_context = scheme.from_cli(args)
+fft.from_cli(args)
 
 logging.info('Starting optimize SNR')
 
@@ -237,66 +326,45 @@ sample_rate = fp['sample_rate'][()]
 
 extra_args = [data, coinc_times, coinc_ifos, flen,
               approximant, flow, f_end, delta_f, sample_rate]
-extra_kwargs = {}
-extra_kwargs['args'] = extra_args
 
-mass1 = fp['mass1'][()]
-mass2 = fp['mass2'][()]
-spin1z = fp['spin1z'][()]
-spin2z = fp['spin2z'][()]
-mchirp = mchirp_from_mass1_mass2(mass1, mass2)
+mchirp = mchirp_from_mass1_mass2(
+    fp['mass1'][()],
+    fp['mass2'][()]
+)
 minchirp = mchirp * (1 - mchirp / 50.0)
 maxchirp = mchirp * (1 + mchirp / 50.0)
 minchirp = 1 if minchirp < 1 else minchirp
 maxchirp = 80 if maxchirp > 80 else maxchirp
 
-# Different optimizers have different bound definitions
-if args.optimizer == 'pso':
-    min_bound = [minchirp, 0.01, -0.9, -0.9]
-    max_bound = [maxchirp, 0.2499, 0.9, 0.9]
-    bounds = (min_bound, max_bound)
-else:
-    bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
+# boundary of the optimization space (dict of (min, max) tuples)
+bounds = {
+    'mchirp': (minchirp, maxchirp),
+    'eta': (0.01, 0.2499),
+    'spin1z': (-0.9, 0.9),
+    'spin2z': (-0.9, 0.9)
+}
 
-    
-logging.info('Starting optimization')
+with scheme_context:
+    logging.info('Starting optimization')
 
-if args.optimizer == 'differential_evolution':
-    results = differential_evolution(compute_network_snr, bounds,
-                                 maxiter=args.di_maxiter, workers=(args.cores or -1),
-                                 popsize=args.di_popsize, mutation=(0.5,1),
-                                 recombination=0.7, callback=callback_func,
-                                 args=extra_args)
-elif args.optimizer == 'shgo':
-    results = shgo(compute_network_snr, bounds=bounds, args=extra_args,
-                iters=args.shgo_iters, n=args.shgo_samples, sampling_method="sobol")
-elif args.optimizer == 'pso':
-    options = {'c1': args.pso_c1, 'c2': args.pso_c2, 'w':args.pso_w}
-    optimizer = ps.single.GlobalBestPSO(n_particles=args.pso_particles,
-                                        dimensions=4, options=options, bounds=bounds)
-    cost, results = optimizer.optimize(compute_network_snr_pso, iters=args.pso_iters,
-                                       n_processes=args.cores, **extra_kwargs)
+    optimize_func = optimize_funcs[args.optimizer]
+    opt_params = optimize_func(bounds, args, extra_args)
 
-logging.info('Optimization complete')
+    logging.info('Optimization complete')
 
-if args.optimizer == 'pso':
-    opt_params = results
-else:
-    opt_params = results.x
+    fup_ifos = set(ifos) - set(coinc_ifos)
+    for ifo in fup_ifos:
+        coinc_times[ifo] = coinc_times[coinc_ifos[0]]
+
+    extra_args[2] = ifos
+
+    _, snr_series_dict = compute_network_snr_core(opt_params, *extra_args)
 
 mtotal = mtotal_from_mchirp_eta(opt_params[0], opt_params[1])
 mass1 = mass1_from_mtotal_eta(mtotal, opt_params[1])
 mass2 = mass2_from_mtotal_eta(mtotal, opt_params[1])
 spin1z = opt_params[2]
 spin2z = opt_params[3]
-
-fup_ifos = set(ifos) - set(coinc_ifos)
-for ifo in fup_ifos:
-    coinc_times[ifo] = coinc_times[coinc_ifos[0]]
-
-extra_args[2] = ifos
-
-_, snr_series_dict = compute_network_snr_core(opt_params, *extra_args)
 
 # Prepare for GraceDB upload
 coinc_results = {}
