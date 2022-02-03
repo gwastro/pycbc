@@ -203,8 +203,8 @@ if args.optimizer == 'pso' and ps == None:
     parser.error('You need to install pyswarms to use the pso optimizer.')
 pycbc.init_logging(args.verbose)
 
-fft.verify_fft_options(opt,parser)
-fft.from_cli(opt)
+fft.verify_fft_options(args, parser)
+fft.from_cli(args)
 
 
 logging.info('Starting optimize SNR')
