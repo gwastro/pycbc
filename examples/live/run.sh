@@ -111,6 +111,7 @@ echo -e "\\n\\n>> [`date`] Running PyCBC Live"
 mpirun \
 -host localhost,localhost \
 -n 2 \
+--bind-to none \
 -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
 python -m mpi4py `which pycbc_live` \
@@ -181,7 +182,15 @@ python -m mpi4py `which pycbc_live` \
 --src-class-mchirp-to-delta 0.01 \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
+--run-snr-optimization \
 --verbose
+
+# cat the logs of pycbc_optimize_snr so we can check them
+for opt_snr_log in `ls output/*optimize_snr.log`
+do
+    echo -e "\\n\\n>> [`date`] Showing log of SNR optimizer, ${opt_snr_log}"
+    cat ${opt_snr_log}
+done
 
 echo -e "\\n\\n>> [`date`] Checking results"
 ./check_results.py \
