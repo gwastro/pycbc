@@ -299,10 +299,9 @@ for ifo in ifos:
     data[ifo].psd = load_frequencyseries(args.psd_files[ifo])
 
 fp = h5py.File(args.params_file, 'r')
+original_gid = None
 if 'gid' in fp:
-    original_gid = fp['gid'][()]
-else:
-    original_gid = None
+    original_gid = fp['gid'].asstr()[()]
 if args.enable_gracedb_upload and not original_gid:
     raise RuntimeError('Params must include original gracedb ID in order '
                        'to upload followup!')
@@ -473,7 +472,7 @@ coinc_results['foreground/ifar'] = fp['ifar'][()]
 
 channel_names = {}
 for ifo in fp['channel_names'].keys():
-    channel_names[ifo] = fp['channel_names'][ifo][()]
+    channel_names[ifo] = fp['channel_names'][ifo].asstr()[()]
 
 mc_area_args = load_hdf5_to_dict(fp, 'mc_area_args/')
 

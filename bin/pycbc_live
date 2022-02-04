@@ -353,7 +353,7 @@ class LiveEventManager(object):
                 if self.enable_gracedb_upload:
                     cmd += '--enable-gracedb-upload '
 
-                cmd += '--cores {}'.format(self.fu_cores)
+                cmd += '--cores {} '.format(self.fu_cores)
                 if args.processing_scheme:
                     # we will use the cores for multiple workers of the
                     # optimization routine, so we force the processing scheme
@@ -364,14 +364,15 @@ class LiveEventManager(object):
                     # unlikely to benefit from a processing scheme with more
                     # than 1 thread anyway.
                     opt_scheme = args.processing_scheme.split(':')[0]
-                    cmd += '--processing-scheme {}:1'.format(opt_scheme)
+                    cmd += '--processing-scheme {}:1 '.format(opt_scheme)
 
-                log_fname = \
-                        fname.replace('.xml.gz', '_optimize_snr_log.dat')
+                log_fname = fname.replace('.xml.gz', '_optimize_snr.log')
 
-                cmd += '&> {} '.format(log_fname)
-                logging.info('Running %s', cmd)
-                subprocess.Popen(cmd, shell=True)
+                logging.info('Running %s with log to %s', cmd, log_fname)
+                with open(log_fname, "w") as logfile:
+                    subprocess.Popen(
+                        cmd, shell=True, stdout=logfile, stderr=logfile
+                    )
 
 
     def check_singles(self, results, data_reader, psds, f_low):
