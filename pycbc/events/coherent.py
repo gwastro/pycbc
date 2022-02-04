@@ -114,7 +114,7 @@ def coincident_snr(snr_dict, index, threshold, time_delay_idx):
         survive cuts
     """
     # Restrict the snr timeseries to just the interesting points
-    coinc_triggers = get_coinc_triggers(snr_dict, index, time_delay_index)
+    coinc_triggers = get_coinc_triggers(snr_dict, index, time_delay_idx)
     # Calculate the coincident snr
     snr_array = np.array(
         [coinc_triggers[ifo] for ifo in coinc_triggers.keys()]
@@ -123,12 +123,12 @@ def coincident_snr(snr_dict, index, threshold, time_delay_idx):
     # Apply threshold
     thresh_indexes = rho_coinc > threshold
     index = index[thresh_indexes]
-    coinc_triggers = get_coinc_triggers(snr_dict, index, time_delay_index)
+    coinc_triggers = get_coinc_triggers(snr_dict, index, time_delay_idx)
     rho_coinc = rho_coinc[thresh_indexes]
     return rho_coinc, index, coinc_triggers
 
 
-def get_projection_matrix(f_pluss, f_cross, sigma, projection="standard"):
+def get_projection_matrix(f_plus, f_cross, sigma, projection="standard"):
     """Calculate the matrix that prjects the signal onto the network.
 
     Parameters
@@ -216,8 +216,8 @@ def coherent_snr(
     snr_array = np.array(
         [snr_triggers[ifo] for ifo in sorted(snr_triggers.keys())]
     )
-    x = np.inner(snr_array.conj().transpose(), projection_matrix)
-    rho_coh2 = sum(x.transpose() * snr_array)
+    snr_proj = np.inner(snr_array.conj().transpose(), projection_matrix)
+    rho_coh2 = sum(snr_proj.transpose() * snr_array)
     rho_coh = np.sqrt(rho_coh2)
     # Apply thresholds
     index = index[rho_coh > threshold]
@@ -312,7 +312,7 @@ def null_snr(
     snrv: dict of None (optional; default None)
         Individual detector SNRs. If given will remove triggers that
         fail cut
-   
+
     Returns
     -------
     null: numpy.ndarray
@@ -351,7 +351,7 @@ def null_snr(
 
 def reweight_snr_by_null(network_snr, nullsnr):
     """Re-weight the detection statistic as a function of the null SNR
-    
+
     Parameters
     ----------
     network_snr: dict
@@ -359,7 +359,7 @@ def reweight_snr_by_null(network_snr, nullsnr):
         trigger
     null: numpy.ndarray
         Null snr for each trigger
-    
+
     Returns
     -------
     reweighted_snr: dict
