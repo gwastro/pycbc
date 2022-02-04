@@ -63,6 +63,28 @@ def get_coinc_indexes(idx_dict, time_delay_idx):
     return coinc_idx
 
 
+def get_coinc_triggers(snrs, idx, t_delay_idx):
+    """Returns the coincident triggers from the longer SNR timeseries
+
+    Parameters
+    ----------
+    snrs: dict
+        Dictionary of single detector SNR time series
+    idx: list
+        List of geocentric time indexes of coincident triggers
+    t_delay_idx: dict
+        Dictionary of indexes corresponding to light travel time from
+        geocenter for each detector
+
+    Returns
+    -------
+    coincs: dict
+        Dictionary of coincident trigger SNRs in each detector
+    """
+    coincs = {ifo: snrs[ifo][idx + t_delay_idx[ifo]] for ifo in snrs}
+    return coincs
+
+
 def coincident_snr(snr_dict, index, threshold, time_delay_idx):
     """Calculate the coincident SNR for all coinciden triggers above
     threshold
@@ -92,10 +114,7 @@ def coincident_snr(snr_dict, index, threshold, time_delay_idx):
         survive cuts
     """
     # Restrict the snr timeseries to just the interesting points
-    coinc_triggers = {
-        ifo: snr_dict[ifo][index + time_delay_idx[ifo]]
-        for ifo in snr_dict.keys()
-    }
+    coinc_triggers = get_coinc_triggers(snr_dict, index, time_delay_index)
     # Calculate the coincident snr
     snr_array = np.array(
         [coinc_triggers[ifo] for ifo in coinc_triggers.keys()]
@@ -104,23 +123,20 @@ def coincident_snr(snr_dict, index, threshold, time_delay_idx):
     # Apply threshold
     thresh_indexes = rho_coinc > threshold
     index = index[thresh_indexes]
-    coinc_triggers = {
-        ifo: snr_dict[ifo][index + time_delay_idx[ifo]]
-        for ifo in snr_dict.keys()
-    }
+    coinc_triggers = get_coinc_triggers(snr_dict, index, time_delay_index)
     rho_coinc = rho_coinc[thresh_indexes]
     return rho_coinc, index, coinc_triggers
 
 
-def get_projection_matrix(fp, fc, sigma, projection="standard"):
+def get_projection_matrix(f_pluss, f_cross, sigma, projection="standard"):
     """Calculate the matrix that prjects the signal onto the network.
 
     Parameters
     ----------
-    fp: dict
+    f_plus: dict
         Dictionary containing the plus antenna response factors for
         each IFO
-    fc: dict
+    f_cross: dict
         Dictionary containing the cross antenna response factors for
         each IFO
     sigma: dict
@@ -137,8 +153,8 @@ def get_projection_matrix(fp, fc, sigma, projection="standard"):
     """
     # Calculate the weighted antenna responses
     keys = sorted(sigma.keys())
-    wp = np.array([sigma[ifo] * fp[ifo] for ifo in keys])
-    wc = np.array([sigma[ifo] * fc[ifo] for ifo in keys])
+    wp = np.array([sigma[ifo] * f_plus[ifo] for ifo in keys])
+    wc = np.array([sigma[ifo] * f_cross[ifo] for ifo in keys])
 
     # Get the projection matrix associated with the requested projection
     if projection == "standard":
@@ -154,7 +170,7 @@ def get_projection_matrix(fp, fc, sigma, projection="standard"):
             + np.outer(wc, wc)
             + (np.outer(wp, wc) - np.outer(wc, wp)) * 1j
         ) / (np.dot(wp, wp) + np.dot(wc, wc))
-    elif projectioni == "right":
+    elif projection == "right":
         projection_matrix = (
             np.outer(wp, wp)
             + np.outer(wc, wc)
@@ -167,7 +183,7 @@ def get_projection_matrix(fp, fc, sigma, projection="standard"):
 
 
 def coherent_snr(
-    snr_triggers, index, threshold, projection_matrix, coinc_snr=[]
+    snr_triggers, index, threshold, projection_matrix, coinc_snr=None
 ):
     """Calculate the coherent SNR for a given set of triggers
 
@@ -192,7 +208,7 @@ def coherent_snr(
         Indexes that survive cuts
     snrv: dict
         Dictionary of individual deector triggers that survive cuts
-    coinc_snr: list
+    coinc_snr: list or None (default: None)
         The coincident SNR values for triggers surviving the coherent
         cut
     """
@@ -205,6 +221,7 @@ def coherent_snr(
     rho_coh = np.sqrt(rho_coh2)
     # Apply thresholds
     index = index[rho_coh > threshold]
+    coinc_snr = [] if coinc_snr is None else coinc_snr
     if coinc_snr:
         coinc_snr = coinc_snr[rho_coh > threshold]
     snrv = {
@@ -248,16 +265,24 @@ def network_chisq(chisq, chisq_dof, snr_dict):
     return net_chisq
 
 
-def reweighted_snr(netwk_snr, netwk_chisq, a=3, b=1.0 / 6.0):
+def reweighted_snr(netwk_snr, netwk_chisq, idx1=3, idx2=1.0 / 6.0):
+    """Return the chi-squeared re-weighted SNR statistic
+
+    Parameters
+    ----------
+    netwk_snr: numpy.ndarray
+        Array of coherent SNRs
+    netwk_chisq: numpy.ndarray
+        Network chisq values corresponding to each trigger
+
+    Returns
+    -------
+    rw_snr: numpy.ndarray
+        Array of re-weighted SNRs
     """
-    Output: reweighted_snr: Reweighted SNR for each trigger
-    Input:  netwk_snr:  Dictionary of coincident or coherent SNR for each
-                        trigger
-            netwk_chisq: A chisq value for each trigger
-    """
-    denom = ((1 + netwk_chisq) ** a) / 2
-    reweighted_snr = netwk_snr / denom ** b
-    return reweighted_snr
+    denom = ((1 + netwk_chisq) ** idx1) / 2
+    rw_snr = netwk_snr / denom ** idx2
+    return rw_snr
 
 
 def null_snr(
