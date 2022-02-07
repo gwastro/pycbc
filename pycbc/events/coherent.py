@@ -153,29 +153,29 @@ def get_projection_matrix(f_plus, f_cross, sigma, projection="standard"):
     """
     # Calculate the weighted antenna responses
     keys = sorted(sigma.keys())
-    wp = np.array([sigma[ifo] * f_plus[ifo] for ifo in keys])
-    wc = np.array([sigma[ifo] * f_cross[ifo] for ifo in keys])
+    w_p = np.array([sigma[ifo] * f_plus[ifo] for ifo in keys])
+    w_c = np.array([sigma[ifo] * f_cross[ifo] for ifo in keys])
 
     # Get the projection matrix associated with the requested projection
     if projection == "standard":
-        denominator = np.dot(wp, wp) * np.dot(wc, wc) - np.dot(wp, wc) ** 2
+        denom = np.dot(w_p, w_p) * np.dot(w_c, w_c) - np.dot(w_p, w_c) ** 2
         projection_matrix = (
-            np.dot(wc, wc) * np.outer(wp, wp)
-            + np.dot(wp, wp) * np.outer(wc, wc)
-            - np.dot(wp, wc) * (np.outer(wp, wc) + np.outer(wc, wp))
-        ) / denominator
+            np.dot(w_c, w_c) * np.outer(w_p, w_p)
+            + np.dot(w_p, w_p) * np.outer(w_c, w_c)
+            - np.dot(w_p, w_c) * (np.outer(w_p, w_c) + np.outer(w_c, w_p))
+        ) / denom
     elif projection == "left":
         projection_matrix = (
-            np.outer(wp, wp)
-            + np.outer(wc, wc)
-            + (np.outer(wp, wc) - np.outer(wc, wp)) * 1j
-        ) / (np.dot(wp, wp) + np.dot(wc, wc))
+            np.outer(w_p, w_p)
+            + np.outer(w_c, w_c)
+            + (np.outer(w_p, w_c) - np.outer(w_c, w_p)) * 1j
+        ) / (np.dot(w_p, w_p) + np.dot(w_c, w_c))
     elif projection == "right":
         projection_matrix = (
-            np.outer(wp, wp)
-            + np.outer(wc, wc)
-            + (np.outer(wc, wp) - np.outer(wp, wc)) * 1j
-        ) / (np.dot(wp, wp) + np.dot(wc, wc))
+            np.outer(w_p, w_p)
+            + np.outer(w_c, w_c)
+            + (np.outer(w_c, w_p) - np.outer(w_p, w_c)) * 1j
+        ) / (np.dot(w_p, w_p) + np.dot(w_c, w_c))
     else:
         raise ValueError("Unknown projection: {}".format(projection))
 
