@@ -367,5 +367,5 @@ def reweight_snr_by_null(network_snr, nullsnr):
     """
     nullsnr = np.array(nullsnr)
     nullsnr[nullsnr <= 4.25] = 4.25
-    reweighted_snr = network_snr / (nullsnr - 3.25)
-    return reweighted_snr
+    rw_snr = network_snr / (nullsnr - 3.25)
+    return rw_snr
