@@ -16,8 +16,8 @@ wget -nc ${CONFIG_URL}/${INJ_FILE}
 
 # Generate mock data
 for IFO in 'H1' 'L1' 'V1'; do
-    echo -e "\\n\\n>> [`date`] generating mock data for ${IFO}"
-    `which pycbc_condition_strain` \
+    echo -e "\\n\\n>> [`date`] Generating mock data for ${IFO}"
+    pycbc_condition_strain \
         --fake-strain zeroNoise \
         --sample-rate 4096 \
         --gps-start-time ${GPS_START} \
@@ -43,7 +43,7 @@ wget -nc ${CONFIG_URL}/${BANK_VETO_FILE}
 
 for POL in 'standard' 'left' 'right' 'left+right'; do
     echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral with ${POL} projection"
-    `which pycbc_multi_inspiral` \
+    pycbc_multi_inspiral \
         --projection ${POL} \
         --processing-scheme mkl \
         --instruments H1 L1 V1 \
