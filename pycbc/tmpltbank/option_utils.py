@@ -21,7 +21,7 @@ import numpy
 import os
 from pycbc.tmpltbank.lambda_mapping import get_ethinca_orders, pycbcValidOrdersHelpDescriptions
 from pycbc import pnutils
-from pycbc.tmpltbank.em_progenitors import load_ns_sequence
+from pycbc.neutron_stars import load_ns_sequence
 from pycbc.types import positive_float, nonnegative_float
 
 class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):

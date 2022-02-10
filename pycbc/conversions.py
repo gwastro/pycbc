@@ -28,12 +28,16 @@ from other parameters. All exposed functions in this module's namespace return
 one parameter given a set of inputs.
 """
 
+import logging
+import sys
 import copy
 import numpy
 import lal
+import numpy as np
 from pycbc.detector import Detector
 import pycbc.cosmology
 from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
+from pycbc.neutron_stars import ns_g_mass_to_ns_compactness, ns_g_mass_to_ns_b_mass
 
 pykerr = pycbc.libutils.import_optional('pykerr')
 lalsim = pycbc.libutils.import_optional('lalsimulation')
@@ -1539,3 +1543,82 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'nltides_gw_phase_diff_isco', 'spin_from_pulsar_freq',
            'freqlmn_from_other_lmn', 'taulmn_from_other_lmn'
           ]
+
+##############################################################################
+# NS-BH merger remnant mass [Foucart, Hinderer, Nissanke PRD 98, 081501(R)   #
+# (2018)].                                                                   #
+#                                                                            #
+# * THIS ASSUMES THE NS SPIN IS 0 (the user is warned about this).           #
+# * Physical parameters passed to remnant_mass (see sanity checks below)     #
+#   must not be unphysical.                                                  #
+# * Tilted BH spin cases are handled by using rISSO(chi,incl) where rISCO    #
+#   appears in the formula. This approximation was suggested in Stone, Loeb, #
+#   Berger, PRD 87, 084053 (2013) for the previous NS-BH remnant mass fit of #
+#   Foucart, PRD 86, 124007 (2012).                                          #
+##############################################################################
+def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
+    """
+    Function that determines the remnant disk mass of
+    an NS-BH system using the fit to numerical-relativity
+    results discussed in Foucart, Hinderer, Nissanke PRD 98, 081501(R) (2018).
+
+    Parameters
+    -----------
+    eta: float
+        the symmetric mass ratio of the binary
+    ns_g_mass: float
+        NS gravitational mass (in solar masses)
+    ns_sequence: 3D-array
+        contains the sequence data in the form NS gravitational
+         mass (in solar masses), NS baryonic mass (in solar
+         masses), NS compactness (dimensionless)
+    chi: float
+        the BH dimensionless spin parameter
+    incl: float
+        the inclination angle between the BH spin and the orbital
+        angular momentum in radians
+
+    Returns
+    ----------
+    remnant_mass: float
+        The remnant mass in solar masses
+    """
+
+    # Sanity checks on eta and chi
+    if not (eta>0. and eta<=0.25 and abs(chi)<=1 and ns_g_mass>0):
+        err_msg = "The BH spin magnitude must be <= 1,"
+        err_msg += "eta must be between 0 and 0.25,"
+        err_msg += "and the NS mass must be positive."
+        logging.error(err_msg)
+        info_msg = "The function remnant_mass was launched with"
+        info_msg += "ns_mass={0}, eta={1}, chi={2},"
+        info_msg += "inclination={3}\n'.format(ns_g_mass, eta, chi, incl)"
+        logging.info(info_msg)
+        sys.exit(1)
+        raise Exception('Unphysical parameters!')
+
+    # NS compactness and rest mass
+    ns_compactness = ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence)
+    ns_b_mass = ns_g_mass_to_ns_b_mass(ns_g_mass, ns_sequence)
+
+    # Fit parameters and tidal correction
+    alpha = 0.406
+    beta  = 0.139
+    gamma = 0.255
+    delta = 1.761
+    # The remnant mass over the NS rest mass
+    remnant_mass = (max(alpha/eta**(1./3.)*(1 - 2*ns_compactness)
+                        - beta*ns_compactness / eta*PG_ISSO_solver(chi, incl)
+                        + gamma, 0.)) ** delta
+    # Convert to solar masses
+    remnant_mass = remnant_mass*ns_b_mass
+
+    return remnant_mass
+
+
+#############################################################################
+# Vectorized version of remnant_mass. The third argument (NS equilibrium    #
+# sequence) is excluded from vectorisation.                                 #
+#############################################################################
+remnant_masses = np.vectorize(remnant_mass)
+remnant_masses.excluded.add(2)
