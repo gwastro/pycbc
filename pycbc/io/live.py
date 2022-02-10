@@ -400,15 +400,6 @@ class SingleCoincForGraceDB(object):
                 gracedb.writeLabel(gid, 'INJ')
                 logging.info("Tagging event %s as an injection", gid)
 
-            # upload PSDs. Note that the PSDs are already stored in the
-            # original event file and we just upload a copy of that same file
-            # here. This keeps things as they were in O2 and can be removed
-            # after updating the follow-up infrastructure
-            psd_fname = 'psd.xml.gz' if fname.endswith('.gz') else 'psd.xml'
-            gracedb.writeLog(gid, "PyCBC PSD estimate from the time of event",
-                             psd_fname, open(fname, "rb").read(), "psd")
-            logging.info("Uploaded PSDs for event %s", gid)
-
             # add info for tracking code version
             gracedb_tag_with_version(gracedb, gid)
 
