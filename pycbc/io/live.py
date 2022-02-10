@@ -322,6 +322,35 @@ class SingleCoincForGraceDB(object):
         # as GraceDB operations can fail later
         self.save(fname)
 
+        gid = None
+        try:
+            # try connecting to GraceDB
+            gracedb = GraceDb(gracedb_server) \
+                    if gracedb_server is not None else GraceDb()
+
+            # create GraceDB event
+            group = 'Test' if testing else 'CBC'
+            r = gracedb.createEvent(group, "pycbc", fname, search).json()
+            gid = r["graceid"]
+            logging.info("Uploaded event %s", gid)
+
+            if self.is_hardware_injection:
+                gracedb.writeLabel(gid, 'INJ')
+                logging.info("Tagging event %s as an injection", gid)
+
+            # add info for tracking code version
+            gracedb_tag_with_version(gracedb, gid)
+
+            extra_strings = [] if extra_strings is None else extra_strings
+            for text in extra_strings:
+                gracedb.writeLog(gid, text, tag_name=['analyst_comments'])
+        except Exception as exc:
+            logging.error('Something failed during the upload/annotation of '
+                          'event %s on GraceDB. The event may not have been '
+                          'uploaded!', fname)
+            logging.error(str(exc))
+
+        # plot the SNR timeseries and noise PSDs
         if self.snr_series is not None:
             if fname.endswith('.xml.gz'):
                 snr_series_fname = fname.replace('.xml.gz', '.hdf')
@@ -345,7 +374,6 @@ class SingleCoincForGraceDB(object):
                           + self.time_offset)
                     pl.plot([mt - ref_time], [snr], c=ifo_color(ifo),
                             marker='x')
-
             pl.legend()
             pl.xlabel('GPS time from {:d} (s)'.format(ref_time))
             pl.ylabel('SNR')
@@ -353,7 +381,7 @@ class SingleCoincForGraceDB(object):
             pl.close()
 
             pl.figure()
-            for ifo in sorted(self.snr_series):
+            for ifo in sorted(self.psds):
                 # Undo dynamic range factor
                 curr_psd = self.psds[ifo].astype(numpy.float64)
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
@@ -384,57 +412,49 @@ class SingleCoincForGraceDB(object):
             fig.savefig(prob_plot_fname)
             pl.close()
 
-        gid = None
-        try:
-            # try connecting to GraceDB
-            gracedb = GraceDb(gracedb_server) \
-                    if gracedb_server is not None else GraceDb()
+        # upload SNR series in HDF format and plots
+        if gid is not None and self.snr_series is not None:
+            try:
+                gracedb.writeLog(
+                    gid, 'SNR timeseries HDF file upload',
+                    filename=snr_series_fname
+                )
+                gracedb.writeLog(
+                    gid, 'SNR timeseries plot upload',
+                    filename=snr_series_plot_fname,
+                    tag_name=['background'],
+                    displayName=['SNR timeseries']
+                )
+                gracedb.writeLog(
+                    gid, 'PSD plot upload',
+                    filename=psd_series_plot_fname,
+                    tag_name=['psd'], displayName=['PSDs']
+                )
+            except Exception as exc:
+                logging.error('Failed to upload plots for %s', gid)
+                logging.error(str(exc))
 
-            # create GraceDB event
-            group = 'Test' if testing else 'CBC'
-            r = gracedb.createEvent(group, "pycbc", fname, search).json()
-            gid = r["graceid"]
-            logging.info("Uploaded event %s", gid)
-
-            if self.is_hardware_injection:
-                gracedb.writeLabel(gid, 'INJ')
-                logging.info("Tagging event %s as an injection", gid)
-
-            # add info for tracking code version
-            gracedb_tag_with_version(gracedb, gid)
-
-            extra_strings = [] if extra_strings is None else extra_strings
-            for text in extra_strings:
-                gracedb.writeLog(gid, text, tag_name=['analyst_comments'])
-
-            # upload SNR series in HDF format and plots
-            if self.snr_series is not None:
-                gracedb.writeLog(gid, 'SNR timeseries HDF file upload',
-                                 filename=snr_series_fname)
-                gracedb.writeLog(gid, 'SNR timeseries plot upload',
-                                 filename=snr_series_plot_fname,
-                                 tag_name=['background'],
-                                 displayName=['SNR timeseries'])
-                gracedb.writeLog(gid, 'PSD plot upload',
-                                 filename=psd_series_plot_fname,
-                                 tag_name=['psd'], displayName=['PSDs'])
-
-            # upload source probabilities in json format and plot
-            if self.probabilities is not None:
-                gracedb.writeLog(gid, 'source probabilities JSON file upload',
-                                 filename=prob_fname, tag_name=['em_follow'])
+        # upload source probabilities in JSON format and plot
+        if gid is not None and self.probabilities is not None:
+            try:
+                gracedb.writeLog(
+                    gid, 'Source probabilities JSON file upload',
+                    filename=prob_fname, tag_name=['em_follow']
+                )
                 logging.info('Uploaded source probabilities for event %s', gid)
-                gracedb.writeLog(gid, 'source probabilities plot upload',
-                                 filename=prob_plot_fname,
-                                 tag_name=['em_follow'])
+                gracedb.writeLog(
+                    gid, 'Source probabilities plot upload',
+                    filename=prob_plot_fname,
+                    tag_name=['em_follow']
+                )
                 logging.info('Uploaded source probabilities pie chart for '
                              'event %s', gid)
-
-        except Exception as exc:
-            logging.error('Something failed during the upload/annotation of '
-                          'event %s on GraceDB. The event may not have been '
-                          'uploaded!', fname)
-            logging.error(str(exc))
+            except Exception as exc:
+                logging.error(
+                    'Failed to upload source probability results for %s',
+                    gid
+                )
+                logging.error(str(exc))
 
         return gid
 
