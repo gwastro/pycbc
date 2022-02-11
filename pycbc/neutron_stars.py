@@ -41,7 +41,7 @@ def load_ns_sequence(eos_name):
     ns_sequence = []
 
     if eos_name == '2H':
-        ns_sequence_path = os.path.join(pycbc.tmpltbank.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
+        ns_sequence_path = os.path.join(pycbc.tmpltbank.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat') 
         ns_sequence = np.loadtxt(ns_sequence_path)
     else:
         err_msg = "Only the 2H EOS is currently supported."
