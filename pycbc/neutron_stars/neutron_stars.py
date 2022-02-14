@@ -1,7 +1,7 @@
 from __future__ import division
 import math
 import numpy as np
-import pycbc.tmpltbank
+import pycbc
 import os.path
 import scipy.interpolate
 import logging
@@ -41,7 +41,8 @@ def load_ns_sequence(eos_name):
     ns_sequence = []
 
     if eos_name == '2H':
-        ns_sequence_path = os.path.join(pycbc.tmpltbank.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
+        ns_sequence_path = os.path.join(pycbc.neutron_stars.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
+        print(ns_sequence_path)
         ns_sequence = np.loadtxt(ns_sequence_path)
     else:
         err_msg = "Only the 2H EOS is currently supported."
