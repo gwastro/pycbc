@@ -37,7 +37,8 @@ import numpy as np
 from pycbc.detector import Detector
 import pycbc.cosmology
 from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
-from pycbc.neutron_stars import ns_g_mass_to_ns_compactness, ns_g_mass_to_ns_b_mass
+from pycbc.neutron_stars import (
+    ns_g_mass_to_ns_compactness, ns_g_mass_to_ns_b_mass, PG_ISSO_solver)
 
 pykerr = pycbc.libutils.import_optional('pykerr')
 lalsim = pycbc.libutils.import_optional('lalsimulation')
