@@ -19,6 +19,7 @@
 import logging
 import time
 from collections import defaultdict
+from copy import copy
 import argparse
 import numpy as np
 from pycbc import (
@@ -335,12 +336,12 @@ with ctx:
             if not analyse_segment: continue
             logging.info(
                 "Analyzing segment %d/%d", s_num + 1, len(segments[ifo]))
-            snrv_dict = {}
-            norm_dict = {}
-            corr_dict = {}
-            snr_ts={}
-            idx={}
-            coinc_idx = np.array([])
+            snr_dict = dict.fromkeys(args.instruments)
+            norm_dict = dict.fromkeys(args.instruments)
+            corr_dict = dict.fromkeys(args.instruments)
+            idx = dict.fromkeys(args.instruments)
+            snrv_dict = dict.fromkeys(args.instruments)
+            snr = dict.fromkeys(args.instruments)
             ifo_list = args.instruments[:]
             for ifo in args.instruments:
                 logging.info(
@@ -348,27 +349,19 @@ with ctx:
                 # No clustering in the coherent search until the end.
                 # The correlation vector is the FFT of the snr (so inverse FFT
                 # it to get the snr). 
-                (snr_ts[ifo], norm_dict[ifo], corr_dict[ifo], idx[ifo],
-                 snrv_dict[ifo]) = \
+                snr_ts, norm, corr, ind, snrv = \
                      matched_filter[ifo].matched_filter_and_cluster(
                          s_num, template.sigmasq(stilde[ifo].psd), window=0)
-
-                #List of ifos with triggers
-                if len(idx[ifo]) == 0: ifo_list.remove(ifo)
-
+                snr_dict[ifo] = (
+                        snr_ts[matched_filter[ifo].segments[s_num].analyze]
+                        * norm)
+                norm_dict[ifo] = copy(norm)
+                corr_dict[ifo] = copy(corr)
+                idx[ifo] = copy(ind)
+                snrv_dict[ifo] = copy(snrv)
+                snr[ifo] = snrv * norm
             # Move onto next segment if there are no triggers.
             if len(ifo_list)==0: continue
-
-            # Find the data we need to analyse
-            analyse_data = {
-                ifo: matched_filter[ifo].segments[s_num].analyze
-                for ifo in args.instruments}
-
-            # Restrict the snr timeseries to just this section
-            snr = {
-                ifo: snr_ts[ifo][analyse_data[ifo]] * norm_dict[ifo]
-                for ifo in args.instruments}
-
             # Save the indexes of triggers (if we have any)
             # Even if we have none, need to keep an empty dictionary.
             # Only do this is idx doesn't get time shifted out of the time
@@ -376,7 +369,7 @@ with ctx:
             idx_dict = {
                 ifo: idx[ifo][np.logical_and(
                     idx[ifo] > time_delay_idx[ifo],
-                    idx[ifo] - time_delay_idx[ifo] < len(snr[ifo])
+                    idx[ifo] - time_delay_idx[ifo] < len(snr_dict[ifo])
                     )
                 ]
                 for ifo in args.instruments}
@@ -384,38 +377,34 @@ with ctx:
             # ifos. If a single ifo analysis then just use the indexes from
             # that ifo.
             if len(args.instruments) > 1:
-                coinc_idx = coh.get_coinc_indexes(idx_dict,time_delay_idx)
+                coinc_idx = coh.get_coinc_indexes(idx_dict, time_delay_idx)
             else:
                 coinc_idx = (
                     idx_dict[args.instruments[0]]
                     - time_delay_idx[args.instruments[0]]
                     )
             logging.info("Found %d coincident triggers", len(coinc_idx))
-
             # Number of ifos
             nifo = len(args.instruments)
-
             for ifo in args.instruments:
                 # Move on if this segment has no data
-                if len(snr[ifo])==0:
+                if len(snr_dict[ifo])==0:
                     raise ValueError('The SNR triggers dictionary is empty. '
                                      'This should not be possible.')
                 # Time delay is applied to indices
                 coinc_idx_det_frame = {
                     ifo: coinc_idx + time_delay_idx[ifo]
                     for ifo in args.instruments}
-
             # Calculate the coincident and coherent snr
             # Check we have data before we try to compute the coherent snr
             if len(coinc_idx) != 0 and nifo > 1:
                 #Find coinc snr at trigger times and apply coinc snr threshold
                 rho_coinc, coinc_idx, coinc_triggers = coh.coincident_snr(
-                    snr, coinc_idx, args.coinc_threshold, time_delay_idx)
+                    snr_dict, coinc_idx, args.coinc_threshold, time_delay_idx)
                 logging.info(
                     "%d points above coincident SNR threshold", len(coinc_idx))
                 if len(coinc_idx) != 0:
                     logging.info("Max coincident SNR = %.2f", max(rho_coinc))
-
             # If there is only one ifo, then coinc_triggers is just the
             # triggers from ifo
             elif len(coinc_idx) != 0 and nifo == 1:
@@ -481,7 +470,7 @@ with ctx:
                     ifo: coinc_idx + time_delay_idx[ifo]
                     for ifo in args.instruments}
                 coherent_ifo_trigs = {
-                    ifo: snr[ifo][coinc_idx_det_frame[ifo]]
+                    ifo: snr_dict[ifo][coinc_idx_det_frame[ifo]]
                     for ifo in args.instruments}
                 # Calculate the power and autochi2 values for the coinc indexes
                 # (this uses the snr timeseries before the time delay, so we

@@ -222,7 +222,7 @@ def coherent_snr(
     # Apply thresholds
     index = index[rho_coh > threshold]
     coinc_snr = [] if coinc_snr is None else coinc_snr
-    if coinc_snr:
+    if len(coinc_snr) != 0:
         coinc_snr = coinc_snr[rho_coh > threshold]
     snrv = {
         ifo: snr_triggers[ifo][rho_coh > threshold]
