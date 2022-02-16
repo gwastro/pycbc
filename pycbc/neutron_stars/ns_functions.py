@@ -177,8 +177,8 @@ def PG_ISSO_solver(chi,incl):
 ##############################################################################
 # 2H 2-piecewise polytropic EOS, NS non-rotating equilibrium sequence        #
 # File format is: grav mass (Msun)   baryonic mass (Msun)    compactness     #
-#                                                                            #       THIS FUNCTION IS BEING CALLED IN TMPLTBANK, does it need to be moved back?
-# Eventually, the function should call an NS sequence generator within LAL   #       or should I go and modify those files to reflect new location?
+#                                                                            #
+# Eventually, the function should call an NS sequence generator within LAL   #
 # the EOS prescribed by the user and store it.                               #
 ##############################################################################
 def load_ns_sequence(eos_name):

@@ -20,7 +20,6 @@ from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import conversions
 from pycbc import pnutils
 from pycbc.neutron_stars import load_ns_sequence
-from pycbc.conversions import remnant_mass
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -292,8 +291,8 @@ def get_random_mass(numPoints, massRangeParams):
             #     threshold mass]
             mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
             if eta_nsbh.size != 0:
-                remnant = remnant_mass(eta_nsbh, mass2_nsbh, ns_sequence,
-                                         spin1z_nsbh, 0.)
+                remnant = conversions.remnant_mass(eta_nsbh, mass2_nsbh, ns_sequence,
+                                                   spin1z_nsbh, 0.)
                 mask_bright_nsbh[remnant
                                  >
                                  massRangeParams.remnant_mass_threshold] = True
