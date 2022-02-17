@@ -1,0 +1,131 @@
+#!/home/ian.harry/virtualenvs/pycbc_python3/bin/python3
+
+# Copyright (C) 2016 Ian W. Harry, Alex Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Program for concatenating output files from pycbc_banksim split over bank
+files. It is assumed that input files have analysed the same set of injections.
+Concatenation of injections is done separately.
+"""
+
+from os.path import isfile
+import argparse
+import logging
+from numpy import *
+import pycbc
+import pycbc.version
+
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__program__ = "pycbc_banksim_combine_banks"
+
+# Read command line options
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc)
+
+parser.add_argument('--version', action=pycbc.version.Version)
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="verbose output")
+parser.add_argument("-I", "--input-files", nargs='+',
+                    help="Explicit list of input files.")
+parser.add_argument("-o", "--output-file", required=True,
+                    help="Output file name")
+
+options = parser.parse_args()
+
+dtypei = dtype([('match_1', float64), ('match_2', float64),
+                ('match_3', float64), ('match_4', float64),
+                ('match_5', float64), ('match_vary', float64),
+                ('match_vary_max2', float64), ('match_vary_max3', float64),
+                ('match_vary_max4', float64), ('bank', unicode_, 256),
+                ('bank_i_1', int32), ('bank_i_2', int32),
+                ('bank_i_3', int32), ('bank_i_4', int32),
+                ('bank_i_5', int32), ('bank_i_vary', int32),
+                ('bank_i_vary_max2', int32), ('bank_i_vary_max3', int32),
+                ('bank_i_vary_max4', int32), ('sim', unicode_, 256),
+                ('sim_i', int32), ('sigmasq', float64)])
+
+dtypeo = dtype([('match_1', float64), ('match_2', float64),
+                ('match_3', float64), ('match_4', float64),
+                ('match_5', float64), ('match_vary', float64),
+                ('match_vary_max2', float64), ('match_vary_max3', float64),
+                ('match_vary_max4', float64), ('bank_1', unicode_, 256),
+                ('bank_2', unicode_, 256), ('bank_3', unicode_, 256),
+                ('bank_4', unicode_, 256), ('bank_5', unicode_, 256),
+                ('bank_vary', unicode_, 256),
+                ('bank_vary_max2', unicode_, 256),
+                ('bank_vary_max3', unicode_, 256),
+                ('bank_vary_max4', unicode_, 256),
+                ('bank_i_1', int32), ('bank_i_2', int32),
+                ('bank_i_3', int32), ('bank_i_4', int32),
+                ('bank_i_5', int32), ('bank_i_vary', int32),
+                ('bank_i_vary_max2', int32), ('bank_i_vary_max3', int32),
+                ('bank_i_vary_max4', int32), ('sim', unicode_, 256),
+                ('sim_i', int32), ('sigmasq', float64)])
+
+matches=[]
+maxmatch = []
+for fil in options.input_files:
+    matches.append(loadtxt(fil, dtype=dtypei))
+
+# It is possible for the input files to only contain a single injection
+# if the user has split the injections many times.
+if array(matches, dtype=dtypei)['match_1'].ndim == 1:
+    raise ValueError("Not supporting this yet")
+    index = array(matches, dtype=dtypef)['match'].argmax()
+    maxmatch.append(matches[index])
+else:
+    out_arr = zeros(len(matches[0]), dtype=dtypeo)
+    for i in [1, 2, 3, 4, 5, 'vary', 'vary_max2', 'vary_max3', 'vary_max4']:
+        indices = array(matches, dtype=dtypei)['match_{}'.format(i)].argmax(0)
+        for p, q in enumerate(indices):
+            mfmt = 'match_{}'.format(i)
+            out_arr[p][mfmt] = matches[q][p][mfmt]
+            bfmt = 'bank_{}'.format(i)
+            out_arr[p][bfmt] = matches[q][p]['bank']
+            bifmt = 'bank_i_{}'.format(i)
+            out_arr[p][bifmt] = matches[q][p][bifmt]
+            out_arr[p]['sim'] = matches[q][p]['sim']
+            out_arr[p]['sim_i'] = matches[q][p]['sim_i']
+            out_arr[p]['sigmasq'] = matches[q][p]['sigmasq']
+
+savetxt(options.output_file, out_arr, 
+        fmt=('%5.5f', '%5.5f','%5.5f','%5.5f','%5.5f',
+             '%5.5f', '%5.5f','%5.5f','%5.5f',
+             '%s', '%s','%s','%s','%s',
+             '%s', '%s','%s','%s',
+             '%i', '%i','%i','%i','%i',
+             '%i', '%i','%i','%i',
+             '%s', '%i', '%5.5f'), delimiter=' ')
+
+dtypeo = dtype([('match_1', float64), ('match_2', float64),
+                ('match_3', float64), ('match_4', float64),
+                ('match_5', float64), ('match_vary', float64),
+                ('match_vary_max2', float64), ('match_vary_max3', float64),
+                ('match_vary_max4', float64), ('bank_1', unicode_, 256),
+                ('bank_2', unicode_, 256), ('bank_3', unicode_, 256),
+                ('bank_4', unicode_, 256), ('bank_5', unicode_, 256),
+                ('bank_vary', unicode_, 256),
+                ('bank_vary_max2', unicode_, 256),
+                ('bank_vary_max3', unicode_, 256),
+                ('bank_vary_max4', unicode_, 256),
+                ('bank_i_1', int32), ('bank_i_2', int32),
+                ('bank_i_3', int32), ('bank_i_4', int32),
+                ('bank_i_5', int32), ('bank_i_vary', int32),
+                ('bank_i_vary_max2', int32), ('bank_i_vary_max3', int32),
+                ('bank_i_vary_max4', int32), ('sim', unicode_, 256),
+                ('sim_i', int32), ('sigmasq', float64)])
+
