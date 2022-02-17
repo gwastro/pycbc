@@ -1122,7 +1122,9 @@ class MatchedFilterTHAControl(object):
                 curr_lgc = self.snr_mem.data[:] > -1
             else:
                 self.snr_mem[:] += abs(self.snr_mem_comps[i])**2
-                curr_lgc = curr_lgc & (abs(self.snr_mem_comps[0].data)**2 > abs(self.snr_mem_comps[i].data)**2) 
+                # This test was checking if comp1 was the loudest and rejecting
+                # if not. I think it is not wanted though!
+                # curr_lgc = curr_lgc & (abs(self.snr_mem_comps[0].data)**2 > abs(self.snr_mem_comps[i].data)**2) 
         self.snr_mem[:] = self.snr_mem[:]**0.5
         self.snr_mem.data[~curr_lgc] = 0
 
