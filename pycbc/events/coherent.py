@@ -264,26 +264,6 @@ def network_chisq(chisq, chisq_dof, snr_dict):
     return net_chisq
 
 
-def reweighted_snr(netwk_snr, netwk_chisq, idx1=3, idx2=1.0 / 6.0):
-    """Return the chi-squared re-weighted SNR statistic
-
-    Parameters
-    ----------
-    netwk_snr: numpy.ndarray
-        Array of coherent SNRs
-    netwk_chisq: numpy.ndarray
-        Network chisq values corresponding to each trigger
-
-    Returns
-    -------
-    rw_snr: numpy.ndarray
-        Array of re-weighted SNRs
-    """
-    denom = ((1 + netwk_chisq) ** idx1) / 2
-    rw_snr = netwk_snr / denom ** idx2
-    return rw_snr
-
-
 def null_snr(
     rho_coh, rho_coinc, null_min=5.25, null_grad=0.2, null_step=20.0,
     index=None, snrv=None
@@ -361,7 +341,7 @@ def reweight_snr_by_null(network_snr, nullsnr):
 
     Returns
     -------
-    reweighted_snr: dict
+    rw_snr: dict
         Re-weighted SNR for each trigger
     """
     nullsnr = np.array(nullsnr)

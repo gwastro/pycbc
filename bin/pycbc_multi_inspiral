@@ -31,7 +31,7 @@ from pycbc import (
     detector, fft, init_logging, inject, opt, psd, scheme, strain, vetoes,
     waveform, DYN_RANGE_FAC
 )
-from pycbc.events import coherent as coh, EventManagerCoherent
+from pycbc.events import ranking, coherent as coh, EventManagerCoherent
 from pycbc.filter import MatchedFilterControl
 from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
@@ -487,13 +487,13 @@ if __name__ == '__main__':
                         chisq, chisq_dof, coherent_ifo_trigs)
                     # Calculate chisq reweighted SNR
                     if nifo > 2:
-                        reweighted_snr = coh.reweighted_snr(
+                        reweighted_snr = ranking.newsnr(
                             rho_coh, network_chisq_dict)
                         # Calculate null reweighted SNR
                         reweighted_snr = coh.reweight_snr_by_null(
                             reweighted_snr, null)
                     elif nifo == 2:
-                        reweighted_snr = coh.reweighted_snr(
+                        reweighted_snr = ranking.newsnr(
                             rho_coinc, network_chisq_dict)
                     else:
                         rho_sngl = abs(
@@ -501,7 +501,7 @@ if __name__ == '__main__':
                                 coinc_idx_det_frame[args.instruments[0]]
                                 ]
                             )
-                        reweighted_snr = coh.reweighted_snr(
+                        reweighted_snr = ranking.newsnr(
                             rho_sngl, network_chisq_dict)
                     # Need all out vals to be the same length. This means the
                     # entries that are single values need to be repeated once
