@@ -1585,17 +1585,12 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
     """
 
     # Sanity checks on eta and chi
-    if not (eta>0. and eta<=0.25 and abs(chi)<=1 and ns_g_mass>0):
-        err_msg = "The BH spin magnitude must be <= 1,"
-        err_msg += "eta must be between 0 and 0.25,"
-        err_msg += "and the NS mass must be positive."
-        logging.error(err_msg)
-        info_msg = "The function remnant_mass was launched with"
-        info_msg += "ns_mass={0}, eta={1}, chi={2},"
-        info_msg += "inclination={3}\n'.format(ns_g_mass, eta, chi, incl)"
-        logging.info(info_msg)
-        sys.exit(1)
-        raise Exception('Unphysical parameters!')
+    if not (eta > 0 and eta <= 0.25):
+        raise ValueError(f'Require 0 < eta <= 0.25. Value passed was {eta}')
+    if not abs(chi) <= 1:
+        raise ValueError(f'Require abs(chi) <= 1. Value of chi passed was {chi}')
+    if not ns_g_mass > 0:
+        raise ValueError(f'Require ns_g_mass > 0. Value passed was {ns_g_mass}')
 
     # NS compactness and rest mass
     ns_compactness = ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence)
