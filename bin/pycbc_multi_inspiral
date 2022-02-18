@@ -28,8 +28,8 @@ from copy import copy
 import argparse
 import numpy as np
 from pycbc import (
-    detector, fft, inject, opt, psd, scheme, strain, vetoes, waveform,
-    DYN_RANGE_FAC
+    detector, fft, init_logging, inject, opt, psd, scheme, strain, vetoes,
+    waveform, DYN_RANGE_FAC
 )
 from pycbc.events import coherent as coh, EventManagerCoherent
 from pycbc.filter import MatchedFilterControl
@@ -122,8 +122,7 @@ if __name__ == '__main__':
     inject.insert_injfilterrejector_option_group_multi_ifo(parser)
     sgchisq.SingleDetSGChisq.insert_option_group(parser)
     args = parser.parse_args()
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+    init_logging(args.verbose)
     # Set GRB time variable for convenience
     t_gps = args.trigger_time
     # Put the ifos in alphabetical order so they are always called in
@@ -414,7 +413,6 @@ if __name__ == '__main__':
                 else:
                     coinc_triggers = {}
                     logging.info("No triggers above coincident SNR threshold")
-
                 # If we have triggers above coinc threshold and more than 2
                 # ifos then calculate the coherent statistics
                 if len(coinc_idx) != 0 and nifo > 2:
@@ -459,7 +457,6 @@ if __name__ == '__main__':
                             logging.info("Max null SNR = %.2f", max(null))
                         logging.info(
                             "%d points above null threshold", len(null))
-
                 # We are now going to find the individual detector chi2 values.
                 # To do this it is useful to find the indexes of coinc triggers
                 # in the detector frame.
@@ -566,6 +563,5 @@ if __name__ == '__main__':
                 "time_index", "coherent_snr", cluster_window)
             event_mgr.finalize_template_events()
     event_mgr.write_events(args.output)
-
     logging.info("Finished")
     logging.info("Time to complete analysis: %d", int(time.time() - time_init))
