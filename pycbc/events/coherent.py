@@ -57,9 +57,8 @@ def get_coinc_indexes(idx_dict, time_delay_idx):
             )
     # Search through coinc_idx for repeated indexes. These must have been loud
     # in at least 2 detectors.
-    coinc_idx = np.unique(coinc_list, return_counts=True)[0][
-        np.unique(coinc_list, return_counts=True)[1] > 1
-    ]
+    counts = np.unique(coinc_list, return_counts=True)
+    coinc_idx = counts[0][counts[1] > 1]
     return coinc_idx
 
 
@@ -266,7 +265,7 @@ def network_chisq(chisq, chisq_dof, snr_dict):
 
 
 def reweighted_snr(netwk_snr, netwk_chisq, idx1=3, idx2=1.0 / 6.0):
-    """Return the chi-squeared re-weighted SNR statistic
+    """Return the chi-squared re-weighted SNR statistic
 
     Parameters
     ----------
