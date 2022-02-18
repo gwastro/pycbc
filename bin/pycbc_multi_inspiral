@@ -381,7 +381,7 @@ if __name__ == '__main__':
                 for ifo in args.instruments:
                     # Move on if this segment has no data
                     if len(snr_dict[ifo])==0:
-                        raise ValueError(
+                        raise RuntimeError(
                             'The SNR triggers dictionary is empty. This '
                             'should not be possible.')
                     # Time delay is applied to indices
