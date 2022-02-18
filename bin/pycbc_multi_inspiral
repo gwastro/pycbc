@@ -564,4 +564,4 @@ if __name__ == '__main__':
             event_mgr.finalize_template_events()
     event_mgr.write_events(args.output)
     logging.info("Finished")
-    logging.info("Time to complete analysis: %d", int(time.time() - time_init))
+    logging.info("Time to complete analysis: %.0f s", time.time() - time_init)
