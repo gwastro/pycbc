@@ -59,10 +59,10 @@ class TestMatchedFilter(unittest.TestCase):
         self.filt_highres = TimeSeries(data,dtype=float,delta_t=1.0/4096)
         frequency_series = make_frequency_series(self.filt_highres)
         
-        # the number is roughly 2pi*delta_t/2, which is where the standard 
+        # the number is 2pi*delta_t*(5+1/2), which is where the standard 
         # SNR interpolation does the worst
-        # the .3 is added to test the phase retrieval
-        phase = numpy.exp(-0.000767j * frequency_series.sample_frequencies - .3)
+        # the .3j phase is added to test the phase retrieval
+        phase = numpy.exp(-0.008436894333371026j * frequency_series.sample_frequencies - .3j)
         self.filt_offset_subsample = (
             frequency_series*phase
         )
@@ -147,11 +147,11 @@ class TestMatchedFilter(unittest.TestCase):
                 return_phase=True
             )
             self.assertAlmostEqual(1., o, places=10)
-            self.assertAlmostEqual(.5, i, places=4)
+            self.assertAlmostEqual(5 + 1/2, i, places=4)
             self.assertAlmostEqual(.3, ph, places=4)
             
             # but the standard implementation is not correct 
-            # to a much lower degree of accuracy:
+            # even when checked to a much lower degree of accuracy:
             # the following tests are just a sanity check,
             # they can be removed
             
