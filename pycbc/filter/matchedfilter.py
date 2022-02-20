@@ -1409,7 +1409,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
         # then the optimization is only used to move to the 
         # correct subsample-timeshift witin (-delta_t, delta_t) 
         # of this
-        stilde.cyclic_time_shift(max_id * stilde.delta_t)
+        stilde = stilde.cyclic_time_shift(-max_id * stilde.delta_t)
         
         f = stilde.sample_frequencies.numpy()
         wf1 = htilde.numpy()
