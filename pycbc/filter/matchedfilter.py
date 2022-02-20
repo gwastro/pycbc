@@ -2046,7 +2046,11 @@ def optimization_match(frequencies, waveform_1, waveform_2, psd, delta_t):
         product(waveform_1, waveform_1)[0] * product(waveform_2, waveform_2)[0]
     )
 
-    res = minimize_scalar(to_minimize, method="brent", bracket=(-delta_t, delta_t))
+    res = minimize_scalar(
+        to_minimize,
+        method="brent",
+        bracket=(-delta_t, delta_t)
+    )
     match, angle = product_offset(res.x)
     return match / norm, res.x, angle
 
