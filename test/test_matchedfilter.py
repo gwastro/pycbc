@@ -61,7 +61,8 @@ class TestMatchedFilter(unittest.TestCase):
         
         # the number is roughly 2pi*delta_t/2, which is where the standard 
         # SNR interpolation does the worst
-        phase = numpy.exp(-0.000767j * frequency_series.sample_frequencies)
+        # the .3 is added to test the phase retrieval
+        phase = numpy.exp(-0.000767j * frequency_series.sample_frequencies - .3)
         self.filt_offset_subsample = (
             frequency_series*phase
         )
@@ -139,13 +140,15 @@ class TestMatchedFilter(unittest.TestCase):
 
     def test_perfect_match_subsample_offset(self):
         with self.context:
-            o, i, ph = match(self.filt_highres, self.filt_offset_subsample, optimize_subsample=True, return_phase=True)
+            o, i, ph = match(
+                self.filt_highres,
+                self.filt_offset_subsample,
+                subsample_optimization=True,
+                return_phase=True
+            )
             self.assertAlmostEqual(1., o, places=10)
             self.assertAlmostEqual(.5, i, places=4)
-            
-            # this should be very close to zero in this case, but 
-            # it seems to be off by ~1e-3, why?
-            self.assertAlmostEqual(0., ph, places=4)
+            self.assertAlmostEqual(.3, ph, places=4)
             
             # but the standard implementation is not correct 
             # to a much lower degree of accuracy:
