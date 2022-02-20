@@ -56,6 +56,17 @@ class TestMatchedFilter(unittest.TestCase):
 
         self.filt_short =TimeSeries([0,1,2,3,4],dtype=float32,delta_t=1.0/4096)
 
+        self.filt_highres = TimeSeries(data,dtype=float,delta_t=1.0/4096)
+        frequency_series = make_frequency_series(self.filt_highres)
+        
+        # the number is roughly 2pi*delta_t/2, which is where the standard 
+        # SNR interpolation does the worst
+        phase = numpy.exp(-0.000767j * frequency_series.sample_frequencies)
+        self.filt_offset_subsample = (
+            frequency_series*phase
+        )
+        
+
     def test_correlate (self):
         from pycbc.filter.matchedfilter import correlate
         with self.context:
@@ -125,6 +136,27 @@ class TestMatchedFilter(unittest.TestCase):
                         subsample_interpolation=True)
             self.assertAlmostEqual(1, o, places=4)
             self.assertAlmostEqual(4096*32, i, places=1)
+
+    def test_perfect_match_subsample_offset(self):
+        with self.context:
+            o, i, ph = match(self.filt_highres, self.filt_offset_subsample, optimize_subsample=True, return_phase=True)
+            self.assertAlmostEqual(1., o, places=10)
+            self.assertAlmostEqual(.5, i, places=4)
+            
+            # this should be very close to zero in this case, but 
+            # it seems to be off by ~1e-3, why?
+            self.assertAlmostEqual(0., ph, places=4)
+            
+            # but the standard implementation is not correct 
+            # to a much lower degree of accuracy:
+            # the following tests are just a sanity check,
+            # they can be removed
+            
+            o2, _ = match(self.filt_highres, self.filt_offset_subsample)
+            self.assertNotAlmostEqual(1., o2, places=7)
+
+            o3, _ = match(self.filt_highres, self.filt_offset_subsample, subsample_interpolation=True)
+            self.assertNotAlmostEqual(1., o3, places=7)
 
 
     def test_imperfect_match(self):
