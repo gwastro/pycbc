@@ -365,7 +365,7 @@ def reweight_snr_by_null(
 
     Returns
     -------
-    rw_snr: dict
+    rw_snr: numpy.ndarray
         Re-weighted SNR for each trigger
     """
     downweight = (
