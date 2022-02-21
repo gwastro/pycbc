@@ -286,9 +286,9 @@ def build_includes():
 build_includes()
 
 def setup(app):
-    app.add_javascript('typed.min.js')
-    app.add_stylesheet('terminal.css')
-    app.add_stylesheet("theme_overrides.css")
+    app.add_js_file('typed.min.js')
+    app.add_js_file('terminal.css')
+    app.add_js_file("theme_overrides.css")
 
 
 
