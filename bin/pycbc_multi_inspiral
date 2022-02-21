@@ -463,7 +463,6 @@ with ctx:
         'coherent_snr'   : float32,
         'null_snr'      : float32,
         'nifo'          : int,
-        'my_network_chisq':float32,
         'reweighted_snr' : float32
                }
     network_out_vals = {
@@ -473,7 +472,6 @@ with ctx:
         'coherent_snr'   : None,
         'null_snr'      : None,
         'nifo'          : None,
-        'my_network_chisq' : None, 
         'reweighted_snr' : None
                }
     network_names = sorted(network_out_vals.keys())
@@ -739,7 +737,6 @@ with ctx:
                     network_out_vals['coherent_snr'] = \
                         abs(snr[opt.instruments[0]][coinc_idx_det_frame[opt.instruments[0]]])
                 network_out_vals['reweighted_snr'] = reweighted_snr
-                network_out_vals['my_network_chisq'] = np.real(network_chisq_dict)
 
                 network_out_vals['time_index'] = \
                     coinc_idx+stilde[ifo].cumulative_index
