@@ -37,8 +37,7 @@ epsie==0.7.1
 dqsegdb2>=1.0.1
 amqplib
 htchirp >= 2.0
-# use dqsegdb fork till next dqsegdb release
-https://github.com/ahnitz/dqsegdb/archive/master.tar.gz
+dqsegdb >= 2.0.0
 
 # For building documentation
 Sphinx>=1.5.0,<2.0.0
