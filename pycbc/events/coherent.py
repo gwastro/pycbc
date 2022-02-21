@@ -85,7 +85,7 @@ def get_coinc_triggers(snrs, idx, t_delay_idx):
 
 
 def coincident_snr(snr_dict, index, threshold, time_delay_idx):
-    """Calculate the coincident SNR for all coinciden triggers above
+    """Calculate the coincident SNR for all coincident triggers above
     threshold
 
     Parameters
@@ -118,7 +118,7 @@ def coincident_snr(snr_dict, index, threshold, time_delay_idx):
     snr_array = np.array(
         [coinc_triggers[ifo] for ifo in coinc_triggers.keys()]
     )
-    rho_coinc = np.sqrt(np.sum(snr_array * snr_array.conj(), axis=0))
+    rho_coinc = abs(np.sqrt(np.sum(snr_array * snr_array.conj(), axis=0)))
     # Apply threshold
     thresh_indexes = rho_coinc > threshold
     index = index[thresh_indexes]
@@ -217,17 +217,18 @@ def coherent_snr(
     )
     snr_proj = np.inner(snr_array.conj().transpose(), projection_matrix)
     rho_coh2 = sum(snr_proj.transpose() * snr_array)
-    rho_coh = np.sqrt(rho_coh2)
+    rho_coh = abs(np.sqrt(rho_coh2))
     # Apply thresholds
-    index = index[rho_coh > threshold]
+    above = rho_coh > threshold
+    index = index[above]
     coinc_snr = [] if coinc_snr is None else coinc_snr
     if len(coinc_snr) != 0:
-        coinc_snr = coinc_snr[rho_coh > threshold]
+        coinc_snr = coinc_snr[above]
     snrv = {
-        ifo: snr_triggers[ifo][rho_coh > threshold]
+        ifo: snr_triggers[ifo][above]
         for ifo in snr_triggers.keys()
     }
-    rho_coh = rho_coh[rho_coh > threshold]
+    rho_coh = rho_coh[above]
     return rho_coh, index, snrv, coinc_snr
 
 
@@ -265,8 +266,8 @@ def network_chisq(chisq, chisq_dof, snr_dict):
 
 
 def null_snr(
-    rho_coh, rho_coinc, null_min=5.25, null_grad=0.2, null_step=20.0,
-    index=None, snrv=None
+    rho_coh, rho_coinc, apply_cut=True, null_min=5.25, null_grad=0.2,
+    null_step=20.0, index=None, snrv=None
 ):
     """Calculate the null SNR and apply threshold cut where
     null SNR > null_min where coherent SNR < null_step
@@ -278,6 +279,9 @@ def null_snr(
         Array of coherent snr triggers
     rho_coinc: numpy.ndarray
         Array of coincident snr triggers
+    apply_cut: bool
+        Apply a cut and downweight on null SNR determined by null_min,
+        null_grad, null_step (default True)
     null_min: scalar
         Any trigger with null SNR below this is retained
     null_grad: scalar
@@ -311,40 +315,54 @@ def null_snr(
     null2 = rho_coinc ** 2 - rho_coh ** 2
     # Numerical errors may make this negative and break the sqrt, so set
     # negative values to 0.
-    null2[null2 < 0] = 0
+    #null2[null2 < 0] = 0
     null = null2 ** 0.5
-    # Make cut on null.
-    keep = np.logical_or(
-        np.logical_and(null < null_min, rho_coh <= null_step),
-        np.logical_and(
-            null < (rho_coh * null_grad + null_min), rho_coh > null_step
-        ),
-    )
-    index = index[keep]
-    rho_coh = rho_coh[keep]
-    snrv = {ifo: snrv[ifo][keep] for ifo in snrv}
-    rho_coinc = rho_coinc[keep]
-    null = null[keep]
+    if apply_cut:
+        # Make cut on null.
+        keep = (
+            ((null < null_min) & (rho_coh <= null_step))
+            | (
+                (null < (rho_coh * null_grad + null_min))
+                & (rho_coh > null_step)
+                )
+            )
+        index = index[keep]
+        rho_coh = rho_coh[keep]
+        snrv = {ifo: snrv[ifo][keep] for ifo in snrv}
+        rho_coinc = rho_coinc[keep]
+        null = null[keep]
     return null, rho_coh, rho_coinc, index, snrv
 
 
-def reweight_snr_by_null(network_snr, nullsnr):
+def reweight_snr_by_null(
+        network_snr, null_snr, coherent_snr, null_min=5.25, null_grad=0.2,
+        null_step=20.0):
     """Re-weight the detection statistic as a function of the null SNR
 
     Parameters
     ----------
-    network_snr: dict
-        Dictionary of coincident, coherent, or reweighted SNR for each
-        trigger
-    null: numpy.ndarray
-        Null snr for each trigger
+    network_snr: numpy.ndarray
+        Array containing SNR statistic to be re-weighted
+    null_snr: numpy.ndarray
+        Null SNR array
+    coherent_snr:
+        Coherent SNR array
 
     Returns
     -------
     rw_snr: dict
         Re-weighted SNR for each trigger
     """
-    nullsnr = np.array(nullsnr)
-    nullsnr[nullsnr <= 4.25] = 4.25
-    rw_snr = network_snr / (nullsnr - 3.25)
+    downweight = (
+        ((null_snr > null_min - 1) & (coherent_snr <= null_step))
+        | (
+            (null_snr > (coherent_snr * null_grad + null_min - 1))
+            & (coherent_snr > null_step))
+        )
+    rw_fac = np.where(
+        coherent_snr > null_step,
+        1 + null_snr - (null_min - 1) - (coherent_snr - null_step) * null_grad,
+        1 + null_snr - (null_min - 1)
+        )
+    rw_snr = np.where(downweight, network_snr / rw_fac, network_snr)
     return rw_snr

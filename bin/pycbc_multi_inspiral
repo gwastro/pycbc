@@ -433,8 +433,11 @@ if __name__ == '__main__':
                         rho_coh = np.where(max_idx==0, rho_coh_l, rho_coh_r)
                         coinc_idx = np.where(
                             max_idx==0, coinc_idx_l, coinc_idx_r)
-                        coinc_triggers = np.where(
-                            max_idx==0, coinc_triggers_l, coinc_triggers_r)
+                        coinc_triggers = {
+                            ifo: np.where(
+                                max_idx==0, coinc_triggers_l[ifo],
+                                coinc_triggers_r[ifo])
+                            for ifo in coinc_triggers_l}
                         rho_coinc = np.where(
                             max_idx==0, rho_coinc_l, rho_coinc_r)
                     else:
@@ -491,7 +494,7 @@ if __name__ == '__main__':
                             rho_coh, network_chisq_dict)
                         # Calculate null reweighted SNR
                         reweighted_snr = coh.reweight_snr_by_null(
-                            reweighted_snr, null)
+                            reweighted_snr, null, rho_coh)
                     elif nifo == 2:
                         reweighted_snr = ranking.newsnr(
                             rho_coinc, network_chisq_dict)
