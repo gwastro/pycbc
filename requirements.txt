@@ -18,7 +18,12 @@ lscsoft-glue>=1.59.3
 ligo-segments
 tqdm
 gwdatafind
+
+# Requirements for full pegasus env
 pegasus-wms >= 5.0.1
+# need to pin until pegasus for further upstream
+# addresses incompatibility between old flask/jinja2 and latest markupsafe
+markupsafe <= 2.0.1
 
 # Requirements for ligoxml access needed by some workflows
 python-ligo-lw >= 1.7.0
@@ -32,8 +37,7 @@ epsie==0.7.1
 dqsegdb2>=1.0.1
 amqplib
 htchirp >= 2.0
-# use dqsegdb fork till next dqsegdb release
-https://github.com/ahnitz/dqsegdb/archive/master.tar.gz
+dqsegdb >= 2.0.0
 
 # For building documentation
 Sphinx>=1.5.0,<2.0.0
