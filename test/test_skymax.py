@@ -388,12 +388,10 @@ class TestChisq(unittest.TestCase):
         self.assertAlmostEqual(abs(real(I_t.data[idx_max_hom])), max_ds_hom)
         self.assertEqual(abs(real(I_t.data[idx_max_hom])),
                          max(abs(real(I_t.data))))
-        old_vals = numpy.geterr()
-        numpy.seterr(invalid='ignore', divide='ignore')
-        chisq, _ = self.power_chisq.values\
-            (corr_t, array([max_ds_hom]) / n_plus, n_t, self.psd,
-             array([idx_max_hom]), ht)
-        numpy.seterr(**old_vals)
+        with numpy.errstate(invalid='ignore', divide='ignore'):
+            chisq, _ = self.power_chisq.values\
+                (corr_t, array([max_ds_hom]) / n_plus, n_t,
+                 self.psd, array([idx_max_hom]), ht)
 
         ht = hplus * uvals_prec[0] + hcross
         ht_norm = sigmasq(ht, psd=self.psd,
