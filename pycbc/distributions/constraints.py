@@ -47,6 +47,8 @@ class Constraint(object):
         """Evaluates constraint.
         """
         # cast to FieldArray
+        print(self.constraint_arg)
+        print(params.fieldnames)
         if isinstance(params, dict):
             params = record.FieldArray.from_kwargs(**params)
         elif not isinstance(params, record.FieldArray):

@@ -14,14 +14,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import math
-import numpy as np
-import pycbc
 import os.path
-import scipy.optimize
-import scipy.interpolate
-import logging
 import sys
+import logging
+import numpy as np
+from scipy.optimize import fsolve
+from scipy.interpolate import interp1d
+from . import NS_SEQUENCES, NS_SEQUENCE_FILE_DIRECTORY
 
 ##############################################################################
 # Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz (PG)       #
@@ -105,7 +104,7 @@ def PG_ISSO_eq(r, chi, incl):
     r4 = r2*r2
     three_r = 3*r
     r_minus_2 = r - 2
-    sin_incl2 = (math.sin(incl))**2
+    sin_incl2 = (np.sin(incl))**2
 
     X = chi2*(chi2*(3*chi2+4*r*(2*r-3))+r2*(15*r*(r-4)+28))-6*r4*(r2-4)
     Y = chi4 * (chi4+r2*(7 * r * (three_r-4)+36))+6 * r * r_minus_2 * \
@@ -135,7 +134,7 @@ def PG_ISSO_solver(chi,incl):
         the radius of the orbit in BH mass units
     """
     # Auxiliary variables
-    cos_incl=math.cos(incl)
+    cos_incl=np.cos(incl)
     sgnchi = np.sign(cos_incl)*chi
 
     # ISCO radius for the given spin magnitude
@@ -145,30 +144,30 @@ def PG_ISSO_solver(chi,incl):
         initial_guess = 9
     else:
         initial_guess = 5 # Works better than 6 for chi=0.5
-    rISCO_limit = scipy.optimize.fsolve(ISCO_eq, initial_guess, args=sgnchi)
+    rISCO_limit = fsolve(ISCO_eq, initial_guess, args=sgnchi)
 
     # ISSO radius for an inclination of pi/2
     if chi < 0:
         initial_guess = 9
     else:
         initial_guess = 6
-    rISSO_at_pole_limit = scipy.optimize.fsolve(ISSO_eq_at_pole, initial_guess,
+    rISSO_at_pole_limit = fsolve(ISSO_eq_at_pole, initial_guess,
                                                 args=chi)
 
     # If the inclination is 0 or pi, just output the ISCO radius
-    if incl in [0, math.pi]:
+    if incl in [0, np.pi]:
         solution = rISCO_limit
     # If the inclination is pi/2, just output the ISSO radius at the pole(s)
-    elif incl == math.pi/2:
+    elif incl == np.pi/2:
         solution = rISSO_at_pole_limit
     # Otherwise, find the ISSO radius for a generic inclination
     else:
         initial_guess = max(rISCO_limit,rISSO_at_pole_limit)
-        solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess,
+        solution = fsolve(PG_ISSO_eq, initial_guess,
                                          args=(chi, incl))
         if solution < 1 or solution > 9:
             initial_guess = min(rISCO_limit,rISSO_at_pole_limit)
-            solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess,
+            solution = fsolve(PG_ISSO_eq, initial_guess,
                                              args=(chi, incl))
 
     return solution
@@ -205,21 +204,16 @@ def load_ns_sequence(eos_name):
         the sequence (this is the mass of the most massive stable
         NS)
     """
-    ns_sequence = []
-
-    if eos_name == '2H':
-        ns_sequence_path = os.path.join(pycbc.neutron_stars.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
-        ns_sequence = np.loadtxt(ns_sequence_path)
-    else:
-        err_msg = "Only the 2H EOS is currently supported."
-        err_msg += "If you plan to use a different NS EOS,"
-        err_msg += "be sure not to filter too many templates!\n"
-        logging.error(err_msg)
-        sys.exit(1)
-        raise Exception('Unsupported EOS!')
-
+    if eos_name not in NS_SEQUENCES:
+        raise NotImplementedError(
+            f'{eos_name} does not have an implemented NS sequence file! '
+            f'To implement, the file {ns_sequence_file} must exist and '
+            'contain: NS gravitational mass (in solar masses), NS baryonic '
+            'mass (in solar masses), NS compactness (dimensionless)')
+    ns_sequence_file = os.path.join(
+        NS_SEQUENCE_FILE_DIRECTORY, 'equil_{}.dat'.format(eos_name))
+    ns_sequence = np.loadtxt(ns_sequence_file)
     max_ns_g_mass = max(ns_sequence[:,0])
-
     return (ns_sequence, max_ns_g_mass)
 
 
@@ -249,7 +243,7 @@ def ns_g_mass_to_ns_b_mass(ns_g_mass, ns_sequence):
     """
     x = ns_sequence[:,0]
     y = ns_sequence[:,1]
-    f = scipy.interpolate.interp1d(x, y)
+    f = interp1d(x, y)
 
     return f(ns_g_mass)
 
@@ -278,6 +272,6 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
     """
     x = ns_sequence[:,0]
     y = ns_sequence[:,2]
-    f = scipy.interpolate.interp1d(x, y)
+    f = interp1d(x, y)
 
     return f(ns_g_mass)

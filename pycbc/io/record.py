@@ -1802,7 +1802,8 @@ class WaveformArray(_FieldArrayWithDefaults):
         parameters.spin_px, parameters.spin_py, parameters.spin_pz,
         parameters.spin_sx, parameters.spin_sy, parameters.spin_sz,
         parameters.spin1_a, parameters.spin1_azimuthal, parameters.spin1_polar,
-        parameters.spin2_a, parameters.spin2_azimuthal, parameters.spin2_polar]
+        parameters.spin2_a, parameters.spin2_azimuthal, parameters.spin2_polar,
+        parameters.remnant_mass]
 
     @property
     def primary_mass(self):
@@ -1911,6 +1912,13 @@ class WaveformArray(_FieldArrayWithDefaults):
         """Returns the polar spin angle of mass 2."""
         return coordinates.cartesian_to_spherical_polar(
                                      self.spin2x, self.spin2y, self.spin2z)
+
+    @property
+    def remnant_mass(self):
+        """Returns the remnant mass for an NS-BH binary."""
+        return conversions.remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos(
+                                     self.mass1, self.mass2, self.spin1x,
+                                     self.spin1y, self.spin1z)
 
 
 __all__ = ['FieldArray', 'WaveformArray']
