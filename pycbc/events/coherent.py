@@ -315,7 +315,7 @@ def null_snr(
     null2 = rho_coinc ** 2 - rho_coh ** 2
     # Numerical errors may make this negative and break the sqrt, so set
     # negative values to 0.
-    #null2[null2 < 0] = 0
+    null2[null2 < 0] = 0
     null = null2 ** 0.5
     if apply_cut:
         # Make cut on null.

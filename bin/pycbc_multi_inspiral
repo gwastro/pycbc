@@ -96,6 +96,8 @@ if __name__ == '__main__':
     parser.add_argument("--coinc-threshold", type=float, default=0.0,
                         help="Triggers with coincident/coherent snr below "
                              "this value will be discarded.")
+    parser.add_argument("--do-null-cut", action='store_true',
+                        help="Apply a cut based on null SNR.")
     parser.add_argument("--null-min", type=float, default=5.25,
                         help="Triggers with null_snr above this value will be"
                              " discarded.")
@@ -455,7 +457,7 @@ if __name__ == '__main__':
                         null, rho_coh, rho_coinc, coinc_idx, coinc_triggers =\
                             coh.null_snr(
                                 rho_coh, rho_coinc, snrv=coinc_triggers,
-                                index=coinc_idx)
+                                index=coinc_idx, apply_cut=args.do_null_cut)
                         if len(coinc_idx) != 0:
                             logging.info("Max null SNR = %.2f", max(null))
                         logging.info(
