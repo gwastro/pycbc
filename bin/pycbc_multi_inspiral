@@ -24,7 +24,6 @@ coherent SNRs and related statistics.
 import logging
 import time
 from collections import defaultdict
-from copy import copy
 import argparse
 import numpy as np
 from pycbc import (
@@ -349,10 +348,10 @@ if __name__ == '__main__':
                     snr_dict[ifo] = (
                             snr_ts[matched_filter[ifo].segments[s_num].analyze]
                             * norm)
-                    norm_dict[ifo] = copy(norm)
-                    corr_dict[ifo] = copy(corr)
-                    idx[ifo] = copy(ind)
-                    snrv_dict[ifo] = copy(snrv)
+                    norm_dict[ifo] = norm
+                    corr_dict[ifo] = corr.copy()
+                    idx[ifo] = ind.copy()
+                    snrv_dict[ifo] = snrv.copy()
                     snr[ifo] = snrv * norm
                 # Move onto next segment if there are no triggers.
                 if len(ifo_list)==0: continue
