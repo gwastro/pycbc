@@ -128,7 +128,13 @@ def coincident_snr(snr_dict, index, threshold, time_delay_idx):
 
 
 def get_projection_matrix(f_plus, f_cross, sigma, projection="standard"):
-    """Calculate the matrix that prjects the signal onto the network.
+    """Calculate the matrix that projects the signal onto the network.
+    Definitions can be found in Fairhurst (2018) [arXiv:1712.04724].
+    For the standard projection see Eq. 8, and for left/right
+    circular projections see Eq. 21, with further discussion in
+    Appendix A. See also Williamson et al. (2014) [arXiv:1410.6042]
+    for discussion in context of the GRB search with restricted
+    binary inclination angles.
 
     Parameters
     ----------
@@ -176,7 +182,9 @@ def get_projection_matrix(f_plus, f_cross, sigma, projection="standard"):
             + (np.outer(w_c, w_p) - np.outer(w_p, w_c)) * 1j
         ) / (np.dot(w_p, w_p) + np.dot(w_c, w_c))
     else:
-        raise ValueError("Unknown projection: {}".format(projection))
+        raise ValueError(
+            f'Unknown projection: {projection}. Allowed values are: '
+            '"standard", "left", and "right"')
 
     return projection_matrix
 
@@ -184,7 +192,9 @@ def get_projection_matrix(f_plus, f_cross, sigma, projection="standard"):
 def coherent_snr(
     snr_triggers, index, threshold, projection_matrix, coinc_snr=None
 ):
-    """Calculate the coherent SNR for a given set of triggers
+    """Calculate the coherent SNR for a given set of triggers. See
+    Eq. 2.26 of Harry & Fairhurst (2011) [arXiv:1012.4939].
+
 
     Parameters
     ----------
@@ -233,7 +243,9 @@ def coherent_snr(
 
 
 def network_chisq(chisq, chisq_dof, snr_dict):
-    """Calculate the network chi-squared statistic
+    """Calculate the network chi-squared statistic. This is the sum of
+    SNR-weighted individual detector chi-squared values. See Eq. 5.4
+    of Dorrington (2019) [http://orca.cardiff.ac.uk/id/eprint/128124].
 
     Parameters
     ----------
@@ -251,7 +263,7 @@ def network_chisq(chisq, chisq_dof, snr_dict):
         Network chi-squared values
     """
     ifos = sorted(snr_dict.keys())
-    chisq_per_dof = {}
+    chisq_per_dof = dict.fromkeys(ifos)
     for ifo in ifos:
         chisq_per_dof[ifo] = chisq[ifo] / chisq_dof[ifo]
         chisq_per_dof[ifo][chisq_per_dof[ifo] < 1] = 1
@@ -269,9 +281,11 @@ def null_snr(
     rho_coh, rho_coinc, apply_cut=True, null_min=5.25, null_grad=0.2,
     null_step=20.0, index=None, snrv=None
 ):
-    """Calculate the null SNR and apply threshold cut where
+    """Calculate the null SNR and optionally apply threshold cut where
     null SNR > null_min where coherent SNR < null_step
-    and null SNR > (null_grad * rho_coh + null_min) elsewhere
+    and null SNR > (null_grad * rho_coh + null_min) elsewhere. See
+    Eq. 3.1 of Harry & Fairhurst (2011) [arXiv:1012.4939] or
+    Eqs. 11 and 12 of Williamson et al. (2014) [arXiv:1410.6042]..
 
     Parameters
     ----------
@@ -337,7 +351,8 @@ def null_snr(
 def reweight_snr_by_null(
         network_snr, null_snr, coherent_snr, null_min=5.25, null_grad=0.2,
         null_step=20.0):
-    """Re-weight the detection statistic as a function of the null SNR
+    """Re-weight the detection statistic as a function of the null SNR.
+    See Eq. 16 of Williamson et al. (2014) [arXiv:1410.6042].
 
     Parameters
     ----------
