@@ -518,6 +518,13 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
         # NB for no clear reason this function has f_low as first argument
         time_length = lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
                            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
+    elif approximant == 'SPAtmplt' or approximant == 'TaylorF2':
+        chi = lalsimulation.SimInspiralTaylorF2ReducedSpinComputeChi(
+            m1, m2, s1z, s2z
+        )
+        time_length = lalsimulation.SimInspiralTaylorF2ReducedSpinChirpTime(
+            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, -1
+        )
     else:
         raise RuntimeError("I can't calculate a duration for %s" % approximant)
     # FIXME Add an extra factor of 1.1 for 'safety' since the duration
@@ -949,3 +956,154 @@ def hybrid_meco_frequency(m1, m2, chi1, chi2, qm1=None, qm2=None):
         qm2 = 1
 
     return velocity_to_frequency(hybrid_meco_velocity(m1, m2, chi1, chi2, qm1, qm2), m1 + m2)
+
+
+def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
+                      spin1_a=0., spin2_a=0.,
+                      spin1_polar=0., spin2_polar=0.,
+                      spin12_deltaphi=0.):
+    """Converts J-frame parameters into L0 frame.
+
+    Parameters
+    ----------
+    mass1 : float
+        The mass of the first component object in the
+        binary (in solar masses)
+    mass2 : float
+        The mass of the second component object in the
+        binary (in solar masses)
+    f_ref : float
+        The reference frequency.
+    thetajn : float
+        Angle between the line of sight and the total angular momentume J.
+    phijl : float
+        Azimuthal angle of L on its cone about J.
+    spin1_a : float
+        The dimensionless spin magnitude :math:`|\\vec{{s}}_1/m^2_1|`.
+    spin2_a : float
+        The dimensionless spin magnitude :math:`|\\vec{{s}}_2/m^2_2|`.
+    spin1_polar : float
+        Angle between L and the spin magnitude of the larger object.
+    spin2_polar : float
+        Angle betwen L and the spin magnitude of the smaller object.
+    spin12_deltaphi : float
+        Difference between the azimuthal angles of the spin of the larger
+        object (S1) and the spin of the smaller object (S2).
+
+    Returns
+    -------
+    dict :
+        Dictionary of:
+
+        * inclination : float
+            Inclination (rad), defined as the angle between
+            the orbital angular momentum L and the
+            line-of-sight at the reference frequency.
+        * spin1x : float
+            The x component of the first binary component's
+            dimensionless spin.
+        * spin1y : float
+            The y component of the first binary component's
+            dimensionless spin.
+        * spin1z : float
+            The z component of the first binary component's
+            dimensionless spin.
+        * spin2x : float
+            The x component of the second binary component's
+            dimensionless spin.
+        * spin2y : float
+            The y component of the second binary component's
+            dimensionless spin.
+        * spin2z : float
+            The z component of the second binary component's
+            dimensionless spin.
+    """
+    inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
+        lalsimulation.SimInspiralTransformPrecessingNewInitialConditions(
+            thetajn, phijl, spin1_polar, spin2_polar, spin12_deltaphi,
+            spin1_a, spin2_a, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref,
+            phiref)
+    out = {'inclination': inclination,
+           'spin1x': spin1x,
+           'spin1y': spin1y,
+           'spin1z': spin1z,
+           'spin2x': spin2x,
+           'spin2y': spin2y,
+           'spin2z': spin2z}
+    return out
+
+def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
+                      spin1x=0., spin1y=0., spin1z=0.,
+                      spin2x=0., spin2y=0., spin2z=0.):
+    """Converts L0-frame parameters to J-frame.
+
+    Parameters
+    ----------
+    mass1 : float
+        The mass of the first component object in the
+        binary (in solar masses)
+    mass2 : float
+        The mass of the second component object in the
+        binary (in solar masses)
+    f_ref : float
+        The reference frequency.
+    phiref : float
+        The orbital phase at ``f_ref``.
+    inclination : float
+        Inclination (rad), defined as the angle between
+        the orbital angular momentum L and the
+        line-of-sight at the reference frequency.
+    spin1x : float
+        The x component of the first binary component's
+        dimensionless spin.
+    spin1y : float
+        The y component of the first binary component's
+        dimensionless spin.
+    spin1z : float
+        The z component of the first binary component's
+        dimensionless spin.
+    spin2x : float
+        The x component of the second binary component's
+        dimensionless spin.
+    spin2y : float
+        The y component of the second binary component's
+        dimensionless spin.
+    spin2z : float
+        The z component of the second binary component's
+        dimensionless spin.
+
+    Returns
+    -------
+    dict :
+        Dictionary of:
+
+        * thetajn : float
+            Angle between the line of sight and the total angular momentume J.
+        * phijl : float
+            Azimuthal angle of L on its cone about J.
+        * spin1_a : float
+            The dimensionless spin magnitude :math:`|\\vec{{s}}_1/m^2_1|`.
+        * spin2_a : float
+            The dimensionless spin magnitude :math:`|\\vec{{s}}_2/m^2_2|`.
+        * spin1_polar : float
+            Angle between L and the spin magnitude of the larger object.
+        * spin2_polar : float
+            Angle betwen L and the spin magnitude of the smaller object.
+        * spin12_deltaphi : float
+            Difference between the azimuthal angles of the spin of the larger
+            object (S1) and the spin of the smaller object (S2).
+    """
+    # Note: unlike other LALSimulation functions, this one takes masses in
+    # solar masses
+    thetajn, phijl, s1pol, s2pol, s12_deltaphi, spin1_a, spin2_a = \
+        lalsimulation.SimInspiralTransformPrecessingWvf2PE(
+            inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+            mass1, mass2, f_ref, phiref)
+    out = {'thetajn': thetajn,
+           'phijl': phijl,
+           'spin1_polar': s1pol,
+           'spin2_polar': s2pol,
+           'spin12_deltaphi': s12_deltaphi,
+           'spin1_a': spin1_a,
+           'spin2_a': spin2_a}
+    return out

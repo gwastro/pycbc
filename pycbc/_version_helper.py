@@ -125,6 +125,9 @@ def get_git_tag(hash_, git_path='git'):
     else:
         return None
 
+def get_num_commits():
+    return call(('git', 'rev-list', '--count', 'HEAD'))
+
 def get_git_status(git_path='git'):
     """Returns the state of the git working copy
     """
@@ -190,7 +193,7 @@ def generate_git_version_info():
         info.version = info.tag.strip('v')
         info.release = not re.search('[a-z]', info.version.lower())
     else:
-        info.version = info.hash[:6]
+        info.version = '0.0a' + get_num_commits()
         info.release = False
 
     # Determine *last* stable release

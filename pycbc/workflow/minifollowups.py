@@ -15,11 +15,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, os.path
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
-import distutils.spawn
 from ligo import segments
-from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
+from pycbc.workflow.core import Executable, FileList
+from pycbc.workflow.core import makedir, resolve_url_to_file
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 try:
     # Python 3
@@ -27,8 +25,7 @@ try:
 except ImportError:
     # Python 2
     from itertools import izip_longest as zip_longest
-from Pegasus import DAX3 as dax
-from pycbc.workflow import pegasus_workflow as wdax
+from pycbc.workflow.pegasus_workflow import SubWorkflow
 
 def grouper(iterable, n, fillvalue=None):
     """ Create a list of n length tuples
@@ -84,8 +81,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'foreground_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
 
-    config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
+    config_file = resolve_url_to_file(config_path)
 
     exe = Executable(workflow.cp, 'foreground_minifollowup',
                      ifos=workflow.ifos, out_dir=dax_output, tags=tags)
@@ -101,14 +97,11 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     if tags:
         node.add_list_opt('--tags', tags)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt',
-                             '--transformation-catalog')
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
-    tc_file = node.output_files[2]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -119,18 +112,13 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     fil = node.output_files[0]
 
     # determine if a staging site has been specified
-    try:
-        staging_site = workflow.cp.get('workflow-foreground_minifollowups',
-                                       'staging-site')
-    except:
-        staging_site = None
-
-    job = dax.DAX(fil)
-    job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
-    workflow._adag.addJob(job)
-    dep = dax.Dependency(parent=node._dax_node, child=job)
-    workflow._adag.addDependency(dep)
+    job = SubWorkflow(fil.name, is_planned=False)
+    input_files = [tmpltbank_file, coinc_file, insp_segs] + single_triggers
+    job.add_inputs(*input_files)
+    job.set_subworkflow_properties(map_file,
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
+    job.add_into_workflow(workflow)
     logging.info('Leaving minifollowups module')
 
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
@@ -186,13 +174,10 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
                                    '_'.join(tags) + 'singles_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
 
-    config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
+    config_file = resolve_url_to_file(config_path)
 
     exe = Executable(workflow.cp, 'singles_minifollowup',
                      ifos=curr_ifo, out_dir=dax_output, tags=tags)
-
-    wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
 
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
@@ -202,7 +187,6 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     node.add_opt('--instrument', curr_ifo)
-    node.add_opt('--wiki-file', wikifile)
     if veto_file is not None:
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
@@ -210,15 +194,14 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     if statfiles:
         statfiles = statfiles.find_output_with_ifo(curr_ifo)
         node.add_input_list_opt('--statistic-files', statfiles)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
+    if tags:
+        node.add_list_opt('--tags', tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map',
                              '--output-map')
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt',
-                             '--transformation-catalog')
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
-    tc_file = node.output_files[2]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -228,21 +211,17 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
-    # determine if a staging site has been specified
-    try:
-        staging_site = workflow.cp.get('workflow-sngl_minifollowups',
-                                       'staging-site')
-    except:
-        staging_site = None
-
-    job = dax.DAX(fil)
-    job.addArguments('--basename %s' \
-                     % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file,
-                                staging_site=staging_site)
-    workflow._adag.addJob(job)
-    dep = dax.Dependency(parent=node._dax_node, child=job)
-    workflow._adag.addDependency(dep)
+    job = SubWorkflow(fil.name, is_planned=False)
+    input_files = [tmpltbank_file, insp_segs, single_trig_file]
+    if veto_file is not None:
+        input_files.append(veto_file)
+    if statfiles:
+        input_files += statfiles
+    job.add_inputs(*input_files)
+    job.set_subworkflow_properties(map_file,
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
+    job.add_into_workflow(workflow)
     logging.info('Leaving minifollowups module')
 
 
@@ -293,8 +272,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'injection_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
 
-    config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
+    config_file = resolve_url_to_file(config_path)
 
     exe = Executable(workflow.cp, 'injection_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 
@@ -307,13 +285,13 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     node.add_input_opt('--inspiral-segments', insp_segs)
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
+    if tags:
+        node.add_list_opt('--tags', tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
-    tc_file = node.output_files[2]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -323,46 +301,39 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
-    # determine if a staging site has been specified
-    try:
-        staging_site = workflow.cp.get('workflow-injection_minifollowups',
-                                       'staging-site')
-    except:
-        staging_site = None
+    job = SubWorkflow(fil.name, is_planned=False)
+    input_files = [tmpltbank_file, injection_file, inj_xml_file, insp_segs]
+    input_files += single_triggers
+    job.add_inputs(*input_files)
+    job.set_subworkflow_properties(map_file,
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
+    job.add_into_workflow(workflow)
 
-    job = dax.DAX(fil)
-    job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
-    workflow._adag.addJob(job)
-    dep = dax.Dependency(parent=node._dax_node, child=job)
-    workflow._adag.addDependency(dep)
     logging.info('Leaving injection minifollowups module')
 
 
 class SingleTemplateExecutable(PlotExecutable):
     """Class to be used for to create workflow.Executable instances for the
     pycbc_single_template executable. Basically inherits directly from
-    PlotExecutable but adds the file_input_options.
+    PlotExecutable.
     """
-    file_input_options = ['--gating-file']
     time_dependent_options = ['--channel-name', '--frame-type']
 
 
 class SingleTimeFreqExecutable(PlotExecutable):
     """Class to be used for to create workflow.Executable instances for the
     pycbc_plot_singles_timefreq executable. Basically inherits directly from
-    PlotExecutable but adds the file_input_options.
+    PlotExecutable.
     """
-    file_input_options = ['--gating-file']
     time_dependent_options = ['--channel-name', '--frame-type']
 
 
 class PlotQScanExecutable(PlotExecutable):
     """Class to be used for to create workflow.Executable instances for the
     pycbc_plot_qscan executable. Basically inherits directly from
-    PlotExecutable but adds the file_input_options.
+    PlotExecutable.
     """
-    file_input_options = ['--gating-file']
     time_dependent_options = ['--channel-name', '--frame-type']
 
 
@@ -865,19 +836,3 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
     workflow += node
     files = node.output_files
     return files
-
-
-def create_noop_node():
-    """
-    Creates a noop node that can be added to a DAX doing nothing. The reason
-    for using this is if a minifollowups dax contains no triggers currently
-    the dax will contain no jobs and be invalid. By adding a noop node we
-    ensure that such daxes will actually run if one adds one such noop node.
-    Adding such a noop node into a workflow *more than once* will cause a
-    failure.
-    """
-    exe = wdax.Executable('NOOP')
-    pfn = distutils.spawn.find_executable('true')
-    exe.add_pfn(pfn)
-    node = wdax.Node(exe)
-    return node

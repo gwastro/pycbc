@@ -1,0 +1,101 @@
+#!/usr/bin/python
+
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"Writes veto_definer table contents to HTML table."
+
+import argparse
+import logging
+import numpy
+import pycbc.results
+import sys
+from ligo.lw import lsctables
+from ligo.lw import utils
+from pycbc.results import save_fig_with_metadata
+import pycbc.version
+from pycbc.io.ligolw import LIGOLWContentHandler
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+
+# add command line options
+parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
+parser.add_argument('--veto-definer-file', type=str,
+                        help='XML files with a veto_definer table to read.')
+parser.add_argument('--output-file', type=str,
+                        help='Path of the output HTML file.')
+
+# parse command line
+opts = parser.parse_args()
+
+# setup log
+logging.basicConfig(format='%(asctime)s:%(levelname)s, %(message)s',
+                    level=logging.INFO,datefmt='%I:%M:%S')
+
+# set column names
+columns = (('Category', []),
+           ('IFO', []),
+           ('Name', []),
+           ('Version', []),
+           ('Start Padding (s)', []),
+           ('End Padding (s)', []),
+           ('Start Time', []),
+           ('End Time', []),
+           ('Comment', []),
+)
+
+# set caption name
+caption = "This table shows each veto in the veto definer table."
+
+# read input file
+logging.info('Reading veto definer XML file')
+vetodef_xml = utils.load_filename(opts.veto_definer_file,
+                                   contenthandler=LIGOLWContentHandler)
+
+# get veto_definer table
+vetodef_table = lsctables.VetoDefTable.get_table(vetodef_xml)
+
+# loop over rows in veto_definer table
+logging.info('Looping through veto_definer table and saving information')
+for vetodef in vetodef_table:
+
+    # put values into columns
+    columns[0][1].append(vetodef.category)
+    columns[1][1].append(str(vetodef.ifo))
+    columns[2][1].append(str(vetodef.name))
+    columns[3][1].append(vetodef.version)
+    columns[4][1].append(vetodef.start_pad)
+    columns[5][1].append(vetodef.end_pad)
+    columns[6][1].append(vetodef.start_time)
+    columns[7][1].append(vetodef.end_time)
+    columns[8][1].append(str(vetodef.comment))
+
+# cast columns into arrays
+keys = [numpy.array(key, dtype=type(key[0])) for key,_ in columns]
+vals = [numpy.array(val, dtype=type(val[0])) for _,val in columns]
+
+# write HTML table
+logging.info('Writing HTML table')
+fig_kwds = {}
+html_table = pycbc.results.html_table(vals, keys, page_size=25)
+save_fig_with_metadata(str(html_table), opts.output_file,
+                     fig_kwds=fig_kwds,
+                     title='Veto Definer Table',
+                     cmd=' '.join(sys.argv),
+                     caption=caption)
+
+logging.info('Done.')

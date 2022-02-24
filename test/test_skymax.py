@@ -2,6 +2,7 @@ import copy
 import unittest
 import random
 import os
+import numpy
 from numpy import complex128, real, sqrt, sin, cos, angle, ceil, log
 from numpy import zeros, argmax, array
 from pycbc import DYN_RANGE_FAC
@@ -222,6 +223,7 @@ class DummyClass(object):
     pass
 
 class TestChisq(unittest.TestCase):
+    __test__ = False
     def setUp(self, *args):
         # Where are my data files?
         if os.path.isfile('test/data/ZERO_DET_high_P.txt'):
@@ -368,9 +370,10 @@ class TestChisq(unittest.TestCase):
         uvals_prec, _ = compute_u_val_for_sky_loc_stat\
             (I_plus.data, I_cross.data, hpc_corr_R, indices=[idx_max_prec],
              hpnorm=1., hcnorm=1.)
-        uvals_hom, _ = compute_u_val_for_sky_loc_stat_no_phase\
-            (I_plus.data, I_cross.data, hpc_corr_R, indices=[idx_max_hom],
-             hpnorm=1., hcnorm=1.)
+        with numpy.errstate(divide="ignore"):
+            uvals_hom, _ = compute_u_val_for_sky_loc_stat_no_phase\
+                (I_plus.data, I_cross.data, hpc_corr_R, indices=[idx_max_hom],
+                 hpnorm=1., hcnorm=1.)
 
         ht = hplus * uvals_hom[0] + hcross
         ht_norm = sigmasq(ht, psd=self.psd,
@@ -385,9 +388,10 @@ class TestChisq(unittest.TestCase):
         self.assertAlmostEqual(abs(real(I_t.data[idx_max_hom])), max_ds_hom)
         self.assertEqual(abs(real(I_t.data[idx_max_hom])),
                          max(abs(real(I_t.data))))
-        chisq, _ = self.power_chisq.values\
-            (corr_t, array([max_ds_hom]) / n_plus, n_t, self.psd,
-             array([idx_max_hom]), ht)
+        with numpy.errstate(invalid='ignore', divide='ignore'):
+            chisq, _ = self.power_chisq.values\
+                (corr_t, array([max_ds_hom]) / n_plus, n_t,
+                 self.psd, array([idx_max_hom]), ht)
 
         ht = hplus * uvals_prec[0] + hcross
         ht_norm = sigmasq(ht, psd=self.psd,
@@ -400,9 +404,10 @@ class TestChisq(unittest.TestCase):
              low_frequency_cutoff=self.low_freq_filter, h_norm=1.)
         I_t = I_t * n_t
 
-        chisq, _ = self.power_chisq.values\
-            (corr_t, array([max_ds_prec]) / n_plus, n_t, self.psd,
-             array([idx_max_prec]), ht)
+        with numpy.errstate(divide="ignore", invalid='ignore'):
+            chisq, _ = self.power_chisq.values\
+                (corr_t, array([max_ds_prec]) / n_plus, n_t, self.psd,
+                 array([idx_max_prec]), ht)
 
         self.assertAlmostEqual(abs(I_t.data[idx_max_prec]), max_ds_prec)
         self.assertEqual(idx_max_prec, abs(I_t.data).argmax())
@@ -410,8 +415,9 @@ class TestChisq(unittest.TestCase):
 
 
 
-def test_maker(class_name, idx, jdx):
+def skymax_test_maker(class_name, idx, jdx):
     class Test(class_name):
+        __test__ = True
         idx = idx
         jdx = jdx
 
@@ -422,8 +428,10 @@ def test_maker(class_name, idx, jdx):
 suite = unittest.TestSuite()
 for idx in range(4):
     for jdx in range(4):
-        curr_cls = test_maker(TestChisq, idx, jdx)
+        curr_cls = skymax_test_maker(TestChisq, idx, jdx)
+        vars()[curr_cls.__name__] = curr_cls
         suite.addTest(unittest.TestLoader().loadTestsFromTestCase(curr_cls))
+        del curr_cls
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)

@@ -19,6 +19,7 @@
 """
 
 import os
+import sys
 import argparse
 import logging
 import shutil
@@ -33,6 +34,7 @@ from pycbc.waveform import generator
 from pycbc import __version__
 from pycbc import inference
 from pycbc.inference import (models, burn_in, option_utils)
+from pycbc.inference.io import loadfile
 from pycbc.workflow import configuration
 
 # command line usage
@@ -81,9 +83,8 @@ opts = parser.parse_args()
 # setup log
 # If we're running in MPI mode, only allow the parent to print
 use_mpi, size, rank = pycbc.pool.use_mpi(opts.use_mpi, log=False)
-if use_mpi:
-    opts.verbose &= rank == 0
-pycbc.init_logging(opts.verbose)
+if pool.is_main_process():
+    pycbc.init_logging(opts.verbose)
 
 # verify options are sane
 fft.verify_fft_options(opts, parser)
@@ -137,8 +138,17 @@ with ctx:
         cp, model, output_file=opts.output_file, nprocesses=opts.nprocesses,
         use_mpi=opts.use_mpi)
 
+    # store the checkpoint file
+    if pool.is_main_process():
+        for fn in [sampler.checkpoint_file, sampler.backup_file]:
+            with loadfile(fn, 'a') as fp:
+                fp.write_config_file(cp)
+
     # Run the sampler
     sampler.run()
+    
+    if not pool.is_main_process():
+        sys.exit(0)
 
     # Finalize the output
     sampler.finalize()

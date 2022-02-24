@@ -29,13 +29,12 @@ http://pycbc.org/pycbc/latest/html/workflow.html
 """
 
 from __future__ import print_function
-import sys
 import os
 import shutil
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
 from ligo import segments
-from glue.ligolw import ligolw, lsctables, utils, ilwd
+from ligo.lw import ligolw, lsctables, utils
 from pycbc.workflow.core import File, FileList, resolve_url_to_file
 from pycbc.workflow.jobsetup import select_generic_executable
 
@@ -109,7 +108,8 @@ def get_coh_PTF_files(cp, ifos, run_dir, bank_veto=False, summary_files=False):
             bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
             bank_veto = File(ifos, "bank_veto_bank", sci_seg,
                              file_url=bank_veto_url)
-            bank_veto.PFN(bank_veto.cache_entry.path, site="local")
+            # FIXME: Is this an input file? If so use the from_path classmethod
+            bank_veto.add_pfn(bank_veto.cache_entry.path, site="local")
             file_list.extend(FileList([bank_veto]))
 
         if summary_files:
@@ -120,7 +120,7 @@ def get_coh_PTF_files(cp, ifos, run_dir, bank_veto=False, summary_files=False):
                              % run_dir
             summary_js = File(ifos, "coh_PTF_html_summary_js", sci_seg,
                               file_url=summary_js_url)
-            summary_js.PFN(summary_js.cache_entry.path, site="local")
+            summary_js.add_pfn(summary_js.cache_entry.path, site="local")
             file_list.extend(FileList([summary_js]))
 
             # summary.css file
@@ -130,7 +130,7 @@ def get_coh_PTF_files(cp, ifos, run_dir, bank_veto=False, summary_files=False):
                               % run_dir
             summary_css = File(ifos, "coh_PTF_html_summary_css", sci_seg,
                                file_url=summary_css_url)
-            summary_css.PFN(summary_css.cache_entry.path, site="local")
+            summary_css.add_pfn(summary_css.cache_entry.path, site="local")
             file_list.extend(FileList([summary_css]))
 
         return file_list
@@ -176,20 +176,20 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
 
     # Fill in all empty rows
     for entry in cols.keys():
-        if not hasattr(row, entry):
-            if cols[entry] in ['real_4','real_8']:
-                setattr(row,entry,0.)
-            elif cols[entry] == 'int_4s':
-                setattr(row,entry,0)
-            elif cols[entry] == 'lstring':
-                setattr(row,entry,'')
-            elif entry == 'process_id':
-                row.process_id = ilwd.ilwdchar("external_trigger:process_id:0")
-            elif entry == 'event_id':
-                row.event_id = ilwd.ilwdchar("external_trigger:event_id:0")
-            else:
-                print("Column %s not recognized" %(entry), file=sys.stderr)
-                raise ValueError
+        if hasattr(row, entry):
+            continue
+        if cols[entry] in ['real_4', 'real_8']:
+            setattr(row, entry, 0.)
+        elif cols[entry] in ['int_4s', 'int_8s']:
+            setattr(row, entry, 0)
+        elif cols[entry] == 'lstring':
+            setattr(row, entry, '')
+        elif entry == 'process_id':
+            row.process_id = 0
+        elif entry == 'event_id':
+            row.event_id = 0
+        else:
+            raise ValueError("Column %s not recognized" % entry)
 
     # Save file
     xml_file_name = "triggerGRB%s.xml" % str(cp.get("workflow",
@@ -198,7 +198,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
     utils.write_filename(xmldoc, xml_file_path)
     xml_file_url = urljoin("file:", pathname2url(xml_file_path))
     xml_file = File(ifos, xml_file_name, sci_seg, file_url=xml_file_url)
-    xml_file.PFN(xml_file_url, site="local")
+    xml_file.add_pfn(xml_file_url, site="local")
 
     return xml_file
 

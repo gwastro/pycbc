@@ -1,0 +1,209 @@
+#!/usr/bin/python
+
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse, pycbc.version
+import matplotlib; matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
+import itertools, datetime, time
+import sys
+from itertools import cycle
+from matplotlib.patches import Rectangle
+from pycbc.events.veto import get_segment_definer_comments
+from pycbc.results.color import ifo_color
+from pycbc.results.mpld3_utils import MPLSlide, LineTooltip
+from pycbc.workflow import SegFile
+import pycbc.version
+
+# parse command line
+parser = argparse.ArgumentParser()
+parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
+parser.add_argument('--segment-files', type=str, nargs="+",
+                        help='XML files with a segment definer table to read.')
+parser.add_argument('--segment-names', type=str, nargs="+", required=False,
+                        help='Names of segments in the segment definer table.')
+parser.add_argument('--output-file', type=str,
+                        help='Path of the output HTML file.')
+parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'],
+                        help='Space-separated list of IFOs to plot, default H1 L1.')
+opts = parser.parse_args()
+
+def timestr(s):
+    """ Takes seconds and returns a human-readable string for the amount
+    of time.
+    """
+
+    t = ""
+    s = int(s)
+    d = s / 86400
+    t += "%sd " % d if d else ""
+    s -= d * 86400
+    h = s / 3600
+    t += "%sh " % h if h else ""
+    s -= h * 3600
+    m = s / 60
+    t += "%sm " % m if m else ""
+    s -= m * 60
+    t += "%ss " % s
+    return t
+
+# FIXME set colors
+color_cycle = {}
+color_cycle['H1'] = cycle(['#ee0000', '#8c000f', '#840000', '#653700'])
+color_cycle['L1'] = cycle(['#4ba6ff', '#d0fefe', '#0165fc', '#001146'])
+color_cycle['V1'] = cycle(['#9b59b6', '#c20078', '#9a0eea', '#7e1e9c'])
+color_cycle['K1'] = cycle(['#ffb200', '#fdde6c', '#fdb915', '#d8863b'])
+color_cycle['I1'] = cycle(['#b0dd8b', 'ForestGreen', 'DarkGreen', 'DarkOliveGreen'])
+color_cycle['G1'] = cycle(['#222222', '#d8dcd6', '#363737', '#000000'])
+
+# set default plugins
+mpld3.plugins.DEFAULT_PLUGINS = []
+
+# an empty list for holding segment names
+names = []
+
+# default x-axis limits
+smin, smax = numpy.inf, -numpy.inf
+
+# set height of rectangles
+h = .7
+
+ifos = opts.ifos
+
+# set caption beginning
+caption = "Visualization of the input and output segments for the search. Shown are: "
+
+# an empty list for holding lists of matplotlib objects for the interactive legend
+line_collections = []
+
+# create a figure
+fig, ax = plt.subplots(figsize=(16,9))
+
+# loop over segment XML files
+i = 0
+seg_list = []
+s = []
+for segment_file in opts.segment_files:
+
+    # read segment definer table
+    seg_dict = SegFile.from_segment_xml(segment_file).segment_dict
+
+    # read comments from segment definer table
+    comment_dict = get_segment_definer_comments(open(segment_file, 'rb'),
+                                                include_version=False)
+
+    # loop over segment names
+    for segment_name in opts.segment_names:
+
+        # get segments
+        for ifo in ifos:
+
+            # get new color for this segment name
+            color = next(color_cycle[ifo])
+
+            for key in seg_dict.keys():
+                seg_key = ifo+':'+segment_name
+                if key == seg_key or key.startswith(ifo+':'+segment_name+':'):
+                    segs = seg_dict[key]
+
+                    # increment y position of bits
+                    y = ifos.index(ifo) + 0.33
+
+                else:
+                    continue
+
+                # put comment in caption
+                caption += ifo + ':' + segment_name
+                if comment_dict[key] != None:
+                    caption += " ("+comment_dict[key]+")"
+                caption += " "
+
+                # get a start time and end time array
+                start = numpy.array([float(seg[0]) for seg in segs])
+                end = numpy.array([float(seg[1]) for seg in segs])
+
+                # get an array for the duration of each segment
+                dur = end - start
+
+                # get the start and end of the timeseries
+                smin = start.min() if len(start) and start.min() < smin else smin
+                smax = end.max() if len(end) and end.max() > smax else smax
+
+                # plot segments
+                sub_line_collections = []
+                for s,e in zip(start, end):
+                    l = ax.plot([s,e], [y,y], '-', lw=120, color=color, alpha=0.3)
+                    sub_line_collections += l
+
+                    # set HTML table string
+                    label = """<table>
+                             <tr><th>Segment Name</th><td>%s</td></tr>
+                             <tr><th>Start</th><td>%.0f</td></tr>
+                             <tr><th>End</th><td>%.0f</td></tr>
+                             <tr><th>Duration</th><td>%s</td></tr>
+                         </table>
+                    """ % (segment_name, s, e, e-s)
+
+                    # add tooltip for segment
+                    if len(line_collections) < 1:
+                        mpld3.plugins.connect(fig, mpld3.plugins.LineHTMLTooltip(l[0], label))
+                    else:
+                        mpld3.plugins.connect(fig, LineTooltip(l[0], label))
+
+                # add name to list
+                names += [ifo+':'+segment_name]
+
+                # add list of lines to list
+                line_collections.append(sub_line_collections)
+
+# loop over IFOs
+for ifo in ifos:
+
+    # increment y position of bits
+    y = ifos.index(ifo) + 2 * 0.33
+
+    # set y position of text
+    ax.text(smin, y, ifo+' Segments', size=24)
+
+# add interactive legend
+interactive_legend = mpld3.plugins.InteractiveLegendPlugin(line_collections,
+                                                     names,
+                                                     alpha_unsel=0.1)
+mpld3.plugins.connect(fig, interactive_legend)
+
+# format the plot
+pylab.ylim(0, len(ifos) * (h + 0.2))
+pylab.xlim(smin, smax)
+pylab.xlabel('GPS Time (s)')
+
+# add whitespace for the legend
+fig.subplots_adjust(left=0.0, right=0.6, top=0.9, bottom=0.1)
+
+# add plugins to the plot
+mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10f'))
+mpld3.plugins.connect(fig, mpld3.plugins.BoxZoom())
+mpld3.plugins.connect(fig, mpld3.plugins.Zoom())
+mpld3.plugins.connect(fig, mpld3.plugins.Reset())
+
+# save the plot as an interactive HTML
+fig_kwds = {}
+pycbc.results.save_fig_with_metadata(fig, opts.output_file,
+                     fig_kwds=fig_kwds,
+                     title='Data Input and Search Output Segments',
+                     cmd=' '.join(sys.argv),
+                     caption=caption)

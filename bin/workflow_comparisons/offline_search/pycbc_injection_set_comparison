@@ -20,7 +20,7 @@ from os import path
 import argparse
 import numpy as np
 from h5py import File
-from pycbc.events import stat
+from pycbc.events import ranking
 import pycbc
 import logging
 
@@ -180,10 +180,12 @@ class RunInjectionResults(object):
                             vals = vals / 2 + 1
                         fdict[ifo].update({param: vals})
                 # Initialize statclass with an empty file list
-                statinst = \
-                        stat.sngl_statistic_dict[single_detector_statistic]([])
+                curr_rank = ranking.get_sngls_ranking_from_trigs(
+                    fdict[ifo],
+                    single_detector_statistic
+                )
                 fdict[ifo].update({single_detector_statistic:
-                                   statinst.single(fdict[ifo])})
+                                   curr_rank})
             statname = self.single_detector_statistic
             fdict.update({'minimum_single_detector_statistic': 
                           np.minimum(fdict[self.inj_dets[0]][statname],
@@ -385,7 +387,7 @@ parser.add_argument('--ifar-threshold', type=float, default=None,
                     help="If given, also followup injections with ifar smaller "
                          "than this threshold.")
 parser.add_argument("--single-detector-statistic", type=str, default='newsnr',
-                    choices=stat.sngl_statistic_dict.keys(),
+                    choices=ranking.sngls_ranking_function_dict.keys(),
                     help="Which single-detector statistic to calculate for"
                     " found injections")
 parser.add_argument("--verbose", action="store_true", default=False,

@@ -16,15 +16,9 @@
 """
 Module that contains functions for setting up the inference workflow.
 """
-
-import logging, os.path
-from Pegasus import DAX3 as dax
-from pycbc.workflow.core import (Executable, FileList, Node, makedir, File,
-                                 Workflow)
-from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
-from pycbc.workflow import WorkflowConfigParser
+from pycbc.workflow.core import (Executable, makedir)
+from pycbc.workflow.plotting import PlotExecutable
 from pycbc.results import layout
-from pycbc.workflow import pegasus_workflow as wdax
 
 
 def make_inference_plot(workflow, input_file, output_dir,
@@ -444,6 +438,108 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
     return node.output_files
 
 
+def make_inference_plot_mcmc_history(workflow, inference_file, output_dir,
+                                     name="plot_mcmc_history",
+                                     analysis_seg=None, tags=None):
+    """Sets up a plot showing the checkpoint history of an MCMC sampler.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    inference_file: pycbc.workflow.File
+        The file with posterior samples.
+    output_dir: str
+        The directory to store result plots and files.
+    name: str, optional
+        The name in the [executables] section of the configuration file
+        to use, and the section to read for additional arguments to pass to
+        the executable. Default is ``plot_mcmc_history``.
+    analysis_segs: ligo.segments.Segment, optional
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: list, optional
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of output files.
+    """
+    node = make_inference_plot(workflow, inference_file, output_dir,
+                               name, analysis_seg=analysis_seg, tags=tags,
+                               add_to_workflow=True)
+    return node.output_files
+
+
+def make_inference_dynesty_run_plot(workflow, inference_file, output_dir,
+                                    name="plot_dynesty_run",
+                                    analysis_seg=None, tags=None):
+    """Sets up a debugging plot for the dynesty run (for Dynesty sampler).
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    inference_file: pycbc.workflow.File
+        The file with posterior samples.
+    output_dir: str
+        The directory to store result plots and files.
+    name: str, optional
+        The name in the [executables] section of the configuration file
+        to use, and the section to read for additional arguments to pass to
+        the executable. Default is ``plot_dynesty_run``.
+    analysis_segs: ligo.segments.Segment, optional
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: list, optional
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of output files.
+    """
+    node = make_inference_plot(workflow, inference_file, output_dir,
+                               name, analysis_seg=analysis_seg, tags=tags,
+                               add_to_workflow=True)
+    return node.output_files
+
+
+def make_inference_dynesty_trace_plot(workflow, inference_file, output_dir,
+                                      name="plot_dynesty_traceplot",
+                                      analysis_seg=None, tags=None):
+    """Sets up a trace plot for the dynesty run (for Dynesty sampler).
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    inference_file: pycbc.workflow.File
+        The file with posterior samples.
+    output_dir: str
+        The directory to store result plots and files.
+    name: str, optional
+        The name in the [executables] section of the configuration file
+        to use, and the section to read for additional arguments to pass to
+        the executable. Default is ``plot_dynesty_traceplot``.
+    analysis_segs: ligo.segments.Segment, optional
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: list, optional
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of output files.
+    """
+    node = make_inference_plot(workflow, inference_file, output_dir,
+                               name, analysis_seg=analysis_seg, tags=tags,
+                               add_to_workflow=True)
+    return node.output_files
+
+
 def make_inference_pp_table(workflow, posterior_files, output_dir,
                             parameters=None, injection_samples_map=None,
                             name="pp_table_summary",
@@ -622,6 +718,12 @@ def get_diagnostic_plots(workflow):
         diagnostics.append('samples')
     if "plot_acceptance_rate" in workflow.cp.options("executables"):
         diagnostics.append('acceptance_rate')
+    if "plot_mcmc_history" in workflow.cp.options("executables"):
+        diagnostics.append('mcmc_history')
+    if "plot_dynesty_run" in workflow.cp.options("executables"):
+        diagnostics.append('dynesty_run')
+    if "plot_dynesty_traceplot" in workflow.cp.options("executables"):
+        diagnostics.append('dynesty_traceplot')
     return diagnostics
 
 
@@ -687,6 +789,42 @@ def make_diagnostic_plots(workflow, diagnostics, samples_file, label, rdir,
                 tags=tags+[label, str(kk)])
         out['acceptance_rate'] = acceptance_plots
         layout.single_layout(rdir[base], acceptance_plots)
+
+    if 'mcmc_history' in diagnostics:
+        # files for samples mcmc history subsection
+        base = "mcmc_history/{}".format(label)
+        history_plots = []
+        for kk, sf in enumerate(samples_file):
+            history_plots += make_inference_plot_mcmc_history(
+                workflow, sf, rdir[base],
+                analysis_seg=workflow.analysis_time,
+                tags=tags+[label, str(kk)])
+        out['mcmc_history'] = history_plots
+        layout.single_layout(rdir[base], history_plots)
+
+    if 'dynesty_run' in diagnostics:
+        # files for dynesty run subsection
+        base = "dynesty_run/{}".format(label)
+        dynesty_run_plots = []
+        for kk, sf in enumerate(samples_file):
+            dynesty_run_plots += make_inference_dynesty_run_plot(
+                workflow, sf, rdir[base],
+                analysis_seg=workflow.analysis_time,
+                tags=tags+[label, str(kk)])
+        out['dynesty_run'] = dynesty_run_plots
+        layout.single_layout(rdir[base], dynesty_run_plots)
+
+    if 'dynesty_traceplot' in diagnostics:
+        # files for samples dynesty tyrace plots subsection
+        base = "dynesty_traceplot/{}".format(label)
+        dynesty_trace_plots = []
+        for kk, sf in enumerate(samples_file):
+            dynesty_trace_plots += make_inference_dynesty_trace_plot(
+                workflow, sf, rdir[base],
+                analysis_seg=workflow.analysis_time,
+                tags=tags+[label, str(kk)])
+        out['dynesty_traceplot'] = dynesty_trace_plots
+        layout.single_layout(rdir[base], dynesty_trace_plots)
 
     return out
 
@@ -804,6 +942,11 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
     make_skymap = ("create_fits_file" in workflow.cp.options("executables") and
                    "plot_skymap" in workflow.cp.options("executables"))
 
+    make_prior = ("plot_prior" in workflow.cp.options("executables"))
+    _config = None
+    if make_prior:
+        _config = config_file
+
     # make node for running extract samples
     posterior_file = create_posterior_files(
         workflow, samples_files, posterior_file_dir,
@@ -822,7 +965,7 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
         summary_plots += make_inference_posterior_plot(
             workflow, posterior_file, rdir.base,
             name='plot_posterior_summary',
-            parameters=params, plot_prior_from_file=config_file,
+            parameters=params, plot_prior_from_file=_config,
             analysis_seg=analysis_seg,
             tags=tags+[label, group])
 
@@ -840,25 +983,25 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
 
     summary_files += list(layout.grouper(summary_plots, 2))
 
-    # files for priors summary section
-    base = "priors/{}".format(label)
-    prior_plots = make_inference_prior_plot(
-        workflow, config_file, rdir[base],
-        analysis_seg=workflow.analysis_time,
-        tags=tags+[label])
-    layout.single_layout(rdir[base], prior_plots)
-
     # files for posteriors summary subsection
     base = "posteriors/{}".format(label)
     posterior_plots = []
     for group, params in plot_params.items():
         posterior_plots += make_inference_posterior_plot(
             workflow, posterior_file, rdir[base],
-            parameters=params, plot_prior_from_file=config_file,
+            parameters=params, plot_prior_from_file=_config,
             analysis_seg=analysis_seg,
             tags=tags+[label, group])
     layout.single_layout(rdir[base], posterior_plots)
 
+    prior_plots = []
+    # files for priors summary section
+    if make_prior:
+        base = "priors/{}".format(label)
+        prior_plots += make_inference_prior_plot(
+            workflow, config_file, rdir[base],
+            analysis_seg=workflow.analysis_time, tags=tags+[label])
+        layout.single_layout(rdir[base], prior_plots)
     return posterior_file, summary_files, prior_plots, posterior_plots
 
 

@@ -30,6 +30,7 @@ from __future__ import absolute_import
 
 import logging
 import os
+import array
 import cpnest
 import cpnest.model as cpm
 from pycbc.inference.io import (CPNestFile, validate_checkpoint_files)
@@ -228,7 +229,7 @@ class CPNestModel(cpm.Model):
     def new_point(self):
         point = self.model.prior_rvs()
         return cpm.LivePoint(list(self.model.sampling_params),
-                             [point[p] for p in self.model.sampling_params])
+                             array.array('d', [point[p] for p in self.model.sampling_params]))
 
     def log_prior(self,xx):
         self.model.update(**xx)

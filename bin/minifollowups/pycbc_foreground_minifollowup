@@ -22,21 +22,11 @@ from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
 from pycbc.io import get_all_subkeys
 import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
+from pycbc.workflow.core import resolve_url_to_file
 import pycbc.version
-
-def to_file(path, ifo=None):
-    fil = wdax.File(os.path.basename(path))
-    fil.ifo = ifo
-    path = os.path.abspath(path)
-    fil.PFN(path, 'local')
-    return fil
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
 parser.add_argument('--statmap-file',
@@ -64,32 +54,24 @@ parser.add_argument('--sort-order', default='descending',
                     choices=['ascending','descending'],
                     help='Which direction to use when sorting on '
                          '--sort-variable. Default=descending')
-parser.add_argument('--output-map', type=str, required=False,
-                    help='Supply the location of the pegasus output map file. '
-                         'Only needed if running this job within a workflow.')
-parser.add_argument('--output-file', type=str, required=True,
-                    help='Name of the output dax file to be generated.')
-parser.add_argument('--transformation-catalog', type=str, required=False,
-                    help='Supply the location of the pegasus executable '
-                         'transformation catalog file. '
-                         'Only needed if running this job within a workflow.')
-parser.add_argument('--tags', nargs='+', default=[])
+
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
-workflow = wf.Workflow(args, args.workflow_name)
+workflow = wf.Workflow(args)
 
 wf.makedir(args.output_dir)
 
 # create a FileList that will contain all output files
 layouts = []
 
-tmpltbank_file = to_file(args.bank_file)
-coinc_file = to_file(args.statmap_file)
-insp_segs = to_file(args.inspiral_segments)
+tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
+coinc_file = resolve_url_to_file(os.path.abspath(args.statmap_file))
+insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 
 single_triggers = []
 fsdt = {}
@@ -97,7 +79,9 @@ insp_data_seglists = {}
 insp_analysed_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
-    single_triggers.append(to_file(fname, ifo=ifo))
+    strig_file = resolve_url_to_file(os.path.abspath(fname),
+                                     attrs={'ifos': ifo})
+    single_triggers.append(strig_file)
     fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
     insp_data_seglists[ifo] = select_segments_by_definer(
         args.inspiral_segments,
@@ -124,14 +108,6 @@ if args.sort_variable not in f[file_val]:
                    '{1} are {2}'.format(args.sort_variable, file_val,
                                         ', '.join(all_datasets)))
 
-if len(stat) == 0:
-    # There are no triggers, make no-op job and exit
-    noop_node = mini.create_noop_node()
-    workflow += noop_node
-    workflow.save(filename=args.output_file, output_map_path=args.output_map,
-                  transformation_catalog_path=args.transformation_catalog)
-    sys.exit(0)
-
 events_to_read = num_events * 100
 
 if len(stat) < num_events:
@@ -147,24 +123,11 @@ stat = stat[event_idx]
 
 times = {}
 tids = {}
-# Check if using input files from old (2-ifo) coinc code
-if 'detector_1' in f.attrs:
-    times = {f.attrs['detector_1']:
-               f['{}/time1'.format(file_val)][:][event_idx],
-             f.attrs['detector_2']:
-               f['{}/time2'.format(file_val)][:][event_idx],
-             }
-    tids = {f.attrs['detector_1']:
-          f['{}/trigger_id1'.format(file_val)][:][event_idx],
-            f.attrs['detector_2']:
-          f['{}/trigger_id2'.format(file_val)][:][event_idx],
-            }
-else:
-    # Version used for multi-ifo coinc code
-    ifo_list = f.attrs['ifos'].split(' ')
-    for ifo in ifo_list:
-        times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
-        tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
+# Version used for multi-ifo coinc code
+ifo_list = f.attrs['ifos'].split(' ')
+for ifo in ifo_list:
+    times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
+    tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
 
 bank_data = h5py.File(args.bank_file, 'r')
 
@@ -177,59 +140,34 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
     curr_idx += 1
     files = wf.FileList([])
 
-    # Check if using input files from old (2-ifo) coinc code
-    if 'detector_1' in f.attrs:
-        key0, key1 = tuple(times.keys())[:2]
-        ifo_times = '%s:%s %s:%s' % (key0, times[key0][curr_idx],
-                                     key1, times[key1][curr_idx])
-        key0, key1 = tuple(tids.keys())[:2]
-        ifo_tids = '%s:%s %s:%s' % (key0, tids[key0][curr_idx],
-                                    key1, tids[key1][curr_idx])
-        # For background do not want to follow up 10 background events caused
-        # by the same event in ifo 1 and different, quiet, events in ifo 2,
-        if key0 not in event_times:
-            event_times[key0] = []
-        if int(times[key0][curr_idx]) in event_times[key0]:
-            skipped_data.append((key0, int(times[key0][curr_idx])))
-            continue
-        if key1 not in event_times:
-            event_times[key1] = []
-        if int(times[key1][curr_idx]) in event_times[key1]:
-            skipped_data.append((key1, int(times[key1][curr_idx])))
-            continue
-        event_times[key0].append(int(times[key0][curr_idx]))
-        event_times[key1].append(int(times[key1][curr_idx]))
+    ifo_times_strings = []
+    ifo_tids_strings = []
+    duplicate = False
+    for ifo in times:
+        ifo_times_string = '%s:%s' % (ifo, times[ifo][curr_idx])
+        ifo_tids_string = '%s:%s' % (ifo, tids[ifo][curr_idx])
+        ifo_times_strings += [ifo_times_string]
+        ifo_tids_strings += [ifo_tids_string]
 
-    else:
-        # Version used for multi-ifo coinc code
-        ifo_times_strings = []
-        ifo_tids_strings = []
-        duplicate = False
-        for ifo in times:
-            ifo_times_string = '%s:%s' % (ifo, times[ifo][curr_idx])
-            ifo_tids_string = '%s:%s' % (ifo, tids[ifo][curr_idx])
-            ifo_times_strings += [ifo_times_string]
-            ifo_tids_strings += [ifo_tids_string]
+        # For background do not want to follow up 10 background coincs with
+        # the same event in ifo 1 and different events in ifo 2
+        if ifo not in event_times:
+            event_times[ifo] = []
+        # Don't skip coincs in zerolag or due to the sentinel time -1
+        if 'background' in args.analysis_category and \
+                times[ifo][curr_idx] != -1 and \
+                int(times[ifo][curr_idx]) in event_times[ifo]:
+            skipped_data.append((ifo, int(times[ifo][curr_idx])))
+            duplicate = True
+            break
 
-            # For background do not want to follow up 10 background coincs with
-            # the same event in ifo 1 and different events in ifo 2
-            if ifo not in event_times:
-                event_times[ifo] = []
-            # Don't skip coincs in zerolag or due to the sentinel time -1
-            if 'background' in args.analysis_category and \
-                    times[ifo][curr_idx] != -1 and \
-                    int(times[ifo][curr_idx]) in event_times[ifo]:
-                skipped_data.append((ifo, int(times[ifo][curr_idx])))
-                duplicate = True
-                break
+    if duplicate:
+        continue
+    for ifo in times:
+        event_times[ifo].append(int(times[ifo][curr_idx]))
 
-        if duplicate:
-            continue
-        for ifo in times:
-            event_times[ifo].append(int(times[ifo][curr_idx]))
-
-        ifo_times = ' '.join(ifo_times_strings)
-        ifo_tids = ' '.join(ifo_tids_strings)
+    ifo_times = ' '.join(ifo_times_strings)
+    ifo_tids = ' '.join(ifo_tids_strings)
 
     event_count += 1
     if skipped_data:
@@ -303,6 +241,5 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
 
     layouts += list(layout.grouper(files, 2))
 
-workflow.save(filename=args.output_file, output_map_path=args.output_map,
-              transformation_catalog_path=args.transformation_catalog)
+workflow.save()
 layout.two_column_layout(args.output_dir, layouts)

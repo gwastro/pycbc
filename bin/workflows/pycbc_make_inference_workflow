@@ -23,10 +23,8 @@ import h5py
 import logging
 import os
 import shlex
-import Pegasus.DAX3 as dax
 import pycbc
 import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
 import socket
 import sys
 import numpy
@@ -77,12 +75,12 @@ def read_events_from_config(cp):
 
     .. code-block:: ini
 
-       [event-gw150914]                                                                
-       label = GW150914+09:50:45UTC                                                    
-       config-files = sampler.ini                                    
-                      gw150914_like.ini                              
-                      o1_data.ini                                    
-       config-overrides = data:trigger-time:1126259462.43                              
+       [event-gw150914]
+       label = GW150914+09:50:45UTC
+       config-files = sampler.ini
+                      gw150914_like.ini
+                      o1_data.ini
+       config-overrides = data:trigger-time:1126259462.43
        nruns = 3
 
     Parameters
@@ -183,19 +181,14 @@ core.makedir(opts.output_dir)
 core.makedir('{}/{}'.format(opts.output_dir, config_file_dir))
 core.makedir('{}/{}'.format(opts.output_dir, posterior_file_dir))
 
-# set the dax file name
-dax_file = opts.dax_file
-if dax_file is None:
-    dax_file = "{}.dax".format(opts.workflow_name)
-
 # log to terminal until we know where the path to log output file
 log_format = "%(asctime)s:%(levelname)s : %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
 container = core.Workflow(opts, opts.workflow_name)
-workflow = core.Workflow(opts, opts.workflow_name + "-main")
-finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
+workflow = core.Workflow(opts, 'main')
+finalize_workflow = core.Workflow(opts, "finalization")
 
 # read the events to analyze
 events, labels, cpopts, nruns = read_events_from_config(workflow.cp)
@@ -249,8 +242,7 @@ for num_event, event in enumerate(events):
     # we need to go back to the original directory to do this for all the file
     # references to work correctly
     os.chdir(origdir)
-    sub_workflow = core.Workflow(opts,
-                                 "{}-{}".format(opts.workflow_name, event))
+    sub_workflow = core.Workflow(opts, event)
     # load the inference config file
     cp = configuration.WorkflowConfigParser.from_cli(cpopt)
 
@@ -327,12 +319,10 @@ container += workflow
 container += finalize_workflow
 
 # make finalize sub-workflow depend on main sub-workflow
-dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
-container._adag.addDependency(dep)
+container.add_subworkflow_dependancy(workflow, finalize_workflow)
 
 # write dax
-container.save(filename=dax_file, output_map_path=opts.output_map,
-               transformation_catalog_path=opts.transformation_catalog)
+container.save()
 
 # save workflow configuration file
 base = rdir["workflow/configuration"]

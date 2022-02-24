@@ -24,7 +24,6 @@
 """
 These are the unittests for the pycbc.waveform module
 """
-import pycbc
 import unittest
 from pycbc.types import zeros, complex64
 from pycbc.filter import overlap

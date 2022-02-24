@@ -4,7 +4,7 @@ import numpy
 from utils import simple_exit
 
 from pycbc.waveform.utils import apply_fd_time_shift
-from pycbc.types import (FrequencySeries, TimeSeries)
+from pycbc.types import (TimeSeries)
 
 
 class TestFDTimeShift(unittest.TestCase):
@@ -30,10 +30,6 @@ class TestFDTimeShift(unittest.TestCase):
         start_time = self.time_series.start_time
         tdshift = apply_fd_time_shift(fdsinx, start_time+tshift,
                                       fseries=fseries)
-        if not isinstance(tdshift, FrequencySeries):
-            # cast to FrequencySeries so time series will work
-            tdshift = FrequencySeries(tdshift, delta_f=fdsinx.delta_f,
-                                      epoch=fdsinx.epoch)
         return tdshift.to_timeseries()
 
     def _test_apply_fd_time_shift(self, fdsinx, fseries=None, atol=1e-8):
@@ -100,11 +96,7 @@ class TestFDTimeShift(unittest.TestCase):
         """Applies shifts to fdsinx using numpy code, and compares the result
         to applying the shift directly in the time domain.
         """
-        fdsinx = self.fdsinx.numpy()
-        # attach things will work needed to make this work
-        fdsinx.delta_f = self.fdsinx.delta_f
-        fdsinx.epoch = self.fdsinx.epoch
-        fdsinx.precision = self.fdsinx.precision
+        fdsinx = self.fdsinx.copy()
         fseries = self.fdsinx.sample_frequencies.numpy()
         self._test_apply_fd_time_shift(fdsinx, fseries)
 

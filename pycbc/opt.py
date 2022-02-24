@@ -31,16 +31,10 @@ if os.environ.get("LEVEL2_CACHE_SIZE", None) or os.environ.get("NO_GETCONF", Non
 elif sys.platform == 'darwin':
     # Mac has getconf, but we can do nothing useful with it
     HAVE_GETCONF = False
-elif sys.version_info >= (2, 7):
+else:
     import subprocess
     _USE_SUBPROCESS = True
     HAVE_GETCONF = True
-else:
-    try:
-        import commands # Only available on Unix?
-        HAVE_GETCONF = True
-    except:
-        pass
 
 if os.environ.get("LEVEL2_CACHE_SIZE", None):
     LEVEL2_CACHE_SIZE = int(os.environ["LEVEL2_CACHE_SIZE"])

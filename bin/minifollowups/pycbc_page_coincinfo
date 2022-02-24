@@ -101,23 +101,14 @@ headers = list(headers)
 table = list(table)
 if args.include_gracedb_link:
     # Get the time from the single detectors
-    if 'detector_1' in f.attrs:
-        time = (d['time2'][n] + d['time1'][n]) / 2.0
-    else:
-        times = [d['%s/time' % ifo][n] for ifo in f.attrs['ifos'].split(' ')]
-        times = numpy.array(times)
-        time = numpy.mean(times[times > 0])
+    times = [d['%s/time' % ifo][n] for ifo in f.attrs['ifos'].split(' ')]
+    times = numpy.array(times)
+    time = numpy.mean(times[times > 0])
     gdb_search_link = followup.get_gracedb_search_link(time)
     headers.append("GraceDB Search Link")
     table.append(gdb_search_link)
 
 table = numpy.array([table], dtype=str)
-
-if 'detector_1' in f.attrs:
-    headers.append("Time delay (s)")
-    tdelay = '%5.4f' % (d['time2'][n] - d['time1'][n])
-    table = numpy.array([list(table[0]) + [tdelay]])
-
 
 html = pycbc.results.dq.redirect_javascript + \
                                 str(pycbc.results.static_table(table, headers))
@@ -125,16 +116,9 @@ html = pycbc.results.dq.redirect_javascript + \
 # Make a table for the single detector information ############################
 
 idx = {}
-# Check if using input files from old (2-ifo) coinc code
-if 'detector_1' in f.attrs:
-    # 2 detector version
-    ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
-    idx = {ifo1:d['trigger_id1'][n], ifo2:d['trigger_id2'][n]}
-else:
-    # Version used for multi-ifo coinc code
-    ifo_list = f.attrs['ifos'].split(' ')
-    for ifo in ifo_list:
-        idx[ifo] = d['%s/trigger_id' % ifo][n]
+ifo_list = f.attrs['ifos'].split(' ')
+for ifo in ifo_list:
+    idx[ifo] = d['%s/trigger_id' % ifo][n]
 
 # Store the single detector trigger files keyed by ifo in a dictionary
 files = {}
@@ -153,9 +137,8 @@ data = []
 for ifo in files.keys():
 
     # ignore ifo if coinc didn't participate (only for multi-ifo workflow)
-    if ('detector_1' not in f.attrs) and \
-       (statmapfile['%s/time' % ifo][n] == -1.0):
-            continue
+    if (statmapfile['%s/time' % ifo][n] == -1.0):
+        continue
 
     d = files[ifo]
     i = idx[ifo]

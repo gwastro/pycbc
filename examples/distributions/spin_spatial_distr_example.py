@@ -1,7 +1,6 @@
 import numpy
 import matplotlib.pyplot as plt
 import pycbc.coordinates as co
-from mpl_toolkits.mplot3d import Axes3D
 from pycbc import distributions
 
 # We can choose any bounds between 0 and pi for this distribution but in units

@@ -1,0 +1,34 @@
+name: docker build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      -
+        uses: actions/checkout@v1
+      -
+        name: "Set up Python"
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      -
+        name: "Preparing a host container"
+        run: "docker build -t pycbc-docker-tmp ."
+      -
+        name: "Installing PyCBC and dependencies"
+        run: "docker run --privileged --name pycbc_inst -v `pwd`:/scratch pycbc-docker-tmp /bin/bash -c /scratch/docker/etc/docker-install.sh"
+      -
+        env:
+          DOCKER_IMG: pycbc/pycbc-el8
+        name: "Running docker commit"
+        run: "bash -e docker/etc/docker_commit.sh"
+      -
+        env:
+          DOCKER_IMG: pycbc/pycbc-el8
+          DOCKER_PASSWORD: "${{secrets.DOCKERHUB_PASSWORD}}"
+          DOCKER_USERNAME: "${{secrets.DOCKERHUB_USERNAME}}"
+        name: "Pushing docker image"
+        run: "bash -e docker/etc/push_image.sh"
+

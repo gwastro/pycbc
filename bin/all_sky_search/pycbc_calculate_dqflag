@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+"""
+    Convert veto definer into timeseries
+"""
+
+import logging, argparse, numpy, h5py
+import pycbc
+from pycbc.version import git_verbose_msg as version
+from pycbc.events import veto
+from pycbc.types.timeseries import TimeSeries
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=version)
+parser.add_argument('--verbose', action="store_true")
+parser.add_argument("--gps-start-time", type=int,required=True,
+                    help="The gps start time of the data "
+                          "(integer seconds)")
+parser.add_argument("--gps-end-time", type=int,required=True,
+                    help="The gps end time of the data "
+                         "(integer seconds)")
+parser.add_argument('--dq-segments', required=True,
+                    help="segment file containing the "
+                         "relevant data quality flag segments")
+parser.add_argument('--flag', type=str, required=True,
+                    help="name of the data quality flag")
+parser.add_argument('--ifo', type=str, required=True,
+                    help="interferometer to analyze")
+parser.add_argument("--output-file", required=True,
+                    help="name of output file")
+parser.add_argument("--output-channel", required=False,
+                    help="name of output channel")
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+
+def make_dq_ts(dq_segs, start, end, ifo, flag):
+    """ Create a data quality timeseries
+    """
+    logging.info('Creating data quality timeseries for flag %s', 
+                 flag)
+    # Keep just times which belong to science_segments
+    dq_times = numpy.arange(start, end)
+    dq = numpy.zeros(len(dq_times))
+    # Identify times within segments for the chosen flag
+    indexes, _ = veto.indices_within_segments(dq_times, [dq_segs], ifo=ifo,
+                                              segment_name=flag)
+    if indexes.size:
+        dq[indexes] = 1
+    else:
+        logging.warning('Veto definer segment list is empty for flag %s-%s',
+                        ifo, flag)
+    return TimeSeries(dq, epoch=start, delta_t=1.)
+
+
+ifo = args.ifo
+flag = args.flag
+
+flag_list = flag.split(':')
+if len(flag_list)>1:
+    flag = flag_list[1]
+
+# Create data quality time series
+dq = make_dq_ts(args.dq_segments, args.gps_start_time, args.gps_end_time, 
+                ifo, flag)
+
+dq.save(args.output_file, group=args.output_channel)
+
+logging.info('Done!')

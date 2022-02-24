@@ -83,6 +83,10 @@ You should click the button, and proceed to fill in the title and description bo
 
 Once the request has been opened, one of the maintainers will assign someone to review the change.
 
+During this process you might have some suggestions about code layout (mostly automated). Please see here for guidance on that:
+
+https://github.com/gwastro/pycbc/wiki/How-to-satisfy-CodeClimate
+
 ## More Information
 
 More information regarding the usage of GitHub can be found in the [GitHub Guides](https://guides.github.com/).

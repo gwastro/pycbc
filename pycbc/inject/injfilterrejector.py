@@ -265,7 +265,7 @@ class InjFilterRejector(object):
                                   delta_f=self.coarsematch_deltaf)
         self.short_injections[simulation_id] = new_inj
 
-    def template_segment_checker(self, bank, t_num, segment, start_time):
+    def template_segment_checker(self, bank, t_num, segment):
         """Test if injections in segment are worth filtering with template.
 
         Using the current template, current segment, and injections within that
@@ -293,15 +293,9 @@ class InjFilterRejector(object):
             # If disabled, always filter (ie. return True)
             return True
 
-        # Get times covered by segment analyze
-        sample_rate = 2. * (len(segment) - 1) * segment.delta_f
-        cum_ind = segment.cumulative_index
-        diff = segment.analyze.stop - segment.analyze.start
-        seg_start_time = cum_ind / sample_rate + start_time
-        seg_end_time = (cum_ind + diff) / sample_rate + start_time
-        # And add buffer
-        seg_start_time = seg_start_time - self.seg_buffer
-        seg_end_time = seg_end_time + self.seg_buffer
+        # Get times covered by segment analyze and add buffer
+        seg_start_time = segment.start_time - self.seg_buffer
+        seg_end_time = segment.end_time + self.seg_buffer
 
         # Chirp time test
         if self.chirp_time_window is not None:
@@ -309,8 +303,14 @@ class InjFilterRejector(object):
             m2 = bank.table[t_num]['mass2']
             tau0_temp, _ = mass1_mass2_to_tau0_tau3(m1, m2, self.f_lower)
             for inj in self.injection_params.table:
-                end_time = inj.geocent_end_time + \
-                    1E-9 * inj.geocent_end_time_ns
+                if isinstance(inj, np.record):
+                    # hdf format file
+                    end_time = inj['tc']
+                else:
+                    # must be an xml file originally
+                    end_time = inj.geocent_end_time + \
+                        1E-9 * inj.geocent_end_time_ns
+
                 if not(seg_start_time <= end_time <= seg_end_time):
                     continue
                 tau0_inj, _ = \
@@ -362,12 +362,20 @@ class InjFilterRejector(object):
             else:
                 htilde = self._short_template_wav
 
-            for inj in self.injection_params.table:
-                end_time = inj.geocent_end_time + \
-                    1E-9 * inj.geocent_end_time_ns
+            for ii, inj in enumerate(self.injection_params.table):
+                if isinstance(inj, np.record):
+                    # hdf format file
+                    end_time = inj['tc']
+                    sim_id = self.injection_ids[ii]
+                else:
+                    # must be an xml file originally
+                    end_time = inj.geocent_end_time + \
+                        1E-9 * inj.geocent_end_time_ns
+                    sim_id = inj.simulation_id
+
                 if not(seg_start_time < end_time < seg_end_time):
                     continue
-                curr_inj = self.short_injections[inj.simulation_id]
+                curr_inj = self.short_injections[sim_id]
                 o, _ = match(htilde, curr_inj, psd=red_psd,
                              low_frequency_cutoff=self.f_lower)
                 if o > self.match_threshold:

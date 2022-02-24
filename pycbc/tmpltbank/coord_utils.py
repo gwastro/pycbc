@@ -17,7 +17,6 @@
 from __future__ import division
 import logging
 import numpy
-from six.moves import range
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import conversions
 from pycbc import pnutils

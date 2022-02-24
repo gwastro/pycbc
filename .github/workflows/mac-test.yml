@@ -1,0 +1,25 @@
+name: macos basic tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 4
+      matrix:
+        os: [macos-10.15]
+        python-version: [3.7, 3.8, 3.9]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - run: |
+        brew install fftw
+        pip install --upgrade pip setuptools tox
+    - name: run basic pycbc test suite
+      run: |
+        sudo chmod -R 777 /usr/local/miniconda/
+        tox py-unittest

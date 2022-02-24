@@ -17,6 +17,7 @@ This modules provides classes for evaluating distributions with bounds.
 """
 
 import warnings
+import numpy
 from six.moves.configparser import Error
 from pycbc import boundaries
 from pycbc import VARARGS_DELIM
@@ -314,6 +315,18 @@ class BoundedDist(object):
         for param in self.params:
             updated[param] = self._cdfinv_param(param, kwds[param])
         return updated
+
+    def rvs(self, size=1, **kwds):
+        "Draw random value"
+        dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        draw = {}
+        for param in self.params:
+            draw[param] = numpy.random.uniform(0, 1, size=size)
+        exp = self.cdfinv(**draw)
+        for param in self.params:
+            arr[param] = exp[param]
+        return arr
 
     @classmethod
     def from_config(cls, cp, section, variable_args, bounds_required=False):

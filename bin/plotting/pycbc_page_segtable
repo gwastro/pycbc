@@ -1,0 +1,182 @@
+#!/usr/bin/python
+
+# Copyright (C) 2015 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import logging
+import numpy
+import pycbc.results
+import sys
+from ligo import segments
+from pycbc.events.veto import get_segment_definer_comments
+from pycbc.results import save_fig_with_metadata
+from pycbc.workflow import SegFile
+import pycbc.version
+import itertools
+
+def powerset_ifos(ifo_set):
+    combo_set = []
+    for n_ifos in range(1, len(ifo_set) + 1):
+        combo_set += itertools.combinations(ifo_set, n_ifos)
+    return combo_set
+
+# parse command line
+parser = argparse.ArgumentParser()
+parser.add_argument("--version", action="version",
+                        version=pycbc.version.git_verbose_msg)
+parser.add_argument('--segment-files', type=str, nargs="+",
+                        help='XML files with a segment definer table to read.')
+parser.add_argument('--segment-names', type=str, nargs="+", required=False, default="",
+                        help='Names of segments in the segment definer table.')
+parser.add_argument('--description', type=str, required=False, default="",
+                        help='Additional descriptive text for caption.')
+parser.add_argument('--title-text', type=str, required=False,
+                        help='Additional text to append to title.')
+parser.add_argument('--output-file', type=str,
+                        help='Path of the output HTML file.')
+parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'],
+                        help='Space-separated list of detectors: default H1 L1.')
+opts = parser.parse_args()
+
+# setup log
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    level=logging.INFO,datefmt='%I:%M:%S')
+
+# create list of combinations of detectors
+ifo_combinations = powerset_ifos(opts.ifos)
+
+# set column names
+columns = (('Name', []),)
+# columns for detectors and combinations
+for combo in ifo_combinations:
+    det_combo_string = ''.join(combo).upper()
+    columns += (('%s Time (s)' % det_combo_string, []),)
+
+caption = "This table shows the cumulative amount of time for each segment. Shown are:"
+
+# loop over segment files from command line
+seg_dict = {}
+comment_dict = {}
+for segment_file in opts.segment_files:
+
+    # read segment definer table
+    seg_dict.update(SegFile.from_segment_xml(segment_file).segment_dict)
+    comment_dict.update(get_segment_definer_comments(open(segment_file, 'rb'),
+                                                     include_version=False))
+
+# loop over segment names
+for segment_name in opts.segment_names:
+
+    # allow user to find the and of segments if they use a "&" on the command line
+    names = segment_name.split('&')
+
+    # create a dict that will hold first segment_name in list for each IFO
+    base_segs = segments.segmentlistdict({})
+
+    # create a dict that will hold all other segment_name in list for each IFO
+    comp_segs = segments.segmentlistdict({})
+
+    # loop over IFOs
+    for ifo in opts.ifos:
+
+        # make an empty list for each IFO
+        base_segs[ifo] = segments.segmentlist([])
+        comp_segs[ifo] = segments.segmentlist([])
+
+        # loop over names from string split on "&"
+        for name in names:
+
+            # construct the first part of the segment flag
+            # note that if you don't include a version on the command line then
+            # it will select what ever version it finds first for that
+            # segment flag
+            segment_flag = ifo + ":" + name
+
+            # loop over segments names from segment_definer table
+            # from the segment XML files
+            for key in seg_dict.keys():
+
+                # if you find the segment flag for this IFO then add those
+                # segments to the list and exit this for loop
+                # this is a for loop because the version of the flag may not
+                # be defined by the command line
+                if key == segment_flag or key.startswith(segment_flag+':'):
+                    if not len(base_segs[ifo]) and name == names[0]:
+                        base_segs[ifo] = seg_dict[key].coalesce()
+                    else:
+                        comp_segs[ifo] = comp_segs[ifo].coalesce() + seg_dict[key].coalesce()
+                        comp_segs[ifo].coalesce()
+                    break
+
+    # put comment in caption
+    caption += " " + segment_name
+    # FIXME: This only worked by fluke before. Not sure what it's supposed to
+    #        do in the case where there are two segments anyway.
+    #        Commenting for now
+    #if comment_dict[key] != None:
+    #    caption += " ("+comment_dict[key]+")"
+
+    # set up dictionary of length of time of single-ifo segments in seconds
+    ifo_len = {}
+    for ifo in opts.ifos:
+        if len(names) > 1:
+            ifo_len[ifo] = abs( ( base_segs[ifo].coalesce() & comp_segs[ifo].coalesce() ).coalesce() )
+        else:
+            ifo_len[ifo] = abs( base_segs[ifo].coalesce() )
+
+    columns[0][1].append(segment_name)
+    counter = 1
+    for combo in ifo_combinations:
+        first_ifo = True
+        for ifo in combo:
+            if first_ifo:
+                combo_base_segs = base_segs[ifo].coalesce()
+                combo_comp_segs = comp_segs[ifo].coalesce()
+                first_ifo = False
+            else:
+                for ifo in combo:
+                    combo_base_segs = combo_base_segs.coalesce() & base_segs[ifo].coalesce()
+                    combo_comp_segs = combo_comp_segs.coalesce() + comp_segs[ifo].coalesce()
+
+        combo_base_segs.coalesce()
+        combo_comp_segs.coalesce()
+        if len(names) > 1:
+            combo_len = abs( (combo_base_segs.coalesce() & combo_comp_segs.coalesce() ).coalesce() )
+        else:
+            combo_len = abs( combo_base_segs.coalesce() )
+        columns[counter][1].append(float(combo_len))
+        counter += 1
+
+# cast columns into arrays
+keys = [numpy.array(key, dtype=type(key[0])) for key,_ in columns]
+vals = [numpy.array(val, dtype=type(val[0])) for _,val in columns]
+
+# write HTML table
+title = 'Segment Summary'
+caption += '.'
+if opts.title_text:
+    title = title + ": " + opts.title_text
+if opts.description:
+   caption = caption + " " + opts.description
+
+fig_kwds = {}
+html_table = pycbc.results.html_table(vals, keys, page_size=10)
+save_fig_with_metadata(str(html_table), opts.output_file,
+                     fig_kwds=fig_kwds,
+                     title=title,
+                     cmd=' '.join(sys.argv),
+                     caption=caption)

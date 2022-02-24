@@ -7,12 +7,12 @@ The easiest way to start using PyCBC is to install one of our `Docker containers
 
 To start a Docker container with no graphics, type the commands::
 
-    docker pull pycbc/pycbc-el7:latest
-    docker run -it pycbc/pycbc-el7:latest
+    docker pull pycbc/pycbc-el8:latest
+    docker run -it pycbc/pycbc-el8:latest
 
-This example downloads current version of the code from the `GitHub master branch. <https://github.com/ligo-cbc/pycbc>`_ Replace the string ``latest`` with one of the `PyCBC release tags <https://github.com/ligo-cbc/pycbc/releases>`_ (e.g. ``v1.7.0``) to install a container containing a released version of PyCBC. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite installed into the root filesystem. The command above starts a login shell as the pycbc user. To override this and log in as root, run the command::
+This example downloads current version of the code from the `GitHub master branch. <https://github.com/gwastro/pycbc>`_ Replace the string ``latest`` with one of the `PyCBC release tags <https://github.com/gwastro/pycbc/releases>`_ (e.g. ``v1.7.0``) to install a container containing a released version of PyCBC. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite installed into the root filesystem. The command above starts a login shell as the pycbc user. To override this and log in as root, run the command::
 
-   docker run -it pycbc/pycbc-el7:latest /bin/bash -l
+   docker run -it pycbc/pycbc-el8:latest /bin/bash -l
 
 -------------------------------------
 Using jupyter notebook within docker
@@ -21,7 +21,7 @@ Using jupyter notebook within docker
 One can start a jupyter notebook within docker and then port forward to your
 computer's environment.::
 
-    docker run -it -p 8888:8888 --name pycbc_test pycbc/pycbc-el7:latest /bin/su -l pycbc -c "jupyter notebook --no-browser --ip 0.0.0.0"
+    docker run -it -p 8888:8888 --name pycbc_test pycbc/pycbc-el8:latest /bin/su -l pycbc -c "jupyter notebook --no-browser --ip 0.0.0.0"
 
 Once the image is running, you can connect from your computer's web browser to the address printed to the screen by jupyter. This is typically the local host adddress, e.g. ``127.0.0.1``
 

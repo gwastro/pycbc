@@ -29,37 +29,30 @@ import os
 import numpy as np
 import lal
 import copy
+import logging
+from six import add_metaclass
 from abc import ABCMeta, abstractmethod
 import lalsimulation as sim
 import h5py
 from pycbc import waveform
+from pycbc import frame
+from pycbc.opt import LimitedSizeDict
 from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
-from pycbc.types import float64, float32, TimeSeries
+from pycbc.types import float64, float32, TimeSeries, load_timeseries
 from pycbc.detector import Detector
 from pycbc.conversions import tau0_from_mass1_mass2
+from pycbc.filter import resample_to_delta_t
 import pycbc.io
+from pycbc.io.ligolw import LIGOLWContentHandler
+from ligo.lw import utils as ligolw_utils, ligolw, lsctables
 
-from six import add_metaclass
 
 injection_func_map = {
     np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
     np.dtype(float64): sim.SimAddInjectionREAL8TimeSeries
 }
 
-
-#
-# Remove everything between the dashed lines once we get rid of xml
-# -----------------------------------------------------------------------------
-#
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import ligolw, table, lsctables
-
-# dummy class needed for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-
-lsctables.use_in(LIGOLWContentHandler)
 
 # Map parameter names used in pycbc to names used in the sim_inspiral
 # table, if they are different
@@ -82,6 +75,48 @@ def set_sim_data(inj, field, data):
     else:
         setattr(inj, sim_field, data)
 
+
+def projector(detector_name, inj, hp, hc, distance_scale=1):
+    """ Use the injection row to project the polarizations into the
+    detector frame
+    """
+    detector = Detector(detector_name)
+
+    hp /= distance_scale
+    hc /= distance_scale
+
+    try:
+        tc = inj.tc
+        ra = inj.ra
+        dec = inj.dec
+    except:
+        tc = inj.time_geocent
+        ra = inj.longitude
+        dec = inj.latitude
+
+    hp.start_time += tc
+    hc.start_time += tc
+
+    # taper the polarizations
+    try:
+        hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
+        hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
+    except AttributeError:
+        hp_tapered = hp
+        hc_tapered = hc
+
+    projection_method = 'lal'
+    if hasattr(inj, 'detector_projection_method'):
+        projection_method = inj.detector_projection_method
+
+    logging.info('Injecting at %s, method is %s', tc, projection_method)
+
+    # compute the detector response and add it to the strain
+    signal = detector.project_wave(hp_tapered, hc_tapered,
+                                   ra, dec, inj.polarization,
+                                   method=projection_method,
+                                   reference_time=tc,)
+    return signal
 
 def legacy_approximant_name(apx):
     """Convert the old style xml approximant name to a name
@@ -118,11 +153,13 @@ class _XMLInjectionSet(object):
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
+        self.table = lsctables.SimInspiralTable.get_table(self.indoc)
         self.extra_args = kwds
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None, inj_filter_rejector=None):
+              simulation_ids=None,
+              inj_filter_rejector=None,
+              injection_sample_rate=None,):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -143,6 +180,8 @@ class _XMLInjectionSet(object):
             If given send each injected waveform to the InjFilterRejector
             instance so that it can store a reduced representation of that
             injection if necessary.
+        injection_sample_rate: float, optional
+            The sample rate to generate the signal before injection
 
         Returns
         -------
@@ -165,6 +204,10 @@ class _XMLInjectionSet(object):
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
 
+        delta_t = strain.delta_t
+        if injection_sample_rate is not None:
+            delta_t = 1.0 / injection_sample_rate
+
         injections = self.table
         if simulation_ids:
             injections = [inj for inj in injections \
@@ -174,15 +217,16 @@ class _XMLInjectionSet(object):
             f_l = inj.f_lower if f_lower is None else f_lower
             # roughly estimate if the injection may overlap with the segment
             # Add 2s to end_time to account for ringdown and light-travel delay
-            end_time = inj.get_time_geocent() + 2
+            end_time = inj.time_geocent + 2
             inj_length = tau0_from_mass1_mass2(inj.mass1, inj.mass2, f_l)
             # Start time is taken as twice approx waveform length with a 1s
             # safety buffer
-            start_time = inj.get_time_geocent() - 2 * (inj_length + 1)
+            start_time = inj.time_geocent - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
                 continue
-            signal = self.make_strain_from_inj_object(inj, strain.delta_t,
+            signal = self.make_strain_from_inj_object(inj, delta_t,
                     detector_name, f_lower=f_l, distance_scale=distance_scale)
+            signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
             if float(signal.start_time) > t1:
                 continue
 
@@ -228,7 +272,6 @@ class _XMLInjectionSet(object):
         signal : float
             h(t) corresponding to the injection.
         """
-        detector = Detector(detector_name)
         f_l = inj.f_lower if f_lower is None else f_lower
 
         name, phase_order = legacy_approximant_name(inj.waveform)
@@ -239,26 +282,12 @@ class _XMLInjectionSet(object):
             phase_order=phase_order,
             f_lower=f_l, distance=inj.distance,
             **self.extra_args)
-
-        hp /= distance_scale
-        hc /= distance_scale
-
-        hp._epoch += inj.get_time_geocent()
-        hc._epoch += inj.get_time_geocent()
-
-        # taper the polarizations
-        hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
-        hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
-
-        # compute the detector response and add it to the strain
-        signal = detector.project_wave(hp_tapered, hc_tapered,
-                             inj.longitude, inj.latitude, inj.polarization)
-
-        return signal
+        return projector(detector_name,
+                         inj, hp, hc, distance_scale=distance_scale)
 
     def end_times(self):
         """Return the end times of all injections"""
-        return [inj.get_time_geocent() for inj in self.table]
+        return [inj.time_geocent for inj in self.table]
 
     @staticmethod
     def write(filename, samples, write_params=None, static_args=None):
@@ -323,9 +352,13 @@ class _HDFInjectionSet(object):
     table
     static_args
     extra_args
+    required_params : tuple
+        Parameter names that must exist in the injection HDF file in order to
+        create an injection of that type.
     """
     _tableclass = pycbc.io.FieldArray
     injtype = None
+    required_params = ()
 
     def __init__(self, sim_file, hdf_group=None, **kwds):
         # open the file
@@ -336,6 +369,11 @@ class _HDFInjectionSet(object):
         parameters = list(group.keys())
         # get all injection parameter values
         injvals = {param: group[param][()] for param in parameters}
+        # make sure Numpy S strings are loaded as strings and not bytestrings
+        # (which could mess with approximant names, for example)
+        for k in injvals:
+            if injvals[k].dtype.kind == 'S':
+                injvals[k] = injvals[k].astype('U')
         # if there were no variable args, then we only have a single injection
         if len(parameters) == 0:
             numinj = 1
@@ -343,7 +381,8 @@ class _HDFInjectionSet(object):
             numinj = tuple(injvals.values())[0].size
         # add any static args in the file
         try:
-            self.static_args = group.attrs['static_args']
+            # ensure parameter names are string types
+            self.static_args = group.attrs['static_args'].astype('U')
         except KeyError:
             self.static_args = []
         parameters.extend(self.static_args)
@@ -361,12 +400,15 @@ class _HDFInjectionSet(object):
                 # otherwise, we can just repeat the value the needed number of
                 # times
                 arr = np.repeat(val, numinj)
+            # make sure any byte strings are stored as strings instead
+            if arr.dtype.char == 'S':
+                arr = arr.astype('U')
             injvals[param] = arr
-        # make sure a coalescence time is specified for injections
-        if 'tc' not in injvals:
-            raise ValueError("no tc found in the given injection file; "
-                             "this is needed to determine where to place the "
-                             "injection")
+        # make sure required parameters are provided
+        missing = set(self.required_params) - set(injvals.keys())
+        if missing:
+            raise ValueError("required parameter(s) {} not found in the given "
+                             "injection file".format(', '.join(missing)))
         # initialize the table
         self.table = self._tableclass.from_kwargs(**injvals)
         # save the extra arguments
@@ -420,7 +462,7 @@ class _HDFInjectionSet(object):
             # write metadata
             if static_args is None:
                 static_args = {}
-            fp.attrs["static_args"] = list(static_args.keys())
+            fp.attrs["static_args"] = list(map(str, static_args.keys()))
             fp.attrs['injtype'] = cls.injtype
             for key, val in metadata.items():
                 fp.attrs[key] = val
@@ -434,7 +476,15 @@ class _HDFInjectionSet(object):
                     # try decoding it and writing
                     fp.attrs[arg] = str(val)
             for field in write_params:
-                fp[field] = samples[field]
+                try:
+                    fp[field] = samples[field]
+                except TypeError as e:
+                    # can get this in python 3 if the val was a numpy.str_ type
+                    # we'll try again as a string type
+                    if samples[field].dtype.char == 'U':
+                        fp[field] = samples[field].astype('S')
+                    else:
+                        raise e
 
 
 class CBCHDFInjectionSet(_HDFInjectionSet):
@@ -442,9 +492,12 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
     """
     _tableclass = pycbc.io.WaveformArray
     injtype = 'cbc'
+    required_params = ('tc',)
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None, inj_filter_rejector=None):
+              simulation_ids=None,
+              inj_filter_rejector=None,
+              injection_sample_rate=None,):
         """Add injections (as seen by a particular detector) to a time series.
 
         Parameters
@@ -465,6 +518,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             If given send each injected waveform to the InjFilterRejector
             instance so that it can store a reduced representation of that
             injection if necessary.
+        injection_sample_rate: float, optional
+            The sample rate to generate the signal before injection
 
         Returns
         -------
@@ -487,9 +542,15 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
 
+        delta_t = strain.delta_t
+        if injection_sample_rate is not None:
+            delta_t = 1.0 / injection_sample_rate
+
         injections = self.table
         if simulation_ids:
             injections = injections[list(simulation_ids)]
+
+        injected_ids = []
         for ii, inj in enumerate(injections):
             f_l = inj.f_lower if f_lower is None else f_lower
             # roughly estimate if the injection may overlap with the segment
@@ -501,23 +562,33 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             start_time = inj.tc - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
                 continue
-            signal = self.make_strain_from_inj_object(inj, strain.delta_t,
-                     detector_name, f_lower=f_l, distance_scale=distance_scale)
+            signal = self.make_strain_from_inj_object(inj, delta_t,
+                     detector_name, f_lower=f_l,
+                     distance_scale=distance_scale)
+            signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
             if float(signal.start_time) > t1:
                 continue
 
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
+            injected_ids.append(ii)
             if inj_filter_rejector is not None:
                 inj_filter_rejector.generate_short_inj_from_inj(signal, ii)
 
         strain.data[:] = lalstrain.data.data[:]
 
         injected = copy.copy(self)
-        injected.table = injections
+        injected.table = injections[np.array(injected_ids).astype(int)]
         if inj_filter_rejector is not None:
+            if hasattr(inj_filter_rejector, 'injected'):
+                prev_p = inj_filter_rejector.injection_params
+                prev_id = inj_filter_rejector.injection_ids
+                injected = np.concatenate([prev_p, injected])
+                injected_ids = np.concatenate([prev_id, injected_ids])
+
             inj_filter_rejector.injection_params = injected
+            inj_filter_rejector.injection_ids = injected_ids
         return injected
 
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
@@ -546,7 +617,6 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         signal : float
             h(t) corresponding to the injection.
         """
-        detector = Detector(detector_name)
         if f_lower is None:
             f_l = inj.f_lower
         else:
@@ -555,26 +625,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         # compute the waveform time series
         hp, hc = get_td_waveform(inj, delta_t=delta_t, f_lower=f_l,
                                  **self.extra_args)
-
-        hp /= distance_scale
-        hc /= distance_scale
-
-        hp._epoch += inj.tc
-        hc._epoch += inj.tc
-
-        # taper the polarizations
-        try:
-            hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
-            hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
-        except AttributeError:
-            hp_tapered = hp
-            hc_tapered = hc
-
-        # compute the detector response and add it to the strain
-        signal = detector.project_wave(hp_tapered, hc_tapered,
-                             inj.ra, inj.dec, inj.polarization)
-
-        return signal
+        return projector(detector_name,
+                         inj, hp, hc, distance_scale=distance_scale)
 
     def end_times(self):
         """Return the end times of all injections"""
@@ -594,9 +646,11 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
     and injects it into time series.
     """
     injtype = 'ringdown'
+    required_params = ('tc',)
 
     def apply(self, strain, detector_name, distance_scale=1,
-              simulation_ids=None, inj_filter_rejector=None):
+              simulation_ids=None, inj_filter_rejector=None,
+              injection_sample_rate=None):
         """Add injection (as seen by a particular detector) to a time series.
 
         Parameters
@@ -613,6 +667,8 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         inj_filter_rejector: InjFilterRejector instance, optional
             Not implemented. If not ``None``, a ``NotImplementedError`` will
             be raised.
+        injection_sample_rate: float, optional
+            The sample rate to generate the signal before injection
 
         Returns
         -------
@@ -637,14 +693,19 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
 
+        delta_t = strain.delta_t
+        if injection_sample_rate is not None:
+            delta_t = 1.0 / injection_sample_rate
+
         injections = self.table
         if simulation_ids:
             injections = injections[list(simulation_ids)]
         for ii in range(injections.size):
             injection = injections[ii]
             signal = self.make_strain_from_inj_object(
-                injection, strain.delta_t, detector_name,
+                injection, delta_t, detector_name,
                 distance_scale=distance_scale)
+            signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
@@ -673,24 +734,11 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         signal : float
             h(t) corresponding to the injection.
         """
-        detector = Detector(detector_name)
-
         # compute the waveform time series
         hp, hc = ringdown_td_approximants[inj['approximant']](
             inj, delta_t=delta_t, **self.extra_args)
-
-        hp._epoch += inj['tc']
-        hc._epoch += inj['tc']
-
-        if distance_scale != 1:
-            hp /= distance_scale
-            hc /= distance_scale
-
-        # compute the detector response and add it to the strain
-        signal = detector.project_wave(hp, hc,
-                             inj['ra'], inj['dec'], inj['polarization'])
-
-        return signal
+        return projector(detector_name,
+                         inj, hp, hc, distance_scale=distance_scale)
 
     def end_times(self):
         """Return the approximate end times of all injections.
@@ -707,9 +755,250 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         return list(waveform.ringdown_td_approximants.keys())
 
 
+class IncoherentFromFileHDFInjectionSet(_HDFInjectionSet):
+    """Manages injecting an arbitrary time series loaded from a file.
+
+    The injections must have the following attributes set:
+
+    * ``filename``: (str) the name of the file to load containing the time
+      series. The file type and format can be a frame file or anything
+      understood by :py:func:`pycbc.types.timeseries.load_timeseries`. If a
+      frame file (ends in ``.gwf``) is specified, a ``channel`` attribute must
+      also be set.
+
+    * ``DETECTOR_gps_time``: (float) The GPS time at which the time series
+      should be added to the ``DETECTOR`` data, where ``DETECTOR`` is the name
+      of the instrument to inject into (e.g., ``h1_gps_time``). **The time
+      series will only be injected into a detector if a GPS time is given for
+      that detector.** Set to -inf, nan, or do not provide a GPS time for a
+      particular detector if you do not want to inject into that detector.
+
+    * ``ref_point``: (str or float) What to use as the reference time of the
+      injected time series. The time series will be injected into the detector
+      such that the ``ref_point`` in the time series occurs at the specifed
+      ``DETECTOR_gps_time``. Options are: ``'start'``, ``'end'``, ``'center'``,
+      ``'absmax'``, or a float giving the number of seconds into the time
+      series.
+
+    In addition, the following attributes may optionally be provided:
+
+    * ``channel``: (str): If the filename points to a frame file, the channel
+      to load in that file. Must be provided for frame files.
+
+    * ``DETECTOR_phase_shift``: (float) Apply a phase shift to the time series
+      before adding it to detector ``DETECTOR``.
+
+    * ``DETECTOR_amp_scale``: (float) Scale the amplitude by the given amount
+      before adding it to detector ``DETECTOR``.
+
+    * ``slice_start``: (float) Slice the time series starting at
+      ``ref_point + slice_start`` before injecting into the data. Measured in
+      seconds.
+
+    * ``slice_end``: (float) Slice the time series ending at
+      ``ref_point + slice_end`` before injecting into the data. Measured in
+      seconds.
+
+    * ``left_taper_width``: (float) Taper the start of the time series (after
+      slicing) using half a kaiser window over the given number of seconds.
+      See `:py:func:waveform.utils.td_taper` for more details.
+
+    * ``right_taper_width``: (float) Taper the end of the time series (after
+      slicing) using half a kaiser window over the given number of seconds.
+      See `:py:func:waveform.utils.td_taper` for more details.
+
+    The signal will be resampled to the same sample rate as the data it is
+    being injected into.
+
+    In order to use with ``pycbc_create_injections``, set the ``approximant``
+    name to ``'incoherent_from_file'``.
+    """
+    injtype = 'incoherent_from_file'
+    required_params = ('filename', 'ref_point')
+    _buffersize = 10
+    _buffer = None
+    _rtbuffer = None
+
+    def end_times(self):
+        raise NotImplementedError("IncoherentFromFile times cannot be "
+                                  "determined without loading time series")
+
+    @staticmethod
+    def supported_approximants():
+        return ['incoherent_from_file']
+
+    def loadts(self, inj):
+        """Loads an injection time series.
+
+        After the first time a time series is loaded it will be added to an
+        internal buffer for faster in case another injection uses the same
+        series.
+        """
+        if self._buffer is None:
+            # create the buffer
+            self._buffer = LimitedSizeDict(size_limit=self._buffersize)
+        try:
+            return self._buffer[inj.filename]
+        except KeyError:
+            pass
+        # not in buffer, so load
+        if inj.filename.endswith('.gwf'):
+            try:
+                channel = inj.channel
+            except AttributeError as _err:
+                # Py3.XX: uncomment the "from _err" when we drop 2.7
+                raise ValueError("Must provide a channel for "
+                                 "frame files") #from _err
+            ts = frame.read_frame(inj.filename, channel)
+        else:
+            ts = load_timeseries(inj.filename)
+        # cache
+        self._buffer[inj.filename] = ts
+        return ts
+
+    def set_ref_time(self, inj, ts):
+        """Sets t=0 of the given time series based on what the given
+        injection's ``ref_point`` is.
+        """
+        try:
+            ref_point = inj.ref_point
+        except AttributeError as _err:
+            # Py3.XX: uncomment the "from _err" when we drop 2.7
+            raise ValueError("Must provide a ref_point for {} injections"
+                             .format(self.injtype))  #from _err
+        # try to get from buffer
+        if self._rtbuffer is None:
+            self._rtbuffer = LimitedSizeDict(size_limit=self._buffersize)
+        try:
+            reftime = self._rtbuffer[inj.filename, ref_point]
+        except KeyError:
+            if ref_point == "start":
+                reftime = 0.
+            elif ref_point == "end":
+                reftime = -len(ts)*ts.delta_t
+            elif ref_point == "center":
+                reftime = -len(ts)*ts.delta_t/2.
+            elif ref_point == "absmax":
+                reftime = -ts.abs_arg_max()*ts.delta_t
+            elif isinstance(ref_point, (float, int)):
+                reftime = -float(ref_point)
+            else:
+                raise ValueError("Unrecognized ref_point {} provided"
+                                 .format(ref_point))
+            self._rtbuffer[inj.filename, ref_point] = reftime
+        ts._epoch = reftime
+
+    @staticmethod
+    def slice_and_taper(inj, ts):
+        """Slices and tapers a timeseries based on the injection settings.
+
+        This assumes that ``set_ref_time`` has been applied to the timeseries
+        first. A copy of the time series will be returned even if no slicing
+        or tapering is done.
+        """
+        try:
+            tstart = inj.slice_start
+        except AttributeError:
+            tstart = ts.start_time
+        try:
+            tend = inj.slice_end
+        except AttributeError:
+            tend = ts.end_time
+        ts = ts.time_slice(tstart, tend).copy()
+        # now taper
+        try:
+            twidth = inj.left_taper_width
+        except AttributeError:
+            twidth = 0
+        if twidth:
+            ts = wfutils.td_taper(ts, ts.start_time, ts.start_time+twidth,
+                                  side='left')
+        try:
+            twidth = inj.right_taper_width
+        except AttributeError:
+            twidth = 0
+        if twidth:
+            ts = wfutils.td_taper(ts, ts.end_time-twidth, ts.end_time,
+                                  side='right')
+        return ts
+
+    def apply(self, strain, detector_name, distance_scale=1,
+              injection_sample_rate=None, inj_filter_rejector=None):
+        if inj_filter_rejector is not None:
+            raise NotImplementedError("IncoherentFromFile injections do not "
+                                      "support inj_filter_rejector")
+        if injection_sample_rate is not None:
+            delta_t = 1./injection_sample_rate
+        else:
+            delta_t = strain.delta_t
+        injections = self.table
+        for inj in injections:
+            # Check if we should inject or not...
+            # loading the time series like this is a bit brute-force, since
+            # we really only need to know the delta_t and length of the
+            # timeseries if the ref_point is anything but absmax, but that
+            # would require adding logic to figure out how to get that metadata
+            # based on the filetype and ref_point
+            ts = self.loadts(inj)
+            # set the ref time
+            self.set_ref_time(inj, ts)
+            # determine if we inject or not based on the times
+            try:
+                injtime = inj['{}_gps_time'.format(detector_name).lower()]
+            except ValueError:
+                injtime = -np.inf
+            if np.isnan(injtime):
+                # nan means don't inject
+                injtime = -np.inf
+            start_time = injtime + ts.start_time
+            end_time = injtime + ts.end_time
+            inject = (start_time < strain.end_time and
+                      end_time > strain.start_time)
+            if inject:
+                ts = self.make_strain_from_inj_object(
+                    inj, delta_t, detector_name,
+                    distance_scale=distance_scale, ts=ts)
+                if ts.delta_t != strain.delta_t:
+                    ts = resample_to_delta_t(ts, strain.delta_t, method='ldas')
+                strain.inject(ts, copy=False)
+
+    def make_strain_from_inj_object(self, inj, delta_t, detector_name,
+                                    distance_scale=1, ts=None):
+        if ts is None:
+            ts = load_timeseries(inj.filename)
+            self.set_ref_time(inj, ts)
+        # slice and taper
+        ts = self.slice_and_taper(inj, ts)
+        # shift reference to the detector time
+        ts._epoch += inj['{}_gps_time'.format(detector_name).lower()]
+        # resample
+        ts = resample_to_delta_t(ts, delta_t, method='ldas')
+        # apply any phase shift
+        try:
+            phase_shift = inj[
+                '{}_phase_shift'.format(detector_name).lower()]
+        except ValueError:
+            phase_shift = 0
+        if phase_shift:
+            fs = ts.to_frequencyseries()
+            fs *= np.exp(1j*phase_shift)
+            ts = fs.to_timeseries()
+        # apply any scaling
+        try:
+            amp_scale = inj[
+                '{}_amp_scale'.format(detector_name).lower()]
+        except ValueError:
+            amp_scale = 1.
+        amp_scale /= distance_scale
+        ts *= amp_scale
+        return ts
+
+
 hdfinjtypes = {
     CBCHDFInjectionSet.injtype: CBCHDFInjectionSet,
     RingdownHDFInjectionSet.injtype: RingdownHDFInjectionSet,
+    IncoherentFromFileHDFInjectionSet.injtype:
+    IncoherentFromFileHDFInjectionSet,
 }
 
 
@@ -734,7 +1023,17 @@ def get_hdf_injtype(sim_file):
             ftype = fp.attrs['injtype']
         except KeyError:
             ftype = CBCHDFInjectionSet.injtype
-    return hdfinjtypes[ftype]
+    try:
+        return hdfinjtypes[ftype]
+    except KeyError:
+        # may get a key error if the file type was stored as unicode instead
+        # of string; if so, try decoding it
+        try:
+            ftype = str(ftype.decode())
+        except AttributeError:
+            # not actually a byte error; passing will reraise the KeyError
+            pass
+        return hdfinjtypes[ftype]
 
 
 def hdf_injtype_from_approximant(approximant):
@@ -883,8 +1182,7 @@ class SGBurstInjectionSet(object):
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(
-            self.indoc, lsctables.SimBurstTable.tableName)
+        self.table = lsctables.SimBurstTable.get_table(self.indoc)
         self.extra_args = kwds
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1):
@@ -927,7 +1225,7 @@ class SGBurstInjectionSet(object):
 
         for inj in self.table:
             # roughly estimate if the injection may overlap with the segment
-            end_time = inj.get_time_geocent()
+            end_time = inj.time_geocent
             #CHECK: This is a hack (10.0s); replace with an accurate estimate
             inj_length = 10.0
             eccentricity = 0.0

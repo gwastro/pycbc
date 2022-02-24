@@ -26,12 +26,10 @@ import math
 import copy
 import numpy
 import logging
-from six.moves import range
 import pycbc
 import pycbc.version
 import pycbc.psd
 import pycbc.strain
-import pycbc.types
 from pycbc import tmpltbank
 from pycbc import pnutils
 
@@ -161,7 +159,7 @@ logging.info("Calculating lattice")
 
 # When placing the lattice we transition from 1D lattice to a hexagonal
 # lattice and then back to 1D lattice
-# Assume that once 2D is needed it will be needed until the end. 
+# Assume that once 2D is needed it will be needed until the end.
 # Ie. We have 1D region then 2D region then 1D region. Nothing else
 # Length of the 1D region can be 0
 
@@ -184,7 +182,7 @@ for i in range(100):
         # 1D lattice through here
         chi2Loc = (tempChi2Max + tempChi2Min) / 2.
         currIter = 0
-        startPoint = chi1Min - 0.02 * chi1Diff 
+        startPoint = chi1Min - 0.02 * chi1Diff
         while(1):
             currChi1 = startPoint + currIter * spacing1D
             if (currChi1 < tempChi1Lower) and (i != 0):
@@ -219,7 +217,7 @@ for i in range(99,-1,-1):
     if (tempChi2Max - tempChi2Min) < 0.2:
         # 1D lattice through here
         chi2Loc = (tempChi2Max + tempChi2Min) / 2.
-        currIter = 0  
+        currIter = 0
         startPoint = chi1Min - 0.02 * chi1Diff
         while(1):
             currChi1 = startPoint + currIter * spacing1D
@@ -230,7 +228,7 @@ for i in range(99,-1,-1):
                 break
             elif (currChi1 > tempChi1Upper + 0.02*chi1Diff):
                 break
-            v1s.append(currChi1) 
+            v1s.append(currChi1)
             v2s.append(chi2Loc)
             currIter = currIter + 1
     else:
@@ -266,7 +264,7 @@ v2s = numpy.array(v2s)
 
 logging.info("%d points in the lattice" % len(v1s))
 
-# What follows is used to 
+# What follows is used to
 #   1) Check if the points are close to the physical space, if not reject
 #   2) If the point is *within* the physical space find a physical point that
 #      matches the position.
@@ -326,7 +324,7 @@ logging.info("Converting to physical points")
 
 # Now we start looping through all the points and either accept it, with a
 # physical representation *or* accept it nudged toward the physical space
-# *or* reject it if it is outside the physically allowed region. 
+# *or* reject it if it is outside the physically allowed region.
 
 tempBank = []
 temp_number = 0
@@ -357,11 +355,11 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     iters = points[:,0]
     bestXis = points[dist.argmin(),1:]
     bestMasses = physMasses[int(points[dist.argmin(),0] + 0.5)]
-    
+
     # Reject point if it is too far from physical space
-    masses = tmpltbank.get_physical_covaried_masses([v1,v2],\
-               copy.deepcopy(bestMasses), copy.deepcopy(bestXis), req_match, \
-               massRangeParams, metricParams, metricParams.fUpper, \
+    masses = tmpltbank.get_physical_covaried_masses([v1,v2],
+               copy.deepcopy(bestMasses), copy.deepcopy(bestXis), req_match,
+               massRangeParams, metricParams, metricParams.fUpper,
                giveUpThresh=20)
 
     # If point is still not close enough to desired space, remove it
@@ -383,9 +381,9 @@ logging.info("Writing output")
 # easily changed.
 
 tmpltbank.output_sngl_inspiral_table(
-    opts.output_file, tempBank, metricParams, ethincaParams, 
-    programName=__program__, optDict=opts.__dict__, comment="",
-    version=pycbc.version.git_hash, 
+    opts.output_file, tempBank, metricParams, ethincaParams,
+    programName=__program__, optDict=opts.__dict__,
+    version=pycbc.version.git_hash,
     cvs_repository='pycbc/'+pycbc.version.git_branch,
     cvs_entry_time=pycbc.version.date)
 

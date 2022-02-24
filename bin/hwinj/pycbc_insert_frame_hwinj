@@ -67,7 +67,8 @@ initial_array = numpy.loadtxt(opts.hwinj_file)
 initial_array *= opts.scale_factor
 
 # figure out how much to pad
-start_pad = (opts.hwinj_start_time-opts.gps_start_time) * opts.sample_rate
+start_pad = (opts.hwinj_start_time-strain.start_time) * opts.sample_rate
+start_pad = int(start_pad + 0.5)
 
 # add the two time series
 logging.info('Summing the two time series')

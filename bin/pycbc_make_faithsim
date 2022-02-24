@@ -144,14 +144,11 @@ dag.add_node(pnode)
 
 f = open("scripts/pycbc_faithsim_collect_results", "w")
 f.write("""#!/usr/bin/env python
-from os.path import isfile
 from numpy import *
-from glue.ligolw import utils, table, lsctables, ligolw
+from ligo.lw import utils, table, lsctables
 import glob
+from pycbc.io.ligolw import LIGOLWContentHandler
 
-class ContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(ContentHandler)
 
 fils = glob.glob("match/match*.dat")
 mfields = ('match', 'overlap', 'time_offset', 'sigma1', 'sigma2')
@@ -178,8 +175,8 @@ if __name__ == "__main__":
             btag = part.split('-')[2].split('.')[0]
             bname = "bank/bank" + btag + ".xml"
             if bname not in btables:
-                indoc = utils.load_filename(bname, False, contenthandler=ContentHandler)
-                btables[bname] = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
+                indoc = utils.load_filename(bname, False, contenthandler=LIGOLWContentHandler)
+                btables[bname] = lsctables.SimInspiralTable.get_table(indoc)
             bt = btables[bname]
             try:      
                 md = loadtxt(part, dtype=dtypem)
@@ -218,9 +215,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.cm
 import pylab
-from os.path import isfile
 from numpy import *
-from glue.ligolw import utils, table, lsctables
+from ligo.lw import utils, table, lsctables
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import glob
 

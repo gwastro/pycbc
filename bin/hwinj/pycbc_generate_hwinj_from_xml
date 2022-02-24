@@ -20,15 +20,11 @@ import argparse
 import logging
 import numpy
 import os, sys
-from glue.ligolw import ligolw, lsctables, table, utils
 from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.types import TimeSeries
 from pycbc.waveform import get_td_waveform
 from pycbc.detector import get_available_detectors
 
-class DefaultContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-lsctables.use_in(DefaultContentHandler)
 
 # command line usage
 parser = argparse.ArgumentParser(

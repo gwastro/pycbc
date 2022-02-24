@@ -30,17 +30,22 @@ export LIGO_DATAFIND_SERVER='128.230.190.43:80'
 mkdir $WORKFLOW_NAME
 pushd $WORKFLOW_NAME
 
+# Doesn't need to be a valid bank file, just needs to exist
+echo "DUMMY BANK FILE" > bank.hdf
+echo "DUMMY STAT FILE" > statHL.hdf
+echo "DUMMY STAT FILE" > statLV.hdf
+echo "DUMMY STAT FILE" > statHV.hdf
+echo "DUMMY STAT FILE" > statHLV.hdf
+
 echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 
 pycbc_make_coinc_search_workflow \
 --workflow-name ${WORKFLOW_NAME} --output-dir output \
 --config-files \
-${CONFIG_PATH}/analysis.ini \
-${CONFIG_PATH}/data_O1.ini \
-${CONFIG_PATH}/plotting.ini \
-${CONFIG_PATH}/injections_minimal.ini \
-${CONFIG_PATH}/executables.ini \
-${CONFIG_PATH}/gps_times_O1_analysis_1.ini \
+/pycbc/examples/search/analysis.ini \
+/pycbc/examples/search/plotting.ini \
+/pycbc/examples/search/injections_minimal.ini \
+/pycbc/examples/search/executables.ini \
 --config-overrides \
 "results_page:output-path:../../../html"
 

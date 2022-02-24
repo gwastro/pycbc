@@ -34,6 +34,13 @@ configurations which can analyze this simple problem.
 .. literalinclude:: ../../../examples/inference/samplers/emcee_pt_stub.ini
    :language: ini
    
+===================================================
+`PTEmcee <https://github.com/willvousden/ptemcee>`_
+===================================================
+   
+.. literalinclude:: ../../../examples/inference/samplers/ptemcee_stub.ini
+   :language: ini
+   
 ===============================================
 `Dynesty <https://dynesty.readthedocs.io/>`_
 ===============================================
@@ -58,18 +65,18 @@ configurations which can analyze this simple problem.
 The following are also supported, but require either python3 support only (cpnest)
 or an external package (multinest).
    
-===============================================
+================================================
 `cpnest <https://github.com/johnveitch/cpnest>`_
-===============================================
+================================================
    
-.. literalinclude:: ../../../examples/inference/samplers/cpnest_tub.ini
+.. literalinclude:: ../../../examples/inference/samplers/cpnest_stub.ini
    :language: ini
    
 =============================================================
 `Multinest <https://johannesbuchner.github.io/PyMultiNest/>`_
 =============================================================
    
-.. literalinclude:: ../../../examples/inference/samplers/multinest_tub.ini
+.. literalinclude:: ../../../examples/inference/samplers/multinest_stub.ini
    :language: ini
    
 If we run these samplers, we create the following plot:

@@ -17,10 +17,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-from glue.ligolw import ilwd
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils
 import logging
 import numpy
 import pycbc
@@ -30,7 +29,7 @@ from pycbc import fft
 from pycbc import pnutils
 from pycbc import psd as _psd
 from pycbc import strain as _strain
-from pycbc.detector import Detector, effective_distance
+from pycbc.detector import Detector
 from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.filter import make_frequency_series
 from pycbc.filter import sigmasq
@@ -42,8 +41,7 @@ import sys
 
 def _empty_row(obj):
     """Create an empty sim_inspiral or sngl_inspiral row where the columns have
-    default values of 0.0 for a float, 0 for an int, '' for a string. The ilwd
-    columns have a default where the index is 0.
+    default values of 0.0 for a float, 0 for an int, '' for a string. 
     """
 
     # check if sim_inspiral or sngl_inspiral
@@ -63,11 +61,11 @@ def _empty_row(obj):
         elif cols[entry] == 'lstring':
             setattr(row,entry,'')
         elif entry == 'process_id':
-            row.process_id = ilwd.ilwdchar("sim_inspiral:process_id:0")
+            row.process_id = 0
         elif entry == 'simulation_id':
-            row.simulation_id = ilwd.ilwdchar("sim_inspiral:simulation_id:0")
+            row.simulation_id = 0
         elif entry == 'event_id':
-            row.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
+            row.event_id = 0
         else:
             raise ValueError("Column %s not recognized." %(entry) )
 
@@ -278,7 +276,7 @@ opts_dict = convert_to_process_params_dict(opts)
 # create process table
 proc_id = utils.process.register_to_xmldoc(
                     outdoc, sys.argv[0], opts_dict,
-                    comment="", ifos=[''.join(opts.instruments)],
+                    comment="", instruments=[''.join(opts.instruments)],
                     version=pycbc.version.git_hash,
                     cvs_repository='pycbc/'+pycbc.version.git_branch,
                     cvs_entry_time=pycbc.version.date).process_id
@@ -457,8 +455,11 @@ for ifo in opts.instruments:
     setattr(sim, ifo[0].lower()+'_end_time_ns', int(end_time % 1 * 1e9))
 
     # populate IFO distance columns
-    eff_distance = effective_distance(sim.distance, sim.inclination,
-                                      f_plus, f_cross)
+    eff_distance = det.effective_distance(sim.distance,
+                                          sim.longitude, sim.latitude,
+                                          sim.polarization,
+                                          sim.geocent_end_time,
+                                          sim.inclination)
     setattr(sim, 'eff_dist_'+ifo[0].lower(), eff_distance)
 
     # populate IFO end time columns

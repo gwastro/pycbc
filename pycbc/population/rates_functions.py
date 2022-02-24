@@ -2,13 +2,14 @@
 A set of helper functions for evaluating rates.
 """
 
-from scipy import integrate, optimize
-import numpy as np, h5py
+import h5py
+import numpy as np
 from numpy import log
+from scipy import integrate, optimize
 import scipy.stats as ss
 
-import bisect
 from pycbc.conversions import mchirp_from_mass1_mass2
+
 
 def process_full_data(fname, rhomin, mass1, mass2, lo_mchirp, hi_mchirp):
     """Read the zero-lag and time-lag triggers identified by templates in
@@ -94,51 +95,6 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_mchirp, hi_mchi
 
     return bkg, coincs
 
-def log_rho_bg(trigs, bins, counts):
-    ''' Calculate the log of background fall-off
-
-        Parameters
-        ----------
-        trigs: array
-               SNR values of all the triggers
-        bins: string
-               bins for histogrammed triggers
-        path: string
-               counts for histogrammed triggers
-
-        Returns
-        -------
-        array
-    '''
-
-    trigs = np.atleast_1d(trigs)
-
-    N = sum(counts)
-
-    assert np.all(trigs >= np.min(bins)), \
-        'Trigger SNR values cannot all be below the lowest bin limit!'
-
-    # If there are any triggers that are louder than the max bin, put one
-    # fictitious count in a bin that extends from the limits of the slide
-    # triggers out to the loudest trigger.
-
-    # If there is no counts for a foreground trigger put a fictitious count
-    # in the background bin
-    if np.any(trigs >= np.max(bins)):
-        N = N + 1
-        #log_plimit = -np.log(N) - np.log(np.max(trigs) - bins[-1]) CHECK IT
-
-    log_rhos = []
-    for t in trigs:
-        if t >= np.max(bins):
-            log_rhos.append(-log(N)-log(np.max(trigs) - bins[-1]))
-        else:
-            i = bisect.bisect(bins, t) - 1
-
-            if counts[i] == 0:
-                counts[i] = 1
-            log_rhos.append(log(counts[i]) - log(bins[i+1] - bins[i]) - log(N))
-    return np.array(log_rhos)
 
 def log_rho_fgmc(t, injstats, bins):
     counts, bins = np.histogram(injstats, bins)
@@ -152,6 +108,7 @@ def log_rho_fgmc(t, injstats, bins):
     tinds = np.searchsorted(bins, t) - 1
 
     return log(dens[tinds])
+
 
 def fgmc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
     '''
@@ -187,11 +144,13 @@ def fgmc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
 
     return Rf_sel[idx], Lf[idx], Lb
 
+
 def _optm(x, alpha, mu, sigma):
     '''Return probability density of skew-lognormal
        See scipy.optimize.curve_fit
     '''
     return ss.skewnorm.pdf(x, alpha, mu, sigma)
+
 
 def fit(R):
     ''' Fit skew - lognormal to the rate samples achived from a prior analysis
@@ -220,6 +179,7 @@ def fit(R):
     # And a guess assuming small skewness
     ff = optimize.curve_fit(_optm, xs, pxs, p0 = [0.1, mu_norm, sigma_norm])[0]
     return ff[0], ff[1], ff[2]
+
 
 def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
     ''' Returns a large number of Skew lognormal samples
@@ -251,6 +211,7 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
     Rfs = np.exp(log_Rf)
 
     return Rfs
+
 
 # The flat in log and power-law mass distribution models  #
 
@@ -294,6 +255,7 @@ def prob_lnm(m1, m2, s1z, s2z, **kwargs):
     p_m1_m2[idx] = 0
 
     return p_m1_m2
+
 
 def prob_imf(m1, m2, s1z, s2z, **kwargs):
     ''' Return probability density for power-law
@@ -342,6 +304,7 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
 
     return p_m1_m2/2.
 
+
 def prob_flat(m1, m2, s1z, s2z, **kwargs):
     ''' Return probability density for uniform in component mass
         Parameters
@@ -374,6 +337,7 @@ def prob_flat(m1, m2, s1z, s2z, **kwargs):
     p_m1_m2[idx] = 0
 
     return p_m1_m2
+
 
 # Generate samples for the two canonical models plus flat in mass model
 def draw_imf_samples(**kwargs):
@@ -410,6 +374,7 @@ def draw_imf_samples(**kwargs):
 
     return np.resize(m1, nsamples), np.resize(m2, nsamples)
 
+
 def draw_lnm_samples(**kwargs):
     ''' Draw samples for uniform-in-log model
 
@@ -443,6 +408,7 @@ def draw_lnm_samples(**kwargs):
 
     return np.resize(m1, nsamples), np.resize(m2, nsamples)
 
+
 def draw_flat_samples(**kwargs):
     ''' Draw samples for uniform in mass
 
@@ -469,6 +435,7 @@ def draw_flat_samples(**kwargs):
 
     return np.maximum(m1, m2), np.minimum(m1, m2)
 
+
 # Functions to generate chirp mass samples for the two canonical models
 def mchirp_sampler_lnm(**kwargs):
     ''' Draw chirp mass samples for uniform-in-log model
@@ -488,6 +455,7 @@ def mchirp_sampler_lnm(**kwargs):
 
     return mchirp_astro
 
+
 def mchirp_sampler_imf(**kwargs):
     ''' Draw chirp mass samples for power-law model
 
@@ -505,6 +473,7 @@ def mchirp_sampler_imf(**kwargs):
     mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
 
     return mchirp_astro
+
 
 def mchirp_sampler_flat(**kwargs):
     ''' Draw chirp mass samples for flat in mass model

@@ -1012,14 +1012,14 @@ It is also through arguments to ``pycbc_submit_dax`` that the workflow is made a
 Singularity image to use when running ``pycbc_inspiral``. This is done by including the following
 argument to ``pycbc_submit_dax``::
 
-    --append-site-profile "osg:condor|+SingularityImage:\"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el7:latest\"" \
+    --append-site-profile "osg:condor|+SingularityImage:\"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:latest\"" \
 
 The precise line above will cause ``pycbc_inspiral`` to run using the code in the latest version of PyCBC
 as found on the ``master`` branch. You may well prefer a specific version (for example, for a production
 run) and each release will also have a corresponding Singularity image published to CVMFS.  For example,
 to use the ``1.14.3`` release of PyCBC, use instead the line::
 
-    --append-site-profile "osg:condor|+SingularityImage:\"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el7:v1.14.3\"" \
+    --append-site-profile "osg:condor|+SingularityImage:\"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v1.14.3\"" \
 
 You may also direct the workflow to use a Singularity image of your own, if that has been published to CVMFS.
 

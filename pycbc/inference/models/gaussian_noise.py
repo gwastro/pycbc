@@ -25,7 +25,7 @@ import numpy
 from pycbc import filter as pyfilter
 from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.waveform import generator
-from pycbc.types import Array, FrequencySeries
+from pycbc.types import FrequencySeries
 from pycbc.strain import gates_from_cli
 from pycbc.strain.calibration import Recalibrate
 from pycbc.inject import InjectionSet
@@ -112,18 +112,22 @@ class BaseGaussianNoise(BaseDataModel):
     normalize
     lognorm
     """
+
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, ignore_failed_waveforms=False,
+                 no_save_data=False,
                  **kwargs):
         # set up the boiler-plate attributes
         super(BaseGaussianNoise, self).__init__(variable_params, data,
                                                 static_params=static_params,
+                                                no_save_data=no_save_data,
                                                 **kwargs)
         self.ignore_failed_waveforms = ignore_failed_waveforms
+        self.no_save_data = no_save_data
         # check if low frequency cutoff has been provided for every IFO with
         # data
-        for ifo in self.data.keys():
+        for ifo in self.data:
             if low_frequency_cutoff[ifo] is None:
                 raise ValueError(
                     "A low-frequency-cutoff must be provided for every "
@@ -139,17 +143,25 @@ class BaseGaussianNoise(BaseDataModel):
         # check that the data sets all have the same delta fs and delta ts
         dts = numpy.array([d.delta_t for d in self.data.values()])
         dfs = numpy.array([d.delta_f for d in self.data.values()])
-        if not all(dts == dts[0]):
-            raise ValueError("all data must have the same sample rate")
-        if not all(dfs == dfs[0]):
-            raise ValueError("all data must have the same segment length")
+        if all(dts == dts[0]) and all(dfs == dfs[0]):
+            self.all_ifodata_same_rate_length = True
+        else:
+            self.all_ifodata_same_rate_length = False
+            logging.info(
+                "You are using different data segment lengths or "
+                "sampling rates for different IFOs")
+
         # store the number of samples in the time domain
-        self._N = int(1./(dts[0]*dfs[0]))
-        # Set low frequency cutoff
-        self.low_frequency_cutoff = self._f_lower = low_frequency_cutoff
-        # set upper frequency cutoff
-        self._f_upper = None
-        self.high_frequency_cutoff = high_frequency_cutoff
+        self._N = {}
+        for (det, d) in self._data.items():
+            self._N[det] = int(1./(d.delta_f*d.delta_t))
+
+        # set lower/upper frequency cutoff
+        if high_frequency_cutoff is None:
+            high_frequency_cutoff = {ifo: None for ifo in self.data}
+        self._f_upper = high_frequency_cutoff
+        self._f_lower = low_frequency_cutoff
+
         # Set the cutoff indices
         self._kmin = {}
         self._kmax = {}
@@ -157,19 +169,23 @@ class BaseGaussianNoise(BaseDataModel):
         for (det, d) in self._data.items():
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
                                                      self._f_upper[det],
-                                                     d.delta_f, self._N)
+                                                     d.delta_f, self._N[det])
             self._kmin[det] = kmin
             self._kmax[det] = kmax
+
         # store the psd segments
         self._psd_segments = {}
         if psds is not None:
             self.set_psd_segments(psds)
+
         # store the psds and calculate the inner product weight
         self._psds = {}
+        self._invpsds = {}
         self._weight = {}
         self._lognorm = {}
         self._det_lognls = {}
         self._whitened_data = {}
+
         # set the normalization state
         self._normalize = False
         self.normalize = normalize
@@ -178,34 +194,13 @@ class BaseGaussianNoise(BaseDataModel):
 
     @property
     def high_frequency_cutoff(self):
-        """The high frequency cutoff of the inner product.
-
-        If a high frequency cutoff was not provided for a detector, it will
-        be ``None``.
-        """
+        """The high frequency cutoff of the inner product."""
         return self._f_upper
 
-    @high_frequency_cutoff.setter
-    def high_frequency_cutoff(self, high_frequency_cutoff):
-        """Sets the high frequency cutoff.
-
-        Parameters
-        ----------
-        high_frequency_cutoff : dict
-            Dictionary mapping detector names to frequencies. If a high
-            frequency cutoff is not provided for one or more detectors, the
-            Nyquist frequency will be used for those detectors.
-        """
-        self._f_upper = {}
-        if high_frequency_cutoff is not None and bool(high_frequency_cutoff):
-            for det in self._data:
-                if det in high_frequency_cutoff:
-                    self._f_upper[det] = high_frequency_cutoff[det]
-                else:
-                    self._f_upper[det] = None
-        else:
-            for det in self._data.keys():
-                self._f_upper[det] = None
+    @property
+    def low_frequency_cutoff(self):
+        """The low frequency cutoff of the inner product."""
+        return self._f_lower
 
     @property
     def kmin(self):
@@ -253,6 +248,7 @@ class BaseGaussianNoise(BaseDataModel):
             raise ValueError("high frequency cutoff not set")
         # make sure the relevant caches are cleared
         self._psds.clear()
+        self._invpsds.clear()
         self._weight.clear()
         self._lognorm.clear()
         self._det_lognls.clear()
@@ -260,21 +256,22 @@ class BaseGaussianNoise(BaseDataModel):
         for det, d in self._data.items():
             if psds is None:
                 # No psd means assume white PSD
-                p = FrequencySeries(numpy.ones(int(self._N/2+1)),
+                p = FrequencySeries(numpy.ones(int(self._N[det]/2+1)),
                                     delta_f=d.delta_f)
             else:
                 # copy for storage
                 p = psds[det].copy()
             self._psds[det] = p
             # we'll store the weight to apply to the inner product
-            w = Array(numpy.zeros(len(p)))
             # only set weight in band we will analyze
             kmin = self._kmin[det]
             kmax = self._kmax[det]
-            w[kmin:kmax] = numpy.sqrt(4.*p.delta_f/p[kmin:kmax])
-            self._weight[det] = w
+            invp = FrequencySeries(numpy.zeros(len(p)), delta_f=p.delta_f)
+            invp[kmin:kmax] = 1./p[kmin:kmax]
+            self._invpsds[det] = invp
+            self._weight[det] = numpy.sqrt(4 * invp.delta_f * invp)
             self._whitened_data[det] = d.copy()
-            self._whitened_data[det][kmin:kmax] *= w[kmin:kmax]
+            self._whitened_data[det] *= self._weight[det]
         # set the lognl and lognorm; we'll get this by just calling lognl
         _ = self.lognl
 
@@ -342,7 +339,7 @@ class BaseGaussianNoise(BaseDataModel):
             dt = self._whitened_data[det].delta_t
             kmin = self._kmin[det]
             kmax = self._kmax[det]
-            lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
+            lognorm = -float(self._N[det]*numpy.log(numpy.pi*self._N[det]*dt)/2.
                              + numpy.log(p[kmin:kmax]).sum())
             self._lognorm[det] = lognorm
             return self._lognorm[det]
@@ -447,7 +444,7 @@ class BaseGaussianNoise(BaseDataModel):
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
             fp.attrs[key] = [float(data.start_time), float(data.end_time)]
-        if self._psds is not None:
+        if self._psds is not None and not self.no_save_data:
             fp.write_psd(self._psds)
         # write the times used for psd estimation (if they were provided)
         for det in self.psd_segments:
@@ -470,10 +467,16 @@ class BaseGaussianNoise(BaseDataModel):
             # computation as an attribute if one was provided the user
             if self._f_upper[det] is not None:
                 fp.attrs['{}_likelihood_high_freq'.format(det)] = \
-                                                        self._f_upper[det]
+                    self._f_upper[det]
+
+    @staticmethod
+    def _fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict):
+        """Wrapper around :py:func:`data_utils.fd_data_from_strain_dict`."""
+        return fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict)
 
     @classmethod
-    def from_config(cls, cp, data_section='data', **kwargs):
+    def from_config(cls, cp, data_section='data', data=None, psds=None,
+                    **kwargs):
         r"""Initializes an instance of this class from the given config file.
 
         In addition to ``[model]``, a ``data_section`` (default ``[data]``)
@@ -523,7 +526,7 @@ class BaseGaussianNoise(BaseDataModel):
             The name of the section to load data options from.
         \**kwargs :
             All additional keyword arguments are passed to the class. Any
-            provided keyword will over ride what is in the config file.
+            provided keyword will override what is in the config file.
         """
         # get the injection file, to replace any FROM_INJECTION settings
         if 'injection-file' in cp.options('data'):
@@ -541,8 +544,11 @@ class BaseGaussianNoise(BaseDataModel):
             args['normalize'] = True
         if cp.has_option('model', 'ignore-failed-waveforms'):
             args['ignore_failed_waveforms'] = True
+        if cp.has_option('model', 'no-save-data'):
+            args['no_save_data'] = True
         # get any other keyword arguments provided in the model section
-        ignore_args = ['name', 'normalize', 'ignore-failed-waveforms']
+        ignore_args = ['name', 'normalize',
+                       'ignore-failed-waveforms', 'no-save-data']
         for option in cp.options("model"):
             if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)
@@ -550,6 +556,7 @@ class BaseGaussianNoise(BaseDataModel):
                 args[name] = cp.get_cli_option('model', name,
                                                nargs='+', type=float,
                                                action=MultiDetOptionAction)
+
         if 'low_frequency_cutoff' not in args:
             raise ValueError("low-frequency-cutoff must be provided in the"
                              " model section, but is not found!")
@@ -563,20 +570,23 @@ class BaseGaussianNoise(BaseDataModel):
         # load the data
         opts = data_opts_from_config(cp, data_section,
                                      args['low_frequency_cutoff'])
-        strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
-        # convert to frequency domain and get psds
-        stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
-                                                     psd_strain_dict)
-        # save the psd data segments if the psd was estimated from data
-        if opts.psd_estimation is not None:
-            _tdict = psd_strain_dict or strain_dict
-            for det in psds:
-                psds[det].psd_segment = (_tdict[det].start_time,
-                                         _tdict[det].end_time)
-        # gate overwhitened if desired
-        if opts.gate_overwhitened and opts.gate is not None:
-            stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
-        args.update({'data': stilde_dict, 'psds': psds})
+        if data is None or psds is None:
+            strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
+            # convert to frequency domain and get psds
+            stilde_dict, psds = cls._fd_data_from_strain_dict(
+                opts, strain_dict, psd_strain_dict)
+            # save the psd data segments if the psd was estimated from data
+            if opts.psd_estimation:
+                _tdict = psd_strain_dict or strain_dict
+                for det in psds:
+                    psds[det].psd_segment = (_tdict[det].start_time,
+                                             _tdict[det].end_time)
+            # gate overwhitened if desired
+            if opts.gate_overwhitened and opts.gate is not None:
+                stilde_dict = gate_overwhitened_data(
+                    stilde_dict, psds, opts.gate)
+            data = stilde_dict
+        args.update({'data': data, 'psds': psds})
         # any extra args
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
@@ -591,6 +601,7 @@ class BaseGaussianNoise(BaseDataModel):
         gates = gates_from_cli(opts)
         if gates:
             args['gates'] = gates
+        args.update(kwargs)
         return cls(**args)
 
 
@@ -805,12 +816,23 @@ class GaussianNoise(BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
-        # create the waveform generator
-        self.waveform_generator = create_waveform_generator(
-            self.variable_params, self.data,
-            waveform_transforms=self.waveform_transforms,
-            recalibration=self.recalibration,
-            gates=self.gates, **self.static_params)
+        # Determine if all data have the same sampling rate and segment length
+        if self.all_ifodata_same_rate_length:
+            # create a waveform generator for all ifos
+            self.waveform_generator = create_waveform_generator(
+                self.variable_params, self.data,
+                waveform_transforms=self.waveform_transforms,
+                recalibration=self.recalibration,
+                gates=self.gates, **self.static_params)
+        else:
+            # create a waveform generator for each ifo respestively
+            self.waveform_generator = {}
+            for det in self.data:
+                self.waveform_generator[det] = create_waveform_generator(
+                    self.variable_params, {det: self.data[det]},
+                    waveform_transforms=self.waveform_transforms,
+                    recalibration=self.recalibration,
+                    gates=self.gates, **self.static_params)
 
     @property
     def _extra_stats(self):
@@ -849,7 +871,12 @@ class GaussianNoise(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self.waveform_generator.generate(**params)
+            if self.all_ifodata_same_rate_length:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
         except NoWaveformError:
             return self._nowaveform_loglr()
         except FailedWaveformError as e:
@@ -873,7 +900,7 @@ class GaussianNoise(BaseGaussianNoise):
                 # the inner products
                 cplx_hd = self._whitened_data[det][slc].inner(h[slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
-            cplx_loglr = cplx_hd - 0.5*hh
+            cplx_loglr = cplx_hd - 0.5 * hh
             # store
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh)
             setattr(self._current_stats, '{}_cplx_loglr'.format(det),
@@ -936,6 +963,8 @@ class GaussianNoise(BaseGaussianNoise):
 #
 # =============================================================================
 #
+
+
 def get_values_from_injection(cp, injection_file, update_cp=True):
     """Replaces all FROM_INJECTION values in a config file with the
     corresponding value from the injection.
@@ -957,7 +986,7 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
 
     will cause ``mass1`` to be retrieved from the injection file, while:
 
-    .. code-black:: ini
+    .. code-block:: ini
 
        mass1 = FROM_INJECTION:'primary_mass(mass1, mass2)'
 
@@ -1046,10 +1075,12 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
     return replace_params
 
 
-def create_waveform_generator(variable_params, data, waveform_transforms=None,
-                              recalibration=None, gates=None,
-                              **static_params):
-    """Creates a waveform generator for use with a model.
+def create_waveform_generator(
+        variable_params, data, waveform_transforms=None,
+        recalibration=None, gates=None,
+        generator_class=generator.FDomainDetFrameGenerator,
+        **static_params):
+    r"""Creates a waveform generator for use with a model.
 
     Parameters
     ----------
@@ -1069,6 +1100,12 @@ def create_waveform_generator(variable_params, data, waveform_transforms=None,
     gates : dict of tuples, optional
         Dictionary of detectors -> tuples of specifying gate times. The
         sort of thing returned by :py:func:`pycbc.gate.gates_from_cli`.
+    generator_class : detector-frame fdomain generator, optional
+        Class to use for generating waveforms. Default is
+        :py:class:`waveform.generator.FDomainDetFrameGenerator`.
+    \**static_params :
+        All other keyword arguments are passed as static parameters to the
+        waveform generator.
 
     Returns
     -------
@@ -1089,7 +1126,8 @@ def create_waveform_generator(variable_params, data, waveform_transforms=None,
         approximant = static_params['approximant']
     except KeyError:
         raise ValueError("no approximant provided in the static args")
-    generator_function = generator.select_waveform_generator(approximant)
+
+    generator_function = generator_class.select_rframe_generator(approximant)
     # get data parameters; we'll just use one of the data to get the
     # values, then check that all the others are the same
     delta_f = None
@@ -1103,7 +1141,7 @@ def create_waveform_generator(variable_params, data, waveform_transforms=None,
                         d.start_time == start_time]):
                 raise ValueError("data must all have the same delta_t, "
                                  "delta_f, and start_time")
-    waveform_generator = generator.FDomainDetFrameGenerator(
+    waveform_generator = generator_class(
         generator_function, epoch=start_time,
         variable_args=variable_params, detectors=list(data.keys()),
         delta_f=delta_f, delta_t=delta_t,

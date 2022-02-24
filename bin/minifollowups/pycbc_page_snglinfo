@@ -21,6 +21,7 @@ matplotlib.use('Agg')
 import lal
 import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
 from pycbc.results import followup
+from pycbc.events import stat
 from pycbc.io import hdf
 
 
@@ -50,9 +51,6 @@ trig_args.add_argument("--n-loudest", type=int, default=None,
 trig_args.add_argument("--trigger-id", type=int, default=None,
     help="Use the trigger with this ID in the HDF file. Must supply either "
          "this option or --n-loudest.")
-parser.add_argument('--ranking-statistic', default='newsnr',
-    help="How to rank triggers when determining loudest triggers. Default "
-         "'newsnr'")
 parser.add_argument('--include-summary-page-link', action='store_true',
     help="If given, will include a link to the DQ summary page")
 parser.add_argument('--include-gracedb-link', action='store_true',
@@ -61,6 +59,7 @@ parser.add_argument('--include-gracedb-link', action='store_true',
 parser.add_argument('--significance-file',
     help="If given, will search for this trigger's id in the file to see if "
          "stat and p_astro values exists for this trigger.")
+stat.insert_statistic_option_group(parser)
 
 
 args = parser.parse_args()
@@ -71,17 +70,17 @@ pycbc.init_logging(args.verbose)
 sngl_file = hdf.SingleDetTriggers(args.single_trigger_file, args.bank_file,
                 args.veto_file, args.veto_segment_name, None, args.instrument)
 
+rank_method = stat.get_statistic_from_opts(args, [args.instrument])
 if args.trigger_id is not None:
     sngl_file.mask = [args.trigger_id]
     trig_id = args.trigger_id
-    sngl_file.mask_to_n_loudest_clustered_events(n_loudest=1,
-                                      ranking_statistic=args.ranking_statistic)
+    sngl_file.mask_to_n_loudest_clustered_events(rank_method, n_loudest=1)
     stat = sngl_file.stat[0]
 elif args.n_loudest is not None:
     # Cluster by a ranking statistic and retain only the loudest n clustered
     # triggers
-    sngl_file.mask_to_n_loudest_clustered_events(n_loudest=args.n_loudest+1,
-                                      ranking_statistic=args.ranking_statistic)
+    sngl_file.mask_to_n_loudest_clustered_events(rank_method,
+                                                 n_loudest=args.n_loudest+1)
     # Restrict to only the nth loudest, instead of all triggers up to nth
     # loudest
     stat = sngl_file.stat
@@ -121,7 +120,24 @@ data[0].append('%5.2f' % sngl_file.get_column('coa_phase'))
 data[0].append('%5.2f' % stat)
 headers.append("&rho;")
 headers.append("Phase")
-headers.append(sngl_file.stat_name)
+# Determine statistic naming
+if args.sngl_ranking == "newsnr":
+    sngl_stat_name = "Reweighted SNR"
+elif args.sngl_ranking == "newsnr_sgveto":
+    sngl_stat_name = "Reweighted SNR (+sgveto)"
+elif args.sngl_ranking == "newsnr_sgveto_psdvar":
+    sngl_stat_name = "Reweighted SNR (+sgveto+psdvar)"
+elif args.sngl_ranking == "snr":
+    sngl_stat_name = "SNR"
+else:
+    sngl_stat_name = args.sngl_ranking
+
+if args.ranking_statistic in ["quadsum", "single_ranking_only"]:
+    stat_name = sngl_stat_name
+else:
+    stat_name = '_with_'.join(ranking_statistic, sngl_ranking)
+
+headers.append(stat_name)
 
 # Signal-glitch discrimators
 data[0].append('%5.2f' % sngl_file.rchisq)
@@ -180,7 +196,7 @@ html = pycbc.results.dq.redirect_javascript + \
 if args.n_loudest:
     title = 'Parameters of single-detector event ranked %s' \
         % (args.n_loudest + 1)
-    caption = 'Parameters of the single-detector event ranked number %s by %s. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1, sngl_file.stat_name)
+    caption = 'Parameters of the single-detector event ranked number %s by %s. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1, stat_name)
 else:
     title = 'Parameters of single-detector event'
     caption = 'Parameters of the single-detector event. The figures below show the mini-followup data for this event.'

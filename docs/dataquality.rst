@@ -7,6 +7,8 @@ resources at the GWOSC and from LVC-proprietary DQSEGDB through the
 functions of the :py:mod:`pycbc.dq` module. We will outline a few of common
 tasks below.
 
+.. _example-valid-data:
+
 =================================================
 Determine the times an instrument has valid data
 =================================================

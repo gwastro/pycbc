@@ -8,8 +8,8 @@ export OMP_NUM_THREADS=4
 export HDF5_USE_FILE_LOCKING="FALSE"
 
 gps_start_time=1272790000
-gps_end_time=1272790500
-
+gps_end_time=1272790512
+f_min=18
 
 
 # test if there is a template bank. If not, make one
@@ -38,83 +38,72 @@ then
 
     mv template_bank_0.hdf template_bank.hdf
     rm -f template_bank_*.hdf
-else echo -e "\\n\\n>> [`date`] Pre-existing template bank found"
+else
+    echo -e "\\n\\n>> [`date`] Pre-existing template bank found"
 fi
 
 
-# test if there is a inj file. If not, make one.
-# if a new inj is made, delete old strain
+# test if there is a injection file.
+# If not, make one and delete any existing strain
 
-if [[ -f test_inj1.hdf && -f test_inj2.hdf ]]
+if [[ -f injections.hdf ]]
 then
-    echo -e "\\n\\n>> [`date`] Pre-existing Injection Found"
-else echo -e "\\n\\n>> [`date`] Generating injection"
+    echo -e "\\n\\n>> [`date`] Pre-existing injections found"
+else
+    echo -e "\\n\\n>> [`date`] Generating injections"
 
-    if [[ -f test_inj1.hdf ]]
-    then rm test_inj1.hdf
-    fi
-    
-    if [[ -f test_inj2.hdf ]]
-    then rm test_inj2.hdf
-    fi
-    
-    if [[ -d ./strain ]]
-    then rm -r ./strain
-    fi
-    
-     ./generate_injections.py
+    rm -rf ./strain
+
+    ./generate_injections.py
 fi
-
 
 
 # test if strain files exist. If they dont, make them
 
 if [[ ! -d ./strain ]]
-then        
+then
     echo -e "\\n\\n>> [`date`] Generating simulated strain"
-    
+
     function simulate_strain { # detector PSD_model random_seed
-        mkdir -p temp_strain/$1
         mkdir -p strain/$1
-        
-        (( t1=$gps_start_time-10 ))
-        (( t2=$gps_end_time+10 ))
-        
+
+        out_path="strain/$1/$1-SIMULATED_STRAIN-{start}-{duration}.gwf"
+
         pycbc_condition_strain \
             --fake-strain $2 \
             --fake-strain-seed $3 \
-            --output-strain-file "temp_strain/$1/$1-TEMP-{start}-{duration}.gwf" \
-            --gps-start-time $t1 \
-            --gps-end-time $t2 \
-            --sample-rate 16384 \
-            --low-frequency-cutoff 10 \
-            --channel-name $1:SIMULATED_STRAIN \
-            --frame-duration 32 \
-            --injection-file 'test_inj1.hdf'
-            
-        pycbc_condition_strain \
-            --frame-files temp_strain/$1/* \
-            --output-strain-file "strain/$1/$1-SIMULATED_STRAIN-{start}-{duration}.gwf" \
-            --gps-start-time $gps_start_time  \
+            --output-strain-file $out_path \
+            --gps-start-time $gps_start_time \
             --gps-end-time $gps_end_time \
             --sample-rate 16384 \
             --low-frequency-cutoff 10 \
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 32 \
-            --injection-file 'test_inj2.hdf'
-
+            --injection-file injections.hdf
     }
+
     simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
     simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345
     simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456
-else echo -e "\\n\\n>> [`date`] Pre-existing strain data found"
+else
+    echo -e "\\n\\n>> [`date`] Pre-existing strain data found"
+fi
+
+
+# make phase-time-amplitude histogram files, if needed
+
+if [[ ! -f statHL.hdf ]]
+then
+    echo -e "\\n\\n>> [`date`] Making phase-time-amplitude files"
+
+    bash ../search/stats.sh
+else
+    echo -e "\\n\\n>> [`date`] Pre-existing phase-time-amplitude files found"
 fi
 
 
 # delete old outputs if they exist
-if [[ -d ./output ]]
-then rm -r ./output
-fi
+rm -rf ./output
 
 
 echo -e "\\n\\n>> [`date`] Running PyCBC Live"
@@ -122,13 +111,14 @@ echo -e "\\n\\n>> [`date`] Running PyCBC Live"
 mpirun \
 -host localhost,localhost \
 -n 2 \
+--bind-to none \
 -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
 python -m mpi4py `which pycbc_live` \
 --bank-file template_bank.hdf \
 --sample-rate 2048 \
 --enable-bank-start-frequency \
---low-frequency-cutoff 18 \
+--low-frequency-cutoff ${f_min} \
 --max-length 256 \
 --approximant "SPAtmplt:mtotal<4" "SEOBNRv4_ROM:else" \
 --chisq-bins "0.72*get_freq('fSEOBNRv4Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7" \
@@ -175,7 +165,9 @@ python -m mpi4py `which pycbc_live` \
 --max-batch-size 16777216 \
 --output-path output \
 --day-hour-output-prefix \
---background-statistic newsnr_sgveto \
+--sngl-ranking newsnr_sgveto \
+--ranking-statistic phasetd \
+--statistic-files statHL.hdf statHV.hdf statLV.hdf \
 --sgchisq-snr-threshold 4 \
 --sgchisq-locations "mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120" \
 --enable-background-estimation \
@@ -186,7 +178,31 @@ python -m mpi4py `which pycbc_live` \
 --ifar-upload-threshold 0.0001 \
 --round-start-time 4 \
 --start-time $gps_start_time \
---end-time $gps_end_time
+--end-time $gps_end_time \
+--src-class-mchirp-to-delta 0.01 \
+--src-class-eff-to-lum-distance 0.74899 \
+--src-class-lum-distance-to-delta -0.51557 -0.32195 \
+--run-snr-optimization \
+--verbose
+
+# cat the logs of pycbc_optimize_snr so we can check them
+for opt_snr_log in `ls output/*optimize_snr.log`
+do
+    echo -e "\\n\\n>> [`date`] Showing log of SNR optimizer, ${opt_snr_log}"
+    cat ${opt_snr_log}
+done
 
 echo -e "\\n\\n>> [`date`] Checking results"
-./check_results.py
+./check_results.py \
+    --gps-start ${gps_start_time} \
+    --gps-end ${gps_end_time} \
+    --f-min ${f_min} \
+    --bank template_bank.hdf \
+    --injections injections.hdf \
+    --detectors H1 L1 V1
+
+echo -e "\\n\\n>> [`date`] Running Bayestar"
+for XMLFIL in `ls output/*xml*`
+do
+    bayestar-localize-coincs --f-low ${f_min} ${XMLFIL} ${XMLFIL}
+done

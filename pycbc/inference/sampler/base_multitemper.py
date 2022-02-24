@@ -27,7 +27,6 @@ samplers."""
 from __future__ import absolute_import
 
 import logging
-from six import string_types
 import numpy
 import h5py
 from pycbc.filter import autocorrelation
@@ -82,19 +81,27 @@ class MultiTemperedSupport(object):
             # get the path of the file containing inverse temperatures values.
             inverse_temperatures_file = cp.get(section,
                                                "inverse-temperatures-file")
-            with h5py.File(inverse_temperatures_file, "r") as fp:
-                try:
-                    betas = numpy.array(fp.attrs['betas'])
-                    # betas must be in decending order
-                    betas = numpy.sort(betas)[::-1]
-                    ntemps = betas.shape[0]
-                except KeyError:
-                    raise AttributeError("No attribute called betas")
+            betas = read_betas_from_hdf(inverse_temperatures_file)
+            ntemps = betas.shape[0]
         else:
             # get the number of temperatures
             betas = None
             ntemps = int(cp.get(section, "ntemps"))
         return ntemps, betas
+
+
+def read_betas_from_hdf(filename):
+    """Loads inverse temperatures from the given file.
+    """
+    # get the path of the file containing inverse temperatures values.
+    with h5py.File(filename, "r") as fp:
+        try:
+            betas = numpy.array(fp.attrs['betas'])
+            # betas must be in decending order
+            betas = numpy.sort(betas)[::-1]
+        except KeyError:
+            raise AttributeError("No attribute called betas")
+    return betas
 
 
 #
@@ -144,7 +151,7 @@ def compute_acf(filename, start_index=None, end_index=None,
     with loadfile(filename, 'r') as fp:
         if parameters is None:
             parameters = fp.variable_params
-        if isinstance(parameters, string_types):
+        if isinstance(parameters, str):
             parameters = [parameters]
         temps = _get_temps_idx(fp, temps)
         if chains is None:
@@ -304,7 +311,7 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
     with loadfile(filename, 'r') as fp:
         if parameters is None:
             parameters = fp.variable_params
-        if isinstance(parameters, string_types):
+        if isinstance(parameters, str):
             parameters = [parameters]
         temps = _get_temps_idx(fp, temps)
         for param in parameters:

@@ -32,7 +32,6 @@ import copy
 import numpy
 import logging
 import h5py
-from six.moves import range
 import pycbc.tmpltbank
 import pycbc.version
 from pycbc import pnutils

@@ -24,22 +24,17 @@
 """Provides constructor classes and convenience functions for MCMC samplers."""
 
 from __future__ import (absolute_import, division)
-
-import os
-import signal
 import logging
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 
-from six import (add_metaclass, string_types)
+from six import add_metaclass
+from six.moves import configparser as ConfigParser
 
 import numpy
 
-from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import (validate_checkpoint_files, loadfile)
 from pycbc.inference.io.base_mcmc import nsamples_in_chain
-
-from .base import setup_output
 from .base import initial_dist_from_config
 
 #
@@ -600,11 +595,8 @@ class BaseMCMC(object):
                 for fn in [self.checkpoint_file, self.backup_file]:
                     with self.io(fn, "a") as fp:
                         self.burn_in.write(fp)
-            # Compute acls; the burn_in test may have calculated an acl and
-            # saved it, in which case we don't need to do it again.
-            if self.raw_acls is None:
-                logging.info("Computing autocorrelation time")
-                self.raw_acls = self.compute_acl(self.checkpoint_file)
+            logging.info("Computing autocorrelation time")
+            self.raw_acls = self.compute_acl(self.checkpoint_file)
             # write acts, effective number of samples
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
@@ -838,15 +830,18 @@ class EnsembleSupport(object):
         """The effective number of samples post burn-in that the sampler has
         acquired so far.
         """
+        if self.burn_in is not None and not self.burn_in.is_burned_in:
+            # not burned in, so there's no effective samples
+            return 0
         act = self.act
         if act is None:
             act = numpy.inf
-        if self.burn_in is None or not self.burn_in.is_burned_in:
+        if self.burn_in is None:
             start_iter = 0
         else:
             start_iter = self.burn_in.burn_in_iteration
         nperwalker = nsamples_in_chain(start_iter, act, self.niterations)
-        if self.burn_in is not None and self.burn_in.is_burned_in:
+        if self.burn_in is not None:
             # after burn in, we always have atleast 1 sample per walker
             nperwalker = max(nperwalker, 1)
         return int(self.nwalkers * nperwalker)
@@ -900,7 +895,7 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
     with loadfile(filename, 'r') as fp:
         if parameters is None:
             parameters = fp.variable_params
-        if isinstance(parameters, string_types):
+        if isinstance(parameters, str):
             parameters = [parameters]
         for param in parameters:
             if per_walker:

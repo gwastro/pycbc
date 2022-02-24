@@ -1,6 +1,6 @@
 # Module with utilities for estimating candidate events source probabilities
 # Initial code by A. Curiel Barroso, August 2019
-# Modified by V. Villa-Ortega, January 2020
+# Modified by V. Villa-Ortega, January 2020, March 2021
 
 """Functions to compute the area corresponding to different CBC on the m1 & m2
 plane when given a central mchirp value and uncertainty.
@@ -9,9 +9,11 @@ detector frame mass and redshift.
 """
 
 import math
+import numpy as np
 from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 from scipy.integrate import quad
 from pycbc.cosmology import _redshift
+from astropy.cosmology import FlatLambdaCDM
 
 
 def insert_args(parser):
@@ -34,18 +36,17 @@ def insert_args(parser):
                                    "Used as limits of integration of the "
                                    "different CBC regions.")
     mchirp_group.add_argument('--src-class-mchirp-to-delta', type=float,
-                              metavar='m0', default=0.01,
+                              metavar='m0', required=True,
                               help='Coefficient to estimate the value of the '
                                    'mchirp uncertainty by mchirp_delta = '
                                    'm0 * mchirp.')
     mchirp_group.add_argument('--src-class-eff-to-lum-distance', type=float,
-                              metavar='a0', default=0.759,
+                              metavar='a0', required=True,
                               help='Coefficient to estimate the value of the '
                                    'luminosity distance from the minimum '
                                    'eff distance by D_lum = a0 * min(D_eff).')
     mchirp_group.add_argument('--src-class-lum-distance-to-delta', type=float,
-                              nargs=2, metavar=('b0', 'b1'),
-                              default=[-0.449, -0.342],
+                              nargs=2, metavar=('b0', 'b1'), required=True,
                               help='Coefficients to estimate the value of the '
                                    'uncertainty on the luminosity distance '
                                    'from the estimated luminosity distance and'
@@ -55,6 +56,11 @@ def insert_args(parser):
                               action='store_true',
                               help='Gives separate probabilities for each kind'
                                    ' of mass gap CBC sources: GNS, GG, BHG.')
+    mchirp_group.add_argument('--src-class-lal-cosmology',
+                              action='store_true',
+                              help='Uses the Planck15 cosmology defined in '
+                                   'lalsuite instead of the astropy Planck15 '
+                                   'default model.')
 
 
 def from_cli(args):
@@ -66,7 +72,31 @@ def from_cli(args):
                                  'b0': args.src_class_lum_distance_to_delta[0],
                                  'b1': args.src_class_lum_distance_to_delta[1],
                                  'm0': args.src_class_mchirp_to_delta},
-            'mass_gap': args.src_class_mass_gap_separate}
+            'mass_gap': args.src_class_mass_gap_separate,
+            'lal_cosmology': args.src_class_lal_cosmology}
+
+
+def redshift_estimation(distance, distance_std, lal_cosmology):
+    """Takes values of distance and its uncertainty and returns a
+       dictionary with estimates of the redshift and its uncertainty.
+       If the argument 'lal_cosmology' is True, it uses Planck15 cosmology
+       model as defined in lalsuite instead of the astropy default.
+       Constants for lal_cosmology taken from Planck15_lal_cosmology() in
+       https://git.ligo.org/lscsoft/pesummary/-/blob/master/pesummary/gw/
+       cosmology.py.
+    """
+    if lal_cosmology:
+        cosmology = FlatLambdaCDM(H0=67.90, Om0=0.3065)
+    else:
+        cosmology = None
+    z_estimation = _redshift(distance, cosmology=cosmology)
+    z_est_max = _redshift((distance + distance_std),
+                          cosmology=cosmology)
+    z_est_min = _redshift((distance - distance_std),
+                          cosmology=cosmology)
+    z_std_estimation = 0.5 * (z_est_max - z_est_min)
+    z = {'central': z_estimation, 'delta': z_std_estimation}
+    return z
 
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
@@ -80,11 +110,62 @@ def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
 
 
 def intmc(mc, x_min, x_max):
-    """Returns the integral of a component mass as a function of the mass of
-       the other component, taking mchirp as an argument.
+    """Returns the integral of m2 over m1 between x_min and x_max,
+       assuming that mchirp is fixed.
     """
     integral = quad(lambda x, mc: m2mcm1(mc, x), x_min, x_max, args=mc)
     return integral[0]
+
+
+def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
+    """Returns the area under the chirp mass contour in a region of the m1-m2
+    plane (m1 > m2).
+
+    Parameters
+    ----------
+    trig_mc : sequence of two values
+        first represents central estimate of mchirp in source frame,
+        second its uncertainty
+    lim_h1, lim_h2 : floats or the string 'diagonal'
+        upper and lower horizontal limits of the region (limits on m2)
+    lim_v1, lim_v2 : floats
+        right and left vertical limits of the region (limits on m1)
+
+    Returns
+    -------
+    area : float
+    """
+    mc_max = trig_mc[0] + trig_mc[1]
+    mc_min = trig_mc[0] - trig_mc[1]
+    # The points where the equal mass line and a chirp mass
+    # curve intersect is m1 = m2 = 2**0.2 * mchirp
+    mi_max = (2.**0.2) * mc_max
+    mi_min = (2.**0.2) * mc_min
+
+    if lim_h1 == 'diagonal':
+        max_h1 = mi_max
+        min_h1 = mi_min
+        fun_sup = lambda x: x
+    else:
+        max_h1 = m2mcm1(mc_max, lim_h1)
+        min_h1 = m2mcm1(mc_min, lim_h1)
+        fun_sup = lambda x: lim_h1
+
+    max_h2 = m2mcm1(mc_max, lim_h2)
+    min_h2 = m2mcm1(mc_min, lim_h2)
+    fun_inf = lambda x: lim_h2
+
+    lim_max1 = np.clip(max_h1, lim_v1, lim_v2)
+    lim_max2 = np.clip(max_h2, lim_v1, lim_v2)
+    lim_min1 = np.clip(min_h1, lim_v1, lim_v2)
+    lim_min2 = np.clip(min_h2, lim_v1, lim_v2)
+
+    int_max = intmc(mc_max, lim_max1, lim_max2)
+    int_min = intmc(mc_min, lim_min1, lim_min2)
+    intline_sup = quad(fun_sup, lim_min1, lim_max1)[0]
+    intline_inf = quad(fun_inf, lim_min2, lim_max2)[0]
+    area = int_max + intline_sup - int_min - intline_inf
+    return area
 
 
 def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
@@ -96,186 +177,18 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
     trig_mc = src_mass_from_z_det_mass(z["central"], z["delta"],
                                        trig_mc_det["central"],
                                        trig_mc_det["delta"])
-    mcb = trig_mc[0] + trig_mc[1]
-    mcs = trig_mc[0] - trig_mc[1]
     m2_min = mass_limits["min_m2"]
     m1_max = mass_limits["max_m1"]
     ns_max = mass_bdary["ns_max"]
     gap_max = mass_bdary["gap_max"]
-    # The points where the equal mass line and a chirp mass
-    # curve intersect is m1 = m2 = 2**0.2 * mchirp
-    mib = (2.**0.2) * mcb
-    mis = (2.**0.2) * mcs
 
-    # AREA FOR BBH
-    if mib < gap_max:
-        abbh = 0.0
-    else:
-        limb_bbh = min(m1_max, m2mcm1(mcb, gap_max))
-        intb_bbh = intmc(mcb, mib, limb_bbh)
+    abbh = get_area(trig_mc, 'diagonal', gap_max, gap_max, m1_max)
+    abhg = get_area(trig_mc, gap_max, ns_max, gap_max, m1_max)
+    ansbh = get_area(trig_mc, ns_max, m2_min, gap_max, m1_max)
+    agg = get_area(trig_mc, 'diagonal', ns_max, ns_max, gap_max)
+    agns = get_area(trig_mc, ns_max, m2_min, ns_max, gap_max)
+    abns = get_area(trig_mc, 'diagonal', m2_min, m2_min, ns_max)
 
-        if mis < gap_max:
-            lims1_bbh = gap_max
-            lims2_bbh = lims1_bbh
-        else:
-            lims1_bbh = mis
-            lims2_bbh = min(m1_max, m2mcm1(mcs, gap_max))
-
-        ints_bbh = intmc(mcs, lims1_bbh, lims2_bbh)
-
-        limdiag_bbh = max(m2mcm1(mcs, lims1_bbh), gap_max)
-        intline_sup_bbh = 0.5 * (limdiag_bbh + mib) * (mib - lims1_bbh)
-        intline_inf_bbh = (limb_bbh - lims2_bbh) * gap_max
-        int_sup_bbh = intb_bbh + intline_sup_bbh
-        int_inf_bbh = ints_bbh + intline_inf_bbh
-
-        abbh = int_sup_bbh - int_inf_bbh
-
-    # AREA FOR BHG
-    if m2mcm1(mcb, gap_max) < ns_max or m2mcm1(mcs, m1_max) > gap_max:
-        abhg = 0.0
-    else:
-        if m2mcm1(mcb, m1_max) > gap_max:
-            limb2_bhg = m1_max
-            limb1_bhg = limb2_bhg
-        else:
-            limb2_bhg = min(m1_max, m2mcm1(mcb, ns_max))
-            limb1_bhg = max(gap_max, m2mcm1(mcb, gap_max))
-
-        intb_bhg = intmc(mcb, limb1_bhg, limb2_bhg)
-
-        if m2mcm1(mcs, gap_max) < ns_max:
-            lims2_bhg = gap_max
-            lims1_bhg = lims2_bhg
-        else:
-            lims1_bhg = max(gap_max, m2mcm1(mcs, gap_max))
-            lims2_bhg = min(m1_max, m2mcm1(mcs, ns_max))
-
-        intline_inf_bhg = (limb2_bhg - lims2_bhg) * ns_max
-        intline_sup_bhg = (limb1_bhg - lims1_bhg) * gap_max
-        ints_bhg = intmc(mcs, lims1_bhg, lims2_bhg)
-        int_sup_bhg = intb_bhg + intline_sup_bhg
-        int_inf_bhg = ints_bhg + intline_inf_bhg
-
-        abhg = int_sup_bhg - int_inf_bhg
-
-    # AREA FOR GG
-    if m2mcm1(mcs, gap_max) > gap_max or m2mcm1(mcb, ns_max) < ns_max:
-        agg = 0.0
-    else:
-        if m2mcm1(mcb, gap_max) > gap_max:
-            limb2_gg = gap_max
-            limb1_gg = limb2_gg
-        else:
-            limb1_gg = mib
-            limb2_gg = min(gap_max, m2mcm1(mcb, ns_max))
-
-        intb_gg = intmc(mcb, limb1_gg, limb2_gg)
-
-        if m2mcm1(mcs, ns_max) < ns_max:
-            lims2_gg = ns_max
-            lims1_gg = lims2_gg
-        else:
-            lims1_gg = mis
-            lims2_gg = min(gap_max, m2mcm1(mcs, ns_max))
-
-        ints_gg = intmc(mcs, lims1_gg, lims2_gg)
-        limdiag1_gg = max(m2mcm1(mcs, lims1_gg), ns_max)
-        limdiag2_gg = min(m2mcm1(mcb, limb1_gg), gap_max)
-        intline_sup_gg = (0.5 * (limb1_gg - lims1_gg)
-                          * (limdiag1_gg + limdiag2_gg))
-        intline_inf_gg = (limb2_gg - lims2_gg) * ns_max
-        int_sup_gg = intb_gg + intline_sup_gg
-        int_inf_gg = ints_gg + intline_inf_gg
-
-        agg = int_sup_gg - int_inf_gg
-
-    # AREA FOR BNS
-    if m2mcm1(mcs, ns_max) > ns_max:
-        abns = 0.0
-    else:
-        if m2mcm1(mcb, ns_max) > ns_max:
-            limb2_bns = ns_max
-            limb1_bns = limb2_bns
-        else:
-            limb2_bns = min(ns_max, m2mcm1(mcb, m2_min))
-            limb1_bns = mib
-
-        intb_bns = intmc(mcb, limb1_bns, limb2_bns)
-
-        if mis < m2_min:
-            lims2_bns = m2_min
-            lims1_bns = lims2_bns
-        else:
-            lims2_bns = min(ns_max, m2mcm1(mcs, m2_min))
-            lims1_bns = mis
-
-        ints_bns = intmc(mcs, lims1_bns, lims2_bns)
-        intline_inf_bns = (limb2_bns - lims2_bns) * m2_min
-        limdiag1_bns = max(m2mcm1(mcs, lims1_bns), m2_min)
-        limdiag2_bns = min(m2mcm1(mcb, limb1_bns), ns_max)
-        intline_sup_bns = (0.5 * (limdiag1_bns + limdiag2_bns)
-                           * (limb1_bns - lims1_bns))
-        int_sup_bns = intb_bns + intline_sup_bns
-        int_inf_bns = ints_bns + intline_inf_bns
-
-        abns = int_sup_bns - int_inf_bns
-
-    # AREA FOR GNS
-    if m2mcm1(mcs, gap_max) > ns_max or m2mcm1(mcb, ns_max) < m2_min:
-        agns = 0.0
-    else:
-        if m2mcm1(mcb, gap_max) > ns_max:
-            limb2_gns = gap_max
-            limb1_gns = limb2_gns
-        else:
-            limb2_gns = min(gap_max, m2mcm1(mcb, m2_min))
-            limb1_gns = max(ns_max, m2mcm1(mcb, ns_max))
-
-        intb_gns = intmc(mcb, limb1_gns, limb2_gns)
-
-        if m2mcm1(mcs, ns_max) < m2_min:
-            lims2_gns = ns_max
-            lims1_gns = lims2_gns
-        else:
-            lims1_gns = max(ns_max, m2mcm1(mcs, ns_max))
-            lims2_gns = min(gap_max, m2mcm1(mcs, m2_min))
-
-        intline_inf_gns = (limb2_gns - lims2_gns) * m2_min
-        intline_sup_gns = (limb1_gns - lims1_gns) * ns_max
-        ints_gns = intmc(mcs, lims1_gns, lims2_gns)
-        int_sup_gns = intb_gns + intline_sup_gns
-        int_inf_gns = ints_gns + intline_inf_gns
-
-        agns = int_sup_gns - int_inf_gns
-
-    # AREA FOR NSBH
-    if m2mcm1(mcs, m1_max) > ns_max or m2mcm1(mcb, gap_max) < m2_min:
-        ansbh = 0.0
-    else:
-        if m2mcm1(mcb, m1_max) > ns_max:
-            limb2_nsbh = m1_max
-            limb1_nsbh = limb2_nsbh
-        else:
-            limb1_nsbh = max(gap_max, m2mcm1(mcb, ns_max))
-            limb2_nsbh = min(m1_max, m2mcm1(mcb, m2_min))
-
-        intb_nsbh = intmc(mcb, limb1_nsbh, limb2_nsbh)
-
-        if m2mcm1(mcs, gap_max) < m2_min:
-            lims1_nsbh = gap_max
-            lims2_nsbh = lims1_nsbh
-        else:
-            lims1_nsbh = max(gap_max, m2mcm1(mcs, ns_max))
-            lims2_nsbh = min(m1_max, m2mcm1(mcs, m2_min))
-
-        intline_inf_nsbh = (limb2_nsbh - lims2_nsbh) * m2_min
-        intline_sup_nsbh = (limb1_nsbh - lims1_nsbh) * ns_max
-        ints_nsbh = intmc(mcs, lims1_nsbh, lims2_nsbh)
-        int_sup_nsbh = intb_nsbh + intline_sup_nsbh
-        int_inf_nsbh = ints_nsbh + intline_inf_nsbh
-
-        ansbh = int_sup_nsbh - int_inf_nsbh
     if mass_gap:
         return {
             "BNS": abns,
@@ -298,9 +211,8 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
        each CBC source category taking as arguments the chirp mass, the
        coincident SNR and the effective distance, and estimating the
        chirp mass uncertainty, the luminosity distance (and its uncertainty)
-       and the redshift (and its uncertainty). Probability estimation is done
-       assuming it is directly proportional to the area laying in the
-       correspondent CBC region.
+       and the redshift (and its uncertainty). Probability is estimated to be
+       directly proportional to the area of the corresponding CBC region.
     """
     mass_limits = src_args['mass_limits']
     mass_bdary = src_args['mass_bdary']
@@ -309,16 +221,17 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     dist_estimation = coeff['a0'] * eff_distance
     dist_std_estimation = (dist_estimation * math.exp(coeff['b0']) *
                            snr ** coeff['b1'])
-    z_estimation = _redshift(dist_estimation)
-    z_est_max = _redshift(dist_estimation + dist_std_estimation)
-    z_est_min = _redshift(dist_estimation - dist_std_estimation)
-    z_std_estimation = 0.5 * (z_est_max - z_est_min)
-    z = {'central': z_estimation, 'delta': z_std_estimation}
+    z = redshift_estimation(dist_estimation, dist_std_estimation,
+                            src_args['lal_cosmology'])
     mass_gap = src_args['mass_gap']
 
     # If the mchirp is greater than the mchirp corresponding to two masses
-    # equal to the maximum mass, the probability for BBH is 100%
+    # equal to the maximum mass, the probability for BBH is 100%.
+    # If it is less than the mchirp corresponding to two masses equal to the
+    # minimum mass, the probability for BNS is 100%.
     mc_max = mass_limits['max_m1'] / (2 ** 0.2)
+    mc_min = mass_limits['min_m2'] / (2 ** 0.2)
+
     if trig_mc_det['central'] > mc_max * (1 + z['central']):
         if mass_gap:
             probabilities = {"BNS": 0.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
@@ -326,8 +239,18 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
         else:
             probabilities = {"BNS": 0.0, "NSBH": 0.0, "BBH": 1.0,
                              "Mass Gap": 0.0}
+
+    elif trig_mc_det['central'] < mc_min * (1 + z['central']):
+        if mass_gap:
+            probabilities = {"BNS": 1.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
+                             "BHG": 0.0, "BBH": 0.0}
+        else:
+            probabilities = {"BNS": 1.0, "NSBH": 0.0, "BBH": 0.0,
+                             "Mass Gap": 0.0}
+
     else:
         areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap)
         total_area = sum(areas.values())
         probabilities = {key: areas[key]/total_area for key in areas}
+
     return probabilities

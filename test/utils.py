@@ -66,9 +66,9 @@ once.
 import pycbc
 import optparse
 from sys import exit as _exit
-from optparse import OptionParser, OptionValueError
+from optparse import OptionParser
 from pycbc.scheme import CPUScheme, CUDAScheme
-from numpy import dtype, float32, float64, complex64, complex128
+from numpy import float32, float64, complex64, complex128
 from pycbc.types import Array
 
 

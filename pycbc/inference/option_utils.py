@@ -19,8 +19,6 @@
 
 import argparse
 
-from six import string_types
-
 from pycbc import waveform
 from pycbc import distributions
 
@@ -60,7 +58,7 @@ class ParseLabelArg(argparse.Action):
                                             **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        singlearg = isinstance(values, string_types)
+        singlearg = isinstance(values, str)
         if singlearg:
             values = [values]
         params = []
@@ -169,6 +167,14 @@ def add_plot_posterior_option_group(parser):
                         type=float,
                         help="Percentiles to draw lines at on the 1D "
                              "histograms.")
+    pgroup.add_argument('--no-marginal-lines', action='store_true',
+                        default=False,
+                        help="Do not add vertical lines in the 1D marginal "
+                             "plots showing the marginal percentiles.")
+    pgroup.add_argument('--no-marginal-titles', action='store_true',
+                        default=False,
+                        help="Do not add titles giving the 1D credible range "
+                             "over the 1D marginal plots.")
     pgroup.add_argument("--plot-scatter", action='store_true', default=False,
                         help="Plot each sample point as a scatter plot.")
     pgroup.add_argument("--plot-density", action="store_true", default=False,
@@ -216,6 +222,10 @@ def add_plot_posterior_option_group(parser):
                              "injection in the file to work. Any values "
                              "specified by expected-parameters will override "
                              "the values obtained for the injection.")
+    pgroup.add_argument('--pick-injection-by-time', action='store_true',
+                        default=False,
+                        help="In the case of multiple injections, pick one"
+                             " for plotting based on its proximity in time.")
     add_injsamples_map_opt(pgroup)
     return pgroup
 
@@ -327,10 +337,30 @@ def add_density_option_group(parser):
         help="Specify the color to use for the contour lines. Default is "
              "white for density plots and black for scatter plots.")
     density_group.add_argument(
+        "--contour-linestyles", type=str, default=None, nargs="+",
+        help="Specify the linestyles to use for the contour lines. Defaut "
+             "is solid for all.")
+    density_group.add_argument(
+        "--no-contour-labels", action="store_true", default=False,
+        help="Don't put labels on the contours.")
+    density_group.add_argument(
         '--use-kombine-kde', default=False, action="store_true",
-        help="Use kombine's KDE for determining contours. "
-             "Default is to use scipy's gaussian_kde.")
-
+        help="Use kombine's clustered KDE for determining 2D marginal "
+             "contours and density instead of scipy's gaussian_kde (the "
+             "default). This is better at distinguishing bimodal "
+             "distributions, but is much slower than the default. For speed, "
+             "suggest setting --kde-args 'max_samples:20000' or smaller if "
+             "using this. Requires kombine to be installed.")
+    density_group.add_argument(
+        '--max-kde-samples', type=int, default=None,
+        help="Limit the number of samples used for KDE construction to the "
+             "given value. This can substantially speed up plot generation "
+             "(particularly when plotting multiple parameters). Suggested "
+             "values: 5000 to 10000.")
+    density_group.add_argument(
+        '--kde-args', metavar="ARG:VALUE", nargs='+', default=None,
+        help="Pass the given argrument, value pairs to the KDE function "
+             "(either scipy's or kombine's) when setting it up.")
     return density_group
 
 

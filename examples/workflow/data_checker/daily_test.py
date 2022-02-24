@@ -28,10 +28,8 @@ __date__    = pycbc.version.date
 __program__ = "daily_test"
 
 import os
-import copy
 import logging
 import argparse
-from ligo import segments
 import pycbc.workflow as _workflow
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \

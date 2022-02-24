@@ -29,15 +29,19 @@ from __future__ import absolute_import
 
 import sys
 import logging
+from io import StringIO
 
 from abc import (ABCMeta, abstractmethod)
-from six import (add_metaclass, string_types)
+from six import add_metaclass
 
 import numpy
 import h5py
 
 from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
+from pycbc.io import (dump_state, load_state)
+from pycbc.workflow import WorkflowConfigParser
+from pycbc.types import FrequencySeries
 
 
 def format_attr(val):
@@ -92,6 +96,7 @@ class BaseInferenceFile(h5py.File):
     sampler_group = 'sampler_info'
     data_group = 'data'
     injections_group = 'injections'
+    config_group = 'config_file'
 
     def __init__(self, path, mode=None, **kwargs):
         super(BaseInferenceFile, self).__init__(path, mode, **kwargs)
@@ -628,7 +633,7 @@ class BaseInferenceFile(h5py.File):
         # copy non-samples/stats data
         if ignore is None:
             ignore = []
-        if isinstance(ignore, string_types):
+        if isinstance(ignore, str):
             ignore = [ignore]
         ignore = set(ignore + [self.samples_group])
         copy_groups = set(self.keys()) - ignore
@@ -719,7 +724,7 @@ class BaseInferenceFile(h5py.File):
         # info
         if ignore is None:
             ignore = []
-        if isinstance(ignore, string_types):
+        if isinstance(ignore, str):
             ignore = [ignore]
         self.copy_info(other, ignore=ignore)
         # samples
@@ -836,3 +841,112 @@ class BaseInferenceFile(h5py.File):
             except KeyError:
                 # dataset doesn't exist yet
                 group[name] = data
+
+    def write_config_file(self, cp):
+        """Writes the given config file parser.
+
+        File is stored as a pickled buffer array to ``config_parser/{index}``,
+        where ``{index}`` is an integer corresponding to the number of config
+        files that have been saved. The first time a save is called, it is
+        stored to ``0``, and incremented from there.
+
+        Parameters
+        ----------
+        cp : ConfigParser
+            Config parser to save.
+        """
+        # get the index of the last saved file
+        try:
+            index = list(map(int, self[self.config_group].keys()))
+        except KeyError:
+            index = []
+        if index == []:
+            # hasn't been written yet
+            index = 0
+        else:
+            index = max(index) + 1
+        # we'll store the config file as a text file that is pickled
+        out = StringIO()
+        cp.write(out)
+        # now pickle it
+        dump_state(out, self, path=self.config_group, dsetname=str(index))
+
+    def read_config_file(self, return_cp=True, index=-1):
+        """Reads the config file that was used.
+
+        A ``ValueError`` is raised if no config files have been saved, or if
+        the requested index larger than the number of stored config files.
+
+        Parameters
+        ----------
+        return_cp : bool, optional
+            If true, returns the loaded config file as
+            :py:class:`pycbc.workflow.configuration.WorkflowConfigParser`
+            type. Otherwise will return as string buffer. Default is True.
+        index : int, optional
+            The config file to load. If ``write_config_file`` has been called
+            multiple times (as would happen if restarting from a checkpoint),
+            there will be config files stored. Default (-1) is to load the
+            last saved file.
+
+        Returns
+        -------
+        WorkflowConfigParser or StringIO :
+            The parsed config file.
+        """
+        # get the stored indices
+        try:
+            indices = sorted(map(int, self[self.config_group].keys()))
+            index = indices[index]
+        except KeyError:
+            raise ValueError("no config files saved in hdf")
+        except IndexError:
+            raise ValueError("no config file matches requested index")
+        cf = load_state(self, path=self.config_group, dsetname=str(index))
+        cf.seek(0)
+        if return_cp:
+            cp = WorkflowConfigParser()
+            cp.read_file(cf)
+            return cp
+        return cf
+
+    def read_data(self):
+        """Loads the data stored in the file as a FrequencySeries.
+
+        Only works for models that store data as a frequency series in
+        ``data/DET/stilde``. A ``KeyError`` will be raised if the model used
+        did not store data in that path.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector name -> FrequencySeries.
+        """
+        data = {}
+        fmt = 'data/{}/stilde'
+        for det in self['data'].keys():
+            group = self[fmt.format(det)]
+            data[det] = FrequencySeries(
+                group[()], delta_f=group.attrs['delta_f'],
+                epoch=group.attrs['epoch'])
+        return data
+
+    def read_psds(self):
+        """Loads the PSDs stored in the file as a FrequencySeries.
+
+        Only works for models that store PSDs in
+        ``data/DET/psds/0``. A ``KeyError`` will be raised if the model used
+        did not store PSDs in that path.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector name -> FrequencySeries.
+        """
+        psds = {}
+        fmt = 'data/{}/psds/0'
+        for det in self['data'].keys():
+            group = self[fmt.format(det)]
+            psds[det] = FrequencySeries(
+                group[()], delta_f=group.attrs['delta_f'])
+        return psds

@@ -155,21 +155,22 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
 
     """
     import lal.series
-    from glue.ligolw import utils as ligolw_utils
-    fp = open(filename, 'r')
-    ct_handler = lal.series.PSDContentHandler
-    fileobj, _ = ligolw_utils.load_fileobj(fp, contenthandler=ct_handler)
-    psd_dict = lal.series.read_psd_xmldoc(fileobj, root_name=root_name)
+    from ligo.lw import utils as ligolw_utils
+
+    with open(filename, 'rb') as fp:
+        ct_handler = lal.series.PSDContentHandler
+        xml_doc = ligolw_utils.load_fileobj(fp, compress='auto',
+                                            contenthandler=ct_handler)
+        psd_dict = lal.series.read_psd_xmldoc(xml_doc, root_name=root_name)
 
     if ifo_string is not None:
         psd_freq_series = psd_dict[ifo_string]
+    elif len(psd_dict.keys()) == 1:
+        psd_freq_series = psd_dict[tuple(psd_dict.keys())[0]]
     else:
-        if len(psd_dict.keys()) == 1:
-            psd_freq_series = psd_dict[tuple(psd_dict.keys())[0]]
-        else:
-            err_msg = "No ifo string given and input XML file contains not "
-            err_msg += "exactly one PSD. Specify which PSD you want to use."
-            raise ValueError(err_msg)
+        err_msg = "No ifo string given and input XML file contains not "
+        err_msg += "exactly one PSD. Specify which PSD you want to use."
+        raise ValueError(err_msg)
 
     noise_data = psd_freq_series.data.data[:]
     freq_data = numpy.arange(len(noise_data)) * psd_freq_series.deltaF

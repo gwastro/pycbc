@@ -20,22 +20,32 @@ This modules provides a list of implemented samplers for parameter estimation.
 from __future__ import absolute_import
 # pylint: disable=unused-import
 from .base import (initial_dist_from_config, create_new_output_file)
-from .emcee import EmceeEnsembleSampler
-from .emcee_pt import EmceePTSampler
 from .multinest import MultinestSampler
 from .ultranest import UltranestSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
-    EmceeEnsembleSampler,
-    EmceePTSampler,
     MultinestSampler,
     UltranestSampler,
 )}
 
 try:
+    from .emcee import EmceeEnsembleSampler
+    from .emcee_pt import EmceePTSampler
+    samplers[EmceeEnsembleSampler.name] = EmceeEnsembleSampler
+    samplers[EmceePTSampler.name] = EmceePTSampler
+except ImportError:
+    pass
+
+try:
     from .epsie import EpsieSampler
     samplers[EpsieSampler.name] = EpsieSampler
+except ImportError:
+    pass
+
+try:
+    from .ptemcee import PTEmceeSampler
+    samplers[PTEmceeSampler.name] = PTEmceeSampler
 except ImportError:
     pass
 

@@ -53,7 +53,7 @@ if args.fixed_params:
 
 class Shrinker(object):
     def __init__(self, data):
-        self.data = data 
+        self.data = data
 
     def pop(self):
         if len(self.data) == 0:
@@ -72,7 +72,7 @@ class TriangleBank(object):
 
     def __len__(self):
         return len(self.waveforms)
-       
+
     def activelen(self):
         i = 0
         for w in self.waveforms:
@@ -97,7 +97,7 @@ class TriangleBank(object):
 
     def key(self, k):
         return numpy.array([p.params[k] for p in self.waveforms])
-        
+
     def sigma_match_bound(self, sig):
         if not hasattr(self, 'sigma'):
             self.sigma = None
@@ -111,10 +111,10 @@ class TriangleBank(object):
         if self.r is None or len(self.r) != len(self):
             self.r = numpy.arange(0, len(self))
         return self.r
-        
+
     def culltau0(self, threshold):
         cull = numpy.where(self.tau0() < threshold)[0]
-    
+
         class dumb(object):
             pass
         for c in cull:
@@ -123,7 +123,7 @@ class TriangleBank(object):
             d.params = self.waveforms[c].params
             d.s = self.waveforms[c].s
             self.waveforms[c] = d
-            
+
 
     def tau0(self):
         if not hasattr(self, 't0'):
@@ -132,12 +132,12 @@ class TriangleBank(object):
             self.t0 = numpy.array([h.tau0 for h in self])
         return self.t0
 
-    def __contains__(self, hp):  
-        mmax = 0  
+    def __contains__(self, hp):
+        mmax = 0
         mnum = 0
         #Apply sigmas maximal match.
         if args.enable_sigma_bound:
-            matches = self.sigma_match_bound(hp.s)            
+            matches = self.sigma_match_bound(hp.s)
             r = self.range()[matches > hp.threshold]
         else:
             matches = numpy.ones(len(self))
@@ -148,7 +148,7 @@ class TriangleBank(object):
         #Apply tua0 threshold
         if args.tau0_threshold:
             hp.tau0 = pycbc.conversions.tau0_from_mass1_mass2(
-                                            hp.params['mass1'], 
+                                            hp.params['mass1'],
                                             hp.params['mass2'], 15.0)
             hp.tbin = int(hp.tau0 / args.tau0_threshold)
 
@@ -160,7 +160,7 @@ class TriangleBank(object):
         mtau = len(r)
 
         # Try to do some actual matches
-        inc = Shrinker(r*1)         
+        inc = Shrinker(r*1)
         while 1:
             j = inc.pop()
             if j is None:
@@ -175,7 +175,7 @@ class TriangleBank(object):
             m = hp.gen.match(hp, hc)
             matches[j] = m
             mnum += 1
-            
+
             # Update bounding match values, apply triangle inequality
             maxmatches = hc.matches - m + 1.10
             update = numpy.where(maxmatches < matches[hc.indices])[0]
@@ -184,11 +184,11 @@ class TriangleBank(object):
             # Update where to calculate matches
             skip_threshold = 1 - (1 - hp.threshold) * 2.0
             inc.data = inc.data[matches[inc.data] > skip_threshold]
-            
+
             if m > hp.threshold:
                 return True
             if m > mmax:
-                mmax = m     
+                mmax = m
 
     def check_params(self, gen, params, threshold):
         num_tried = 0
@@ -201,7 +201,7 @@ class TriangleBank(object):
             except Exception as err:
                 print(err)
                 continue
-    
+
             hp.gen = gen
             hp.threshold = threshold
             if hp not in self:
@@ -215,7 +215,7 @@ class GenUniformWaveform(object):
         self.f_lower = f_lower
         self.delta_f = 1.0 / buffer_length
         tlen = int(buffer_length * sample_rate)
-        self.flen = tlen / 2 + 1
+        self.flen = tlen // 2 + 1
         psd = pycbc.psd.from_cli(args, self.flen, self.delta_f, self.f_lower)
         self.kmin = int(f_lower * buffer_length)
         self.w = ((1.0 / psd[self.kmin:-1]) ** 0.5).astype(numpy.float32)
@@ -229,16 +229,16 @@ class GenUniformWaveform(object):
     def generate(self, **kwds):
         kwds.update(fdict)
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
-            hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f, 
+            hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
                                                 f_lower=self.f_lower, **kwds)
             if 'fratio' in kwds:
                 hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
         else:
             dt = 1.0 / args.sample_rate
             hp = pycbc.waveform.get_waveform_filter(
-                        pycbc.types.zeros(self.flen, dtype=numpy.complex64), 
+                        pycbc.types.zeros(self.flen, dtype=numpy.complex64),
                         delta_f=self.delta_f, delta_t=dt,
-                        f_lower=self.f_lower, **kwds) 
+                        f_lower=self.f_lower, **kwds)
 
         hp.resize(self.flen)
         hp = hp.astype(numpy.complex64)
@@ -264,7 +264,7 @@ else:
 
 size = int(1.0 / tolerance)
 
-gen = GenUniformWaveform(args.buffer_length, 
+gen = GenUniformWaveform(args.buffer_length,
     args.sample_rate, args.low_frequency_cutoff)
 bank = TriangleBank()
 
@@ -276,7 +276,7 @@ if args.input_file:
 
 def draw(rtype):
     params = {}
-    
+
     if rtype == 'uniform':
         for name, pmin, pmax in zip(args.params, args.min, args.max):
             params[name] = numpy.random.uniform(pmin, pmax, size=size)
@@ -293,9 +293,9 @@ def draw(rtype):
         points = kde.resample(size=size)
         for k, v in zip(p, points):
             params[k] = v
-        
+
     params['approximant'] = numpy.array([args.approximant]*size)
-        
+
     # Filter out stuff
     l = None
     for name, pmin, pmax in zip(args.params, args.min, args.max):
@@ -318,42 +318,42 @@ def draw(rtype):
         from pycbc.conversions import mchirp_from_mass1_mass2
         mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
         l &= mc > args.min_mchirp
-            
+
     for k in params:
         params[k] = params[k][l]
-            
+
     return params
 
 def cdraw(rtype, ts, te):
     from pycbc.conversions import tau0_from_mass1_mass2
 
-    p = draw(rtype)    
-    if  len(p[p.keys()[0]]) > 0:
+    p = draw(rtype)
+    if  len(p[list(p.keys())[0]]) > 0:
         t = tau0_from_mass1_mass2(p['mass1'], p['mass2'], 15.0)
         l = (t < te) & (t > ts)
         for k in p:
             p[k] = p[k][l]
-        
+
     i = 0
-    while len(p[p.keys()[0]]) < size:
+    while len(p[list(p.keys())[0]]) < size:
         tp = draw(rtype)
         for k in p:
             p[k] = numpy.concatenate([p[k], tp[k]])
-            
-        if  len(p[p.keys()[0]]) > 0:
+
+        if  len(p[list(p.keys())[0]]) > 0:
             t = tau0_from_mass1_mass2(p['mass1'], p['mass2'], 15.0)
             l = (t < te) & (t > ts)
             for k in p:
-                p[k] = p[k][l] 
-           
+                p[k] = p[k][l]
+
         i += 1
         if i > 1000:
             break
-            
-            
-    if len(p[p.keys()[0]]) == 0:
+
+
+    if len(p[list(p.keys())[0]]) == 0:
         return None
-            
+
     return p
 
 tau0s = args.tau0_start
@@ -372,7 +372,7 @@ while tau0s < args.tau0_end:
             if len(bank) > 0:
                 go = False
             break
-        
+
         blen = len(bank)
         bank, uconv = bank.check_params(gen, params, args.minimal_match)
         logging.info("%s: Round (U): %s Size: %s conv: %s added: %s",
@@ -393,17 +393,21 @@ while tau0s < args.tau0_end:
 
             if kloop == 1:
                 okconv = kconv
-            
+
             if kconv <= tolerance:
                 conv = kconv
                 break
-    
+
     bank.culltau0(tau0s - args.tau0_threshold * 2.0)
     logging.info("Region Done %3.1f-%3.1f, %s stored", tau0s, tau0e, bank.activelen())
-    region += 1          
+    region += 1
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2
 
 o = h5py.File(args.output_file, 'w')
 for k in bank.keys():
-    o[k] = bank.key(k)
+    val = bank.key(k)
+    if val.dtype.char == 'U':
+        val = val.astype('bytes')
+    o[k] = val
+o['f_lower'] =  numpy.ones(len(val)) * args.low_frequency_cutoff

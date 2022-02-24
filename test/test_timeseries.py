@@ -50,6 +50,7 @@ elif _scheme == 'cpu':
 from numpy import ndarray as CPUArray
 
 class TestTimeSeriesBase(array_base,unittest.TestCase):
+    __test__ = False
     def setUp(self):
         self.scheme = _scheme
         self.context = _context
@@ -536,8 +537,9 @@ class TestTimeSeriesBase(array_base,unittest.TestCase):
             self.assertEqual(numpy.abs(b[:,1] - a_numpy).max(), 0)
             os.remove(temp_path_txt)
 
-def test_maker(dtype, odtype, epoch):
+def ts_test_maker(dtype, odtype, epoch):
     class TestTimeSeries(TestTimeSeriesBase):
+        __test__ = True
         def __init__(self, *args):
             self.dtype = dtype
             self.odtype = odtype
@@ -559,7 +561,7 @@ for t,otypes in types:
     for ot in otypes:
         for epoch in epochs:
             na = 'test' + str(i)
-            vars()[na] = test_maker(t, ot, epoch)
+            vars()[na] = ts_test_maker(t, ot, epoch)
             suite.addTest(unittest.TestLoader().loadTestsFromTestCase(vars()[na]))
             i += 1
 

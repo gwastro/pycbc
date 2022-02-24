@@ -21,13 +21,9 @@ fi
 # Fixme replace with apt-get from intel repo
 # get library needed to build documentation
 wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
-primary_url="https://git.ligo.org/ligo-cbc/pycbc-software/raw/cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090"
-secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090"
+primary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090"
 p="libmkl_rt.so"
-set +e
 test -r $p || wget $wget_opts ${primary_url}/${p}
-set -e
-test -r $p || wget $wget_opts ${secondary_url}/${p}
 chmod +x $p
 
 # LAL extra data files

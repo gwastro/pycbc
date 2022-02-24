@@ -64,8 +64,8 @@ class BatchCorrelator(object):
         self.zs = zs
 
         # Store each pointer as in integer array
-        self.x = Array([v.ptr for v in xs], dtype=numpy.int)
-        self.z = Array([v.ptr for v in zs], dtype=numpy.int)
+        self.x = Array([v.ptr for v in xs], dtype=int)
+        self.z = Array([v.ptr for v in zs], dtype=int)
 
     @pycbc.scheme.schemed(BACKEND_PREFIX)
     def batch_correlate_execute(self, y):
@@ -474,7 +474,11 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
                                                       out=None, thresh=0,
                                                       analyse_slice=None):
     """
-    Compute the maximized over sky location statistic.
+    Matched filter maximised over polarization and orbital phase.
+
+    This implements the statistic derived in 1603.02444. It is encouraged
+    to read that work to understand the limitations and assumptions implicit
+    in this statistic before using it.
 
     Parameters
     -----------
@@ -661,9 +665,13 @@ def compute_max_snr_over_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
                                                out=None, thresh=0,
                                                analyse_slice=None):
     """
-    Compute the match maximized over polarization phase.
+    Matched filter maximised over polarization phase.
 
-    In contrast to compute_max_snr_over_sky_loc_stat_no_phase this function
+    This implements the statistic derived in 1709.09181. It is encouraged
+    to read that work to understand the limitations and assumptions implicit
+    in this statistic before using it.
+
+    In contrast to compute_max_snr_over_sky_loc_stat this function
     performs no maximization over orbital phase, treating that as an intrinsic
     parameter. In the case of aligned-spin 2,2-mode only waveforms, this
     collapses to the normal statistic (at twice the computational cost!)
@@ -1315,7 +1323,8 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
 
 _snr = None
 def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
-          high_frequency_cutoff=None, v1_norm=None, v2_norm=None):
+          high_frequency_cutoff=None, v1_norm=None, v2_norm=None,
+          subsample_interpolation=False, return_phase=False):
     """ Return the match between the two TimeSeries or FrequencySeries.
 
     Return the match between two waveforms. This is equivalent to the overlap
@@ -1339,12 +1348,21 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     v2_norm : {None, float}, optional
         The normalization of the second waveform. This is equivalent to its
         sigmasq value. If None, it is internally calculated.
+    subsample_interpolation : {False, bool}, optional
+        If True the peak will be interpolated between samples using a simple
+        quadratic fit. This can be important if measuring matches very close to
+        1 and can cause discontinuities if you don't use it as matches move
+        between discrete samples. If True the index returned will be a float.
+    return_phase : {False, bool}, optional
+        If True, also return the phase shift that gives the match.
 
     Returns
     -------
     match: float
     index: int
         The number of samples to shift to get the match.
+    phi: float
+        Phase to rotate complex waveform to get the match, if desired.
     """
 
     htilde = make_frequency_series(vec1)
@@ -1355,12 +1373,33 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     global _snr
     if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != N:
         _snr = zeros(N,dtype=complex_same_precision_as(vec1))
-    snr, _, snr_norm = matched_filter_core(htilde,stilde,psd,low_frequency_cutoff,
-                             high_frequency_cutoff, v1_norm, out=_snr)
+    snr, _, snr_norm = matched_filter_core(htilde, stilde, psd,
+                                           low_frequency_cutoff,
+                                           high_frequency_cutoff,
+                                           v1_norm, out=_snr)
     maxsnr, max_id = snr.abs_max_loc()
     if v2_norm is None:
-        v2_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
-    return maxsnr * snr_norm / sqrt(v2_norm), max_id
+        v2_norm = sigmasq(stilde, psd, low_frequency_cutoff,
+                          high_frequency_cutoff)
+
+    if subsample_interpolation:
+        # This uses the implementation coded up in sbank. Thanks Nick!
+        # The maths for this is well summarized here:
+        # https://ccrma.stanford.edu/~jos/sasp/Quadratic_Interpolation_Spectral_Peaks.html
+        # We use adjacent points to interpolate, but wrap off the end if needed
+        left = abs(snr[-1]) if max_id == 0 else abs(snr[max_id - 1])
+        middle = maxsnr
+        right = abs(snr[0]) if max_id == (len(snr)-1) else abs(snr[max_id + 1])
+        # Get derivatives
+        id_shift, maxsnr = quadratic_interpolate_peak(left, middle, right)
+        max_id = max_id + id_shift
+
+    if return_phase:
+        rounded_max_id = int(round(max_id))
+        phi = numpy.angle(snr[rounded_max_id])
+        return maxsnr * snr_norm / sqrt(v2_norm), max_id, phi
+    else:
+        return maxsnr * snr_norm / sqrt(v2_norm), max_id
 
 def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, normalized=True):
@@ -1456,7 +1495,7 @@ def quadratic_interpolate_peak(left, middle, right):
         Array of the estimated peak values at the interpolated offset
     """
     bin_offset = 1.0/2.0 * (left - right) / (left - 2 * middle + right)
-    peak_value = middle + 0.25 * (left - right) * bin_offset
+    peak_value = middle - 0.25 * (left - right) * bin_offset
     return bin_offset, peak_value
 
 
@@ -1812,8 +1851,11 @@ def followup_event_significance(ifo, data_reader, bank,
     pvalue = (1 + (peaks >= peak_value).sum()) / float(1 + nsamples)
 
     # Return recentered source SNR for bayestar, along with p-value, and trig
-    baysnr = snr.time_slice(peak_time - duration / 2.0,
-                            peak_time + duration / 2.0)
+    peak_full = int((peak_time - snr.start_time) / snr.delta_t)
+    half_dur_samples = int(snr.sample_rate * duration / 2)
+    snr_slice = slice(peak_full - half_dur_samples,
+                      peak_full + half_dur_samples + 1)
+    baysnr = snr[snr_slice]
 
     logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
                  pvalue, nsamples)

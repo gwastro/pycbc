@@ -80,18 +80,35 @@ def save_png_with_metadata(fig, filename, fig_kwds, kwds):
 
     im.save(filename, "png", pnginfo=meta)
 
+def save_pdf_with_metadata(fig, filename, fig_kwds, kwds):
+    """Save a matplotlib figure to a PDF file with metadata.
+    """
+    # https://stackoverflow.com/a/17462125
+    from matplotlib.backends.backend_pdf import PdfPages
+
+    with PdfPages(filename) as pdfp:
+        fig.savefig(pdfp, format='pdf', **fig_kwds)
+        metadata = pdfp.infodict()
+        for key in kwds:
+            if str(key).lower() == 'title':
+                # map the title to the official PDF keyword (capitalized)
+                metadata['Title'] = str(kwds[key])
+            else:
+                metadata[str(key)] = str(kwds[key])
+
 def load_png_metadata(filename):
-    from PIL import Image, PngImagePlugin
+    from PIL import Image
     data = Image.open(filename).info
     cp = ConfigParser.ConfigParser(data)
     cp.add_section(os.path.basename(filename))
     return cp
 
-_metadata_saver = {'.png':save_png_with_metadata,
-                   '.html':save_html_with_metadata,
+_metadata_saver = {'.png': save_png_with_metadata,
+                   '.html': save_html_with_metadata,
+                   '.pdf': save_pdf_with_metadata,
                   }
-_metadata_loader = {'.png':load_png_metadata,
-                    '.html':load_html_metadata,
+_metadata_loader = {'.png': load_png_metadata,
+                    '.html': load_html_metadata,
                    }
 
 def save_fig_with_metadata(fig, filename, fig_kwds=None, **kwds):

@@ -1,11 +1,13 @@
 #!/bin/bash -v
 set -e
 cd /scratch
-pip install -r requirements.txt
-pip install .
+python3.8 -m pip install --upgrade 'pip<22.0'
+python3.8 -m pip install -r requirements.txt
+python3.8 -m pip install .
 cd /
 mkdir -p /opt/pycbc/src
 cp -a /scratch /opt/pycbc/src/pycbc
+chmod a+rw /dev/fuse
 mount /cvmfs/config-osg.opensciencegrid.org
 mount /cvmfs/oasis.opensciencegrid.org
 mkdir -p /opt/pycbc/pycbc-software/share/lal-data

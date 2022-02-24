@@ -47,7 +47,7 @@ from pycbc.opt import LimitedSizeDict
 # we should restrict any functions that do not allow an
 # array of uint32 integers
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
-                   _numpy.complex128, _numpy.uint32, _numpy.int32, _numpy.int]
+                   _numpy.complex128, _numpy.uint32, _numpy.int32, int]
 try:
     _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
 except NameError:
@@ -81,19 +81,19 @@ def _noreal(fn, self, *args):
 
 def force_precision_to_match(scalar, precision):
     if _numpy.iscomplexobj(scalar):
-        if precision is 'single':
+        if precision == 'single':
             return _numpy.complex64(scalar)
         else:
             return _numpy.complex128(scalar)
     else:
-        if precision is 'single':
+        if precision == 'single':
             return _numpy.float32(scalar)
         else:
             return _numpy.float64(scalar)
 
 def common_kind(*dtypes):
     for dtype in dtypes:
-        if dtype.kind is 'c':
+        if dtype.kind == 'c':
             return dtype
     return dtypes[0]
    
@@ -117,6 +117,19 @@ def _scheme_matches_base_array(array):
     err_msg = "This function is a stub that should be overridden using the "
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
+
+def check_same_len_precision(a, b):
+    """Check that the two arguments have the same length and precision.
+    Raises ValueError if they do not.
+    """
+    if len(a) != len(b):
+        msg = 'lengths do not match ({} vs {})'.format(
+                len(a), len(b))
+        raise ValueError(msg)
+    if a.precision != b.precision:
+        msg = 'precisions do not match ({} vs {})'.format(
+                a.precision, b.precision)
+        raise TypeError(msg)
 
 class Array(object):
     """Array used to do numeric calculations on a various compute
@@ -249,13 +262,9 @@ class Array(object):
                 other = force_precision_to_match(other, self.precision)
                 nargs +=(other,)
             elif isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
-                    raise ValueError('lengths do not match')
-                if other.precision == self.precision:
-                    _convert_to_scheme(other)
-                    nargs += (other._data,)
-                else:
-                    raise TypeError('precisions do not match')
+                check_same_len_precision(self, other)
+                _convert_to_scheme(other)
+                nargs += (other._data,)
             else:
                 return NotImplemented
 
@@ -267,30 +276,22 @@ class Array(object):
         for other in args:
             self._typecheck(other)  
             if isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
-                    raise ValueError('lengths do not match')
-                if other.precision == self.precision:
-                    _convert_to_scheme(other)
-                    nargs += (other._data,)
-                else:
-                    raise TypeError('precisions do not match')
+                check_same_len_precision(self, other)
+                _convert_to_scheme(other)
+                nargs += (other._data,)
             else:
                 raise TypeError('array argument required')                    
 
         return fn(self,*nargs) # pylint:disable=not-callable
         
     @decorator  
-    def _vrcheckother(fn, self,*args):
+    def _vrcheckother(fn, self, *args):
         nargs = ()
         for other in args:
             if isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
-                    raise ValueError('lengths do not match')
-                if other.precision == self.precision:
-                    _convert_to_scheme(other)
-                    nargs += (other._data,)
-                else:
-                    raise TypeError('precisions do not match')
+                check_same_len_precision(self, other)
+                _convert_to_scheme(other)
+                nargs += (other._data,)
             else:
                 raise TypeError('array argument required')                    
 
@@ -305,15 +306,11 @@ class Array(object):
                 raise TypeError('dtypes are incompatible')
             other = force_precision_to_match(other, self.precision)
         elif isinstance(other, type(self)) or type(other) is Array:
-            if len(other) != len(self):
-                raise ValueError('lengths do not match')
+            check_same_len_precision(self, other)
             if self.kind == 'real' and other.kind == 'complex':
                 raise TypeError('dtypes are incompatible')
-            if other.precision == self.precision:
-                _convert_to_scheme(other)
-                other = other._data
-            else:
-                raise TypeError('precisions do not match')
+            _convert_to_scheme(other)
+            other = other._data
         else:
             return NotImplemented
 
@@ -862,7 +859,7 @@ class Array(object):
         if isinstance(other,Array):
             _convert_to_scheme(other)
 
-            if self.kind is 'real' and other.kind is 'complex':
+            if self.kind == 'real' and other.kind == 'complex':
                 raise ValueError('Cannot set real value with complex')
 
             if isinstance(index,slice):          
@@ -1053,15 +1050,15 @@ class Array(object):
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):
-    if data.precision is 'single':
+    if data.precision == 'single':
         return float32
-    elif data.precision is 'double':
+    elif data.precision == 'double':
         return float64
 
 def complex_same_precision_as(data):
-    if data.precision is 'single':
+    if data.precision == 'single':
         return complex64
-    elif data.precision is 'double':
+    elif data.precision == 'double':
         return complex128
 
 @decorator
@@ -1087,41 +1084,48 @@ def empty(length, dtype=float64):
     raise ValueError(err_msg)
 
 def load_array(path, group=None):
-    """
-    Load an Array from a .hdf, .txt or .npy file. The
-    default data types will be double precision floating point.
+    """Load an Array from an HDF5, ASCII or Numpy file. The file type is
+    inferred from the file extension, which must be `.hdf`, `.txt` or `.npy`.
+
+    For ASCII and Numpy files with a single column, a real array is returned.
+    For files with two columns, the columns are assumed to contain the real
+    and imaginary parts of a complex array respectively.
+
+    The default data types will be double precision floating point.
 
     Parameters
     ----------
     path : string
-        source file path. Must end with either .npy or .txt.
+        Input file path. Must end with either `.npy`, `.txt` or `.hdf`.
 
-    group: string 
-        Additional name for internal storage use. Ex. hdf storage uses
-        this as the key value.
+    group: string
+        Additional name for internal storage use. When reading HDF files, this
+        is the path to the HDF dataset to read.
 
     Raises
     ------
     ValueError
-        If path does not end in .npy or .txt.
+        If path does not end with a supported extension. For Numpy and ASCII
+        input files, this is also raised if the array does not have 1 or 2
+        dimensions.
     """
     ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = _numpy.load(path)    
+        data = _numpy.load(path)
     elif ext == '.txt':
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        return Array(h5py.File(path)[key]) 
+        with h5py.File(path, 'r') as f:
+            array = Array(f[key])
+        return array
     else:
         raise ValueError('Path must end with .npy, .hdf, or .txt')
-        
+
     if data.ndim == 1:
         return Array(data)
     elif data.ndim == 2:
         return Array(data[:,0] + 1j*data[:,1])
-    else:
-        raise ValueError('File has %s dimensions, cannot convert to Array, \
-                          must be 1 (real) or 2 (complex)' % data.ndim)
-    
 
+    raise ValueError('File has %s dimensions, cannot convert to Array, \
+                      must be 1 (real) or 2 (complex)' % data.ndim)

@@ -106,11 +106,11 @@ if args.plot_caption is None:
     args.plot_caption = ''
 
 if 'command_line' in f.attrs:
-    cmd = f.attrs['command_line'].decode() + '\\n\\n' + ' '.join(sys.argv)
+    cmd = f.attrs['command_line'] + '\\n\\n' + ' '.join(sys.argv)
 else:
     cmd = ' '.join(sys.argv)
 
-pycbc.results.save_fig_with_metadata(fig, args.output_file, 
+pycbc.results.save_fig_with_metadata(fig, args.output_file,
                              cmd=cmd, fig_kwds={'dpi': 150},
                              title=args.plot_title,
                              caption=args.plot_caption)

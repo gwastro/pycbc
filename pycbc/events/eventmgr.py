@@ -269,7 +269,6 @@ class EventManager(object):
         if len(self.events) == 0:
             return
 
-        from pycbc.events import stat
         e_copy = self.events.copy()
 
         # Here self.events['snr'] is the complex SNR
@@ -277,9 +276,7 @@ class EventManager(object):
         # Messy step because pycbc inspiral's internal 'chisq_dof' is 2p-2
         # but stat.py / ranking.py functions use 'chisq_dof' = p
         e_copy['chisq_dof'] = e_copy['chisq_dof'] / 2 + 1
-        # Initialize statclass with an empty file list
-        stat_instance = stat.sngl_statistic_dict[statname]([])
-        statv = stat_instance.single(e_copy)
+        statv = ranking.get_sngls_ranking_from_trigs(e_copy, statname)
 
         # Convert trigger time to integer bin number
         # NB time_index and window are in units of samples
@@ -471,10 +468,7 @@ class EventManager(object):
                 f['sigmasq'] = template_sigmasq_plus[tid]
             except Exception:
                 # Not precessing
-                template_sigmasq = numpy.array(
-                                  [t['sigmasq'] for t in self.template_params],
-                                               dtype=numpy.float32)
-                f['sigmasq'] = template_sigmasq[tid]
+                f['sigmasq'] = self.events['sigmasq']
 
             template_durations = [p['tmplt'].template_duration for p in
                                   self.template_params]

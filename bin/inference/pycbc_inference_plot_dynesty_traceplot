@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2020 Sumit Kumar
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import logging
+from matplotlib import use
+use('agg')
+from matplotlib import pyplot as plt
+
+from dynesty import plotting as dyplot
+
+from pycbc.inference import io
+import pycbc
+from pycbc import __version__
+from pycbc import results
+import sys
+
+
+parser = argparse.ArgumentParser(
+            usage="pycbc_inference_plot_dynesty_traceplots [--options]",
+            description="Plots various figures showing evolution of "
+                        "dynesty run.")
+
+parser.add_argument("--input-file", type=str, required=True,
+                    help="Path to input HDF file.")
+parser.add_argument('--version', action='version', version=__version__,
+                    help='show version number and exit')
+# output plot options
+parser.add_argument("--output-file", type=str, required=True,
+                    help="Path to output plot.")
+
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="")
+# parse the command line
+opts = parser.parse_args()
+
+# setup log
+pycbc.init_logging(opts.verbose)
+
+# load the samples
+logging.info("Reading input file")
+fp = io.loadfile(opts.input_file, "r")
+
+sampler_state = fp.read_pickled_data_from_checkpoint_file()
+fp.close()
+
+# plot evolution of dynesty run
+logging.info("Plotting dynesty tracelots")
+fig, axes = dyplot.traceplot(sampler_state.results, truth_color='black',
+                             show_titles=True, trace_cmap='viridis',
+                             connect=True)
+#plt.savefig()
+# save figure with meta-data
+caption = """Set of plots shows 'evolution of particles (and their marginal
+             posterior distributions) in 1-D projections'."""
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title="Dynesty traceplots",
+                               caption=caption)
+
+plt.close()
+
+# exit
+logging.info("Done")

@@ -28,12 +28,10 @@ useful for storing and retrieving data created by a search for gravitationa
 waves.
 """
 
-import os, sys, types, re, copy, numpy, inspect
-import six
-from six import string_types
-from glue.ligolw import types as ligolw_types
+import types, re, copy, numpy, inspect
+from ligo.lw import types as ligolw_types
 from pycbc import coordinates, conversions, cosmology
-from pycbc.detector import Detector
+from pycbc.population import population_models
 from pycbc.waveform import parameters
 
 # what functions are given to the eval in FieldArray's __getitem__:
@@ -47,8 +45,8 @@ _numpy_function_lib = {_x: _y for _x,_y in numpy.__dict__.items()
 #
 # =============================================================================
 #
-# add ligolw_types to numpy typeDict
-numpy.typeDict.update(ligolw_types.ToNumPyType)
+# add ligolw_types to numpy sctypeDict
+numpy.sctypeDict.update(ligolw_types.ToNumPyType)
 
 # Annoyingly, numpy has no way to store NaNs in an integer field to indicate
 # the equivalent of None. This can be problematic for fields that store ids:
@@ -121,8 +119,8 @@ def lstring_as_obj(true_or_false=None):
     """
     if true_or_false is not None:
         _default_types_status['lstring_as_obj'] = true_or_false
-        # update the typeDict
-        numpy.typeDict[u'lstring'] = numpy.object_ \
+        # update the sctypeDict
+        numpy.sctypeDict[u'lstring'] = numpy.object_ \
             if _default_types_status['lstring_as_obj'] \
             else 'S%i' % _default_types_status['default_strlen']
     return _default_types_status['lstring_as_obj']
@@ -133,7 +131,7 @@ def ilwd_as_int(true_or_false=None):
     """
     if true_or_false is not None:
         _default_types_status['ilwd_as_int'] = true_or_false
-        numpy.typeDict[u'ilwd:char'] = int \
+        numpy.sctypeDict[u'ilwd:char'] = int \
             if _default_types_status['ilwd_as_int'] \
             else 'S%i' % default_strlen
     return _default_types_status['ilwd_as_int']
@@ -144,7 +142,7 @@ def default_strlen(strlen=None):
     """
     if strlen is not None:
         _default_types_status['default_strlen'] = strlen
-        # update the typeDicts as needed
+        # update the sctypeDicts as needed
         lstring_as_obj(_default_types_status['lstring_as_obj'])
         ilwd_as_int(_default_types_status['ilwd_as_int'])
     return _default_types_status['default_strlen']
@@ -225,7 +223,7 @@ def get_needed_fieldnames(arr, names):
     # we'll need the class that the array is an instance of to evaluate some
     # things
     cls = arr.__class__
-    if isinstance(names, string_types):
+    if isinstance(names, str):
         names = [names]
     # parse names for variables, incase some of them are functions of fields
     parsed_names = set([])
@@ -269,7 +267,17 @@ def get_dtype_descr(dtype):
     offsets specified. This function tries to fix that by not including
     fields that have no names and are void types.
     """
-    return [dt for dt in dtype.descr if not (dt[0] == '' and dt[1][1] == 'V')]
+    dts = []
+    for dt in dtype.descr:
+        if (dt[0] == '' and dt[1][1] == 'V'):
+            continue
+
+        # Downstream codes (numpy, etc) can't handle metadata in dtype
+        if isinstance(dt[1], tuple):
+            dt = (dt[0], dt[1][0])
+
+        dts.append(dt)
+    return dts
 
 
 def combine_fields(dtypes):
@@ -398,7 +406,7 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
     arrays = _ensure_array_list(arrays)
     # set the names
     if names is not None:
-        if isinstance(names, string_types):
+        if isinstance(names, str):
             names = [names]
         # check if any names are subarray names; if so, we have to add them
         # separately
@@ -476,7 +484,8 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
 
 # We'll include functions in various pycbc modules in FieldArray's function
 # library. All modules used must have an __all__ list defined.
-_modules_for_functionlib = [conversions, coordinates, cosmology]
+_modules_for_functionlib = [conversions, coordinates, cosmology,
+                            population_models]
 _fieldarray_functionlib = {_funcname : getattr(_mod, _funcname)
                               for _mod in _modules_for_functionlib
                               for _funcname in getattr(_mod, '__all__')}
@@ -696,7 +705,7 @@ class FieldArray(numpy.recarray):
     Convert a LIGOLW xml table:
 
     >>> type(sim_table)
-        glue.ligolw.lsctables.SimInspiralTable
+        ligo.lw.lsctables.SimInspiralTable
     >>> sim_array = FieldArray.from_ligolw_table(sim_table)
     >>> sim_array.mass1
     array([ 2.27440691,  1.85058105,  1.61507106, ...,  2.0504961 ,
@@ -783,15 +792,6 @@ class FieldArray(numpy.recarray):
             obj.__copy_attributes__(self)
         except AttributeError:
             pass
-        # numpy has some issues with dtype field names that are unicode,
-        # so we'll force them to strings here
-        if six.PY2:
-            if self.dtype.names is not None and \
-                    any(isinstance(name, unicode) for name in obj.dtype.names):
-                self.dtype.names = map(str, self.dtype.names)
-            # We don't want to do this in python3 because a str *is* unicode,
-            # but maybe numpy in python3 is more lenient of this. Let's just
-            # wait and see if this becomes a problem in python3
 
     def __copy_attributes__(self, other, default=None):
         """Copies the values of all of the attributes listed in
@@ -800,13 +800,17 @@ class FieldArray(numpy.recarray):
         [setattr(other, attr, copy.deepcopy(getattr(self, attr, default))) \
             for attr in self.__persistent_attributes__]
 
-    def __getattribute__(self, attr):
+    def __getattribute__(self, attr, no_fallback=False):
         """Allows fields to be accessed as attributes.
         """
         # first try to get the attribute
         try:
             return numpy.ndarray.__getattribute__(self, attr)
         except AttributeError as e:
+            # don't try getitem, which might get back here
+            if no_fallback:
+                raise(e)
+
             # might be a field, try to retrive it using getitem
             if attr in self.fields:
                 return self.__getitem__(attr)
@@ -874,25 +878,54 @@ class FieldArray(numpy.recarray):
             #
             #   arg isn't a simple argument of row, so we'll have to eval it
             #
-            # get the function library
-            item_dict = dict(_numpy_function_lib.items())
-            item_dict.update(self._functionlib)
-            # get the set of fields & attributes we will need
-            itemvars = get_vars_from_arg(item)
-            # pull out any other needed attributes
-            itemvars = get_fields_from_arg(item)
-            d = {attr: getattr(self, attr)
-                for attr in set(dir(self)).intersection(itemvars)}
-            item_dict.update(d)
-            # pull out the fields: note, by getting the parent fields, we
-            # also get the sub fields name
-            item_dict.update({fn: self.__getbaseitem__(fn) \
-                for fn in set(self.fieldnames).intersection(itemvars)})
-            # add any aliases
-            item_dict.update({alias: item_dict[name]
-                              for alias,name in self.aliases.items()
-                              if name in item_dict})
-            return eval(item, {"__builtins__": None}, item_dict)
+            if not hasattr(self, '_code_cache'):
+                self._code_cache = {}
+
+            if item not in self._code_cache:
+                code = compile(item, '<string>', 'eval')
+
+                # get the function library
+                item_dict = dict(_numpy_function_lib.items())
+                item_dict.update(self._functionlib)
+
+                # parse to get possible fields
+                itemvars_raw = get_fields_from_arg(item)
+
+                itemvars = []
+                for it in itemvars_raw:
+                    try:
+                        float(it)
+                        is_num = True
+                    except ValueError:
+                        is_num = False
+
+                    if not is_num:
+                        itemvars.append(it)
+
+                self._code_cache[item] = (code, itemvars, item_dict)
+
+            code, itemvars, item_dict = self._code_cache[item]
+            added = {}
+            for it in itemvars:
+                if it in self.fieldnames:
+                    # pull out the fields: note, by getting the parent fields
+                    # we also get the sub fields name
+                    added[it] = self.__getbaseitem__(it)
+                elif (it in self.__dict__) or (it in self._virtualfields):
+                    # pull out any needed attributes
+                    added[it] = self.__getattribute__(it, no_fallback=True)
+                else:
+                    # add any aliases
+                    aliases = self.aliases
+                    if it in aliases:
+                        added[it] = self.__getbaseitem__(aliases[it])
+            if item_dict is not None:
+                item_dict.update(added)
+
+            ans = eval(code, {"__builtins__": None}, item_dict)
+            for k in added:
+                item_dict.pop(k)
+            return ans
 
     def __contains__(self, field):
         """Returns True if the given field name is in self's fields."""
@@ -939,7 +972,7 @@ class FieldArray(numpy.recarray):
         """Adds the given method(s) as instance method(s) of self. The
         method(s) must take `self` as a first argument.
         """
-        if isinstance(names, string_types):
+        if isinstance(names, str):
             names = [names]
             methods = [methods]
         for name,method in zip(names, methods):
@@ -952,7 +985,7 @@ class FieldArray(numpy.recarray):
         """
         cls = type(self)
         cls = type(cls.__name__, (cls,), dict(cls.__dict__))
-        if isinstance(names, string_types):
+        if isinstance(names, str):
             names = [names]
             methods = [methods]
         for name,method in zip(names, methods):
@@ -966,7 +999,7 @@ class FieldArray(numpy.recarray):
         are properties that are assumed to operate on one or more of self's
         fields, thus returning an array of values.
         """
-        if isinstance(names, string_types):
+        if isinstance(names, str):
             names = [names]
             methods = [methods]
         out = self.add_properties(names, methods)
@@ -988,7 +1021,7 @@ class FieldArray(numpy.recarray):
         functions : (list of) function(s)
             The function(s) to call.
         """
-        if isinstance(names, string_types):
+        if isinstance(names, str):
             names = [names]
             functions = [functions]
         if len(functions) != len(names):
@@ -1007,7 +1040,7 @@ class FieldArray(numpy.recarray):
         names : (list of) string(s)
             Name or list of names of the functions to remove.
         """
-        if isinstance(names, string_types):
+        if isinstance(names, str):
             names = [names]
         for name in names:
             self._functionlib.pop(name)
@@ -1147,8 +1180,10 @@ class FieldArray(numpy.recarray):
             dtype = list(columns.items())
         # get the values
         if _default_types_status['ilwd_as_int']:
+            # columns like `process:process_id` have corresponding attributes
+            # with names that are only the part after the colon, so we split
             input_array = \
-                [tuple(getattr(row, col) if dt != 'ilwd:char'
+                [tuple(getattr(row, col.split(':')[-1]) if dt != 'ilwd:char'
                        else int(getattr(row, col))
                        for col,dt in columns.items())
                  for row in table]
@@ -1182,7 +1217,7 @@ class FieldArray(numpy.recarray):
         """
         if fields is None:
             fields = self.fieldnames
-        if isinstance(fields, string_types):
+        if isinstance(fields, str):
             fields = [fields]
         return numpy.stack([self[f] for f in fields], axis=axis)
 
@@ -1456,7 +1491,7 @@ class FieldArray(numpy.recarray):
             The list of names of the fields that are needed in order to
             evaluate the given parameters.
         """
-        if isinstance(possible_fields, string_types):
+        if isinstance(possible_fields, str):
             possible_fields = [possible_fields]
         possible_fields = list(map(str, possible_fields))
         # we'll just use float as the dtype, as we just need this for names
@@ -1487,7 +1522,7 @@ def fields_from_names(fields, names=None):
 
     if names is None:
         return fields
-    if isinstance(names, string_types):
+    if isinstance(names, str):
         names = [names]
     aliases_to_names = aliases_from_fields(fields)
     names_to_aliases = dict(zip(aliases_to_names.values(),
@@ -1585,7 +1620,7 @@ class _FieldArrayWithDefaults(FieldArray):
             **field_kwargs)
         if 'names' in kwargs:
             names = kwargs.pop('names')
-            if isinstance(names, string_types):
+            if isinstance(names, str):
                 names = [names]
             # evaluate the names to figure out what base fields are needed
             # to do this, we'll create a small default instance of self (since
@@ -1628,7 +1663,7 @@ class _FieldArrayWithDefaults(FieldArray):
         new array : instance of this array
             A copy of this array with the field added.
         """
-        if isinstance(names, string_types):
+        if isinstance(names, str):
             names = [names]
         default_fields = self.default_fields(include_virtual=False, **kwargs)
         # parse out any virtual fields

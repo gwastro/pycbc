@@ -1,4 +1,4 @@
-from pycbc.types import zeros, complex64, complex128
+from pycbc.types import zeros
 import numpy as _np
 import ctypes
 import pycbc.scheme as _scheme
@@ -381,11 +381,11 @@ plan_many_r2c_d.restype = ctypes.c_void_p
 # translate input and output dtypes into the correct planning function.
 
 _plan_funcs_dict = { ('complex64', 'complex64') : plan_many_c2c_f,
-                     ('complex64', 'float32') : plan_many_r2c_f,
-                     ('float32', 'complex64') : plan_many_c2r_f,
+                     ('float32', 'complex64') : plan_many_r2c_f,
+                     ('complex64', 'float32') : plan_many_c2r_f,
                      ('complex128', 'complex128') : plan_many_c2c_d,
-                     ('complex128', 'float64') : plan_many_r2c_d,
-                     ('float64', 'complex128') : plan_many_c2r_d }
+                     ('float64', 'complex128') : plan_many_r2c_d,
+                     ('complex128', 'float64') : plan_many_c2r_d }
 
 # To avoid multiple-inheritance, we set up a function that returns much
 # of the initialization that will need to be handled in __init__ of both
@@ -406,18 +406,16 @@ def _fftw_setup(fftobj):
     plan_func = _plan_funcs_dict[ (str(fftobj.invec.dtype), str(fftobj.outvec.dtype)) ]
     tmpin = zeros(len(fftobj.invec), dtype = fftobj.invec.dtype)
     tmpout = zeros(len(fftobj.outvec), dtype = fftobj.outvec.dtype)
-    # C2C, forward
-    if fftobj.forward and (fftobj.outvec.dtype in [complex64, complex128]):
+    # C2C
+    if fftobj.outvec.kind == 'complex' and fftobj.invec.kind == 'complex':
+        if fftobj.forward:
+            ffd = FFTW_FORWARD
+        else:
+            ffd = FFTW_BACKWARD
         plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
                          tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
                          tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                         FFTW_FORWARD, flags)
-    # C2C, backward
-    elif not fftobj.forward and (fftobj.invec.dtype in [complex64, complex128]):
-        plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
-                         tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
-                         tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                         FFTW_BACKWARD, flags)
+                         ffd, flags)
     # R2C or C2R (hence no direction argument for plan creation)
     else:
         plan = plan_func(1, n.ctypes.data, fftobj.nbatch,

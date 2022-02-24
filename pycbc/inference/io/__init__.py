@@ -34,6 +34,7 @@ from pycbc.io.hdf import (dump_state, load_state)
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
+from .ptemcee import PTEmceeFile
 from .cpnest import CPNestFile
 from .multinest import MultinestFile
 from .dynesty import DynestyFile
@@ -44,6 +45,7 @@ from .txt import InferenceTXTFile
 filetypes = {
     EmceeFile.name: EmceeFile,
     EmceePTFile.name: EmceePTFile,
+    PTEmceeFile.name: PTEmceeFile,
     CPNestFile.name: CPNestFile,
     MultinestFile.name: MultinestFile,
     DynestyFile.name: DynestyFile,

@@ -3,7 +3,7 @@
 
 def hist_overflow(val, val_max, **kwds):
     """ Make a histogram with an overflow bar above val_max """
-    import pylab, numpy
+    import pylab
 
     overflow = len(val[val>=val_max])
     pylab.hist(val[val<val_max], **kwds)

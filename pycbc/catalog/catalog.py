@@ -26,7 +26,7 @@
 compact binary mergers
 """
 import json
-from astropy.utils.data import download_file
+from pycbc.io import get_file
 
 # For the time being all quantities are the 1-d median value
 # FIXME with posteriors when available and we can just post-process that
@@ -37,11 +37,19 @@ _catalogs = {'GWTC-1-confident': 'LVC',
              'GWTC-1-marginal': 'LVC',
              'Initial_LIGO_Virgo': 'LVC',
              'O1_O2-Preliminary': 'LVC',
-             'O3_Discovery_Papers': 'LVC'}
+             'O3_Discovery_Papers': 'LVC',
+             'GWTC-2': 'LVC',
+             'GWTC-2.1-confident': 'LVC',
+             'GWTC-2.1-marginal': 'LVC',
+             'GWTC-3-confident': 'LVC',
+             'GWTC-3-marginal': 'LVC'}
 
 # add some aliases
 _aliases = {}
 _aliases['gwtc-1'] = 'GWTC-1-confident'
+_aliases['gwtc-2'] = 'GWTC-2'
+_aliases['gwtc-2.1'] = 'GWTC-2.1-confident'
+_aliases['gwtc-3'] = 'GWTC-3-confident'
 
 
 def list_catalogs():
@@ -58,7 +66,7 @@ def get_source(source):
     if source in _catalogs:
         catalog_type = _catalogs[source]
         if catalog_type == 'LVC':
-            fname = download_file(base_lvc_url.format(source), cache=True)
+            fname = get_file(base_lvc_url.format(source), cache=True)
             data = json.load(open(fname, 'r'))
     else:
         raise ValueError('Unkown catalog source {}'.format(source))

@@ -44,7 +44,7 @@ def read_raw_samples_from_file(fp, fields, **kwargs):
     return {field: samples[field][:] for field in fields}
 
 
-def write_samples_to_file(fp, samples, parameters=None):
+def write_samples_to_file(fp, samples, parameters=None, group=None):
     """Writes samples to the given file.
 
     Results are written to ``samples_group/{vararg}``, where ``{vararg}``
@@ -70,7 +70,10 @@ def write_samples_to_file(fp, samples, parameters=None):
     assert all(len(p) == niterations
                for p in samples.values()), (
         "all samples must have the same shape")
-    group = fp.samples_group + '/{name}'
+    if group is not None:
+        group = group + '/{name}'
+    else:
+        group = fp.samples_group + '/{name}'
     if parameters is None:
         parameters = samples.keys()
     # loop over number of dimensions

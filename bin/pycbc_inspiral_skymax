@@ -28,11 +28,11 @@ import pycbc.opt
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector precessing gravitational-wave triggers.")
 
-parser.add_argument("-V", "--verbose", action="store_true", 
+parser.add_argument("-V", "--verbose", action="store_true",
                   help="print extra debugging information", default=False )
 parser.add_argument("--output", type=str, help="FIXME: ADD")
 parser.add_argument("--bank-file", type=str, help="FIXME: ADD")
-parser.add_argument("--snr-threshold", 
+parser.add_argument("--snr-threshold",
                   help="SNR threshold for trigger generation", type=float)
 parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
@@ -45,6 +45,9 @@ parser.add_argument("--max-template-length", type=float,
                   help="The maximum length of a template is seconds. The "
                        "starting frequency of the template is modified to "
                        "ensure the proper length")
+parser.add_argument("--enable-q-transform", action='store_true',
+                  help="compute the q-transform for each segment of a "
+                       "given analysis run. (default = False)")
 # add approximant arg
 waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--order", type=int,
@@ -120,26 +123,38 @@ parser.add_argument("--autochi-max-valued-dof", action="store", metavar="INT",
                     help="If using --autochi-max-valued this value denotes "
                          "the pre-calculated mean value that will be stored "
                          "as the auto-chisq degrees-of-freedom value.")
-parser.add_argument("--downsample-factor", type=int, 
+parser.add_argument("--downsample-factor", type=int,
                     help="Factor that determines the interval between the "
                          "initial SNR sampling. If not set (or 1) no sparse sample "
                          "is created, and the standard full SNR is calculated.", default=1)
-parser.add_argument("--upsample-threshold", type=float, 
+parser.add_argument("--upsample-threshold", type=float,
                     help="The fraction of the SNR threshold to check the sparse SNR sample.")
 parser.add_argument("--upsample-method", choices=["pruned_fft"],
                     help="The method to find the SNR points between the sparse SNR sample.", default='pruned_fft')
 
 parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
-                    This is used to identify FULL_DATA jobs for 
-                    compatibility with pipedown post-processing. 
+                    This is used to identify FULL_DATA jobs for
+                    compatibility with pipedown post-processing.
                     Option will be removed when no longer needed.""")
 parser.add_argument("--keep-loudest-interval", type=float,
                     help="Window in seconds to maximize triggers over bank")
 parser.add_argument("--keep-loudest-num", type=int,
                     help="Number of triggers to keep from each maximization interval")
 parser.add_argument("--keep-loudest-stat", default="newsnr",
-                    choices=events.stat.sngl_statistic_dict.keys(),
+                    choices=events.ranking.sngls_ranking_function_dict.keys(),
                     help="Statistic used to determine loudest to keep")
+parser.add_argument("--keep-loudest-log-chirp-window", type=float,
+                    help="Keep loudest triggers within ln chirp mass window")
+parser.add_argument("--finalize-events-template-rate", default=None,
+                    type=int, metavar="NUM TEMPLATES",
+                    help="After NUM TEMPLATES perform the various clustering "
+                         "and rejection tests that would be performed at the "
+                         "end of this job. Default is to only do those things "
+                         "at the end of the job. This can help control memory "
+                         "usage if a lot of triggers that would be rejected "
+                         "are being retained. A suggested value for this is "
+                         "500, but a good number may depend on other settings "
+                         "and your specific use-case.")
 parser.add_argument("--gpu-callback-method", default='none')
 parser.add_argument("--sky-maximization-method", required=True,
                     choices=["precessing", "hom"])
@@ -184,15 +199,16 @@ with ctx:
 
     # storage for values and types to be passed to event manager
     out_types = {
-        'time_index' : int,
-        'snr'        : float32,
-        'chisq'      : float32,
-        'chisq_dof'  : int,
-        'bank_chisq' : float32,
-        'bank_chisq_dof' : int,
-        'cont_chisq' : float32,
-        'u_vals' : float32,
-        'coa_phase' : float32,
+        'time_index'       : int,
+        'snr'              : float32,
+        'chisq'            : float32,
+        'chisq_dof'        : int,
+        'bank_chisq'       : float32,
+        'bank_chisq_dof'   : int,
+        'cont_chisq'       : float32,
+        'psd_var_val'      : float32,
+        'u_vals'           : float32,
+        'coa_phase'        : float32,
         'hplus_cross_corr' : float32
                 }
     out_types.update(SingleDetSGChisq.returns)
@@ -210,7 +226,15 @@ with ctx:
         logging.info("Finished")
         sys.exit(0)
 
-    if opt.sky_maximization_method == 'hom':    
+    # FIXME: Maybe we should use the PSD corresponding to each trigger
+    if opt.psdvar_segment is not None:
+        logging.info("Calculating PSD variation")
+        psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
+                opt.psdvar_short_segment, opt.psdvar_long_segment,
+                opt.psdvar_psd_duration, opt.psdvar_psd_stride,
+                opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
+
+    if opt.sky_maximization_method == 'hom':
 
        matched_filter = MatchedFilterSkyMaxControlNoPhase(opt.low_frequency_cutoff,
                                    None, opt.snr_threshold, tlen, delta_f,
@@ -314,44 +338,23 @@ with ctx:
             out_vals['time_index'] = idx
             out_vals['snr'] = snrv
 
+            if opt.psdvar_short_segment is not None:
+                out_vals['psd_var_val'] = \
+                            pycbc.psd.find_trigger_value(psd_var,
+                                          out_vals['time_index'],
+                                          opt.gps_start_time, opt.sample_rate)
+
             event_mgr.add_template_events(names, [out_vals[n] for n in names])
 
         event_mgr.cluster_template_events("time_index", "snr", cluster_window)
         event_mgr.finalize_template_events()
+        if opt.finalize_events_template_rate is not None and \
+                not (t_num+1) % opt.finalize_events_template_rate:
+            event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 
+event_mgr.consolidate_events(opt, gwstrain=gwstrain)
+event_mgr.finalize_events()
 logging.info("Found %s triggers" % str(len(event_mgr.events)))
-
-if opt.chisq_threshold and opt.chisq_bins:
-    logging.info("Removing triggers with poor chisq")
-    event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
-                              opt.chisq_delta)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
-
-if opt.newsnr_threshold and opt.chisq_bins:
-    logging.info("Removing triggers with NewSNR below threshold")
-    event_mgr.newsnr_threshold(opt.newsnr_threshold)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
-
-if opt.keep_loudest_interval:
-    logging.info("Removing triggers not within the top %s loudest of a %s "
-                 "second interval by %s" % (opt.keep_loudest_num,
-                                            opt.keep_loudest_interval,
-                                            opt.keep_loudest_stat))
-    event_mgr.keep_loudest_in_interval(opt.keep_loudest_interval * opt.sample_rate,
-                                       opt.keep_loudest_num,
-                                       statname=opt.keep_loudest_stat)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
-
-if opt.injection_window and hasattr(gwstrain, 'injections'):
-    logging.info("Keeping triggers within %s seconds of injection" % opt.injection_window)
-    event_mgr.keep_near_injection(opt.injection_window, gwstrain.injections)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
-
-if opt.maximization_interval:
-    logging.info("Maximizing triggers over %s ms window" % opt.maximization_interval)
-    window = int(opt.maximization_interval * gwstrain.sample_rate / 1000)
-    event_mgr.maximize_over_bank("time_index", "snr", window)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
 
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
@@ -363,3 +366,4 @@ if opt.fftw_output_double_wisdom_file:
     fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
 
 logging.info("Finished")
+

@@ -25,7 +25,7 @@
 coincident triggers.
 """
 
-import numpy, logging, pycbc.pnutils, copy, lal
+import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector
 
 
@@ -49,46 +49,72 @@ def background_bin_from_string(background_bins, data):
     used = numpy.array([], dtype=numpy.uint32)
     bins = {}
     for mbin in background_bins:
-        name, bin_type, boundary = tuple(mbin.split(':'))
+        locs = None
+        name, bin_type_list, boundary_list = tuple(mbin.split(':'))
 
-        if boundary[0:2] == 'lt':
-            member_func = lambda vals, bd=boundary : vals < float(bd[2:])
-        elif boundary[0:2] == 'gt':
-            member_func = lambda vals, bd=boundary : vals > float(bd[2:])
-        else:
-            raise RuntimeError("Can't parse boundary condition! Must begin "
-                               "with 'lt' or 'gt'")
+        bin_type_list = bin_type_list.split(',')
+        boundary_list = boundary_list.split(',')
 
-        if bin_type == 'component' and boundary[0:2] == 'lt':
-            # maximum component mass is less than boundary value
-            vals = numpy.maximum(data['mass1'], data['mass2'])
-        if bin_type == 'component' and boundary[0:2] == 'gt':
-            # minimum component mass is greater than bdary
-            vals = numpy.minimum(data['mass1'], data['mass2'])
-        elif bin_type == 'total':
-            vals = data['mass1'] + data['mass2']
-        elif bin_type == 'chirp':
-            vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-                                               data['mass1'], data['mass2'])[0]
-        elif bin_type == 'SEOBNRv2Peak':
-            vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
-                  data['mass1'], data['mass2'], data['spin1z'], data['spin2z'])
-        elif bin_type == 'SEOBNRv4Peak':
-            vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
-                                          data['mass2'], data['spin1z'],
-                                          data['spin2z'])
-        elif bin_type == 'SEOBNRv2duration':
-            vals = pycbc.pnutils.get_imr_duration(data['mass1'], data['mass2'],
-                               data['spin1z'], data['spin2z'], data['f_lower'],
-                                                        approximant='SEOBNRv2')
-        else:
-            raise ValueError('Invalid bin type %s' % bin_type)
+        for bin_type, boundary in zip(bin_type_list, boundary_list):
+            if boundary[0:2] == 'lt':
+                member_func = lambda vals, bd=boundary : vals < float(bd[2:])
+            elif boundary[0:2] == 'gt':
+                member_func = lambda vals, bd=boundary : vals > float(bd[2:])
+            else:
+                raise RuntimeError("Can't parse boundary condition! Must begin "
+                                   "with 'lt' or 'gt'")
 
-        locs = member_func(vals)
-        del vals
+            if bin_type == 'component' and boundary[0:2] == 'lt':
+                # maximum component mass is less than boundary value
+                vals = numpy.maximum(data['mass1'], data['mass2'])
+            elif bin_type == 'component' and boundary[0:2] == 'gt':
+                # minimum component mass is greater than bdary
+                vals = numpy.minimum(data['mass1'], data['mass2'])
+            elif bin_type == 'total':
+                vals = data['mass1'] + data['mass2']
+            elif bin_type == 'chirp':
+                vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
+                                                   data['mass1'], data['mass2'])[0]
+            elif bin_type == 'ratio':
+                vals = pycbc.conversions.q_from_mass1_mass2(
+                                                   data['mass1'], data['mass2'])
+            elif bin_type == 'eta':
+                vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
+                                                   data['mass1'], data['mass2'])[1]
+            elif bin_type == 'chi_eff':
+                vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
+                                                 data['spin1z'], data['spin2z'])
+            elif bin_type == 'SEOBNRv2Peak':
+                vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
+                                              data['mass1'], data['mass2'],
+                                              data['spin1z'], data['spin2z'])
+            elif bin_type == 'SEOBNRv4Peak':
+                vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
+                                              data['mass2'], data['spin1z'],
+                                              data['spin2z'])
+            elif bin_type == 'SEOBNRv2duration':
+                vals = pycbc.pnutils.get_imr_duration(
+                                   data['mass1'], data['mass2'],
+                                   data['spin1z'], data['spin2z'],
+                                   data['f_lower'], approximant='SEOBNRv2')
+            elif bin_type == 'SEOBNRv4duration':
+                vals = pycbc.pnutils.get_imr_duration(
+                                   data['mass1'][:], data['mass2'][:],
+                                   data['spin1z'][:], data['spin2z'][:],
+                                   data['f_lower'][:], approximant='SEOBNRv4')
+            else:
+                raise ValueError('Invalid bin type %s' % bin_type)
+
+            sub_locs = member_func(vals)
+            del vals
+            sub_locs = numpy.where(sub_locs)[0]
+            if locs is not None:
+                # find intersection of boundary conditions
+                locs = numpy.intersect1d(locs, sub_locs)
+            else:
+                locs = sub_locs
 
         # make sure we don't reuse anything from an earlier bin
-        locs = numpy.where(locs)[0]
         locs = numpy.delete(locs, numpy.where(numpy.in1d(locs, used))[0])
         used = numpy.concatenate([used, locs])
         bins[name] = locs
@@ -726,11 +752,12 @@ class LiveCoincTimeslideBackgroundEstimator(object):
     """Rolling buffer background estimation."""
 
     def __init__(self, num_templates, analysis_block, background_statistic,
-                 stat_files, ifos,
+                 sngl_ranking, stat_files, ifos,
                  ifar_limit=100,
                  timeslide_interval=.035,
                  coinc_threshold=.002,
-                 return_background=False):
+                 return_background=False,
+                 **kwargs):
         """
         Parameters
         ----------
@@ -740,6 +767,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             The number of seconds in each analysis segment
         background_statistic: str
             The name of the statistic to rank coincident events.
+        sngl_ranking: str
+            The single detector ranking to use with the background statistic
         stat_files: list of strs
             List of filenames that contain information used to construct
             various coincident statistics.
@@ -757,13 +786,21 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         return_background: boolean
             If true, background triggers will also be included in the file
             output.
+        kwargs: dict
+            Additional options for the statistic to use. See stat.py
+            for more details on statistic options.
         """
         from . import stat
         self.num_templates = num_templates
         self.analysis_block = analysis_block
 
         stat_class = stat.get_statistic(background_statistic)
-        self.stat_calculator = stat_class(stat_files, ifos)
+        self.stat_calculator = stat_class(
+            sngl_ranking,
+            stat_files,
+            ifos=ifos,
+            **kwargs
+        )
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
@@ -838,25 +875,34 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     @classmethod
     def from_cli(cls, args, num_templates, analysis_chunk, ifos):
+        from . import stat
+
+        # Allow None inputs
+        stat_files = args.statistic_files or []
+        stat_keywords = args.statistic_keywords or []
+
+        # flatten the list of lists of filenames to a single list (may be empty)
+        stat_files = sum(stat_files, [])
+
+        kwargs = stat.parse_statistic_keywords_opt(stat_keywords)
+
         return cls(num_templates, analysis_chunk,
-                   args.background_statistic,
-                   args.background_statistic_files,
+                   args.ranking_statistic,
+                   args.sngl_ranking,
+                   stat_files,
                    return_background=args.store_background,
                    ifar_limit=args.background_ifar_limit,
                    timeslide_interval=args.timeslide_interval,
-                   ifos=ifos)
+                   ifos=ifos,
+                   **kwargs)
 
     @staticmethod
     def insert_args(parser):
         from . import stat
 
+        stat.insert_statistic_option_group(parser)
+
         group = parser.add_argument_group('Coincident Background Estimation')
-        group.add_argument('--background-statistic', default='newsnr',
-            choices=sorted(stat.statistic_dict.keys()),
-            help="Ranking statistic to use for candidate coincident events")
-        group.add_argument('--background-statistic-files', nargs='+',
-            help="Files containing precalculate values to calculate ranking"
-                 " statistic values", default=[])
         group.add_argument('--store-background', action='store_true',
             help="Return background triggers with zerolag coincidencs")
         group.add_argument('--background-ifar-limit', type=float,
@@ -1022,8 +1068,15 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                                  self.time_window,
                                  self.timeslide_interval)
                 trig_stat = numpy.resize(trig_stat, len(i1))
-                c = self.stat_calculator.coinc(stats[i1], trig_stat,
-                                               slide, self.timeslide_interval)
+                sngls_list = [[ifo, trig_stat],
+                              [oifo, stats[i1]]]
+                # This can only use 2-det coincs at present
+                c = self.stat_calculator.rank_stat_coinc(
+                    sngls_list,
+                    slide,
+                    self.timeslide_interval,
+                    [0, -1]
+                )
                 offsets.append(slide)
                 cstat.append(c)
                 ctimes[oifo].append(times[i1])

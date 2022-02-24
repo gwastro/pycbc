@@ -135,6 +135,7 @@ and submit the workflow with::
     # submit workflow
     pycbc_submit_dax --dax ${WORKFLOW_NAME}.dax \
         --no-grid \
+        --no-create-proxy \
         --enable-shared-filesystem \
         --accounting-group ${ACCOUNTING_GROUP}
 

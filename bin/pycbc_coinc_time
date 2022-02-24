@@ -1,7 +1,7 @@
 #!/bin/env python
 import argparse, logging, pycbc.version, ligo.segments, numpy
 from dqsegdb.apicalls import dqsegdbQueryTimes as query
-from pycbc.workflow.segment import cat_to_veto_def_cat as convert_cat
+#from pycbc.workflow.segment import cat_to_veto_def_cat as convert_cat
 
 def sane(seg_list):
     """ Convert list of len two lists containing strs to segment list """
@@ -24,13 +24,12 @@ def parse_veto_definer(veto_def_filename):
             Returns a dictionary first indexed by ifo, then category level, and
             finally a list of veto definitions.
     """
-    from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-    from glue.ligolw.ligolw import LIGOLWContentHandler as h
-    lsctables.use_in(h)
-    
+    from ligo.lw import table, utils as ligolw_utils
+    from pycbc.io.ligolw import LIGOLWContentHandler as h
+
     indoc = ligolw_utils.load_filename(veto_def_filename, False, contenthandler=h)
-    veto_table = table.get_table(indoc, 'veto_definer')
-    
+    veto_table = table.Table.get_table(indoc, 'veto_definer')
+
     ifo = veto_table.getColumnByName('ifo')
     name = veto_table.getColumnByName('name')
     version = numpy.array(veto_table.getColumnByName('version'))
@@ -62,9 +61,12 @@ def get_vetoes(veto_def, ifo, server, veto_name, start_default, end_default):
     """ Cycle through the veto name string and collect the vetoes for the
     selected categories. Return the final segment list
     """
+    raise ValueError("This code needs updating to work with the new segment "
+                     "interface. If it's still used please fix this, "
+                     "otherwise we can just remove this code.")
     veto_segments = ligo.segments.segmentlist([])
     for cat in veto_name:
-        cat = convert_cat(cat)
+        #cat = convert_cat(cat)
         flags = veto_def[ifo][cat]
         
         for flag in flags:

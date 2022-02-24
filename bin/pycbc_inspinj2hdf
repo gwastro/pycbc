@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2021 Alex Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+""" This program converts a standard sngl_inspiral table based template bank
+into an hdf format that includes a template hash used to associate triggers
+with their template.
+"""
+
+import argparse
+import numpy
+
+import pycbc
+from pycbc.inject import InjectionSet, CBCHDFInjectionSet
+from pycbc.io.record import FieldArray
+from pycbc.inject import legacy_approximant_name
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--injection-file', required=True,
+                    help="The injection file to load. Must end in '.xml[.gz]' "
+                         "and must contain a SimInspiral table")
+parser.add_argument('--output-file', required=True,
+                    help="The ouput file name. Must end in '.hdf'.")
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Be verbose.")
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+xinj = InjectionSet(args.injection_file)
+
+data = {}
+for key in xinj.table[0].__slots__:
+    # Some XML files can have empty columns which are read as None in python.
+    # For these cases we ignore the columns so they do not appear in the output
+    # HDF file. (Such XML files cannot currently be read by LALSuite C code.)
+    if getattr(xinj.table[0], key) is not None:
+        data[str(key)] = numpy.array([getattr(t, key) for t in xinj.table])
+
+for k in ['simulation_id', 'process_id']:
+    a = data.pop(k)
+
+data['approximant'], data['phase_order'] = \
+        numpy.array([legacy_approximant_name(wf) for wf in data['waveform']]).T
+data['tc'] = data['geocent_end_time'] + 1e-9 * data['geocent_end_time_ns']
+data['dec'] = data['latitude']
+data['ra'] = data['longitude']
+
+samples = FieldArray.from_kwargs(**data)
+CBCHDFInjectionSet.write(args.output_file, samples)

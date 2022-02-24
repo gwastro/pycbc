@@ -24,7 +24,6 @@
 """
 These are the unittests for the pycbc.filter.matchedfilter module
 """
-import sys
 import unittest
 import numpy
 from pycbc.pnutils import *
