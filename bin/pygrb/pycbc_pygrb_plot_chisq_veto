@@ -30,6 +30,7 @@ import sys
 import glob
 import os
 import logging
+from glue.ligolw import lsctables
 import numpy
 from matplotlib import pyplot as plt
 import pycbc.version
