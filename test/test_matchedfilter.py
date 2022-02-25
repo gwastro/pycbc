@@ -140,10 +140,9 @@ class TestMatchedFilter(unittest.TestCase):
 
     def test_perfect_match_subsample_offset(self):
         with self.context:
-            o, i, ph = match(
+            o, i, ph = optimized_match(
                 self.filt_highres,
                 self.filt_offset_subsample,
-                subsample_optimization=True,
                 return_phase=True
             )
             self.assertAlmostEqual(1., o, places=10)
