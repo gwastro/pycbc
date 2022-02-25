@@ -1971,7 +1971,7 @@ def optimized_match(
     """Given two waveforms (as numpy arrays),
     compute the optimized match between them, making use
     of scipy.minimize_scalar.
-    
+
     This function computes the same quantities as "match";
     it is more accurate and slower.
 
@@ -2007,7 +2007,7 @@ def optimized_match(
 
     from scipy import integrate
     from scipy.optimize import minimize_scalar
-    
+
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
 
@@ -2015,7 +2015,13 @@ def optimized_match(
     # then the optimization is only used to move to the
     # correct subsample-timeshift witin (-delta_t, delta_t)
     # of this
-    _, max_id = match(htilde, stilde, psd=psd, low_frequency_cutoff=low_frequency_cutoff, high_frequency_cutoff=high_frequency_cutoff)
+    _, max_id = match(
+        htilde,
+        stilde,
+        psd=psd,
+        low_frequency_cutoff=low_frequency_cutoff,
+        high_frequency_cutoff=high_frequency_cutoff,
+    )
     stilde = stilde.cyclic_time_shift(-max_id * stilde.delta_t)
 
     frequencies = stilde.sample_frequencies.numpy()
@@ -2045,19 +2051,16 @@ def optimized_match(
         return -product_offset(dt)[0]
 
     norm = numpy.sqrt(
-        product(waveform_1, waveform_1)[0] * 
-        product(waveform_2, waveform_2)[0]
+        product(waveform_1, waveform_1)[0] * product(waveform_2, waveform_2)[0]
     )
 
     res = minimize_scalar(
-        to_minimize,
-        method="brent",
-        bracket=(-stilde.delta_t, stilde.delta_t)
+        to_minimize, method="brent", bracket=(-stilde.delta_t, stilde.delta_t)
     )
     m, angle = product_offset(res.x)
 
     if return_phase:
-        return m / norm, res.x / stilde.delta_t + max_id, - angle
+        return m / norm, res.x / stilde.delta_t + max_id, -angle
     else:
         return m / norm, res.x / stilde.delta_t + max_id
 
