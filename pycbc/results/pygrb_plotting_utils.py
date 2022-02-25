@@ -36,6 +36,7 @@ if 'matplotlib.backends' not in sys.modules:  # nopep8
     import matplotlib
     matplotlib.use('agg')
 
+
 #
 # Used locally
 #
@@ -101,12 +102,12 @@ def pygrb_shared_plot_setups():
     """Master function to plot PyGRB results"""
 
     from matplotlib import rc
-    #from matplotlib import pyplot as plt
+    # from matplotlib import pyplot as plt
 
     # Get rcParams
     rc('font', size=14)
     # Set color for out-of-range values
-    #plt.cm.spring.set_over('g')
+    # plt.cm.spring.set_over('g')
 
 
 # =============================================================================
@@ -154,6 +155,7 @@ def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
         cax.set_ylim(y_lims)
     # Wrap up
     plt.tight_layout()
-    save_fig_with_metadata(fig, opts.output_file, cmd=cmd, title=opts.plot_title,
-                           caption=opts.plot_caption) # fig_kwds=fig_kwds
+    save_fig_with_metadata(fig, opts.output_file, cmd=cmd,
+                           title=opts.plot_title,
+                           caption=opts.plot_caption)
     plt.close()

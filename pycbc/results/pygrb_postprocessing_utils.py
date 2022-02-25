@@ -58,7 +58,7 @@ def pygrb_initialize_plot_parser(usage='', description=None, version=None):
     """Sets up a basic argument parser object for PyGRB plotting scripts"""
 
     parser = argparse.ArgumentParser(usage=usage, description=description,
-                                     formatter_class=\
+                                     formatter_class=
                                      argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--version", action="version", version=version)
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
@@ -397,6 +397,7 @@ def get_antenna_single_response(antenna, ra, dec, geocent_time):
 
     return fp**2 + fc**2
 
+
 # Vectorize the function above on all but the first argument
 get_antenna_responses = numpy.vectorize(get_antenna_single_response,
                                         otypes=[float])
@@ -452,10 +453,10 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
         chisq_threshold = snr_threshold
     bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
                                            column='bank_chisq'))
-                                           < chisq_threshold] = 0
+           < chisq_threshold] = 0
     bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
                                            column='cont_chisq'))
-                                           < chisq_threshold] = 0
+           < chisq_threshold] = 0
 
     # Define IFOs for sngl cut
     ifos = map(str, trigs[0].get_ifos())
@@ -474,7 +475,7 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
             ifos.sort(key=lambda ifo, j=i_trig: sens[ifo][j], reverse=True)
             # Apply when there is more than 1 IFO
             if len(ifos) > 1:
-                for i in xrange(0, 2):
+                for i in range(0, 2):
                     if ifo_snr[ifos[i]][i_trig] < sngl_snr_threshold:
                         bestnr[i_trig] = 0
         # Get chisq reduced (new) SNR for triggers that were not cut so far
@@ -499,7 +500,7 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
 # =============================================================================
 # Construct sorted triggers from trials
 # =============================================================================
-def sort_trigs(trial_dict, trigs, num_slides, segment_dict):
+def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
     """Constructs sorted triggers from a trials dictionary"""
 
     sorted_trigs = {}
@@ -514,7 +515,7 @@ def sort_trigs(trial_dict, trigs, num_slides, segment_dict):
 
     for slide_id in range(num_slides):
         # These can only *reduce* the analysis time
-        curr_seg_list = segment_dict[slide_id]
+        curr_seg_list = seg_dict[slide_id]
 
         # TODO: below is a check we can possibly remove
         # Check the triggers are all in the analysed segment lists
@@ -535,21 +536,24 @@ def sort_trigs(trial_dict, trigs, num_slides, segment_dict):
 
         # The below line works like the inverse of .veto and only returns trigs
         # that are within the segment specified by trial_dict[slide_id]
-        sorted_trigs[slide_id] = sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
+        sorted_trigs[slide_id] = sorted_trigs[slide_id].\
+                                 vetoed(trial_dict[slide_id])
 
     return sorted_trigs
 
 
 # =============================================================================
-# Extract basic trigger properties and store as dictionaries
+# Extract basic trigger properties and store them as dictionaries
 # TODO: the for's can be made more Pythonic probably.
 # TODO: use argument to determine which properties to calculate?
 # =============================================================================
-def extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts):
-    """Extract and store as dictionaries time, SNR, and BestNR of time-slid triggers"""
+def extract_basic_trig_properties(trial_dict, trigs, num_slides, seg_dict,
+                                  opts):
+    """Extract and store as dictionaries time, SNR, and BestNR of
+    time-slid triggers"""
 
     # Sort the triggers into each slide
-    sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
+    sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, seg_dict)
     logging.info("Triggers sorted.")
 
     # Local copies of variables entering the BestNR definition
@@ -570,7 +574,8 @@ def extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, o
     for slide_id in range(num_slides):
         slide_trigs = sorted_trigs[slide_id]
         if slide_trigs:
-            trig_time[slide_id] = numpy.asarray(slide_trigs.get_end()).astype(float)
+            trig_time[slide_id] = numpy.asarray(slide_trigs.get_end()).\
+                                  astype(float)
             trig_snr[slide_id] = numpy.asarray(slide_trigs.get_column('snr'))
         else:
             trig_time[slide_id] = numpy.asarray([])
@@ -632,7 +637,7 @@ def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
     veto_files = []
     if veto_dir:
         veto_string = ','.join([str(i) for i in range(2, veto_cat+1)])
-        veto_files = glob.glob(veto_dir +'/*CAT[%s]*.xml' % (veto_string))
+        veto_files = glob.glob(veto_dir + '/*CAT[%s]*.xml' % (veto_string))
     vetoes = extract_vetoes(veto_files, ifos)
 
     return ifos, vetoes
@@ -654,11 +659,11 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
         insp_table = lsctables.SimInspiralTable
 
     # Load injections in injection file
-    table = load_xml_table(inj_file, insp_table.tableName)
+    inj_table = load_xml_table(inj_file, insp_table.tableName)
 
     # Extract injections in time-slid non-vetoed data
     injs = lsctables.New(insp_table, columns=insp_table.loadcolumns)
-    injs.extend(t for t in table if t.get_end() not in vetoes)
+    injs.extend(inj for inj in inj_table if inj.get_end() not in vetoes)
 
     if label is None:
         logging.info("%d injections found.", len(injs))
@@ -740,7 +745,8 @@ def load_segment_dict(xml_file):
     # Get the mapping table
     # TODO: unclear whether this step is necessary (seems the
     # segment_def_id and time_slide_id are always identical)
-    time_slide_map_table = load_xml_table(xml_file, lsctables.TimeSlideSegmentMapTable.tableName)
+    time_slide_map_table = \
+        load_xml_table(xml_file, lsctables.TimeSlideSegmentMapTable.tableName)
     segment_map = {
         int(entry.segment_def_id): int(entry.time_slide_id)
         for entry in time_slide_map_table
@@ -749,22 +755,22 @@ def load_segment_dict(xml_file):
     segment_table = load_xml_table(
         xml_file, lsctables.SegmentTable.tableName
         )
-    segmentDict = {}
+    segment_dict = {}
     for entry in segment_table:
-        currSlidId = segment_map[int(entry.segment_def_id)]
-        currSeg = entry.get()
-        if currSlidId not in segmentDict.keys():
-            segmentDict[currSlidId] = segments.segmentlist()
-        segmentDict[currSlidId].append(currSeg)
-        segmentDict[currSlidId].coalesce()
+        curr_slid_id = segment_map[int(entry.segment_def_id)]
+        curr_seg = entry.get()
+        if curr_slid_id not in segment_dict.keys():
+            segment_dict[curr_slid_id] = segments.segmentlist()
+        segment_dict[curr_slid_id].append(curr_seg)
+        segment_dict[curr_slid_id].coalesce()
 
-    return segmentDict
+    return segment_dict
 
 
 # =============================================================================
 # Construct the trials from the timeslides, segments, and vetoes
 # =============================================================================
-def construct_trials(num_slides, seg_dir, segment_dict, ifos, slide_dict, vetoes):
+def construct_trials(num_slides, seg_dir, seg_dict, ifos, slide_dict, vetoes):
     """Constructs trials from triggers, timeslides, segments and vetoes"""
 
     trial_dict = {}
@@ -777,14 +783,16 @@ def construct_trials(num_slides, seg_dir, segment_dict, ifos, slide_dict, vetoes
 
     for slide_id in range(num_slides):
         # These can only *reduce* the analysis time
-        curr_seg_list = segment_dict[slide_id]
+        curr_seg_list = seg_dict[slide_id]
 
         # Construct the buffer segment list
         seg_buffer = segments.segmentlist()
         for ifo in ifos:
             slide_offset = slide_dict[slide_id][ifo]
-            seg_buffer.append(segments.segment(segs['buffer'][0] - slide_offset,
-                                               segs['buffer'][1] - slide_offset))
+            seg_buffer.append(segments.segment(segs['buffer'][0] -
+                                               slide_offset,
+                                               segs['buffer'][1] -
+                                               slide_offset))
         seg_buffer.coalesce()
 
         # Construct the ifo list
@@ -797,10 +805,11 @@ def construct_trials(num_slides, seg_dir, segment_dict, ifos, slide_dict, vetoes
         for curr_seg in curr_seg_list:
             iter_int = 0
             while 1:
-                if (curr_seg[0] + trial_time*(iter_int+1)) > curr_seg[1]:
+                trial_end = curr_seg[0] + trial_time*(iter_int+1)
+                if trial_end > curr_seg[1]:
                     break
-                curr_trial = segments.segment(curr_seg[0] + trial_time*iter_int,
-                                              curr_seg[0] + trial_time*(iter_int+1))
+                curr_trial = segments.segment(trial_end - trial_time,
+                                              trial_end)
                 if not seg_buffer.intersects_segment(curr_trial):
                     for ifo in ifos:
                         if slid_vetoes[ifo].intersects_segment(curr_trial):
