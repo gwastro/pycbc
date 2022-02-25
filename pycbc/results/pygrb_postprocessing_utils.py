@@ -63,15 +63,15 @@ def pygrb_initialize_plot_parser(usage='', description=None, version=None):
     parser.add_argument("--version", action="version", version=version)
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="Verbose output")
-    parser.add_argument("-o", "--output-file", default=None, #required=True,
+    parser.add_argument("-o", "--output-file", default=None,
                         help="Output file.")
     parser.add_argument("--x-lims", action="store", default=None,
-                        help="Comma separated minimum and maximum values "+
-                        "for the horizontal axis. When using negative values "+
-                        "an equal sign after --x-lims is necessary.")
+                        help="Comma separated minimum and maximum values " +
+                        "for the horizontal axis. When using negative " +
+                        "values an equal sign after --x-lims is necessary.")
     parser.add_argument("--y-lims", action="store", default=None,
-                        help="Comma separated minimum and maximum values "+
-                        "for the vertical axis. When using negative values "+
+                        help="Comma separated minimum and maximum values " +
+                        "for the vertical axis. When using negative values " +
                         "an equal sign after --y-lims is necessary.")
     parser.add_argument("--use-logs", default=False, action="store_true",
                         help="Produce a log-log plot")
@@ -98,7 +98,7 @@ def pygrb_initialize_plot_parser(usage='', description=None, version=None):
 
 
 def pygrb_add_injmc_opts(parser):
-    """Add to the parser object the arguments used for Monte-Carlo on distance."""
+    """Add to parser object the arguments used for Monte-Carlo on distance."""
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument("-M", "--num-mc-injections", action="store",
@@ -116,8 +116,8 @@ def pygrb_add_injmc_opts(parser):
                         default=0, help="The number of bins used to " +
                         "calculate injection efficiency.")
     parser.add_argument("-w", "--waveform-error", action="store",
-                        type=float, default=0, help="The standard " +
-                        "deviation to use when calculating the waveform error.")
+                        type=float, default=0, help="The standard deviation " +
+                        "to use when calculating the waveform error.")
     parser.add_argument("--h1-cal-error", action="store", type=float,
                         default=0, help="The standard deviation to use when " +
                         "calculating the H1 calibration amplitude error.")
@@ -185,7 +185,7 @@ def pygrb_add_bestnr_opts(parser):
 
 
 def pygrb_add_fminjs_input_opts(parser):
-    """Add to the parser object the arguments for found/missed injection files."""
+    """Add to parser object the arguments for found/missed injection files."""
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--found-file", action="store",
@@ -254,7 +254,8 @@ def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
     """
 
     # Load SegmentDefTable and SegmentTable
-    seg_def_table = load_xml_table(xml_doc, lsctables.SegmentDefTable.tableName)
+    seg_def_table = load_xml_table(xml_doc,
+                                   lsctables.SegmentDefTable.tableName)
     seg_table = load_xml_table(xml_doc, lsctables.SegmentTable.tableName)
 
     if return_dict:
@@ -377,7 +378,8 @@ def load_triggers(trig_file, vetoes):
 # work because we are on Python 2.7 and therefore on an old version of astropy
 # which cannot download recent enough IERS tables. TEMPORARILY use the
 # default time (GW150914) as reference, thus approximating the sidereal time.
-# TODO: would getting rid of get_antenna_factors slow things down?  It is used only in here.
+# TODO: would getting rid of get_antenna_factors slow things down?
+#       It is used only in here.
 def get_antenna_factors(antenna, ra, dec, geocent_time):
     """Returns the antenna responses F+ and Fx of an IFO (passed as pycbc
     Detector type) at a given sky location and time."""
@@ -396,21 +398,19 @@ def get_antenna_single_response(antenna, ra, dec, geocent_time):
     return fp**2 + fc**2
 
 # Vectorize the function above on all but the first argument
-get_antenna_responses = numpy.vectorize(get_antenna_single_response,\
-                                    otypes=[float])
+get_antenna_responses = numpy.vectorize(get_antenna_single_response,
+                                        otypes=[float])
 get_antenna_responses.excluded.add(0)
 
 
 def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
-    """Returns the antenna factors (defined as eq. 4.3 on page 57 of 
-    Duncan Brown's Ph.D.) for an IFO (passed as pycbc Detector type) at 
+    """Returns the antenna factors (defined as eq. 4.3 on page 57 of
+    Duncan Brown's Ph.D.) for an IFO (passed as pycbc Detector type) at
     a given sky location and time."""
-
 
     fp, fc = get_antenna_factors(antenna, ra, dec, geocent_time)
 
     return numpy.sqrt(fp ** 2 * (1 + numpy.cos(inc)) ** 2 / 4 + fc ** 2)
-
 
 
 # =============================================================================
@@ -418,12 +418,11 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
 # TODO: where is the null SNR cut? get_bestnr reweights the SNR by null SNR
 # (null_thresh[0], really): where is null_thresh[1] used?
 # =============================================================================
-def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,\
-                sngl_snr_threshold=4., chisq_threshold=None,\
+def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
+                sngl_snr_threshold=4., chisq_threshold=None,
                 null_grad_thresh=20., null_grad_val=0.2):
-    """
-    Calculate BestNR (coh_PTF detection statistic) of triggers through signal
-    based vetoes.  The (default) signal based vetoes are:
+    """Calculate BestNR (coh_PTF detection statistic) of triggers through
+    signal based vetoes.  The (default) signal based vetoes are:
       * Coherent SNR < 6
       * Bank chi-squared reduced (new) SNR < 6
       * Auto veto reduced (new) SNR < 6
@@ -452,10 +451,10 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,\
     if not chisq_threshold:
         chisq_threshold = snr_threshold
     bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
-                                           column='bank_chisq')) \
+                                           column='bank_chisq'))
                                            < chisq_threshold] = 0
     bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
-                                           column='cont_chisq')) \
+                                           column='cont_chisq'))
                                            < chisq_threshold] = 0
 
     # Define IFOs for sngl cut
@@ -467,7 +466,8 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,\
     ifo_snr = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
     for ifo in ifos:
         antenna = Detector(ifo)
-        sens[ifo] = sigmasqs[ifo] * get_antenna_responses(antenna, ra, dec, time)
+        sens[ifo] = sigmasqs[ifo] * get_antenna_responses(antenna, ra,
+                                                          dec, time)
     for i_trig, trig in enumerate(trigs):
         # Apply only to triggers that were not already cut previously
         if bestnr[i_trig] != 0:
@@ -489,7 +489,7 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,\
         if bestnr[i_trig] != 0:
             if trig.chisq == 0:
                 err_msg = "Chisq not calculated for trigger with end time "
-                err_msg += "%s and snr %s" %(trig.get_end(), trig.snr)
+                err_msg += "%s and snr %s" % (trig.get_end(), trig.snr)
                 logging.error(err_msg)
                 sys.exit()
 
@@ -516,12 +516,13 @@ def sort_trigs(trial_dict, trigs, num_slides, segment_dict):
         # These can only *reduce* the analysis time
         curr_seg_list = segment_dict[slide_id]
 
-        ###### TODO: below is a check we can possibly remove #####
+        # TODO: below is a check we can possibly remove
         # Check the triggers are all in the analysed segment lists
         for trig in sorted_trigs[slide_id]:
             if trig.end_time not in curr_seg_list:
-                # This can be raised if the trigger is on the segment boundary, so
-                # check if the trigger is within 1/100 of a second within the list
+                # This can be raised if the trigger is on the segment boundary,
+                # so check if the trigger is within 1/100 of a second within
+                # the list
                 if trig.get_end() + 0.01 in curr_seg_list:
                     continue
                 if trig.get_end() - 0.01 in curr_seg_list:
@@ -530,7 +531,7 @@ def sort_trigs(trial_dict, trigs, num_slides, segment_dict):
                 err_msg += "analysed segments. This should not happen."
                 logging.error(err_msg)
                 sys.exit()
-        ###### end of check #####
+        # END OF CHECK #
 
         # The below line works like the inverse of .veto and only returns trigs
         # that are within the segment specified by trial_dict[slide_id]
@@ -631,7 +632,7 @@ def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
     veto_files = []
     if veto_dir:
         veto_string = ','.join([str(i) for i in range(2, veto_cat+1)])
-        veto_files = glob.glob(veto_dir +'/*CAT[%s]*.xml' %(veto_string))
+        veto_files = glob.glob(veto_dir +'/*CAT[%s]*.xml' % (veto_string))
     vetoes = extract_vetoes(veto_files, ifos)
 
     return ifos, vetoes
@@ -682,7 +683,8 @@ def load_time_slides(xml_file):
     ]))
     time_slide_list = numpy.array(time_slide_unsorted)[sort_idx]
     # Check time_slide_ids are ordered correctly.
-    ids = get_id_numbers(time_slide, "time_slide_id")[::len(time_slide_list[0].keys())]
+    ids = get_id_numbers(time_slide,
+                         "time_slide_id")[::len(time_slide_list[0].keys())]
     if not (numpy.all(ids[1:] == numpy.array(ids[:-1])+1) and ids[0] == 0):
         err_msg = "time_slide_ids list should start at zero and increase by "
         err_msg += "one for every element"
@@ -751,7 +753,7 @@ def load_segment_dict(xml_file):
     for entry in segment_table:
         currSlidId = segment_map[int(entry.segment_def_id)]
         currSeg = entry.get()
-        if not currSlidId in segmentDict.keys():
+        if currSlidId not in segmentDict.keys():
             segmentDict[currSlidId] = segments.segmentlist()
         segmentDict[currSlidId].append(currSeg)
         segmentDict[currSlidId].coalesce()
@@ -781,7 +783,7 @@ def construct_trials(num_slides, seg_dir, segment_dict, ifos, slide_dict, vetoes
         seg_buffer = segments.segmentlist()
         for ifo in ifos:
             slide_offset = slide_dict[slide_id][ifo]
-            seg_buffer.append(segments.segment(segs['buffer'][0] - slide_offset,\
+            seg_buffer.append(segments.segment(segs['buffer'][0] - slide_offset,
                                                segs['buffer'][1] - slide_offset))
         seg_buffer.coalesce()
 
@@ -797,7 +799,7 @@ def construct_trials(num_slides, seg_dir, segment_dict, ifos, slide_dict, vetoes
             while 1:
                 if (curr_seg[0] + trial_time*(iter_int+1)) > curr_seg[1]:
                     break
-                curr_trial = segments.segment(curr_seg[0] + trial_time*iter_int,\
+                curr_trial = segments.segment(curr_seg[0] + trial_time*iter_int,
                                               curr_seg[0] + trial_time*(iter_int+1))
                 if not seg_buffer.intersects_segment(curr_trial):
                     for ifo in ifos:
@@ -828,7 +830,7 @@ def sort_stat(time_veto_max_stat):
 def max_median_stat(num_slides, time_veto_max_stat, trig_stat, total_trials):
     """Deterine the maximum and median of the loudest SNRs/BestNRs"""
 
-    max_stat = max([trig_stat[slide_id].max() if trig_stat[slide_id].size \
+    max_stat = max([trig_stat[slide_id].max() if trig_stat[slide_id].size
                    else 0 for slide_id in range(num_slides)])
 
     full_time_veto_max_stat = sort_stat(time_veto_max_stat)
@@ -836,8 +838,8 @@ def max_median_stat(num_slides, time_veto_max_stat, trig_stat, total_trials):
     if total_trials % 2:
         median_stat = full_time_veto_max_stat[(total_trials - 1) // 2]
     else:
-        median_stat = numpy.mean((full_time_veto_max_stat)\
-                              [total_trials//2 - 1 : total_trials//2 + 1])
+        median_stat = numpy.mean((full_time_veto_max_stat)
+                                 [total_trials//2 - 1: total_trials//2 + 1])
 
     return max_stat, median_stat, full_time_veto_max_stat
 
@@ -859,130 +861,8 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
     for i in range(num_mc_injs):
         cal_dist_red = stats.norm.rvs(size=num_injs) * cal_err
         wf_dist_red = numpy.abs(stats.norm.rvs(size=num_injs) * wf_err)
-        inj_dist_mc[i+1, :] = inj_dists / (max_dc_cal_err * \
-                                     (1 + cal_dist_red) * (1 + wf_dist_red))
+        inj_dist_mc[i+1, :] = inj_dists / (max_dc_cal_err *
+                                           (1 + cal_dist_red) *
+                                           (1 + wf_dist_red))
 
     return inj_dist_mc
-
-
-# OBSOLETE but useful to know how to access and combine the various xml columns
-#class PygrbFilterOutput(object):
-#        self.trace_snr = None
-#        self.bank_veto = None
-#        self.auto_veto = None
-#        self.coinc_snr = None
-#        self.rel_amp_1 = None
-#        self.norm_3 = None
-#        self.rel_amp_2 = None
-#        if trigs_or_injs:
-#            # Work out if using sngl chisqs
-#            self.null_stat = numpy.asarray(trigs_or_injs.get_column(
-#                'null_statistic'))
-#            self.trace_snr = numpy.asarray(trigs_or_injs.get_column(
-#                'null_stat_degen'))
-#
-#            # Get single detector data
-#            self.coinc_snr = (trigs_or_injs.get_column('coinc_snr'))
-#
-#            # Initiate amplitude generator
-#            num_amp = 4
-#            amplitudes = range(1, num_amp+1)
-#
-#            # Get amplitude terms
-#            amp = dict((amplitude,
-#                        numpy.asarray(trigs_or_injs.get_column(
-#                            'amp_term_%d' % amplitude)))
-#                       for amplitude in amplitudes)
-#            #
-#            # All 0, hence the 3 warnings
-#            # for i in amplitudes:
-#            #     print numpy.count_nonzero(amp[amplitudes])
-#            #
-#            self.rel_amp_1 = numpy.sqrt((amp[1]**2 + amp[2]**2) /
-#                                        (amp[3]**2 + amp[4]**2))
-#            gamma_r = amp[1] - amp[4]
-#            gamma_i = amp[2] + amp[3]
-#            delta_r = amp[1] + amp[4]
-#            delta_i = amp[3] - amp[2]
-#            norm_1 = delta_r*delta_r + delta_i*delta_i
-#            norm_2 = gamma_r*gamma_r + gamma_i*gamma_i
-#            self.norm_3 = ((norm_1**0.25) + (norm_2**0.25))**2
-#            amp_plus = (norm_1)**0.5 + (norm_2)**0.5
-#            amp_cross = abs((norm_1)**0.5 - (norm_2)**0.5)
-#            self.rel_amp_2 = amp_plus/amp_cross
-#            self.inclination = amp_cross/self.norm_3
-#
-#            # Deal with the sigma-squares (historically called sigmas here)
-#            if output_type == "triggers":
-#                # Get antenna response based parameters
-#                self.ra = trigs_or_injs.get_column('ra')
-#                self.longitude = numpy.degrees(self.ra)
-#                self.dec = trigs_or_injs.get_column('dec')
-#                self.latitude = numpy.degrees(self.dec)
-
-# =============================================================================
-# Dumping material from pycbc_pygrb_efficiency and pycbc_pygrb_page_tables
-# that is not strictly needed but that we may want to turn into functions,
-# additional tools, unit tests
-# =============================================================================
-# Calculate and print fraction of trials with an event (highest FAP value)
-#num_events = 0
-#for slide_id in range(num_slides):
-#    for trial in range(len(trial_dict[slide_id])):
-#        if time_veto_max_bestnr[slide_id][trial] > 0:
-#            num_events += 1
-#quietest_file = open('%s/quiet_fap_val.txt' % outdir, 'w')
-#quietest_file.write('%s' % (num_events/total_trials))
-#quietest_file.close()
-
-
-# Write inclination recovery to file
-# GRB start time
-#grb_time = segs['on'][1] - 1
-#f_incl_txt = open('%s/found_inclinations.txt' % outdir, 'w')
-#f_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
-#stacked = np.column_stack([found_injs["time"][zero_fap],
-#                           found_injs["time"][zero_fap] - grb_time,
-#                           found_injs["inclination"][zero_fap]])
-#np.savetxt(f_incl_txt, stacked, delimiter='\t')
-#f_incl_txt.close()
-#t_incl_txt = open('%s/total_inclinations.txt' % outdir, 'w')
-#t_incl_txt.write('GPS time\tTime since %d\tInclination\n\n' % grb_time)
-#stacked = np.column_stack([np.concatenate((found_injs['time'], missed_injs['time'])),
-#                           np.concatenate((found_injs['time'] - grb_time,
-#                                           missed_injs['time'] - grb_time)),
-#                           np.concatenate((found_injs['inclination'],
-#                                           missed_injs['inclination']))])
-#np.savetxt(t_incl_txt, stacked, delimiter='\t')
-#t_incl_txt.close()
-
-
-# Save the efficiency values to disk
-#efficiency_txt = open('%s/efficiency_numbers.txt' % outdir, 'w')
-#efficiency_txt.write('distance (Mpc) \tfraction\tyerr_low\tyerr_high\n\n')
-#stacked = np.column_stack([dist_plot_vals, fraction_mc,
-#                           yerr_low_mc, yerr_high_mc])
-#np.savetxt(efficiency_txt, stacked, fmt='%.8e', delimiter='\t')
-#efficiency_txt.close()
-
-# Print efficiency curve to file
-#efficiency_curve_txt = open("%s/efficiency_curve.txt" % outdir, "w")
-#efficiency_curve_txt.write('Distance (Mpc)\tEfficiency including counting errors\n\n')
-#stacked = np.column_stack([dist_plot_vals, red_efficiency])
-#np.savetxt(efficiency_curve_txt, stacked, delimiter='\t')
-#efficiency_curve_txt.close()
-
-# Useful while developping: exploit as unit test?
-#np.savetxt('%s/found_maxbestnr.txt' % outdir, found_max_bestnr.T)
-#np.savetxt('%s/found_maxbestnrnomc.txt' % outdir, found_max_bestnr_no_mc.T)
-#np.savetxt('%s/foundonbestnr.txt' % outdir, found_on_bestnr.T)
-#np.savetxt('%s/foundonbestnrnomc.txt' % outdir, found_on_bestnr_no_mc.T)
-#np.savetxt('%s/numinjections.txt' % outdir, num_injections.T)
-#np.savetxt('%s/numinjectionsnomc.txt' % outdir, num_injections_no_mc.T)
-#inj_rec_file = open("%s/injection_recovery.html" % outdir, "w")
-#inj_rec_file.write("Total injections found louder than all background using %s "\
-#                   "is: %s<br>\n" % ('BestNR', found_max_bestnr[-1]))
-#inj_rec_file.write("Total injections found louder than all background (and "\
-#                   "nearby triggers in the offsource) using %s is: %s<br>"\
-#                   % ('BestNR', found_on_bestnr[-1]))
-#inj_rec_file.close()
