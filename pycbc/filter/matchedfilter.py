@@ -1337,10 +1337,10 @@ def match(
 
     Return the match between two waveforms. This is equivalent to the overlap
     maximized over time and phase.
-    
+
     The maximization is only performed with discrete time-shifts,
     or a quadratic interpolation of them if the subsample_interpolation
-    option is turned on; for a more precise computation 
+    option is turned on; for a more precise computation
     of the match between two waveforms, use the optimized_match function.
     The accuracy of this function is guaranteed up to the fourth decimal place.
 
