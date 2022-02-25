@@ -1332,12 +1332,17 @@ def match(
     v2_norm=None,
     subsample_interpolation=False,
     return_phase=False,
-    subsample_optimization=False,
 ):
     """Return the match between the two TimeSeries or FrequencySeries.
 
     Return the match between two waveforms. This is equivalent to the overlap
     maximized over time and phase.
+    
+    The maximization is only performed with discrete time-shifts,
+    or a quadratic interpolation of them if the subsample_interpolation
+    option is turned on; for a more precise computation 
+    of the match between two waveforms, use the optimized_match function.
+    The accuracy of this function is guaranteed up to the fourth decimal place.
 
     Parameters
     ----------
@@ -1362,14 +1367,6 @@ def match(
         quadratic fit. This can be important if measuring matches very close to
         1 and can cause discontinuities if you don't use it as matches move
         between discrete samples. If True the index returned will be a float.
-    subsample_optimization: {False, bool}, optional
-        If True, the match between the waveforms will be computed
-        by optimizing the time shift among the waveforms as a real number.
-        This implementation may be significantly slower, but it is
-        guaranteed to be accurate even when the waveforms are very close;
-        it should be used whenever the 1 minus the match is expected
-        to be smaller than, roughly, 1e-4.
-        If True, the index returned will be a float.
     return_phase : {False, bool}, optional
         If True, also return the phase shift that gives the match.
 
@@ -1414,36 +1411,6 @@ def match(
         # Get derivatives
         id_shift, maxsnr = quadratic_interpolate_peak(left, middle, right)
         max_id = max_id + id_shift
-
-    if subsample_optimization:
-
-        # a first time shift to get in the nearby region;
-        # then the optimization is only used to move to the
-        # correct subsample-timeshift witin (-delta_t, delta_t)
-        # of this
-        stilde = stilde.cyclic_time_shift(-max_id * stilde.delta_t)
-
-        f = stilde.sample_frequencies.numpy()
-        wf1 = htilde.numpy()
-        wf2 = stilde.numpy()
-        fmax = high_frequency_cutoff if high_frequency_cutoff is not None else numpy.inf
-        fmin = low_frequency_cutoff if low_frequency_cutoff is not None else -numpy.inf
-
-        mask = numpy.logical_and(fmin <= f, f < fmax)
-        wf1 = wf1[mask]
-        wf2 = wf2[mask]
-
-        if psd is not None:
-            psd_arr = psd.numpy()
-        else:
-            psd_arr = numpy.ones_like(wf1)
-
-        match, delta_t, phase = optimization_match(f, wf1, wf2, psd_arr, stilde.delta_t)
-
-        if return_phase:
-            return match, delta_t / stilde.delta_t + max_id, phase
-        else:
-            return match, delta_t / stilde.delta_t + max_id
 
     if return_phase:
         rounded_max_id = int(round(max_id))
@@ -1993,47 +1960,82 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
                            onsource_idx + half_dur_samples + 1)
     return snr[onsource_slice] * norm
 
-def optimization_match(frequencies, waveform_1, waveform_2, psd, delta_t):
+def optimized_match(
+    vec1,
+    vec2,
+    psd=None,
+    low_frequency_cutoff=None,
+    high_frequency_cutoff=None,
+    return_phase=False,
+):
     """Given two waveforms (as numpy arrays),
     compute the optimized match between them, making use
     of scipy.minimize_scalar.
+    
+    This function computes the same quantities as "match";
+    it is more accurate and slower.
 
     Parameters
     ----------
-    frequencies: numpy.ndarray
-        Frequencies at which the waveforms are sampled.
-        These need not be uniform.
-    waveform_1: numpy.ndarray
-        First waveform to compare.
-    waveform_2: numpy.ndarray
-        First waveform to compare.
-        The offset and phase refer to this waveform.
-    psd: numpy.ndarray
-        Reference power spectral density.
-    delta_t: float
-        Sample rate of the waveform;
-        it is used to define the interval within which
-        the optimization is performed, a time shift
-        between (-delta_t, delta_t).
+    vec1 : TimeSeries or FrequencySeries
+        The input vector containing a waveform.
+    vec2 : TimeSeries or FrequencySeries
+        The input vector containing a waveform.
+    psd : FrequencySeries
+        A power spectral density to weight the overlap.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin the match.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop the match.
+    v1_norm : {None, float}, optional
+        The normalization of the first waveform. This is equivalent to its
+        sigmasq value. If None, it is internally calculated.
+    v2_norm : {None, float}, optional
+        The normalization of the second waveform. This is equivalent to its
+        sigmasq value. If None, it is internally calculated.
+    return_phase : {False, bool}, optional
+        If True, also return the phase shift that gives the match.
 
     Returns
     -------
-    normalized_match: float
-        Match between waveform_1 and waveform_2, weighed by the PSD.
-    delta_t: float
-        Optimal time shift found by the optimization; to be applied
-        to waveform_2.
+    match: float
+    index: int
+        The number of samples to shift to get the match.
     phi: float
-        Phase of the match, or equivalently, phase by which
-        waveform_2 should be rotated to achieve the best match.
+        Phase to rotate complex waveform to get the match, if desired.
     """
 
     from scipy import integrate
     from scipy.optimize import minimize_scalar
+    
+    htilde = make_frequency_series(vec1)
+    stilde = make_frequency_series(vec2)
+
+    # a first time shift to get in the nearby region;
+    # then the optimization is only used to move to the
+    # correct subsample-timeshift witin (-delta_t, delta_t)
+    # of this
+    _, max_id = match(htilde, stilde, psd=psd, low_frequency_cutoff=low_frequency_cutoff, high_frequency_cutoff=high_frequency_cutoff)
+    stilde = stilde.cyclic_time_shift(-max_id * stilde.delta_t)
+
+    frequencies = stilde.sample_frequencies.numpy()
+    waveform_1 = htilde.numpy()
+    waveform_2 = stilde.numpy()
+    fmin = low_frequency_cutoff if low_frequency_cutoff is not None else -numpy.inf
+    fmax = high_frequency_cutoff if high_frequency_cutoff is not None else numpy.inf
+
+    mask = numpy.logical_and(fmin <= frequencies, frequencies < fmax)
+    waveform_1 = waveform_1[mask]
+    waveform_2 = waveform_2[mask]
+
+    if psd is not None:
+        psd_arr = psd.numpy()
+    else:
+        psd_arr = numpy.ones_like(waveform_1)
 
     def product(a, b):
-        integral = integrate.trapezoid(numpy.conj(a) * b / psd, x=frequencies)
-        return 4 * abs(integral), -numpy.angle(integral)
+        integral = integrate.trapezoid(numpy.conj(a) * b / psd_arr, x=frequencies)
+        return 4 * abs(integral), numpy.angle(integral)
 
     def product_offset(dt):
         offset = numpy.exp(2j * numpy.pi * frequencies * dt)
@@ -2043,19 +2045,24 @@ def optimization_match(frequencies, waveform_1, waveform_2, psd, delta_t):
         return -product_offset(dt)[0]
 
     norm = numpy.sqrt(
-        product(waveform_1, waveform_1)[0] * product(waveform_2, waveform_2)[0]
+        product(waveform_1, waveform_1)[0] * 
+        product(waveform_2, waveform_2)[0]
     )
 
     res = minimize_scalar(
         to_minimize,
         method="brent",
-        bracket=(-delta_t, delta_t)
+        bracket=(-stilde.delta_t, stilde.delta_t)
     )
-    match, angle = product_offset(res.x)
-    return match / norm, res.x, angle
+    m, angle = product_offset(res.x)
+
+    if return_phase:
+        return m / norm, res.x / stilde.delta_t + max_id, - angle
+    else:
+        return m / norm, res.x / stilde.delta_t + max_id
 
 
-__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
+__all__ = ['match', 'optimized_match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap',
            'overlap_cplx', 'matched_filter_core', 'correlate',
            'MatchedFilterControl', 'LiveBatchMatchedFilter',
