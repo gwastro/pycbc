@@ -209,22 +209,27 @@ class TestDistributions(unittest.TestCase):
             pdf_2 = numpy.array([polar_dist.pdf(**{"theta" : p})
                                  * ang_dist.pdf(**{"theta" : a})
                                  for p, a in cart_sin])
-            if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
-                       < tolerance)):
-                raise ValueError("The {} distribution PDF does not match its "
-                                 "component distriubtions.".format(dist.name))
 
-            # check logarithm of PDF equilvalent
-            pdf_1 = numpy.array([dist.logpdf(**{dist.polar_angle : p,
-                                                dist.azimuthal_angle : a})
-                                 for p, a in cart_sin])
-            pdf_2 = numpy.array([polar_dist.logpdf(**{"theta" : p})
-                                 + ang_dist.logpdf(**{"theta" : a})
-                                 for p, a in cart_sin])
-            if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
-                       < tolerance)):
-                raise ValueError("The {} distribution PDF does not match its "
-                                 "component distriubtions.".format(dist.name))
+            # Catch and silence warnings here
+            with numpy.errstate(invalid="ignore", divide='ignore'):
+                if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
+                                  < tolerance)):
+                    raise ValueError("The {} distribution PDF does not match "
+                                     "its component "
+                                     "distributions.".format(dist.name))
+
+                # check logarithm of PDF equivalent
+                pdf_1 = numpy.array([dist.logpdf(**{dist.polar_angle : p,
+                                                    dist.azimuthal_angle : a})
+                                     for p, a in cart_sin])
+                pdf_2 = numpy.array([polar_dist.logpdf(**{"theta" : p})
+                                     + ang_dist.logpdf(**{"theta" : a})
+                                     for p, a in cart_sin])
+                if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
+                           < tolerance)):
+                    raise ValueError("The {} distribution PDF does not match "
+                                     "its component "
+                                     "distriubtions.".format(dist.name))
 
             # check random draws from polar angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.polar_angle]
