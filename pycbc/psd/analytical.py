@@ -16,7 +16,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """Provides reference PSDs from LALSimulation.
 
-More information about how to use these can be found in the 
+More information about how to use these can be found in the
 guide about `Analytic PSDs from lalsimulation`_.
 """
 import numbers
