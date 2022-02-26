@@ -33,7 +33,7 @@ from matplotlib import pyplot as plt
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import pygrb_postprocessing_utils as ppu 
-from pycbc.results import pygrb_plottiing_utils as plu 
+from pycbc.results import pygrb_plotting_utils as plu 
 
 plt.switch_backend('Agg')
 
