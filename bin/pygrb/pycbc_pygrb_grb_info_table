@@ -71,7 +71,7 @@ parser.add_argument("--output-file", action="store",
 
 opts = parser.parse_args()
 
-level = logging.INFOif opts.verbose else level = logging.WARNING
+level = logging.INFO if opts.verbose else level = logging.WARNING
 logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
                     level=level)
 
