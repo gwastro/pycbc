@@ -20,8 +20,6 @@
 # Preamble
 # =============================================================================
 
-from __future__ import division
-
 import sys
 import glob
 import os
@@ -29,7 +27,9 @@ import copy
 import logging
 from ligo.lw import lsctables
 import pycbc.version
-from pycbc.results.pygrb_plotting_utils import *
+from pycbc.results import save_fig_with_metadata
+from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.results.pygrb_plotting_utils import pygrb_shared_plot_setups
 plt.switch_backend('Agg')
 
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
@@ -39,25 +39,45 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 
 
 # =============================================================================
+# Functions
+# =============================================================================
+# Function to load latitude and longitude data from a trigger/injection file
+def load_data(trig_file, vetoes):
+    """Build a dictionary containing latitude and longitude data extracted
+    from a trigger file"""
+
+    # Inizialize the dictionary
+    data = {}
+    data['longitude'] = None
+    data['latitude'] = None
+
+    # Fill the dictionary in with required data
+    if input_file:
+        trigs = ppu.load_triggers(trig_file, vetoes)
+        data['longitude'] = numpy.degrees(trigs.get_column('ra'))
+        data['latitude'] = numpy.degrees(trigs.get_column('dec'))
+
+    return data
+
+
+# =============================================================================
 # Main script starts here
 # =============================================================================
 
 description = 'pycbc_pygrb_plot_skygrid will produce the sky grid plot.'
 usage = __program__ + ' [--options]'
-opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
+parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description, version=__version__)
+opts = parser.parse_args()
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
+level = logging.INFO if opts.verbose else logging.WARNING
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
                     level=level)
 
-trig_file  = os.path.abspath(opts.trig_file)
-inj_file   = None
+trig_file = os.path.abspath(opts.trig_file)
+inj_file = None
 if opts.inj_file:
     inj_file = os.path.abspath(opts.inj_file)
-outfile       = opts.output_file
+outfile = opts.output_file
 seg_dir = opts.segment_dir
 veto_files = []
 if opts.veto_directory:
@@ -76,19 +96,13 @@ for outdir in outdirs:
         os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos = extract_ifos(trig_file)
+ifos = ppu.extract_ifos(trig_file)
 
 # Extract IFOs and vetoes
-vetoes = extract_vetoes(trig_file, ifos)
+vetoes = ppu.extract_vetoes(trig_file, ifos)
 
-# Load triggers
-trigs = load_triggers(trig_file, vetoes, ifos)
-
-# Extract trigger data
-trig_data = PygrbFilterOutput(trigs, ifos,
-                              lsctables.MultiInspiralTable.loadcolumns,
-                              "triggers", opts)
-
+# Load trigger data
+trig_data = load_data(trig_file, vetoes)
 
 #
 # Generate sky grid plot
@@ -104,10 +118,10 @@ if opts.verbose:
 
 pygrb_shared_plot_setups()
 fig = plt.figure()
-ax  = fig.gca()
+ax = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
 ax.set_ylabel(ylabel)#, fontsize=16)
-ax.plot(trig_data.longitude, trig_data.latitude, 'ko', markerfacecolor='blue')
+ax.plot(trig_data['longitude'], trig_data['latitude'], 'ko', markerfacecolor='blue')
 # Wrap up
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=opts.plot_caption)

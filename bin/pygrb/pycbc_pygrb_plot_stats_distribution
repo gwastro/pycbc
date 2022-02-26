@@ -24,8 +24,6 @@
 Plot distribution of BestNR/SNR/SNR after cuts of triggers in a PyGRB run.
 """
 
-from __future__ import division
-
 import os
 import logging
 import sys
@@ -35,17 +33,8 @@ import numpy as np
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
-from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
-from pycbc.results.pygrb_postprocessing_utils import load_xml_table
-from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
-from pycbc.results.pygrb_postprocessing_utils import load_time_slides
-from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
-from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
-from pycbc.results.pygrb_postprocessing_utils import construct_trials
-from pycbc.results.pygrb_postprocessing_utils import extract_basic_trig_properties
-from pycbc.results.pygrb_postprocessing_utils import sort_stat
-from pycbc.results.pygrb_postprocessing_utils import max_median_stat
-from glue.ligolw import lsctables
+from pycbc.results import pygrb_postprocessing_utils as ppu
+from ligo.lw import lsctables
 
 plt.switch_backend('Agg')
 rc("image", cmap="cividis_r")
@@ -62,8 +51,8 @@ __program__ = "pycbc_pygrb_plot_stats_distribution"
 description = 'Efficiency calculator for the triggered search (PyGRB).'
 usage = __program__ + ' [--options]'
 
-parser = pygrb_initialize_plot_parser(usage=usage, description=description,
-                                      version=__version__)
+parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
+                                          version=__version__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file")
 parser.add_argument("-x", "--x-variable", default=None, required=True,
@@ -71,7 +60,7 @@ parser.add_argument("-x", "--x-variable", default=None, required=True,
                     "choices are: bestnr, snr, or snruncut.")
 #parser.add_argument("-S", "--seed", action="store", type=int,
 #                    default=1234, help="Seed to initialize Monte Carlo.")
-parser = pygrb_add_bestnr_opts(parser)
+parser = ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -103,30 +92,31 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
-                                       opts.veto_category)
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+                                           opts.veto_category)
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trigs = load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
+trigs = ppu.load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
 logging.info("%d triggers loaded.", len(trigs))
 logging.info("Loading timeslides.")
-slide_dict = load_time_slides(trig_file)
+slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
-segment_dict = load_segment_dict(trig_file)
+segment_dict = ppu.load_segment_dict(trig_file)
 
 # Identify the number of slides
 num_slides = len(slide_dict)
 
 # Construct trials
 logging.info("Constructing trials.")
-trial_dict = construct_trials(num_slides, opts.segment_dir, segment_dict, ifos, slide_dict, vetoes)
+trial_dict = ppu.construct_trials(num_slides, opts.segment_dir, segment_dict,
+                                  ifos, slide_dict, vetoes)
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
 logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
 trig_time, trig_snr, trig_bestnr = \
-    extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
+    ppu.extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
@@ -159,10 +149,10 @@ for slide_id in range(num_slides):
                           max(trig_snr[slide_id][trial_cut & sbv_cut])
 
 # This is the data that will be plotted
-full_time_veto_max_snr = sort_stat(time_veto_max_snr)
-full_time_veto_max_snr_uncut = sort_stat(time_veto_max_snr_uncut)
+full_time_veto_max_snr = ppu.sort_stat(time_veto_max_snr)
+full_time_veto_max_snr_uncut = ppu.sort_stat(time_veto_max_snr_uncut)
 _, _, full_time_veto_max_bestnr =\
-    max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
+    ppu.max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
 # The 0.'s here force the histograms to start at (0, 1) if no trial
 # returned a no-event (i.e., BestNR = 0)
 if full_time_veto_max_bestnr[0] != 0.:

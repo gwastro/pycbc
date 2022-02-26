@@ -24,8 +24,6 @@
 Gather information about quiet/missed injections in html tables.
 """
 
-from __future__ import division
-
 import sys
 import os
 import logging
@@ -36,24 +34,8 @@ import pycbc.version
 from pycbc.detector import Detector
 from pycbc import init_logging
 import pycbc.results
-from pycbc.results.pygrb_postprocessing_utils import extract_ifos_and_vetoes
-from pycbc.results.pygrb_postprocessing_utils import load_xml_table
-from pycbc.results.pygrb_postprocessing_utils import load_segment_dict
-from pycbc.results.pygrb_postprocessing_utils import load_time_slides
-from pycbc.results.pygrb_postprocessing_utils import load_injections
-from pycbc.results.pygrb_postprocessing_utils import find_zero_lag_slide_id
-from pycbc.results.pygrb_postprocessing_utils import pygrb_initialize_plot_parser
-from pycbc.results.pygrb_postprocessing_utils import pygrb_add_injmc_opts
-from pycbc.results.pygrb_postprocessing_utils import pygrb_add_bestnr_opts
-from pycbc.results.pygrb_postprocessing_utils import pygrb_add_fminjs_input_opts
-from pycbc.results.pygrb_postprocessing_utils import construct_trials
-from pycbc.results.pygrb_postprocessing_utils import extract_basic_trig_properties
-from pycbc.results.pygrb_postprocessing_utils import sort_trigs
-from pycbc.results.pygrb_postprocessing_utils import max_median_stat
-from pycbc.results.pygrb_postprocessing_utils import mc_cal_wf_errs
-from pycbc.results.pygrb_postprocessing_utils import get_antenna_responses
-from pycbc.results.pygrb_postprocessing_utils import get_bestnrs
-from glue.ligolw import lsctables
+from pycbc.results import pygrb_postprocessing_utils as ppu
+from ligo.lw import lsctables
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -65,13 +47,13 @@ __program__ = "pycbc_pygrb_page_tables"
 # Functions
 # =============================================================================
 def get_column(table, column_name):
-    """Wrapper for glue.ligolw.lsctables.MultiInspiralTable.get_column
+    """Wrapper for ligo.lw.lsctables.MultiInspiralTable.get_column
     method. Easier for h5py switch. Note: Must still replace
     .get_sigmasqs() and .get_snglsnr() methods throughout the scripts.
 
     Parameters
     ----------
-    table: glue.ligolw.lsctables.MultiInspiralTable
+    table: ligo.lw.lsctables.MultiInspiralTable
     column_name: str
 
     Returns
@@ -100,9 +82,9 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
 
     Parameters
     ----------
-    inj_table: glue.ligolw.lsctables.SimInspiralTable
+    inj_table: ligo.lw.lsctables.SimInspiralTable
     ifos: list
-    trig_table: glue.ligolw.lsctables.MultiInspiralTable, optional
+    trig_table: ligo.lw.lsctables.MultiInspiralTable, optional
     background_bestnrs: numpy.array, optional
         Used to compute FAP of quiet injections.
 
@@ -151,15 +133,15 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
         for ifo in ifos:
             site = ifo.lower()
             inj_data['snr_{}'.format(site)] = trig_table.get_sngl_snr(site)
-        inj_data['bestnr'] = get_bestnrs(trig_table,
-                                         q=chisq_index,
-                                         n=chisq_nhigh,
-                                         null_thresh=null_thresh,
-                                         snr_threshold=snr_thresh,
-                                         sngl_snr_threshold=sngl_snr_thresh,
-                                         chisq_threshold=new_snr_thresh,
-                                         null_grad_thresh=null_grad_thresh,
-                                         null_grad_val=null_grad_val)
+        inj_data['bestnr'] = ppu.get_bestnrs(trig_table,
+                                             q=chisq_index,
+                                             n=chisq_nhigh,
+                                             null_thresh=null_thresh,
+                                             snr_threshold=snr_thresh,
+                                             sngl_snr_threshold=sngl_snr_thresh,
+                                             chisq_threshold=new_snr_thresh,
+                                             null_grad_thresh=null_grad_thresh,
+                                             null_grad_val=null_grad_val)
         if background_bestnrs is not None:
             inj_data['fap'] = np.array(
                 [sum(background_bestnrs > bestnr) for bestnr in inj_data['bestnr']],
@@ -184,9 +166,9 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
                     logging.info(msg)
                     inj_sigma[ifo][:] = 1.0
             antenna = Detector(ifo)
-            f_resp[ifo] = get_antenna_responses(antenna, inj_data['ra'],
-                                                inj_data['dec'],
-                                                inj_data['time'])
+            f_resp[ifo] = ppu.get_antenna_responses(antenna, inj_data['ra'],
+                                                    inj_data['dec'],
+                                                    inj_data['time'])
         inj_sigma_mult = dict_to_ndarray(inj_sigma) * dict_to_ndarray(f_resp)
         inj_sigma_tot = np.sum(inj_sigma_mult, axis=0)
         for ifo in ifos:
@@ -202,16 +184,16 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
 description = 'Processes PyGRB triggers and injections to create results tables.'
 usage = __program__ + ' [--options]'
 
-parser = pygrb_initialize_plot_parser(usage=usage, description=description,
-                                      version=__version__)
+parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
+                                          version=__version__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file")
 # As opposed to offsource-file and trig-file, this only contains onsource
 parser.add_argument("--onsource-file", action="store", default=None,
                     help="Location of on-source trigger file.")
-parser = pygrb_add_fminjs_input_opts(parser)
-parser = pygrb_add_injmc_opts(parser)
-parser = pygrb_add_bestnr_opts(parser)
+parser = ppu.pygrb_add_fminjs_input_opts(parser)
+parser = ppu.pygrb_add_injmc_opts(parser)
+parser = ppu.pygrb_add_bestnr_opts(parser)
 parser.add_argument("--num-loudest-off-trigs", action="store",
                     type=int, default=30, help="Number of loudest " +
                     "offsouce triggers to output details about.")
@@ -337,31 +319,31 @@ np.random.seed(opts.seed)
 logging.info("Setting random seed to %d.", opts.seed)
 
 # Extract IFOs and vetoes
-ifos, vetoes = extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
-                                       opts.veto_category)
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+                                           opts.veto_category)
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trigs = load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
+trigs = ppu.load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
 logging.info("%d triggers loaded.", len(trigs))
 logging.info("Loading timeslides.")
-slide_dict = load_time_slides(trig_file)
+slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
-segment_dict = load_segment_dict(trig_file)
+segment_dict = ppu.load_segment_dict(trig_file)
 
 # Identify the zero-lag slide and the number of slides
-zero_lag_slide_id = find_zero_lag_slide_id(slide_dict)
+zero_lag_slide_id = ppu.find_zero_lag_slide_id(slide_dict)
 num_slides = len(slide_dict)
 
 # Construct trials
 logging.info("Constructing trials.")
-trial_dict = construct_trials(num_slides, opts.segment_dir, segment_dict, ifos, slide_dict, vetoes)
+trial_dict = ppu.construct_trials(num_slides, opts.segment_dir, segment_dict, ifos, slide_dict, vetoes)
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
 logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
 trig_time, trig_snr, trig_bestnr = \
-    extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
+    ppu.extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
@@ -392,16 +374,16 @@ logging.info("SNR and bestNR maxima calculated.")
 
 # Output details of loudest offsouce triggers, sorted by BestNR
 offsource_trigs = []
-sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, segment_dict)
+sorted_trigs = ppu.sort_trigs(trial_dict, trigs, num_slides, segment_dict)
 for slide_id in range(num_slides):
     offsource_trigs.extend(zip(trig_bestnr[slide_id], sorted_trigs[slide_id]))
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
 
 # Median and max values of SNR and BestNR
-_, median_snr, _ = max_median_stat(num_slides, time_veto_max_snr, trig_snr, total_trials)
+_, median_snr, _ = ppu.max_median_stat(num_slides, time_veto_max_snr, trig_snr, total_trials)
 max_bestnr, median_bestnr, full_time_veto_max_bestnr =\
-    max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
+    ppu.max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
 
 if lofft_outfile or lofft_h5_outfile:
     # td: table data
@@ -513,7 +495,7 @@ if lofft_outfile or lofft_h5_outfile:
 if onsource_file:
 
     # Get trigs
-    on_trigs = load_xml_table(onsource_file, "multi_inspiral")
+    on_trigs = ppu.load_xml_table(onsource_file, "multi_inspiral")
     msg = "%d onsource triggers loaded." % (len(on_trigs))
     logging.info(msg)
 
@@ -523,15 +505,15 @@ if onsource_file:
     # Record loudest trig by BestNR
     loud_on_bestnr = 0
     if on_trigs:
-        on_trigs_bestnrs = get_bestnrs(on_trigs,
-                                       q=chisq_index,
-                                       n=chisq_nhigh,
-                                       null_thresh=null_thresh,
-                                       snr_threshold=snr_thresh,
-                                       sngl_snr_threshold=sngl_snr_thresh,
-                                       chisq_threshold=new_snr_thresh,
-                                       null_grad_thresh=null_grad_thresh,
-                                       null_grad_val=null_grad_val)
+        on_trigs_bestnrs = ppu.get_bestnrs(on_trigs,
+                                           q=chisq_index,
+                                           n=chisq_nhigh,
+                                           null_thresh=null_thresh,
+                                           snr_threshold=snr_thresh,
+                                           sngl_snr_threshold=sngl_snr_thresh,
+                                           chisq_threshold=new_snr_thresh,
+                                           null_grad_thresh=null_grad_thresh,
+                                           null_grad_val=null_grad_val)
         loud_on_bestnr_trigs, loud_on_bestnr = \
             np.asarray([[x, y] for y, x in sorted(zip(on_trigs_bestnrs, on_trigs),
                                                   reverse=True)])[0]
@@ -619,8 +601,8 @@ else:
 # =======================
 if do_injections:
 
-    found_trig_table = load_injections(found_file, vetoes)
-    found_inj_table = load_injections(found_file, vetoes, sim_table=True)
+    found_trig_table = ppu.load_injections(found_file, vetoes)
+    found_inj_table = ppu.load_injections(found_file, vetoes, sim_table=True)
 
     logging.info("Missed/found injections/triggers loaded.")
 
@@ -650,7 +632,7 @@ if do_injections:
     logging.info("%d found injections analysed.", len(found_injs['mchirp']))
 
     # Missed injections (ones not recovered at all)
-    missed_inj_table = load_injections(missed_file, vetoes, sim_table=True)
+    missed_inj_table = ppu.load_injections(missed_file, vetoes, sim_table=True)
     missed_injs = lsctable_to_dict(missed_inj_table, ifos, opts)
 
     # Avoids a problem with formatting in the non-static html output file
@@ -700,16 +682,16 @@ if do_injections:
     # times, where each time we draw a random value of distance.
 
     # Distribute injections
-    found_injs['dist_mc'] = mc_cal_wf_errs(num_mc_injs,
-                                           found_injs['distance'],
-                                           cal_error, wav_err,
-                                           max_dc_cal_error)
-    missed_injs['dist_mc'] = mc_cal_wf_errs(num_mc_injs,
-                                            missed_injs['distance'],
-                                            cal_error, wav_err,
-                                            max_dc_cal_error)
-    long_inj['dist_mc'] = mc_cal_wf_errs(num_mc_injs, long_inj['dist'],
-                                         cal_error, wav_err, max_dc_cal_error)
+    found_injs['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs,
+                                               found_injs['distance'],
+                                               cal_error, wav_err,
+                                               max_dc_cal_error)
+    missed_injs['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs,
+                                                missed_injs['distance'],
+                                                cal_error, wav_err,
+                                                max_dc_cal_error)
+    long_inj['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs, long_inj['dist'],
+                                             cal_error, wav_err, max_dc_cal_error)
     logging.info("MC injection set distributed with %d iterations.",\
                  num_mc_injs)
 

@@ -34,9 +34,9 @@ from scipy import stats
 from pycbc.detector import Detector
 # TODO: imports to fix/remove
 try:
-    from glue import segments
-    from glue.ligolw import utils, lsctables, ligolw, table
-    from glue.segmentsUtils import fromsegwizard
+    from ligo import segments
+    from ligo.lw import utils, lsctables, ligolw, table
+    from ligo.segments.utils import fromsegwizard
 except ImportError:
     pass
 try:
@@ -235,7 +235,7 @@ def load_xml_table(file_name, table_name):
 # Function to load segments from an xml file
 # ==============================================================================
 def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
-    """Read a glue.segments.segmentlist from the file object file containing an
+    """Read a ligo.segments.segmentlist from the file object file containing an
     xml segment table.
 
     Parameters
@@ -244,11 +244,11 @@ def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
 
         Keyword Arguments:
             return_dict : [ True | False ]
-                return a glue.segments.segmentlistdict containing coalesced
-                glue.segments.segmentlists keyed by seg_def.name for each entry
+                return a ligo.segments.segmentlistdict containing coalesced
+                ligo.segments.segmentlists keyed by seg_def.name for each entry
                 in the contained segment_def_table. Default False
             select_id : int
-                return a glue.segments.segmentlist object containing only
+                return a ligo.segments.segmentlist object containing only
                 those segments matching the given segment_def_id integer
 
     """
@@ -424,11 +424,11 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
                 null_grad_thresh=20., null_grad_val=0.2):
     """Calculate BestNR (coh_PTF detection statistic) of triggers through
     signal based vetoes.  The (default) signal based vetoes are:
-      * Coherent SNR < 6
-      * Bank chi-squared reduced (new) SNR < 6
-      * Auto veto reduced (new) SNR < 6
-      * Single-detector SNR (from two most sensitive IFOs) < 4
-      * Null SNR (CoincSNR^2 - CohSNR^2)^(1/2) < null_thresh
+    * Coherent SNR < 6
+    * Bank chi-squared reduced (new) SNR < 6
+    * Auto veto reduced (new) SNR < 6
+    * Single-detector SNR (from two most sensitive IFOs) < 4
+    * Null SNR (CoincSNR^2 - CohSNR^2)^(1/2) < null_thresh
 
     Returns Numpy array of BestNR values.
     """
@@ -479,7 +479,7 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
                     if ifo_snr[ifos[i]][i_trig] < sngl_snr_threshold:
                         bestnr[i_trig] = 0
         # Get chisq reduced (new) SNR for triggers that were not cut so far
-        # NOTE: .get_bestnr is in glue.ligolw.lsctables.MultiInspiralTable
+        # NOTE: .get_bestnr is in ligo.lw.lsctables.MultiInspiralTable
         if bestnr[i_trig] != 0:
             bestnr[i_trig] = trig.get_bestnr(index=q, nhigh=n,
                                              null_snr_threshold=null_thresh[0],

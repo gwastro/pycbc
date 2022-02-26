@@ -24,8 +24,6 @@
 Workflow generator to run pygrb offline post-processing.
 """
 
-from __future__ import division
-
 import sys
 import socket
 import logging
@@ -34,12 +32,10 @@ import os
 import pycbc.version
 from pycbc import init_logging
 import pycbc.workflow as _workflow
-from pycbc.workflow.plotting import PlotExecutable #, excludestr, requirestr
+from pycbc.workflow.plotting import PlotExecutable
 from pycbc.results import create_versioning_page, layout, pygrb_postprocessing_utils
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.workflow import pegasus_workflow as wdax
-#from pycbc.workflow.core import Executable, makedir
-#from pprint import pprint
 from Pegasus import DAX3 as dax
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin

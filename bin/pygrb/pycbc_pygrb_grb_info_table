@@ -19,8 +19,6 @@
 # =============================================================================
 # Preamble
 # =============================================================================
-from __future__ import division
-
 import sys
 import logging
 import argparse
@@ -73,10 +71,7 @@ parser.add_argument("--output-file", action="store",
 
 opts = parser.parse_args()
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
+level = logging.INFOif opts.verbose else level = logging.WARNING
 logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
                     level=level)
 
