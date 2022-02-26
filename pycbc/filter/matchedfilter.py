@@ -2021,7 +2021,7 @@ def optimized_match(
         psd=psd,
         low_frequency_cutoff=low_frequency_cutoff,
         high_frequency_cutoff=high_frequency_cutoff,
-    )
+    ) # pylint: disable=unbalanced-tuple-unpacking
     stilde = stilde.cyclic_time_shift(-max_id * stilde.delta_t)
 
     frequencies = stilde.sample_frequencies.numpy()
