@@ -30,6 +30,7 @@ import pycbc.version
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results.pygrb_plotting_utils import pygrb_shared_plot_setups
+from matplotlib import pyplot as plt
 plt.switch_backend('Agg')
 
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
