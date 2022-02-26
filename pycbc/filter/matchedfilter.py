@@ -2017,13 +2017,14 @@ def optimized_match(
     # then the optimization is only used to move to the
     # correct subsample-timeshift witin (-delta_t, delta_t)
     # of this
-    _, max_id = match(
+    _, max_id, _ = match(
         htilde,
         stilde,
         psd=psd,
         low_frequency_cutoff=low_frequency_cutoff,
         high_frequency_cutoff=high_frequency_cutoff,
-    ) # pylint: disable=unbalanced-tuple-unpacking
+        return_phase=True
+    )
     stilde = stilde.cyclic_time_shift(-max_id * stilde.delta_t)
 
     frequencies = stilde.sample_frequencies.numpy()
