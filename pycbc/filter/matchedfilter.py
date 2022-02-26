@@ -1966,6 +1966,8 @@ def optimized_match(
     psd=None,
     low_frequency_cutoff=None,
     high_frequency_cutoff=None,
+    v1_norm=None,
+    v2_norm=None,
     return_phase=False,
 ):
     """Given two waveforms (as numpy arrays),
@@ -2050,8 +2052,11 @@ def optimized_match(
     def to_minimize(dt):
         return -product_offset(dt)[0]
 
+    norm_1 = product(waveform_1, waveform_1)[0] if v1_norm is None else v1_norm
+    norm_2 = product(waveform_2, waveform_2)[0] if v2_norm is None else v2_norm
+
     norm = numpy.sqrt(
-        product(waveform_1, waveform_1)[0] * product(waveform_2, waveform_2)[0]
+        norm_1 * norm_2
     )
 
     res = minimize_scalar(
