@@ -596,15 +596,15 @@ class Workflow(object):
             sub.save(root=False)
             # FIXME: If I'm now putting output_map here, all output_map stuff
             #        should move here.
-            sub.output_map_file.insert_into_dax(self._rc, self._tc)
+            sub.output_map_file.insert_into_dax(self._rc, self.sites)
             sub_workflow_file = File(sub.filename)
             pfn = os.path.join(os.getcwd(), sub.filename)
             sub_workflow_file.add_pfn(pfn, site='local')
-            sub_workflow_file.insert_into_dax(self._rc, self._tc)
+            sub_workflow_file.insert_into_dax(self._rc, self.sites)
 
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:
-            fil.insert_into_dax(self._rc, self._tc)
+            fil.insert_into_dax(self._rc, self.sites)
 
         self._adag.add_replica_catalog(self._rc)
 
@@ -847,10 +847,10 @@ class File(dax.File):
         return (((url, site) in self.input_pfns)
                 or ((url, 'all') in self.input_pfns))
 
-    def insert_into_dax(self, rep_cat, site_cat):
+    def insert_into_dax(self, rep_cat, sites):
         for (url, site) in self.input_pfns:
             if site == 'all':
-                for curr_site in site_cat.sites:
+                for curr_site in sites:
                     rep_cat.add_replica(curr_site, self, url)
             else:
                 rep_cat.add_replica(site, self, url)
