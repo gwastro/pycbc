@@ -185,7 +185,7 @@ with h5py.File(args.trig_file, "r") as h5f:
 # empty file (no triggers), so just copy the file
 if not time.size:
     shutil.copyfile(args.trig_file, outfile)
-    err_msg = "trigger file is empty\ncopied input file to {}".format(outfile))
+    err_msg = "trigger file is empty\ncopied input file to {}".format(outfile)
     if args.verbose:
         print(err_msg)
     raise RuntimeError(err_msg)
