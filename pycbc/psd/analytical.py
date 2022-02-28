@@ -17,7 +17,7 @@
 """Provides reference PSDs from LALSimulation.
 
 More information about how to use these can be found in the
-guide about `Analytic PSDs from lalsimulation`_.
+guide about :ref:`Analytic PSDs from lalsimulation`.
 """
 import numbers
 from pycbc.types import FrequencySeries
