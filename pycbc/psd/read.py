@@ -67,8 +67,8 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     psd = numpy.zeros(length, dtype=numpy.float64)
 
     vals = numpy.log(numpy.arange(kmin, length) * delta_f)
-    # Sometimes due to rounding errors, the endpoints in `vals` will fall below or above
-    # the interpolation range, so force two endpoints to be flog[0]/flog[-1].
+    # Sometimes due to rounding errors, the endpoints in vals will fall below
+    # or above the interpolation range, so force them to be the same as flog.
     vals[0], vals[-1] = flog[0], flog[-1]
     psd[kmin:] =  numpy.exp(psd_interp(vals))
 
