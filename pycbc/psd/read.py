@@ -64,14 +64,12 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     slog = numpy.log(noise_data)
 
     psd_interp = scipy.interpolate.interp1d(flog, slog)
-
-    kmin = int(low_freq_cutoff / delta_f)
     psd = numpy.zeros(length, dtype=numpy.float64)
 
     vals = numpy.log(numpy.arange(kmin, length) * delta_f)
-    # Sometimes due to rounding errors, vals[0] will fall below
-    # the interpolation range, so force vals[0] to be `low_freq_cutoff`.
-    vals[0] = numpy.log(low_freq_cutoff)
+    # Sometimes due to rounding errors, the endpoints in `vals` will fall below or above
+    # the interpolation range, so force two endpoints to be flog[0]/flog[-1].
+    vals[0], vals[-1] = flog[0], flog[-1]
     psd[kmin:] =  numpy.exp(psd_interp(vals))
 
     return FrequencySeries(psd, delta_f=delta_f)
