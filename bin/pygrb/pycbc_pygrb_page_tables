@@ -227,12 +227,12 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
     logging.error(err_msg)
-    sys.exit()
+    raise RuntimeError(err_msg)
 
 # TODO: split this script into one that handles injections
 # and one that handles loudest on/off-source events?
 # TODO: deal better with the multiple output file possibilities?
-# The hdf5 output files are handfy for injection follow-up
+# The hdf5 output files are handy for injection follow-up
 # but for the moment this remains a hacky solution
 output_files = [opts.quiet_found_injs_output_file,
                 opts.missed_found_injs_output_file,
@@ -244,7 +244,7 @@ output_files = [opts.quiet_found_injs_output_file,
 if output_files.count(None) == len(output_files):
     msg = "Please specify at least one output file location."
     logging.error(msg)
-    sys.exit()
+    raise RuntimeError(err_msg)
 
 if opts.quiet_found_injs_output_file or opts.missed_found_injs_output_file or\
     opts.quiet_found_injs_h5_output_file:
@@ -253,7 +253,7 @@ if opts.quiet_found_injs_output_file or opts.missed_found_injs_output_file or\
         err_msg = "Must provide both found and missed injections file "
         err_msg += "locations if processing injections."
         logging.error(err_msg)
-        sys.exit()
+        raise RuntimeError(err_msg)
 else:
     do_injections = False
 
@@ -262,7 +262,7 @@ if opts.loudest_onsource_trig_output_file or opts.loudest_onsource_trig_h5_outpu
         err_msg = "Must provide the on-source file location to output its "
         err_msg += "loudest trigger information."
         logging.error(err_msg)
-        sys.exit()
+        raise RuntimeError(err_msg)
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
@@ -429,7 +429,6 @@ if lofft_outfile or lofft_h5_outfile:
         d.append(bestnr)
         td.append(d)
 
-    #FIXME: with switch to hdf5, include the template spin1z and spin2z.
     # th: table header
     th = ['Trial', 'Slide Num', 'p-value', 'GPS time',\
           'Rec. m1', 'Rec. m2', 'Rec. Mc',\
@@ -483,11 +482,11 @@ if lofft_outfile or lofft_h5_outfile:
                 'cmd' :' '.join(sys.argv), }
         pycbc.results.save_fig_with_metadata(str(html_table), lofft_outfile, **kwds)
 
-    # Store BestNR and FAP values: needed when we study FAPs of an observing run collectively
-    # TODO: needs a final place in the results webpage
-    #if False:
-    #    np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
-    #               full_time_veto_max_bestnr, delimiter='/t')
+    # Store BestNR and FAP values: for collective FAP value studies at the
+    # end of an observing run collectively
+    # TODO: Needs a final place in the results webpage
+    # np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
+    #            full_time_veto_max_bestnr, delimiter='/t')
 
 # =======================
 # Load on source triggers
@@ -553,7 +552,6 @@ if onsource_file:
         td.append(["There are no events"] + [0 for number in xrange(11)] + \
                   [0 for ifo in ifos] + [0])
 
-    #FIXME: with switch to hdf5, include the template spin1z and spin2z.
     # Table header
     th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
           'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
@@ -726,8 +724,6 @@ if do_injections:
                       [np.abs(trig_time[zero_lag_slide_id]-t) < cluster_window]
         near_test[j] = ~((near_bestnr * glitch_check_fac > bestnr).any())
     # Apply the local test
-    # FIXME: putmask does not seem to work...
-    #np.putmask(found_excl, found_excl==True, near_test)
     c = 0
     for z, b in enumerate(found_excl):
         if found_excl[z]:

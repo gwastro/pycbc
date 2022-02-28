@@ -145,12 +145,14 @@ if opts.veto_directory:
 if opts.y_variable in ['coherent', 'single', 'reweighted', 'null']:
     snr_type = opts.y_variable
 else:
-    logging.error('Unrecognized option given with --y-variable')
-    sys.exit()
+    err_msg = 'Unrecognized option given with --y-variable'
+    logging.error(err_msg)
+    raise ValueError(err_msg)
 ifo = opts.ifo
 if snr_type == 'single' and ifo is None:
-    logging.error("Please specify an interferometer for a single IFO plot")
-    sys.exit()
+    err_msg = "Please specify an interferometer for a single IFO plot"
+    logging.error(err_msg)
+    raise RuntimeError(err_msg)
 
 logging.info("Imported and ready to go.")
 

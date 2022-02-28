@@ -145,8 +145,9 @@ if opts.veto_directory:
 if opts.y_variable in ['coincident', 'nullstat', 'overwhitened']:
     null_stat_type = opts.y_variable
 else:
-    logging.error('Unrecognized option given with --y-variable')
-    sys.exit()
+    err_msg = 'Unrecognized option given with --y-variable'
+    logging.error(err_msg)
+    raise ValueError(err_msg)
 
 # Prepare plot title and caption
 y_labels = {'nullstat': "Null statistic",

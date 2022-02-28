@@ -246,12 +246,12 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
     logging.error(err_msg)
-    sys.exit()
+    raise RuntimeError(err_msg)
 
 if (opts.found_file is None) or (opts.missed_file is None):
     err_msg = "Must provide both found and missed injections files."
     logging.error(err_msg)
-    sys.exit()
+    raise RuntimeError(err_msg)
 
 admitted_vars = ['mchirp', 'mtotal', 'q', 'distance',
                  'eff_site_dist', 'eff_dist', 'time',
@@ -263,21 +263,23 @@ opts.x_variable = process_var_strings(opts.x_variable)
 if opts.x_variable in admitted_vars:
     x_qty = opts.x_variable
 else:
-    logging.error("Unrecognized option given with --x-variable")
-    sys.exit()
+    err_msg = "Unrecognized option given with --x-variable"
+    logging.error(err_msg)
+    raise ValueError(err_msg)
 opts.y_variable = process_var_strings(opts.y_variable)
 if opts.y_variable in admitted_vars:
     y_qty = opts.y_variable
 else:
-    logging.error("Unrecognized option given with --y-variable")
-    sys.exit()
+    err_msg = "Unrecognized option given with --y-variable"
+    logging.error(err_msg)
+    raise ValueError(err_msg)
 
 if 'eff_site_dist' in [opts.x_variable, opts.y_variable]:
     if opts.ifo is None:
         err_msg = "A value for --ifo must be provided for "
         err_msg += "site specific effective distance"
         logging.error(err_msg)
-        sys.exit()
+        raise RuntimeError(err_msg)
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
 

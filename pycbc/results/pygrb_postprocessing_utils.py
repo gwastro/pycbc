@@ -23,7 +23,6 @@
 Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
-import sys
 import glob
 import os
 import logging
@@ -32,7 +31,7 @@ import copy
 import numpy
 from scipy import stats
 from pycbc.detector import Detector
-# TODO: imports to fix/remove
+# All/most of these will become obsolete with hdf5 switch
 try:
     from ligo import segments
     from ligo.lw import utils, lsctables, ligolw, table
@@ -52,8 +51,6 @@ except ImportError:
 # * Add to the parser object the arguments used for BestNR calculation
 # * Add to the parser object the arguments for found/missed injection files
 # =============================================================================
-# TODO: move to plotting_utils and do not use in non-plot executables
-# TODO: make required once pygrb_efficiency no longer uses this
 def pygrb_initialize_plot_parser(usage='', description=None, version=None):
     """Sets up a basic argument parser object for PyGRB plotting scripts"""
 
@@ -211,8 +208,9 @@ def read_seg_files(seg_dir):
     for key, file_name in zip(keys, file_names):
         segs = fromsegwizard(open(os.path.join(seg_dir, file_name), 'r'))
         if len(segs) > 1:
-            logging.error('More than one segment, an error has occured.')
-            sys.exit()
+            err_msg = 'More than one segment, an error has occured.'
+            logging.error(err_msg)
+            raise RuntimeError(err_msg)
         times[key] = segs[0]
 
     return times
@@ -374,12 +372,10 @@ def load_triggers(trig_file, vetoes):
 # * Function to calculate the antenna response F+^2 + Fx^2
 # * Function to calculate the antenna distance factor
 # =============================================================================
-# TODO: the call, e.g., Detector("H1", reference_time=None) will not always
-# work because we are on Python 2.7 and therefore on an old version of astropy
-# which cannot download recent enough IERS tables. TEMPORARILY use the
-# default time (GW150914) as reference, thus approximating the sidereal time.
-# TODO: would getting rid of get_antenna_factors slow things down?
-#       It is used only in here.
+# The call, e.g., Detector("H1", reference_time=None), will not always work in
+# Python 2.7 as is needs an old version of astropy which cannot download
+# recent enough IERS tables. TEMPORARILY use the default time (GW150914) as
+# reference, thus approximating the sidereal time.
 def get_antenna_factors(antenna, ra, dec, geocent_time):
     """Returns the antenna responses F+ and Fx of an IFO (passed as pycbc
     Detector type) at a given sky location and time."""
@@ -416,8 +412,6 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
 
 # =============================================================================
 # Function to calculate the detection statistic of a list of triggers
-# TODO: where is the null SNR cut? get_bestnr reweights the SNR by null SNR
-# (null_thresh[0], really): where is null_thresh[1] used?
 # =============================================================================
 def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
                 sngl_snr_threshold=4., chisq_threshold=None,
@@ -492,7 +486,7 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
                 err_msg = "Chisq not calculated for trigger with end time "
                 err_msg += "%s and snr %s" % (trig.get_end(), trig.snr)
                 logging.error(err_msg)
-                sys.exit()
+                raise RuntimeError(err_msg)
 
     return bestnr
 
@@ -517,7 +511,6 @@ def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
         # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
-        # TODO: below is a check we can possibly remove
         # Check the triggers are all in the analysed segment lists
         for trig in sorted_trigs[slide_id]:
             if trig.end_time not in curr_seg_list:
@@ -531,7 +524,7 @@ def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
                 err_msg = "Triggers found in input files not in the list of "
                 err_msg += "analysed segments. This should not happen."
                 logging.error(err_msg)
-                sys.exit()
+                raise RuntimeError(err_msg)
         # END OF CHECK #
 
         # The below line works like the inverse of .veto and only returns trigs
@@ -544,8 +537,6 @@ def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
 
 # =============================================================================
 # Extract basic trigger properties and store them as dictionaries
-# TODO: the for's can be made more Pythonic probably.
-# TODO: use argument to determine which properties to calculate?
 # =============================================================================
 def extract_basic_trig_properties(trial_dict, trigs, num_slides, seg_dict,
                                   opts):
@@ -557,7 +548,6 @@ def extract_basic_trig_properties(trial_dict, trigs, num_slides, seg_dict,
     logging.info("Triggers sorted.")
 
     # Local copies of variables entering the BestNR definition
-    # TODO: does this slow  things down?
     chisq_index = opts.chisq_index
     chisq_nhigh = opts.chisq_nhigh
     null_thresh = map(float, opts.null_snr_threshold.split(','))
@@ -675,7 +665,6 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
 
 # =============================================================================
 # Function to load timeslides
-# TODO: can this be made local?
 # =============================================================================
 def load_time_slides(xml_file):
     """Loads timeslides from PyGRB output file"""
@@ -694,14 +683,14 @@ def load_time_slides(xml_file):
         err_msg = "time_slide_ids list should start at zero and increase by "
         err_msg += "one for every element"
         logging.error(err_msg)
-        sys.exit()
+        raise RuntimeError(err_msg)
     # Check that the zero-lag slide has time_slide_id == 0.
     if not numpy.all(numpy.array(list(time_slide_list[0].values())) == 0):
         err_msg = "The zero-lag slide should have time_slide_id == 0 "
         err_msg += "but the first element of time_slide_list is "
         err_msg += "%s \n" % time_slide_list[0]
         logging.error(err_msg)
-        sys.exit()
+        raise RuntimeError(err_msg)
 
     return time_slide_list
 
@@ -724,20 +713,19 @@ def find_zero_lag_slide_id(slide_dict):
                     err_msg = 'zero_lag_slide_id was already assigned: there'
                     err_msg += 'seems to be more than one zero-lag slide!'
                     logging.error(err_msg)
-                    sys.exit()
+                    raise RuntimeError(err_msg)
 
     if zero_lag_slide_id is None:
         err_msg = 'Unable to assign zero_lag_slide_id: '
         err_msg += 'there seems to be no zero-lag slide!'
         logging.error(err_msg)
-        sys.exit()
+        raise RuntimeError(err_msg)
 
     return zero_lag_slide_id
 
 
 # =============================================================================
 # Function to load the segment dicitonary
-# TODO: Can this become local?
 # =============================================================================
 def load_segment_dict(xml_file):
     """Loads the segment dictionary """

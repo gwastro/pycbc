@@ -59,7 +59,7 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
         err_msg = "The parameter num_mc_injs is the number of Monte-Carlo "
         err_msg += "injections.  It must be an integer."
         logging.error(err_msg)
-        sys.exit()
+        raise TypeError(err_msg)
 
     only_found_injs = found_bestnr[:-1]
     all_injs = num_injections[:-1]
@@ -119,7 +119,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
     logging.error(err_msg)
-    sys.exit()
+    raise RuntimeError(err_msg)
 
 if (opts.found_file is None) and (opts.missed_file is None):
     do_injections = False
@@ -128,7 +128,7 @@ elif (opts.found_file) and opts.missed_file:
 else:
     err_msg = "Must provide both found and missed file if running injections."
     logging.error(err_msg)
-    sys.exit()
+    raise RuntimeError(err_msg)
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
@@ -492,8 +492,6 @@ if do_injections:
                       [np.abs(trig_time[zero_lag_slide_id]-t) < cluster_window]
         near_test[j] = ~((near_bestnr * glitch_check_fac > bestnr).any())
     # Apply the local test
-    # FIXME: putmask does not seem to work...
-    #np.putmask(found_excl, found_excl==True, near_test)
     c = 0
     for z, b in enumerate(found_excl):
         if found_excl[z]:

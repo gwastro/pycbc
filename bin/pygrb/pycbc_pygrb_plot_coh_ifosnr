@@ -147,9 +147,9 @@ if opts.veto_directory:
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
 ifo = opts.ifo
 if ifo is None:
-    msg = "Please specify an interferometer"
-    logging.error(msg)
-    sys.exit()
+    err_msg = "Please specify an interferometer"
+    logging.error(err_msg)
+    raise RuntimeError(err_msg)
 
 if opts.plot_title is None:
     opts.plot_title = '%s SNR vs Coherent SNR' % ifo

@@ -215,8 +215,9 @@ if opts.veto_directory:
 if opts.y_variable in ['standard', 'bank', 'auto']:
     veto_type = opts.y_variable
 else:
-    logging.error('Unrecognized option given with --y-variable')
-    sys.exit()
+    err_msg = 'Unrecognized option given with --y-variable'
+    logging.error(err_msg)
+    raise ValueError(err_msg)
 veto_type = opts.y_variable
 ifo = opts.ifo
 snr_type = 'snr'
@@ -225,8 +226,9 @@ snr_type = 'snr'
 use_sngl_ifo_snr = opts.use_sngl_ifo_snr
 if use_sngl_ifo_snr:
     if ifo is None:
-        logging.error("--ifo must be given when using --use-sngl-ifo-snr")
-        sys.exit()
+        err_msg = "--ifo must be given when using --use-sngl-ifo-snr"
+        logging.error(err_msg)
+        raise RuntimeError(err_msg)
     else:
         snr_type += '_sngl'
 # If this is false, network vetoes are used on the vertical axis
@@ -234,11 +236,13 @@ if use_sngl_ifo_snr:
 use_sngl_ifo_veto = opts.use_sngl_ifo_veto
 if use_sngl_ifo_veto:
     if ifo is None:
-        logging.error("--ifo must be given when using --use-sngl-ifo-veto")
-        sys.exit()
+        err_msg = "--ifo must be given when using --use-sngl-ifo-snr-veto"
+        logging.error(err_msg)
+        raise RuntimeError(err_msg)
     elif veto_type != 'standard':
-        logging.error("Single IFO values are available only for the standard chi-square")
-        sys.exit()
+        err_msg = "Single IFO values are available only for the standard chi-square"
+        logging.error(err_msg)
+        raise RuntimeError(err_msg)
     else:
         veto_type += '_sngl'
 
@@ -276,8 +280,9 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
 
 # Exit gracefully if the requested IFO is not available
 if ifo and ifo not in ifos:
-    logging.error("The IFO selected with --ifo is unavailable in the data.")
-    sys.exit()
+    err_msg = "The IFO selected with --ifo is unavailable in the data."
+    logging.error(err_msg)
+    raise RuntimeError(err_msg)
 
 # Extract trigger data
 trig_data = load_data(trig_file, vetoes, ifos, opts)
@@ -287,11 +292,13 @@ inj_data = load_data(inj_file, vetoes, ifos, opts, injections=True)
 
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:
-    logging.warn("No data to be plotted on the x-axis was found")
-    sys.exit()
+    err_msg = "No data to be plotted on the x-axis was found"
+    logging.err(err_msg)
+    raise RuntimeError(err_msg)
 if trig_data[veto_type] is None and inj_data[veto_type] is None:
-    logging.warn("No data to be plotted on the y-axis was found")
-    sys.exit()
+    err_msg = "No data to be plotted on the y-axis was found"
+    logging.err(err_msg)
+    raise RuntimeError(err_msg)
 
 # Generate plots
 logging.info("Plotting...")

@@ -49,26 +49,6 @@ __program__ = "pycbc_pygrb_pp_workflow"
 # =============================================================================
 # Functions
 # =============================================================================
-def file_from_workflow(workflow, trig_or_inj_file, tags=None):
-    """Function to create File object, here used for trigger/injection files"""
-
-    file_out = None
-    if trig_or_inj_file not in ['trig-file', 'inj-file']:
-        logging.error('Expecting trig-file or inj-file as an argument')
-        sys.exit()
-    file_out = workflow.cp.get('workflow', trig_or_inj_file)
-    file_out = _workflow.File.from_path(file_out)
-    if tags is None:
-        file_out.tags = []
-    else:
-        file_out.tags = tags
-    #trig_file.description='TRIGGER_FILE'
-    #trig_file.ifo_list=(['H1','L1','V1'])
-    #trig_file.segment = workflow.analysis_time
-    #inj_file.ifo_list=workflow.ifos
-
-    return file_out
-
 def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
                     ifo=None, inj_set=None, tags=None):
     """Adds a node for a plot of PyGRB results to the workflow"""
@@ -93,9 +73,6 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
     if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_coh_ifosnr',
                      'pygrb_plot_null_stats', 'pygrb_plot_skygrid',
                      'pygrb_plot_snr_timeseries']:
-        #FIXME: why won't this work?
-        #trig_file = file_from_workflow(workflow, 'trig-file')
-        #node.add_input_opt('--trig-file', trig_file)
         node.add_opt('--trig-file', workflow.cp.get('workflow', 'trig-file'))
     # Veto directory and category and segments directory
     node.add_opt('--veto-directory', workflow.cp.get('workflow', 'veto-directory'))
@@ -530,7 +507,6 @@ for inj_set in inj_sets:
     for inj_plot in inj_plots:
         y_qty, x_qty = inj_plot.split('_')
         ifos_to_loop = [None]
-        # FIXME: ensure that things don't break if x_qty == effsitedist
         if y_qty == 'effsitedist':
             ifos_to_loop = ifos
         for ifo in ifos_to_loop:
