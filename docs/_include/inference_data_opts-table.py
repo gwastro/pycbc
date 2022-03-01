@@ -18,12 +18,8 @@
 
 """Prints an RST table of data options for inference models.
 """
-from __future__ import (print_function, absolute_import)
-try:
-    from StringIO import StringIO
-except ModuleNotFoundError:  # python 3
-    from io import StringIO
 
+from io import StringIO
 import re
 import textwrap
 
@@ -188,7 +184,7 @@ while skip:
     line = fp.readline()
     m = regx_newgroup.match(line)
     if m is not None:
-        skip = m.group('msg') != 'optional arguments:'
+        skip = m.group('msg') not in ['optional arguments:', 'options:']
 
 # advance past the 'optional arguments:' and the 'help' line
 line = fp.readline()

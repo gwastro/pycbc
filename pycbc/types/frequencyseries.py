@@ -38,15 +38,6 @@ class FrequencySeries(Array):
         Sample data type.
     copy : boolean, optional
         If True, samples are copied to a new array.
-
-    Attributes
-    ----------
-    delta_f : float
-        Frequency spacing
-    epoch : lal.LIGOTimeGPS
-        Time at 0 index.
-    sample_frequencies : Array
-        Frequencies that each index corresponds to.
     """
 
     def __init__(self, initial_array, delta_f=None, epoch="", dtype=None, copy=True):
