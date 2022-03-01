@@ -2036,6 +2036,7 @@ def optimized_match(
     mask = numpy.logical_and(fmin <= frequencies, frequencies < fmax)
     waveform_1 = waveform_1[mask]
     waveform_2 = waveform_2[mask]
+    frequencies = frequencies[mask]
 
     if psd is not None:
         psd_arr = psd.numpy()
