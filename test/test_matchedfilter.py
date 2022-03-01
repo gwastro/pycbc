@@ -67,6 +67,8 @@ class TestMatchedFilter(unittest.TestCase):
             frequency_series*phase
         )
         
+        self.psd = FrequencySeries(2 * numpy.ones_like(frequency_series), 
+            delta_f=frequency_series.delta_f)
 
     def test_correlate (self):
         from pycbc.filter.matchedfilter import correlate
@@ -145,21 +147,52 @@ class TestMatchedFilter(unittest.TestCase):
                 self.filt_offset_subsample,
                 return_phase=True
             )
-            self.assertAlmostEqual(1., o, places=10)
-            self.assertAlmostEqual(5 + 1/2, i, places=4)
-            self.assertAlmostEqual(.3, ph, places=4)
-            
+            self._check_accuracy_subsample_offset(
+                o, i, ph
+            )
+
             # but the standard implementation is not correct 
             # even when checked to a much lower degree of accuracy:
             # the following tests are just a sanity check,
             # they can be removed
-            
+
             o2, _ = match(self.filt_highres, self.filt_offset_subsample)
             self.assertNotAlmostEqual(1., o2, places=7)
 
-            o3, _ = match(self.filt_highres, self.filt_offset_subsample, subsample_interpolation=True)
+            o3, _ = match(self.filt_highres, self.filt_offset_subsample, 
+                subsample_interpolation=True)
             self.assertNotAlmostEqual(1., o3, places=7)
 
+    def test_perfect_match_subsample_offset_bandlimited(self):
+        with self.context:
+            o, i, ph = optimized_match(
+                self.filt_highres,
+                self.filt_offset_subsample,
+                return_phase=True,
+                low_frequency_cutoff=20.,
+                high_frequency_cutoff=1500.
+            )
+            self._check_accuracy_subsample_offset(
+                o, i, ph
+            )
+
+    def test_perfect_match_subsample_offset_with_psd(self):
+        with self.context:
+            o, i, ph = optimized_match(
+                self.filt_highres,
+                self.filt_offset_subsample,
+                return_phase=True,
+                psd=self.psd
+            )
+            self._check_accuracy_subsample_offset(
+                o, i, ph
+            )
+
+
+    def _check_accuracy_subsample_offset(self, o, i, ph):
+        self.assertAlmostEqual(1.0, o, places=10)
+        self.assertAlmostEqual(5 + 1 / 2, i, places=4)
+        self.assertAlmostEqual(0.3, ph, places=4)        
 
     def test_imperfect_match(self):
         with self.context:
