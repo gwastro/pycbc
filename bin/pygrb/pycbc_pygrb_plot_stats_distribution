@@ -16,14 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# =============================================================================
-# Preamble
-# =============================================================================
 
 """
 Plot distribution of BestNR/SNR/SNR after cuts of triggers in a PyGRB run.
 """
 
+# =============================================================================
+# Preamble
+# =============================================================================
 import os
 import logging
 import sys
@@ -48,10 +48,7 @@ __program__ = "pycbc_pygrb_plot_stats_distribution"
 # =============================================================================
 # Main script starts here
 # =============================================================================
-description = 'Efficiency calculator for the triggered search (PyGRB).'
-usage = __program__ + ' [--options]'
-
-parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file")

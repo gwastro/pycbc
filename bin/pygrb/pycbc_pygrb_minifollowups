@@ -16,14 +16,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# =============================================================================
-# Preamble
-# =============================================================================
-
 """
 Temporary script to produce qscans of loudest triggers/missed injections
 """
 
+# =============================================================================
+# Preamble
+# =============================================================================
 import os
 import argparse
 import logging
@@ -109,9 +108,6 @@ def make_timeseries_plot(workflow, snr_type, central_time, shift_time, out_dir,
 # =============================================================================
 # Main script starts here
 # =============================================================================
-description = 'Temporary script to produce qscans of loudest triggers/missed injections.'
-usage = __program__ + ' [--options]'
-
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument("-v", "--verbose", default=False, action="store_true",

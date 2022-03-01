@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+"""Produce the sky grid plot for the triggered search (PyGRB)."""
+
 # =============================================================================
 # Preamble
 # =============================================================================
@@ -65,10 +67,8 @@ def load_data(trig_file, vetoes):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-
-description = 'pycbc_pygrb_plot_skygrid will produce the sky grid plot.'
-usage = __program__ + ' [--options]'
-parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description, version=__version__)
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
+                                          version=__version__)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")

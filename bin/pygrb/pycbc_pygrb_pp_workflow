@@ -16,14 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+"""
+Workflow generator to run PyGRB offline post-processing.
+"""
+
 # =============================================================================
 # Preamble
 # =============================================================================
-
-"""
-Workflow generator to run pygrb offline post-processing.
-"""
-
 import sys
 import socket
 import logging
@@ -283,8 +283,7 @@ def setup_pygrb_minifollowups(workflow, followups_file, ifos,
 # Main script
 # =============================================================================
 # Use the standard workflow command-line parsing routines.
-_desc = __doc__[1:]
-parser = argparse.ArgumentParser(description=_desc)
+parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("-v", "--verbose", default=False, action="store_true",
                     help="Verbose output")

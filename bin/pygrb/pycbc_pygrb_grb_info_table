@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+"""Create GRB info table."""
+
 # =============================================================================
 # Preamble
 # =============================================================================
@@ -39,11 +41,8 @@ __program__ = "pycbc_pygrb_grb_info_table"
 # =============================================================================
 # Main script starts here
 # =============================================================================
-description = 'Create GRB info table.'
-usage = __program__ + ' [--options]'
-
-parser = argparse.ArgumentParser(usage=usage, description=description,
-             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser = argparse.ArgumentParser(description=__doc__, formatter_class=
+                                 argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument("--version", action="version", version=__version__)
 

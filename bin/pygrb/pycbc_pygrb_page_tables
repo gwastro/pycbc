@@ -16,14 +16,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+"""
+Processes PyGRB triggers and injections to create html results tables.
+"""
+
 # =============================================================================
 # Preamble
 # =============================================================================
-
-"""
-Gather information about quiet/missed injections in html tables.
-"""
-
 import sys
 import os
 import logging
@@ -181,10 +180,7 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
 # =============================================================================
 # Main script starts here
 # =============================================================================
-description = 'Processes PyGRB triggers and injections to create results tables.'
-usage = __program__ + ' [--options]'
-
-parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file")

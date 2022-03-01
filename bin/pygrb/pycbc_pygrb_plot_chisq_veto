@@ -16,14 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+"""
+Produces signal consistency plots of the form standard/bank/auto chi-square vs coherent SNR.
+"""
+
 # =============================================================================
 # Preamble
 # =============================================================================
-
-"""
-Plot standard/bank/auto chi-square vs coherent SNR for a PyGRB run.
-"""
-
 import sys
 import glob
 import os
@@ -177,10 +177,7 @@ def contour_colors(opts, new_snrs=None):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-description = 'Produces signal consistency plots of the form SNR versus veto.'
-usage = __program__ + ' [--options]'
-
-parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,

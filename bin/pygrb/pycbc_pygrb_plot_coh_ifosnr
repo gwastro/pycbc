@@ -16,14 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# =============================================================================
-# Preamble
-# =============================================================================
 
 """
 Plot single IFO SNR vs coherent SNR for a PyGRB run.
 """
 
+# =============================================================================
+# Preamble
+# =============================================================================
 import sys
 import glob
 import os
@@ -121,10 +121,7 @@ def plot_deviation(percentile, snr_grid, y, ax, style):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-description = 'Produces coherent SNR versus single IFO SNR plots.'
-usage = __program__ + ' [--options]'
-
-parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,

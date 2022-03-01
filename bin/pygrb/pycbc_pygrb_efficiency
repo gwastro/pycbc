@@ -16,14 +16,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+"""Determine efficiency and exclusion distances of a PyGRB run."""
+
 # =============================================================================
 # Preamble
 # =============================================================================
-
-"""
-Determine efficiency and exlusion distances of a PyGRB run.
-"""
-
 import sys
 import os
 import logging
@@ -83,10 +80,7 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-description = 'Efficiency calculator for the triggered search (PyGRB).'
-usage = __program__ + ' [--options]'
-
-parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file.")

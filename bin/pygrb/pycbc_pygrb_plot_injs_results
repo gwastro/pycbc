@@ -16,14 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+"""
+Plot found/missed injection properties for the triggered search (PyGRB).'
+"""
+
 # =============================================================================
 # Preamble
 # =============================================================================
-
-"""
-Plot found/missed injection properties.
-"""
-
 import sys
 import os
 import logging
@@ -204,10 +204,7 @@ def grab_triggers_subset(full_data, fap_mask, found_trigs):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-description = 'Efficiency calculator for the triggered search (PyGRB).'
-usage = __program__ + ' [--options]'
-
-parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file")

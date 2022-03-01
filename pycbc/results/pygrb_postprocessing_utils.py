@@ -51,10 +51,10 @@ except ImportError:
 # * Add to the parser object the arguments used for BestNR calculation
 # * Add to the parser object the arguments for found/missed injection files
 # =============================================================================
-def pygrb_initialize_plot_parser(usage='', description=None, version=None):
+def pygrb_initialize_plot_parser(description=None, version=None):
     """Sets up a basic argument parser object for PyGRB plotting scripts"""
 
-    parser = argparse.ArgumentParser(usage=usage, description=description,
+    parser = argparse.ArgumentParser(description=description,
                                      formatter_class=
                                      argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--version", action="version", version=version)
