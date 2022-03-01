@@ -2076,7 +2076,11 @@ def optimized_match(
 
     norm = numpy.sqrt(norm_1 * norm_2)
 
-    res = minimize_scalar(to_minimize, method="brent", bracket=(-delta_t, delta_t))
+    res = minimize_scalar(
+        to_minimize,
+        method="brent",
+        bracket=(-delta_t, delta_t)
+    )
     m, angle = product_offset(res.x)
 
     if return_phase:
