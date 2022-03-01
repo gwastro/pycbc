@@ -290,11 +290,11 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
 
     # make search summary table
     search_summary_table = lsctables.New(lsctables.SearchSummaryTable)
-    search_summary = return_search_summary(start_time, end_time,
-                               len(sngl_inspiral_table), ifos, **kwargs)
+    search_summary = return_search_summary(
+        start_time, end_time, len(sngl_inspiral_table), ifos
+    )
     search_summary_table.append(search_summary)
     outdoc.childNodes[0].appendChild(search_summary_table)
 
     # write the xml doc to disk
-    ligolw_utils.write_filename(outdoc, outputFile,
-                                gz=outputFile.endswith('.gz'))
+    ligolw_utils.write_filename(outdoc, outputFile)

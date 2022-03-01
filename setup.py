@@ -54,7 +54,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'ligo-segments',
                       'tqdm',
                       'gwdatafind',
-                      'pegasus-wms >= 5.0.1',
+                      'pegasus-wms.api >= 5.0.1',
                       'python-ligo-lw >= 1.7.0'
                       ]
 
