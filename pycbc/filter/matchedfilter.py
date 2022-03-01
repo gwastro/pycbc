@@ -2007,11 +2007,17 @@ def optimized_match(
         Phase to rotate complex waveform to get the match, if desired.
     """
 
-    from scipy import integrate
     from scipy.optimize import minimize_scalar
 
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
+    
+    assert numpy.isclose(htilde.delta_f, stilde.delta_f)
+    delta_f = stilde.delta_f
+
+    assert numpy.isclose(htilde.delta_t, stilde.delta_t)
+    delta_t = stilde.delta_t
+
 
     # a first time shift to get in the nearby region;
     # then the optimization is only used to move to the
@@ -2025,26 +2031,29 @@ def optimized_match(
         high_frequency_cutoff=high_frequency_cutoff,
         return_phase=True
     )
-    stilde = stilde.cyclic_time_shift(-max_id * stilde.delta_t)
+    
+    stilde = stilde.cyclic_time_shift(-max_id * delta_t)
 
     frequencies = stilde.sample_frequencies.numpy()
     waveform_1 = htilde.numpy()
     waveform_2 = stilde.numpy()
-    fmin = low_frequency_cutoff if low_frequency_cutoff is not None else -numpy.inf
-    fmax = high_frequency_cutoff if high_frequency_cutoff is not None else numpy.inf
 
-    mask = numpy.logical_and(fmin <= frequencies, frequencies < fmax)
+    N = (len(stilde)-1) * 2
+    kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
+                                    high_frequency_cutoff, delta_f, N)
+    mask = slice(kmin, kmax)
+    
     waveform_1 = waveform_1[mask]
     waveform_2 = waveform_2[mask]
     frequencies = frequencies[mask]
 
     if psd is not None:
-        psd_arr = psd.numpy()
+        psd_arr = psd.numpy()[mask]
     else:
         psd_arr = numpy.ones_like(waveform_1)
 
     def product(a, b):
-        integral = integrate.trapezoid(numpy.conj(a) * b / psd_arr, x=frequencies)
+        integral = numpy.sum(numpy.conj(a) * b / psd_arr) * delta_f
         return 4 * abs(integral), numpy.angle(integral)
 
     def product_offset(dt):
@@ -2054,22 +2063,20 @@ def optimized_match(
     def to_minimize(dt):
         return -product_offset(dt)[0]
 
-    norm_1 = product(waveform_1, waveform_1)[0] if v1_norm is None else v1_norm
-    norm_2 = product(waveform_2, waveform_2)[0] if v2_norm is None else v2_norm
+    norm_1 = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff) if v1_norm is None else v1_norm
+    norm_2 = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff) if v2_norm is None else v2_norm
 
-    norm = numpy.sqrt(
-        norm_1 * norm_2
-    )
+    norm = numpy.sqrt(norm_1 * norm_2)
 
     res = minimize_scalar(
-        to_minimize, method="brent", bracket=(-stilde.delta_t, stilde.delta_t)
+        to_minimize, method="brent", bracket=(-delta_t, delta_t)
     )
     m, angle = product_offset(res.x)
 
     if return_phase:
-        return m / norm, res.x / stilde.delta_t + max_id, -angle
+        return m / norm, res.x / delta_t + max_id, -angle
     else:
-        return m / norm, res.x / stilde.delta_t + max_id
+        return m / norm, res.x / delta_t + max_id
 
 
 __all__ = ['match', 'optimized_match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
