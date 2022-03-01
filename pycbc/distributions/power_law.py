@@ -109,7 +109,7 @@ class UniformPowerLaw(bounded.BoundedDist):
     ----------
     dim : int
         The dimension of volume space. In the notation above `dim`
-        is :math:`n+1`. For a 3-dimensional sphere this is 3.      
+        is :math:`n+1`. For a 3-dimensional sphere this is 3.
     """
     name = "uniform_power_law"
     def __init__(self, dim=None, **params):

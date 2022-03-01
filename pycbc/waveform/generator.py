@@ -179,14 +179,14 @@ class BaseCBCGenerator(BaseGenerator):
     """Adds ability to convert from various derived parameters to parameters
     needed by the waveform generators.
     """
-    
+
     possible_args = set(parameters.td_waveform_params +
                         parameters.fd_waveform_params +
                         ['taper'])
-    """set: The set of names of arguments that may be used in the 
+    """set: The set of names of arguments that may be used in the
         `variable_args` or `frozen_params`.
     """
-                        
+
     def __init__(self, generator, variable_args=(), **frozen_params):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
@@ -596,7 +596,7 @@ class BaseFDomainDetFrameGenerator(object):
     @property
     def epoch(self):
         """The GPS start time of the frequency series returned by the generate
-        function. A time shift is applied to the waveform equal to tc-epoch. 
+        function. A time shift is applied to the waveform equal to tc-epoch.
         Update by using ``set_epoch``
         """
         return _lal.LIGOTimeGPS(self._epoch)
@@ -682,7 +682,7 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
      'L1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637a50>}
 
     """
-    
+
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
     """set(['tc', 'ra', 'dec', 'polarization']):
         The set of location parameters. These are not passed to the rFrame
@@ -815,7 +815,7 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
 
     """
     location_args = set(['tc', 'ra', 'dec'])
-    """ set(['tc', 'ra', 'dec']): 
+    """ set(['tc', 'ra', 'dec']):
         The set of location parameters. These are not passed to the rFrame
         generator class; instead, they are used to apply the detector response
         function and/or shift the waveform in time. The parameters are:
