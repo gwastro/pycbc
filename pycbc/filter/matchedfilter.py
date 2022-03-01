@@ -2011,13 +2011,12 @@ def optimized_match(
 
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
-    
+
     assert numpy.isclose(htilde.delta_f, stilde.delta_f)
     delta_f = stilde.delta_f
 
     assert numpy.isclose(htilde.delta_t, stilde.delta_t)
     delta_t = stilde.delta_t
-
 
     # a first time shift to get in the nearby region;
     # then the optimization is only used to move to the
@@ -2029,20 +2028,21 @@ def optimized_match(
         psd=psd,
         low_frequency_cutoff=low_frequency_cutoff,
         high_frequency_cutoff=high_frequency_cutoff,
-        return_phase=True
+        return_phase=True,
     )
-    
+
     stilde = stilde.cyclic_time_shift(-max_id * delta_t)
 
     frequencies = stilde.sample_frequencies.numpy()
     waveform_1 = htilde.numpy()
     waveform_2 = stilde.numpy()
 
-    N = (len(stilde)-1) * 2
-    kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
-                                    high_frequency_cutoff, delta_f, N)
+    N = (len(stilde) - 1) * 2
+    kmin, kmax = get_cutoff_indices(
+        low_frequency_cutoff, high_frequency_cutoff, delta_f, N
+    )
     mask = slice(kmin, kmax)
-    
+
     waveform_1 = waveform_1[mask]
     waveform_2 = waveform_2[mask]
     frequencies = frequencies[mask]
@@ -2063,14 +2063,20 @@ def optimized_match(
     def to_minimize(dt):
         return -product_offset(dt)[0]
 
-    norm_1 = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff) if v1_norm is None else v1_norm
-    norm_2 = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff) if v2_norm is None else v2_norm
+    norm_1 = (
+        sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)
+        if v1_norm is None
+        else v1_norm
+    )
+    norm_2 = (
+        sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
+        if v2_norm is None
+        else v2_norm
+    )
 
     norm = numpy.sqrt(norm_1 * norm_2)
 
-    res = minimize_scalar(
-        to_minimize, method="brent", bracket=(-delta_t, delta_t)
-    )
+    res = minimize_scalar(to_minimize, method="brent", bracket=(-delta_t, delta_t))
     m, angle = product_offset(res.x)
 
     if return_phase:
