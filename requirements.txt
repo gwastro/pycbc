@@ -41,6 +41,5 @@ dqsegdb >= 2.0.0
 
 # For building documentation
 Sphinx>=4.2.0
-numpydoc
 sphinx-rtd-theme
 sphinxcontrib-programoutput>=0.11
