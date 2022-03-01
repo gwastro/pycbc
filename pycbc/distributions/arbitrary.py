@@ -223,12 +223,6 @@ class FromFile(Arbitrary):
 
     Attributes
     ----------
-    name : 'fromfile'
-        The name of the distribution.
-    filename : str
-        The path to the file containing values for the parameter(s).
-    params : list
-        Parameters to read from file.
     norm : float
         The normalization of the multi-dimensional pdf.
     lognorm : float
@@ -253,6 +247,8 @@ class FromFile(Arbitrary):
 
     @property
     def filename(self):
+        """str: The path to the file containing values for the parameter(s).
+        """
         return self._filename
 
     def get_arrays_from_file(self, params_file, params=None):

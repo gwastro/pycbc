@@ -343,22 +343,6 @@ class BaseModel(object):
         the likelihood is most easily defined in. Since these are used solely
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
-
-    Properties
-    ----------
-    logjacobian :
-        Returns the log of the jacobian needed to go from the parameter space
-        of the ``variable_params`` to the sampling params.
-    logprior :
-        Returns the log of the prior.
-    loglikelihood :
-        A function that returns the log of the likelihood function.
-    logposterior :
-        A function that returns the log of the posterior.
-    loglr :
-        A function that returns the log of the likelihood ratio.
-    logplr :
-        A function that returns the log of the prior-weighted likelihood ratio.
     """
     name = None
 
