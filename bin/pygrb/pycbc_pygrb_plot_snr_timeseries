@@ -124,9 +124,9 @@ parser.add_argument("-t", "--trig-file", action="store",
 parser.add_argument('--central-time', type=float, default=None,
                     help="Center plot at the given GPS time. If omitted, "+
                     "use the GRB trigger time")
-parser.add_argument("-y", "--y-variable", default=None, help="Quantity " +
-                    "to plot on the vertical axis. Supported choices " +
-                    "are: coherent, single, reweighted, or null.")
+parser.add_argument("-y", "--y-variable", default=None,
+                    choices=['coherent', 'single', 'reweighted', 'null'],
+                    help="Quantity to plot on the vertical axis.")
 parser = ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
@@ -142,17 +142,11 @@ veto_files = []
 if opts.veto_directory:
     veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
-if opts.y_variable in ['coherent', 'single', 'reweighted', 'null']:
-    snr_type = opts.y_variable
-else:
-    err_msg = 'Unrecognized option given with --y-variable'
-    logging.error(err_msg)
-    raise ValueError(err_msg)
+snr_type = opts.y_variable
 ifo = opts.ifo
 if snr_type == 'single' and ifo is None:
     err_msg = "Please specify an interferometer for a single IFO plot"
-    logging.error(err_msg)
-    raise RuntimeError(err_msg)
+    parser.error(err_msg)
 
 logging.info("Imported and ready to go.")
 

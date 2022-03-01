@@ -28,7 +28,6 @@ import os
 import argparse
 import logging
 import h5py
-#from lal import GPSToUTC
 import numpy as np
 from pycbc import init_logging
 import pycbc.workflow.minifollowups as mini

@@ -21,7 +21,7 @@
 # =============================================================================
 
 """
-Determine efficiency and exlucion distances of a PyGRB run.
+Determine efficiency and exlusion distances of a PyGRB run.
 """
 
 import sys
@@ -48,12 +48,9 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_efficiency"
 
 
-# =============================================================================
-# Function to calculate the error bars and fraction of recovered injections
-# (used for efficiency/distance plots)
-# =============================================================================
 def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
-    """Calculates the fraction of recovered injections and its error bars"""
+    """Function to calculate the fraction of recovered injections and its
+    error bars (used for efficiency/sensitive distance plots)."""
 
     if not isinstance(num_mc_injs, int):
         err_msg = "The parameter num_mc_injs is the number of Monte-Carlo "
@@ -118,8 +115,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 # Check options
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
-    logging.error(err_msg)
-    raise RuntimeError(err_msg)
+    parser.error(err_msg)
 
 if (opts.found_file is None) and (opts.missed_file is None):
     do_injections = False
@@ -127,8 +123,7 @@ elif (opts.found_file) and opts.missed_file:
     do_injections = True
 else:
     err_msg = "Must provide both found and missed file if running injections."
-    logging.error(err_msg)
-    raise RuntimeError(err_msg)
+    parser.error(err_msg)
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
@@ -364,8 +359,9 @@ if do_injections:
         if sum(inj_sigma[ifo] != 0) == 0:
             logging.info("%s: sigmasq not set for any trigger.", ifo)
             if len(ifos) == 1:
-                msg = "This is a single ifo analysis. "
-                msg += "Setting sigmasq to unity for all triggers."
+                msg = "Since this is a single ifo analysis, sigmasq will be "
+                msg += "set to unity for all triggers in order to build the "
+                msg += "calibration errors."
                 logging.info(msg)
                 inj_sigma[ifo][:] = 1.
 

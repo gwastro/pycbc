@@ -226,8 +226,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 # Check options
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
-    logging.error(err_msg)
-    raise RuntimeError(err_msg)
+    parser.error(err_msg)
 
 # TODO: split this script into one that handles injections
 # and one that handles loudest on/off-source events?
@@ -243,8 +242,7 @@ output_files = [opts.quiet_found_injs_output_file,
                 opts.loudest_onsource_trig_h5_output_file]
 if output_files.count(None) == len(output_files):
     msg = "Please specify at least one output file location."
-    logging.error(msg)
-    raise RuntimeError(err_msg)
+    parser.error(msg)
 
 if opts.quiet_found_injs_output_file or opts.missed_found_injs_output_file or\
     opts.quiet_found_injs_h5_output_file:
@@ -252,8 +250,7 @@ if opts.quiet_found_injs_output_file or opts.missed_found_injs_output_file or\
     if (opts.found_file is None) and (opts.missed_file is None):
         err_msg = "Must provide both found and missed injections file "
         err_msg += "locations if processing injections."
-        logging.error(err_msg)
-        raise RuntimeError(err_msg)
+        parser.error(err_msg)
 else:
     do_injections = False
 
@@ -261,8 +258,7 @@ if opts.loudest_onsource_trig_output_file or opts.loudest_onsource_trig_h5_outpu
     if opts.onsource_file is None:
         err_msg = "Must provide the on-source file location to output its "
         err_msg += "loudest trigger information."
-        logging.error(err_msg)
-        raise RuntimeError(err_msg)
+        parser.error(err_msg)
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
@@ -495,8 +491,7 @@ if onsource_file:
 
     # Get trigs
     on_trigs = ppu.load_xml_table(onsource_file, "multi_inspiral")
-    msg = "%d onsource triggers loaded." % (len(on_trigs))
-    logging.info(msg)
+    logging.info("%d onsource triggers loaded.", len(on_trigs))
 
     # Separate off chirp mass column
     on_mchirp = on_trigs.get_column('mchirp')
@@ -562,10 +557,9 @@ if onsource_file:
     # Write to h5 file
     if lont_h5_outfile:
         logging.info("Writing loudest onsource trigger to h5 file.")
-        lont_h5_fp = h5py.File(lont_h5_outfile, 'w')
-        for i, key in enumerate(th):
-            lont_h5_fp.create_dataset(key, data=td[i])
-        lont_h5_fp.close()
+        with h5py.File(lont_h5_outfile, 'w') as lont_h5_fp:
+            for i, key in enumerate(th):
+                lont_h5_fp.create_dataset(key, data=td[i])
 
     # Write to html file
     if lont_outfile:
@@ -817,10 +811,9 @@ if do_injections:
     # Write to h5 file
     if qf_h5_outfile:
         logging.info("Writing %d quiet-found injections to h5 file.", len(td))
-        qf_h5_fp = h5py.File(qf_h5_outfile, 'w')
-        for i, key in enumerate(th):
-            qf_h5_fp.create_dataset(key, data=td[i])
-        qf_h5_fp.close()
+        with h5py.File(qf_h5_outfile, 'w') as qf_h5_fp:
+            for i, key in enumerate(th):
+                qf_h5_fp.create_dataset(key, data=td[i])
 
     # Write to html file
     if qf_outfile:

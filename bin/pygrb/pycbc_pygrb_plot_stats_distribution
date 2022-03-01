@@ -56,8 +56,8 @@ parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file")
 parser.add_argument("-x", "--x-variable", default=None, required=True,
-                    help="Quantity to plot on the horizontal axis. Supported "+
-                    "choices are: bestnr, snr, or snruncut.")
+                    choices=["bestnr", "snr", "snruncut"],
+                    help="Quantity to plot on the horizontal axis.")
 #parser.add_argument("-S", "--seed", action="store", type=int,
 #                    default=1234, help="Seed to initialize Monte Carlo.")
 parser = ppu.pygrb_add_bestnr_opts(parser)
@@ -68,16 +68,10 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 # Check options
 if opts.veto_directory and (opts.veto_category is None):
     err_msg = "Must supply veto category if applying vetoes."
-    logging.error(err_msg)
-    raise RuntimeError(err_msg)
+    parser.error(err_msg)
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
-
-if opts.x_variable not in ["bestnr", "snr", "snruncut"]:
-    err_msg = "--x-variable must be one of: bestnr, snr, snruncut."
-    logging.error(err_msg)
-    raise ValueError(err_msg)
 
 # Store options used multiple times in local variables
 trig_file = opts.offsource_file
@@ -231,8 +225,3 @@ save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
 plt.close()
 
 logging.info("Plots complete.")
-
-# USE THIS TO CHECK NOTHING IS BREAKING
-# REMOVE ONCE DONE CODING UP THIS SCRIPT
-#for stat in ["bestnr", "snr", "snruncut"]:
-np.savetxt('%s/%s_vals.txt' % (outdir, stat), data_dict[stat])

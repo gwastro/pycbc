@@ -148,8 +148,7 @@ if opts.veto_directory:
 ifo = opts.ifo
 if ifo is None:
     err_msg = "Please specify an interferometer"
-    logging.error(err_msg)
-    raise RuntimeError(err_msg)
+    parser.error(err_msg)
 
 if opts.plot_title is None:
     opts.plot_title = '%s SNR vs Coherent SNR' % ifo

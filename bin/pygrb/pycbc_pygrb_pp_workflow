@@ -86,9 +86,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
                         'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
                 node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
     # Injection file
-    if inj_set is not None:
-        if exec_name != 'pygrb_plot_injs_results':
-            node.add_opt('--inj-file', workflow.cp.get('injections-'+inj_set, 'inj-file'))
+    if inj_set is not None and exec_name != 'pygrb_plot_injs_results':
+        node.add_opt('--inj-file', workflow.cp.get('injections-'+inj_set, 'inj-file'))
     # IFO option
     if ifo:
         node.add_opt('--ifo', ifo)
@@ -107,9 +106,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
     else:
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--output-file', tags=extra_tags)
-        if exec_name in ['pygrb_plot_coh_ifosnr', 'pygrb_plot_null_stats']:
-            if 'zoomin' in tags:
-                node.add_opt('--zoom-in')
+        if exec_name in ['pygrb_plot_coh_ifosnr', 'pygrb_plot_null_stats'] and 'zoomin' in tags:
+            node.add_opt('--zoom-in')
     # Quantity to be displayed on the y-axis of the plot
     if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_null_stats', 'pygrb_plot_snr_timeseries']:
         node.add_opt('--y-variable', tags[0])

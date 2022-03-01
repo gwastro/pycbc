@@ -211,22 +211,22 @@ parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description,
                                           version=__version__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file")
+admitted_vars = ['mchirp', 'mtotal', 'q', 'distance',
+                 'eff_dist', 'eff_site_dist', 'time',
+                 'sky_error', 'ra', 'dec', 'incl',
+                 'cos_incl', 'abs_incl', 'cos_abs_incl',
+                 'spin1', 'spin1x', 'spin1y', 'spin1z',
+                 'spin2', 'spin2x', 'spin2y', 'spin2z',
+                 'effdist', 'effsitedist', 'skyerror',
+                 'cosincl', 'absincl', 'cosabsincl']
 parser.add_argument("-x", "--x-variable", default=None, required=True,
-                    help="Quantity to plot on the horizontal axis. Supported "+
-                    "choices are: mchirp, mtotal, q, distance, eff_dist, "+
-                    "eff_site_dist, time, sky_error, ra, dec, incl, "+
-                    "cos_incl, abs_incl, cos_abs_incl, "+
-                    "spin1, spin1x, spin1y, spin1z, "+
-                    "spin2, spin2x, spin2y, spin2z "+
-                    "(underscores may be omitted).")
+                    choices=admitted_vars,
+                    help="Quantity to plot on the horizontal axis. "+
+                    "(Underscores may be omitted in specifying this option).")
 parser.add_argument("-y", "--y-variable", default=None, required=True,
-                    help="Quantity to plot on the vertical axis. Supported "+
-                    "choices are: mchirp, mtotal, q, distance, eff_dist, "+
-                    "eff_site_dist, time, sky_error, ra, dec, incl, "+
-                    "cos_incl, abs_incl, cos_abs_incl, "+
-                    "spin1, spin1x, spin1y, spin1z, "+
-                    "spin2, spin2x, spin2y, spin2z "+
-                    "(underscores may be omitted).")
+                    choices=admitted_vars,
+                    help="Quantity to plot on the vertical axis. "+
+                    "(Underscores may be omitted in specifying this option).")
 parser.add_argument("--x-log", action="store_true",
                     help="Use log horizontal axis")
 parser.add_argument("--y-log", action="store_true",
@@ -253,33 +253,13 @@ if (opts.found_file is None) or (opts.missed_file is None):
     logging.error(err_msg)
     raise RuntimeError(err_msg)
 
-admitted_vars = ['mchirp', 'mtotal', 'q', 'distance',
-                 'eff_site_dist', 'eff_dist', 'time',
-                 'sky_error', 'ra', 'dec', 'incl',
-                 'cos_incl', 'abs_incl', 'cos_abs_incl',
-                 'spin1', 'spin1x', 'spin1y', 'spin1z',
-                 'spin2', 'spin2x', 'spin2y', 'spin2z']
-opts.x_variable = process_var_strings(opts.x_variable)
-if opts.x_variable in admitted_vars:
-    x_qty = opts.x_variable
-else:
-    err_msg = "Unrecognized option given with --x-variable"
-    logging.error(err_msg)
-    raise ValueError(err_msg)
-opts.y_variable = process_var_strings(opts.y_variable)
-if opts.y_variable in admitted_vars:
-    y_qty = opts.y_variable
-else:
-    err_msg = "Unrecognized option given with --y-variable"
-    logging.error(err_msg)
-    raise ValueError(err_msg)
+x_qty = process_var_strings(opts.x_variable)
+y_qty = process_var_strings(opts.y_variable)
 
-if 'eff_site_dist' in [opts.x_variable, opts.y_variable]:
-    if opts.ifo is None:
-        err_msg = "A value for --ifo must be provided for "
-        err_msg += "site specific effective distance"
-        logging.error(err_msg)
-        raise RuntimeError(err_msg)
+if 'eff_site_dist' in [x_qty, y_qty] and opts.ifo is None:
+    err_msg = "A value for --ifo must be provided for "
+    err_msg += "site specific effective distance"
+    parser.error(err_msg)
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
 

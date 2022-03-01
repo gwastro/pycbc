@@ -27,6 +27,7 @@ import pycbc.results
 import lal
 import numpy
 from datetime import datetime
+from pycbc import init_logging
 from pycbc.detector import Detector
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_dist_factor
 
@@ -71,10 +72,7 @@ parser.add_argument("--output-file", action="store",
 
 opts = parser.parse_args()
 
-level = logging.INFO if opts.verbose else logging.WARNING
-logging.basicConfig(format="%(asctime)s: %(levelname)s: %(message)s",
-                    level=level)
-
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 headers = []
 data = [[]]

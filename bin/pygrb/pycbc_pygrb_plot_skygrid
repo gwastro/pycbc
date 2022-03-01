@@ -27,6 +27,7 @@ import copy
 import logging
 from ligo.lw import lsctables
 import pycbc.version
+from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results.pygrb_plotting_utils import pygrb_shared_plot_setups
@@ -70,9 +71,7 @@ usage = __program__ + ' [--options]'
 parser = ppu.pygrb_initialize_plot_parser(usage=usage, description=description, version=__version__)
 opts = parser.parse_args()
 
-level = logging.INFO if opts.verbose else logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    level=level)
+init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")
 
 trig_file = os.path.abspath(opts.trig_file)
 inj_file = None

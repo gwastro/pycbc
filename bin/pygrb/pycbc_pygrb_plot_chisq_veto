@@ -187,9 +187,9 @@ parser.add_argument("-t", "--trig-file", action="store",
                     help="The location of the trigger file")
 parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
-parser.add_argument("-y", "--y-variable", required=True, help="Quantity " +
-                    "to plot on the vertical axis. Supported choices " +
-                    "are: standard, bank, or auto.")
+parser.add_argument("-y", "--y-variable", required=True,
+                    choices=['standard', 'bank', 'auto'],
+                    help="Quantity to plot on the vertical axis.")
 parser.add_argument("--use-sngl-ifo-snr", default=False,
                     action="store_true", help="Plots are vs single IFO " +
                     "SNR, rather than coherent SNR")
@@ -211,13 +211,6 @@ veto_files = []
 if opts.veto_directory:
     veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
-# Check that the y-axis variable was specified correctly
-if opts.y_variable in ['standard', 'bank', 'auto']:
-    veto_type = opts.y_variable
-else:
-    err_msg = 'Unrecognized option given with --y-variable'
-    logging.error(err_msg)
-    raise ValueError(err_msg)
 veto_type = opts.y_variable
 ifo = opts.ifo
 snr_type = 'snr'
@@ -227,22 +220,18 @@ use_sngl_ifo_snr = opts.use_sngl_ifo_snr
 if use_sngl_ifo_snr:
     if ifo is None:
         err_msg = "--ifo must be given when using --use-sngl-ifo-snr"
-        logging.error(err_msg)
-        raise RuntimeError(err_msg)
-    else:
-        snr_type += '_sngl'
+        parser.error(err_msg)
+    snr_type += '_sngl'
 # If this is false, network vetoes are used on the vertical axis
 # otherwise the veto is intended as a single IFO quantity
 use_sngl_ifo_veto = opts.use_sngl_ifo_veto
 if use_sngl_ifo_veto:
     if ifo is None:
         err_msg = "--ifo must be given when using --use-sngl-ifo-snr-veto"
-        logging.error(err_msg)
-        raise RuntimeError(err_msg)
+        parser.error(err_msg)
     elif veto_type != 'standard':
         err_msg = "Single IFO values are available only for the standard chi-square"
-        logging.error(err_msg)
-        raise RuntimeError(err_msg)
+        parser.error(err_msg)
     else:
         veto_type += '_sngl'
 
