@@ -118,8 +118,8 @@ def pygrb_add_injmc_opts(parser):
     for ifo in ["h1", "k1", "l1", "v1"]:
         parser.add_argument("--%s-cal-error" % ifo, action="store", type=float,
                             default=0, help="The standard deviation to use " +
-                            "when calculating the %s " + % ifo.upper() +
-                            "calibration amplitude error." )
+                            "when calculating the %s " % ifo.upper() +
+                            "calibration amplitude error.")
         parser.add_argument("--%s-dc-cal-error" % ifo, action="store",
                             type=float, default=1.0, help="The scaling " +
                             "factor to use when calculating the " +
@@ -521,8 +521,8 @@ def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
 
         # The below line works like the inverse of .veto and only returns trigs
         # that are within the segment specified by trial_dict[slide_id]
-        sorted_trigs[slide_id] = sorted_trigs[slide_id].\
-                                 vetoed(trial_dict[slide_id])
+        sorted_trigs[slide_id] = \
+            sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
 
     return sorted_trigs
 
