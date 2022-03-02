@@ -118,12 +118,12 @@ def pygrb_add_injmc_opts(parser):
     for ifo in ["h1", "k1", "l1", "v1"]:
         parser.add_argument("--%s-cal-error" % ifo, action="store", type=float,
                             default=0, help="The standard deviation to use " +
-                            "when calculating the %s calibration amplitude " +
-                            "error." % ifo.upper())
+                            "when calculating the %s " + % ifo.upper() +
+                            "calibration amplitude error." )
         parser.add_argument("--%s-dc-cal-error" % ifo, action="store",
                             type=float, default=1.0, help="The scaling " +
-                            "factor to use when calculating the %s " +
-                            "calibration amplitude error." % ifo.upper())
+                            "factor to use when calculating the " +
+                            "%s calibration amplitude error." % ifo.upper())
 
     return parser
 
