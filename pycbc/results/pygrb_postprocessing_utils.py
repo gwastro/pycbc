@@ -115,34 +115,15 @@ def pygrb_add_injmc_opts(parser):
     parser.add_argument("-w", "--waveform-error", action="store",
                         type=float, default=0, help="The standard deviation " +
                         "to use when calculating the waveform error.")
-    parser.add_argument("--h1-cal-error", action="store", type=float,
-                        default=0, help="The standard deviation to use when " +
-                        "calculating the H1 calibration amplitude error.")
-    parser.add_argument("--k1-cal-error", action="store", type=float,
-                        default=0, help="The standard deviation to use when " +
-                        "calculating the K1 calibration amplitude error.")
-    parser.add_argument("--l1-cal-error", action="store", type=float,
-                        default=0, help="The standard deviation to use when " +
-                        "calculating the L1 calibration amplitude error.")
-    parser.add_argument("--v1-cal-error", action="store", type=float,
-                        default=0, help="The standard deviation to use when " +
-                        "calculating the V1 calibration amplitude error.")
-    parser.add_argument("--h1-dc-cal-error", action="store",
-                        type=float, default=1.0, help="The scaling factor " +
-                        "to use when calculating the H1 calibration " +
-                        "amplitude error.")
-    parser.add_argument("--k1-dc-cal-error", action="store",
-                        type=float, default=1.0, help="The scaling factor " +
-                        "to use when calculating the K1 calibration " +
-                        "amplitude error.")
-    parser.add_argument("--l1-dc-cal-error", action="store",
-                        type=float, default=1.0, help="The scaling factor " +
-                        "to use when calculating the L1 calibration " +
-                        "amplitude error.")
-    parser.add_argument("--v1-dc-cal-error", action="store",
-                        type=float, default=1.0, help="The scaling factor " +
-                        "to use when calculating the V1 calibration " +
-                        "amplitude error.")
+    for ifo in ["h1", "k1", "l1", "v1"]:
+        parser.add_argument("--%s-cal-error" % ifo, action="store", type=float,
+                            default=0, help="The standard deviation to use " +
+                            "when calculating the %s calibration amplitude " +
+                            "error." % ifo.upper())
+        parser.add_argument("--%s-dc-cal-error" % ifo, action="store",
+                            type=float, default=1.0, help="The scaling " +
+                            "factor to use when calculating the %s " +
+                            "calibration amplitude error." % ifo.upper())
 
     return parser
 
@@ -323,6 +304,23 @@ def get_id_numbers(ligolw_table, column):
     return ids
 
 
+# =============================================================================
+# Function to build a dictionary (indexed by ifo) of time-slide vetoes
+# =============================================================================
+def slide_vetoes(vetoes, slide_dict, slide_id):
+    """Build a dictionary (indexed by ifo) of time-slide vetoes"""
+
+    # Copy vetoes
+    slid_vetoes = copy.deepcopy(vetoes)
+
+    # Slide them
+    ifos = vetoes.keys()
+    for ifo in ifos:
+        slid_vetoes[ifo].shift(-slide_dict[slide_id][ifo])
+
+    return slid_vetoes
+
+
 #
 # Used (also) in executables
 #
@@ -334,9 +332,6 @@ def load_triggers(trig_file, vetoes):
     """Loads triggers from PyGRB output file"""
 
     logging.info("Loading triggers...")
-
-    # Determine ifos
-    ifos = vetoes.keys()
 
     # Extract time-slides
     multis, slide_dict, _ = \
@@ -352,9 +347,8 @@ def load_triggers(trig_file, vetoes):
 
     # Time-slid vetoes
     for slide_id in range(num_slides):
-        slid_vetoes = copy.deepcopy(vetoes)
-        for ifo in ifos:
-            slid_vetoes[ifo].shift(-slide_dict[slide_id][ifo])
+        # Construct the ifo-indexed dictionary of slid veteoes
+        slid_vetoes = slide_vetoes(vetoes, slide_dict, slide_id)
 
         # Add time-slid triggers
         vets = slid_vetoes.union(slid_vetoes.keys())
@@ -445,12 +439,10 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
     # Bank and auto chi-squared cuts
     if not chisq_threshold:
         chisq_threshold = snr_threshold
-    bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
-                                           column='bank_chisq'))
-           < chisq_threshold] = 0
-    bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
-                                           column='cont_chisq'))
-           < chisq_threshold] = 0
+    for chisq in ['bank_chisq', 'cont_chisq']:
+        bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
+                                               column=chisq))
+               < chisq_threshold] = 0
 
     # Define IFOs for sngl cut
     ifos = map(str, trigs[0].get_ifos())
@@ -783,10 +775,8 @@ def construct_trials(num_slides, seg_dir, seg_dict, ifos, slide_dict, vetoes):
                                                slide_offset))
         seg_buffer.coalesce()
 
-        # Construct the ifo list
-        slid_vetoes = copy.deepcopy(vetoes)
-        for ifo in ifos:
-            slid_vetoes[ifo].shift(-slide_dict[slide_id][ifo])
+        # Construct the ifo-indexed dictionary of slid veteoes
+        slid_vetoes = slide_vetoes(vetoes, slide_dict, slide_id)
 
         # Construct trial list and check against buffer
         trial_dict[slide_id] = segments.segmentlist()
