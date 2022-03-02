@@ -151,7 +151,8 @@ class DistributionFunctionFromFile(External):
         column index of the density distribution. By default, the first column
         should be the values of a certain parameter, such as "mass", other
         columns should be the corresponding density values (as a function of
-        that parameter).
+        that parameter). If you add the name of the parameter in the first
+        row, please add the '#' at the beginning.
     \**kwargs :
         All other keyword args are passed to `scipy.integrate.quad` to control
         the numerical accuracy of the inverse CDF.
@@ -177,7 +178,7 @@ class DistributionFunctionFromFile(External):
         else:
             super().__init__(cdfinv=not None)
         self.params = params
-        self.data = np.loadtxt(file_path, unpack=True, skiprows=1)
+        self.data = np.loadtxt(fname=file_path, unpack=True, comments='#')
         self.column_index = int(column_index)
         self.epsabs = kwargs.get('epsabs', 1.49e-05)
         self.epsrel = kwargs.get('epsrel', 1.49e-05)
