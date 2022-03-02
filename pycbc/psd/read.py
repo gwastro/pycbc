@@ -48,7 +48,7 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
         raise ValueError('Lowest frequency in input data '
           ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
 
-    kmin = int(low_freq_cutoff / delta_f)
+    kmin = int(numpy.ceil(low_freq_cutoff / delta_f))
     flow = kmin * delta_f
 
     data_start = (0 if freq_data[0]==low_freq_cutoff else numpy.searchsorted(freq_data, flow) - 1)
@@ -60,6 +60,12 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     freq_data = freq_data[data_start:]
     noise_data = noise_data[data_start:]
 
+    if (length - 1) * delta_f > freq_data[-1]:
+        raise ValueError('Requested number of samples exceeds the highest '
+                         'available frequency in the input data. '
+                         f'(requested {(length - 1) * delta_f}, '
+                         f' available {freq_data[-1]})')
+
     flog = numpy.log(freq_data)
     slog = numpy.log(noise_data)
 
@@ -67,9 +73,6 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     psd = numpy.zeros(length, dtype=numpy.float64)
 
     vals = numpy.log(numpy.arange(kmin, length) * delta_f)
-    # Sometimes due to rounding errors, the endpoints in vals will fall below
-    # or above the interpolation range, so force them to be the same as flog.
-    vals[0], vals[-1] = flog[0], flog[-1]
     psd[kmin:] =  numpy.exp(psd_interp(vals))
 
     return FrequencySeries(psd, delta_f=delta_f)
