@@ -81,19 +81,19 @@ def _noreal(fn, self, *args):
 
 def force_precision_to_match(scalar, precision):
     if _numpy.iscomplexobj(scalar):
-        if precision is 'single':
+        if precision == 'single':
             return _numpy.complex64(scalar)
         else:
             return _numpy.complex128(scalar)
     else:
-        if precision is 'single':
+        if precision == 'single':
             return _numpy.float32(scalar)
         else:
             return _numpy.float64(scalar)
 
 def common_kind(*dtypes):
     for dtype in dtypes:
-        if dtype.kind is 'c':
+        if dtype.kind == 'c':
             return dtype
     return dtypes[0]
    
@@ -859,7 +859,7 @@ class Array(object):
         if isinstance(other,Array):
             _convert_to_scheme(other)
 
-            if self.kind is 'real' and other.kind is 'complex':
+            if self.kind == 'real' and other.kind == 'complex':
                 raise ValueError('Cannot set real value with complex')
 
             if isinstance(index,slice):          
@@ -1050,15 +1050,15 @@ class Array(object):
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):
-    if data.precision is 'single':
+    if data.precision == 'single':
         return float32
-    elif data.precision is 'double':
+    elif data.precision == 'double':
         return float64
 
 def complex_same_precision_as(data):
-    if data.precision is 'single':
+    if data.precision == 'single':
         return complex64
-    elif data.precision is 'double':
+    elif data.precision == 'double':
         return complex128
 
 @decorator

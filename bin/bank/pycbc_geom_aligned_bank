@@ -30,7 +30,6 @@ import argparse
 import tempfile
 import numpy
 import logging
-import distutils.spawn
 import h5py
 import configparser
 from scipy import spatial

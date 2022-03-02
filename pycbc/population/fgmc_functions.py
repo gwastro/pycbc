@@ -17,23 +17,12 @@ import bisect
 from itertools import chain as it_chain, combinations as it_comb
 import numpy as np
 
-from matplotlib import use
-use('Agg')
-from matplotlib import rcParams
 from matplotlib import pyplot as plt
 
 from pycbc import conversions as conv
 from pycbc import events
 from pycbc.events.coinc import mean_if_greater_than_zero as coinc_meanigz
 from pycbc.events import triggers
-
-rcParams.update({'axes.labelsize': 12,
-                 'font.size': 12,
-                 'legend.fontsize': 12,
-                 'xtick.labelsize': 12,
-                 'ytick.labelsize': 12,
-                 'text.usetex': False,
-                })
 
 
 def filter_bin_lo_hi(values, lo, hi):

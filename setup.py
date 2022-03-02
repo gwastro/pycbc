@@ -54,7 +54,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'ligo-segments',
                       'tqdm',
                       'gwdatafind',
-                      'pegasus-wms >= 5.0.1',
+                      'pegasus-wms.api >= 5.0.1',
                       'python-ligo-lw >= 1.7.0'
                       ]
 
@@ -123,8 +123,8 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.0.dev0'
-        vinfo.release = 'False'
+        vinfo.version = '2.0.2'
+        vinfo.release = 'True'
 
     with open('pycbc/version.py', 'wb') as f:
         f.write("# coding: utf-8\n".encode('utf-8'))
@@ -305,6 +305,7 @@ setup (
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
         'Topic :: Scientific/Engineering',

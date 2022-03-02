@@ -187,26 +187,6 @@ class BaseMCMC(object):
     * compute_acl(filename, \**kwargs)
         [`classmethod`] Should compute the autocorrelation length using
         the given filename. Also allows for other keyword arguments.
-
-    Attributes
-    ----------
-    p0
-    pos
-    nchains
-    niterations
-    checkpoint_interval
-    checkpoint_signal
-    target_niterations
-    target_eff_nsamples
-    thin_interval
-    max_samples_per_chain
-    thin_safety_factor
-    burn_in
-    effective_nsamples
-    acl
-    raw_acls
-    act
-    raw_acts
     """
     _lastclear = None  # the iteration when samples were cleared from memory
     _itercounter = None  # the number of iterations since the last clear

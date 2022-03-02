@@ -42,15 +42,6 @@ class TimeSeries(Array):
         Sample data type.
     copy : boolean, optional
         If True, samples are copied to a new array.
-
-    Attributes
-    ----------
-    delta_t
-    duration
-    start_time
-    end_time
-    sample_times
-    sample_rate
     """
 
     def __init__(self, initial_array, delta_t=None,
@@ -486,7 +477,7 @@ class TimeSeries(Array):
             Frequency series containing the estimated PSD.
         """
         from pycbc.psd import welch
-        seg_len = int(segment_duration * self.sample_rate)
+        seg_len = int(round(segment_duration * self.sample_rate))
         seg_stride = int(seg_len / 2)
         return welch(self, seg_len=seg_len,
                            seg_stride=seg_stride,
@@ -567,7 +558,7 @@ class TimeSeries(Array):
         """
         from pycbc.psd import interpolate, inverse_spectrum_truncation
         p = self.psd(segment_duration)
-        samples = int(p.sample_rate * segment_duration)
+        samples = int(round(p.sample_rate * segment_duration))
         p = interpolate(p, delta_f)
         return inverse_spectrum_truncation(p, samples,
                                            low_frequency_cutoff=flow,
@@ -610,7 +601,7 @@ class TimeSeries(Array):
         # Estimate the noise spectrum
         psd = self.psd(segment_duration, **kwds)
         psd = interpolate(psd, self.delta_f)
-        max_filter_len = int(max_filter_duration * self.sample_rate)
+        max_filter_len = int(round(max_filter_duration * self.sample_rate))
 
         # Interpolate and smooth to the desired corruption length
         psd = inverse_spectrum_truncation(psd,

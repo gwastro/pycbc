@@ -207,13 +207,6 @@ class BoundedDist(object):
         The keyword arguments should provide the names of parameters and their
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
     """
     def __init__(self, **params):
         # convert input bounds to Bounds class, if necessary
@@ -234,10 +227,12 @@ class BoundedDist(object):
 
     @property
     def params(self):
+        """list of strings: The list of parameter names."""
         return self._params
 
     @property
     def bounds(self):
+        """dict: A dictionary of the parameter names and their bounds."""
         return self._bounds
 
     def __contains__(self, params):

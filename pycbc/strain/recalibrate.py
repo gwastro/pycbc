@@ -182,11 +182,6 @@ class PhysicalModel(object):
     """ Class for adjusting time-varying calibration parameters of given
     strain data.
 
-    Attributes
-    ----------
-    name : 'physical_model'
-        The name of this calibration model.
-
     Parameters
     ----------
     strain : FrequencySeries

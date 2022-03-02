@@ -121,11 +121,11 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
         # Calculate the metric
         gs, unmax_metric_curr = calculate_metric(Js, logJs, loglogJs,
                                           logloglogJs, loglogloglogJs, mapping)
-        metric[item] = numpy.matrix(gs)
+        metric[item] = gs
         unmax_metric[item] = unmax_metric_curr
 
         # And the eigenvalues
-        evals[item],evecs[item] = numpy.linalg.eig(gs)
+        evals[item], evecs[item] = numpy.linalg.eig(gs)
 
         # Numerical error can lead to small negative eigenvalues.
         for i in range(len(evals[item])):
@@ -430,9 +430,8 @@ def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, \
     # How many dimensions in the parameter space?
     maxLen = len(mapping.keys())
 
-    metric = numpy.matrix(numpy.zeros(shape=(maxLen,maxLen),dtype=float))
-    unmax_metric = numpy.matrix(numpy.zeros(shape=(maxLen+1,maxLen+1),
-                                                                  dtype=float))
+    metric = numpy.zeros(shape=(maxLen,maxLen), dtype=float)
+    unmax_metric = numpy.zeros(shape=(maxLen+1,maxLen+1), dtype=float)
 
     for i in range(16):
         for j in range(16):
