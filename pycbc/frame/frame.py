@@ -102,8 +102,8 @@ def locations_to_cache(locations, latest=False):
     Parameters
     ----------
     locations : list
-        A list of strings containing files, globs, or cache files used to build
-    a combined lal cache file object.
+        A list of strings containing files, globs, or cache files used to
+        build a combined lal cache file object.
     latest : Optional, {False, Boolean}
         Only return a cache with the most recent frame in the locations.
         If false, all results are returned.
@@ -112,7 +112,7 @@ def locations_to_cache(locations, latest=False):
     -------
     cache : lal.Cache
         A cumulative lal cache object containing the files derived from the
-    list of locations
+        list of locations.
     """
     cum_cache = lal.Cache()
     for source in locations:
@@ -126,6 +126,8 @@ def locations_to_cache(locations, latest=False):
                     return os.path.getctime(fn)
                 except OSError:
                     return 0
+            if not flist:
+                raise ValueError('no frame or cache files found in ' + source)
             flist = [max(flist, key=relaxed_getctime)]
 
         for file_path in flist:

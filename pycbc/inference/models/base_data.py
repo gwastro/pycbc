@@ -65,18 +65,6 @@ class BaseDataModel(BaseModel):
     \**kwargs :
         All other keyword arguments are passed to ``BaseModel``.
 
-    Attributes
-    ----------
-    data : dict
-        The data that the class was initialized with.
-    detectors : list
-        List of detector names used.
-    lognl :
-        Returns the log likelihood of the noise.
-    loglr :
-        Returns the log of the likelihood ratio.
-    logplr :
-        Returns the log of the prior-weighted likelihood ratio.
 
     See ``BaseModel`` for additional attributes and properties.
     """
@@ -92,7 +80,7 @@ class BaseDataModel(BaseModel):
 
     @property
     def data(self):
-        """Dictionary mapping detector names to data."""
+        """dict: Dictionary mapping detector names to data."""
         return self._data
 
     @data.setter
@@ -152,7 +140,7 @@ class BaseDataModel(BaseModel):
 
     @property
     def detectors(self):
-        """Returns the detectors used."""
+        """list: Returns the detectors used."""
         return list(self._data.keys())
 
     def write_metadata(self, fp):

@@ -396,10 +396,6 @@ h_iterations = 0
 # Break out of loop if max number of removals is reached
 # or no more triggers above specified IFAR threshold
 while True:
-    if (h_iterations == args.max_hierarchical_removal):
-        logging.info("Reached hierarchical removal limit of %d" %
-                     args.max_hierarchical_removal)
-        break
     logging.info("Hierarchical iteration %d" % h_iterations)
     bg_grps = {}
 
@@ -450,6 +446,11 @@ while True:
         for key in combined_fg_data.data:
             f['foreground_h%s/%s' % (h_iterations, key)] = \
                     combined_fg_data.data[key][:]
+
+    if (h_iterations == args.max_hierarchical_removal):
+        logging.info("Reached hierarchical removal limit of %d" %
+                     args.max_hierarchical_removal)
+        break
 
     max_each_combo = {combo: sep_fg_data[combo].data['ifar'][:].argmax()
                       for combo in all_ifo_combos

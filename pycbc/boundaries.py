@@ -207,15 +207,6 @@ class Bounds(object):
         Whether or not to make the bounds cyclic; default is False. If True,
         both the minimum and maximum bounds must be finite.
 
-    Attributes
-    ----------
-    min : _Bound instance
-        The minimum bound.
-    max : _Bound instance
-        The maximum bound.
-    cyclic : bool
-        Whether the bounds are cyclic or not.
-
     Examples
     --------
     Create a right-open interval between -1 and 1 and test whether various
@@ -329,14 +320,18 @@ class Bounds(object):
 
     @property
     def min(self):
+        """_bounds instance: The minimum bound """
         return self._min
 
     @property
     def max(self):
+        """_bounds instance: The maximum bound """
         return self._max
 
     @property
     def cyclic(self):
+        """bool: Whether the bounds are cyclic or not.
+        """
         return self._cyclic
 
     def __getitem__(self, ii):

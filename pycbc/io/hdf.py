@@ -726,6 +726,7 @@ class ForegroundTriggers(object):
         self._sort_arr = None
         self._template_id = None
         self._trig_ids = None
+        self.get_active_segments()
 
     @property
     def sort_arr(self):
@@ -794,6 +795,14 @@ class ForegroundTriggers(object):
                     raise
             return_dict[ifo] = (curr, np.logical_not(lgc))
         return return_dict
+
+    def get_active_segments(self):
+        self.active_segments = {}
+        for ifo in self.ifos:
+            starts = self.sngl_files[ifo].get_column('search/start_time')
+            ends = self.sngl_files[ifo].get_column('search/end_time')
+            self.active_segments[ifo] = veto.start_end_to_segments(starts,
+                                                                   ends)
 
     def get_end_time(self):
         ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
@@ -993,14 +1002,15 @@ class ForegroundTriggers(object):
 
         # Some fields are special cases:
 
+        logging.info("Outputting search results")
         time = self.get_end_time()
-        ofd.create_dataset('end_time', data=time, dtype=np.float32)
+        ofd.create_dataset('time', data=time, dtype=np.float32)
 
-        far = 1. / self.get_coincfile_array('ifar')
-        ofd.create_dataset('false_alarm_rate', data=far, dtype=np.float32)
+        ifar = self.get_coincfile_array('ifar')
+        ofd.create_dataset('ifar', data=ifar, dtype=np.float32)
 
-        far_exc = 1. / self.get_coincfile_array('ifar_exc')
-        ofd.create_dataset('false_alarm_rate_exclusive', data=far_exc,
+        ifar_exc = self.get_coincfile_array('ifar_exc')
+        ofd.create_dataset('ifar_exclusive', data=ifar_exc,
                            dtype=np.float32)
 
         fap = self.get_coincfile_array('fap')
@@ -1016,6 +1026,7 @@ class ForegroundTriggers(object):
             vals = self.get_coincfile_array(field)
             ofd.create_dataset(field, data=vals, dtype=np.float32)
 
+        logging.info("Outputting template information")
         # Bank fields
         for field in ['mass1','mass2','spin1z','spin2z']:
             vals = self.get_bankfile_array(field)
@@ -1027,10 +1038,28 @@ class ForegroundTriggers(object):
 
         ofd.create_dataset('chirp_mass', data=mchirp, dtype=np.float32)
 
+        logging.info("Outputting single-trigger information")
+        logging.info("reduced chisquared")
+        chisq_vals_valid = self.get_snglfile_array_dict('chisq')
+        chisq_dof_vals_valid = self.get_snglfile_array_dict('chisq_dof')
+        for ifo in self.ifos:
+            chisq_vals = chisq_vals_valid[ifo][0]
+            chisq_valid = chisq_vals_valid[ifo][1]
+            chisq_dof_vals = chisq_dof_vals_valid[ifo][0]
+            rchisq = chisq_vals / (2. * chisq_dof_vals - 2.)
+            rchisq[np.logical_not(chisq_valid)] = -1.
+            ofd.create_dataset(ifo + '_chisq', data=rchisq,
+                               dtype=np.float64)
+
         # Single-detector fields
-        for field in ['chisq', 'chisq_dof', 'coa_phase', 'end_time',
-                      'sg_chisq', 'sigmasq']:
-            vals_valid = self.get_snglfile_array_dict(field)
+        for field in ['sg_chisq', 'end_time', 'sigmasq',
+                      'psd_var_val']:
+            logging.info(field)
+            try:
+                vals_valid = self.get_snglfile_array_dict(field)
+            except KeyError:
+                logging.info(field + " is not present in the "
+                             "single-detector files")
             for ifo in self.ifos:
                 vals = vals_valid[ifo][0]
                 valid = vals_valid[ifo][1]
@@ -1049,6 +1078,30 @@ class ForegroundTriggers(object):
             network_snr_sq[valid] += vals[valid] ** 2.0
         network_snr = np.sqrt(network_snr_sq)
         ofd.create_dataset('network_snr', data=network_snr, dtype=np.float32)
+
+        logging.info("Triggered detectors")
+        # This creates a n_ifos by n_events matrix, with the ifo letter
+        # if the event contains a trigger from the ifo, empty string if not
+        triggered_matrix = [[ifo[0] if v else ''
+                             for v in snr_vals_valid[ifo][1]]
+                            for ifo in self.ifos]
+        # This combines the ifo letters to make a single string per event
+        triggered_detectors = [''.join(triggered).encode('ascii')
+                               for triggered in zip(*triggered_matrix)]
+        ofd.create_dataset('trig', data=triggered_detectors,
+                           dtype='<S3')
+
+        logging.info("active detectors")
+        # This creates a n_ifos by n_events matrix, with the ifo letter
+        # if the ifo was active at the event time, empty string if not
+        active_matrix = [[ifo[0] if t in self.active_segments[ifo]
+                          else '' for t in time]
+                         for ifo in self.ifos]
+        # This combines the ifo letters to make a single string per event
+        active_detectors = [''.join(active_at_time).encode('ascii')
+                            for active_at_time in zip(*active_matrix)]
+        ofd.create_dataset('obs', data=active_detectors,
+                           dtype='<S3')
 
         ofd.close()
 

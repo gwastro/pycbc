@@ -47,17 +47,6 @@ class UniformAngle(uniform.Uniform):
         in [0,2PI). These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
 
-    Attributes
-    ----------
-    name : 'uniform_angle'
-        The name of this distribution.
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds, in radians.
-    domain : boundaries.Bounds
-        The domain of the distribution.
-
     Notes
     ------
     For more information, see Uniform.
@@ -196,15 +185,6 @@ class SinAngle(UniformAngle):
         `boundaries.Bounds` instances or tuples. The bounds must be
         in [0,PI]. These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
-
-    Attributes
-    ----------
-    name : 'sin_angle'
-        The name of this distribution.
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds, in radians.
     """
     name = 'sin_angle'
     _func = numpy.cos
@@ -267,15 +247,6 @@ class CosAngle(SinAngle):
         (optionally) their corresponding bounds, as either
         `boundaries.Bounds` instances or tuples. The bounds must be
         in [-PI/2, PI/2].
-
-    Attributes
-    ----------------
-    name : 'cos_angle'
-        The name of this distribution.
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds, in radians.
     """
     name = 'cos_angle'
     _func = numpy.sin
@@ -318,23 +289,6 @@ class UniformSolidAngle(bounded.BoundedDist):
         values are constrained to be in [0, 2pi) using cyclic boundaries prior
         to applying any other boundary conditions and prior to evaluating the
         pdf. Default is False.
-
-    Attributes
-    ----------
-    name : 'uniform_solidangle'
-        The name of the distribution.
-    bounds : dict
-        The bounds on each angle. The keys are the names of the polar and
-        azimuthal angles, the values are the minimum and maximum of each, in
-        radians. For example, if the distribution was initialized with
-        `polar_angle='theta', polar_bounds=(0,0.5)` then the bounds will have
-        `'theta': 0, 1.5707963267948966` as an entry.
-    params : list
-        The names of the polar and azimuthal angles.
-    polar_angle : str
-        The name of the polar angle.
-    azimuthal_angle : str
-        The name of the azimuthal angle.
     """
     name = 'uniform_solidangle'
     _polardistcls = SinAngle
@@ -360,14 +314,23 @@ class UniformSolidAngle(bounded.BoundedDist):
         self._bounds.update(self._azimuthaldist.bounds)
         self._params = sorted(self._bounds.keys())
 
+    @property
+    def bounds(self):
+        """dict: The bounds on each angle. The keys are the names of the polar
+        and azimuthal angles, the values are the minimum and maximum of each,
+        in radians. For example, if the distribution was initialized with
+        `polar_angle='theta', polar_bounds=(0,0.5)` then the bounds will have
+        `'theta': 0, 1.5707963267948966` as an entry."""
+        return self._bounds
 
     @property
     def polar_angle(self):
+        """str: The name of the polar angle."""
         return self._polar_angle
-
 
     @property
     def azimuthal_angle(self):
+        """str: The name of the azimuthal angle."""
         return self._azimuthal_angle
 
     def _cdfinv_param(self, param, value):

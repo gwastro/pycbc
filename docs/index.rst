@@ -79,9 +79,9 @@ Full detailed installation instructions which covers other installation cases:
    install_virtualenv
    install_lalsuite
 
-====================================================
+==================================================
 Parameter Estimation of Gravitational-wave Sources
-====================================================
+==================================================
 
 Users who want to create and run parameter estimation workflows should read the
 documentation at:
@@ -91,9 +91,9 @@ documentation at:
 
    inference
 
-==========================================
+========================================
 Searching for Gravitational-wave Signals
-==========================================
+========================================
 
 Users who want to create and run scientific workflows to search for compact
 binaries should read the documentation in the links at:
@@ -105,9 +105,9 @@ binaries should read the documentation in the links at:
    workflow/pycbc_make_coinc_search_workflow
    workflow/pygrb.rst
 
-===================================================
-Template Banks, Hardware Injections, and more...
-===================================================
+=============================================
+Template Banks, Hardware Injections, and more
+=============================================
 
 Users who are interested in tools that PyCBC provides for various other
 analysis tasks (e.g. template bank generation, hardware injections, and testing
@@ -121,10 +121,11 @@ template banks) should read the documentation at:
    banksim
    faithsim
    upload_to_gracedb
+   pycbc_condition_strain
 
-==========================================
+=====================================
 Extending PyCBC with external plugins
-==========================================
+=====================================
 
 Would you like to use a waveform model that PyCBC doesn't have? Or maybe
 you have your own waveform you'd like to use for a search, parameter estimation
@@ -209,9 +210,9 @@ Instructions for building the GitHub pages documentation are at:
 
    build_gh_pages
 
-===================
+==================
 Indexes and Tables
-===================
+==================
 
 * :ref:`modindex`
 * :ref:`genindex`

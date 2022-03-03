@@ -94,23 +94,11 @@ class BaseGaussianNoise(BaseDataModel):
 
     Attributes
     ----------
-    data : dict
-        Dictionary of detectors -> frequency-domain data.
     ignore_failed_waveforms : bool
         If True, points in parameter space that cause waveform generation to
         fail (i.e., they raise a ``FailedWaveformError``) will be treated as
         points with zero likelihood. Otherwise, such points will cause the
         model to raise a ``FailedWaveformError``.
-    low_frequency_cutoff
-    high_frequency_cutoff
-    kmin
-    kmax
-    psds
-    psd_segments
-    weight
-    whitened_data
-    normalize
-    lognorm
     """
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,

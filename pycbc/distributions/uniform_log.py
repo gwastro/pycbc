@@ -30,11 +30,6 @@ class UniformLog10(uniform.Uniform):
         The keyword arguments should provide the names of parameters and their
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
-
-    Attributes
-    ----------
-    name : "uniform_log10"
-        The name of this distribution.
     """
     name = "uniform_log10"
 

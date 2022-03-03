@@ -39,7 +39,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   ENV_OS="x86_64_rhel_8"
   yum -y install python38 python38-devel
   yum -y groupinstall "Development Tools"
-  yum -y install which
+  yum -y install which rsync
   yum clean all
   yum makecache
   yum -y install openssl-devel
@@ -60,7 +60,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
 
   echo -e "\\n>> [`date`] Upgrading pip and setuptools"
-  pip install --upgrade pip setuptools pytest
+  pip install --upgrade 'pip<22.0' setuptools pytest
   pip install six packaging appdirs mkl
 
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"

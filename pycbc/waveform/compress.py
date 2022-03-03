@@ -492,9 +492,6 @@ class CompressedWaveform(object):
 
     Attributes
     ----------
-    sample_points
-    amplitude
-    phase
     load_to_memory : bool
         Whether or not to load `sample_points`/`amplitude`/`phase` into memory
         the first time they are accessed, if they are hdf datasets. Can be

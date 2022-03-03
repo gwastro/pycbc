@@ -15,6 +15,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """Provides reference PSDs from LALSimulation.
+
+More information about how to use these can be found in the
+guide about :ref:`Analytic PSDs from lalsimulation`.
 """
 import numbers
 from pycbc.types import FrequencySeries

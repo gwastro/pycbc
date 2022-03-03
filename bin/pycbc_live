@@ -14,8 +14,8 @@ import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
 import os.path
 import itertools
 import platform
-import distutils
 import subprocess
+from shutil import which
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
@@ -291,7 +291,7 @@ class LiveEventManager(object):
                 flen = int(tlen / 2 + 1)
                 delta_f = bank.sample_rate / float(tlen)
                 cmd = 'timeout {} '.format(args.snr_opt_timeout)
-                exepath = distutils.spawn.find_executable('pycbc_optimize_snr')
+                exepath = which('pycbc_optimize_snr')
                 cmd += exepath + ' '
                 data_fils_str = '--data-files '
                 psd_fils_str = '--psd-files '
@@ -353,14 +353,26 @@ class LiveEventManager(object):
                 if self.enable_gracedb_upload:
                     cmd += '--enable-gracedb-upload '
 
-                cmd += '--cores {}'.format(self.fu_cores)
+                cmd += '--cores {} '.format(self.fu_cores)
+                if args.processing_scheme:
+                    # we will use the cores for multiple workers of the
+                    # optimization routine, so we force the processing scheme
+                    # to a single core here.  This may be enforcing some
+                    # assumptions about the optimal way to do FFTs on the
+                    # machine. However, the dominant cost of pycbc_optimize_snr
+                    # is expected to be in waveform generation, which is
+                    # unlikely to benefit from a processing scheme with more
+                    # than 1 thread anyway.
+                    opt_scheme = args.processing_scheme.split(':')[0]
+                    cmd += '--processing-scheme {}:1 '.format(opt_scheme)
 
-                log_fname = \
-                        fname.replace('.xml.gz', '_optimize_snr_log.dat')
+                log_fname = fname.replace('.xml.gz', '_optimize_snr.log')
 
-                cmd += '&> {} '.format(log_fname)
-                logging.info('Running %s', cmd)
-                subprocess.Popen(cmd, shell=True)
+                logging.info('Running %s with log to %s', cmd, log_fname)
+                with open(log_fname, "w") as logfile:
+                    subprocess.Popen(
+                        cmd, shell=True, stdout=logfile, stderr=logfile
+                    )
 
 
     def check_singles(self, results, data_reader, psds, f_low):
