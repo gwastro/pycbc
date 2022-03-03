@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Read a pycbc_imulti_inspiral HDF5 trigger file and check that it contains
+# Read a pycbc_multi_inspiral HDF5 trigger file and check that it contains
 # triggers compatible with mock GW170817-like injections
 # 2022 Andrew Williamson, Tito Dal Canton
 
