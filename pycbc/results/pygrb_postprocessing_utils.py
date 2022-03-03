@@ -36,10 +36,7 @@ try:
     from ligo import segments
     from ligo.lw import utils, lsctables, ligolw, table
     from ligo.segments.utils import fromsegwizard
-except ImportError:
-    pass
-try:
-    from pylal import MultiInspiralUtils
+    import pycbc.io.ligolw as pycbcligolw
 except ImportError:
     pass
 
@@ -204,8 +201,8 @@ def load_xml_table(file_name, table_name):
     """Load xml table from file."""
 
     xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
-                                  contenthandler=lsctables.use_in(
-                                      ligolw.LIGOLWContentHandler))
+                                  contenthandler=
+                                      pycbcligolw.LIGOLWContentHandler)
 
     return table.get_table(xml_doc, table_name)
 
@@ -335,7 +332,7 @@ def load_triggers(trig_file, vetoes):
 
     # Extract time-slides
     multis, slide_dict, _ = \
-        MultiInspiralUtils.ReadMultiInspiralTimeSlidesFromFiles([trig_file])
+        read_multiinspiral_timeslides_from_files([trig_file])
     num_slides = len(slide_dict)
     lsctables.MultiInspiralTable.loadcolumns =\
         [slot for slot in multis[0].__slots__ if hasattr(multis[0], slot)]
@@ -599,7 +596,7 @@ def extract_ifos(trig_file):
                                  lsctables.SearchSummaryTable.tableName)
 
     # Extract IFOs
-    ifos = sorted(map(str, search_summ[0].get_ifos()))
+    ifos = sorted(search_summ[0].instruments)
 
     return ifos
 
@@ -853,3 +850,54 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
                                            (1 + wf_dist_red))
 
     return inj_dist_mc
+
+
+def read_multiinspiral_timeslides_from_files(file_list):
+    """
+    Read time-slid multiInspiral tables from a list of files
+    """
+
+    multis = None
+    time_slides = []
+
+    for this_file in file_list:
+        doc = utils.load_filename(this_file,
+            gz=this_file.endswith("gz"), contenthandler= pycbcligolw.LIGOLWContentHandler)
+
+        # Extract the time slide table
+        time_slide_table = table.get_table(doc,
+              lsctables.TimeSlideTable.tableName)
+        slide_mapping = {}
+        curr_slides = {}
+        for slide in time_slide_table:
+            curr_id = int(slide.time_slide_id)
+            if curr_id not in curr_slides.keys():
+                curr_slides[curr_id] = {}
+                curr_slides[curr_id][slide.instrument] = slide.offset
+            elif slide.instrument not in curr_slides[curr_id].keys():
+                curr_slides[curr_id][slide.instrument] = slide.offset
+
+        for slide_id,offset_dict in curr_slides.items():
+            try:
+                # Is the slide already in the list and where?
+                offset_index = time_slides.index(offset_dict)
+                slide_mapping[slide_id] = offset_index
+            except ValueError:
+                # If not then add it
+                time_slides.append(offset_dict)
+                slide_mapping[slide_id] = len(time_slides) - 1
+
+        # Extract the multi inspiral table
+        try:
+            multi_inspiral_table = table.get_table(doc,
+                lsctables.MultiInspiralTable.tableName)
+            # Remap the time slide IDs
+            for multi in multi_inspiral_table:
+                newID = slide_mapping[int(multi.time_slide_id)]
+                multi.time_slide_id = ilwd.ilwdchar(\
+                                      "time_slide:time_slide_id:%d" % (newID))
+            if multis: multis.extend(multi_inspiral_table)
+            else: multis = multi_inspiral_table
+        except: raise
+
+    return multis,time_slides

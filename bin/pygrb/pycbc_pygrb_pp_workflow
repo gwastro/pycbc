@@ -33,12 +33,10 @@ import pycbc.version
 from pycbc import init_logging
 import pycbc.workflow as _workflow
 from pycbc.workflow.plotting import PlotExecutable
+from pycbc.workflow.core import resolve_url_to_file
+from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.results import create_versioning_page, layout, pygrb_postprocessing_utils
 from pycbc.results.versioning import save_fig_with_metadata
-from pycbc.workflow import pegasus_workflow as wdax
-from Pegasus import DAX3 as dax
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
 
 __author__ = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -227,8 +225,7 @@ def setup_pygrb_minifollowups(workflow, followups_file, ifos,
                                    '_'.join(tags) + '_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
 
-    config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
+    config_file = resolve_url_to_file(config_path)
 
     exe = _workflow.Executable(workflow.cp, 'pygrb_minifollowups',
                                ifos=ifos, out_dir=dax_output, tags=tags)
@@ -245,37 +242,24 @@ def setup_pygrb_minifollowups(workflow, followups_file, ifos,
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map',
                              '--output-map')
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt',
-                             '--transformation-catalog')
 
     name = node.output_files[0].name
+    assert(name.endswith('.dax'))
     map_file = node.output_files[1]
-    tc_file = node.output_files[2]
+    assert(map_file.name.endswith('.map'))
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
 
     workflow += node
 
-    # execute this in a sub-workflow
+    # Execute this in a sub-workflow
     fil = node.output_files[0]
-
-    # determine if a staging site has been specified
-    try:
-        staging_site = workflow.cp.get('workflow-minifollowups',
-                                       'staging-site')
-    except:
-        staging_site = None
-
-    job = dax.DAX(fil)
-    job.addArguments('--basename %s' \
-                     % os.path.splitext(os.path.basename(name))[0])
-    _workflow.Workflow.set_job_properties(job, map_file, tc_file,
-                                          staging_site=staging_site)
-    workflow._adag.addJob(job)
-    dep = dax.Dependency(parent=node._dax_node, child=job)
-    #dep = dax.Dependency(parent=workflow.as_job, child=job)
-    workflow._adag.addDependency(dep)
+    job = SubWorkflow(fil.name, is_planned=False)
+    job.set_subworkflow_properties(map_file,
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
+    job.add_into_workflow(workflow)
     logging.info('Leaving minifollowups module')
 
 
@@ -287,18 +271,15 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("-v", "--verbose", default=False, action="store_true",
                     help="Verbose output")
-parser.add_argument("--workflow-name", type=str, default='pygrb_offline_pp',
-                    help="Descriptive name of the analysis.")
-parser.add_argument("-d", "--output-dir", default=None,
-                    required=True, help="Path to output directory.")
 _workflow.add_workflow_command_line_group(parser)
+_workflow.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
 init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Create the workflow objects
 logging.info("Generating %s workflow", args.workflow_name)
-container = _workflow.Workflow(args, args.workflow_name)
+container = _workflow.Workflow(args, name=args.workflow_name)
 wflow = _workflow.Workflow(args, args.workflow_name + '-main')
 finalize_wflow = _workflow.Workflow(args, args.workflow_name + '-finalization')
 
@@ -638,8 +619,7 @@ _workflow.make_results_web_page(finalize_wflow, os.path.join(os.getcwd(), rdir.b
 container += wflow
 container += finalize_wflow
 
-dep = dax.Dependency(parent=wflow.as_job, child=finalize_wflow.as_job)
-container._adag.addDependency(dep)
+container.add_subworkflow_dependancy(wflow, finalize_wflow)
 
 container.save()
 logging.info("Dax written.")
