@@ -3,12 +3,13 @@
 # triggers compatible with mock GW170817-like injections
 # 2022 Andrew Williamson, Tito Dal Canton
 
-import logging
 import sys
+import logging
 import h5py
 import numpy as np
+from pycbc import init_logging
 
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.INFO)
+init_logging(True)
 gw170817_time = 1187008882
 end_times = (np.arange(3) - 1) * 300 + gw170817_time
 pols = ['standard', 'left', 'right', 'left+right']
@@ -29,8 +30,8 @@ for pol in pols:
         snrs[1] < 1.1 * refs[pol]
         )
     n = mask.sum()
-    result = 'Pass' if n == 3 else 'Fail'
-    if result == 'Fail':
+    result = 'PASS' if n == 3 else 'FAIL'
+    if result == 'FAIL':
         status = 1
-    logging.info('%s: %d triggers found for "%s" polarization', result, n, pol)
+    logging.info('"%s" polarization: %s (%d/3 triggers found)', pol, result, n)
 sys.exit(status)
