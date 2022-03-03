@@ -183,8 +183,8 @@ class DistributionFunctionFromFile(External):
             raise ValueError("Must provide the path to density function file.")
 
     def _pdf(self, x, **kwargs):
-        """Calculate and interpolate the PDF by using the given density function,
-        then return the corresponding value at the given x."""
+        """Calculate and interpolate the PDF by using the given density
+        function, then return the corresponding value at the given x."""
         if self.interp['pdf'] == callable:
             func_unnorm = scipy_interpolate.interp1d(
                 self.data[0], self.data[self.column_index])
