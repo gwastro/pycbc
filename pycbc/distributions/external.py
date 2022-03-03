@@ -158,11 +158,6 @@ class DistributionFunctionFromFile(External):
         the numerical accuracy of the inverse CDF.
         If not be provided, will use the default values in `self.__init__`.
 
-    Attributes
-    ----------
-    name : "external_func_fromfile"
-        The name of this distribution.
-
     Notes
     -----
     This class is different from `pycbc.distributions.arbitrary.FromFile`,
