@@ -60,8 +60,14 @@ parser.add_argument("--taper-template",
                     choices=["start", "end", "startend"],
                     help="For time-domain approximants, taper the start "
                          "and/or end of the waveform before FFTing.")
-parser.add_argument("--cluster-method", choices=["template", "window"])
-parser.add_argument("--cluster-window", type=float, default = -1,
+parser.add_argument("--cluster-method", choices=["template", "window"],
+                    default="window",
+                    help="Method to use when clustering triggers. 'window' - "
+                         "cluster within a fixed time window defined by the "
+                         "cluster-window option (default); or 'template' - "
+                         "cluster within windows defined by each template's "
+                         "chirp length.")
+parser.add_argument("--cluster-window", type=float, default=0,
                     help="Length of clustering window in seconds.")
 parser.add_argument("--bank-veto-bank-file", type=str)
 parser.add_argument("--chisq-bins", default=0)
@@ -284,13 +290,6 @@ with ctx:
             args.ra, args.dec, polarization=0, t_gps=t_gps)
     # Loop over templates
     for t_num, template in enumerate(bank):
-        for ifo in args.instruments:
-            if args.cluster_method == "window":
-                cluster_window = int(args.cluster_window * sample_rate)
-            elif args.cluster_method == "template":
-                cluster_window = int(template.chirp_length * sample_rate)
-            elif args.cluster_window == 0:
-                 cluster_window = int(0)
         # Loop over segments
         for s_num,stilde in enumerate(segments[args.instruments[0]]):
             stilde = {ifo : segments[ifo][s_num] for ifo in args.instruments}
@@ -542,6 +541,11 @@ with ctx:
                 event_mgr.add_template_events_to_network(
                     network_names,
                     [network_out_vals[n] for n in network_names])
+        # Now cluster
+        if args.cluster_method == "window":
+            cluster_window = int(args.cluster_window * sample_rate)
+        elif args.cluster_method == "template":
+            cluster_window = int(template.chirp_length * sample_rate)
         event_mgr.cluster_template_network_events(
             "time_index", "coherent_snr", cluster_window)
         event_mgr.finalize_template_events()
