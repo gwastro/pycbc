@@ -349,7 +349,7 @@ def null_snr(
 
 
 def reweight_snr_by_null(
-        network_snr, null_snr, coherent_snr, null_min=5.25, null_grad=0.2,
+        network_snr, null, coherent, null_min=5.25, null_grad=0.2,
         null_step=20.0):
     """Re-weight the detection statistic as a function of the null SNR.
     See Eq. 16 of Williamson et al. (2014) [arXiv:1410.6042].
@@ -358,9 +358,9 @@ def reweight_snr_by_null(
     ----------
     network_snr: numpy.ndarray
         Array containing SNR statistic to be re-weighted
-    null_snr: numpy.ndarray
+    null: numpy.ndarray
         Null SNR array
-    coherent_snr:
+    coherent:
         Coherent SNR array
 
     Returns
@@ -369,15 +369,16 @@ def reweight_snr_by_null(
         Re-weighted SNR for each trigger
     """
     downweight = (
-        ((null_snr > null_min - 1) & (coherent_snr <= null_step))
+        ((null > null_min - 1) & (coherent <= null_step))
         | (
-            (null_snr > (coherent_snr * null_grad + null_min - 1))
-            & (coherent_snr > null_step))
+            (null > (coherent * null_grad + null_min - 1))
+            & (coherent > null_step)
+            )
         )
     rw_fac = np.where(
-        coherent_snr > null_step,
-        1 + null_snr - (null_min - 1) - (coherent_snr - null_step) * null_grad,
-        1 + null_snr - (null_min - 1)
+        coherent > null_step,
+        1 + null - (null_min - 1) - (coherent - null_step) * null_grad,
+        1 + null - (null_min - 1)
         )
     rw_snr = np.where(downweight, network_snr / rw_fac, network_snr)
     return rw_snr
