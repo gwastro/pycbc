@@ -16,12 +16,14 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v2
       - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==1.9.0
+        run: python -m pip install cibuildwheel==2.3.1
 
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
           CIBW_BUILD: cp37-* cp38-* cp39-* cp310-*
+          CIBW_SKIP: "*musllinux*"
+          CIBW_ARCHS_MACOS: x86_64 arm64
       - uses: actions/upload-artifact@v2
         with:
           path: ./wheelhouse/*.whl
