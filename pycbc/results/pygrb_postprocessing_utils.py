@@ -122,8 +122,6 @@ def pygrb_add_injmc_opts(parser):
                             "factor to use when calculating the " +
                             "%s calibration amplitude error." % ifo.upper())
 
-    return parser
-
 
 def pygrb_add_bestnr_opts(parser):
     """Add to the parser object the arguments used for BestNR calculation."""
@@ -156,8 +154,6 @@ def pygrb_add_bestnr_opts(parser):
                         default=0.2, help="Rate the null SNR cut will " +
                         "increase above the threshold")
 
-    return parser
-
 
 def pygrb_add_fminjs_input_opts(parser):
     """Add to parser object the arguments for found/missed injection files."""
@@ -169,8 +165,6 @@ def pygrb_add_fminjs_input_opts(parser):
     parser.add_argument("-m", "--missed-file", action="store",
                         default=None,
                         help="Location of the missed injections file")
-
-    return parser
 
 
 # =============================================================================

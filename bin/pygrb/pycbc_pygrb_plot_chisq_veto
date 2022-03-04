@@ -193,7 +193,7 @@ parser.add_argument("--use-sngl-ifo-snr", default=False,
 parser.add_argument("--use-sngl-ifo-veto", default=False,
                     action="store_true", help="Single IFO veto values " +
                     "plotted, rather than network ones")
-parser = ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")

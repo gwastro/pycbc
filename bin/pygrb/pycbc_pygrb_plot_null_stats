@@ -122,7 +122,7 @@ parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
 parser.add_argument("-y", "--y-variable", default=None,
                     choices=['coincident', 'nullstat', 'overwhitened'],
                     help="Quantity to plot on the vertical axis.")
-parser = ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")

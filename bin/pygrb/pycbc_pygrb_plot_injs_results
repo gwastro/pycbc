@@ -233,8 +233,8 @@ group.add_argument("--found-missed", action="store_true",
                    help="Plot found injections over missed injections.")
 group.add_argument("--missed-found", action="store_false",
                    help="Plot missed injections over found injections.")
-parser = ppu.pygrb_add_fminjs_input_opts(parser)
-parser = ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_fminjs_input_opts(parser)
+ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")

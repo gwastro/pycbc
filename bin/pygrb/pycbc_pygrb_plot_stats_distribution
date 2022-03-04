@@ -57,7 +57,7 @@ parser.add_argument("-x", "--x-variable", default=None, required=True,
                     help="Quantity to plot on the horizontal axis.")
 #parser.add_argument("-S", "--seed", action="store", type=int,
 #                    default=1234, help="Seed to initialize Monte Carlo.")
-parser = ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")

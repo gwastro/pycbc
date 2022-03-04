@@ -99,9 +99,9 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
-parser = ppu.pygrb_add_fminjs_input_opts(parser)
-parser = ppu.pygrb_add_injmc_opts(parser)
-parser = ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_fminjs_input_opts(parser)
+ppu.pygrb_add_injmc_opts(parser)
+ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
