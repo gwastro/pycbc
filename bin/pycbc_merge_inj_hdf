@@ -65,7 +65,7 @@ if __name__ == '__main__':
         injections = pycbc.inject.InjectionSet(inj_file)
 
         inj_table = injections.table
-        inj_table = inj_table[np.sort(inj_table.dtype.fields.keys())]
+        inj_table = inj_table[np.sort(list(inj_table.dtype.fields.keys()))]
         injection_tables.append(injections.table)
 
         inj_dtypes = [inj_table.dtype.fields[k] for k in \
