@@ -79,7 +79,6 @@ def _read_channel(channel, stream, start, duration):
     channel_type = lalframe.FrStreamGetTimeSeriesType(channel, stream)
     read_func = _fr_type_map[channel_type][0]
     d_type = _fr_type_map[channel_type][1]
-    print(start, duration)
     data = read_func(stream, channel, start, duration, 0)
     return TimeSeries(data.data.data, delta_t=data.deltaT, epoch=start,
                       dtype=d_type)

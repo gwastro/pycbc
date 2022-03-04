@@ -19,7 +19,11 @@ with h5py.File('GW170817_test_output.hdf', 'r') as f:
         f['network/reweighted_snr'][:],
         ]
 # search for compatible trigs
-mask = (abs(gw170817_time - snrs[0]) < 0.1)
+mask = (
+    (abs(gw170817_time - snrs[0]) < 0.1)
+    & (snrs[1] > 25)
+    & (snrs[2] > 25)
+    )
 n = mask.sum()
 status = 0
 if n > 0:
