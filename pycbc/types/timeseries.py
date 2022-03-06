@@ -42,15 +42,6 @@ class TimeSeries(Array):
         Sample data type.
     copy : boolean, optional
         If True, samples are copied to a new array.
-
-    Attributes
-    ----------
-    delta_t
-    duration
-    start_time
-    end_time
-    sample_times
-    sample_rate
     """
 
     def __init__(self, initial_array, delta_t=None,

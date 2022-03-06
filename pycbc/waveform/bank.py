@@ -251,8 +251,6 @@ class TemplateBank(object):
     has_compressed_waveforms : {False, bool}
         True if compressed waveforms are present in the the (hdf) file; False
         otherwise.
-    parameters : tuple
-        The parameters loaded from the input file. Same as `table.fieldnames`.
     indoc : {None, xmldoc}
         If an xml file was provided, an in-memory representation of the xml.
         Otherwise, None.
@@ -344,6 +342,9 @@ class TemplateBank(object):
 
     @property
     def parameters(self):
+        """tuple: The parameters loaded from the input file.
+        Same as `table.fieldnames`.
+        """
         return self.table.fieldnames
 
     def ensure_hash(self):

@@ -94,22 +94,6 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
         The keyword arguments should provide the names of parameters and their
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
-
-    Attributes
-    ----------
-    name : 'mchirp_from_uniform_mass1_mass2'
-        The name of this distribution.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
     """
 
     name = "mchirp_from_uniform_mass1_mass2"
@@ -137,22 +121,6 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
 
-    Attributes
-    ----------
-    name : 'q_from_uniform_mass1_mass2'
-        The name of this distribution.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
-
     Examples
     --------
 
@@ -177,10 +145,12 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
 
     @property
     def norm(self):
+        """float: The normalization of the multi-dimensional pdf."""
         return self._norm
 
     @property
     def lognorm(self):
+        """float: The log of the normalization."""
         return self._lognorm
 
     def _pdf(self, **kwargs):
