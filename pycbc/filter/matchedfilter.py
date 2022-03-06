@@ -1148,7 +1148,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
     kmax: int
     """
     if flow:
-        kmin = int(flow / df)
+        kmin = int(numpy.ceil(flow / df))
         if kmin < 0:
             err_msg = "Start frequency cannot be negative. "
             err_msg += "Supplied value and kmin {} and {}".format(flow, kmin)
@@ -1156,7 +1156,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
     else:
         kmin = 1
     if fhigh:
-        kmax = int(fhigh / df )
+        kmax = int(fhigh / df)
         if kmax > int((N + 1)/2.):
             kmax = int((N + 1)/2.)
     else:
