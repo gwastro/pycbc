@@ -680,7 +680,9 @@ class BaseModel(object):
         cp : WorkflowConfigParser
             Config file parser to read.
         variable_params : list
-            List of of model parameter names.
+            List of variable model parameter names.
+        static_params : dict
+            Dictionary of static model parameters and their values.
         prior_section : str
             Section to read prior(s) from.
         constraint_section : str

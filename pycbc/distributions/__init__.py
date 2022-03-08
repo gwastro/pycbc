@@ -184,6 +184,9 @@ def read_constraints_from_config(cp, transforms=None, static_args=None,
         An open config parser to read from.
     transforms : list, optional
         List of transforms to apply to parameters before applying constraints.
+    static_args : dict, optional
+        Dictionary of static parameters and their values to be applied
+        to constraints.
     constraint_section : str, optional
         The section to get the constraints from. Default is 'constraint'.
 
