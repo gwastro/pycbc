@@ -35,7 +35,7 @@ from pycbc.distributions.uniform_log import UniformLog10
 from pycbc.distributions.spins import IndependentChiPChiEff
 from pycbc.distributions.qnm import UniformF0Tau
 from pycbc.distributions.joint import JointDistribution
-from pycbc.distributions.external import External
+from pycbc.distributions.external import External, DistributionFunctionFromFile
 from pycbc.distributions.fixedsamples import FixedSamples
 from pycbc.distributions.mass import MchirpfromUniformMass1Mass2, \
                                      QfromUniformMass1Mass2
@@ -57,6 +57,7 @@ distribs = {
     UniformLog10.name : UniformLog10,
     UniformF0Tau.name : UniformF0Tau,
     External.name: External,
+    DistributionFunctionFromFile.name: DistributionFunctionFromFile,
     FixedSamples.name: FixedSamples,
     MchirpfromUniformMass1Mass2.name: MchirpfromUniformMass1Mass2,
     QfromUniformMass1Mass2.name: QfromUniformMass1Mass2
