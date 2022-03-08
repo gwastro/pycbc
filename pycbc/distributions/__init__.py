@@ -174,7 +174,7 @@ def read_params_from_config(cp, prior_section='prior',
     return variable_args, static_args
 
 
-def read_constraints_from_config(cp, transforms=None,
+def read_constraints_from_config(cp, transforms=None, static_args=None,
                                  constraint_section='constraint'):
     """Loads parameter constraints from a configuration file.
 
@@ -212,8 +212,8 @@ def read_constraints_from_config(cp, transforms=None,
                 except ValueError:
                     pass
             kwargs[key] = val
-        cons.append(constraints.constraints[name](constraint_arg,
-                                                  transforms=transforms,
-                                                  **kwargs))
+        cons.append(constraints.constraints[name](
+            constraint_arg, static_args=static_args, transforms=transforms,
+            **kwargs))
 
     return cons
