@@ -22,14 +22,21 @@ import h5py
 from pycbc import transforms
 from pycbc.io import record
 
-
 class Constraint(object):
     """Creates a constraint that evaluates to True if parameters obey
     the constraint and False if they do not.
     """
     name = "custom"
 
-    def __init__(self, constraint_arg, transforms=None, **kwargs):
+    def __init__(self, constraint_arg, static_args=None, transforms=None,
+            **kwargs):
+        static_args = (
+            {} if static_args is None
+            else dict(sorted(
+                static_args.items(), key=lambda x: len(x[0]), reverse=True))
+            )
+        for k, v in static_args.items():
+            constraint_arg = constraint_arg.replace(k, str(v))
         self.constraint_arg = constraint_arg
         self.transforms = transforms
         for kwarg in kwargs.keys():
