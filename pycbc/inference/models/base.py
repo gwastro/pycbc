@@ -671,7 +671,7 @@ class BaseModel(object):
         return kwargs
 
     @staticmethod
-    def prior_from_config(cp, variable_params, prior_section,
+    def prior_from_config(cp, variable_params, static_params, prior_section,
                           constraint_section):
         """Gets arguments and keyword arguments from a config file.
 
@@ -680,7 +680,9 @@ class BaseModel(object):
         cp : WorkflowConfigParser
             Config file parser to read.
         variable_params : list
-            List of of model parameter names.
+            List of variable model parameter names.
+        static_params : dict
+            Dictionary of static model parameters and their values.
         prior_section : str
             Section to read prior(s) from.
         constraint_section : str
@@ -695,7 +697,7 @@ class BaseModel(object):
         logging.info("Setting up priors for each parameter")
         dists = distributions.read_distributions_from_config(cp, prior_section)
         constraints = distributions.read_constraints_from_config(
-            cp, constraint_section)
+            cp, constraint_section, static_args=static_params)
         return distributions.JointDistribution(variable_params, *dists,
                                                constraints=constraints)
 
@@ -735,8 +737,9 @@ class BaseModel(object):
             cp, prior_section=prior_section, vargs_section=vparams_section,
             sargs_section=sparams_section)
         # get prior
-        prior = cls.prior_from_config(cp, variable_params, prior_section,
-                                      constraint_section)
+        prior = cls.prior_from_config(
+            cp, variable_params, static_params, prior_section,
+            constraint_section)
         args = {'variable_params': variable_params,
                 'static_params': static_params,
                 'prior': prior}
