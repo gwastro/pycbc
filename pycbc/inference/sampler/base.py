@@ -221,7 +221,7 @@ def create_new_output_file(sampler, filename, **kwargs):
         fp.write_sampler_metadata(sampler)
 
 
-def initial_dist_from_config(cp, variable_params):
+def initial_dist_from_config(cp, variable_params, static_params):
     r"""Loads a distribution for the sampler start from the given config file.
 
     A distribution will only be loaded if the config file has a [initial-\*]
@@ -246,7 +246,8 @@ def initial_dist_from_config(cp, variable_params):
         initial_dists = distributions.read_distributions_from_config(
             cp, section="initial")
         constraints = distributions.read_constraints_from_config(
-            cp, constraint_section="initial_constraint")
+            cp, constraint_section="initial_constraint",
+            static_args=static_params)
         init_dist = distributions.JointDistribution(
             variable_params, *initial_dists,
             **{"constraints": constraints})

@@ -68,7 +68,8 @@ class TestDistributions(unittest.TestCase):
         self.cp = WorkflowConfigParser.from_cli(self.opts)
         self.variable_args, self.static_args = \
             distributions.read_params_from_config(self.cp)
-        self.constraints = distributions.read_constraints_from_config(self.cp)
+        self.constraints = distributions.read_constraints_from_config(
+            self.cp, static_args=self.static_args)
 
         # read distributions
         self.dists = distributions.read_distributions_from_config(self.cp)
