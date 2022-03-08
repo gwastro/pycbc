@@ -34,7 +34,10 @@ import pycbc.version
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
-from ligo.lw import lsctables
+try:
+    from glue.ligolw import lsctables
+except ImportError:
+    pass
 
 plt.switch_backend('Agg')
 rc("image", cmap="cividis_r")
@@ -73,7 +76,7 @@ if not opts.newsnr_threshold:
 # Store options used multiple times in local variables
 trig_file = opts.offsource_file
 chisq_nhigh = opts.chisq_nhigh
-null_thresh = map(float, opts.null_snr_threshold.split(','))
+#null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
 stat = opts.x_variable
 
 # Set output directory

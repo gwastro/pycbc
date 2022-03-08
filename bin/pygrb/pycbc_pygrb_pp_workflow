@@ -324,10 +324,6 @@ logging.info("Created log file %s", wf_log_file.storage_path)
 # Read the configuration file
 # typecast str from command line to File instances
 #cp = configuration.WorkflowConfigParser(opts.pp_config_file)
-#cp_file_name = workflow_name + ".ini"
-#with open('inference.ini', 'w') as ff:
-#    cp.write(ff)
-#config_file = to_file('inference.ini')
 
 #
 # Plot sky grid

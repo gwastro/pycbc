@@ -34,7 +34,10 @@ from pycbc.detector import Detector
 from pycbc import init_logging
 import pycbc.results
 from pycbc.results import pygrb_postprocessing_utils as ppu
-from ligo.lw import lsctables
+try:
+    from glue.ligolw import lsctables
+except ImportError:
+    pass
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -46,13 +49,13 @@ __program__ = "pycbc_pygrb_page_tables"
 # Functions
 # =============================================================================
 def get_column(table, column_name):
-    """Wrapper for ligo.lw.lsctables.MultiInspiralTable.get_column
+    """Wrapper for glue.ligolw.lsctables.MultiInspiralTable.get_column
     method. Easier for h5py switch. Note: Must still replace
     .get_sigmasqs() and .get_snglsnr() methods throughout the scripts.
 
     Parameters
     ----------
-    table: ligo.lw.lsctables.MultiInspiralTable
+    table: glue.ligolw.lsctables.MultiInspiralTable
     column_name: str
 
     Returns
@@ -83,7 +86,7 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
     ----------
     inj_table: ligo.lw.lsctables.SimInspiralTable
     ifos: list
-    trig_table: ligo.lw.lsctables.MultiInspiralTable, optional
+    trig_table: glue.ligolw.lsctables.MultiInspiralTable, optional
     background_bestnrs: numpy.array, optional
         Used to compute FAP of quiet injections.
 
@@ -98,7 +101,7 @@ def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=
     # Local copies of variables entering the BestNR definition
     chisq_index = opts.chisq_index
     chisq_nhigh = opts.chisq_nhigh
-    null_thresh = map(float, opts.null_snr_threshold.split(','))
+    null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
     snr_thresh = opts.snr_threshold
     sngl_snr_thresh = opts.sngl_snr_threshold
     new_snr_thresh = opts.newsnr_threshold
@@ -282,7 +285,7 @@ sngl_snr_thresh = opts.sngl_snr_threshold
 new_snr_thresh = opts.newsnr_threshold
 null_grad_thresh = opts.null_grad_thresh
 null_grad_val = opts.null_grad_val
-null_thresh = map(float, opts.null_snr_threshold.split(','))
+null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
 upper_dist = opts.upper_inj_dist
 lower_dist = opts.lower_inj_dist
 num_bins = opts.num_bins
@@ -432,7 +435,7 @@ if lofft_outfile or lofft_h5_outfile:
 
     # To ensure desired formatting in the h5 file and html table:
     # 1) "transpose" the data preserving its dtype
-    td = zip(*td)
+    td = list(zip(*td))
 
     # Write to h5 file
     if lofft_outfile:
@@ -506,6 +509,7 @@ if onsource_file:
                                            null_grad_val=null_grad_val)
         loud_on_bestnr_trigs, loud_on_bestnr = \
             np.asarray([[x, y] for y, x in sorted(zip(on_trigs_bestnrs, on_trigs),
+                                                  key=lambda on_trig: on_trig[0],
                                                   reverse=True)])[0]
 
     # If the loudest event has bestnr = 0, there is no event at all!
@@ -540,7 +544,7 @@ if onsource_file:
              [trig.get_sngl_snr(ifo) for ifo in ifos] + [loud_on_bestnr]
         td.append(d)
     else:
-        td.append(["There are no events"] + [0 for number in xrange(11)] + \
+        td.append(["There are no events"] + [0 for number in range(11)] + \
                   [0 for ifo in ifos] + [0])
 
     # Table header
@@ -548,7 +552,7 @@ if onsource_file:
           'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
          ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
 
-    td = zip(*td)
+    td = list(zip(*td))
 
     # Write to h5 file
     if lont_h5_outfile:
@@ -643,6 +647,7 @@ if do_injections:
                    np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),\
                              (upper_dist-lower_dist)/num_bins) +\
                              (upper_dist-lower_dist)/num_bins)
+    dist_bins = list(dist_bins)
 
     num_dist_bins_plus_one = len(dist_bins) + 1
     num_injections = {}
@@ -801,9 +806,9 @@ if do_injections:
             td += [np.concatenate((found_injs[key][nonzero_fap],\
                                    found_injs[key][vetoed_trigs],\
                                    missed_injs[key]))]
-    td = zip(*td)
+    td = list(zip(*td))
     td.sort(key=lambda elem: elem[0])
-    td = zip(*td)
+    td = list(zip(*td))
     # Write to h5 file
     if qf_h5_outfile:
         logging.info("Writing %d quiet-found injections to h5 file.", len(td))
@@ -829,7 +834,7 @@ if do_injections:
         t_missed = []
         for key in keys:
             t_missed += [found_injs[key][vetoed_trigs]]
-        t_missed = zip(*t_missed)
+        t_missed = list(zip(*t_missed))
         t_missed.sort(key=lambda elem: elem[0])
         logging.info("Writing %d missed-found injections to html file.", len(t_missed))
 

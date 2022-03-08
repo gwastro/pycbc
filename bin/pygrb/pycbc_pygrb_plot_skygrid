@@ -27,7 +27,7 @@ import glob
 import os
 import copy
 import logging
-from ligo.lw import lsctables
+import numpy
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
@@ -56,7 +56,7 @@ def load_data(trig_file, vetoes):
     data['latitude'] = None
 
     # Fill the dictionary in with required data
-    if input_file:
+    if trig_file:
         trigs = ppu.load_triggers(trig_file, vetoes)
         data['longitude'] = numpy.degrees(trigs.get_column('ra'))
         data['latitude'] = numpy.degrees(trigs.get_column('dec'))
@@ -69,6 +69,9 @@ def load_data(trig_file, vetoes):
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
+parser.add_argument("-t", "--trig-file", action="store",
+                    default=None, required=True,
+                    help="The location of the trigger file")
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")

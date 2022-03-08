@@ -34,7 +34,10 @@ from pycbc.detector import Detector
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
-from ligo.lw import lsctables
+try:
+    from glue.ligolw import lsctables
+except ImportError:
+    pass
 
 plt.switch_backend('Agg')
 rc("image")
@@ -147,7 +150,7 @@ sngl_snr_thresh = opts.sngl_snr_threshold
 new_snr_thresh = opts.newsnr_threshold
 null_grad_thresh = opts.null_grad_thresh
 null_grad_val = opts.null_grad_val
-null_thresh = map(float, opts.null_snr_threshold.split(','))
+null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
 upper_dist = opts.upper_inj_dist
 lower_dist = opts.lower_inj_dist
 num_bins = opts.num_bins
@@ -257,8 +260,8 @@ if onsource_file:
                                            null_grad_thresh=null_grad_thresh,
                                            null_grad_val=null_grad_val)
         loud_on_bestnr_trigs, loud_on_bestnr = \
-            np.asarray([[x, y] for y, x in sorted(zip(on_trigs_bestnrs,
-                                                      np.asarray(on_trigs)),
+            np.asarray([[x, y] for y, x in sorted(zip(on_trigs_bestnrs, on_trigs),
+                                                  key=lambda elem: elem[0],
                                                   reverse=True)])[0]
 
     # If the loudest event has bestnr = 0, there is no event at all!
@@ -324,7 +327,7 @@ if do_injections:
 
     # Construct conditions for injection:
     # 1) found louder than background,
-    zero_fap = np.zeros(len(found_injs)).astype(np.bool)
+    zero_fap = np.zeros(len(found_injs)).astype(bool)
     zero_fap_cut = found_trig['bestnr'] > max_bestnr
     zero_fap = zero_fap | (zero_fap_cut)
 
@@ -366,8 +369,8 @@ if do_injections:
                                                 found_inj['ra'], found_inj['dec'],
                                                 found_inj['time'])
 
-    inj_sigma_mult = (np.asarray(inj_sigma.values()) *\
-                      np.asarray(f_resp.values()))
+    inj_sigma_mult = (np.asarray(list(inj_sigma.values())) *\
+                      np.asarray(list(f_resp.values())))
 
     inj_sigma_tot = inj_sigma_mult[0, :]
     for i in range(1, len(ifos)):
@@ -402,6 +405,7 @@ if do_injections:
                     np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),\
                              (upper_dist-lower_dist)/num_bins) +\
                              (upper_dist-lower_dist)/num_bins)
+    dist_bins = list(dist_bins)
 
     num_dist_bins_plus_one = len(dist_bins) + 1
     num_injections = {}
@@ -568,12 +572,12 @@ if do_injections:
     ax.plot(dist_plot_vals, (fraction_no_mc), 'g-',
             label='No marginalisation')
     ax.errorbar(dist_plot_vals, (fraction_no_mc),
-                yerr=[yerr_low_no_mc, yerr_high_no_mc], c='g')
+                yerr=[yerr_low_no_mc, yerr_high_no_mc], c='green')
     marg_eff = fraction_mc
     if not np.isnan(marg_eff.sum()):
         ax.plot(dist_plot_vals, marg_eff, 'r-', label='Marginalised')
         ax.errorbar(dist_plot_vals, marg_eff, yerr=[yerr_low_mc, yerr_high_mc],
-                    c='r')
+                    c='red')
     ax.legend()
     ax.grid()
     ax.set_ylim([0, 1])
@@ -629,11 +633,11 @@ if do_injections:
     ax.plot(dist_plot_vals, (fraction_no_mc), 'g-',
             label='No marginalisation')
     ax.errorbar(dist_plot_vals, (fraction_no_mc),
-                yerr=[yerr_low_no_mc, yerr_high_no_mc], c='g')
+                yerr=[yerr_low_no_mc, yerr_high_no_mc], c='green')
     marg_eff = fraction_mc
     if not np.isnan(marg_eff.sum()):
         ax.plot(dist_plot_vals, marg_eff, 'r-', label='Marginalised')
-        ax.errorbar(dist_plot_vals, marg_eff, yerr=[yerr_low, yerr_high], c='r')
+        ax.errorbar(dist_plot_vals, marg_eff, yerr=[yerr_low, yerr_high], c='red')
     if not np.isnan(red_efficiency.sum()):
         ax.plot(dist_plot_vals, red_efficiency, 'm-',
                 label='Inc. counting errors')

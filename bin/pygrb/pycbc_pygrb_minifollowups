@@ -112,9 +112,6 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument("-v", "--verbose", default=False, action="store_true",
                     help="Verbose output")
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 parser.add_argument('--followups-file',
                     help="HDF format file containing trigger/injections to follow up")
 #parser.add_argument('--instrument', help="Name of interferometer e.g. H1")
@@ -123,11 +120,9 @@ parser.add_argument('--wiki-file',
 parser.add_argument('--output-map')
 parser.add_argument('--transformation-catalog')
 parser.add_argument('--output-file')
-parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
-# args.statistic_files might be a list of lists. This will flatten it to a single list.
-#args.statistic_files = sum(args.statistic_files, [])
 
 init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
@@ -206,6 +201,5 @@ for num_event in range(num_events):
 
     layouts += list(layout.grouper(files, 2))
 
-workflow.save(filename=args.output_file, output_map_path=args.output_map,
-              transformation_catalog_path=args.transformation_catalog)
+workflow.save(filename=args.output_file, output_map_path=args.output_map)
 layout.two_column_layout(args.output_dir, layouts)

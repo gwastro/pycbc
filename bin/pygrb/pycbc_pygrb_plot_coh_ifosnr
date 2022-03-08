@@ -238,7 +238,7 @@ ax.set_ylabel(y_label)
 ax.set_xlim([0, 1.01*x_max])
 ax.set_ylim([0, 1.20*y_max])
 # Veto applies to the two most sensitive IFOs, so shade them
-loudness_index = ifo_senstvty.keys().index(ifo)
+loudness_index = list(ifo_senstvty.keys()).index(ifo)
 if loudness_index < 2:
     limy = ax.get_ylim()[0]
     polyx = [0, max_snr]

@@ -70,7 +70,7 @@ def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
         elif snr_type == 'null':
             data['null'] = numpy.asarray(trigs_or_injs.get_column('null_statistic'))
         elif snr_type == 'reweighted':
-            null_thresh = map(float, opts.null_snr_threshold.split(','))
+            null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
             data['reweighted'] = ppu.get_bestnrs(trigs_or_injs,
                                                  q=opts.chisq_index,
                                                  n=opts.chisq_nhigh,

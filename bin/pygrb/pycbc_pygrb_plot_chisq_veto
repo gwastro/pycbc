@@ -102,7 +102,7 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
             data[veto_type] = format_single_chisqs(data[veto_type], ifos)[opts.ifo]
         # Remove BestNR = 0 points when dealing with standard chi-square
         if 'standard' in veto_type:
-            null_thresh = map(float, opts.null_snr_threshold.split(','))
+            null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
             data['reweighted_snr'] = ppu.get_bestnrs(trigs_or_injs,
                                                      q=opts.chisq_index,
                                                      n=opts.chisq_nhigh,

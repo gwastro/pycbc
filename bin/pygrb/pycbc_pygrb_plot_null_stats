@@ -199,7 +199,7 @@ else:
     null_cont, snr_vals = calculate_contours(opts, new_snrs=None)
     null_stat_conts = [null_cont]
     if zoom_in:
-        null_thresh = map(float, opts.null_snr_threshold.split(','))
+        null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
         null_thresh_width = null_thresh[1] - null_thresh[0]
         null_stat_conts.append(numpy.asarray(null_cont) - null_thresh_width)
         if null_thresh_width > 1:

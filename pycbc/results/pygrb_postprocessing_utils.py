@@ -31,12 +31,18 @@ import copy
 import numpy
 from scipy import stats
 from pycbc.detector import Detector
-# All/most of these will become obsolete with hdf5 switch
+# All/most of these final imports will become obsolete with hdf5 switch
+from ligo import segments
+from ligo.lw import utils, lsctables
+from ligo.lw.table import get_table
+from ligo.segments.utils import fromsegwizard
+import pycbc.io.ligolw as pycbcligolw
+# To handle MultiInspiral xml-talbes, no longer supported in ligo.lw
 try:
-    from ligo import segments
-    from ligo.lw import utils, lsctables, ligolw, table
-    from ligo.segments.utils import fromsegwizard
-    import pycbc.io.ligolw as pycbcligolw
+    from glue.ligolw import lsctables as glsctables
+    from glue.ligolw import utils as gutils
+    from glue.ligolw.ilwd import ilwdchar as gilwdchar
+    from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
     pass
 
@@ -195,10 +201,10 @@ def load_xml_table(file_name, table_name):
     """Load xml table from file."""
 
     xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
-                                  contenthandler=
-                                      pycbcligolw.LIGOLWContentHandler)
+                                  contenthandler=glsctables.use_in(
+                                      LIGOLWContentHandler))
 
-    return table.get_table(xml_doc, table_name)
+    return get_table(xml_doc, table_name)
 
 
 # ==============================================================================
@@ -225,8 +231,8 @@ def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
 
     # Load SegmentDefTable and SegmentTable
     seg_def_table = load_xml_table(xml_doc,
-                                   lsctables.SegmentDefTable.tableName)
-    seg_table = load_xml_table(xml_doc, lsctables.SegmentTable.tableName)
+                                   glsctables.SegmentDefTable.tableName)
+    seg_table = load_xml_table(xml_doc, glsctables.SegmentTable.tableName)
 
     if return_dict:
         segs = segments.segmentlistdict()
@@ -325,16 +331,15 @@ def load_triggers(trig_file, vetoes):
     logging.info("Loading triggers...")
 
     # Extract time-slides
-    multis, slide_dict, _ = \
+    multis, slide_dict = \
         read_multiinspiral_timeslides_from_files([trig_file])
     num_slides = len(slide_dict)
-    lsctables.MultiInspiralTable.loadcolumns =\
+    glsctables.MultiInspiralTable.loadcolumns =\
         [slot for slot in multis[0].__slots__ if hasattr(multis[0], slot)]
 
     # Extract triggers
-    trigs = lsctables.New(lsctables.MultiInspiralTable,
-                          columns=lsctables.MultiInspiralTable.loadcolumns)
-    logging.info("%d triggers found.", len(trigs))
+    trigs = glsctables.New(glsctables.MultiInspiralTable,
+                          columns=glsctables.MultiInspiralTable.loadcolumns)
 
     # Time-slid vetoes
     for slide_id in range(num_slides):
@@ -436,7 +441,7 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
                < chisq_threshold] = 0
 
     # Define IFOs for sngl cut
-    ifos = map(str, trigs[0].get_ifos())
+    ifos = list(map(str, trigs[0].get_ifos()))
 
     # Single detector SNR cut
     sens = {}
@@ -451,12 +456,13 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
         if bestnr[i_trig] != 0:
             ifos.sort(key=lambda ifo, j=i_trig: sens[ifo][j], reverse=True)
             # Apply when there is more than 1 IFO
+            # TODO: can this go before the if?
             if len(ifos) > 1:
                 for i in range(0, 2):
                     if ifo_snr[ifos[i]][i_trig] < sngl_snr_threshold:
                         bestnr[i_trig] = 0
         # Get chisq reduced (new) SNR for triggers that were not cut so far
-        # NOTE: .get_bestnr is in ligo.lw.lsctables.MultiInspiralTable
+        # NOTE: .get_bestnr is in glue.ligolw.lsctables.MultiInspiralTable
         if bestnr[i_trig] != 0:
             bestnr[i_trig] = trig.get_bestnr(index=q, nhigh=n,
                                              null_snr_threshold=null_thresh[0],
@@ -484,7 +490,7 @@ def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
 
     # Begin by sorting the triggers into each slide
     # New seems pretty slow, so run it once and then use deepcopy
-    tmp_table = lsctables.New(lsctables.MultiInspiralTable)
+    tmp_table = glsctables.New(glsctables.MultiInspiralTable)
     for slide_id in range(num_slides):
         sorted_trigs[slide_id] = copy.deepcopy(tmp_table)
     for trig in trigs:
@@ -533,7 +539,7 @@ def extract_basic_trig_properties(trial_dict, trigs, num_slides, seg_dict,
     # Local copies of variables entering the BestNR definition
     chisq_index = opts.chisq_index
     chisq_nhigh = opts.chisq_nhigh
-    null_thresh = map(float, opts.null_snr_threshold.split(','))
+    null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
     snr_thresh = opts.snr_threshold
     sngl_snr_thresh = opts.sngl_snr_threshold
     new_snr_thresh = opts.newsnr_threshold
@@ -587,7 +593,7 @@ def extract_ifos(trig_file):
 
     # Load search summary
     search_summ = load_xml_table(trig_file,
-                                 lsctables.SearchSummaryTable.tableName)
+                                 glsctables.SearchSummaryTable.tableName)
 
     # Extract IFOs
     ifos = sorted(search_summ[0].instruments)
@@ -627,9 +633,9 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
     else:
         logging.info("Loading %s...", label)
 
-    insp_table = lsctables.MultiInspiralTable
+    insp_table = glsctables.MultiInspiralTable
     if sim_table:
-        insp_table = lsctables.SimInspiralTable
+        insp_table = glsctables.SimInspiralTable
 
     # Load injections in injection file
     inj_table = load_xml_table(inj_file, insp_table.tableName)
@@ -652,7 +658,7 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
 def load_time_slides(xml_file):
     """Loads timeslides from PyGRB output file"""
 
-    time_slide = load_xml_table(xml_file, lsctables.TimeSlideTable.tableName)
+    time_slide = load_xml_table(xml_file, glsctables.TimeSlideTable.tableName)
     time_slide_unsorted = [dict(i) for i in time_slide.as_dict().values()]
     # NB: sorting not necessary if using python 3
     sort_idx = numpy.argsort(numpy.array([
@@ -717,15 +723,14 @@ def load_segment_dict(xml_file):
     # TODO: unclear whether this step is necessary (seems the
     # segment_def_id and time_slide_id are always identical)
     time_slide_map_table = \
-        load_xml_table(xml_file, lsctables.TimeSlideSegmentMapTable.tableName)
+        load_xml_table(xml_file, glsctables.TimeSlideSegmentMapTable.tableName)
     segment_map = {
         int(entry.segment_def_id): int(entry.time_slide_id)
         for entry in time_slide_map_table
     }
     # Extract the segment table
     segment_table = load_xml_table(
-        xml_file, lsctables.SegmentTable.tableName
-        )
+        xml_file, glsctables.SegmentTable.tableName)
     segment_dict = {}
     for entry in segment_table:
         curr_slid_id = segment_map[int(entry.segment_def_id)]
@@ -796,7 +801,7 @@ def construct_trials(num_slides, seg_dir, seg_dict, ifos, slide_dict, vetoes):
 def sort_stat(time_veto_max_stat):
     """Sort a dictionary of loudest SNRs/BestNRs"""
 
-    full_time_veto_max_stat = numpy.concatenate(time_veto_max_stat.values())
+    full_time_veto_max_stat = numpy.concatenate(list(time_veto_max_stat.values()))
     full_time_veto_max_stat.sort()
 
     return full_time_veto_max_stat
@@ -856,10 +861,10 @@ def read_multiinspiral_timeslides_from_files(file_list):
 
     for this_file in file_list:
         doc = utils.load_filename(this_file,
-            gz=this_file.endswith("gz"), contenthandler= pycbcligolw.LIGOLWContentHandler)
+            gz=this_file.endswith("gz"), contenthandler=glsctables.use_in(LIGOLWContentHandler))
 
         # Extract the time slide table
-        time_slide_table = table.get_table(doc,
+        time_slide_table = get_table(doc,
               lsctables.TimeSlideTable.tableName)
         slide_mapping = {}
         curr_slides = {}
@@ -883,15 +888,18 @@ def read_multiinspiral_timeslides_from_files(file_list):
 
         # Extract the multi inspiral table
         try:
-            multi_inspiral_table = table.get_table(doc,
-                lsctables.MultiInspiralTable.tableName)
+            multi_inspiral_table = get_table(doc,
+                glsctables.MultiInspiralTable.tableName)
             # Remap the time slide IDs
             for multi in multi_inspiral_table:
                 newID = slide_mapping[int(multi.time_slide_id)]
-                multi.time_slide_id = ilwd.ilwdchar(\
+                multi.time_slide_id = gilwdchar(\
                                       "time_slide:time_slide_id:%d" % (newID))
-            if multis: multis.extend(multi_inspiral_table)
-            else: multis = multi_inspiral_table
-        except: raise
+            if multis:
+                multis.extend(multi_inspiral_table)
+            else:
+                multis = multi_inspiral_table
+        except:
+            raise
 
-    return multis,time_slides
+    return multis, time_slides
