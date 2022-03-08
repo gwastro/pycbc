@@ -32,13 +32,13 @@ import numpy
 from scipy import stats
 from pycbc.detector import Detector
 # All/most of these final imports will become obsolete with hdf5 switch
-from ligo import segments
-from ligo.lw import utils, lsctables
-from ligo.lw.table import get_table
-from ligo.segments.utils import fromsegwizard
-import pycbc.io.ligolw as pycbcligolw
-# To handle MultiInspiral xml-talbes, no longer supported in ligo.lw
 try:
+    from ligo import segments
+    from ligo.lw import utils, lsctables
+    from ligo.lw.table import get_table
+    from ligo.segments.utils import fromsegwizard
+    # Handle MultiInspiral xml-talbes with glue,
+    # as ligo.lw no longer supports them
     from glue.ligolw import lsctables as glsctables
     from glue.ligolw import utils as gutils
     from glue.ligolw.ilwd import ilwdchar as gilwdchar
