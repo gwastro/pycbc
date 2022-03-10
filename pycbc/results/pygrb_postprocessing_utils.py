@@ -873,7 +873,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
             elif slide.instrument not in curr_slides[curr_id].keys():
                 curr_slides[curr_id][slide.instrument] = slide.offset
 
-        for slide_id,offset_dict in curr_slides.items():
+        for slide_id, offset_dict in curr_slides.items():
             try:
                 # Is the slide already in the list and where?
                 offset_index = time_slides.index(offset_dict)
@@ -890,7 +890,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
             # Remap the time slide IDs
             for multi in multi_inspiral_table:
                 newID = slide_mapping[int(multi.time_slide_id)]
-                multi.time_slide_id = gilwdchar(\
+                multi.time_slide_id = gilwdchar(
                                       "time_slide:time_slide_id:%d" % (newID))
             if multis:
                 multis.extend(multi_inspiral_table)
