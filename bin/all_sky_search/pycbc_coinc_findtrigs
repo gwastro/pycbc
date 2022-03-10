@@ -45,9 +45,9 @@ parser.add_argument("--loudest-keep-values",
                          " decimation to coincs with stat value below the"
                          " given thresholds. Supply as a comma-separated list"
                          " of threshold:decimation value pairs surrounded by"
-                         " square brackets. Decimation values must be"
-                         " positive integers."
-                         " Ex. [9:10,8.5:30,8:30,7.5:30]."
+                         " square brackets (no spaces!). Decimation values must"
+                         " be positive integers."
+                         " Ex. [15:5,10:30,5:30,0:30]."
                          " Default: no decimation")
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. Format"
