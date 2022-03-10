@@ -29,9 +29,10 @@ import logging
 import h5py
 import numpy as np
 from pycbc import init_logging
+import pycbc.workflow as wf
+from pycbc.workflow.core import resolve_url_to_file
 import pycbc.workflow.minifollowups as mini
 import pycbc.version
-import pycbc.workflow as wf
 import pycbc.events
 from pycbc.results import layout
 from pycbc.results.pygrb_postprocessing_utils import get_grb_time
@@ -55,7 +56,8 @@ def add_wiki_row(outfile, cols):
         f.write('||%s||\n' % '||'.join(map(str, cols)))
 
 
-def make_timeseries_plot(workflow, snr_type, central_time, shift_time, out_dir,
+def make_timeseries_plot(workflow, trig_file, veto_dir, seg_dir,
+                         snr_type, central_time, shift_time, out_dir,
                          ifo=None, tags=None):
     """Adds a node for a timeseries of PyGRB results to the workflow"""
 
@@ -70,8 +72,7 @@ def make_timeseries_plot(workflow, snr_type, central_time, shift_time, out_dir,
     node = PlotExecutable(workflow.cp, 'pygrb_plot_snr_timeseries',
                           ifos=workflow.ifos, out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
-    trig_file_path = workflow.cp.get('workflow', 'trig-file')
-    node.add_opt('--trig-file', trig_file_path)
+    node.add_input_opt('--trig-file', trig_file)
     # Veto directory and segments directory
     node.add_opt('--veto-directory', workflow.cp.get('workflow', 'veto-directory'))
     node.add_opt('--segment-dir', workflow.cp.get('workflow', 'segment-dir'))
@@ -112,21 +113,22 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument("-v", "--verbose", default=False, action="store_true",
                     help="Verbose output")
+parser.add_argument('--trig-file',
+                    help="xml file containing the triggers found by PyGRB")
 parser.add_argument('--followups-file',
                     help="HDF format file containing trigger/injections to follow up")
 #parser.add_argument('--instrument', help="Name of interferometer e.g. H1")
 parser.add_argument('--wiki-file',
                     help="Name of file to save wiki-formatted table in")
-parser.add_argument('--output-map')
-parser.add_argument('--transformation-catalog')
-parser.add_argument('--output-file')
+parser.add_argument('--veto-directory', help="Path to the veto directory")
+parser.add_argument('--segment-dir',  help="Path to the segments directory")
 wf.add_workflow_command_line_group(parser)
-wf.add_workflow_settings_cli(parser)
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
-workflow = wf.Workflow(args, args.workflow_name)
+workflow = wf.Workflow(args)
 
 wf.makedir(args.output_dir)
 
@@ -142,18 +144,14 @@ if args.wiki_file:
     wiki_file = os.path.join(args.output_dir, args.wiki_file)
     add_wiki_row(wiki_file, fp.keys())
 
-# Trigger time
-seg_dir = workflow.cp.get('workflow', 'segment-dir')
-trig_time = get_grb_time(seg_dir)
-
 # Establish the number of follow-ups to perform
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
                                           'num-events', ''))
 num_events = min(num_events, len(fp['BestNR'][:]))
 
 # Determine ifos used in the analysis
-trig_file = workflow.cp.get('workflow', 'trig-file')
-ifos = extract_ifos(trig_file)
+trig_file = resolve_url_to_file(os.path.abspath(args.trig_file))
+ifos = extract_ifos(os.path.abspath(args.trig_file))
 num_ifos = len(ifos)
 
 # (Loudest) off/on-source events are on time-slid data so the
@@ -171,7 +169,7 @@ for num_event in range(num_events):
     files = wf.FileList([])
     logging.info('Processing event: %s', num_event)
     gps_time = fp['GPS time'][num_event]
-    gps_time = gps_time.astype(np.float)
+    gps_time = gps_time.astype(float)
     if wiki_file:
         row = []
         for key in fp.keys():
@@ -182,7 +180,9 @@ for num_event in range(num_events):
         for ifo in ifos:
             time_shift = fp[ifo+' time shift (s)'][num_event]
             ifo_time = gps_time - time_shift
-            files += make_timeseries_plot(workflow, 'single', gps_time, ifo_time,
+            files += make_timeseries_plot(workflow, trig_file,
+                                          args.veto_directory, args.segment_dir,
+                                          'single', gps_time, ifo_time,
                                           args.output_dir, ifo=ifo,
                                           tags=args.tags + [str(num_event)])
             files += mini.make_qscan_plot(workflow, ifo, ifo_time,
@@ -191,7 +191,9 @@ for num_event in range(num_events):
     # Handle injections (which are on unslid data)
     else:
         for snr_type in ['reweighted', 'coherent']:
-            files += make_timeseries_plot(workflow, snr_type, gps_time, gps_time,
+            files += make_timeseries_plot(workflow, trig_file,
+                                          args.veto_directory, args.segment_dir,
+                                          snr_type, gps_time, gps_time,
                                           args.output_dir, ifo=None,
                                           tags=args.tags + [str(num_event)])
         for ifo in ifos:
@@ -201,5 +203,5 @@ for num_event in range(num_events):
 
     layouts += list(layout.grouper(files, 2))
 
-workflow.save(filename=args.output_file, output_map_path=args.output_map)
+workflow.save()
 layout.two_column_layout(args.output_dir, layouts)
