@@ -45,7 +45,7 @@ parser.add_argument("--loudest-keep-values",
                          " decimation to coincs with stat value below the"
                          " given thresholds. Supply as a comma-separated list"
                          " of threshold:decimation value pairs surrounded by"
-                         " square brackets (no spaces!). Decimation values must
+                         " square brackets (no spaces!). Decimation values must"
                          " be positive integers."
                          " Ex. [15:5,10:30,5:30,0:30]."
                          " Default: no decimation")
