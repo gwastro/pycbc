@@ -40,7 +40,6 @@ try:
     # Handle MultiInspiral xml-talbes with glue,
     # as ligo.lw no longer supports them
     from glue.ligolw import lsctables as glsctables
-    from glue.ligolw import utils as gutils
     from glue.ligolw.ilwd import ilwdchar as gilwdchar
     from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
@@ -77,8 +76,9 @@ def pygrb_initialize_plot_parser(description=None, version=None):
                         help="Produce a log-log plot")
     parser.add_argument("-i", "--ifo", default=None, help="IFO used for IFO " +
                         "specific plots")
-    parser.add_argument("-I", "--inj-file", action="store", default=None,
-                        help="The location of the injection file")
+    parser.add_argument("-f", "--found-file", action="store",
+                        default=None,
+                        help="Location of the found injections file.")
     parser.add_argument("-a", "--segment-dir", action="store",
                         required=True, help="Directory holding buffer, on " +
                         "and off source segment files.")
@@ -161,16 +161,13 @@ def pygrb_add_bestnr_opts(parser):
                         "increase above the threshold")
 
 
-def pygrb_add_fminjs_input_opts(parser):
-    """Add to parser object the arguments for found/missed injection files."""
+def pygrb_add_missed_injs_input_opt(parser):
+    """Add to parser object the arguments for missed injection file."""
     if parser is None:
         parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--found-file", action="store",
-                        default=None,
-                        help="Location of the found injections file")
     parser.add_argument("-m", "--missed-file", action="store",
                         default=None,
-                        help="Location of the missed injections file")
+                        help="Location of the missed injections file.")
 
 
 # =============================================================================

@@ -190,7 +190,7 @@ parser.add_argument("-F", "--offsource-file", action="store", required=True,
 # As opposed to offsource-file and trig-file, this only contains onsource
 parser.add_argument("--onsource-file", action="store", default=None,
                     help="Location of on-source trigger file.")
-ppu.pygrb_add_fminjs_input_opts(parser)
+ppu.pygrb_add_missed_injs_input_opt(parser)
 ppu.pygrb_add_injmc_opts(parser)
 ppu.pygrb_add_bestnr_opts(parser)
 parser.add_argument("--num-loudest-off-trigs", action="store",

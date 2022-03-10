@@ -60,10 +60,10 @@ def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
 
     # Fill the dictionary in with required data
     if input_file:
-        if not injections:
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-        else:
+        if injections:
             trigs_or_injs = ppu.load_injections(input_file, vetoes, sim_table=sim_table)
+        else:
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
         data['snr'] = numpy.asarray(trigs_or_injs.get_column('snr'))
         if null_stat_type == 'coincident':
             data[null_stat_type] = (trigs_or_injs.get_column('coinc_snr'))
@@ -129,9 +129,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-inj_file = None
-if opts.inj_file:
-    inj_file = os.path.abspath(opts.inj_file)
+found_file = os.path.abspath(opts.found_file) if opts.found_file else None
 zoom_in = opts.zoom_in
 veto_files = []
 if opts.veto_directory:
@@ -148,9 +146,9 @@ if opts.plot_title is None:
     opts.plot_title = y_labels[null_stat_type] + " vs Coherent SNR"
 if opts.plot_caption is None:
     opts.plot_caption = ("Blue crosses: background triggers.  ")
-    if inj_file:
+    if found_file:
         opts.plot_caption = opts.plot_caption +\
-                            ("Red crosses: injection triggers.  ")
+                            ("Red crosses: injections triggers.  ")
 
     if null_stat_type == 'coincident':
         opts.plot_caption += ("Green line: coincident SNR = coherent SNR.")
@@ -177,7 +175,7 @@ _, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
 trig_data = load_data(trig_file, vetoes, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(inj_file, vetoes, opts, injections=True, sim_table=False)
+inj_data = load_data(found_file, vetoes, opts, injections=True, sim_table=False)
 
 # Generate plots
 logging.info("Plotting...")
@@ -190,7 +188,7 @@ x_max = None
 # Coincident SNR plot case: we want a coinc=coh diagonal line on the plot
 if null_stat_type == 'coincident':
     cont_colors = ['g-']
-    x_max = plu.axis_max_value(trig_data['snr'], inj_data['snr'], inj_file)
+    x_max = plu.axis_max_value(trig_data['snr'], inj_data['snr'], found_file)
     snr_vals = [4, x_max]
     null_stat_conts = [[4, x_max]]
 # Overwhitened null stat (null SNR) and null stat  cases: newSNR contours

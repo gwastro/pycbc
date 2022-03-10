@@ -236,7 +236,7 @@ group.add_argument("--found-missed", action="store_true",
                    help="Plot found injections over missed injections.")
 group.add_argument("--missed-found", action="store_false",
                    help="Plot missed injections over found injections.")
-ppu.pygrb_add_fminjs_input_opts(parser)
+ppu.pygrb_add_missed_injs_input_opt(parser)
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 

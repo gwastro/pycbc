@@ -80,10 +80,10 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
 
     # Fill the dictionary in with required data
     if input_file:
-        if not injections:
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-        else:
+        if injections:
             trigs_or_injs = ppu.load_injections(input_file, vetoes)
+        else:
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
         # Case with single SNR
         if snr_type == 'snr_sngl':
             data[snr_type] = trigs_or_injs.get_sngl_snr(opts.ifo)
@@ -200,9 +200,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-inj_file = None
-if opts.inj_file:
-    inj_file = os.path.abspath(opts.inj_file)
+found_file = os.path.abspath(opts.found_file) if opts.found_file else None
 zoom_in = opts.zoom_in
 veto_files = []
 if opts.veto_directory:
@@ -249,8 +247,8 @@ if opts.plot_caption is None:
                          "Black line: veto line.  " +
                          "Gray shaded region: Vetoed area.  " +
                          "Yellow lines: contours of new SNR.")
-    if inj_file:
-        opts.plot_caption = ("Red crosses: injection triggers.  ") +\
+    if found_file:
+        opts.plot_caption = ("Red crosses: injections triggers.  ") +\
                             opts.plot_caption
 
 logging.info("Imported and ready to go.")
@@ -274,7 +272,7 @@ if ifo and ifo not in ifos:
 trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(inj_file, vetoes, ifos, opts, injections=True)
+inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
 
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:
@@ -298,7 +296,7 @@ if use_sngl_ifo_snr:
 
 # Determine the minumum and maximum SNR value we are dealing with
 x_min = opts.sngl_snr_threshold
-x_max = 1.1*plu.axis_max_value(trig_data[snr_type], inj_data[snr_type], inj_file)
+x_max = 1.1*plu.axis_max_value(trig_data[snr_type], inj_data[snr_type], found_file)
 
 # Determine y-axis minimum value and label
 y_label = veto_labels[veto_type.replace('_sngl', '')]
@@ -308,7 +306,7 @@ if opts.use_sngl_ifo_veto:
     y_min = 0.001
 
 # Determine the maximum bank veto value we are dealing with
-y_max = plu.axis_max_value(trig_data[veto_type], inj_data[veto_type], inj_file)
+y_max = plu.axis_max_value(trig_data[veto_type], inj_data[veto_type], found_file)
 
 # Determine contours for plots
 if opts.use_sngl_ifo_veto:
