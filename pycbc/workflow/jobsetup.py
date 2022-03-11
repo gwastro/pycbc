@@ -33,6 +33,7 @@ import lal
 from ligo import segments
 from pycbc.workflow.core import Executable, File, FileList, Node
 
+
 def int_gps_time_to_str(t):
     """Takes an integer GPS time, either given as int or lal.LIGOTimeGPS, and
     converts it to a string. If a LIGOTimeGPS with nonzero decimal part is
@@ -54,6 +55,7 @@ def int_gps_time_to_str(t):
     else:
         err_msg = "Didn't understand input type {}".format(type(t))
         raise ValueError(err_msg)
+
 
 def select_tmpltbank_class(curr_exe):
     """ This function returns a class that is appropriate for setting up
@@ -82,6 +84,7 @@ def select_tmpltbank_class(curr_exe):
     except KeyError:
         raise NotImplementedError(
             "No job class exists for executable %s, exiting" % curr_exe)
+
 
 def select_matchedfilter_class(curr_exe):
     """ This function returns a class that is appropriate for setting up
@@ -113,6 +116,7 @@ def select_matchedfilter_class(curr_exe):
         raise NotImplementedError(
             "No job class exists for executable %s, exiting" % curr_exe)
 
+
 def select_generic_executable(workflow, exe_tag):
     """ Returns a class that is appropriate for setting up jobs to run executables
     having specific tags in the workflow config.
@@ -138,6 +142,7 @@ def select_generic_executable(workflow, exe_tag):
     exe_path = workflow.cp.get("executables", exe_tag)
     exe_name = os.path.basename(exe_path)
     exe_to_class_map = {
+        'pycbc_merge_inj_hdf'      : PyCBCMergeInjHdfExecutable,
         'ligolw_add'               : LigolwAddExecutable,
         'lalapps_inspinj'          : LalappsInspinjExecutable,
         'pycbc_create_injections'  : PyCBCCreateInjectionsExecutable,
@@ -150,6 +155,7 @@ def select_generic_executable(workflow, exe_tag):
         # Should we try some sort of default class??
         raise NotImplementedError(
             "No job class exists for executable %s, exiting" % exe_name)
+
 
 def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                        datafind_outs, parents=None,
@@ -284,6 +290,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
     return out_files
 
+
 def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                                  science_segs, datafind_outs, output_dir,
                                  parents=None, slide_dict=None, tags=None):
@@ -344,6 +351,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     out_files += curr_out_files
 
     return out_files
+
 
 def identify_needed_data(curr_exe_job):
     """ This function will identify the length of data that a specific
@@ -670,6 +678,7 @@ class PyCBCInspiralExecutable(Executable):
             new_data_seg = segments.segment([new_data_start, new_data_end])
             return new_data_seg
 
+
 # FIXME: This is probably misnamed, this is really GRBInspiralExectuable.
 #        There's nothing coherent here, it's just that data segment stuff is
 #        very different between GRB and all-sky/all-time
@@ -895,6 +904,27 @@ class PyCBCTmpltbankExecutable(Executable):
         return [data_length], [segments.segment(start, end)]
 
 
+class PyCBCMergeInjHdfExecutable(Executable):
+    """ The class used to create nodes for pycbc_merge_hdf_inj """
+
+    current_retention_level = Executable.INTERMEDIATE_PRODUCT
+    def __init__(self, *args, **kwargs):
+        super(PyCBCMergeInjHdfExecutable, self).__init__(*args, **kwargs)
+
+    def create_node(self, jobSegment, input_files, use_tmp_subdirs=True,
+                    tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+
+        node.add_input_list_opt('--injection-files', input_files)
+        node.new_output_file_opt(jobSegment, '.hdf', '--output-file',
+                                 tags=tags, store_file=self.retain_files,
+                                 use_tmp_subdirs=use_tmp_subdirs)
+
+        return node
+
+
 class LigolwAddExecutable(Executable):
     """ The class used to create nodes for the ligolw_add Executable. """
 
@@ -974,6 +1004,7 @@ class PyCBCCreateInjectionsExecutable(Executable):
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
         node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
         return node
+
 
 class LalappsInspinjExecutable(Executable):
     """
@@ -1075,6 +1106,7 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
                                  ext, '--output-dim',
                                  store_file=self.retain_files, tags=tags+tag)
         return node
+
 
 class LigolwCBCJitterSkylocExecutable(Executable):
     """

@@ -39,6 +39,7 @@ from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         PycbcDarkVsBrightInjectionsExecutable, LigolwAddExecutable,
         select_generic_executable)
 
+
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
     make_analysis_dir(out_dir)
@@ -67,6 +68,7 @@ class PyCBCOptimalSNRExecutable(Executable):
         node.new_output_file_opt(workflow.analysis_time, ext,
                                  '--output-file')
         return node
+
 
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
@@ -106,16 +108,17 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         opt_snr_split_files += [node.output_files[0]]
         workflow += node
 
-    llwadd_exe = LigolwAddExecutable(workflow.cp, 'optimal_snr_merge',
-                                     ifos=workflow.ifos, out_dir=out_dir,
-                                     tags=tags)
-    llwadd_exe.update_current_retention_level(Executable.MERGED_TRIGGERS)
-    merge_node = llwadd_exe.create_node(workflow.analysis_time,
-                                        opt_snr_split_files,
-                                        use_tmp_subdirs=False)
+    injmerge_exe = PyCBCMergeInjHdfExecutable(workflow.cp, 'optimal_snr_merge',
+                                          ifos=workflow.ifos, out_dir=out_dir,
+                                          tags=tags)
+    injmerge_exe.update_current_retention_level(Executable.MERGED_TRIGGERS)
+    merge_node = injmerge_exe.create_node(workflow.analysis_time,
+                                          opt_snr_split_files,
+                                          use_tmp_subdirs=False)
     workflow += merge_node
 
     return merge_node.output_files[0]
+
 
 def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     "Set up a job for removing injections that are too distant to be seen"
@@ -128,6 +131,7 @@ def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
     workflow += node
     return node.output_files[0]
+
 
 def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
     """ Convert injection file to hdf format if not already one
@@ -145,6 +149,7 @@ def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
     node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
     workflow += node
     return node.output_file
+
 
 def setup_injection_workflow(workflow, output_dir=None,
                              inj_section_name='injections', exttrig_file=None,
@@ -194,7 +199,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     inj_tags = []
     inj_files = FileList([])
 
-    for section in  workflow.cp.get_subsections(inj_section_name):
+    for section in workflow.cp.get_subsections(inj_section_name):
         inj_tag = section.upper()
         curr_tags = tags + [inj_tag]
 
