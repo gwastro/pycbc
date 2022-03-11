@@ -129,9 +129,9 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         workflow,
         opt_snr_split_files
     )
-    workflow += merge_node
+    workflow += hdfcombine_node
 
-    return merge_node.output_files[0]
+    return hdfcombine_node.output_files[0]
 
 def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     "Set up a job for removing injections that are too distant to be seen"
