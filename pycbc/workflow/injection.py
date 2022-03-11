@@ -68,6 +68,17 @@ class PyCBCOptimalSNRExecutable(Executable):
                                  '--output-file')
         return node
 
+class PyCBCMergeHDFExecutable(Executable):
+    """Merge HDF injection files executable class"""
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def create_node(self, workflow, input_files):
+        node = Node(self)
+        node.add_input_list_opt('--injection-files', input_files)
+        node.new_output_file_opt(workflow.analysis_time, '.hdf',
+                                 '--output-file')
+        return node
+
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
     "Set up a job for computing optimal SNRs of a sim_inspiral file."
@@ -106,13 +117,18 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         opt_snr_split_files += [node.output_files[0]]
         workflow += node
 
-    llwadd_exe = LigolwAddExecutable(workflow.cp, 'optimal_snr_merge',
-                                     ifos=workflow.ifos, out_dir=out_dir,
-                                     tags=tags)
-    llwadd_exe.update_current_retention_level(Executable.MERGED_TRIGGERS)
-    merge_node = llwadd_exe.create_node(workflow.analysis_time,
-                                        opt_snr_split_files,
-                                        use_tmp_subdirs=False)
+    hdfcombine_exe = PyCBCMergeHDFExecutable(
+        workflow.cp,
+        'optimal_snr_merge',
+        ifos=workflow.ifos,
+        out_dir=out_dir,
+        tags=tags
+    )
+    
+    hdfcombine_node = hdfcombine_exe.create_node(
+        workflow.analysis_time,
+        opt_snr_split_files
+    )
     workflow += merge_node
 
     return merge_node.output_files[0]
