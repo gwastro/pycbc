@@ -70,7 +70,7 @@ class PyCBCOptimalSNRExecutable(Executable):
 
 class PyCBCMergeHDFExecutable(Executable):
     """Merge HDF injection files executable class"""
-    current_retention_level = Executable.ALL_TRIGGERS
+    current_retention_level = Executable.MERGED_TRIGGERS
 
     def create_node(self, workflow, input_files):
         node = Node(self)
