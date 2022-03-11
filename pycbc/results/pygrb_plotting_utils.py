@@ -27,14 +27,7 @@ import sys
 import copy
 import numpy
 from pycbc.results import save_fig_with_metadata
-# Only if a backend is not already set ... This should really *not* be done
-# here, but in the executables you should set matplotlib.use()
-# This matches the check that matplotlib does internally, but this *may* be
-# version dependent. If this is a problem then remove this and control from
-# the executables directly.
-if 'matplotlib.backends' not in sys.modules:  # nopep8
-    import matplotlib
-    matplotlib.use('agg')
+from matplotlib import pyplot as plt
 
 
 #
@@ -96,21 +89,6 @@ def axis_max_value(trig_values, inj_values, inj_file):
 
 
 # =============================================================================
-# Contains plotting setups shared by PyGRB plots
-# =============================================================================
-def pygrb_shared_plot_setups():
-    """Master function to plot PyGRB results"""
-
-    from matplotlib import rc
-    # from matplotlib import pyplot as plt
-
-    # Get rcParams
-    rc('font', size=14)
-    # Set color for out-of-range values
-    # plt.cm.spring.set_over('g')
-
-
-# =============================================================================
 # Master plotting function: fits all plotting needs in for PyGRB results
 # =============================================================================
 def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
@@ -118,20 +96,14 @@ def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
                   colors=None, vert_spike=False, cmd=None):
     """Master function to plot PyGRB results"""
 
-    from matplotlib import pyplot as plt
-
     # Set up plot
     fig = plt.figure()
     cax = fig.gca()
     # Plot trigger-related and (if present) injection-related quantities
-    if opts.use_logs:
-        cax.loglog(trigs[0], trigs[1], 'bx')
-        if not (injs[0] is None and injs[1] is None):
-            cax.loglog(injs[0], injs[1], 'r+')
-    else:
-        cax.plot(trigs[0], trigs[1], 'bx')
-        if not (injs[0] is None and injs[1] is None):
-            cax.plot(injs[0], injs[1], 'r+')
+    cax_plotter = cax.loglog if opts.use_logs else cax.plot
+    cax_plotter(trigs[0], trigs[1], 'bx')
+    if not (injs[0] is None and injs[1] is None):
+        cax_plotter(injs[0], injs[1], 'r+')
     cax.grid()
     # Plot contours
     if conts is not None:

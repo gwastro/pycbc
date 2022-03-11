@@ -31,6 +31,7 @@ import logging
 import collections
 import operator
 from matplotlib import pyplot as plt
+from matplotlib import rc
 import numpy
 import scipy
 import pycbc.version
@@ -41,6 +42,7 @@ from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results import pygrb_plotting_utils as plu
 
 plt.switch_backend('Agg')
+rc('font', size=14)
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -201,7 +203,6 @@ if x_max < 50.:
 y_max = plu.axis_max_value(trig_data['ifo_snr'], inj_data['ifo_snr'], found_file)
 
 # Setup the plots
-plu.pygrb_shared_plot_setups()
 x_label = "Coherent SNR"
 y_label = "%s sngl SNR" % ifo
 fig = plt.figure()

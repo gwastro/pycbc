@@ -30,12 +30,14 @@ import os
 import logging
 import numpy
 from matplotlib import pyplot as plt
+from matplotlib import rc
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import pygrb_postprocessing_utils as ppu 
 from pycbc.results import pygrb_plotting_utils as plu 
 
 plt.switch_backend('Agg')
+rc('font', size=14)
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -326,7 +328,6 @@ if not opts.x_lims:
     else:
         opts.x_lims = str(x_min)+','+str(x_max)
         opts.y_lims = str(y_min)+','+str(10*y_max)
-plu.pygrb_shared_plot_setups()
 trigs = [trig_data[snr_type], trig_data[veto_type]]
 injs = [inj_data[snr_type], inj_data[veto_type]]
 plu.pygrb_plotter(trigs, injs, x_label, y_label, opts,

@@ -57,8 +57,7 @@ def pygrb_initialize_plot_parser(description=None, version=None):
     """Sets up a basic argument parser object for PyGRB plotting scripts"""
 
     parser = argparse.ArgumentParser(description=description,
-                                     formatter_class=
-                                     argparse.ArgumentDefaultsHelpFormatter)
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--version", action="version", version=version)
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="Verbose output")
@@ -336,7 +335,7 @@ def load_triggers(trig_file, vetoes):
 
     # Extract triggers
     trigs = glsctables.New(glsctables.MultiInspiralTable,
-                          columns=glsctables.MultiInspiralTable.loadcolumns)
+                           columns=glsctables.MultiInspiralTable.loadcolumns)
 
     # Time-slid vetoes
     for slide_id in range(num_slides):
@@ -448,16 +447,16 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
         antenna = Detector(ifo)
         sens[ifo] = sigmasqs[ifo] * get_antenna_responses(antenna, ra,
                                                           dec, time)
-    for i_trig, trig in enumerate(trigs):
-        # Apply only to triggers that were not already cut previously
-        if bestnr[i_trig] != 0:
-            ifos.sort(key=lambda ifo, j=i_trig: sens[ifo][j], reverse=True)
-            # Apply when there is more than 1 IFO
-            # TODO: can this go before the if?
-            if len(ifos) > 1:
-                for i in range(0, 2):
-                    if ifo_snr[ifos[i]][i_trig] < sngl_snr_threshold:
+    # Apply this cut only if there is more than 1 IFO
+    if len(ifos) > 1:
+        for i_trig, _ in enumerate(trigs):
+            # Apply only to triggers that were not already cut previously
+            if bestnr[i_trig] != 0:
+                ifos.sort(key=lambda ifo: sens[ifo][i_trig], reverse=True)
+                if (ifo_snr[ifos[0]][i_trig] < sngl_snr_threshold
+                    or ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
                         bestnr[i_trig] = 0
+    for i_trig, trig in enumerate(trigs):
         # Get chisq reduced (new) SNR for triggers that were not cut so far
         # NOTE: .get_bestnr is in glue.ligolw.lsctables.MultiInspiralTable
         if bestnr[i_trig] != 0:
@@ -465,10 +464,10 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
                                              null_snr_threshold=null_thresh[0],
                                              null_grad_thresh=null_grad_thresh,
                                              null_grad_val=null_grad_val)
-        # If we got this far and the bestNR is non-zero, verify that chisq was
-        # actually calculated for the trigger, otherwise print debugging info
-        if bestnr[i_trig] != 0:
-            if trig.chisq == 0:
+            # If we got this far and the bestNR is non-zero, verify that chisq
+            # was actually calculated for the trigger, otherwise print
+            # debugging info
+            if bestnr[i_trig] != 0 and trig.chisq == 0:
                 err_msg = "Chisq not calculated for trigger with end time "
                 err_msg += "%s and snr %s" % (trig.get_end(), trig.snr)
                 logging.error(err_msg)
@@ -717,10 +716,10 @@ def load_segment_dict(xml_file):
     """Loads the segment dictionary """
 
     # Get the mapping table
-    # TODO: unclear whether this step is necessary (seems the
-    # segment_def_id and time_slide_id are always identical)
     time_slide_map_table = \
         load_xml_table(xml_file, glsctables.TimeSlideSegmentMapTable.tableName)
+    # Perhaps unnecessary as segment_def_id and time_slide_id seem to always
+    # be identical identical
     segment_map = {
         int(entry.segment_def_id): int(entry.time_slide_id)
         for entry in time_slide_map_table
@@ -798,7 +797,8 @@ def construct_trials(num_slides, seg_dir, seg_dict, ifos, slide_dict, vetoes):
 def sort_stat(time_veto_max_stat):
     """Sort a dictionary of loudest SNRs/BestNRs"""
 
-    full_time_veto_max_stat = numpy.concatenate(list(time_veto_max_stat.values()))
+    full_time_veto_max_stat = list(time_veto_max_stat.values())
+    full_time_veto_max_stat = numpy.concatenate(full_time_veto_max_stat)
     full_time_veto_max_stat.sort()
 
     return full_time_veto_max_stat
@@ -857,12 +857,11 @@ def read_multiinspiral_timeslides_from_files(file_list):
     time_slides = []
 
     for this_file in file_list:
-        doc = utils.load_filename(this_file,
-            gz=this_file.endswith("gz"), contenthandler=glsctables.use_in(LIGOLWContentHandler))
+        doc = utils.load_filename(this_file, gz=this_file.endswith("gz"),
+                 contenthandler=glsctables.use_in(LIGOLWContentHandler))
 
         # Extract the time slide table
-        time_slide_table = get_table(doc,
-              lsctables.TimeSlideTable.tableName)
+        time_slide_table = get_table(doc, lsctables.TimeSlideTable.tableName)
         slide_mapping = {}
         curr_slides = {}
         for slide in time_slide_table:
@@ -885,8 +884,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
 
         # Extract the multi inspiral table
         try:
-            multi_inspiral_table = get_table(doc,
-                glsctables.MultiInspiralTable.tableName)
+            multi_inspiral_table = get_table(doc, 'multi_inspiral')
             # Remap the time slide IDs
             for multi in multi_inspiral_table:
                 newID = slide_mapping[int(multi.time_slide_id)]
@@ -896,7 +894,10 @@ def read_multiinspiral_timeslides_from_files(file_list):
                 multis.extend(multi_inspiral_table)
             else:
                 multis = multi_inspiral_table
-        except:
-            raise
+        except RuntimeError:
+            err_msg = "Unable to read a time-slid multiInspiral table "
+            err_msg += "from %s" % this_file
+            logging.error(err_msg)
+            raise RuntimeError(err_msg)
 
     return multis, time_slides

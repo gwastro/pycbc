@@ -30,12 +30,14 @@ import os
 import logging
 import numpy
 import matplotlib.pyplot as plt
+from matplotlib import rc
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results import pygrb_plotting_utils as plu
 
 plt.switch_backend('Agg')
+rc('font', size=14)
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -192,7 +194,6 @@ if opts.plot_caption is None:
         opts.plot_caption += ("Red crosses: injections triggers.")
 
 # Single IFO SNR versus time plots
-plu.pygrb_shared_plot_setups()
 xlims = [start, end]
 if opts.x_lims:
     xlims = opts.x_lims

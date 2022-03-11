@@ -32,9 +32,11 @@ import pycbc.version
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
-from pycbc.results.pygrb_plotting_utils import pygrb_shared_plot_setups
 from matplotlib import pyplot as plt
+from matplotlib import rc
+
 plt.switch_backend('Agg')
+rc('font', size=14)
 
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -116,7 +118,6 @@ if opts.verbose:
     fig_name = os.path.split(os.path.abspath(outfile))[1]
     sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
 
-pygrb_shared_plot_setups()
 fig = plt.figure()
 ax = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
