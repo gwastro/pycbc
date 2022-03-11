@@ -126,7 +126,7 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
     )
     
     hdfcombine_node = hdfcombine_exe.create_node(
-        workflow.analysis_time,
+        workflow,
         opt_snr_split_files
     )
     workflow += merge_node
