@@ -23,11 +23,10 @@
 Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
-import sys
 import copy
 import numpy
-from pycbc.results import save_fig_with_metadata
 from matplotlib import pyplot as plt
+from pycbc.results import save_fig_with_metadata
 
 
 #

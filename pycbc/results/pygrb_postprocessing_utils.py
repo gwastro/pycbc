@@ -452,10 +452,11 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
         for i_trig, _ in enumerate(trigs):
             # Apply only to triggers that were not already cut previously
             if bestnr[i_trig] != 0:
-                ifos.sort(key=lambda ifo: sens[ifo][i_trig], reverse=True)
+                ifos.sort(key=lambda ifo, j=i_trig: sens[ifo][j], reverse=True)
                 if (ifo_snr[ifos[0]][i_trig] < sngl_snr_threshold
-                    or ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
-                        bestnr[i_trig] = 0
+                    or
+                    ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
+                    bestnr[i_trig] = 0
     for i_trig, trig in enumerate(trigs):
         # Get chisq reduced (new) SNR for triggers that were not cut so far
         # NOTE: .get_bestnr is in glue.ligolw.lsctables.MultiInspiralTable
@@ -894,10 +895,10 @@ def read_multiinspiral_timeslides_from_files(file_list):
                 multis.extend(multi_inspiral_table)
             else:
                 multis = multi_inspiral_table
-        except RuntimeError:
+        except Exception as exc:
             err_msg = "Unable to read a time-slid multiInspiral table "
             err_msg += "from %s" % this_file
             logging.error(err_msg)
-            raise RuntimeError(err_msg)
+            raise RuntimeError(err_msg) from exc
 
     return multis, time_slides
