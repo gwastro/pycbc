@@ -24,8 +24,8 @@
 """
 This module is responsible for setting up the part of a pycbc workflow that
 will generate the injection files to be used for assessing the workflow's
-ability to detect predicted signals. (In ihope parlance, this sets up the
-inspinj jobs). Full documentation for this module can be found here:
+ability to detect predicted signals.
+Full documentation for this module can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
@@ -36,8 +36,7 @@ from pycbc.workflow.core import FileList, make_analysis_dir, Node
 from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
-        PycbcDarkVsBrightInjectionsExecutable, LigolwAddExecutable,
-        select_generic_executable)
+        PycbcDarkVsBrightInjectionsExecutable, select_generic_executable)
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -68,6 +67,7 @@ class PyCBCOptimalSNRExecutable(Executable):
                                  '--output-file')
         return node
 
+
 class PyCBCMergeHDFExecutable(Executable):
     """Merge HDF injection files executable class"""
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -78,6 +78,7 @@ class PyCBCMergeHDFExecutable(Executable):
         node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                  '--output-file')
         return node
+
 
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
@@ -124,7 +125,7 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         out_dir=out_dir,
         tags=tags
     )
-    
+
     hdfcombine_node = hdfcombine_exe.create_node(
         workflow,
         opt_snr_split_files
