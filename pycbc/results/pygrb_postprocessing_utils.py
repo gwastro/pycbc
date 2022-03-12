@@ -56,8 +56,9 @@ except ImportError:
 def pygrb_initialize_plot_parser(description=None, version=None):
     """Sets up a basic argument parser object for PyGRB plotting scripts"""
 
+    formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser = argparse.ArgumentParser(description=description,
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                     formatter_class=formatter_class)
     parser.add_argument("--version", action="version", version=version)
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="Verbose output")
@@ -117,15 +118,15 @@ def pygrb_add_injmc_opts(parser):
     parser.add_argument("-w", "--waveform-error", action="store",
                         type=float, default=0, help="The standard deviation " +
                         "to use when calculating the waveform error.")
-    for ifo in ["h1", "k1", "l1", "v1"]:
-        parser.add_argument("--%s-cal-error" % ifo, action="store", type=float,
+    for ifo in ["g1", "h1", "k1", "l1", "v1"]:
+        parser.add_argument(f"--{ifo}-cal-error", action="store", type=float,
                             default=0, help="The standard deviation to use " +
-                            "when calculating the %s " % ifo.upper() +
+                            f"when calculating the {ifo.upper()} " +
                             "calibration amplitude error.")
-        parser.add_argument("--%s-dc-cal-error" % ifo, action="store",
+        parser.add_argument(f"--{ifo}-dc-cal-error", action="store",
                             type=float, default=1.0, help="The scaling " +
                             "factor to use when calculating the " +
-                            "%s calibration amplitude error." % ifo.upper())
+                            f"{ifo.upper()} calibration amplitude error.")
 
 
 def pygrb_add_bestnr_opts(parser):
@@ -453,9 +454,8 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
             # Apply only to triggers that were not already cut previously
             if bestnr[i_trig] != 0:
                 ifos.sort(key=lambda ifo, j=i_trig: sens[ifo][j], reverse=True)
-                if (ifo_snr[ifos[0]][i_trig] < sngl_snr_threshold
-                    or
-                    ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
+                if (ifo_snr[ifos[0]][i_trig] < sngl_snr_threshold or
+                        ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
                     bestnr[i_trig] = 0
     for i_trig, trig in enumerate(trigs):
         # Get chisq reduced (new) SNR for triggers that were not cut so far
@@ -470,7 +470,7 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
             # debugging info
             if bestnr[i_trig] != 0 and trig.chisq == 0:
                 err_msg = "Chisq not calculated for trigger with end time "
-                err_msg += "%s and snr %s" % (trig.get_end(), trig.snr)
+                err_msg += f"{trig.get_end()} and SNR {trig.snr}."
                 logging.error(err_msg)
                 raise RuntimeError(err_msg)
 
@@ -613,7 +613,7 @@ def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
     veto_files = []
     if veto_dir:
         veto_string = ','.join([str(i) for i in range(2, veto_cat+1)])
-        veto_files = glob.glob(veto_dir + '/*CAT[%s]*.xml' % (veto_string))
+        veto_files = glob.glob(veto_dir + f'/*CAT[{veto_string}]*.xml')
     vetoes = extract_vetoes(veto_files, ifos)
 
     return ifos, vetoes
@@ -674,7 +674,7 @@ def load_time_slides(xml_file):
     if not numpy.all(numpy.array(list(time_slide_list[0].values())) == 0):
         err_msg = "The zero-lag slide should have time_slide_id == 0 "
         err_msg += "but the first element of time_slide_list is "
-        err_msg += "%s \n" % time_slide_list[0]
+        err_msg += f"{time_slide_list[0]}."
         logging.error(err_msg)
         raise RuntimeError(err_msg)
 
@@ -732,7 +732,7 @@ def load_segment_dict(xml_file):
     for entry in segment_table:
         curr_slid_id = segment_map[int(entry.segment_def_id)]
         curr_seg = entry.get()
-        if curr_slid_id not in segment_dict.keys():
+        if curr_slid_id not in segment_dict:
             segment_dict[curr_slid_id] = segments.segmentlist()
         segment_dict[curr_slid_id].append(curr_seg)
         segment_dict[curr_slid_id].coalesce()
@@ -857,9 +857,10 @@ def read_multiinspiral_timeslides_from_files(file_list):
     multis = None
     time_slides = []
 
+    contenthandler = glsctables.use_in(LIGOLWContentHandler)
     for this_file in file_list:
         doc = utils.load_filename(this_file, gz=this_file.endswith("gz"),
-                 contenthandler=glsctables.use_in(LIGOLWContentHandler))
+                                  contenthandler=contenthandler)
 
         # Extract the time slide table
         time_slide_table = get_table(doc, lsctables.TimeSlideTable.tableName)
@@ -867,10 +868,10 @@ def read_multiinspiral_timeslides_from_files(file_list):
         curr_slides = {}
         for slide in time_slide_table:
             curr_id = int(slide.time_slide_id)
-            if curr_id not in curr_slides.keys():
+            if curr_id not in curr_slides:
                 curr_slides[curr_id] = {}
                 curr_slides[curr_id][slide.instrument] = slide.offset
-            elif slide.instrument not in curr_slides[curr_id].keys():
+            elif slide.instrument not in curr_slides[curr_id]:
                 curr_slides[curr_id][slide.instrument] = slide.offset
 
         for slide_id, offset_dict in curr_slides.items():
@@ -890,14 +891,14 @@ def read_multiinspiral_timeslides_from_files(file_list):
             for multi in multi_inspiral_table:
                 newID = slide_mapping[int(multi.time_slide_id)]
                 multi.time_slide_id = gilwdchar(
-                                      "time_slide:time_slide_id:%d" % (newID))
+                                      f"time_slide:time_slide_id:{newID}")
             if multis:
                 multis.extend(multi_inspiral_table)
             else:
                 multis = multi_inspiral_table
         except Exception as exc:
             err_msg = "Unable to read a time-slid multiInspiral table "
-            err_msg += "from %s" % this_file
+            err_msg += f"from {this_file}."
             logging.error(err_msg)
             raise RuntimeError(err_msg) from exc
 

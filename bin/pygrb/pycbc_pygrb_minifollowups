@@ -117,7 +117,6 @@ parser.add_argument('--trig-file',
                     help="xml file containing the triggers found by PyGRB")
 parser.add_argument('--followups-file',
                     help="HDF format file containing trigger/injections to follow up")
-#parser.add_argument('--instrument', help="Name of interferometer e.g. H1")
 parser.add_argument('--wiki-file',
                     help="Name of file to save wiki-formatted table in")
 parser.add_argument('--veto-directory', help="Path to the veto directory")

@@ -271,11 +271,13 @@ chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
 wf_err = opts.waveform_error
 cal_errs = {}
+cal_errs['G1'] = opts.g1_cal_error
 cal_errs['H1'] = opts.h1_cal_error
 cal_errs['K1'] = opts.k1_cal_error
 cal_errs['L1'] = opts.l1_cal_error
 cal_errs['V1'] = opts.v1_cal_error
 cal_dc_errs = {}
+cal_dc_errs['G1'] = opts.g1_dc_cal_error
 cal_dc_errs['H1'] = opts.h1_dc_cal_error
 cal_dc_errs['K1'] = opts.k1_dc_cal_error
 cal_dc_errs['L1'] = opts.l1_dc_cal_error
@@ -384,10 +386,10 @@ if lofft_outfile or lofft_h5_outfile:
     # td: table data
     td = []
 
-    # Rather than changing the xml table structures, it is easier to have KAGRA
-    # piggy back on the TAMA column.
-    ifo_att = {'G1':'g', 'H1':'h1', 'H2':'h2', 'K1': 't',
-               'L1':'l', 'V1':'v', 'T1':'t'}
+    # NOTE: Rather than changing the xml table structures, KAGRA piggy backs
+    # on the TAMA column (t). The h2 column is left unused.
+    # TAMA and Hanford2 are therefore no longer supported.
+    ifo_att = {'G1':'g', 'H1':'h1', 'K1': 't', 'L1':'l', 'V1':'v'}
 
     # Gather properties of the loudest offsource triggers
     for i in range(min(len(offsource_trigs), opts.num_loudest_off_trigs)):
