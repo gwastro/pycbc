@@ -48,7 +48,7 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
         raise ValueError('Lowest frequency in input data '
           ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
 
-    kmin = int(numpy.ceil(low_freq_cutoff / delta_f))
+    kmin = int(low_freq_cutoff / delta_f)
     flow = kmin * delta_f
 
     data_start = (0 if freq_data[0]==low_freq_cutoff else numpy.searchsorted(freq_data, flow) - 1)
@@ -61,15 +61,18 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     noise_data = noise_data[data_start:]
 
     if (length - 1) * delta_f > freq_data[-1]:
-        raise ValueError('Requested number of samples exceeds the highest '
-                         'available frequency in the input data. '
-                         f'(requested {(length - 1) * delta_f}, '
-                         f' available {freq_data[-1]})')
+        print('Requested number of samples exceeds the highest '
+              'available frequency in the input data, '
+              'will use max available frequency instead. '
+              f'(requested {(length - 1) * delta_f}, '
+              f' available {freq_data[-1]})')
+        length = int(freq_data[-1]/delta_f + 1)
 
     flog = numpy.log(freq_data)
     slog = numpy.log(noise_data)
 
-    psd_interp = scipy.interpolate.interp1d(flog, slog)
+    psd_interp = scipy.interpolate.interp1d(
+        flog, slog, fill_value=(slog[0], slog[-1]), bounds_error=False)
     psd = numpy.zeros(length, dtype=numpy.float64)
 
     vals = numpy.log(numpy.arange(kmin, length) * delta_f)
