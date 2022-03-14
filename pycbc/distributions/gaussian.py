@@ -62,11 +62,6 @@ class Gaussian(bounded.BoundedDist):
         will be a normal, unbounded Gaussian (equivalent to setting the bounds
         to `[-inf, inf)`).
 
-    Attributes
-    ----------------
-    name : 'guassian'
-        The name of this distribution.
-
     Examples
     --------
     Create an unbounded Gaussian distribution with zero mean and unit variance:

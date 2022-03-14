@@ -85,12 +85,6 @@ class BaseGenerator(object):
     current_params : dict
         A dictionary of the frozen keyword arguments and variable arguments
         that were last passed to the waveform generator.
-
-    Methods
-    -------
-    generate(variable_values)
-        Generates a waveform using the variable arguments and the frozen
-        arguments.
     """
     def __init__(self, generator, variable_args=(), record_failures=False,
                  **frozen_params):
@@ -184,16 +178,15 @@ class BaseGenerator(object):
 class BaseCBCGenerator(BaseGenerator):
     """Adds ability to convert from various derived parameters to parameters
     needed by the waveform generators.
-
-    Attributes
-    ----------
-    possible_args : set
-        The set of names of arguments that may be used in the `variable_args`
-        or `frozen_params`.
     """
+
     possible_args = set(parameters.td_waveform_params +
                         parameters.fd_waveform_params +
                         ['taper'])
+    """set: The set of names of arguments that may be used in the
+        `variable_args` or `frozen_params`.
+    """
+
     def __init__(self, generator, variable_args=(), **frozen_params):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
@@ -527,12 +520,6 @@ class BaseFDomainDetFrameGenerator(object):
 
     Attributes
     ----------
-    location_args : set([])
-        Should be overriden by childern classes with a set of parameters
-        that set the binary's location.
-
-    Attributes
-    ----------
     detectors : dict
         The dictionary of detectors that antenna patterns are calculated for
         on each call of generate. If no detectors were provided, will be
@@ -540,10 +527,6 @@ class BaseFDomainDetFrameGenerator(object):
     detector_names : list
         The list of detector names. If no detectors were provided, then this
         will be ['RF'] for "radiation frame".
-    epoch : lal.LIGOTimeGPS
-        The GPS start time of the frequency series returned by the generate function.
-        A time shift is applied to the waveform equal to tc-epoch. Update by using
-        ``set_epoch``.
     current_params : dict
         A dictionary of name, value pairs of the arguments that were last
         used by the generate function.
@@ -558,7 +541,11 @@ class BaseFDomainDetFrameGenerator(object):
         function.
 
     """
+
     location_args = set([])
+    """Set: Should be overriden by children classes with a set of parameters
+        that set the binary's location.
+    """
 
     def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
                  variable_args=(), recalib=None, gates=None, **frozen_params):
@@ -608,6 +595,10 @@ class BaseFDomainDetFrameGenerator(object):
 
     @property
     def epoch(self):
+        """The GPS start time of the frequency series returned by the generate
+        function. A time shift is applied to the waveform equal to tc-epoch.
+        Update by using ``set_epoch``
+        """
         return _lal.LIGOTimeGPS(self._epoch)
 
     @abstractmethod
@@ -653,22 +644,6 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
 
     Attributes
     ----------
-    location_args : set(['tc', 'ra', 'dec', 'polarization'])
-        The set of location parameters. These are not passed to the rFrame
-        generator class; instead, they are used to apply the detector response
-        function and/or shift the waveform in time. The parameters are:
-
-          * tc: The GPS time of coalescence (should be geocentric time).
-          * ra: Right ascension.
-          * dec: declination
-          * polarization: polarization.
-
-        All of these must be provided in either the variable args or the
-        frozen params if detectors is not None. If detectors
-        is None, tc may optionally be provided.
-
-    Attributes
-    ----------
     detectors : dict
         The dictionary of detectors that antenna patterns are calculated for
         on each call of generate. If no detectors were provided, will be
@@ -707,7 +682,22 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
      'L1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637a50>}
 
     """
+
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
+    """set(['tc', 'ra', 'dec', 'polarization']):
+        The set of location parameters. These are not passed to the rFrame
+        generator class; instead, they are used to apply the detector response
+        function and/or shift the waveform in time. The parameters are:
+
+          * tc: The GPS time of coalescence (should be geocentric time).
+          * ra: Right ascension.
+          * dec: declination
+          * polarization: polarization.
+
+        All of these must be provided in either the variable args or the
+        frozen params if detectors is not None. If detectors
+        is None, tc may optionally be provided.
+    """
 
     def generate(self, **kwargs):
         """Generates a waveform, applies a time shift and the detector response
@@ -799,21 +789,6 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
 
     Attributes
     ----------
-    location_args : set(['tc', 'ra', 'dec'])
-        The set of location parameters. These are not passed to the rFrame
-        generator class; instead, they are used to apply the detector response
-        function and/or shift the waveform in time. The parameters are:
-
-          * tc: The GPS time of coalescence (should be geocentric time).
-          * ra: Right ascension.
-          * dec: declination
-
-        All of these must be provided in either the variable args or the
-        frozen params if detectors is not None. If detectors
-        is None, tc may optionally be provided.
-
-    Attributes
-    ----------
     detectors : dict
         The dictionary of detectors that antenna patterns are calculated for
         on each call of generate. If no detectors were provided, will be
@@ -840,6 +815,19 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
 
     """
     location_args = set(['tc', 'ra', 'dec'])
+    """ set(['tc', 'ra', 'dec']):
+        The set of location parameters. These are not passed to the rFrame
+        generator class; instead, they are used to apply the detector response
+        function and/or shift the waveform in time. The parameters are:
+
+          * tc: The GPS time of coalescence (should be geocentric time).
+          * ra: Right ascension.
+          * dec: declination
+
+        All of these must be provided in either the variable args or the
+        frozen params if detectors is not None. If detectors
+        is None, tc may optionally be provided.
+    """
 
     def generate(self, **kwargs):
         """Generates a waveform polarizations and applies a time shift.
@@ -945,21 +933,6 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
 
     Attributes
     ----------
-    location_args : set(['tc', 'ra', 'dec'])
-        The set of location parameters. These are not passed to the rFrame
-        generator class; instead, they are used to apply the detector response
-        function and/or shift the waveform in time. The parameters are:
-
-          * tc: The GPS time of coalescence (should be geocentric time).
-          * ra: Right ascension.
-          * dec: declination
-
-        All of these must be provided in either the variable args or the
-        frozen params if detectors is not None. If detectors
-        is None, tc may optionally be provided.
-
-    Attributes
-    ----------
     detectors : dict
         The dictionary of detectors that antenna patterns are calculated for
         on each call of generate. If no detectors were provided, will be
@@ -986,6 +959,19 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
 
     """
     location_args = set(['tc', 'ra', 'dec'])
+    """ set(['tc', 'ra', 'dec']):
+        The set of location parameters. These are not passed to the rFrame
+        generator class; instead, they are used to apply the detector response
+        function and/or shift the waveform in time. The parameters are:
+
+          * tc: The GPS time of coalescence (should be geocentric time).
+          * ra: Right ascension.
+          * dec: declination
+
+        All of these must be provided in either the variable args or the
+        frozen params if detectors is not None. If detectors
+        is None, tc may optionally be provided.
+    """
 
     def generate(self, **kwargs):
         """Generates and returns a waveform decompsed into separate modes.

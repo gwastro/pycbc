@@ -123,8 +123,8 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.0.1'
-        vinfo.release = 'True'
+        vinfo.version = '2.0.dev3'
+        vinfo.release = 'False'
 
     with open('pycbc/version.py', 'wb') as f:
         f.write("# coding: utf-8\n".encode('utf-8'))
@@ -305,6 +305,7 @@ setup (
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
         'Topic :: Scientific/Engineering',
