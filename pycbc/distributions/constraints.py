@@ -16,6 +16,7 @@
 This modules provides classes for evaluating multi-dimensional constraints.
 """
 
+import re
 import scipy.spatial
 import numpy
 import h5py
@@ -37,7 +38,11 @@ class Constraint(object):
                 static_args.items(), key=lambda x: len(x[0]), reverse=True))
             )
         for arg, val in static_args.items():
-            constraint_arg = constraint_arg.replace(arg, str(val))
+            # Substitute static arg name for value if it appears in the 
+            # constraint_arg string at the beginning of a word and is not
+            # followed by an underscore
+            constraint_arg = re.sub(
+                r'\b{}(?!\_|\=)'.format(arg), str(val), constraint_arg)
         self.constraint_arg = constraint_arg
         self.transforms = transforms
         for kwarg in kwargs.keys():
