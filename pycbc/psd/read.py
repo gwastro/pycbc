@@ -65,8 +65,8 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
         logging.warning('Requested number of samples exceeds the highest '
                         'available frequency in the input data, '
                         'will use max available frequency instead. '
-                        '(requested %f, available %f)' %
-                        ((length - 1) * delta_f, freq_data[-1]))
+                        '(requested %f Hz, available %f Hz)',
+                        (length - 1) * delta_f, freq_data[-1])
         length = int(freq_data[-1]/delta_f + 1)
 
     flog = numpy.log(freq_data)
