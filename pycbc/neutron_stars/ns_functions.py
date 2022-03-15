@@ -134,42 +134,46 @@ def PG_ISSO_solver(chi,incl):
         the radius of the orbit in BH mass units
     """
     # Auxiliary variables
-    cos_incl=np.cos(incl)
+    cos_incl = np.cos(incl)
     sgnchi = np.sign(cos_incl)*chi
 
     # ISCO radius for the given spin magnitude
-    if sgnchi > 0.99:
-        initial_guess = 2 # Works better than 6 for chi=1
-    elif sgnchi < 0:
-        initial_guess = 9
-    else:
-        initial_guess = 5 # Works better than 6 for chi=0.5
-    rISCO_limit = fsolve(ISCO_eq, initial_guess, args=sgnchi)
+    initial_guess = [2 if s > 0.99 else (9 if s < 0 else 5) for s in sgnchi]
+    rISCO_limit = np.array([
+        fsolve(ISCO_eq, g0, args=sc)[0]
+        for g0, sc in zip(initial_guess, sgnchi)])
+    # If the inclination is 0 or pi, just output the ISCO radius
+    equatorial = (incl == 0) | (incl == np.pi)
+    if all(equatorial):
+        return rISCO_limit
 
     # ISSO radius for an inclination of pi/2
-    if chi < 0:
-        initial_guess = 9
-    else:
-        initial_guess = 6
-    rISSO_at_pole_limit = fsolve(ISSO_eq_at_pole, initial_guess,
-                                                args=chi)
-
-    # If the inclination is 0 or pi, just output the ISCO radius
-    if incl in [0, np.pi]:
-        solution = rISCO_limit
+    initial_guess = [9 if c < 0 else 6 for c in chi]
+    rISSO_at_pole_limit = np.array([
+        fsolve(ISSO_eq_at_pole, g0, args=c)[0]
+        for g0, c in zip(initial_guess, chi)])
     # If the inclination is pi/2, just output the ISSO radius at the pole(s)
-    elif incl == np.pi/2:
-        solution = rISSO_at_pole_limit
-    # Otherwise, find the ISSO radius for a generic inclination
-    else:
-        initial_guess = max(rISCO_limit,rISSO_at_pole_limit)
-        solution = fsolve(PG_ISSO_eq, initial_guess,
-                                         args=(chi, incl))
-        if solution < 1 or solution > 9:
-            initial_guess = min(rISCO_limit,rISSO_at_pole_limit)
-            solution = fsolve(PG_ISSO_eq, initial_guess,
-                                             args=(chi, incl))
+    polar = (incl == np.pi/2)
+    if all(polar):
+        return rISSO_at_pole_limit
 
+    # Otherwise, find the ISSO radius for a generic inclination
+    initial_guess = np.maximum(rISCO_limit, rISSO_at_pole_limit)
+    solution = np.array([
+        fsolve(PG_ISSO_eq, g0, args=(c, inc))[0]
+        for g0, c, inc in zip(initial_guess, chi, incl)])
+    oob = (solution < 1) | (solution > 9)
+    n = 1
+    while any(oob):
+        if n > 5:
+            raise RuntimeError('Unable to obtain some solutions!')
+        initial_guess = np.minimum(rISCO_limit, rISSO_at_pole_limit)
+        solution = np.array([
+            fsolve(PG_ISSO_eq, g0, args=(c, inc))[0] if ob else sol
+            for g0, c, inc, ob, sol
+            in zip(initial_guess, chi, incl, oob, solution)])
+        oob = (solution < 1) | (solution > 9)
+        n += 1
     return solution
 
 

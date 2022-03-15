@@ -455,14 +455,15 @@ def remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos(
         The remnant mass in solar masses
     """
     # mass1 must be greater than mass2
-    if not mass1 >= mass2:
-        raise ValueError(f'Require mass1 >= mass2. {mass1} < {mass2}')
+    if any(mass2 > mass1):
+        raise ValueError(f'Require mass1 >= mass2')
     # Load required EOS
     if eos in ns.NS_SEQUENCES:
         ns_seq, ns_max = ns.load_ns_sequence(eos)
-        if mass2 > ns_max:
+        if any(mass2 > ns_max):
             raise ValueError(
-                f'Maximum NS mass for {eos} is {ns_max}, received {mass2}')
+                f'Maximum NS mass for {eos} is {ns_max}, received '
+                f'{mass2[mass2 > ns_max]}')
         # NS compactness and rest mass
         ns_compactness = ns.ns_g_mass_to_ns_compactness(mass2, ns_seq)
         ns_b_mass = ns.ns_g_mass_to_ns_b_mass(mass2, ns_seq)
@@ -490,8 +491,8 @@ def remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos(
         - beta * ns_compactness / eta * ns.PG_ISSO_solver(spin1a, spin1pol)
         + gamma
         )
-    remnant_mass = ns_b_mass * max(fit, 0.0) ** delta
-    return formatreturn(remnant_mass)
+    remnant_mass = ns_b_mass * numpy.where(fit > 0.0, fit, 0.0) ** delta
+    return remnant_mass
 
 #remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos = numpy.vectorize(
 #    _remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos)
