@@ -79,10 +79,11 @@ def draw_samples_from_config(path, num=1, seed=150914):
     file.close()
 
     # Get the vairable arguments from the .ini file.
-    variable_args, _ = distributions.read_params_from_config(
-                            config_parser, prior_section='prior',
-                            vargs_section='variable_params')
-    constraints = distributions.read_constraints_from_config(config_parser)
+    variable_args, static_args = distributions.read_params_from_config(
+        config_parser, prior_section='prior', vargs_section='variable_params',
+        sargs_section='static_params')
+    constraints = distributions.read_constraints_from_config(
+        config_parser, static_args=static_args)
 
     if any(config_parser.get_subsections('waveform_transforms')):
         waveform_transforms = transforms.read_transforms_from_config(

@@ -30,7 +30,8 @@ from pycbc.workflow import WorkflowConfigParser
 
 # distributions to exclude from one-dimensional distribution unit tests
 # some of these distributons have their own specific unit test
-EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary", "external",
+EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
+                      "external", "external_func_fromfile",
                       "uniform_solidangle", "uniform_sky",
                       "independent_chip_chieff",
                       "uniform_f0_tau", "fixed_samples"]
@@ -67,7 +68,8 @@ class TestDistributions(unittest.TestCase):
         self.cp = WorkflowConfigParser.from_cli(self.opts)
         self.variable_args, self.static_args = \
             distributions.read_params_from_config(self.cp)
-        self.constraints = distributions.read_constraints_from_config(self.cp)
+        self.constraints = distributions.read_constraints_from_config(
+            self.cp, static_args=self.static_args)
 
         # read distributions
         self.dists = distributions.read_distributions_from_config(self.cp)

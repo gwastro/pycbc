@@ -6,7 +6,7 @@ scipy>=0.16.0
 matplotlib>=2.0.0
 numpy>=1.16.0,!=1.19.0
 pillow
-h5py>=2.10
+h5py>=3.0.0
 jinja2
 mpld3>=0.3
 requests>=1.2.1

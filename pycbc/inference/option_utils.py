@@ -381,11 +381,12 @@ def prior_from_config(cp, prior_section='prior'):
         The prior distribution.
     """
     # Read variable and static parameters from the config file
-    variable_params, _ = distributions.read_params_from_config(
+    variable_params, static_params = distributions.read_params_from_config(
         cp, prior_section=prior_section, vargs_section='variable_params',
         sargs_section='static_params')
     # Read constraints to apply to priors from the config file
-    constraints = distributions.read_constraints_from_config(cp)
+    constraints = distributions.read_constraints_from_config(
+        cp, static_args=static_params)
     # Get PyCBC distribution instances for each variable parameter in the
     # config file
     dists = distributions.read_distributions_from_config(cp, prior_section)
