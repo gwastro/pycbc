@@ -435,7 +435,8 @@ class BaseMCMC(object):
             init_prior = None
         else:
             start_file = None
-            init_prior = initial_dist_from_config(cp, self.variable_params)
+            init_prior = initial_dist_from_config(
+                cp, self.variable_params, self.static_params)
         self.set_p0(samples_file=start_file, prior=init_prior)
 
     def resume_from_checkpoint(self):

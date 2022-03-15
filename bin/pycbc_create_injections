@@ -190,7 +190,8 @@ variable_params, static_params = distributions.read_params_from_config(cp,
     prior_section=opts.dist_section,
     vargs_section=opts.variable_params_section,
     sargs_section=opts.static_params_section)
-constraints = distributions.read_constraints_from_config(cp)
+constraints = distributions.read_constraints_from_config(
+    cp, static_args=static_params)
 
 if any(cp.get_subsections('waveform_transforms')):
     waveform_transforms = transforms.read_transforms_from_config(cp,

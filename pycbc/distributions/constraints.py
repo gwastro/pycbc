@@ -29,7 +29,15 @@ class Constraint(object):
     """
     name = "custom"
 
-    def __init__(self, constraint_arg, transforms=None, **kwargs):
+    def __init__(self, constraint_arg, static_args=None, transforms=None,
+                 **kwargs):
+        static_args = (
+            {} if static_args is None
+            else dict(sorted(
+                static_args.items(), key=lambda x: len(x[0]), reverse=True))
+            )
+        for arg, val in static_args.items():
+            constraint_arg = constraint_arg.replace(arg, str(val))
         self.constraint_arg = constraint_arg
         self.transforms = transforms
         for kwarg in kwargs.keys():

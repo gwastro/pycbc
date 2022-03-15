@@ -42,7 +42,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'scipy>=0.16.0',
                       'matplotlib>=1.5.1',
                       'pillow',
-                      'h5py>=2.10',
+                      'h5py>=3.0.0',
                       'jinja2',
                       'lalsuite!=7.2',
                       'astropy>=2.0.3,!=4.2.1,!=4.0.5',
@@ -55,7 +55,8 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'tqdm',
                       'gwdatafind',
                       'pegasus-wms.api >= 5.0.1',
-                      'python-ligo-lw >= 1.7.0'
+                      'python-ligo-lw >= 1.7.0',
+                      'setuptools',
                       ]
 
 def find_files(dirname, relpath=None):
