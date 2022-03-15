@@ -80,12 +80,6 @@ init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")
 
 trig_file = os.path.abspath(opts.trig_file)
 outfile = opts.output_file
-seg_dir = opts.segment_dir
-veto_files = []
-if opts.veto_directory:
-    veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
-    veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
-
 if opts.plot_title is None:
     opts.plot_title = 'PyGRB sky grid'
 
@@ -98,10 +92,8 @@ for outdir in outdirs:
         os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos = ppu.extract_ifos(trig_file)
-
-# Extract IFOs and vetoes
-vetoes = ppu.extract_vetoes(trig_file, ifos)
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+                                           opts.veto_category)
 
 # Load trigger data
 trig_data = load_data(trig_file, vetoes)

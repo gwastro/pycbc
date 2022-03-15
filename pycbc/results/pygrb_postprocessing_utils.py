@@ -31,6 +31,8 @@ import copy
 import numpy
 from scipy import stats
 from pycbc.detector import Detector
+import pycbc.workflow as _workflow
+from pycbc.workflow.core import resolve_url_to_file
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo import segments
@@ -79,11 +81,12 @@ def pygrb_initialize_plot_parser(description=None, version=None):
     parser.add_argument("-f", "--found-file", action="store",
                         default=None,
                         help="Location of the found injections file.")
-    parser.add_argument("-a", "--segment-dir", action="store",
-                        required=True, help="Directory holding buffer, on " +
-                        "and off source segment files.")
-    parser.add_argument("-l", "--veto-directory", action="store", default=None,
-                        help="The location of the CATX veto files")
+    parser.add_argument("-a", "--seg-files", nargs="+", action="store",
+                        default=None, help="The location of the buffer, " +
+                        "onsource and offsource segment files.")
+    parser.add_argument("-V", "--veto-files", nargs="+", action="store",
+                        default=None, help="The location of the CATX veto " +
+                        "files provided as a list of space-separated values.")
     parser.add_argument("-b", "--veto-category", action="store", type=int,
                         default=None, help="Apply vetoes up to this level " +
                         "inclusive.")
@@ -171,20 +174,49 @@ def pygrb_add_missed_injs_input_opt(parser):
 
 
 # =============================================================================
+# Functions to create appropriate FileLists of veto/segment files
+# =============================================================================
+def build_veto_filelist(workflow):
+    """Construct a FileList instance containing all veto xml files"""
+
+    veto_dir = workflow.cp.get('workflow', 'veto-directory')
+    veto_files = glob.glob(veto_dir + f'/*CAT*.xml')
+    veto_files = [resolve_url_to_file(vf) for vf in veto_files]
+    veto_files = _workflow.FileList(veto_files)
+
+    return veto_files
+
+
+def build_segment_filelist(workflow):
+    """Construct a FileList instance containing all segments txt files"""
+
+    seg_dir = workflow.cp.get('workflow', 'segment-dir')
+    file_name_list = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
+    seg_files = [os.path.join(seg_dir, file_name) for file_name in file_name_list]
+    seg_files = [resolve_url_to_file(sf) for sf in seg_files]
+    seg_files = _workflow.FileList(seg_files)
+
+    return seg_files
+
+
+# =============================================================================
 # Wrapper to read segments files
 # =============================================================================
-def read_seg_files(seg_dir):
-    """Given the segments directory, read segments files"""
+def read_seg_files(seg_files):
+    """Read segments txt files"""
+
+    if len(seg_files) != 3:
+        err_msg = "The location of three segment files is necessary."
+        err_msg += "[bufferSeg.txt, offSourceSeg.txt, onSourceSeg.txt]"
+        raise RuntimeError(err_msg)
 
     times = {}
     keys = ["buffer", "off", "on"]
-    file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
 
-    for key, file_name in zip(keys, file_names):
-        segs = fromsegwizard(open(os.path.join(seg_dir, file_name), 'r'))
+    for key, seg_file in zip(keys, seg_files):
+        segs = fromsegwizard(open(seg_file, 'r'))
         if len(segs) > 1:
             err_msg = 'More than one segment, an error has occured.'
-            logging.error(err_msg)
             raise RuntimeError(err_msg)
         times[key] = segs[0]
 
@@ -264,13 +296,28 @@ def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
 # =============================================================================
 # Function to extract vetoes
 # =============================================================================
-def extract_vetoes(veto_files, ifos):
+def extract_vetoes(all_veto_files, ifos, veto_cat):
     """Extracts vetoes from veto filelist"""
+
+    if all_veto_files and (veto_cat is None):
+        err_msg = "Must supply veto category to apply vetoes."
+        parser.error(err_msg)
 
     # Initialize veto containers
     vetoes = segments.segmentlistdict()
     for ifo in ifos:
         vetoes[ifo] = segments.segmentlist()
+
+    veto_files = []
+    veto_cats = range(2, veto_cat+1)
+    for cat in veto_cats:
+        veto_files += [vf for vf in all_veto_files if "CAT"+str(cat) in vf]
+    n_found = len(veto_files)
+    n_expected = len(ifos)*len(veto_cats)
+    if n_found != n_expected:
+        err_msg = f"Found {n_found} veto files instead of the expected "
+        err_msg += f"{n_expected}; check the options."
+        raise RuntimeError(err_msg)
 
     # Construct veto list from veto filelist
     if veto_files:
@@ -471,7 +518,6 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
             if bestnr[i_trig] != 0 and trig.chisq == 0:
                 err_msg = "Chisq not calculated for trigger with end time "
                 err_msg += f"{trig.get_end()} and SNR {trig.snr}."
-                logging.error(err_msg)
                 raise RuntimeError(err_msg)
 
     return bestnr
@@ -509,7 +555,6 @@ def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
                     continue
                 err_msg = "Triggers found in input files not in the list of "
                 err_msg += "analysed segments. This should not happen."
-                logging.error(err_msg)
                 raise RuntimeError(err_msg)
         # END OF CHECK #
 
@@ -573,10 +618,10 @@ def extract_basic_trig_properties(trial_dict, trigs, num_slides, seg_dict,
 # =============================================================================
 # Find GRB trigger time
 # =============================================================================
-def get_grb_time(seg_dir):
+def get_grb_time(seg_files):
     """Determine GRB trigger time"""
 
-    segs = read_seg_files(seg_dir)
+    segs = read_seg_files(seg_files)
     grb_time = segs['on'][1] - 1
 
     return grb_time
@@ -601,7 +646,7 @@ def extract_ifos(trig_file):
 # =============================================================================
 # Function to extract IFOs and vetoes
 # =============================================================================
-def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
+def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
     """Extracts IFOs from search summary table and vetoes from a directory"""
 
     logging.info("Extracting IFOs and vetoes.")
@@ -610,11 +655,7 @@ def extract_ifos_and_vetoes(trig_file, veto_dir, veto_cat):
     ifos = extract_ifos(trig_file)
 
     # Extract vetoes
-    veto_files = []
-    if veto_dir:
-        veto_string = ','.join([str(i) for i in range(2, veto_cat+1)])
-        veto_files = glob.glob(veto_dir + f'/*CAT[{veto_string}]*.xml')
-    vetoes = extract_vetoes(veto_files, ifos)
+    vetoes = extract_vetoes(veto_files, ifos, veto_cat)
 
     return ifos, vetoes
 
@@ -668,14 +709,12 @@ def load_time_slides(xml_file):
     if not (numpy.all(ids[1:] == numpy.array(ids[:-1])+1) and ids[0] == 0):
         err_msg = "time_slide_ids list should start at zero and increase by "
         err_msg += "one for every element"
-        logging.error(err_msg)
         raise RuntimeError(err_msg)
     # Check that the zero-lag slide has time_slide_id == 0.
     if not numpy.all(numpy.array(list(time_slide_list[0].values())) == 0):
         err_msg = "The zero-lag slide should have time_slide_id == 0 "
         err_msg += "but the first element of time_slide_list is "
         err_msg += f"{time_slide_list[0]}."
-        logging.error(err_msg)
         raise RuntimeError(err_msg)
 
     return time_slide_list
@@ -698,13 +737,11 @@ def find_zero_lag_slide_id(slide_dict):
                 else:
                     err_msg = 'zero_lag_slide_id was already assigned: there'
                     err_msg += 'seems to be more than one zero-lag slide!'
-                    logging.error(err_msg)
                     raise RuntimeError(err_msg)
 
     if zero_lag_slide_id is None:
         err_msg = 'Unable to assign zero_lag_slide_id: '
         err_msg += 'there seems to be no zero-lag slide!'
-        logging.error(err_msg)
         raise RuntimeError(err_msg)
 
     return zero_lag_slide_id
@@ -743,13 +780,13 @@ def load_segment_dict(xml_file):
 # =============================================================================
 # Construct the trials from the timeslides, segments, and vetoes
 # =============================================================================
-def construct_trials(num_slides, seg_dir, seg_dict, ifos, slide_dict, vetoes):
+def construct_trials(num_slides, seg_files, seg_dict, ifos, slide_dict, vetoes):
     """Constructs trials from triggers, timeslides, segments and vetoes"""
 
     trial_dict = {}
 
     # Get segments
-    segs = read_seg_files(seg_dir)
+    segs = read_seg_files(seg_files)
 
     # Separate segments
     trial_time = abs(segs['on'])
@@ -774,19 +811,20 @@ def construct_trials(num_slides, seg_dir, seg_dict, ifos, slide_dict, vetoes):
         # Construct trial list and check against buffer
         trial_dict[slide_id] = segments.segmentlist()
         for curr_seg in curr_seg_list:
-            iter_int = 0
+            iter_int = 1
             while 1:
-                trial_end = curr_seg[0] + trial_time*(iter_int+1)
+                trial_end = curr_seg[0] + trial_time*iter_int
                 if trial_end > curr_seg[1]:
                     break
                 curr_trial = segments.segment(trial_end - trial_time,
                                               trial_end)
                 if not seg_buffer.intersects_segment(curr_trial):
-                    for ifo in ifos:
-                        if slid_vetoes[ifo].intersects_segment(curr_trial):
-                            break
-                    else:
+                    intersect = numpy.any([slid_vetoes[ifo].\
+                                           intersects_segment(curr_trial) \
+                                           for ifo in ifos])
+                    if not intersect:
                         trial_dict[slide_id].append(curr_trial)
+
                 iter_int += 1
 
     return trial_dict
@@ -889,9 +927,9 @@ def read_multiinspiral_timeslides_from_files(file_list):
             multi_inspiral_table = get_table(doc, 'multi_inspiral')
             # Remap the time slide IDs
             for multi in multi_inspiral_table:
-                newID = slide_mapping[int(multi.time_slide_id)]
+                new_id = slide_mapping[int(multi.time_slide_id)]
                 multi.time_slide_id = gilwdchar(
-                                      f"time_slide:time_slide_id:{newID}")
+                                      f"time_slide:time_slide_id:{new_id}")
             if multis:
                 multis.extend(multi_inspiral_table)
             else:
@@ -899,7 +937,6 @@ def read_multiinspiral_timeslides_from_files(file_list):
         except Exception as exc:
             err_msg = "Unable to read a time-slid multiInspiral table "
             err_msg += f"from {this_file}."
-            logging.error(err_msg)
             raise RuntimeError(err_msg) from exc
 
     return multis, time_slides

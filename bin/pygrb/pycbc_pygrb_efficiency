@@ -55,7 +55,6 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
     if not isinstance(num_mc_injs, int):
         err_msg = "The parameter num_mc_injs is the number of Monte-Carlo "
         err_msg += "injections.  It must be an integer."
-        logging.error(err_msg)
         raise TypeError(err_msg)
 
     only_found_injs = found_bestnr[:-1]
@@ -110,10 +109,6 @@ opts = parser.parse_args()
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
-if opts.veto_directory and (opts.veto_category is None):
-    err_msg = "Must supply veto category if applying vetoes."
-    parser.error(err_msg)
-
 if (opts.found_file is None) and (opts.missed_file is None):
     do_injections = False
 elif (opts.found_file) and opts.missed_file:
@@ -170,7 +165,7 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Load triggers, time-slides, and segment dictionary
@@ -188,7 +183,7 @@ num_slides = len(slide_dict)
 
 # Construct trials
 logging.info("Constructing trials.")
-trial_dict = ppu.construct_trials(num_slides, opts.segment_dir, segment_dict,
+trial_dict = ppu.construct_trials(num_slides, opts.seg_files, segment_dict,
                                   ifos, slide_dict, vetoes)
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
 logging.info("%d trials generated.", total_trials)

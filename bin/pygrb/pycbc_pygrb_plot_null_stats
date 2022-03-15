@@ -131,11 +131,6 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 trig_file = os.path.abspath(opts.trig_file)
 found_file = os.path.abspath(opts.found_file) if opts.found_file else None
 zoom_in = opts.zoom_in
-veto_files = []
-if opts.veto_directory:
-    veto_string = ','.join([str(i) for i in range(2, opts.veto_category+1)])
-    veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
-
 null_stat_type = opts.y_variable
 
 # Prepare plot title and caption
@@ -168,7 +163,7 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-_, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+_, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                         opts.veto_category)
 
 # Extract trigger data

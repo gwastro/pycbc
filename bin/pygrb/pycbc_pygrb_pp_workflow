@@ -35,7 +35,8 @@ import pycbc.workflow as _workflow
 from pycbc.workflow.plotting import PlotExecutable
 from pycbc.workflow.core import resolve_url_to_file
 from pycbc.workflow.pegasus_workflow import SubWorkflow
-from pycbc.results import create_versioning_page, layout, pygrb_postprocessing_utils
+from pycbc.results import create_versioning_page, layout
+from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results.versioning import save_fig_with_metadata
 
 __author__ = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
@@ -47,6 +48,15 @@ __program__ = "pycbc_pygrb_pp_workflow"
 # =============================================================================
 # Functions
 # =============================================================================
+def opt_to_file(workflow, section, option):
+    """Fetch a file given its url location via the section
+    and option in the workflow configuraiton file."""
+
+    path = workflow.cp.get(section, option)
+
+    return resolve_url_to_file(path)
+
+
 def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
                     ifo=None, inj_set=None, tags=None):
     """Adds a node for a plot of PyGRB results to the workflow"""
@@ -69,10 +79,15 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
                      'pygrb_plot_snr_timeseries']:
         trig_file = opt_to_file(workflow, 'workflow', 'trig-file')
         node.add_input_opt('--trig-file', trig_file)
-    # Veto directory and category and segments directory
-    node.add_opt('--veto-directory', workflow.cp.get('workflow', 'veto-directory'))
+    # Pass the veto and segment files and options
     node.add_opt('--veto-category', workflow.cp.get('workflow', 'veto-category'))
-    node.add_opt('--segment-dir', workflow.cp.get('workflow', 'segment-dir'))
+    veto_files = ppu.build_veto_filelist(workflow)
+    node.add_input_list_opt('--veto-files', veto_files)
+    if exec_name in ['pygrb_plot_injs_results', 'pygrb_efficiency',
+                     'pygrb_plot_snr_timeseries',
+                     'pygrb_plot_stats_distribution']:
+        seg_files = ppu.build_segment_filelist(workflow)
+        node.add_input_list_opt('--seg-files', seg_files)
     # Other shared tuning values
     if exec_name not in ['pygrb_plot_skygrid', 'pygrb_plot_coh_ifosnr']:
         if not (exec_name == 'pygrb_plot_snr_timeseries' and tags[0] != 'reweighted'):
@@ -82,7 +97,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
                 node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
     # Pass the injection file as an input File instance
     if inj_set is not None and exec_name not in ['pygrb_plot_skygrid',
-                                                 'pygrb_plot_stat_distribution']:
+                                                 'pygrb_plot_stats_distribution']:
         found_file = opt_to_file(workflow, 'injections-'+inj_set, 'found-file')
         node.add_input_opt('--found-file', found_file)
     # IFO option
@@ -110,7 +125,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
     if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_null_stats', 'pygrb_plot_snr_timeseries']:
         node.add_opt('--y-variable', tags[0])
     # Quantity to be displayed on the x-axis of the plot
-    elif exec_name == 'pygrb_plot_stat_distribution':
+    elif exec_name == 'pygrb_plot_stats_distribution':
         node.add_opt('--x-variable', tags[0])
     elif exec_name == 'pygrb_plot_injs_results':
         # Variables to plot on x and y axes
@@ -146,9 +161,11 @@ def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
     node = PlotExecutable(workflow.cp, exec_name,
                           ifos=workflow.ifos, out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
-    # Veto directory and segments directory options
-    node.add_opt('--veto-directory', workflow.cp.get('workflow', 'veto-directory'))
-    node.add_opt('--segment-dir', workflow.cp.get('workflow', 'segment-dir'))
+    # Pass the veto and segment files and options
+    veto_files = ppu.build_veto_filelist(workflow)
+    node.add_input_list_opt('--veto-files', veto_files)
+    seg_files = ppu.build_segment_filelist(workflow)
+    node.add_input_list_opt('--seg-files', seg_files)
     # Other shared tuning values
     for opt in ['chisq-index', 'chisq-nhigh', 'null-snr-threshold',
                 'veto-category', 'snr-threshold', 'newsnr-threshold',
@@ -189,17 +206,7 @@ def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
     return node, node.output_files
 
 
-def opt_to_file(workflow, section, option):
-    """Fetch a file given its url location via the section
-    and option in the workflow configuraiton file."""
-
-    path = workflow.cp.get(section, option)
-
-    return resolve_url_to_file(path)
-
-
 # Based on setup_single_det_minifollowups
-#def setup_pygrb_minifollowups(workflow, followups_file, ifos,
 def setup_pygrb_minifollowups(workflow, followups_file,
                               dax_output, out_dir,
                               tags=None):
@@ -245,20 +252,18 @@ def setup_pygrb_minifollowups(workflow, followups_file,
     #wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
     wikifile = '_'.join(tags) + 'loudest_table.txt'
 
-    # Grab the veto directory and segments directory paths
-    veto_dir = workflow.cp.get('workflow', 'veto-directory')
-    seg_dir = workflow.cp.get('workflow', 'segment-dir')
-
+    # Create the node
     exe = _workflow.Executable(workflow.cp, 'pygrb_minifollowups',
                                ifos=workflow.ifos, out_dir=dax_output,
                                tags=tags)
-                               #ifos=ifos, out_dir=dax_output,
     node = exe.create_node()
+
+    # Grab and pass all necessary files
     node.add_input_opt('--trig-file', trig_file)
-    # FIXME? The path to the two following dirs is passed,
-    # but the files in them are not transferred
-    node.add_opt('--veto-directory', veto_dir)
-    node.add_opt('--segment-dir', seg_dir)
+    veto_files = ppu.build_veto_filelist(workflow)
+    node.add_input_list_opt('--veto-files', veto_files)
+    seg_files = ppu.build_segment_filelist(workflow)
+    node.add_input_list_opt('--seg-files', seg_files)
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--followups-file', followups_file)
     node.add_opt('--wiki-file', wikifile)
@@ -328,7 +333,7 @@ _workflow.makedir(rdir['workflow'])
 # Input trigger file
 trig_file = wflow.cp.get('workflow', 'trig-file')
 # IFOs actually used: determined by data availability
-ifos = pygrb_postprocessing_utils.extract_ifos(trig_file)
+ifos = ppu.extract_ifos(trig_file)
 wflow.ifos = ifos
 
 plotting_nodes = []
@@ -529,7 +534,6 @@ for inj_set in inj_sets:
     # Follow up of loudest N quiet-found injections:
     # qf_h5 includes quiet and missed found injections
     out_dir = rdir['injections/'+inj_set+'loudest_quiet_found_followups']
-    #setup_pygrb_minifollowups(wflow, qf_h5, wflow.ifos,
     setup_pygrb_minifollowups(wflow, qf_h5,
                               'daxes', out_dir,
                               tags=[inj_set, 'loudest_quiet_found_injs'])
@@ -543,14 +547,14 @@ _workflow.makedir(out_dir)
 #files = _workflow.FileList([])
 files = []
 # Loop over statistics requested by the user
-stats = wflow.cp.get_subsections('pygrb_plot_stat_distribution')
+stats = wflow.cp.get_subsections('pygrb_plot_stats_distribution')
 for stat in stats:
     plot_node, output_file = \
-        make_pygrb_plot(wflow, 'pygrb_plot_stat_distribution', out_dir,
+        make_pygrb_plot(wflow, 'pygrb_plot_stats_distribution', out_dir,
                         inj_set=tuning_inj_set, tags=[stat])
     plotting_nodes.append(plot_node)
     # We want a File, not a 1-element list with a File
-    # pycbc_pygrb_plot_stat_distribution produces only one plot: take [0]
+    # pycbc_pygrb_plot_stats_distribution produces only one plot: take [0]
     files.append(output_file[0])
 ##layout.single_layout(out_dir, files)
 ##layout.single_layout(out_dir, (files))
@@ -565,7 +569,6 @@ layout.two_column_layout(out_dir, lofft_layout)
 
 # Follow up N loudest offsource triggers (parent-child)
 out_dir = rdir['loudest_offsource_events/followups']
-#setup_pygrb_minifollowups(wflow, lofft_h5, wflow.ifos,
 setup_pygrb_minifollowups(wflow, lofft_h5,
                           'daxes', out_dir,
                           tags=['loudest_offsource_events'])

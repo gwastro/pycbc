@@ -222,11 +222,6 @@ opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
-# Check options
-if opts.veto_directory and (opts.veto_category is None):
-    err_msg = "Must supply veto category if applying vetoes."
-    parser.error(err_msg)
-
 # TODO: split this script into one that handles injections
 # and one that handles loudest on/off-source events?
 # TODO: deal better with the multiple output file possibilities?
@@ -316,7 +311,7 @@ np.random.seed(opts.seed)
 logging.info("Setting random seed to %d.", opts.seed)
 
 # Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_directory, \
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Load triggers, time-slides, and segment dictionary
@@ -334,7 +329,8 @@ num_slides = len(slide_dict)
 
 # Construct trials
 logging.info("Constructing trials.")
-trial_dict = ppu.construct_trials(num_slides, opts.segment_dir, segment_dict, ifos, slide_dict, vetoes)
+trial_dict = ppu.construct_trials(num_slides, opts.seg_files, segment_dict,
+                                  ifos, slide_dict, vetoes)
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
 logging.info("%d trials generated.", total_trials)
 
