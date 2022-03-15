@@ -377,7 +377,7 @@ def load_triggers(trig_file, vetoes):
     # Extract time-slides
     multis, slide_dict = \
         read_multiinspiral_timeslides_from_files([trig_file])
-    n_slides = len(slide_dict)
+    num_slides = len(slide_dict)
     glsctables.MultiInspiralTable.loadcolumns =\
         [slot for slot in multis[0].__slots__ if hasattr(multis[0], slot)]
 
@@ -386,7 +386,7 @@ def load_triggers(trig_file, vetoes):
                            columns=glsctables.MultiInspiralTable.loadcolumns)
 
     # Time-slid vetoes
-    for slide_id in range(n_slides):
+    for slide_id in range(num_slides):
         # Construct the ifo-indexed dictionary of slid veteoes
         slid_vetoes = slide_vetoes(vetoes, slide_dict, slide_id)
 
@@ -513,8 +513,8 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
                                              null_grad_thresh=null_grad_thresh,
                                              null_grad_val=null_grad_val)
             # If we got this far and the bestNR is non-zero, verify that chisq
-            # was actually calculated for the trigger, otherwise print
-            # debugging info
+            # was actually calculated for the trigger, otherwise raise an
+            # error with info useful to figure out why this happened.
             if bestnr[i_trig] != 0 and trig.chisq == 0:
                 err_msg = "Chisq not calculated for trigger with end time "
                 err_msg += f"{trig.get_end()} and SNR {trig.snr}."
@@ -526,7 +526,7 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
 # =============================================================================
 # Construct sorted triggers from trials
 # =============================================================================
-def sort_trigs(trial_dict, trigs, n_slides, seg_dict):
+def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
     """Constructs sorted triggers from a trials dictionary"""
 
     sorted_trigs = {}
@@ -534,12 +534,12 @@ def sort_trigs(trial_dict, trigs, n_slides, seg_dict):
     # Begin by sorting the triggers into each slide
     # New seems pretty slow, so run it once and then use deepcopy
     tmp_table = glsctables.New(glsctables.MultiInspiralTable)
-    for slide_id in range(n_slides):
+    for slide_id in range(num_slides):
         sorted_trigs[slide_id] = copy.deepcopy(tmp_table)
     for trig in trigs:
         sorted_trigs[int(trig.time_slide_id)].append(trig)
 
-    for slide_id in range(n_slides):
+    for slide_id in range(num_slides):
         # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
@@ -569,13 +569,13 @@ def sort_trigs(trial_dict, trigs, n_slides, seg_dict):
 # =============================================================================
 # Extract basic trigger properties and store them as dictionaries
 # =============================================================================
-def extract_basic_trig_properties(trial_dict, trigs, n_slides, seg_dict,
+def extract_basic_trig_properties(trial_dict, trigs, num_slides, seg_dict,
                                   opts):
     """Extract and store as dictionaries time, SNR, and BestNR of
     time-slid triggers"""
 
     # Sort the triggers into each slide
-    sorted_trigs = sort_trigs(trial_dict, trigs, n_slides, seg_dict)
+    sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, seg_dict)
     logging.info("Triggers sorted.")
 
     # Local copies of variables entering the BestNR definition
@@ -592,7 +592,7 @@ def extract_basic_trig_properties(trial_dict, trigs, n_slides, seg_dict,
     trig_time = {}
     trig_snr = {}
     trig_bestnr = {}
-    for slide_id in range(n_slides):
+    for slide_id in range(num_slides):
         slide_trigs = sorted_trigs[slide_id]
         if slide_trigs:
             trig_time[slide_id] = numpy.asarray(slide_trigs.get_end()).\
@@ -727,8 +727,8 @@ def find_zero_lag_slide_id(slide_dict):
     """Loads timeslides from PyGRB output file"""
 
     zero_lag_slide_id = None
-    n_slides = len(slide_dict)
-    for i in range(n_slides):
+    num_slides = len(slide_dict)
+    for i in range(num_slides):
         # Is this slide the zero-lag?
         if max(slide_dict[i].values()) == 0:
             if min(slide_dict[i].values()) == 0:
@@ -780,7 +780,7 @@ def load_segment_dict(xml_file):
 # =============================================================================
 # Construct the trials from the timeslides, segments, and vetoes
 # =============================================================================
-def construct_trials(n_slides, seg_files, seg_dict, ifos, slide_dict, vetoes):
+def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
     """Constructs trials from triggers, timeslides, segments and vetoes"""
 
     trial_dict = {}
@@ -791,7 +791,7 @@ def construct_trials(n_slides, seg_files, seg_dict, ifos, slide_dict, vetoes):
     # Separate segments
     trial_time = abs(segs['on'])
 
-    for slide_id in range(n_slides):
+    for slide_id in range(len(slide_dict)):
         # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
@@ -846,11 +846,11 @@ def sort_stat(time_veto_max_stat):
 # =============================================================================
 # Find max and median of loudest SNRs or BestNRs
 # =============================================================================
-def max_median_stat(n_slides, time_veto_max_stat, trig_stat, total_trials):
+def max_median_stat(num_slides, time_veto_max_stat, trig_stat, total_trials):
     """Deterine the maximum and median of the loudest SNRs/BestNRs"""
 
     max_stat = max([trig_stat[slide_id].max() if trig_stat[slide_id].size
-                   else 0 for slide_id in range(n_slides)])
+                   else 0 for slide_id in range(num_slides)])
 
     full_time_veto_max_stat = sort_stat(time_veto_max_stat)
 

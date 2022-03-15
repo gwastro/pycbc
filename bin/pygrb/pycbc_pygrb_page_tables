@@ -329,7 +329,7 @@ num_slides = len(slide_dict)
 
 # Construct trials
 logging.info("Constructing trials.")
-trial_dict = ppu.construct_trials(num_slides, opts.seg_files, segment_dict,
+trial_dict = ppu.construct_trials(opts.seg_files, segment_dict,
                                   ifos, slide_dict, vetoes)
 total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
 logging.info("%d trials generated.", total_trials)
