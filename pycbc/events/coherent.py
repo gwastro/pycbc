@@ -398,6 +398,8 @@ def reweightedsnr_cut(rw_snr, rw_snr_threshhold):
     rw_snr: array of reweighted snr with cut values as 0
 
     """
+    if rw_snr_threshhold is None:
+        return rw_snr
     for i in range(len(rw_snr)):
         if rw_snr[i] < rw_snr_threshhold:
             rw_snr[i] = 0
