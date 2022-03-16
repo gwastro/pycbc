@@ -16,21 +16,27 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+"""Produce the sky grid plot for the triggered search (PyGRB)."""
+
 # =============================================================================
 # Preamble
 # =============================================================================
-
-from __future__ import division
 
 import sys
 import glob
 import os
 import copy
 import logging
-from ligo.lw import lsctables
+import numpy
 import pycbc.version
-from pycbc.results.pygrb_plotting_utils import *
+from pycbc import init_logging
+from pycbc.results import save_fig_with_metadata
+from pycbc.results import pygrb_postprocessing_utils as ppu
+from matplotlib import pyplot as plt
+from matplotlib import rc
+
 plt.switch_backend('Agg')
+rc('font', size=14)
 
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -39,31 +45,41 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 
 
 # =============================================================================
+# Functions
+# =============================================================================
+# Function to load latitude and longitude data from a trigger/injection file
+def load_data(trig_file, vetoes):
+    """Build a dictionary containing latitude and longitude data extracted
+    from a trigger file"""
+
+    # Inizialize the dictionary
+    data = {}
+    data['longitude'] = None
+    data['latitude'] = None
+
+    # Fill the dictionary in with required data
+    if trig_file:
+        trigs = ppu.load_triggers(trig_file, vetoes)
+        data['longitude'] = numpy.degrees(trigs.get_column('ra'))
+        data['latitude'] = numpy.degrees(trigs.get_column('dec'))
+
+    return data
+
+
+# =============================================================================
 # Main script starts here
 # =============================================================================
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
+                                          version=__version__)
+parser.add_argument("-t", "--trig-file", action="store",
+                    default=None, required=True,
+                    help="The location of the trigger file")
+opts = parser.parse_args()
 
-description = 'pycbc_pygrb_plot_skygrid will produce the sky grid plot.'
-usage = __program__ + ' [--options]'
-opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
+init_logging(opts.verbose, format="%(asctime)s:%(levelname)s : %(message)s")
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    level=level)
-
-trig_file  = os.path.abspath(opts.trig_file)
-inj_file   = None
-if opts.inj_file:
-    inj_file = os.path.abspath(opts.inj_file)
-outfile       = opts.output_file
-seg_dir = opts.segment_dir
-veto_files = []
-if opts.veto_directory:
-    veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
-    veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
-
+trig_file = os.path.abspath(opts.trig_file)
+outfile = opts.output_file
 if opts.plot_title is None:
     opts.plot_title = 'PyGRB sky grid'
 
@@ -76,19 +92,11 @@ for outdir in outdirs:
         os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos = extract_ifos(trig_file)
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+                                           opts.veto_category)
 
-# Extract IFOs and vetoes
-vetoes = extract_vetoes(trig_file, ifos)
-
-# Load triggers
-trigs = load_triggers(trig_file, vetoes, ifos)
-
-# Extract trigger data
-trig_data = PygrbFilterOutput(trigs, ifos,
-                              lsctables.MultiInspiralTable.loadcolumns,
-                              "triggers", opts)
-
+# Load trigger data
+trig_data = load_data(trig_file, vetoes)
 
 #
 # Generate sky grid plot
@@ -102,12 +110,11 @@ if opts.verbose:
     fig_name = os.path.split(os.path.abspath(outfile))[1]
     sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
 
-pygrb_shared_plot_setups()
 fig = plt.figure()
-ax  = fig.gca()
+ax = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
 ax.set_ylabel(ylabel)#, fontsize=16)
-ax.plot(trig_data.longitude, trig_data.latitude, 'ko', markerfacecolor='blue')
+ax.plot(trig_data['longitude'], trig_data['latitude'], 'ko', markerfacecolor='blue')
 # Wrap up
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=opts.plot_caption)
