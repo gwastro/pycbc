@@ -19,6 +19,11 @@ from scipy.stats import norm
 from pycbc.events import triggers
 
 def dist(i1, i2, parvals, smoothing_width):
+    """
+    computes the vector of parameter values at index i1 and
+    set of indices i2, and gives the Euclidean distance between
+    the two with a metric of 1/(smoothing width^2)
+    """
     dsq = 0
     for v, s in zip(parvals, smoothing_width):
         dsq += (v[i2] - v[i1]) ** 2.0 / s ** 2.0
@@ -64,7 +69,6 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
     ntotal_t_smoothed = numpy.average(ntotal[template_idx], weights=weights)
     invalphan_mean = numpy.average(invalphan[template_idx], weights=weights)
 
-    # return nabove_smoothed, alpha_smoothed, ntotal_smoothed
     return_tuple = (nabove_t_smoothed,
                     nabove_t_smoothed / invalphan_mean,
                     ntotal_t_smoothed)
@@ -73,7 +77,7 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
 def smooth_tophat(nabove, invalphan, ntotal, dists):
     """
     Smooth templates using a tophat function with templates within unit
-    distance, with distances normalised by --smoothing-width
+    dists
     """
     idx_within_area = numpy.flatnonzero(dists < 1.)
     return smooth_templates(nabove,
@@ -81,7 +85,7 @@ def smooth_tophat(nabove, invalphan, ntotal, dists):
                             ntotal,
                             idx_within_area)
 
-def smooth_n_closest(nabove, invalphan, ntotal, dists):
+def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500):
     """
     Smooth templates according to the closest N templates
     No weighting is applied
@@ -89,9 +93,9 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists):
     dist_sort = numpy.argsort(dists)
     templates_required = 0
     n_triggers = 0
-    # Count number of templates required to gather 1000 templates,
+    # Count number of templates required to gather total_trigs templates,
     # start at closest
-    while n_triggers < 500:
+    while n_triggers < total_trigs:
         n_triggers += nabove[dist_sort[n_triggers]]
         templates_required += 1
     logging.debug("%d templates required to obtain %d triggers",
@@ -101,8 +105,8 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists):
 
 def smooth_distance_weighted(nabove, invalphan, ntotal, dists):
     """
-    Smooth templates weithed according to a normal distribution
-    with width given by --smoothing-width, truncated at three sigma
+    Smooth templates weighted according to dists in a unit-width normal
+    distribution, truncated at three sigma
     """
     idx_within_area = numpy.flatnonzero(dists < 3.)
     weights = norm.pdf(dists[idx_within_area])
@@ -116,6 +120,12 @@ _smooth_dist_func = {
 }
 
 def smooth(nabove, invalphan, ntotal, dists, smoothing_method):
+    """
+    Wrapper for smoothign according to a function defined by smoothing_method
+    nabove, invalphan, ntotal are as defined in the above smooth_templates
+    function docstring
+    dists defines the distances of the templates from the template of interest
+    """
     return _smooth_dist_func[smoothing_method](nabove, invalphan,
                                                ntotal, dists)
 
@@ -168,7 +178,7 @@ parser.add_argument("--smoothing-method", default="smooth_tophat",
                     choices = _smooth_dist_func.keys(),
                     help="Method used to smooth the fit parameters; "
                          "'smooth_tophat' (default) finds all templates within "
-                         "unity distance from the template of interest "
+                         "unit distance from the template of interest "
                          "(distance normalised by --smoothing-width). "
                          "'n_closest' adds the closest templates to "
                          "the smoothing until 500 triggers are reached. "
