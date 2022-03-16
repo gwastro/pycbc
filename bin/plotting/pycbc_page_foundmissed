@@ -35,7 +35,7 @@ parser.add_argument('--dynamic', action='store_true', default=False)
 parser.add_argument('--gradient-far', action='store_true',
                     help="Show far of found injections as a gradient")
 parser.add_argument('--output-file', required=True)
-parser.add_argument('--limit-ifar', type=float
+parser.add_argument('--limit-ifar', type=float,
                     help="Supply a limit for the IFAR colours.")
 parser.add_argument('--far-type', choices=('inclusive', 'exclusive'),
                     default='inclusive',
