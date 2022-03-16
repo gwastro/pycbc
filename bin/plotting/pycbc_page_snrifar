@@ -188,17 +188,6 @@ if not args.cumulative:
 
 fap_back = p_from_far(far_back, foreground_livetime)
 
-# we'll use the background far for the ylimits
-if args.ymin is None:
-    plot_ymin = far_back.min()/10.
-else:
-    plot_ymin = args.ymin
-
-if args.ymax is None:
-    plot_ymax = far_back.max()
-else:
-    plot_ymax = args.ymax
-
 logging.info('Found %s background (inclusive zerolag) triggers' % len(cstat_back))
 
 back_ifar_exc = f['background_exc/ifar'][:]
@@ -212,6 +201,22 @@ if not args.cumulative:
 
 logging.info('Found %s background (exclusive zerolag) triggers' % len(cstat_back_exc))
 
+
+# We'll use the background far for the ylimits if closed box, foreground
+# otherwise
+if args.ymin is not None:
++    plot_ymin = args.ymin
+elif args.closed_box or cstat_fore is None:
+    plot_ymin = far_back_exc.min()/10.
+else:
+    plot_ymin = far_back.min()/10.
+
+if args.ymax is not None:
+    plot_ymax = args.ymax
+elif args.closed_box or cstat_fore is None:
+    plot_ymax = far_back_exc.max()
+else:
+    plot_ymax = far_back.max()
 # We'll use the background for the xlimits if closed box, foreground
 # otherwise.
 if args.xmin is not None:

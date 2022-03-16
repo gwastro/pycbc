@@ -91,11 +91,6 @@ opts = parser.parse_args()
 # read file
 fp = h5py.File(opts.trigger_file, 'r')
 
-if 'ifos' in fp.attrs:
-    legacy_smap_file = False
-else:
-    legacy_smap_file = True
-
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = opts.use_hierarchical_level
 
@@ -196,31 +191,24 @@ fig = pylab.figure(1)
 
 # get a unique list of timeslide_ids and loop over them
 interval = fp.attrs['timeslide_interval']
-if legacy_smap_file:
-    pifo, fifo = fp.attrs['detector_1'], fp.attrs['detector_2']
-    p_starts = fp['segments'][pifo]['start'][:]
-    p_ends = fp['segments'][pifo]['end'][:]
-    pifo_segments = veto.start_end_to_segments(p_starts, p_ends)
-    f_starts = fp['segments'][pifo]['start'][:]
-    f_ends = fp['segments'][pifo]['end'][:]
-    fifo_segments = veto.start_end_to_segments(f_starts, f_ends)
-    min_tsid = (p_starts.min() - f_ends.max()) / interval
-    max_tsid = (p_ends.max() - f_starts.min()) / interval
+pifo, fifo = fp.attrs['pivot'], fp.attrs['fixed']
+ifo_joined = fp.attrs['ifos'].replace(' ','')
+p_starts = fp['segments'][ifo_joined]['start'][:]
+p_ends = fp['segments'][ifo_joined]['end'][:]
+pifo_segments = veto.start_end_to_segments(p_starts, p_ends)
+fifo_segments = copy.deepcopy(pifo_segments)
+min_tsid = (p_starts.min() - p_ends.max()) / interval
+max_tsid = -min_tsid
+
+if interval == 0:
+    # If this a single-detector statmap file, we don't plot timeslide
+    # background (there isn't one)
+    tsids = numpy.array([0])
 else:
-    pifo, fifo = fp.attrs['pivot'], fp.attrs['fixed']
-    ifo_joined = fp.attrs['ifos'].replace(' ','')
-    p_starts = fp['segments'][ifo_joined]['start'][:]
-    p_ends = fp['segments'][ifo_joined]['end'][:]
-    pifo_segments = veto.start_end_to_segments(p_starts, p_ends)
-    fifo_segments = copy.deepcopy(pifo_segments)
-    min_tsid = (p_starts.min() - p_ends.max()) / interval
-    max_tsid = -min_tsid
-
-min_tsid = numpy.rint(min_tsid) // opts.decimation_factor
-max_tsid = numpy.rint(max_tsid) // opts.decimation_factor
-
-tsids = numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * \
-                     opts.decimation_factor
+    min_tsid = numpy.rint(min_tsid) // opts.decimation_factor
+    max_tsid = numpy.rint(max_tsid) // opts.decimation_factor
+    tsids = numpy.arange(min_tsid, max_tsid, 1).astype(numpy.int64) * \
+                         opts.decimation_factor
 
 allbkg_dur = 0
 allbkg_ifars = []

@@ -27,6 +27,8 @@ parser.add_argument('--output-file', help="name of output file")
 args = parser.parse_args()
 significance.check_significance_options(args, parser)
 
+significance.check_significance_option_group(args)
+
 pycbc.init_logging(args.verbose)
 
 f_in = h5py.File(args.statmap_file,'r')
@@ -99,12 +101,24 @@ bnlouder, fnlouder = significance.get_n_louder(
     f_in['foreground/stat'][:],
     filtered_trigs.data['decimation_factor'],
     **significance_dict[all_ifo_key])
+
 # In principle exc background time should be recalculated
 # However we expect exclude zerolag to be a (very) small correction
 fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])
 bg_time_exc = conv.sec_to_year(f_in.attrs['background_time_exc'])
-fg_ifar_exc = bg_time_exc / (fnlouder + 1)
-bg_ifar_exc = bg_time_exc / (bnlouder + 1)
+
+logging.info('Recalculating IFARs')
+kwargs = {
+    'fit_thresh':args.fit_threshold[ifo],
+    'fit_func': args.fit_function
+}
+bg_ifar_exc, fg_ifar_exc = significance.calculate_ifar(
+                               args.far_calculation_method,
+                               filtered_trigs.data['stat'],
+                               f_in['foreground/stat'][:],
+                               filtered_trigs.data['decimation_factor'],
+                               bg_time_exc,
+                               **kwargs)
 
 logging.info('Writing updated ifars to file')
 f_out['foreground/ifar_exc'][:] = fg_ifar_exc

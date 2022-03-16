@@ -63,6 +63,7 @@ args.veto_files = sum(args.veto_files, [])
 
 init_logging(args.verbose)
 
+<<<<<<< HEAD
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 logging.info('Opening trigger file: %s', trigger_file)
@@ -126,6 +127,101 @@ for tnum in template_ids:
     n_tot_trigs = tids_full.size
     if not n_tot_trigs: continue
 
+=======
+logging.info('Opening trigger file: %s', trigger_file)
+trigf = io.HFile(trigger_file, 'r')
+ifo = trigf.keys()[0]
+
+# Set up to only load triggers from the templates of interest
+
+def parse_template_range(num_templates, rangestr):
+    part = int(rangestr.split('/')[0])
+    pieces = int(rangestr.split('/')[1])
+    tmin = int(num_templates / float(pieces) * part)
+    tmax = int(num_templates / float(pieces) * (part+1))
+    return tmin, tmax
+
+num_templates = io.HFile(args.template_bank, "r")['template_hash'].size
+tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
+logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
+
+if args.randomize_template_order:
+    seed(0)
+    template_ids = np.arange(0, num_templates)
+    shuffle(template_ids)
+    template_ids = template_ids[tmin:tmax]
+else:
+    template_ids = range(tmin, tmax)
+from pycbc.io.hdf import ReadByTemplate
+trigs = ReadByTemplate(args.trigger_files,
+                       args.template_bank,
+                       args.segment_name,
+                       args.veto_files,
+                       args.gating_veto_windows)
+logging.info("%d triggers in file", trigf[ifo + '/snr'].size)
+
+data_init = {}
+#FIXME - this feels like it should be easier to define
+all_dsets = ['sigmasq', 'chisq', 'chisq_dof', 'coa_phase', 'end_time',
+             'snr', 'template_id', 'sg_chisq', 'psd_var_val']
+
+for ds in all_dsets:
+    data_init[ds] = []
+data_init['trigger_id'] = []
+
+trigs_out = io.DictArray(data=data_init)
+stat_all = []
+
+rank_method = stat.get_statistic_from_opts(args, [ifo])
+
+for tnum in template_ids:
+    logging.info("checking template %s", tnum)
+    tids_full = trigs.set_template(tnum)
+    logging.info("%d triggers in this template", len(tids_full))
+
+    t_data_init = {}
+    for ds in all_dsets:
+        if not ds == "template_id":
+            t_data_init[ds] = trigs[ds]
+    t_data_init['template_id'] = np.repeat(tnum, len(tids_full))
+    t_data_init['trigger_id'] = tids_full
+
+    logging.info("Putting data into DictArray")
+    t_trigs = io.DictArray(data=t_data_init)
+
+    snr = t_trigs.data['snr']
+    n_tot_trigs = len(snr)
+    if not n_tot_trigs: continue
+    if args.trigger_snr_cut:
+        snr_cut_f = ("%f" % args.trigger_snr_cut).rstrip("0").rstrip(".")
+        keep_idx = np.flatnonzero(snr >= args.trigger_snr_cut)
+        n_removed = n_tot_trigs - keep_idx.size
+        pc_removed = n_removed / float(n_tot_trigs) * 100
+        logging.info("%d triggers cut due to SNR < %s cut (%.2f%%)",
+                     n_removed, snr_cut_f, pc_removed)
+        t_trigs = t_trigs.select(keep_idx)
+
+    if not len(t_trigs): continue
+
+    if args.reduced_chisq_cut:
+        n_skp_trigs = len(t_trigs)
+        chisq = t_trigs.data['chisq']
+        chisq_dof = t_trigs.data['chisq_dof']
+        reduced_chisq = chisq / (2 * chisq_dof - 2)
+        chisq_keep_idx = np.flatnonzero(reduced_chisq <= args.reduced_chisq_cut)
+        n_removed = n_skp_trigs - chisq_keep_idx.size
+        pc_removed = n_removed / float(n_skp_trigs) * 100
+        chisq_cut_f = ("%f" % args.reduced_chisq_cut).rstrip("0").rstrip(".")
+        logging.info("Ignoring %d triggers cut with \chi^2 > %s (%.2f%%)",
+                     n_removed, chisq_cut_f, pc_removed)
+        # Select chisq-cut-kept idx from keep_idx
+        t_trigs = t_trigs.select(chisq_keep_idx)
+        del chisq, chisq_dof, reduced_chisq, chisq_keep_idx
+
+    if not len(t_trigs): continue
+
+    logging.info('Setting up ranking method')
+>>>>>>> c41203c1 (Big overhaul for singles-included search)
     # Stat class instance to calculate the ranking statistic
     extra_kwargs = {}
     for inputstr in args.statistic_keywords:
@@ -138,6 +234,7 @@ for tnum in template_ids:
                       "Received {}".format(args.statistic_keywords)
             raise ValueError(err_txt)
 
+<<<<<<< HEAD
     sds = rank_method.single(trigs)
     stat_t = rank_method.rank_stat_single((ifo, sds),
                                           **extra_kwargs)
@@ -153,14 +250,33 @@ for tnum in template_ids:
     trigger_ids_all += list(tids_full)
     template_ids_all += list(tnum * np.ones_like(tids_full))
     trigger_times_all += list(trigger_times)
+=======
+
+    logging.info("Calculating single-detector statistic")
+    stat_t = rank_method.rank_stat_single((ifo, t_trigs.data),
+                                          **extra_kwargs)
+    if args.cluster_window:
+        logging.info("Clustering")
+        cid = coinc.cluster_over_time(stat_t, t_trigs.data['end_time'],
+                                      args.cluster_window)
+        t_trigs = t_trigs.select(cid)
+        stat_t = stat_t[cid]
+    trigs_out += t_trigs
+>>>>>>> c41203c1 (Big overhaul for singles-included search)
     stat_all += list(stat_t)
 
 data = {"stat": stat_all,
         "decimation_factor": np.ones_like(stat_all),
         "timeslide_id": np.zeros_like(stat_all),
+<<<<<<< HEAD
         "template_id": template_ids_all,
         "%s/time" % ifo : trigger_times_all,
         "%s/trigger_id" % ifo: trigger_ids_all}
+=======
+        "template_id": trigs_out.data['template_id'],
+        "%s/time" % ifo : trigs_out.data['end_time'],
+        "%s/trigger_id" % ifo: trigs_out.data['trigger_id']}
+>>>>>>> c41203c1 (Big overhaul for singles-included search)
 
 logging.info("saving triggers")
 f = io.HFile(args.output_file, 'w')

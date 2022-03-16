@@ -236,9 +236,10 @@ if opts.open_box:
 if opts.open_box:
     # scale the plot around the foreground
     pylab.ylim(0.7, 0.05 * len(fore_cumnum))
-    pylab.xlim(30 * min(fore_ifar), 3 * max_ifar)
+    pylab.xlim(min(expected_ifar) / 30., 3 * max_ifar)
 else:
     pylab.ylim(0.7, max(expected_cumnum))
+    pylab.xlim(expected_ifar.min(), max(upper[4]))
 pylab.grid()
 pylab.legend(loc='upper right', fontsize=13)
 pylab.ylabel('Cumulative Number', size='large')
@@ -249,7 +250,7 @@ pylab.xlabel(ifar_label, size='large')
 
 # save
 caption = 'This is a cumulative histogram of triggers. The blue triangles ' \
-          + 'represent coincident foreground triggers. The dashed line ' \
+          + 'represent foreground triggers. The dashed line ' \
           + 'represents the expected background given the analysis time. ' \
           + 'The shaded regions represent counting errors.'
 pycbc.results.save_fig_with_metadata(fig, opts.output_file,

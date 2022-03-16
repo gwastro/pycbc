@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Make table of the foreground coincident events. Also includes ability to
+Make table of the foreground events. Also includes ability to
 write FARs and p-values for intermediary hierarchical removal steps.
 """
 import argparse

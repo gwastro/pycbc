@@ -17,6 +17,9 @@ alpha, sigma_alpha = fit_above_thresh('exponential', snrs, thresh=6.25)
 # let the code work out the threshold from the smallest value via the default thresh=None
 alpha, sigma_alpha = fit_above_thresh('exponential', snrs)
 
+# Use weighting factors to e.g. take decimation into account
+alpha, sigma_alpha = fit_above_thresh('exponential', snrs, weights=weights)
+
 # or only fit the largest N values, i.e. tail fitting
 thresh = tail_threshold(snrs, N=500)
 alpha, sigma_alpha = fit_above_thresh('exponential', snrs, thresh)
