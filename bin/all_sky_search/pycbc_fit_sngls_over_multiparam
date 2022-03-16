@@ -25,7 +25,40 @@ def dist(i1, i2, parvals, smoothing_width):
     return dsq ** 0.5
 
 def smooth_templates(nabove, invalphan, ntotal, template_idx,
-                      weights=None):
+                     weights=None):
+    """
+    Find the smoothed values according to the specified templates,
+    weighted appropriately.
+    The max likelihood fit for 1/alpha is linear in the trigger
+    statistic values, so we perform a possibly-weighted average
+    of (n_above / alpha) over templates and then invert this
+    and multiply by (smoothed) nabove to obtain smoothed alpha.
+
+    Parameters
+    ----------
+    nabove: ndarray
+        The array of counts of triggers above threshold for all templates
+    invalphan: ndarray
+        The array of n_above / alpha values for all templates
+    ntotal: ndarray
+        The array of count of triggers in the template, both above and
+        below threshold
+    template_idx: ndarray of ints
+        The indices of the templates to be used for the smoothing
+
+    Optional Parameters
+    -------------------
+    weights: ndarray
+        Weighting factor to apply to the templates specified by template_idx
+
+    Returns
+    -------
+    tuple: 3 floats
+        First float: the smoothed count above threshold value
+        Second float: the smoothed fit coefficient (alpha) value
+        Third float: the smoothed total count in template value
+
+    """
     if weights is None: weights = numpy.ones_like(template_idx)
     nabove_t_smoothed = numpy.average(nabove[template_idx], weights=weights)
     ntotal_t_smoothed = numpy.average(ntotal[template_idx], weights=weights)
@@ -37,7 +70,11 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
                     ntotal_t_smoothed)
     return return_tuple
 
-def smooth_area(nabove, invalphan, ntotal, dists):
+def smooth_tophat(nabove, invalphan, ntotal, dists):
+    """
+    Smooth templates using a tophat function with templates within unit
+    distance, with distances normalised by --smoothing-width
+    """
     idx_within_area = numpy.flatnonzero(dists < 1.)
     return smooth_templates(nabove,
                             invalphan,
@@ -45,6 +82,10 @@ def smooth_area(nabove, invalphan, ntotal, dists):
                             idx_within_area)
 
 def smooth_n_closest(nabove, invalphan, ntotal, dists):
+    """
+    Smooth templates according to the closest N templates
+    No weighting is applied
+    """
     dist_sort = numpy.argsort(dists)
     templates_required = 0
     n_triggers = 0
@@ -53,18 +94,23 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists):
     while n_triggers < 500:
         n_triggers += nabove[dist_sort[n_triggers]]
         templates_required += 1
-    logging.debug("%d templates required to obtain %d triggers", templates_required, n_triggers)
+    logging.debug("%d templates required to obtain %d triggers",
+                  templates_required, n_triggers)
     idx_to_smooth = dist_sort[:templates_required]
     return smooth_templates(nabove, invalphan, ntotal, idx_to_smooth)
 
 def smooth_distance_weighted(nabove, invalphan, ntotal, dists):
+    """
+    Smooth templates weithed according to a normal distribution
+    with width given by --smoothing-width, truncated at three sigma
+    """
     idx_within_area = numpy.flatnonzero(dists < 3.)
     weights = norm.pdf(dists[idx_within_area])
     return smooth_templates(nabove, invalphan, ntotal,
                             idx_within_area, weights=weights)
 
 _smooth_dist_func = {
-    'smooth_area': smooth_area,
+    'smooth_tophat': smooth_tophat,
     'n_closest': smooth_n_closest,
     'distance_weighted': smooth_distance_weighted
 }
@@ -118,15 +164,39 @@ parser.add_argument("--smoothing-width", type=float, nargs='+', required=True,
                          "logs of them) to smooth over. Required. "
                          "This must be a list corresponding to the smoothing "
                          "parameters.")
-parser.add_argument("--smoothing-method", default="smooth_area",
+parser.add_argument("--smoothing-method", default="smooth_tophat",
                     choices = _smooth_dist_func.keys(),
                     help="Method used to smooth the fit parameters; "
-                         "'smooth_area' (default) finds all templates within "
+                         "'smooth_tophat' (default) finds all templates within "
                          "unity distance from the template of interest "
                          "(distance normalised by --smoothing-width). "
                          "'n_closest' adds the closest templates to "
-                         "the smoothing until 500 triggers are reached.")
+                         "the smoothing until 500 triggers are reached. "
+                         "'distance_weighted' weights the closest templates "
+                         "with a normal distribution of width smoothing-width "
+                         "trucated at three smoothing-widths.")
+parser.add_argument("--smoothing-keywords", nargs='*',
+                    help="Keywords for the smoothing function, supplied "
+                         "as key:value pairs, e.g. n_closest:500 to define "
+                         "the number of templates in the n_closest smoothing "
+                         "method")
 args = parser.parse_args()
+
+if args.smoothing_keywords:
+    smooth_kwargs = args.smoothing_keywords
+else:
+    smooth_kwargs = []
+
+kwarg_dict = {}
+for inputstr in smooth_kwargs:
+    try:
+        key, value = inputstr.split(':')
+        kwarg_dict[key] = value
+    except ValueError:
+            err_txt = "--smoothing-keywords must take input in the " \
+                      "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                      "Received {}".format(' '.join(args.smoothing_keywords))
+            raise ValueError(err_txt)
 
 assert len(args.log_param) == len(args.fit_param) == len(args.smoothing_width)
 
@@ -171,14 +241,12 @@ alpha_smoothed = []
 rang = numpy.arange(0, len(nabove))
 
 logging.info("Smoothing ...")
-# Handle the one-dimensional case of one dimension separately as it is easier to
-# optimize computational performance.
-if len(parvals) == 1:
+# Handle the one-dimensional case of tophat smoothing separately
+# as it is easier to optimize computational performance.
+if len(parvals) == 1 and args.smoothing_method == 'smooth_tophat':
+    logging.info("Using efficient 1D tophat smoothing")
     sort = parvals[0].argsort()
     parvals_0 = parvals[0][sort]
-    ntotal = ntotal[sort]
-    nabove = nabove[sort]
-    invalphan = invalphan[sort]
 
     # For each template, find the range of nearby templates which fall within
     # the chosen window.
@@ -201,7 +269,8 @@ if len(parvals) == 1:
 else:
     for i in range(len(nabove)):
         d = dist(i, rang, parvals, args.smoothing_width)
-        smoothed_tuple = smooth(nabove, invalphan, ntotal, d, args.smoothing_method)
+        smoothed_tuple = smooth(nabove, invalphan, ntotal, d,
+                                args.smoothing_method, **kwarg_dict)
         nabove_smoothed.append(smoothed_tuple[0])
         alpha_smoothed.append(smoothed_tuple[1])
         ntotal_smoothed.append(smoothed_tuple[2])
