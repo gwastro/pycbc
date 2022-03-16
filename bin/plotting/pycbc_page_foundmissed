@@ -111,7 +111,7 @@ try:
                                      vals['mchirp'])
     dvals['min_eff_chirp_distance'] = \
         pycbc.pnutils.chirp_distance(dvals['min_eff_distance'],
-                                     vals['mchirp']
+                                     vals['mchirp'])
 except KeyError:
     # If the ifo isn't in the effective distance columns you can't get this.
     # But you can still use other values.
