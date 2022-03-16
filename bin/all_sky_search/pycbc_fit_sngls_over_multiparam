@@ -121,10 +121,13 @@ _smooth_dist_func = {
 
 def smooth(nabove, invalphan, ntotal, dists, smoothing_method):
     """
-    Wrapper for smoothign according to a function defined by smoothing_method
+    Wrapper for smoothing according to a function defined by smoothing_method
+
     nabove, invalphan, ntotal are as defined in the above smooth_templates
     function docstring
-    dists defines the distances of the templates from the template of interest
+
+    dists is an array of the distances of the templates from the
+    template of interest
     """
     return _smooth_dist_func[smoothing_method](nabove, invalphan,
                                                ntotal, dists)
