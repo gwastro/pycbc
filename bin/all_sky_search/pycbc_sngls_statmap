@@ -37,7 +37,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--sngls-files', nargs='+',
-                    help='List of files containign trigger and statistic '
+                    help='List of files containing trigger and statistic '
                          'information.')
 parser.add_argument('--ifos', nargs=1,
                     help='List of ifos used in these coincidence files')
@@ -87,7 +87,7 @@ significance.check_significance_option_group(args)
 # Check that the user chose inclusive or exclusive background to perform
 # hierarchical removals of foreground triggers against.
 if args.max_hierarchical_removal == 0:
-    if args.hierarchical_removal_against is not 'none':
+    if args.hierarchical_removal_against != 'none':
         parser.error("User Error: 0 maximum hierarchical removals chosen but "
                      "option for --hierarchical-removal-against was given. "
                      "These are conflicting options. Use with --help for more "
