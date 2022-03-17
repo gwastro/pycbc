@@ -791,7 +791,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
     # Separate segments
     trial_time = abs(segs['on'])
 
-    for slide_id in range(len(slide_dict)):
+    for slide_id, _ in enumerate(slide_dict):
         # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 

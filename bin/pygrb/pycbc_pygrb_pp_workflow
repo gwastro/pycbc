@@ -145,6 +145,36 @@ def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
     return node, node.output_files
 
 
+def make_info_table(workflow, out_dir, ifo=None, tags=None):
+    """Setup a job to create an html snippet with the GRB trigger information.
+    """
+
+    tags = [] if tags is None else tags
+
+    # Exectuable
+    exec_name = 'pygrb_grb_info_table'
+
+    # Initialize job node
+    grb_name = workflow.cp.get('workflow', 'trigger-name')
+    extra_tags = ['GRB'+grb_name, 'INFO_TABLE']
+    node = PlotExecutable(workflow.cp, exec_name,
+                          ifos=workflow.ifos, out_dir=out_dir,
+                          tags=tags+extra_tags).create_node()
+
+    # Options
+    node.add_opt('--trigger-time', workflow.cp.get('workflow', 'trigger-time'))
+    node.add_opt('--ra', workflow.cp.get('workflow', 'ra'))
+    node.add_opt('--dec', workflow.cp.get('workflow', 'dec'))
+    node.add_opt('--sky-error', workflow.cp.get('workflow', 'sky-error'))
+    node.add_opt('--ifos', ' '.join(workflow.ifos))
+    node.new_output_file_opt(workflow.analysis_time, '.html',
+                             '--output-file', tags=extra_tags)
+    # Add job node to workflow
+    workflow += node
+
+    return node, node.output_files
+
+
 def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
                            inj_set=None, tags=None):
     """Adds a PyGRB job to make quiet-found and missed-found injection tables"""
@@ -355,16 +385,23 @@ logging.info("Created log file %s", wf_log_file.storage_path)
 # typecast str from command line to File instances
 #cp = configuration.WorkflowConfigParser(opts.pp_config_file)
 
-#
-# Plot sky grid
-#
 out_dir = rdir.base
 _workflow.makedir(out_dir)
 files = _workflow.FileList([])
-plot_node, output_files = make_pygrb_plot(wflow, 'pygrb_plot_skygrid', out_dir=out_dir)
+
+#
+# Create information table about the GRB trigger and plot the search grid
+#
+info_table_node, grb_info_table = make_info_table(wflow, out_dir=out_dir)
+html_nodes.append(info_table_node)
+files.append(grb_info_table)
+#
+plot_node, skygrid_plot = make_pygrb_plot(wflow, 'pygrb_plot_skygrid', out_dir=out_dir)
 plotting_nodes.append(plot_node)
-files.append(output_files)
-layout.single_layout(out_dir, output_files)
+files.append(skygrid_plot)
+summary_layout = [(grb_info_table[0],), (skygrid_plot[0],)]
+layout.two_column_layout(out_dir, summary_layout)
+
 
 #
 # Plot SNR timeseries

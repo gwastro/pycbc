@@ -25,7 +25,6 @@ Plot single IFO/coherent/reweighted/null SNR timeseries for a PyGRB run.
 # Preamble
 # =============================================================================
 import sys
-import glob
 import os
 import logging
 import numpy
