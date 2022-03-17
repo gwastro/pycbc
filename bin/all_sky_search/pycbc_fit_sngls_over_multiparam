@@ -95,7 +95,8 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500):
     n_triggers = 0
     # Count number of templates required to gather total_trigs templates,
     # start at closest
-    while n_triggers < total_trigs:
+    # total_trigs, if supplied on command line will be a str so convert to int
+    while n_triggers < int(total_trigs):
         n_triggers += nabove[dist_sort[n_triggers]]
         templates_required += 1
     logging.debug("%d templates required to obtain %d triggers",
@@ -119,7 +120,7 @@ _smooth_dist_func = {
     'distance_weighted': smooth_distance_weighted
 }
 
-def smooth(nabove, invalphan, ntotal, dists, smoothing_method):
+def smooth(nabove, invalphan, ntotal, dists, smoothing_method, **kwargs):
     """
     Wrapper for smoothing according to a function defined by smoothing_method
 
@@ -130,7 +131,7 @@ def smooth(nabove, invalphan, ntotal, dists, smoothing_method):
     template of interest
     """
     return _smooth_dist_func[smoothing_method](nabove, invalphan,
-                                               ntotal, dists)
+                                               ntotal, dists, **kwargs)
 
 parser = argparse.ArgumentParser(usage="",
     description="Smooth (regress) the dependence of coefficients describing "
@@ -190,7 +191,7 @@ parser.add_argument("--smoothing-method", default="smooth_tophat",
                          "trucated at three smoothing-widths.")
 parser.add_argument("--smoothing-keywords", nargs='*',
                     help="Keywords for the smoothing function, supplied "
-                         "as key:value pairs, e.g. n_closest:500 to define "
+                         "as key:value pairs, e.g. total_trigs:500 to define "
                          "the number of templates in the n_closest smoothing "
                          "method")
 args = parser.parse_args()
