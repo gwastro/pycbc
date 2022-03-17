@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright 2016 Thomas Dent, Alex Nitz
+# Copyright 2016 Thomas Dent, Alex Nitz, Gareth Cabourn Davies
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -18,16 +18,18 @@ import sys, h5py, argparse, logging, pycbc.version, numpy
 from scipy.stats import norm
 from pycbc.events import triggers
 
+
 def dist(i1, i2, parvals, smoothing_width):
     """
-    computes the vector of parameter values at index i1 and
-    set of indices i2, and gives the Euclidean distance between
+    Computes the vector of parameter values at index/indices i1 and
+    index/indices i2, and gives the Euclidean distance between
     the two with a metric of 1/(smoothing width^2)
     """
     dsq = 0
     for v, s in zip(parvals, smoothing_width):
         dsq += (v[i2] - v[i1]) ** 2.0 / s ** 2.0
     return dsq ** 0.5
+
 
 def smooth_templates(nabove, invalphan, ntotal, template_idx,
                      weights=None):
@@ -74,6 +76,7 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
                     ntotal_t_smoothed)
     return return_tuple
 
+
 def smooth_tophat(nabove, invalphan, ntotal, dists):
     """
     Smooth templates using a tophat function with templates within unit
@@ -84,6 +87,7 @@ def smooth_tophat(nabove, invalphan, ntotal, dists):
                             invalphan,
                             ntotal,
                             idx_within_area)
+
 
 def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500):
     """
@@ -104,6 +108,7 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500):
     idx_to_smooth = dist_sort[:templates_required]
     return smooth_templates(nabove, invalphan, ntotal, idx_to_smooth)
 
+
 def smooth_distance_weighted(nabove, invalphan, ntotal, dists):
     """
     Smooth templates weighted according to dists in a unit-width normal
@@ -120,6 +125,7 @@ _smooth_dist_func = {
     'distance_weighted': smooth_distance_weighted
 }
 
+
 def smooth(nabove, invalphan, ntotal, dists, smoothing_method, **kwargs):
     """
     Wrapper for smoothing according to a function defined by smoothing_method
@@ -132,6 +138,7 @@ def smooth(nabove, invalphan, ntotal, dists, smoothing_method, **kwargs):
     """
     return _smooth_dist_func[smoothing_method](nabove, invalphan,
                                                ntotal, dists, **kwargs)
+
 
 parser = argparse.ArgumentParser(usage="",
     description="Smooth (regress) the dependence of coefficients describing "
@@ -241,11 +248,10 @@ for param, slog in zip(args.fit_param, args.log_param):
     else:
         raise ValueError("invalid log param argument, use 'true', or 'false'")
 
-# for an exponential fit 1/alpha is linear in the trigger statistic values
-# so calculating weighted sums or averages of 1/alpha is appropriate
 nabove = fits['count_above_thresh'][:]
 ntotal = fits['count_in_template'][:]
-
+# For an exponential fit 1/alpha is linear in the trigger statistic values
+# so calculating weighted sums or averages of 1/alpha is appropriate
 invalpha = 1. / fits['fit_coeff'][:]
 invalphan = invalpha * nabove
 
@@ -255,6 +261,7 @@ alpha_smoothed = []
 rang = numpy.arange(0, len(nabove))
 
 logging.info("Smoothing ...")
+
 # Handle the one-dimensional case of tophat smoothing separately
 # as it is easier to optimize computational performance.
 if len(parvals) == 1 and args.smoothing_method == 'smooth_tophat':
@@ -306,12 +313,12 @@ for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
     elif slog in ['true', 'True', 'TRUE']:
         outfile[param] = numpy.exp(vals)
 
-# add metadata, some is inherited from template level fit
+# Add metadata, some is inherited from template level fit
 outfile.attrs['ifo'] = ifo
 outfile.attrs['stat_threshold'] = fits.attrs['stat_threshold']
 if 'analysis_time' in fits.attrs:
     outfile.attrs['analysis_time'] = fits.attrs['analysis_time']
 
-# add a magic file attribute so that coinc_findtrigs can parse it
+# Add a magic file attribute so that coinc_findtrigs can parse it
 outfile.attrs['stat'] = ifo + '-fit_coeffs'
 logging.info('Done!')
