@@ -205,7 +205,7 @@ logging.info('Found %s background (exclusive zerolag) triggers' % len(cstat_back
 # We'll use the background far for the ylimits if closed box, foreground
 # otherwise
 if args.ymin is not None:
-+    plot_ymin = args.ymin
+    plot_ymin = args.ymin
 elif args.closed_box or cstat_fore is None:
     plot_ymin = far_back_exc.min()/10.
 else:
