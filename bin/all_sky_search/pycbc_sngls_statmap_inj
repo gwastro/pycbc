@@ -1,4 +1,4 @@
-+#!/usr/bin/env python
+#!/usr/bin/env python
 """
 The program combines output files generated
 by pycbc_sngls_findtrigs to generate a mapping between SNR and FAP/FAR, along
