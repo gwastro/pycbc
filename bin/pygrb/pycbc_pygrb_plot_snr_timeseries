@@ -16,108 +16,162 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
+"""
+Plot single IFO/coherent/reweighted/null SNR timeseries for a PyGRB run.
+"""
+
 # =============================================================================
 # Preamble
 # =============================================================================
-
-from __future__ import division
-
 import sys
 import glob
 import os
-import copy
 import logging
-from ligo.lw import lsctables
+import numpy
+import matplotlib.pyplot as plt
+from matplotlib import rc
 import pycbc.version
-from pycbc.results.pygrb_plotting_utils import *
-plt.switch_backend('Agg')
+from pycbc import init_logging
+from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.results import pygrb_plotting_utils as plu
 
-__author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+plt.switch_backend('Agg')
+rc('font', size=14)
+
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_snr_timeseries"
 
 
 # =============================================================================
+# Functions
+# =============================================================================
+# Function to load time and necessary SNR data from a trigger/injection file
+def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
+    """Build a dictionary containing time and SNR data extracted from
+    a trigger/injection file"""
+
+    # Inizialize the dictionary
+    data = {}
+    data['time'] = None
+    snr_type = opts.y_variable
+    data[snr_type] = None
+
+    # Fill the dictionary in with required data
+    if input_file:
+        if injections:
+            trigs_or_injs = ppu.load_injections(input_file, vetoes,
+                                                sim_table=sim_table)
+        else:
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+        data['time'] = numpy.asarray(trigs_or_injs.get_end())
+        if snr_type == 'coherent':
+            data['coherent'] = numpy.asarray(trigs_or_injs.get_column('snr'))
+        elif snr_type == 'null':
+            data['null'] = numpy.asarray(trigs_or_injs.get_column('null_statistic'))
+        elif snr_type == 'reweighted':
+            null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
+            data['reweighted'] = ppu.get_bestnrs(trigs_or_injs,
+                                                 q=opts.chisq_index,
+                                                 n=opts.chisq_nhigh,
+                                                 null_thresh=null_thresh,
+                                                 snr_threshold=opts.snr_threshold,
+                                                 sngl_snr_threshold=opts.sngl_snr_threshold,
+                                                 chisq_threshold=opts.newsnr_threshold,
+                                                 null_grad_thresh=opts.null_grad_thresh,
+                                                 null_grad_val=opts.null_grad_val)
+        elif snr_type == 'single':
+            data['single'] = trigs_or_injs.get_sngl_snr(opts.ifo)
+
+    return data
+
+
+# Find start and end times of trigger/injecton data relative to a given time
+def get_start_end_times(data, central_time):
+    """Determine padded start and end times of data relative to central_time"""
+
+    #start = int(min(data.time)) - central_time
+    #end = int(max(data.time)) - central_time
+    start = int(min(data['time'])) - central_time
+    end = int(max(data['time'])) - central_time
+    duration = end - start
+    start -= duration*0.05
+    end += duration*0.05
+
+    return start, end
+
+
+# Reset times so that t=0 is corresponds to the given trigger time
+def reset_times(data, trig_time):
+    """Reset times in data so that t=0 corresponds to the trigger time provided"""
+
+    #data.time = [t-trig_time for t in data.time]
+    data['time'] = [t-trig_time for t in data['time']]
+
+    return data
+
+
+# =============================================================================
 # Main script starts here
 # =============================================================================
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
+                                          version=__version__)
+parser.add_argument("-t", "--trig-file", action="store",
+                    default=None, required=True,
+                    help="The location of the trigger file")
+parser.add_argument('--central-time', type=float, default=None,
+                    help="Center plot at the given GPS time. If omitted, "+
+                    "use the GRB trigger time")
+parser.add_argument("-y", "--y-variable", default=None,
+                    choices=['coherent', 'single', 'reweighted', 'null'],
+                    help="Quantity to plot on the vertical axis.")
+ppu.pygrb_add_bestnr_opts(parser)
+opts = parser.parse_args()
 
-description = 'pycbc_pygrb_plot_snr_timeries produces SNR timeseries plots.'
-usage = __program__ + ' [--options]'
-opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
-if opts.verbose:
-    level = logging.INFO
-else:
-    level = logging.WARNING
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    level=level)
-
-trig_file  = os.path.abspath(opts.trig_file)
-inj_file   = None
-if opts.inj_file:
-    inj_file = os.path.abspath(opts.inj_file)
-outfile = opts.output_file
-seg_dir = opts.segment_dir
-veto_files = []
-if opts.veto_directory:
-    veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
-    veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
-snr_type = opts.variable
+# Check options
+trig_file = os.path.abspath(opts.trig_file)
+found_file = os.path.abspath(opts.found_file) if opts.found_file else None
+snr_type = opts.y_variable
 ifo = opts.ifo
 if snr_type == 'single' and ifo is None:
-    msg = "Please specify an interferometer for a single IFO plot"
-    logging.error(msg)
-    sys.exit()
-
-title_dict = {'coherent': "Coherent SNR vs Time",
-              'single': "%s SNR vs Time" % ifo,
-              'null': "Null SNR vs Time",
-              'reweighted': "Reweighted SNR vs Time"}
-if opts.plot_title is None:
-    opts.plot_title = title_dict[snr_type]
-if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: Background triggers\n" +
-                         "Red crosses: Injections triggers")
+    err_msg = "Please specify an interferometer for a single IFO plot"
+    parser.error(err_msg)
 
 logging.info("Imported and ready to go.")
 
 # Set output directories
-outdirs = [os.path.split(os.path.abspath(outfile))[0]]
-for outdir in outdirs:
-    if not os.path.isdir(outdir):
-        os.makedirs(outdir)
+outdir = os.path.split(os.path.abspath(opts.output_file))[0]
+if not os.path.isdir(outdir):
+    os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos = extract_ifos(trig_file)
+_, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+                                        opts.veto_category)
 
-# Extract IFOs and vetoes
-vetoes = extract_vetoes(trig_file, ifos)
+# Load trigger data
+trig_data = load_data(trig_file, vetoes, opts)
 
-# Load triggers
-trigs = load_triggers(trig_file, vetoes, ifos)
+# Load (or initialize) injection data
+inj_data = load_data(found_file, vetoes, opts, injections=True, sim_table=False)
 
-# Extract trigger data
-trig_data = PygrbFilterOutput(trigs, ifos,
-                              lsctables.MultiInspiralTable.loadcolumns,
-                              "triggers", opts)
+# Determine the central time (t=0): default is the GRB trigger time
+central_time = opts.central_time if opts.central_time is not None else\
+    ppu.get_grb_time(opts.seg_files)
 
-# Load injections
-injs = None
-if inj_file:
-    injs = load_injections(inj_file, vetoes)
+# Determine trigger data start and end times relative to the central time
+start, end = get_start_end_times(trig_data, central_time)
 
-# Extract injection data
-inj_data = PygrbFilterOutput(injs, ifos,
-                             lsctables.MultiInspiralTable.loadcolumns,
-                             "injections", opts)
+# Reset trigger and injection times
+trig_data = reset_times(trig_data, central_time)
+if found_file:
+    inj_data = reset_times(inj_data, central_time)
 
 # Generate plots
 logging.info("Plotting...")
-
-# Reset trigger and injection times
-grb_time, start, end, trig_data, inj_data = reset_times(seg_dir, trig_data,
-                                                        inj_data, inj_file)
 
 # Determine what goes on the vertical axis
 y_labels = {'coherent': "Coherent SNR",
@@ -125,26 +179,21 @@ y_labels = {'coherent': "Coherent SNR",
             'null': "Null SNR",
             'reweighted': "Reweighted SNR"}
 y_label = y_labels[snr_type]
-trig_snr_data_dict = {'coherent': trig_data.snr,
-                      'null': trig_data.null_stat,
-                      'reweighted': trig_data.reweighted_snr}
-if ifo:
-    trig_snr_data_dict.update({'single': trig_data.ifo_snr[ifo]})
-trig_snr_data = trig_snr_data_dict[snr_type]
-inj_snr_data = None
-if inj_file:
-    inj_snr_data_dict = {'coherent': inj_data.snr,
-                         'null': inj_data.null_stat,
-                         'reweighted': inj_data.reweighted_snr}
-    if ifo:
-        inj_snr_data_dict.update({'single': inj_data.ifo_snr[ifo]})
-    inj_snr_data = inj_snr_data_dict[snr_type]
+
+# Determine title and caption
+if opts.plot_title is None:
+    opts.plot_title = y_label + " vs Time"
+if opts.plot_caption is None:
+    opts.plot_caption = ("Blue crosses: background triggers.  ")
+    if found_file:
+        opts.plot_caption += ("Red crosses: injections triggers.")
 
 # Single IFO SNR versus time plots
-pygrb_shared_plot_setups()
 xlims = [start, end]
-pygrb_plotter(trig_data.time, trig_snr_data,
-              inj_data.time, inj_snr_data, inj_file,
-              "Time since %s" % (str(grb_time)), y_label, outfile,
-              xlims=xlims, use_logs=False, cmd=' '.join(sys.argv),
-              plot_title=opts.plot_title, plot_caption=opts.plot_caption)
+if opts.x_lims:
+    xlims = opts.x_lims
+    xlims = map(float, xlims.split(','))
+plu.pygrb_plotter([trig_data['time'], trig_data[snr_type]],
+                  [inj_data['time'], inj_data[snr_type]],
+                  "Time since %.3f (s)" % (central_time), y_label,
+                  opts, cmd=' '.join(sys.argv))

@@ -20,8 +20,6 @@
 """Cluster triggers from a pyGRB run
 """
 
-from __future__ import print_function
-
 import argparse
 import operator
 import os

@@ -321,6 +321,8 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
                                  out_dir=out_dir,
                                  tags=[tag] + tags)
             node = exe.create_node()
+
+            node.set_memory(15000)
             node.add_input_opt('--trigger-file', trig_file)
             if veto_file is not None:
                 node.add_input_opt('--veto-file', veto_file)
@@ -405,9 +407,9 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
     workflow += node
     return node.output_files[0]
 
-
-def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
-    template_path = 'templates/orange.html'
+def make_results_web_page(workflow, results_dir, template='orange',
+                          explicit_dependencies=None):
+    template_path = 'templates/'+template+'.html'
 
     out_dir = workflow.cp.get('results_page', 'output-path')
     makedir(out_dir)
@@ -419,7 +421,6 @@ def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
     if explicit_dependencies is not None:
         for dep in explicit_dependencies:
             workflow.add_explicit_dependancy(dep, node)
-
 
 def make_single_hist(workflow, trig_file, veto_file, veto_name,
                      out_dir, bank_file=None, exclude=None,
@@ -483,6 +484,7 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
                         out_dir=out_dir,
                         tags=[tag] + tags).create_node()
 
+            node.set_memory(15000)
             node.add_input_opt('--bank-file', bank_file)
             if veto_file is not None:
                 node.add_input_opt('--veto-file', veto_file)

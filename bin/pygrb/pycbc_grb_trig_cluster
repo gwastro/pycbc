@@ -20,12 +20,11 @@
 """Cluster triggers from a pyGRB run
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import shutil
 import sys
+import logging
 
 import tqdm
 
@@ -36,6 +35,7 @@ import h5py
 from gwdatafind.utils import filename_metadata
 
 from pycbc import __version__
+from pycbc import init_logging
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -156,6 +156,8 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
+
 win = args.time_window
 
 ifotag, filetag, segment = filename_metadata(args.trig_file)
@@ -187,9 +189,9 @@ with h5py.File(args.trig_file, "r") as h5f:
 # empty file (no triggers), so just copy the file
 if not time.size:
     shutil.copyfile(args.trig_file, outfile)
-    if args.verbose:
-        print("trigger file is empty")
-        print("copied input file to {}".format(outfile))
+    msg = "trigger file is empty\n"
+    msg += "copied input file to {}".format(outfile)
+    logging.info(msg)
     sys.exit(0)
 
 # find loudest trigger in each bin
