@@ -45,6 +45,11 @@ jobs:
         bash -e ../examples/singles_search/submit.sh
         python ../examples/singles_search/check_job.py
         find submitdir/work/ -type f -name '*.tar.gz' -delete
+        ls
+        ls ..
+        ls ../..
+        ls ../../../
+        cd ..
     - name: store log files
       if: always()
       uses: actions/upload-artifact@v2
