@@ -410,29 +410,10 @@ for insp_file in full_insps:
 # Main results with combined file (we mix open and closed box here, but
 # separate them in the result page)
 
-# FIXME: COMMENTED OUT JOBS ARE FAILING ... NEED FIXING!!
-#        (Currently that's most of the jobs :-( )
-#snrifar = wf.make_snrifar_plot(workflow, combined_bg_file,
-#                               rdir['open_box_result'],
-#                               tags=combined_bg_file.tags)
-#snrifar_cb = wf.make_snrifar_plot(workflow, combined_bg_file,
-#                                  rdir['coincident_triggers'], closed_box=True,
-#                                  tags=combined_bg_file.tags + ['closed'])
-#ratehist = wf.make_snrratehist_plot(workflow, combined_bg_file,
-#                                    rdir['open_box_result'],
-#                                    tags=combined_bg_file.tags)
-#snrifar_ifar = wf.make_snrifar_plot(workflow, combined_bg_file,
-#                                    rdir['open_box_result/significance'],
-#                                    cumulative=False,
-#                                    tags=combined_bg_file.tags + ['ifar'])
 ifar_ob = wf.make_ifar_plot(workflow, combined_bg_file,
                                     rdir['open_box_result'],
                                     tags=combined_bg_file.tags + ['open_box'],
                                     executable='page_ifar_catalog')
-#ifar_cb = wf.make_ifar_plot(workflow, combined_bg_file,
-#                                    rdir['coincident_triggers'],
-#                                    tags=combined_bg_file.tags + ['closed_box'],
-#                                    executable='page_ifar_catalog')
 table = wf.make_foreground_table(workflow, combined_bg_file,
                                  hdfbank, rdir['open_box_result'],
                                  singles=insps, extension='.html',
@@ -445,8 +426,6 @@ fore_xmlloudest = wf.make_foreground_table(workflow, combined_bg_file,
                     hdfbank, rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
 
-#symlink_result(snrifar, 'open_box_result/significance')
-#symlink_result(ratehist, 'open_box_result/significance')
 symlink_result(table, 'open_box_result/significance')
 
 # Set html pages
@@ -478,7 +457,6 @@ wf.setup_foreground_minifollowups(workflow, combined_bg_file,
 
 snrifar_summ = []
 for key in final_bg_files:
-    # FIXME: Stop obfuscating this file!
     bg_file = final_bg_files[key]
     open_dir = rdir['open_box_result/{}_coincidences'.format(key)]
     closed_dir = rdir['coincident_triggers/{}_coincidences'.format(key)]

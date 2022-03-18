@@ -48,11 +48,6 @@ parser.add_argument('--cluster-window', type=float, default=10,
 parser.add_argument('--veto-window', type=float, default=.1,
                     help='Time around each zerolag trigger to window out '
                          '[default=.1s]')
-parser.add_argument('--background-removal-statistic', type=float,
-                    default=numpy.inf,
-                    help="Remove any triggers with statistic higher "
-                         "than this from the background. "
-                          "Default=None removed")
 significance.insert_significance_option_group(parser)
 parser.add_argument('--hierarchical-removal-window', type=float, default=1.0,
                     help='Time around each trigger to window out for a very '
@@ -116,10 +111,9 @@ all_trigs = all_trigs.cluster(args.cluster_window)
 # For now, all triggers are both in the foreground and background
 fore_locs = numpy.flatnonzero(all_trigs.timeslide_id == 0)
 back_locs = numpy.flatnonzero(all_trigs.timeslide_id == 0)
-exc_back_locs = numpy.flatnonzero(all_trigs.stat < args.background_removal_statistic)
 
 fg_time = float(all_trigs.attrs['foreground_time'])
-exc_veto_time = (len(back_locs) - len(exc_back_locs)) * args.veto_window
+exc_veto_time = (len(back_locs) - len(back_locs)) * args.veto_window
 fg_time_exc = fg_time - exc_veto_time
 
 logging.info("%s clustered triggers" % fore_locs.sum())
@@ -141,17 +135,17 @@ f['segments/foreground_veto/end'] = numpy.array([0])
 for k in all_trigs.data:
     f['foreground/' + k] = all_trigs.data[k][fore_locs]
     f['background/' + k] = all_trigs.data[k][back_locs]
-    f['background_exc/' + k] = all_trigs.data[k][exc_back_locs]
+    f['background_exc/' + k] = all_trigs.data[k][back_locs]
 
 
 logging.info("Estimating FAN from background statistic values")
 # Ranking statistic of foreground and background
 fore_stat = all_trigs.stat[fore_locs]
 back_stat = all_trigs.stat[back_locs]
-back_stat_exc = all_trigs.stat[exc_back_locs]
+back_stat_exc = all_trigs.stat[back_locs]
 
 bkg_dec_facs = all_trigs.decimation_factor[back_locs]
-bkg_exc_dec_facs = all_trigs.decimation_factor[exc_back_locs]
+bkg_exc_dec_facs = all_trigs.decimation_factor[back_locs]
 
 kwargs = {
     'fit_thresh':args.fit_threshold[ifo],

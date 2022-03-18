@@ -192,33 +192,6 @@ for tnum in template_ids:
     snr = t_trigs.data['snr']
     n_tot_trigs = len(snr)
     if not n_tot_trigs: continue
-    if args.trigger_snr_cut:
-        snr_cut_f = ("%f" % args.trigger_snr_cut).rstrip("0").rstrip(".")
-        keep_idx = np.flatnonzero(snr >= args.trigger_snr_cut)
-        n_removed = n_tot_trigs - keep_idx.size
-        pc_removed = n_removed / float(n_tot_trigs) * 100
-        logging.info("%d triggers cut due to SNR < %s cut (%.2f%%)",
-                     n_removed, snr_cut_f, pc_removed)
-        t_trigs = t_trigs.select(keep_idx)
-
-    if not len(t_trigs): continue
-
-    if args.reduced_chisq_cut:
-        n_skp_trigs = len(t_trigs)
-        chisq = t_trigs.data['chisq']
-        chisq_dof = t_trigs.data['chisq_dof']
-        reduced_chisq = chisq / (2 * chisq_dof - 2)
-        chisq_keep_idx = np.flatnonzero(reduced_chisq <= args.reduced_chisq_cut)
-        n_removed = n_skp_trigs - chisq_keep_idx.size
-        pc_removed = n_removed / float(n_skp_trigs) * 100
-        chisq_cut_f = ("%f" % args.reduced_chisq_cut).rstrip("0").rstrip(".")
-        logging.info("Ignoring %d triggers cut with \chi^2 > %s (%.2f%%)",
-                     n_removed, chisq_cut_f, pc_removed)
-        # Select chisq-cut-kept idx from keep_idx
-        t_trigs = t_trigs.select(chisq_keep_idx)
-        del chisq, chisq_dof, reduced_chisq, chisq_keep_idx
-
-    if not len(t_trigs): continue
 
     logging.info('Setting up ranking method')
 >>>>>>> c41203c1 (Big overhaul for singles-included search)
