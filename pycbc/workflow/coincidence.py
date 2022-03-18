@@ -209,7 +209,6 @@ class PyCBCSnglsStatMapInjExecutable(Executable):
         return node
 
 
-
 class PyCBCHDFInjFindExecutable(Executable):
     """Find injections in the hdf files output"""
 
@@ -430,6 +429,7 @@ def setup_statmap(workflow, ifos, coinc_files, out_dir, tags=None):
     workflow.add_node(stat_node)
     return stat_node.output_file
 
+
 def setup_sngls_statmap(workflow, ifo, sngls_files, out_dir, tags=None):
     tags = [] if tags is None else tags
 
@@ -440,6 +440,7 @@ def setup_sngls_statmap(workflow, ifo, sngls_files, out_dir, tags=None):
     stat_node = statmap_exe.create_node(sngls_files, ifo)
     workflow.add_node(stat_node)
     return stat_node.output_file
+
 
 def setup_statmap_inj(workflow, ifos, coinc_files, background_file,
                       out_dir, tags=None):
@@ -458,6 +459,7 @@ def setup_statmap_inj(workflow, ifos, coinc_files, background_file,
                                         ifolist)
     workflow.add_node(stat_node)
     return stat_node.output_files[0]
+
 
 def setup_sngls_statmap_inj(workflow, ifo, sngls_inj_files, background_file,
                             out_dir, tags=None):
@@ -587,8 +589,9 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     logging.info('...leaving coincidence ')
     return statmap_files
 
+
 def setup_sngls(workflow, hdfbank, trig_files, stat_files,
-                          veto_file, veto_name, out_dir, tags=None):
+                veto_file, veto_name, out_dir, tags=None):
     """
     This function sets up getting statistic values for single-detector triggers
     """
@@ -618,6 +621,7 @@ def setup_sngls(workflow, hdfbank, trig_files, stat_files,
     logging.info('...leaving coincidence ')
     return statmap_files
 
+
 def setup_sngls_inj(workflow, hdfbank, inj_trig_files,
                     stat_files, background_file, veto_file, veto_name,
                     out_dir, tags=None):
@@ -629,9 +633,10 @@ def setup_sngls_inj(workflow, hdfbank, inj_trig_files,
     findsnglsinj_exe = PyCBCFindSnglsExecutable(workflow.cp, 'sngls', ifos=ifos,
                                                 tags=tags, out_dir=out_dir)
     # Wall time knob and memory knob
+    exe_str_tags = [findsnglsinj_exe.ifo_string] + tags
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence',
                                           'parallelization-factor',
-                                          [findsnglsinj_exe.ifo_string] + tags))
+                                          exe_str_tags))
 
     statmap_files = []
     bg_files = FileList()
@@ -640,8 +645,8 @@ def setup_sngls_inj(workflow, hdfbank, inj_trig_files,
         sngls_node = findsnglsinj_exe.create_node(inj_trig_files, hdfbank,
                                                   stat_files,
                                                   veto_file, veto_name,
-                                               group_str,
-                                               tags=['JOB'+str(i)])
+                                                  group_str,
+                                                  tags=['JOB'+str(i)])
         bg_files += sngls_node.output_files
         workflow.add_node(sngls_node)
 
