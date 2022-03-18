@@ -131,9 +131,6 @@ logging.info("%s clustered foreground triggers" % fore_locs.sum())
 logging.info("Dumping foreground triggers")
 f = fw(args.output_file)
 f.attrs['num_of_ifos'] = 1
-# FIXME Do later codes need pivot and fixed? maybe not, delete for now
-#f.attrs['pivot'] = ifo
-#f.attrs['fixed'] = ifo
 f.attrs['ifos'] = ifo
 
 f.attrs['timeslide_interval'] = all_trigs.attrs['timeslide_interval']

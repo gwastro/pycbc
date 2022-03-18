@@ -626,20 +626,20 @@ def setup_sngls_inj(workflow, hdfbank, inj_trig_files,
     from injections
     """
     ifos, _ = inj_trig_files.categorize_by_attr('ifo')
-    findsngls_exe = PyCBCFindSnglsExecutable(workflow.cp, 'sngls', ifos=ifos,
-                                             tags=tags, out_dir=out_dir)
+    findsnglsinj_exe = PyCBCFindSnglsExecutable(workflow.cp, 'sngls', ifos=ifos,
+                                                tags=tags, out_dir=out_dir)
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence',
                                           'parallelization-factor',
-                                          [findsngls_exe.ifo_string] + tags))
+                                          [findsnglsinj_exe.ifo_string] + tags))
 
     statmap_files = []
     bg_files = FileList()
     for i in range(factor):
         group_str = '%s/%s' % (i, factor)
-        sngls_node = findsngls_exe.create_node(inj_trig_files, hdfbank,
-                                               stat_files,
-                                               veto_file, veto_name,
+        sngls_node = findsnglsinj_exe.create_node(inj_trig_files, hdfbank,
+                                                  stat_files,
+                                                  veto_file, veto_name,
                                                group_str,
                                                tags=['JOB'+str(i)])
         bg_files += sngls_node.output_files
