@@ -19,8 +19,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 Program for running offline analysis through and coincident and
- single-detector trigger ranking then generate post-processing
- and plots.
+single-detector trigger ranking then generate post-processing
+and plots.
 """
 import pycbc
 import pycbc.version
@@ -66,13 +66,9 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
-
-wf.makedir(args.output_dir)
 
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, args.workflow_name + '-main')
@@ -214,6 +210,9 @@ for ifocomb in ifo_combos(ifo_ids.keys()):
     no_fg_exc_files[ordered_ifo_list] = wf.rerank_coinc_followup(
                    workflow, bg_file, hdfbank, output_dir,
                    tags=ctagcomb)
+
+# The single-detector findtrigs and statmap jobs work differently
+# - set these up here
 
 for ifo in ifo_ids.keys():
     inspcomb = wf.select_files_by_ifo_combination([ifo], insps)
@@ -522,11 +521,9 @@ splitbank_files_inj = wf.setup_splittable_workflow(workflow, [hdfbank],
 inj_files_base, inj_tags = wf.setup_injection_workflow(workflow,
                                                   output_dir="inj_files")
 
-# For some reason, there seems to be an issue with the hdf injection files, dont convert for now
-inj_files = inj_files_base
-#inj_files = []
-#for inj_file, tag in zip(inj_files_base, inj_tags):
-#    inj_files.append(wf.inj_to_hdf(workflow, inj_file, 'inj_files', [tag]))
+inj_files = []
+for inj_file, tag in zip(inj_files_base, inj_tags):
+    inj_files.append(wf.inj_to_hdf(workflow, inj_file, 'inj_files', [tag]))
 
 inj_coincs = wf.FileList()
 
@@ -594,9 +591,10 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
         inj_coinc[ordered_ifo_list] = curr_out
 
+    # get sngls for injections
     for ifo in ifo_ids.keys():
         inspcomb = wf.select_files_by_ifo_combination([ifo], insps)
-        # Create coinc tag, and set up the findtrigs job for the combination
+        # Create sngls tag, and set up the findtrigs job for the combination
         ctagsngl = [tag, 'injections', '1det']
         inj_coinc[ifo] = wf.setup_sngls_inj(
             workflow,
@@ -798,6 +796,8 @@ container += finalize_workflow
 import Pegasus.DAX3 as dax
 dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
+
+container.add_subworkflow_dependancy(workflow, finalize_workflow)
 
 container.save()
 
