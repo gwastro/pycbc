@@ -67,7 +67,7 @@ def insert_cuts_option_group(parser):
                              + "', '".join(ineq_choices) +
                              "' to indicate the inequality needed. "
                              "PARAMETER is one of:'"
-                             + "', '".join(trigger_param_choices) + 
+                             + "', '".join(trigger_param_choices) +
                              "'. For example snr:6:LOWER places the "
                              "requirement that matched filter SNR must be > 6")
     parser.add_argument('--template-cuts', nargs='+',
@@ -135,7 +135,7 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
 
     Parameters:
     -----------
-    triggers: 
+    triggers:
 
     trigger_cut_dict: dictionary
         Dictionary with parameters as keys, and tuples of
@@ -147,7 +147,7 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
     """
     idx_out = np.arange(len(triggers['snr']))
 
-    # Loop through the different cuts, and apply them 
+    # Loop through the different cuts, and apply them
     for parameter, cut_function_thresh in trigger_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
         cut_function, cut_thresh = cut_function_thresh
@@ -171,8 +171,8 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
         idx_out = idx_out[cut_function(value, cut_thresh)]
 
     return idx_out
-    
-    
+
+
 
 def apply_template_cuts(statistic, ifos, bank,
                         template_cut_dict, template_ids=None):
@@ -222,7 +222,7 @@ def apply_template_cuts(statistic, ifos, bank,
     template_fit_cuts_allowed = hasattr(statistic, 'fits_by_tid')
     statistic_classname = statistic.__class__.__name__
 
-    # Loop through the different cuts, and apply them 
+    # Loop through the different cuts, and apply them
     for parameter, cut_function_thresh in template_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
         cut_function, cut_thresh = cut_function_thresh
@@ -235,7 +235,7 @@ def apply_template_cuts(statistic, ifos, bank,
         elif parameter in template_fit_param_choices:
             if not template_fit_cuts_allowed:
                 raise ValueError("Cut parameter " + parameter + " cannot "
-                                 "be used when the ranking statistic " + 
+                                 "be used when the ranking statistic " +
                                  statistic_classname + " does not use "
                                  "template fitting.")
             # Need to apply this cut to all IFOs
