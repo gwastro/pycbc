@@ -105,7 +105,7 @@ def ISSO_eq_at_pole(r, chi):
     chi2 = chi * chi
     return (
         r**3 * (r**2 * (r - 6) + chi2 * (3 * r + 4))
-        + chi2 * chi2 * (3 * r * (r - 2) + chi2)
+        + chi2 * chi2 * (3 * r * (r - 2) + chi2))
 
 
 def ISSO_eq_at_pole_dr(r, chi):
