@@ -159,8 +159,8 @@ parser.add_argument("--output", required=True,
                     help="Location for output file containing smoothed fit "
                          "coefficients.  Required")
 parser.add_argument("--use-template-fit-param", action="store_true",
-                    help="Use parameter values stored in the template fit file"
-                         "as template_param for smoothing.", default=False)
+                    help="Use parameter values stored in the template fit "
+                         "file as template_param for smoothing.")
 parser.add_argument("--fit-param", nargs='+',
                     help="Parameter(s) over which to regress the background "
                          "fit coefficients. Required. Either read from "
@@ -201,6 +201,9 @@ parser.add_argument("--smoothing-keywords", nargs='*',
                          "as key:value pairs, e.g. total_trigs:500 to define "
                          "the number of templates in the n_closest smoothing "
                          "method")
+parser.add_argument("--output-fits-by-template", action='store_true',
+                    help="If given, will output the input file fits to "
+                         "fit_by_template group")
 args = parser.parse_args()
 
 if args.smoothing_keywords:
@@ -312,6 +315,11 @@ for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
         outfile[param] = vals
     elif slog in ['true', 'True', 'TRUE']:
         outfile[param] = numpy.exp(vals)
+
+if args.output_fits_by_template:
+    outfile.create_group('fit_by_template')
+    for k in ['count_above_thresh', 'fit_coeff', 'count_in_template']:
+        outfile['fit_by_template'][k] = fits[k][:]
 
 # Add metadata, some is inherited from template level fit
 outfile.attrs['ifo'] = ifo

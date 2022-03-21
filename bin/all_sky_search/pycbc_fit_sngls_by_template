@@ -176,7 +176,11 @@ abovethresh, stat = get_stat(args, trigf[args.ifo], args.stat_threshold)
 tid = trigf[args.ifo + '/template_id'][abovethresh]
 time = trigf[args.ifo + '/end_time'][abovethresh]
 if args.save_trig_param:
-    tparam = trigf[args.ifo + '/' + args.save_trig_param][abovethresh]
+    tparam_region = trigf[args.ifo][args.save_trig_param + '_template'][:]
+    # Note: this breaks if there are no triggers in the template, but that
+    # is pretty rare
+    tparam = [trigf[args.ifo][args.save_trig_param][region][0]
+              for region in tparam_region]
 logging.info('%i trigs left after thresholding' % len(stat))
 
 # Calculate total time being analysed from segments
@@ -195,8 +199,6 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     stat = stat[retain]
     tid = tid[retain]
     time = time[retain]
-    if args.save_trig_param:
-        tparam = tparam[retain]
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
 #now include gating veto
@@ -218,8 +220,6 @@ if args.gating_veto_windows:
         stat = stat[gveto_retain_idx]
         tid = tid[gveto_retain_idx]
         time = time[gveto_retain_idx]
-        if args.save_trig_param:
-            tparam = tparam[gveto_retain_idx]
         logging.info('%i trigs left after vetoing triggers near gates' % len(stat))
 
 total_time = abs(all_segments)
@@ -289,8 +289,6 @@ if args.prune_param:
             logging.info('%i trigs remain' % len(stat))
             tid = tid[retain]
             time = time[retain]
-            if args.save_trig_param:
-                tparam = tparam[retain]
             # also for the reference trig arrays
             retain = abs(timepruneall - ltime) > args.prune_window
             statpruneall = statpruneall[retain]
@@ -344,9 +342,7 @@ for j, tnum in enumerate(trange):
     counts_total.append(count_total)
     fits.append(alpha)
     if args.save_trig_param:
-        # save the param value of the first trig in this template
-        param_in_template = tparam[tid == tnum]
-        tpars.append(param_in_template[0])
+        tpars.append(tparam[tnum])
     if (tnum % 1000 == 0): logging.info('Fitted template %i / %i' %
                                                     (tnum - tmin, tmax - tmin))
 

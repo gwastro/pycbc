@@ -2,7 +2,7 @@
 import h5py, copy, argparse, logging, numpy, numpy.random
 import shutil, uuid, os.path, atexit
 from ligo.segments import infinity
-from pycbc.events import veto, coinc, stat, ranking
+from pycbc.events import veto, coinc, stat, ranking, cuts
 import pycbc.version
 from pycbc import pool
 from numpy.random import seed, shuffle
@@ -70,6 +70,7 @@ parser.add_argument('--stage-input', action='store_true',
 parser.add_argument('--stage-input-dir', type=str, default='/dev/shm',
                     help="Directory to stage input files")
 stat.insert_statistic_option_group(parser)
+cuts.insert_cuts_option_group(parser)
 args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
@@ -89,6 +90,8 @@ def parse_template_range(num_templates, rangestr):
     return tmin, tmax
 
 logging.info('Starting...')
+
+trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 num_templates = len(h5py.File(args.template_bank, "r")['template_hash'])
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
@@ -184,6 +187,15 @@ else:
 if tids_with_trigs is not None:
     template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
 
+# Apply cuts as defined on the command line
+template_ids = cuts.apply_template_cuts(
+    rank_method,
+    trigs.ifos,
+    trigs.singles[0].bank,
+    template_cut_dict,
+    template_ids=template_ids)
+
+
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and
 # ids in each ifo
@@ -224,12 +236,21 @@ def process_template(tnum):
     tids_full = {}
     logging.info('Obtaining trigs for template %i ..' % (tnum))
     for i, sngl in zip(trigs.ifos, trigs.singles):
-        tids_full[i] = sngl.set_template(tnum)
-        times_full[i] = sngl['end_time']
-        logging.info('%s:%s' % (i, len(tids_full[i])))
+        # Apply single-trigger cuts as defined on the command line
+        tids_uncut = sngl.set_template(tnum)
+        trigger_keep_ids = cuts.apply_trigger_cuts(sngl, trigger_cut_dict)
+
+        tids_full[i] = tids_uncut[trigger_keep_ids]
+        times_full[i] = sngl['end_time'][trigger_keep_ids]
+        logging.info('%s:%s' % (i, len(tids_uncut)))
+        if len(tids_full[i]) < len(tids_uncut):
+            logging.info("%s triggers cut",
+                         len(tids_uncut) - len(tids_full[i]))
+        
 
         # get single-detector statistic
-        sds_full[i] = rank_method.single(sngl)
+        sds_full[i] = rank_method.single(sngl)[trigger_keep_ids]
+
 
     mintrigs = min([len(ti) for ti in tids_full.values()])
     if mintrigs == 0:

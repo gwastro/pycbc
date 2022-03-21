@@ -35,10 +35,17 @@ from pycbc.bank import conversions as bank_conv
 
 sngl_rank_keys = ranking.sngls_ranking_function_dict.keys()
 
-trigger_param_choices = [cc + '_chisq' for cc in hdf.chisq_choices]
+trigger_param_choices = ['end_time', 'psd_var_val', 'sigmasq']
+trigger_param_choices += [cc + '_chisq' for cc in hdf.chisq_choices]
 trigger_param_choices += sngl_rank_keys
 
-template_param_choices = bank_conv._conversion_options
+template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
+                              'fit_by_count_above_thresh',
+                              'smoothed_fit_count_above_thresh',
+                              'fit_by_count_in_template',
+                              'smoothed_fit_count_in_template']
+template_param_choices = bank_conv._conversion_options + \
+                             template_fit_param_choices
 
 ineq_choices = ['upper','lower','upper_inc','lower_inc']
 
@@ -48,9 +55,9 @@ ineq_functions = {
     'upper': np.less,
     'lower': np.greater,
     'upper_inc': np.less_equal,
-    'lower_inc': np.greater_esual
+    'lower_inc': np.greater_equal
 }
-def insert_cuts_option_group(args):
+def insert_cuts_option_group(parser):
     parser.add_argument('--trigger-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
                              "PARAMETER:VALUE:LIMIT, where, PARAMETER is the "
@@ -69,7 +76,7 @@ def insert_cuts_option_group(args):
                              "--trigger-cuts. PARAMETER can be one of '"
                              + "', '".join(template_param_choices) + "'.")
 
-def ingest_cuts_option_group(args)
+def ingest_cuts_option_group(args):
     """
     Check that the inputs given to options in insert_cuts_option_group
     are sensible, and return the objects used to handle the cuts.
@@ -138,21 +145,61 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
     Returns:
     --------
     """
+    idx_out = np.arange(len(triggers['snr']))
+
+    # Loop through the different cuts, and apply them 
+    for parameter, cut_function_thresh in trigger_cut_dict.items():
+        # The function and threshold are stored as a tuple so unpack it
+        cut_function, cut_thresh = cut_function_thresh
+
+        # What is the value?
+        if parameter.endswith('_chisq'):
+            # parameter is a chisq-type thing
+            chisq_choice = parameter.split('_')[0]
+            value = get_chisq_from_file_choice(triggers, chisq_choice)
+        elif parameter in triggers.file[triggers.ifo]:
+            # parameter can be read direct from the trigger file
+            value = triggers[parameter]
+        elif parameter in sngl_rank_keys:
+            # parameter is a newsnr-type thing
+            value = ranking.get_sngls_ranking_from_trigs(triggers, parameter)
+        else:
+            raise NotImplementedError("Parameter '" + parameter + "' not "
+                                      "recognised. Input sanitisation means "
+                                      "this shouldn't have happened?!")
+
+        idx_out = idx_out[cut_function(value, cut_thresh)]
+
+    return idx_out
     
     
 
-def apply_template_cuts(bank, trigger_cut_dict, template_ids=None):
+def apply_template_cuts(statistic, ifos, bank,
+                        template_cut_dict, template_ids=None):
     """
-    Calculate the parameter for the templates, possibly already
+    Fetch/calculate the parameter for the templates, possibly already
     preselected by template_ids, and then apply the cuts defined
     in template_cut_dict
+    As this is used to select templates for use in findtrigs codes,
+    we remove anything which does not pass
 
     Parameters:
     -----------
-    bank: h5py File object, or a dictionary containing the
-          usual template bank datasets
+    statistic:
+        A PyCBC ranking statistic instance. Used for the template fit
+        cuts. If fits_by_tid does not exist for each ifo, then
+        template fit cuts will be skipped. If a fit cut has been specified
+        and fits_by_tid does not exist for all ifos, an error will be raised.
 
-    trigger_cut_dict: dictionary
+    ifos: list of strings
+        List of IFOS used in this findtrigs instance.
+        Templates must pass cuts in all IFOs. This is important
+        e.g. for template fit parameter cuts.
+
+    bank: h5py File object, or a dictionary
+        Must contain the usual template bank datasets
+
+    template_cut_dict: dictionary
         Dictionary with parameters as keys, and tuples of
         (cut_function, cut_threshold) as values
         made using ingest_cuts_option_group function
@@ -169,17 +216,42 @@ def apply_template_cuts(bank, trigger_cut_dict, template_ids=None):
         Array of template_ids which have passed all cuts
     """
     # Get the initial list of templates:
-    tids_out = template_ids[:] if template_ids else np.arange(bank['mass1'].size)
+    tids_out = np.arange(bank['mass1'].size) if template_ids is None else template_ids[:]
+
+    # We can only apply template fit cuts if template fits have been done
+    template_fit_cuts_allowed = hasattr(statistic, 'fits_by_tid')
+    statistic_classname = statistic.__class__.__name__
 
     # Loop through the different cuts, and apply them 
-    for parameter, cut_function_thresh in trigger_cut_dict.items():
+    for parameter, cut_function_thresh in template_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
         cut_function, cut_thresh = cut_function_thresh
 
-        # Calculate the parameter values using the bank_conversion helper
-        values = bank_conv.bank_conversion(parameter, bank, tids_out)
+        if parameter in bank_conv._conversion_options:
+            # Calculate the parameter values using the bank_conversion helper
+            values = bank_conv.bank_conversion(parameter, bank, tids_out)
+            # Only keep templates which pass this cut
+            tids_out = tids_out[cut_function(values, cut_thresh)]
+        elif parameter in template_fit_param_choices:
+            if not template_fit_cuts_allowed:
+                raise ValueError("Cut parameter " + parameter + " cannot "
+                                 "be used when the ranking statistic " + 
+                                 statistic_classname + " does not use "
+                                 "template fitting.")
+            # Need to apply this cut to all IFOs
+            for ifo in ifos:
+                fits_dict = statistic.fits_by_tid[ifo]
+                if parameter not in fits_dict:
+                    raise ValueError("Cut parameter " + parameter + " not "
+                                     "available in fits file.")
+                values = fits_dict[parameter][tids_out]
+                # Only keep templates which pass this cut
+                tids_out = tids_out[cut_function(values, cut_thresh)]
+        else:
+            raise ValueError("Cut parameter " + parameter + " not recognised."
+                             " This shouldn't happen with input sanitisation")
 
-        # Only keep templates which pass this cut
-        tids_out = tids_out[cut_function(values, thresh)]
+    logging.info("%d out of %d templates kept after applying template cuts",
+                 len(tids_out), len(template_ids))
 
     return tids_out
