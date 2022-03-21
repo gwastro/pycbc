@@ -40,7 +40,7 @@ class Constraint(object):
         for arg, val in static_args.items():
             # Substitute static arg name for value if it appears in the 
             # constraint_arg string at the beginning of a word and is not
-            # followed by an underscore
+            # followed by an underscore or equals sign
             constraint_arg = re.sub(
                 r'\b{}(?!\_|\=)'.format(arg), str(val), constraint_arg)
         self.constraint_arg = constraint_arg
