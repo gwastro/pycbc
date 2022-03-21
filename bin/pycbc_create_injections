@@ -206,8 +206,7 @@ dists = distributions.read_distributions_from_config(cp, opts.dist_section)
 
 # construct class that will draw the samples
 randomsampler = JointDistribution(variable_params, *dists,
-                               **{"constraints": constraints,
-                                  "n_test_samples": 1000})
+                               **{"constraints": constraints})
 
 if opts.ninjections:
     draw_size = opts.ninjections

@@ -309,6 +309,10 @@ def PG_ISSO_solver(chi, incl):
     # Auxiliary variables
     cos_incl = np.cos(incl)
     sgnchi = np.sign(cos_incl)*chi
+    if np.isscalar(sgnchi):
+        sgnchi = np.array(sgnchi, copy=False, ndmin=1)
+        chi = np.array(chi, copy=False, ndmin=1)
+        incl = np.array(incl, copy=False, ndmin=1)
 
     # ISCO radius for the given spin magnitude
     initial_guess = [2 if s > 0.99 else (9 if s < 0 else 5) for s in sgnchi]
@@ -324,7 +328,6 @@ def PG_ISSO_solver(chi, incl):
 
     # ISSO radius for an inclination of pi/2
     initial_guess = [9 if c < 0 else 6 for c in chi]
-    low_bnd = 1 + 3**0.5 + (3 + 2 * 3**0.5)**0.5
     rISSO_at_pole_limit = np.array([
         root_scalar(
             ISSO_eq_at_pole, x0=g0, fprime=ISSO_eq_at_pole_dr,

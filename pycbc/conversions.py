@@ -454,16 +454,27 @@ def remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos(
     remnant_mass: float
         The remnant mass in solar masses
     """
+    mass1, mass2, spin1x, spin1y, spin1z, input_is_array = ensurearray(
+        mass1, mass2, spin1x, spin1y, spin1z)
     # mass1 must be greater than mass2
-    if any(mass2 > mass1):
-        raise ValueError(f'Require mass1 >= mass2')
+    try:
+        if any(mass2 > mass1) and input_is_array:
+            raise ValueError(f'Require mass1 >= mass2')
+    except TypeError:
+        if mass2 > mass1 and not input_is_array:
+            raise ValueError(f'Require mass1 >= mass2. {mass1} < {mass2}')
     # Load required EOS
     if eos in ns.NS_SEQUENCES:
         ns_seq, ns_max = ns.load_ns_sequence(eos)
-        if any(mass2 > ns_max):
-            raise ValueError(
-                f'Maximum NS mass for {eos} is {ns_max}, received '
-                f'{mass2[mass2 > ns_max]}')
+        try:
+            if any(mass2 > ns_max) and input_is_array:
+                raise ValueError(
+                    f'Maximum NS mass for {eos} is {ns_max}, received masses '
+                    f'up to {max(mass2[mass2 > ns_max])}')
+        except TypeError:
+            if mass2 > ns_max and not input_is_array:
+                raise ValueError(
+                    f'Maximum NS mass for {eos} is {ns_max}, received {mass2}')
         # NS compactness and rest mass
         ns_compactness = ns.ns_g_mass_to_ns_compactness(mass2, ns_seq)
         ns_b_mass = ns.ns_g_mass_to_ns_b_mass(mass2, ns_seq)
@@ -492,10 +503,8 @@ def remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos(
         + gamma
         )
     remnant_mass = ns_b_mass * numpy.where(fit > 0.0, fit, 0.0) ** delta
-    return remnant_mass
+    return formatreturn(remnant_mass, input_is_array)
 
-#remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos = numpy.vectorize(
-#    _remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos)
 
 #
 # =============================================================================
