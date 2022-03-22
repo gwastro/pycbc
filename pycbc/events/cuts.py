@@ -35,9 +35,9 @@ from pycbc.bank import conversions as bank_conv
 
 sngl_rank_keys = ranking.sngls_ranking_function_dict.keys()
 
-trigger_param_choices = ['end_time', 'psd_var_val', 'sigmasq']
+trigger_param_choices = list(sngl_rank_keys)
 trigger_param_choices += [cc + '_chisq' for cc in hdf.chisq_choices]
-trigger_param_choices += sngl_rank_keys
+trigger_param_choices += ['end_time', 'psd_var_val', 'sigmasq']
 
 template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
                               'fit_by_count_above_thresh',
