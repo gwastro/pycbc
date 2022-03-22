@@ -32,6 +32,7 @@ from pycbc.events import ranking
 from pycbc.io import hdf
 from pycbc import conversions as conv
 from pycbc.bank import conversions as bank_conv
+from pycbc.io import get_chisq_from_file_choice
 
 sngl_rank_keys = ranking.sngls_ranking_function_dict.keys()
 
@@ -130,7 +131,7 @@ def ingest_cuts_option_group(args):
 
 def apply_trigger_cuts(triggers, trigger_cut_dict):
     """
-    Calculate the parameter for the triggers, and then
+    Fetch/Calculate the parameter for triggers, and then
     apply the cuts defined in template_cut_dict
 
     Parameters:
@@ -144,6 +145,9 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
 
     Returns:
     --------
+    idx_out: numpy array
+        An array of the indices which meet the criteria
+        set by the dictionary
     """
     idx_out = np.arange(len(triggers['snr']))
 
@@ -152,17 +156,25 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
         # The function and threshold are stored as a tuple so unpack it
         cut_function, cut_thresh = cut_function_thresh
 
-        # What is the value?
+        # What kind of parameter is it?
         if parameter.endswith('_chisq'):
             # parameter is a chisq-type thing
             chisq_choice = parameter.split('_')[0]
+            # Currently calculated for all triggers - this seems inefficient
             value = get_chisq_from_file_choice(triggers, chisq_choice)
+            # Apply any previous cuts to the value for comparison
+            value = value[idx_out]
         elif parameter in triggers.file[triggers.ifo]:
             # parameter can be read direct from the trigger file
             value = triggers[parameter]
+            # Apply any previous cuts to the value for comparison
+            value = value[idx_out]
         elif parameter in sngl_rank_keys:
             # parameter is a newsnr-type thing
+            # Currently calculated for all triggers - this seems inefficient
             value = ranking.get_sngls_ranking_from_trigs(triggers, parameter)
+            # Apply any previous cuts to the value for comparison
+            value = value[idx_out]
         else:
             raise NotImplementedError("Parameter '" + parameter + "' not "
                                       "recognised. Input sanitisation means "
@@ -216,7 +228,13 @@ def apply_template_cuts(statistic, ifos, bank,
         Array of template_ids which have passed all cuts
     """
     # Get the initial list of templates:
-    tids_out = np.arange(bank['mass1'].size) if template_ids is None else template_ids[:]
+    tids_out = np.arange(bank['mass1'].size) \
+                   if template_ids is None else template_ids[:]
+
+    if not template_cut_dict:
+        # No cuts are defined in the dictionary: just return the
+        # list of all tids
+        return tids_out
 
     # We can only apply template fit cuts if template fits have been done
     template_fit_cuts_allowed = hasattr(statistic, 'fits_by_tid')
