@@ -1527,7 +1527,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         # coincs
         # Extent of time-difference space occupied
         noise_twindow = coinc_rate.multiifo_noise_coincident_area(
-                            self.ifos, kwargs['time_addition'])
+                            self.hist_ifos, kwargs['time_addition'])
         # Volume is the allowed time difference window, multiplied by 2pi for
         # each phase difference dimension and by allowed range of SNR ratio
         # for each SNR ratio dimension : there are (n_ifos - 1) dimensions
