@@ -38,11 +38,12 @@ class Constraint(object):
                 static_args.items(), key=lambda x: len(x[0]), reverse=True))
             )
         for arg, val in static_args.items():
+            swp = f"'{val}'" if isinstance(val, str) else str(val)
             # Substitute static arg name for value if it appears in the 
             # constraint_arg string at the beginning of a word and is not
             # followed by an underscore or equals sign
             constraint_arg = re.sub(
-                r'\b{}(?!\_|\=)'.format(arg), str(val), constraint_arg)
+                r'\b{}(?!\_|\=)'.format(arg), swp, constraint_arg)
         self.constraint_arg = constraint_arg
         self.transforms = transforms
         for kwarg in kwargs.keys():

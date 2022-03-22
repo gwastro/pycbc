@@ -20,6 +20,7 @@ import logging
 import numpy as np
 from scipy.optimize import root_scalar
 from scipy.interpolate import interp1d
+import lalsimulation as lalsim
 from . import NS_SEQUENCES, NS_SEQUENCE_FILE_DIRECTORY
 
 ##############################################################################
@@ -466,3 +467,50 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
     f = interp1d(x, y)
 
     return f(ns_g_mass)
+
+
+def initialize_eos(ns_mass, eos):
+    """Load an equation of state and return the compactness and baryonic
+    mass for a given neutron star mass
+
+    Parameters
+    ----------
+    ns_mass : float
+        The mass of the neutron star, in solar masses.
+    eos : str
+        Name of the equation of state.
+
+    Returns
+    -------
+    ns_compactness : float
+        Compactness parameter of the neutron star.
+    ns_b_mass : float
+        Baryonic mass of the neutron star.
+    """
+    if eos in NS_SEQUENCES:
+        ns_seq, ns_max = load_ns_sequence(eos)
+        try:
+            if any(ns_mass > ns_max) and input_is_array:
+                raise ValueError(
+                    f'Maximum NS mass for {eos} is {ns_max}, received masses '
+                    f'up to {max(ns_mass[ns_mass > ns_max])}')
+        except TypeError:
+            if ns_mass > ns_max and not input_is_array:
+                raise ValueError(
+                    f'Maximum NS mass for {eos} is {ns_max}, received '
+                    f'{ns_mass}')
+        # Interpolate NS compactness and rest mass
+        ns_compactness = ns_g_mass_to_ns_compactness(ns_mass, ns_seq)
+        ns_b_mass = ns_g_mass_to_ns_b_mass(ns_mass, ns_seq)
+    elif eos in lalsim.SimNeutronStarEOSNames:
+        #eos_obj = lalsim.SimNeutronStarEOSByName(eos)
+        #eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
+        #r_ns = lalsim.SimNeutronStarRadius(ns_mass * lal.MSUN_SI, eos_obj)
+        #ns_compactness = lal.G_SI * ns_mass * lal.MSUN_SI / (r_ns * lal.C_SI**2)
+        raise NotImplementedError(
+            'LALSimulation EOS interface not yet implemented!')
+    else:
+        raise NotImplementedError(
+            f'{eos} is not implemented! Available are: '
+            f'{NS_SEQUENCES + list(lalsim.SimNeutronStarEOSNames)}')
+    return (ns_compactness, ns_b_mass)

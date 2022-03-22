@@ -421,8 +421,65 @@ def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
     return lambdav
 
 
-def remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos(
-        mass1, mass2, spin1x=0, spin1y=0, spin1z=0, eos='2H'):
+def remnant_mass_from_mass1_mass2_spherical_spin_eos(
+        mass1, mass2, spin1a=0.0, spin1pol=0.0, eos='2H'):
+    """
+    Function that determines the remnant disk mass of an NS-BH system
+    using the fit to numerical-relativity results discussed in
+    Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018).
+    The BH spin may be misaligned with the orbital angular momentum.
+    In such cases the ISSO is approximated following the approach of
+    Stone, Loeb & Berger, PRD 87, 084053 (2013), which was originally
+    devised for a previous NS-BH remnant mass fit of
+    Foucart, PRD 86, 124007 (2012).
+    Note: NS spin is assumed to be 0!
+
+    Parameters
+    -----------
+    mass1 : float
+        The mass of the black hole, in solar masses.
+    mass2 : float
+        The mass of the neutron star, in solar masses.
+    spin1a : float, optional
+        The dimensionless magnitude of the spin of mass1. Default = 0.
+    spin1pol : float, optional
+        The tilt angle of the spin of mass1. Default = 0 (aligned w L).
+    eos: str, optional
+        Name of the equation of state being adopted. Default is '2H'.
+
+    Returns
+    ----------
+    remnant_mass: float
+        The remnant mass in solar masses
+    """
+    mass1, mass2, spin1a, spin1pol, input_is_array = ensurearray(
+        mass1, mass2, spin1a, spin1pol)
+    # mass1 must be greater than mass2
+    try:
+        if any(mass2 > mass1) and input_is_array:
+            raise ValueError(f'Require mass1 >= mass2')
+    except TypeError:
+        if mass2 > mass1 and not input_is_array:
+            raise ValueError(f'Require mass1 >= mass2. {mass1} < {mass2}')
+    ns_compactness, ns_b_mass = ns.initialize_eos(mass2, eos)
+    eta = eta_from_mass1_mass2(mass1, mass2)
+    # Fit parameters and tidal correction
+    alpha = 0.406
+    beta  = 0.139
+    gamma = 0.255
+    delta = 1.761
+    # The remnant mass over the NS rest mass
+    fit = (
+        alpha / eta ** (1/3) * (1 - 2 * ns_compactness)
+        - beta * ns_compactness / eta * ns.PG_ISSO_solver(spin1a, spin1pol)
+        + gamma
+        )
+    remnant_mass = ns_b_mass * numpy.where(fit > 0.0, fit, 0.0) ** delta
+    return formatreturn(remnant_mass, input_is_array)
+
+
+def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
+        mass1, mass2, spin1x=0.0, spin1y=0.0, spin1z=0.0, eos='2H'):
     """
     Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
@@ -454,56 +511,9 @@ def remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos(
     remnant_mass: float
         The remnant mass in solar masses
     """
-    mass1, mass2, spin1x, spin1y, spin1z, input_is_array = ensurearray(
-        mass1, mass2, spin1x, spin1y, spin1z)
-    # mass1 must be greater than mass2
-    try:
-        if any(mass2 > mass1) and input_is_array:
-            raise ValueError(f'Require mass1 >= mass2')
-    except TypeError:
-        if mass2 > mass1 and not input_is_array:
-            raise ValueError(f'Require mass1 >= mass2. {mass1} < {mass2}')
-    # Load required EOS
-    if eos in ns.NS_SEQUENCES:
-        ns_seq, ns_max = ns.load_ns_sequence(eos)
-        try:
-            if any(mass2 > ns_max) and input_is_array:
-                raise ValueError(
-                    f'Maximum NS mass for {eos} is {ns_max}, received masses '
-                    f'up to {max(mass2[mass2 > ns_max])}')
-        except TypeError:
-            if mass2 > ns_max and not input_is_array:
-                raise ValueError(
-                    f'Maximum NS mass for {eos} is {ns_max}, received {mass2}')
-        # NS compactness and rest mass
-        ns_compactness = ns.ns_g_mass_to_ns_compactness(mass2, ns_seq)
-        ns_b_mass = ns.ns_g_mass_to_ns_b_mass(mass2, ns_seq)
-    elif eos in lalsim.SimNeutronStarEOSNames:
-        #eos_obj = lalsim.SimNeutronStarEOSByName(eos)
-        #eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
-        #r_ns = lalsim.SimNeutronStarRadius(mass2 * lal.MSUN_SI, eos_obj)
-        #ns_compactness = lal.G_SI * mass2 * lal.MSUN_SI / (r_ns * lal.C_SI**2)
-        raise NotImplementedError(
-            'LALSimulation EOS interface not yet implemented!')
-    else:
-        raise NotImplementedError(
-            f'{eos} is not implemented! Available are: '
-            f'{ns.NS_SEQUENCES + list(lalsim.SimNeutronStarEOSNames)}')
     spin1a, _, spin1pol = _cartesian_to_spherical(spin1x, spin1y, spin1z)
-    eta = eta_from_mass1_mass2(mass1, mass2)
-    # Fit parameters and tidal correction
-    alpha = 0.406
-    beta  = 0.139
-    gamma = 0.255
-    delta = 1.761
-    # The remnant mass over the NS rest mass
-    fit = (
-        alpha / eta ** (1/3) * (1 - 2 * ns_compactness)
-        - beta * ns_compactness / eta * ns.PG_ISSO_solver(spin1a, spin1pol)
-        + gamma
-        )
-    remnant_mass = ns_b_mass * numpy.where(fit > 0.0, fit, 0.0) ** delta
-    return formatreturn(remnant_mass, input_is_array)
+    return remnant_mass_from_mass1_mass2_spherical_spin_eos(
+        mass1, mass2, spin1a, spin1pol, eos)
 
 
 #
@@ -1627,5 +1637,6 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
            'nltides_gw_phase_diff_isco', 'spin_from_pulsar_freq',
            'freqlmn_from_other_lmn', 'taulmn_from_other_lmn',
-           'remnant_mass_from_mass1_mass2_spin1x_spin1y_spin1z_eos'
+           'remnant_mass_from_mass1_mass2_spherical_spin_eos',
+           'remnant_mass_from_mass1_mass2_cartesian_spin_eos'
           ]
