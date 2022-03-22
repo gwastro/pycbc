@@ -5,4 +5,5 @@ NS_SEQUENCE_FILE_DIRECTORY = os.path.join(
 NS_SEQUENCES = [
     f.replace('equil_', '').replace('.dat', '')
     for f in os.listdir(NS_SEQUENCE_FILE_DIRECTORY) if f.endswith('.dat')]
-from pycbc.neutron_stars.ns_functions import *
+from pycbc.neutron_stars.eos_utils import *
+from pycbc.neutron_stars.pg_isso_solver import *

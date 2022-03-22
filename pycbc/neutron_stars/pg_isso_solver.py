@@ -1,4 +1,5 @@
-# Copyright (C) 2015 Francesco Pannarale
+# Copyright (C) 2022 Francesco Pannarale, Andrew Williamson,
+# Samuel Higginbotham
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -13,20 +14,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-import os.path
-import sys
-import logging
+"""
+Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz (PG)
+formalism [see Stone, Loeb, Berger, PRD 87, 084053 (2013)].
+"""
 import numpy as np
 from scipy.optimize import root_scalar
-from scipy.interpolate import interp1d
-import lalsimulation as lalsim
-from . import NS_SEQUENCES, NS_SEQUENCE_FILE_DIRECTORY
 
-##############################################################################
-# Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz (PG)       #
-# formalism [see Stone, Loeb, Berger, PRD 87, 084053 (2013)].                #
-##############################################################################
 
 def ISCO_eq(r, chi):
     """
@@ -281,7 +275,7 @@ def PG_ISSO_eq_dr2(r, chi, incl):
         + 30 * r**4 * (
             36 * chi6 * sin4i - 16 * chi6 * sin2i + 144 * chi4 * sin4i
             - 56 * chi4 * sin2i)
-        + r**3 * (480 * chi6 * sin2i - 960 * chi6 * sin4i) 
+        + r**3 * (480 * chi6 * sin2i - 960 * chi6 * sin4i)
         + r**2 * (
             252 * chi8 * sin4i - 72 * chi8 * sin2i - 576 * chi6 * sin4i)
         - r * 168 * chi8 * sin4i
@@ -362,155 +356,3 @@ def PG_ISSO_solver(chi, incl):
         oob = (solution < 1) | (solution > 9)
         n += 1
     return solution
-
-
-##############################################################################
-# 2H 2-piecewise polytropic EOS, NS non-rotating equilibrium sequence        #
-# File format is: grav mass (Msun)   baryonic mass (Msun)    compactness     #
-#                                                                            #
-# Eventually, the function should call an NS sequence generator within LAL   #
-# the EOS prescribed by the user and store it.                               #
-##############################################################################
-def load_ns_sequence(eos_name):
-    """
-    Load the data of an NS non-rotating equilibrium sequence
-    generated using the equation of state (EOS) chosen by the
-    user.  [Only the 2H 2-piecewise polytropic EOS is currently
-    supported.  This yields NSs with large radiss (15-16km).]
-
-    Parameters
-    -----------
-    eos_name: string
-        NS equation of state label ('2H' is the only supported
-        choice at the moment)
-
-    Returns
-    ----------
-    ns_sequence: 3D-array
-        contains the sequence data in the form NS gravitational
-         mass (in solar masses), NS baryonic mass (in solar
-         masses), NS compactness (dimensionless)
-    max_ns_g_mass: float
-        the maximum NS gravitational mass (in solar masses) in
-        the sequence (this is the mass of the most massive stable
-        NS)
-    """
-    if eos_name not in NS_SEQUENCES:
-        raise NotImplementedError(
-            f'{eos_name} does not have an implemented NS sequence file! '
-            f'To implement, the file {ns_sequence_file} must exist and '
-            'contain: NS gravitational mass (in solar masses), NS baryonic '
-            'mass (in solar masses), NS compactness (dimensionless)')
-    ns_sequence_file = os.path.join(
-        NS_SEQUENCE_FILE_DIRECTORY, 'equil_{}.dat'.format(eos_name))
-    ns_sequence = np.loadtxt(ns_sequence_file)
-    max_ns_g_mass = max(ns_sequence[:,0])
-    return (ns_sequence, max_ns_g_mass)
-
-
-##############################################################################
-# Given an NS equilibrium sequence and gravitational mass (in Msun), return  #
-# the NS baryonic mass (in Msun).                                            #
-##############################################################################
-def ns_g_mass_to_ns_b_mass(ns_g_mass, ns_sequence):
-    """
-    Determines the baryonic mass of an NS given its gravitational
-    mass and an NS equilibrium sequence.
-
-    Parameters
-    -----------
-    ns_g_mass: float
-        NS gravitational mass (in solar masses)
-    ns_sequence: 3D-array
-        contains the sequence data in the form NS gravitational
-         mass (in solar masses), NS baryonic mass (in solar
-         masses), NS compactness (dimensionless)
-
-    Returns
-    ----------
-    float
-        The NS baryonic mass (in solar massesr**3*(r**2*(r-6)+chi**2*(3*r+4))+
-        chi**4*(3*r*(r-2)+chi**2))
-    """
-    x = ns_sequence[:,0]
-    y = ns_sequence[:,1]
-    f = interp1d(x, y)
-
-    return f(ns_g_mass)
-
-
-##############################################################################
-# Given an NS equilibrium sequence and gravitational mass (in Msun), return  #
-# the NS compactness.                                                        #
-##############################################################################
-def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
-    """
-    Determines the compactness of an NS given its
-    gravitational mass and an NS equilibrium sequence.
-
-    Parameters
-    -----------
-    ns_g_mass: float
-        NS gravitational mass (in solar masses)
-    ns_sequence: 3D-array
-        contains the sequence data in the form NS gravitational
-         mass (in solar masses), NS baryonic mass (in solar
-         masses), NS compactness (dimensionless)
-
-    Returns
-    ----------
-    float
-        The NS compactness (dimensionless)
-    """
-    x = ns_sequence[:,0]
-    y = ns_sequence[:,2]
-    f = interp1d(x, y)
-
-    return f(ns_g_mass)
-
-
-def initialize_eos(ns_mass, eos):
-    """Load an equation of state and return the compactness and baryonic
-    mass for a given neutron star mass
-
-    Parameters
-    ----------
-    ns_mass : float
-        The mass of the neutron star, in solar masses.
-    eos : str
-        Name of the equation of state.
-
-    Returns
-    -------
-    ns_compactness : float
-        Compactness parameter of the neutron star.
-    ns_b_mass : float
-        Baryonic mass of the neutron star.
-    """
-    if eos in NS_SEQUENCES:
-        ns_seq, ns_max = load_ns_sequence(eos)
-        try:
-            if any(ns_mass > ns_max) and input_is_array:
-                raise ValueError(
-                    f'Maximum NS mass for {eos} is {ns_max}, received masses '
-                    f'up to {max(ns_mass[ns_mass > ns_max])}')
-        except TypeError:
-            if ns_mass > ns_max and not input_is_array:
-                raise ValueError(
-                    f'Maximum NS mass for {eos} is {ns_max}, received '
-                    f'{ns_mass}')
-        # Interpolate NS compactness and rest mass
-        ns_compactness = ns_g_mass_to_ns_compactness(ns_mass, ns_seq)
-        ns_b_mass = ns_g_mass_to_ns_b_mass(ns_mass, ns_seq)
-    elif eos in lalsim.SimNeutronStarEOSNames:
-        #eos_obj = lalsim.SimNeutronStarEOSByName(eos)
-        #eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
-        #r_ns = lalsim.SimNeutronStarRadius(ns_mass * lal.MSUN_SI, eos_obj)
-        #ns_compactness = lal.G_SI * ns_mass * lal.MSUN_SI / (r_ns * lal.C_SI**2)
-        raise NotImplementedError(
-            'LALSimulation EOS interface not yet implemented!')
-    else:
-        raise NotImplementedError(
-            f'{eos} is not implemented! Available are: '
-            f'{NS_SEQUENCES + list(lalsim.SimNeutronStarEOSNames)}')
-    return (ns_compactness, ns_b_mass)
