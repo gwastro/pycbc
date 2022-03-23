@@ -317,7 +317,7 @@ def PG_ISSO_solver(chi, incl):
             args=(sc)).root
         for g0, sc in zip(initial_guess, sgnchi)])
     # If the inclination is 0 or pi, just output the ISCO radius
-    equatorial = (incl == 0) | (incl == np.pi)
+    equatorial = np.isclose(incl, 0) | np.isclose(incl, np.pi)
     if all(equatorial):
         return rISCO_limit
 
@@ -329,30 +329,28 @@ def PG_ISSO_solver(chi, incl):
             fprime2=ISSO_eq_at_pole_dr2, args=(c)).root
         for g0, c in zip(initial_guess, chi)])
     # If the inclination is pi/2, just output the ISSO radius at the pole(s)
-    polar = (incl == np.pi/2)
+    polar = np.isclose(incl, np.pi / 2)
     if all(polar):
         return rISSO_at_pole_limit
 
     # Otherwise, find the ISSO radius for a generic inclination
-    initial_guess_h = np.maximum(rISCO_limit, rISSO_at_pole_limit)
-    initial_guess_l = np.minimum(rISCO_limit, rISSO_at_pole_limit)
+    initial_guess = np.maximum(rISCO_limit, rISSO_at_pole_limit)
     solution = np.array([
         root_scalar(
             PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr, fprime2=PG_ISSO_eq_dr2,
-            bracket=(l, g0), args=(c, inc)).root
-        for g0, l, c, inc in zip(initial_guess_h, initial_guess_l, chi, incl)])
+            args=(c, inc)).root
+        for g0, c, inc in zip(initial_guess, chi, incl)])
     oob = (solution < 1) | (solution > 9)
-    n = 1
-    while any(oob):
-        if n > 5:
-            raise RuntimeError('Unable to obtain some solutions!')
+    if any(oob):
+        initial_guess = np.minimum(rISCO_limit, rISSO_at_pole_limit)
         solution = np.array([
             root_scalar(
                 PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr,
-                fprime2=PG_ISSO_eq_dr2, bracket=(g0, h), args=(c, inc)).root
-            if ob else sol for g0, h, c, inc, ob, sol
-            in zip(initial_guess_l, initial_guess_h, chi, incl, oob, solution)
+                fprime2=PG_ISSO_eq_dr2, args=(c, inc)).root
+            if ob else sol for g0, c, inc, ob, sol
+            in zip(initial_guess, chi, incl, oob, solution)
             ])
         oob = (solution < 1) | (solution > 9)
-        n += 1
+        if any(oob):
+            raise RuntimeError('Unable to obtain some solutions!')
     return solution
