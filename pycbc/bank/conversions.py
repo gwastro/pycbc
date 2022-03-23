@@ -37,6 +37,23 @@ conversion_options = ['mass1', 'mass2', 'spin1z', 'spin2z', 'duration',
                       'chieff', 'chi_eff', 'effective_spin', 'chi_a']
 
 
+mass_conversions = {
+    'mtotal': conv.mtotal_from_mass1_mass2,
+    'total_mass': conv.mtotal_from_mass1_mass2
+    'q': conv.q_from_mass1_mass2,
+    'invq': conv.invq_from_mass1_mass2,
+    'eta': conv.eta_from_mass1_mass2,
+    'mchirp': conv.mchirp_from_mass1_mass2,
+    'chirp_mass': conv.mchirp_from_mass1_mass2,
+}
+
+spin_conversions = {
+    'chieff': conv.chi_eff,
+    'chi_eff': conv.chi_eff,
+    'effective_spin': conv.chi_eff,
+    'chi_a': conv.chi_a
+}
+
 def bank_conversion(parameter, bank, template_ids):
     """
     Get a specific value from a hdf file object in standard PyCBC
@@ -86,36 +103,15 @@ def bank_conversion(parameter, bank, template_ids):
                                               bank['f_lower'][:][template_ids],
                                               approximant="SEOBNRv4")
     # Basic conversions
-    elif parameter in ['mtotal', 'total_mass']:
-        values = conv.mtotal_from_mass1_mass2(bank['mass1'][:][template_ids],
-                                              bank['mass2'][:][template_ids])
+    elif parameter in mass_conversions.keys():
+        values = mass_conversions[parameter](bank['mass1'][:][template_ids],
+                                             bank['mass2'][:][template_ids])
 
-    elif parameter == 'q':
-        values = conv.q_from_mass1_mass2(bank['mass1'][:][template_ids],
-                                         bank['mass2'][:][template_ids])
-
-    elif parameter == 'invq':
-        values = 1. / bank_conversion('q', bank, template_ids)
-
-    elif parameter == 'eta':
-        values = conv.eta_from_mass1_mass2(bank['mass1'][:][template_ids],
-                                           bank['mass2'][:][template_ids])
-
-    elif parameter in ['mchirp', 'chirp_mass']:
-        values = conv.mchirp_from_mass1_mass2(bank['mass1'][:][template_ids],
-                                              bank['mass2'][:][template_ids])
-
-    elif parameter in ['chieff', 'chi_eff', 'effective_spin']:
-        values = conv.chi_eff(bank['mass1'][:][template_ids],
-                              bank['mass2'][:][template_ids],
-                              bank['spin1z'][:][template_ids],
-                              bank['spin2z'][:][template_ids])
-
-    elif parameter == 'chi_a':
-        values = conv.chi_a(bank['mass1'][:][template_ids],
-                            bank['mass2'][:][template_ids],
-                            bank['spin1z'][:][template_ids],
-                            bank['spin2z'][:][template_ids])
+    elif parameter in spin_conversions.keys():
+        values = spin_conversion[parameter](bank['mass1'][:][template_ids],
+                                            bank['mass2'][:][template_ids],
+                                            bank['spin1z'][:][template_ids],
+                                            bank['spin2z'][:][template_ids])
 
     else:
         # parameter not in the current conversion parameter list
