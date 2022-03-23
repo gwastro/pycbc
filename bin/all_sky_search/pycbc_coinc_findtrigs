@@ -139,7 +139,7 @@ for i in range(len(args.trigger_files)):
                             args.gating_veto_windows)
     ifo = reader.ifo
     trigs.ifos.append(ifo)
-    
+
     # We don't have that many triggers, see if we can skip some templates
     if len(reader.file[ifo]['template_id']) < 2**27:
         uniq = numpy.unique(reader.file[ifo]['template_id'][:])
@@ -246,7 +246,7 @@ def process_template(tnum):
         if len(tids_full[i]) < len(tids_uncut):
             logging.info("%s triggers cut",
                          len(tids_uncut) - len(tids_full[i]))
-        
+
 
         # get single-detector statistic
         sds_full[i] = rank_method.single(sngl)[trigger_keep_ids]
