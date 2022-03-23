@@ -71,7 +71,7 @@ def insert_cuts_option_group(parser):
                         help="Cuts to apply to the triggers, supplied as "
                              "PARAMETER:VALUE:LIMIT. Format is the same as in "
                              "--trigger-cuts. PARAMETER can be one of '"
-
+                             + "', '".join(template_param_choices) + "'.")
 
 # What are the inequalities associated with the cuts?
 # 'upper' means upper limit, and so requires value < the threshold
