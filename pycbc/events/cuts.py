@@ -28,9 +28,9 @@ applying cuts to triggers or templates in the offline search
 """
 import logging
 import numpy as np
+import argparse
 from pycbc.events import ranking
 from pycbc.io import hdf
-from pycbc import conversions as conv
 from pycbc.bank import conversions as bank_conv
 from pycbc.io import get_chisq_from_file_choice
 
@@ -48,17 +48,13 @@ template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
 template_param_choices = bank_conv._conversion_options + \
                              template_fit_param_choices
 
-ineq_choices = ['upper','lower','upper_inc','lower_inc']
+ineq_choices = ['upper', 'lower', 'upper_inc', 'lower_inc']
 
-# What are the inequalities associated with the cuts?
-# 'upper' means upper limit, and so requires value < the threshold
-ineq_functions = {
-    'upper': np.less,
-    'lower': np.greater,
-    'upper_inc': np.less_equal,
-    'lower_inc': np.greater_equal
-}
+
 def insert_cuts_option_group(parser):
+    """
+    Add options to the parser for cuts to the templates/triggers
+    """
     parser.add_argument('--trigger-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
                              "PARAMETER:VALUE:LIMIT, where, PARAMETER is the "
@@ -75,7 +71,45 @@ def insert_cuts_option_group(parser):
                         help="Cuts to apply to the triggers, supplied as "
                              "PARAMETER:VALUE:LIMIT. Format is the same as in "
                              "--trigger-cuts. PARAMETER can be one of '"
-                             + "', '".join(template_param_choices) + "'.")
+
+
+# What are the inequalities associated with the cuts?
+# 'upper' means upper limit, and so requires value < the threshold
+ineq_functions = {
+    'upper': np.less,
+    'lower': np.greater,
+    'upper_inc': np.less_equal,
+    'lower_inc': np.greater_equal
+}
+
+
+def convert_inputstr(inputstr, choices):
+    """
+    Convert the inputstr into a dictionary keyed on parameter
+    with a tuple of the function to be used in the cut, and
+    the float to compare to.
+    Do some checks as to whether the inputstr fits input requirements
+    """
+    cut_param, cut_value_str, cut_limit = inputstr.split(':')
+    if cut_param.lower() not in choices:
+        raise argparse.ArgparseError("Cut parameter not recognised, "
+                                     "choose from "
+                                     + ", ".join(choices))
+    if cut_limit.lower() not in ineq_choices:
+        raise argparse.ArgparseError("Cut inequality not recognised, "
+                                     "choose from "
+                                     + ", ".join(ineq_choices))
+
+    try:
+        cut_value = float(cut_value_str)
+    except ValueError as value_e:
+        logging.warning("Cut value must be convertible into a float, "
+                        "got {}, a {}".format(cut_value, type(cut_value)))
+        raise value_e
+
+    return {cut_param: (ineq_functions[cut_limit],
+                        float(cut_value_str))}
+
 
 def ingest_cuts_option_group(args):
     """
@@ -91,43 +125,19 @@ def ingest_cuts_option_group(args):
     trigger_cut_strs = args.trigger_cuts if args.trigger_cuts else []
     template_cut_strs = args.template_cuts if args.template_cuts else []
 
-    # Check things in both cut sets
-    for inputstr in trigger_cut_strs + template_cut_strs:
-        _, cut_value_str, cut_limit = inputstr.split(':')
-        if cut_limit.lower() not in ineq_choices:
-            raise argparse.ArgparseError("Cut inequality not recognised, "
-                                         "choose from "
-                                         + ", ".join(ineq_choices))
-        try:
-            cut_value = float(cut_value_str)
-        except ValueError as e:
-            logging.warning("Cut value must be convertible into a float, "
-                            "got {}".format(cut_value))
-            raise e
-
     # Handle trigger cuts
     trigger_cut_dict = {}
     for inputstr in trigger_cut_strs:
-        cut_param, cut_value_str, cut_limit = inputstr.split(':')
-        if cut_param.lower() not in trigger_param_choices:
-            raise argparse.ArgparseError("Cut inequality not recognised, "
-                                         "choose from "
-                                         + ", ".join(trigger_param_choices))
-        trigger_cut_dict[cut_param] = (ineq_functions[cut_limit],
-                                       float(cut_value_str))
-
+        trigger_cut_dict.update(convert_inputstr(inputstr,
+                                                 trigger_param_choices))
     # Handle template cuts
     template_cut_dict = {}
     for inputstr in template_cut_strs:
-        cut_param, cut_value_str, cut_limit = inputstr.split(':')
-        if cut_param.lower() not in template_param_choices:
-            raise argparse.ArgparseError("Cut inequality not recognised, "
-                                         "choose from "
-                                         + ", ".join(template_param_choices))
-        template_cut_dict[cut_param] = (ineq_functions[cut_limit],
-                                        float(cut_value_str))
+        template_cut_dict.update(convert_inputstr(inputstr,
+                                                  template_param_choices))
 
     return trigger_cut_dict, template_cut_dict
+
 
 def apply_trigger_cuts(triggers, trigger_cut_dict):
     """
@@ -185,7 +195,6 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
     return idx_out
 
 
-
 def apply_template_cuts(statistic, ifos, bank,
                         template_cut_dict, template_ids=None):
     """
@@ -229,7 +238,7 @@ def apply_template_cuts(statistic, ifos, bank,
     """
     # Get the initial list of templates:
     tids_out = np.arange(bank['mass1'].size) \
-                   if template_ids is None else template_ids[:]
+        if template_ids is None else template_ids[:]
 
     if not template_cut_dict:
         # No cuts are defined in the dictionary: just return the
