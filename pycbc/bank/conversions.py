@@ -31,10 +31,10 @@ from pycbc import pnutils
 
 # Convert from parameter name to helper function
 # some multiple names are used for the same function
-_conversion_options = ['mass1', 'mass2', 'spin1z', 'spin2z', 'duration',
-                       'template_duration', 'mtotal', 'total_mass',
-                       'q', 'invq', 'eta', 'chirp_mass', 'mchirp',
-                       'chieff', 'chi_eff', 'effective_spin', 'chi_a']
+conversion_options = ['mass1', 'mass2', 'spin1z', 'spin2z', 'duration',
+                      'template_duration', 'mtotal', 'total_mass',
+                      'q', 'invq', 'eta', 'chirp_mass', 'mchirp',
+                      'chieff', 'chi_eff', 'effective_spin', 'chi_a']
 
 
 def bank_conversion(parameter, bank, template_ids):
@@ -45,67 +45,81 @@ def bank_conversion(parameter, bank, template_ids):
     Parameters:
     -----------
     parameter: str
-        the parameter to convert to, must be in _conversion_options
+        the parameter to convert to, must be in conversion_options
 
     bank: h5py File object or dictionary of arrays
         Template bank containing the parameters for use in conversions
         must contain mass1, mass2, spin1z, spin2z as a minimum
+
+    template_ids: numpy array
+        Array of template IDs for reading a set of templates from the bank
+
+    Returns
+    -------
+    values: numpy array, same size as template_ids
+        Array of whatever the requested parameter is calculated for
+        the specified templates in the bank
+
     """
     # These just give things already in the bank
     if parameter == 'mass1':
-         values = bank['mass1'][:][template_ids]
+        values = bank['mass1'][:][template_ids]
+
     elif parameter == 'mass2':
-         values = bank['mass2'][:][template_ids]
+        values = bank['mass2'][:][template_ids]
+
     elif parameter == 'spin1z':
-         values = bank['spin1z'][:][template_ids]
+        values = bank['spin1z'][:][template_ids]
+
     elif parameter == 'spin2z':
-         values = bank['spin2z'][:][template_ids]
+        values = bank['spin2z'][:][template_ids]
+
     # These things may be in the bank, but if not, we need to calculate
     elif parameter in ['template_duration', 'duration']:
         if 'template_duration' in bank:
-             values = bank['template_duration'][:][template_ids]
-        duration = pnutils.get_imr_duration(bank['mass1'][:][template_ids],
-                                            bank['mass2'][:][template_ids],
-                                            bank['spin1z'][:][template_ids],
-                                            bank['spin2z'][:][template_ids],
-                                            bank['f_lower'][:][template_ids],
-                                            approximant="SEOBNRv4")
-         values = duration
+            values = bank['template_duration'][:][template_ids]
+        else:
+            values = pnutils.get_imr_duration(bank['mass1'][:][template_ids],
+                                              bank['mass2'][:][template_ids],
+                                              bank['spin1z'][:][template_ids],
+                                              bank['spin2z'][:][template_ids],
+                                              bank['f_lower'][:][template_ids],
+                                              approximant="SEOBNRv4")
     # Basic conversions
     elif parameter in ['mtotal', 'total_mass']:
-         values = conv.mtotal_from_mass1_mass2(bank['mass1'][:][template_ids],
-                                            bank['mass2'][:][template_ids])
+        values = conv.mtotal_from_mass1_mass2(bank['mass1'][:][template_ids],
+                                              bank['mass2'][:][template_ids])
+
     elif parameter == 'q':
-         values = conv.q_from_mass1_mass2(bank['mass1'][:][template_ids],
-                                       bank['mass2'][:][template_ids])
-
-    elif parameter == 'invq':
-         values = 1. / bank_conversion('q', bank, template_ids)
-
-    elif parameter == 'eta':
-         values = conv.eta_from_mass1_mass2(bank['mass1'][:][template_ids],
+        values = conv.q_from_mass1_mass2(bank['mass1'][:][template_ids],
                                          bank['mass2'][:][template_ids])
 
+    elif parameter == 'invq':
+        values = 1. / bank_conversion('q', bank, template_ids)
+
+    elif parameter == 'eta':
+        values = conv.eta_from_mass1_mass2(bank['mass1'][:][template_ids],
+                                           bank['mass2'][:][template_ids])
 
     elif parameter in ['mchirp', 'chirp_mass']:
-         values = conv.mchirp_from_mass1_mass2(bank['mass1'][:][template_ids],
-                                            bank['mass2'][:][template_ids])
+        values = conv.mchirp_from_mass1_mass2(bank['mass1'][:][template_ids],
+                                              bank['mass2'][:][template_ids])
 
-    elif parameter in ['chieff','chi_eff','effective_spin']:
-         values = conv.chi_eff(bank['mass1'][:][template_ids],
+    elif parameter in ['chieff', 'chi_eff', 'effective_spin']:
+        values = conv.chi_eff(bank['mass1'][:][template_ids],
+                              bank['mass2'][:][template_ids],
+                              bank['spin1z'][:][template_ids],
+                              bank['spin2z'][:][template_ids])
+
+    elif parameter == 'chi_a':
+        values = conv.chi_a(bank['mass1'][:][template_ids],
                             bank['mass2'][:][template_ids],
                             bank['spin1z'][:][template_ids],
                             bank['spin2z'][:][template_ids])
-
-    elif parameter == 'chi_a':
-         values = conv.chi_a(bank['mass1'][:][template_ids],
-                          bank['mass2'][:][template_ids],
-                          bank['spin1z'][:][template_ids],
-                          bank['spin2z'][:][template_ids])
 
     else:
         # parameter not in the current conversion parameter list
         raise NotImplementedError("Bank conversion function " + parameter
                                   + " not recognised: choose from '" +
-                                  "', '".join(_conversion_options) + "'.")
+                                  "', '".join(conversion_options) + "'.")
     return values

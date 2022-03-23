@@ -27,8 +27,8 @@ This module contains functions for reading in command line options and
 applying cuts to triggers or templates in the offline search
 """
 import logging
-import numpy as np
 import argparse
+import numpy as np
 from pycbc.events import ranking
 from pycbc.io import hdf
 from pycbc.bank import conversions as bank_conv
@@ -45,7 +45,7 @@ template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
                               'smoothed_fit_count_above_thresh',
                               'fit_by_count_in_template',
                               'smoothed_fit_count_in_template']
-template_param_choices = bank_conv._conversion_options + \
+template_param_choices = bank_conv.conversion_options + \
                              template_fit_param_choices
 
 ineq_choices = ['upper', 'lower', 'upper_inc', 'lower_inc']
@@ -72,6 +72,7 @@ def insert_cuts_option_group(parser):
                              "PARAMETER:VALUE:LIMIT. Format is the same as in "
                              "--trigger-cuts. PARAMETER can be one of '"
                              + "', '".join(template_param_choices) + "'.")
+
 
 # What are the inequalities associated with the cuts?
 # 'upper' means upper limit, and so requires value < the threshold
@@ -104,7 +105,7 @@ def convert_inputstr(inputstr, choices):
         cut_value = float(cut_value_str)
     except ValueError as value_e:
         logging.warning("Cut value must be convertible into a float, "
-                        "got {}, a {}".format(cut_value, type(cut_value)))
+                        "got '%s', a %s.", cut_value, type(cut_value))
         raise value_e
 
     return {cut_param: (ineq_functions[cut_limit],
@@ -254,7 +255,7 @@ def apply_template_cuts(statistic, ifos, bank,
         # The function and threshold are stored as a tuple so unpack it
         cut_function, cut_thresh = cut_function_thresh
 
-        if parameter in bank_conv._conversion_options:
+        if parameter in bank_conv.conversion_options:
             # Calculate the parameter values using the bank_conversion helper
             values = bank_conv.bank_conversion(parameter, bank, tids_out)
             # Only keep templates which pass this cut
