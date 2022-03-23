@@ -21,7 +21,8 @@ import os.path
 import numpy as np
 from scipy.interpolate import interp1d
 import lalsimulation as lalsim
-from . import NS_SEQUENCES, NS_SEQUENCE_FILE_DIRECTORY
+from . import NS_SEQUENCES, NS_DATA_DIRECTORY
+from .pg_isso_solver import PG_ISSO_solver, pg_isso_interp
 
 
 def load_ns_sequence(eos_name):
@@ -54,7 +55,7 @@ def load_ns_sequence(eos_name):
             'contain: NS gravitational mass (in solar masses), NS baryonic '
             'mass (in solar masses), NS compactness (dimensionless)')
     ns_sequence_file = os.path.join(
-        NS_SEQUENCE_FILE_DIRECTORY, 'equil_{}.dat'.format(eos_name))
+        NS_DATA_DIRECTORY, 'equil_{}.dat'.format(eos_name))
     ns_sequence = np.loadtxt(ns_sequence_file)
     max_ns_g_mass = max(ns_sequence[:, 0])
     return (ns_sequence, max_ns_g_mass)
@@ -158,3 +159,44 @@ def initialize_eos(ns_mass, eos):
             f'{eos} is not implemented! Available are: '
             f'{NS_SEQUENCES + list(lalsim.SimNeutronStarEOSNames)}')
     return (ns_compactness, ns_b_mass)
+
+
+def foucart18(
+        eta, ns_compactness, ns_b_mass, bh_spin_mag, bh_spin_pol, solve=False):
+    """Function that determines the remnant disk mass of an NS-BH system
+    using the fit to numerical-relativity results discussed in
+    Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018).
+    
+    Parameters
+    ----------
+    eta : float
+        The symmetric mass ratio of the system
+        (note: primary is assumed to be the BH).
+    ns_compactness : float
+        NS compactness parameter.
+    ns_b_mass : float
+        Baryonic mass of the NS.
+    bh_spin_mag: float
+        Dimensionless spin magnitude of the BH.
+    bh_spin_pol : float
+        The tilt angle of the BH spin.
+    solve: bool, optional
+        Whether to solve for the ISSO radius of each system via the
+        PG_ISSO_solver routine. Otherwise load pre-computed grid of
+        values and interpolate. Default = False.
+    """
+    if solve:
+        isso = PG_ISSO_solver(bh_spin_mag, bh_spin_pol)
+    else:
+        isso = pg_isso_interp(bh_spin_pol, bh_spin_mag)
+    # Fit parameters and tidal correction
+    alpha = 0.406
+    beta  = 0.139
+    gamma = 0.255
+    delta = 1.761
+    fit = (
+        alpha / eta ** (1/3) * (1 - 2 * ns_compactness)
+        - beta * ns_compactness / eta * isso
+        + gamma
+        )
+    return ns_b_mass * np.where(fit > 0.0, fit, 0.0) ** delta

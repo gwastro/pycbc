@@ -20,6 +20,7 @@ formalism [see Stone, Loeb, Berger, PRD 87, 084053 (2013)].
 """
 import numpy as np
 from scipy.optimize import root_scalar
+from . import NS_DATA_DIRECTORY
 
 
 def ISCO_eq(r, chi):
@@ -354,3 +355,15 @@ def PG_ISSO_solver(chi, incl):
         if any(oob):
             raise RuntimeError('Unable to obtain some solutions!')
     return solution
+
+
+def load_isso_bivariate_interp():
+    from six.moves import cPickle
+    import os.path
+    with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'rb') as f:
+        func = cPickle.load(f)
+    return func
+
+
+def pg_isso_interp(incl, chi):
+    return load_isso_bivariate_interp()(incl, chi, grid=False)
