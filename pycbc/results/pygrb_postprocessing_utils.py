@@ -29,6 +29,7 @@ import logging
 import argparse
 import copy
 import numpy
+import h5py
 from scipy import stats
 from pycbc.detector import Detector
 import pycbc.workflow as _workflow
@@ -628,6 +629,23 @@ def get_grb_time(seg_files):
 
 
 # =============================================================================
+# Function to extract ifos from hdfs
+# =============================================================================
+def extract_ifos_from_hdf(trig_file):
+    """Extracts IFOs from hdf file"""
+    
+    # Load hdf file
+    hdf_file = h5py.File(trig_file, 'r')
+
+    # Extract IFOs
+    ifos = list(hdf_file.keys()) 
+    
+    # Remove 'network' key from list of ifos 
+    ifos.remove('network')
+    
+    return ifos
+
+# =============================================================================
 # Function to extract ifos
 # =============================================================================
 def extract_ifos(trig_file):
@@ -652,7 +670,8 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
     logging.info("Extracting IFOs and vetoes.")
 
     # Extract IFOs
-    ifos = extract_ifos(trig_file)
+    # ifos = extract_ifos(trig_file)
+    ifos = extract_ifos_from_hdf(trig_file)
 
     # Extract vetoes
     vetoes = extract_vetoes(veto_files, ifos, veto_cat)
