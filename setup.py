@@ -50,11 +50,11 @@ install_requires =  setup_requires + [
                       'requests>=1.2.1',
                       'tqdm',
                       'setuptools',
+                      'gwdatafind',
                       'pegasus-wms.api >= 5.0.1',
                       'python-ligo-lw >= 1.7.0',
                       'ligo-segments',
                       'lalsuite!=7.2',
-                      'gwdatafind',
                       'lscsoft-glue>=1.59.3',
                       ]
 
