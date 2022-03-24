@@ -147,11 +147,11 @@ if __name__ == '__main__':
     parser.add_argument('--snr-columns', nargs='+', action=MultiDetOptionAction,
                         metavar='DETECTOR:COLUMN',
                         help='For sim_inspiral table output, specify columns'
-                        ' for storing the optimal SNR for each detector.'
-                        ' COLUMN should be an existing sim_inspiral column'
-                        ' containing no useful data, good candidates are usually'
-                        ' alpha1, alpha2 etc. For HDF output this should be
-                        ' omitted and "optimal_snr_H1" etc. will be used')
+                        ' to store the optimal SNR for each detector. COLUMN'
+                        ' should be an existing sim_inspiral column containing'
+                        ' no useful data, alpha1, alpha2 etc. are good'
+                        ' candidates. For HDF output the --ifos option should be'
+                        ' used, datasets will be named eg "optimal_snr_H1"')
     parser.add_argument('--cores', default=1, type=int,
                         help='Parallelize the computation over the given '
                              'number of cores')
