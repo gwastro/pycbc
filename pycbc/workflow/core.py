@@ -26,13 +26,10 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import os, stat, subprocess, logging, math, string
-from six.moves import configparser as ConfigParser
-from six.moves import urllib
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
-from six.moves import cPickle
-import copy
+import os, stat, subprocess, logging, math, string, urllib, pickle, copy
+import configparser as ConfigParser
+from urllib.request import pathname2url
+from urllib.parse import urljoin
 import numpy, random
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
@@ -1604,14 +1601,14 @@ class FileList(list):
         Load a FileList from a pickle file
         """
         f = open(filename, 'r')
-        return cPickle.load(f)
+        return pickle.load(f)
 
     def dump(self, filename):
         """
         Output this FileList to a pickle file
         """
         f = open(filename, 'w')
-        cPickle.dump(self, f)
+        pickle.dump(self, f)
 
     def to_file_object(self, name, out_dir):
         """Dump to a pickle file and return an File object reference

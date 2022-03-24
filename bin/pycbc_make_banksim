@@ -2,7 +2,7 @@
 import logging
 import os
 import shutil
-from six.moves import configparser as ConfigParser
+import configparser as ConfigParser
 import subprocess
 import glob
 import tempfile

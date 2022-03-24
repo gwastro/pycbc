@@ -28,8 +28,8 @@ This module is described in the page here:
 import re
 import itertools
 import logging
-from six.moves import StringIO
-from six.moves import configparser as ConfigParser
+from io import StringIO
+from configparser as ConfigParser
 
 
 class DeepCopyableConfigParser(ConfigParser.ConfigParser):

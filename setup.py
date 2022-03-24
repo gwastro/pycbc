@@ -35,28 +35,28 @@ from setuptools import find_packages
 
 requires = []
 setup_requires = ['numpy>=1.16.0']
-install_requires =  setup_requires + ['Mako>=1.0.1',
+install_requires =  setup_requires + [
                       'cython>=0.29',
                       'decorator>=3.4.2',
                       'numpy>=1.16.0,!=1.19.0',
                       'scipy>=0.16.0',
+                      'astropy>=2.0.3,!=4.2.1,!=4.0.5',
                       'matplotlib>=1.5.1',
+                      'mpld3>=0.3',
                       'pillow',
                       'h5py>=3.0.0',
                       'jinja2',
-                      'lalsuite!=7.2',
-                      'astropy>=2.0.3,!=4.2.1,!=4.0.5',
-                      'mpld3>=0.3',
-                      'lscsoft-glue>=1.59.3',
+                      'Mako>=1.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
-                      'six>=1.10.0',
-                      'ligo-segments',
                       'tqdm',
-                      'gwdatafind',
+                      'setuptools',
                       'pegasus-wms.api >= 5.0.1',
                       'python-ligo-lw >= 1.7.0',
-                      'setuptools',
+                      'ligo-segments',
+                      'lalsuite!=7.2',
+                      'gwdatafind',
+                      'lscsoft-glue>=1.59.3',
                       ]
 
 def find_files(dirname, relpath=None):

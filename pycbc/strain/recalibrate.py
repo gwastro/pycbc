@@ -19,16 +19,14 @@
 
 from abc import (ABCMeta, abstractmethod)
 
-from six import add_metaclass
-
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 from pycbc.types import FrequencySeries
 
 
-@add_metaclass(ABCMeta)
 class Recalibrate(object):
     """ Base class for modifying calibration """
+    __metaclass__ = ABCMeta
     name = None
 
     def __init__(self, ifo_name):

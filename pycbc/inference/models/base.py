@@ -28,8 +28,7 @@
 import numpy
 import logging
 from abc import (ABCMeta, abstractmethod)
-from six.moves.configparser import NoSectionError
-from six import add_metaclass
+from configparser import NoSectionError
 from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 
@@ -286,7 +285,6 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
-@add_metaclass(ABCMeta)
 class BaseModel(object):
     r"""Base class for all models.
 
@@ -344,6 +342,7 @@ class BaseModel(object):
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
     """
+    __metaclass__ = ABCMeta
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,

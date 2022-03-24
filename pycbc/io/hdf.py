@@ -6,11 +6,9 @@ import h5py
 import numpy as np
 import logging
 import inspect
+import pickle
 
 from itertools import chain
-from six.moves import cPickle as pickle
-from six import raise_from
-
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI
 
@@ -462,7 +460,7 @@ class SingleDetTriggers(object):
             return self.bank[key][:][self.template_id]
         except (RuntimeError, KeyError) as exc:
             err_msg = "Cannot find {} in input files".format(key)
-            raise_from(ValueError(err_msg), exc)
+            raise ValueError(err_msg) from exc
 
     def checkbank(self, param):
         if self.bank == {}:

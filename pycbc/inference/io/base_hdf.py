@@ -32,7 +32,6 @@ import logging
 from io import StringIO
 
 from abc import (ABCMeta, abstractmethod)
-from six import add_metaclass
 
 import numpy
 import h5py
@@ -76,7 +75,6 @@ def format_attr(val):
     return val
 
 
-@add_metaclass(ABCMeta)
 class BaseInferenceFile(h5py.File):
     """Base class for all inference hdf files.
 
@@ -90,6 +88,7 @@ class BaseInferenceFile(h5py.File):
     mode : {None, str}
         The mode to open the file, eg. "w" for write and "r" for read.
     """
+    __metaclass__ = ABCMeta
 
     name = None
     samples_group = 'samples'
