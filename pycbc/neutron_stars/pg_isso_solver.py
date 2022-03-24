@@ -20,6 +20,7 @@ formalism [see Stone, Loeb, Berger, PRD 87, 084053 (2013)].
 """
 import numpy as np
 from scipy.optimize import root_scalar
+from scipy.interpolate import RectBivariateSpline
 from . import NS_DATA_DIRECTORY
 
 
@@ -335,21 +336,24 @@ def PG_ISSO_solver(chi, incl):
         return rISSO_at_pole_limit
 
     # Otherwise, find the ISSO radius for a generic inclination
-    initial_guess = np.maximum(rISCO_limit, rISSO_at_pole_limit)
+    initial_hi = np.maximum(rISCO_limit, rISSO_at_pole_limit)
+    initial_lo = np.minimum(rISCO_limit, rISSO_at_pole_limit)
+    brackets = [
+        (bl, bh) if c == 1 else None
+        for bl, bh, c in zip(initial_lo, initial_hi, chi)]
     solution = np.array([
         root_scalar(
-            PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr, fprime2=PG_ISSO_eq_dr2,
-            args=(c, inc)).root
-        for g0, c, inc in zip(initial_guess, chi, incl)])
+            PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr, bracket=bracket,
+            fprime2=PG_ISSO_eq_dr2, args=(c, inc), xtol=1e-12).root
+        for g0, bracket, c, inc in zip(initial_hi, brackets, chi, incl)])
     oob = (solution < 1) | (solution > 9)
     if any(oob):
-        initial_guess = np.minimum(rISCO_limit, rISSO_at_pole_limit)
         solution = np.array([
             root_scalar(
-                PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr,
+                PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr, bracket=bracket,
                 fprime2=PG_ISSO_eq_dr2, args=(c, inc)).root
-            if ob else sol for g0, c, inc, ob, sol
-            in zip(initial_guess, chi, incl, oob, solution)
+            if ob else sol for g0, bracket, c, inc, ob, sol
+            in zip(initial_lo, brackets, chi, incl, oob, solution)
             ])
         oob = (solution < 1) | (solution > 9)
         if any(oob):
@@ -357,11 +361,49 @@ def PG_ISSO_solver(chi, incl):
     return solution
 
 
+def concat_grid(bounds):
+    out = np.concatenate([
+        np.linspace(0, lim[0], lim[1], endpoint=False) if ii == 0
+        else (
+            np.linspace(chi_lims[ii-1][0], lim[0], lim[1])
+            if ii == len(bounds)
+            else np.linspace(bounds[ii-1][0], lim[0], lim[1], endpoint=False)
+            )
+        for ii, lim in enumerate(bounds)])
+    return out
+
+
+def generate_isso_bivariate_interp():
+    """Constructs a grid in spin magnitude and spin tilt angle then
+    solves for the ISSO radius (in mass units). Uses the resulting
+    grid to create a bivariate spine which is saved to disk.
+    Note: the grid density need not be uniform, and so has been tuned
+    by hand to be more dense in regions of steeper gradient in order to
+    keep the fractional interpolation error over the full span of
+    parameter values to less than 1e-5.
+    """
+    import pickle
+    import os.path
+    chis = concat_grid((
+        (0.5, 25), (0.75, 20), (0.95, 30), (0.99, 20), (0.995, 50),
+        (0.9975, 50), (1, 101)))
+    incs = concat_grid((
+        (0.125 * np.pi, 50), (0.375 * np.pi, 300), (0.5 * np.pi, 50),
+        (0.9 * np.pi, 50), (np.pi, 26)))
+    chig, incg = np.meshgrid(chis, incs)
+    roots = np.empty_like(chig)
+    for i, (chi, inc) in enumerate(zip(chig, incg)):
+        # more dense at larger chi
+        roots[i] = PG_ISSO_solver(chi, inc)
+    bivar = RectBivariateSpline(incs, chis, roots)
+    with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'wb') as f:
+        pickle.dump(bivar, f)
+
 def load_isso_bivariate_interp():
-    from six.moves import cPickle
+    import pickle
     import os.path
     with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'rb') as f:
-        func = cPickle.load(f)
+        func = pickle.load(f)
     return func
 
 
