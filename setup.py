@@ -48,7 +48,6 @@ install_requires =  setup_requires + [
                       'jinja2',
                       'Mako>=1.0.1',
                       'requests>=1.2.1',
-                      'beautifulsoup4>=4.6.0',
                       'tqdm',
                       'setuptools',
                       'pegasus-wms.api >= 5.0.1',

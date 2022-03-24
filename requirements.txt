@@ -10,7 +10,6 @@ h5py>=3.0.0
 jinja2
 mpld3>=0.3
 requests>=1.2.1
-beautifulsoup4>=4.6.0
 cython
 lalsuite!=7.2
 lscsoft-glue>=1.59.3

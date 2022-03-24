@@ -43,8 +43,6 @@ from http.cookiejar import (
     LoadError,
     Cookie,
 )
-from bs4 import BeautifulSoup
-
 
 def _really_load(self, f, filename, ignore_discard, ignore_expires):
     """
