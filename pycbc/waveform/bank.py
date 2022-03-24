@@ -1087,7 +1087,8 @@ class FilterBankTHA(TemplateBank):
             self.curr_tmp = curr_tmp
         else:
             curr_tmp = self.curr_tmp
-        num_comps = min(self.table["num_comps"][index], 3)
+        #num_comps = min(self.table["num_comps"][index], 3)
+        num_comps = self.table["num_comps"][index]
         hcomps = curr_tmp.get_whitened_normalized_comps(self.delta_f, psd,
                                                         num_comps=num_comps)
         hcomps =  [hcmp for hcmp in hcomps]
