@@ -30,7 +30,7 @@ from abc import (ABCMeta, abstractmethod)
 from .base import BaseModel
 
 
-class BaseDataModel(BaseModel):
+class BaseDataModel(BaseModel, metaclass=ABCMeta):
     r"""Base class for models that require data and a waveform generator.
 
     This adds propeties for the log of the likelihood that the data contain
@@ -64,7 +64,6 @@ class BaseDataModel(BaseModel):
 
     See ``BaseModel`` for additional attributes and properties.
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, variable_params, data, recalibration=None, gates=None,
                  injection_file=None, no_save_data=False, **kwargs):

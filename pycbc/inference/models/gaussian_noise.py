@@ -37,7 +37,7 @@ from .data_utils import (data_opts_from_config, data_from_cli,
                          fd_data_from_strain_dict, gate_overwhitened_data)
 
 
-class BaseGaussianNoise(BaseDataModel):
+class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
     r"""Model for analyzing GW data with assuming a wide-sense stationary
     Gaussian noise model.
 
@@ -98,7 +98,6 @@ class BaseGaussianNoise(BaseDataModel):
         points with zero likelihood. Otherwise, such points will cause the
         model to raise a ``FailedWaveformError``.
     """
-    __metaclass__ = ABCMeta
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,

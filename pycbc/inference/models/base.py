@@ -285,7 +285,7 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
-class BaseModel(object):
+class BaseModel(metaclass=ABCMeta):
     r"""Base class for all models.
 
     Given some model :math:`h` with parameters :math:`\Theta`, Bayes Theorem
@@ -342,7 +342,6 @@ class BaseModel(object):
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
     """
-    __metaclass__ = ABCMeta
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,

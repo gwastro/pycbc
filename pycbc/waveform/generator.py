@@ -491,7 +491,7 @@ class TDomainSupernovaeGenerator(BaseGenerator):
 #
 
 
-class BaseFDomainDetFrameGenerator(object):
+class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
     """Base generator for frquency-domain waveforms in a detector frame.
 
     Parameters
@@ -539,7 +539,6 @@ class BaseFDomainDetFrameGenerator(object):
         function.
 
     """
-    __metaclass__ = ABCMeta
 
     location_args = set([])
     """Set: Should be overriden by children classes with a set of parameters

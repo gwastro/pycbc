@@ -153,7 +153,7 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
 #
 
 
-class BaseMCMC(object):
+class BaseMCMC(object, metaclass=ABCMeta):
     """Abstract base class that provides methods common to MCMCs.
 
     This is not a sampler class itself. Sampler classes can inherit from this
@@ -186,7 +186,6 @@ class BaseMCMC(object):
         [`classmethod`] Should compute the autocorrelation length using
         the given filename. Also allows for other keyword arguments.
     """
-    __metaclass__ = ABCMeta
     _lastclear = None  # the iteration when samples were cleared from memory
     _itercounter = None  # the number of iterations since the last clear
     _pos = None

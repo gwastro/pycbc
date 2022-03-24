@@ -75,7 +75,7 @@ def format_attr(val):
     return val
 
 
-class BaseInferenceFile(h5py.File):
+class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
     """Base class for all inference hdf files.
 
     This is a subclass of the h5py.File object. It adds functions for
@@ -88,7 +88,6 @@ class BaseInferenceFile(h5py.File):
     mode : {None, str}
         The mode to open the file, eg. "w" for write and "r" for read.
     """
-    __metaclass__ = ABCMeta
 
     name = None
     samples_group = 'samples'

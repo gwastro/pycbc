@@ -245,9 +245,8 @@ def evaluate_tests(burn_in_test, test_is_burned_in, test_burn_in_iter):
 #
 
 
-class BaseBurnInTests(object):
+class BaseBurnInTests(metaclass=ABCMeta):
     """Base class for burn in tests."""
-    __metaclass__ = ABCMeta
 
     available_tests = ('halfchain', 'min_iterations', 'max_posterior',
                        'posterior_step', 'nacl',

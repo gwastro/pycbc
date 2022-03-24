@@ -332,7 +332,7 @@ class _XMLInjectionSet(object):
 # -----------------------------------------------------------------------------
 
 
-class _HDFInjectionSet(object):
+class _HDFInjectionSet(metaclass=ABCMeta):
     """Manages sets of injections: reads injections from hdf files
     and injects them into time series.
 
@@ -354,7 +354,6 @@ class _HDFInjectionSet(object):
         Parameter names that must exist in the injection HDF file in order to
         create an injection of that type.
     """
-    __metaclass__ = ABCMeta
 
     _tableclass = pycbc.io.FieldArray
     injtype = None

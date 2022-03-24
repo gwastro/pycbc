@@ -23,13 +23,12 @@ from abc import (ABCMeta, abstractmethod)
 from .base_hdf import BaseInferenceFile
 
 
-class BaseSamplerFile(BaseInferenceFile):
+class BaseSamplerFile(BaseInferenceFile, metaclass=ABCMeta):
     """Base HDF class for all samplers.
 
     This adds abstract methods ``write_resume_point`` and
     ``write_sampler_metadata`` to :py:class:`BaseInferenceFile`.
     """
-    __metaclass__ = ABCMeta
 
     def write_run_start_time(self):
         """Writes the current (UNIX) time to the file.
