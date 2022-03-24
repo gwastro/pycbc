@@ -22,7 +22,7 @@
 # =============================================================================
 #
 
-"""Base classes for models with data.
+"""Base classes for mofdels with data.
 """
 
 import numpy
@@ -65,7 +65,7 @@ class BaseDataModel(BaseModel):
     See ``BaseModel`` for additional attributes and properties.
     """
     __metaclass__ = ABCMeta
-    
+
     def __init__(self, variable_params, data, recalibration=None, gates=None,
                  injection_file=None, no_save_data=False, **kwargs):
         self._data = None

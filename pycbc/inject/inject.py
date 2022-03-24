@@ -355,7 +355,7 @@ class _HDFInjectionSet(object):
         create an injection of that type.
     """
     __metaclass__ = ABCMeta
-    
+
     _tableclass = pycbc.io.FieldArray
     injtype = None
     required_params = ()

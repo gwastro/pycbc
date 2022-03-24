@@ -30,7 +30,7 @@ class BaseSamplerFile(BaseInferenceFile):
     ``write_sampler_metadata`` to :py:class:`BaseInferenceFile`.
     """
     __metaclass__ = ABCMeta
-    
+
     def write_run_start_time(self):
         """Writes the current (UNIX) time to the file.
 

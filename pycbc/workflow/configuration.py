@@ -30,7 +30,6 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 import os
 import re
 import stat
-import string
 import shutil
 import time
 import requests
@@ -233,7 +232,7 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
         # did not get redirected to the sign-in page
         # FIXME, this has no longer functioned since dropping python2
         # If we want this again, reimplement 'istext'
-        #if u.netloc == "git.ligo.org" or u.netloc == "code.pycbc.phy.syr.edu":
+        # if u.netloc == "git.ligo.org" or u.netloc== "code.pycbc.phy.syr.edu":
             # Check if we have downloaded a binary file.
         #    if istext(r.content):
         #        soup = BeautifulSoup(r.content, "html.parser")
