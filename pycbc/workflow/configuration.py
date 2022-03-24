@@ -34,12 +34,11 @@ import string
 import shutil
 import time
 import requests
-import six
 from shutil import which
 from pycbc.types.config import InterpolatingConfigParser
-from six.moves.urllib.parse import urlparse
-from six.moves import http_cookiejar as cookielib
-from six.moves.http_cookiejar import (
+from urllib.parse import urlparse
+import http.cookiejar as cookielib
+from http.cookiejar import (
     _warn_unhandled_exception,
     LoadError,
     Cookie,
@@ -160,40 +159,6 @@ before attempting to download files from git.ligo.org.
 """
 
 
-def istext(s, text_characters=None, threshold=0.3):
-    """
-    Determines if the string is a set of binary data or a text file.
-    This is done by checking if a large proportion of characters are > 0X7E
-    (0x7F is <DEL> and unprintable) or low bit control codes. In other words
-    things that you wouldn't see (often) in a text file. (ASCII past 0x7F
-    might appear, but rarely).
-
-    Code modified from
-    https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch01s12.html
-    """
-    # if s contains any null, it's not text:
-    if six.PY2 and "\0" in s:
-        return False
-    # an "empty" string is "text" (arbitrary but reasonable choice):
-    if not s:
-        return True
-
-    text_characters = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
-    if six.PY2:
-        _null_trans = string.maketrans("", "")
-        # Get the substring of s made up of non-text characters
-        t = s.translate(_null_trans, text_characters)
-    else:
-        # Not yet sure how to deal with this in python3. Will need example.
-        return True
-
-        # trans = str.maketrans('', '', text_characters)
-        # t = s.translate(trans)
-
-    # s is 'text' if less than 30% of its characters are non-text ones:
-    return len(t) / float(len(s)) <= threshold
-
-
 def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
     """Resolves a URL to a local file, and returns the path to that file.
 
@@ -268,17 +233,19 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
 
         # if we are downloading from git.ligo.org, check that we
         # did not get redirected to the sign-in page
-        if u.netloc == "git.ligo.org" or u.netloc == "code.pycbc.phy.syr.edu":
+        # FIXME, this has no longer functioned since dropping python2
+        # If we want this again, reimplement 'istext'
+        #if u.netloc == "git.ligo.org" or u.netloc == "code.pycbc.phy.syr.edu":
             # Check if we have downloaded a binary file.
-            if istext(r.content):
-                soup = BeautifulSoup(r.content, "html.parser")
-                desc = soup.findAll(attrs={"property": "og:url"})
-                if (
-                    len(desc)
-                    and desc[0]["content"]
-                    == "https://git.ligo.org/users/sign_in"
-                ):
-                    raise ValueError(ecp_cookie_error.format(url))
+        #    if istext(r.content):
+        #        soup = BeautifulSoup(r.content, "html.parser")
+        #        desc = soup.findAll(attrs={"property": "og:url"})
+        #        if (
+        #            len(desc)
+        #            and desc[0]["content"]
+        #            == "https://git.ligo.org/users/sign_in"
+        #        ):
+        #            raise ValueError(ecp_cookie_error.format(url))
 
         output_fp = open(filename, "wb")
         output_fp.write(r.content)

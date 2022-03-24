@@ -29,7 +29,7 @@ import re
 import itertools
 import logging
 from io import StringIO
-from configparser as ConfigParser
+import configparser as ConfigParser
 
 
 class DeepCopyableConfigParser(ConfigParser.ConfigParser):
