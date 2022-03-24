@@ -17,9 +17,9 @@ This modules provides classes for evaluating distributions with bounds.
 """
 
 import warnings
-import numpy
-
 from configparser import Error
+
+import numpy
 from pycbc import boundaries
 from pycbc import VARARGS_DELIM
 

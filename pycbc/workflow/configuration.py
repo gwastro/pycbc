@@ -43,6 +43,7 @@ from http.cookiejar import (
     Cookie,
 )
 
+
 def _really_load(self, f, filename, ignore_discard, ignore_expires):
     """
     This function is required to monkey patch MozillaCookieJar's _really_load
