@@ -47,7 +47,7 @@ mass_conversions = {
     'chirp_mass': conv.mchirp_from_mass1_mass2,
 }
 
-spin_conversion = {
+spin_conversions = {
     'chieff': conv.chi_eff,
     'chi_eff': conv.chi_eff,
     'effective_spin': conv.chi_eff,
@@ -109,7 +109,7 @@ def bank_conversion(parameter, bank, template_ids):
                                              bank['mass2'][:][template_ids])
 
     elif parameter in spin_conversions.keys():
-        values = spin_conversion[parameter](bank['mass1'][:][template_ids],
+        values = spin_conversions[parameter](bank['mass1'][:][template_ids],
                                             bank['mass2'][:][template_ids],
                                             bank['spin1z'][:][template_ids],
                                             bank['spin2z'][:][template_ids])

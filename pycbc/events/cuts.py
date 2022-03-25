@@ -91,20 +91,26 @@ def convert_inputstr(inputstr, choices):
     the float to compare to.
     Do some checks as to whether the inputstr fits input requirements
     """
-    cut_param, cut_value_str, cut_limit = inputstr.split(':')
+    try:
+        cut_param, cut_value_str, cut_limit = inputstr.split(':')
+    except ValueError as value_e:
+        logging.warn("ERROR: Cut string format not correct, please supply as "
+                     "PARAMETER:VALUE:LIMIT")
+        raise value_e
+
     if cut_param.lower() not in choices:
-        raise NotImplementedError("Cut parameter not recognised, "
-                                  "choose from "
+        raise NotImplementedError("Cut parameter " + cut_param.lower() + " "
+                                  "not recognised, choose from "
                                   + ", ".join(choices))
     if cut_limit.lower() not in ineq_choices:
-        raise NotImplementedError("Cut inequality not recognised, "
-                                  "choose from "
+        raise NotImplementedError("Cut inequality " + cut_limit.lower() + " "
+                                  "not recognised, choose from "
                                   + ", ".join(ineq_choices))
 
     try:
         cut_value = float(cut_value_str)
     except ValueError as value_e:
-        logging.warning("Cut value must be convertible into a float, "
+        logging.warning("Error: Cut value must be convertible into a float, "
                         "got '%s', a %s.", cut_value, type(cut_value))
         raise value_e
 
