@@ -787,10 +787,6 @@ class ExpFitStatistic(QuadratureSumStatistic):
             The alpha fit value(s)
         ratei: float or numpy array
             The rate fit value(s)
-        alphabyi: float or numpy array
-            The alpha fit value(s) from the fit_by_template stage
-        ratebyi: float or numpy array
-            The rate fit value(s) from the fit_by_template stage
         thresh: float or numpy array
             The thresh fit value(s)
         """
@@ -829,7 +825,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
             Array of log noise rate density for each input trigger.
 
         """
-        alphai, ratei, alphabyi, ratebyi, thresh = self.find_fits(trigs)
+        alphai, ratei, thresh = self.find_fits(trigs)
         sngl_stat = self.get_sngl_ranking(trigs)
         # alphai is constant of proportionality between single-ifo newsnr and
         #   negative log noise likelihood in given template
@@ -992,7 +988,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         """
 
         logr_n = self.lognoiserate(trigs)
-        _, _, _, _, thresh = self.find_fits(trigs)
+        _, _, thresh = self.find_fits(trigs)
         # shift by log of reference slope alpha
         logr_n += -1. * numpy.log(self.alpharef)
         # add threshold and rescale by reference slope
@@ -1402,7 +1398,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         lognoisel: numpy.array
             Array of log noise rate density for each input trigger.
         """
-        alphai, ratei, alphabyi, ratebyi, thresh = self.find_fits(trigs)
+        alphai, ratei, thresh = self.find_fits(trigs)
         newsnr = self.get_sngl_ranking(trigs)
         # Above the threshold we use the usual fit coefficient (alpha)
         # below threshold use specified alphabelow
