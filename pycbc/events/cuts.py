@@ -27,6 +27,7 @@ This module contains functions for reading in command line options and
 applying cuts to triggers or templates in the offline search
 """
 import logging
+import copy
 import numpy as np
 from pycbc.events import ranking
 from pycbc.io import hdf
@@ -201,6 +202,67 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
     return idx_out
 
 
+def apply_template_fit_cut(statistic, ifos, parameter, cut_function_thresh,
+                           template_ids):
+    """
+    Apply cuts to template fit parameters, these have a few more checks
+    needed, so we separate out from apply_template_cuts defined later
+
+    Parameters
+    ----------
+    statistic:
+        A PyCBC ranking statistic instance. Used for the template fit
+        cuts. If fits_by_tid does not exist for each ifo, then
+        template fit cuts will be skipped. If a fit cut has been specified
+        and fits_by_tid does not exist for all ifos, an error will be raised.
+
+    ifos: list of strings
+        List of IFOS used in this findtrigs instance.
+        Templates must pass cuts in all IFOs.        
+
+    parameter: string
+        Which parameter is being used for the cut?
+
+    cut_function_thresh: tuple
+        tuple of the cut function and cut threshold
+
+    template_ids: numpy array
+        Array of template_ids which have passed previous cuts
+
+
+    Returns
+    -------
+    tids_out: numpy array
+        Array of template_ids which have passed this cut
+    """
+    cut_function, cut_thresh = cut_function_thresh
+    statistic_classname = statistic.__class__.__name__
+
+    # We can only apply template fit cuts if template fits have been done
+    if not hasattr(statistic, 'fits_by_tid'):
+       raise ValueError("Cut parameter " + parameter + " cannot "
+                         "be used when the ranking statistic " +
+                         statistic_classname + " does not use "
+                         "template fitting.")
+
+    # Is the parameter actually in the fits dictionary?
+    if parameter not in statistic.fits_by_tid[ifos[0]]:
+        # Shouldn't get here due to input sanitisation
+        raise ValueError("Cut parameter " + parameter + " not "
+                         "available in fits file.")
+
+    # Template IDs array to cut down in each IFO
+    tids_out = copy.copy(template_ids)
+    # Need to apply this cut to all IFOs
+    for ifo in ifos:
+        fits_dict = statistic.fits_by_tid[ifo]
+        values = fits_dict[parameter][tids_out]
+        # Only keep templates which pass this cut
+        tids_out = tids_out[cut_function(values, cut_thresh)]
+
+    return tids_out
+
+
 def apply_template_cuts(statistic, ifos, bank,
                         template_cut_dict, template_ids=None):
     """
@@ -251,10 +313,6 @@ def apply_template_cuts(statistic, ifos, bank,
         # list of all tids
         return tids_out
 
-    # We can only apply template fit cuts if template fits have been done
-    template_fit_cuts_allowed = hasattr(statistic, 'fits_by_tid')
-    statistic_classname = statistic.__class__.__name__
-
     # Loop through the different cuts, and apply them
     for parameter, cut_function_thresh in template_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
@@ -266,20 +324,8 @@ def apply_template_cuts(statistic, ifos, bank,
             # Only keep templates which pass this cut
             tids_out = tids_out[cut_function(values, cut_thresh)]
         elif parameter in template_fit_param_choices:
-            if not template_fit_cuts_allowed:
-                raise ValueError("Cut parameter " + parameter + " cannot "
-                                 "be used when the ranking statistic " +
-                                 statistic_classname + " does not use "
-                                 "template fitting.")
-            # Need to apply this cut to all IFOs
-            for ifo in ifos:
-                fits_dict = statistic.fits_by_tid[ifo]
-                if parameter not in fits_dict:
-                    raise ValueError("Cut parameter " + parameter + " not "
-                                     "available in fits file.")
-                values = fits_dict[parameter][tids_out]
-                # Only keep templates which pass this cut
-                tids_out = tids_out[cut_function(values, cut_thresh)]
+            tids_out = apply_template_fit_cut(statistic, ifos, parameter,
+                                              cut_function_thresh, tids_out)
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
