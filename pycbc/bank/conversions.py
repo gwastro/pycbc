@@ -59,8 +59,8 @@ def bank_conversion(parameter, bank, template_ids):
     """ Get a specific value from a hdf file object in standard PyCBC
     template bank format
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     parameter: str
         the parameter to convert to, must be in conversion_options
 
