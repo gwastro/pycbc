@@ -150,8 +150,8 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
     Fetch/Calculate the parameter for triggers, and then
     apply the cuts defined in template_cut_dict
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     triggers:
 
     trigger_cut_dict: dictionary
@@ -159,8 +159,8 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
         (cut_function, cut_threshold) as values
         made using ingest_cuts_option_group function
 
-    Returns:
-    --------
+    Returns
+    -------
     idx_out: numpy array
         An array of the indices which meet the criteria
         set by the dictionary
@@ -210,8 +210,8 @@ def apply_template_cuts(statistic, ifos, bank,
     As this is used to select templates for use in findtrigs codes,
     we remove anything which does not pass
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     statistic:
         A PyCBC ranking statistic instance. Used for the template fit
         cuts. If fits_by_tid does not exist for each ifo, then
@@ -231,14 +231,14 @@ def apply_template_cuts(statistic, ifos, bank,
         (cut_function, cut_threshold) as values
         made using ingest_cuts_option_group function
 
-    Optional Parameters:
-    --------------------
+    Optional Parameters
+    -------------------
     template_ids: list of indices
         Indices of templates to consider within the bank, useful if
         templates have already been down-selected
 
-    Returns:
-    --------
+    Returns
+    -------
     tids_out: numpy array
         Array of template_ids which have passed all cuts
     """
