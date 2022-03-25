@@ -54,7 +54,6 @@ spin_conversions = {
     'chi_a': conv.chi_a
 }
 
-
 def bank_conversion(parameter, bank, template_ids):
     """
     Get a specific value from a hdf file object in standard PyCBC
@@ -80,21 +79,14 @@ def bank_conversion(parameter, bank, template_ids):
 
     """
     # These just give things already in the bank
-    if parameter == 'mass1':
-        values = bank['mass1'][:][template_ids]
-
-    elif parameter == 'mass2':
-        values = bank['mass2'][:][template_ids]
-
-    elif parameter == 'spin1z':
-        values = bank['spin1z'][:][template_ids]
-
-    elif parameter == 'spin2z':
-        values = bank['spin2z'][:][template_ids]
+    if parameter in bank:
+        values = bank[parameter][:][template_ids]
 
     # These things may be in the bank, but if not, we need to calculate
     elif parameter in ['template_duration', 'duration']:
         if 'template_duration' in bank:
+            # This statement should be the reached only if 'duration'
+            # is given, but 'template_duration' is in the bank
             values = bank['template_duration'][:][template_ids]
         else:
             values = pnutils.get_imr_duration(bank['mass1'][:][template_ids],
@@ -110,9 +102,9 @@ def bank_conversion(parameter, bank, template_ids):
 
     elif parameter in spin_conversions.keys():
         values = spin_conversions[parameter](bank['mass1'][:][template_ids],
-                                            bank['mass2'][:][template_ids],
-                                            bank['spin1z'][:][template_ids],
-                                            bank['spin2z'][:][template_ids])
+                                             bank['mass2'][:][template_ids],
+                                             bank['spin1z'][:][template_ids],
+                                             bank['spin2z'][:][template_ids])
 
     else:
         # parameter not in the current conversion parameter list

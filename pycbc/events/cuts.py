@@ -27,7 +27,6 @@ This module contains functions for reading in command line options and
 applying cuts to triggers or templates in the offline search
 """
 import logging
-import argparse
 import numpy as np
 from pycbc.events import ranking
 from pycbc.io import hdf
@@ -94,8 +93,8 @@ def convert_inputstr(inputstr, choices):
     try:
         cut_param, cut_value_str, cut_limit = inputstr.split(':')
     except ValueError as value_e:
-        logging.warn("ERROR: Cut string format not correct, please supply as "
-                     "PARAMETER:VALUE:LIMIT")
+        logging.warning("ERROR: Cut string format not correct, please "
+                        "supply as PARAMETER:VALUE:LIMIT")
         raise value_e
 
     if cut_param.lower() not in choices:
