@@ -39,7 +39,7 @@ conversion_options = ['mass1', 'mass2', 'spin1z', 'spin2z', 'duration',
 
 mass_conversions = {
     'mtotal': conv.mtotal_from_mass1_mass2,
-    'total_mass': conv.mtotal_from_mass1_mass2
+    'total_mass': conv.mtotal_from_mass1_mass2,
     'q': conv.q_from_mass1_mass2,
     'invq': conv.invq_from_mass1_mass2,
     'eta': conv.eta_from_mass1_mass2,
