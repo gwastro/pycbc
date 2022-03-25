@@ -47,12 +47,13 @@ mass_conversions = {
     'chirp_mass': conv.mchirp_from_mass1_mass2,
 }
 
-spin_conversions = {
+spin_conversion = {
     'chieff': conv.chi_eff,
     'chi_eff': conv.chi_eff,
     'effective_spin': conv.chi_eff,
     'chi_a': conv.chi_a
 }
+
 
 def bank_conversion(parameter, bank, template_ids):
     """

@@ -93,13 +93,13 @@ def convert_inputstr(inputstr, choices):
     """
     cut_param, cut_value_str, cut_limit = inputstr.split(':')
     if cut_param.lower() not in choices:
-        raise argparse.ArgumentError("Cut parameter not recognised, "
-                                     "choose from "
-                                     + ", ".join(choices))
+        raise NotImplementedError("Cut parameter not recognised, "
+                                  "choose from "
+                                  + ", ".join(choices))
     if cut_limit.lower() not in ineq_choices:
-        raise argparse.ArgumentError("Cut inequality not recognised, "
-                                     "choose from "
-                                     + ", ".join(ineq_choices))
+        raise NotImplementedError("Cut inequality not recognised, "
+                                  "choose from "
+                                  + ", ".join(ineq_choices))
 
     try:
         cut_value = float(cut_value_str)
