@@ -218,7 +218,7 @@ def apply_template_fit_cut(statistic, ifos, parameter, cut_function_thresh,
 
     ifos: list of strings
         List of IFOS used in this findtrigs instance.
-        Templates must pass cuts in all IFOs.        
+        Templates must pass cuts in all IFOs.
 
     parameter: string
         Which parameter is being used for the cut?
@@ -240,7 +240,7 @@ def apply_template_fit_cut(statistic, ifos, parameter, cut_function_thresh,
 
     # We can only apply template fit cuts if template fits have been done
     if not hasattr(statistic, 'fits_by_tid'):
-       raise ValueError("Cut parameter " + parameter + " cannot "
+        raise ValueError("Cut parameter " + parameter + " cannot "
                          "be used when the ranking statistic " +
                          statistic_classname + " does not use "
                          "template fitting.")
