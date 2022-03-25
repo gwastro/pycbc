@@ -38,8 +38,8 @@ from pycbc.io.ligolw import LIGOLWContentHandler
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo import segments
-    from ligo.lw import utils, lsctables
-    from ligo.lw.table import get_table
+    from ligo.lw import utils, lsctables, table
+    # from ligo.lw.table import get_table
     from ligo.segments.utils import fromsegwizard
     # Handle MultiInspiral xml-talbes with glue,
     # as ligo.lw no longer supports them
@@ -228,14 +228,13 @@ def read_seg_files(seg_files):
 # =============================================================================
 # Function to load a table from an xml file
 # =============================================================================
-def load_xml_table(file_name, table_name):
+def load_xml_table(file_name, table_name): 
     """Load xml table from file."""
-
-    xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
-                                  contenthandler=lsctables.use_in(
-                                      LIGOLWContentHandler))
-
-    return get_table(xml_doc, table_name)
+    
+    xml_doc = utils.load_filename(file_name,
+                                  contenthandler=LIGOLWContentHandler)
+    
+    return table.Table.get_table(xml_doc, table_name)
 
 
 # ==============================================================================
