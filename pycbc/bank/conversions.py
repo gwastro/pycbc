@@ -54,6 +54,7 @@ spin_conversions = {
     'chi_a': conv.chi_a
 }
 
+
 def bank_conversion(parameter, bank, template_ids):
     """
     Get a specific value from a hdf file object in standard PyCBC
