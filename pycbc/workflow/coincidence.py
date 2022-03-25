@@ -657,6 +657,7 @@ def setup_sngls_inj(workflow, hdfbank, inj_trig_files,
     logging.info('...leaving coincidence ')
     return statmap_files
 
+
 def select_files_by_ifo_combination(ifocomb, insps):
     """
     This function selects single-detector files ('insps') for a given ifo combination
