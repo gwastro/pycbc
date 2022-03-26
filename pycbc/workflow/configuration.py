@@ -232,7 +232,7 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
 
         # if we are downloading from git.ligo.org, check that we
         # did not get redirected to the sign-in page
-        if u.netloc == "git.ligo.org" or u.netloc== "code.pycbc.phy.syr.edu":
+        if u.netloc == "git.ligo.org" or u.netloc == "code.pycbc.phy.syr.edu":
             # Check if we have downloaded a binary file.
 
             # this has no longer functioned since dropping python2
