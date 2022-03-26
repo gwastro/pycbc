@@ -34,6 +34,7 @@ import shutil
 import time
 import requests
 from shutil import which
+from bs4 import BeautifulSoup
 from pycbc.types.config import InterpolatingConfigParser
 from urllib.parse import urlparse
 import http.cookiejar as cookielib
@@ -231,19 +232,20 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
 
         # if we are downloading from git.ligo.org, check that we
         # did not get redirected to the sign-in page
-        # FIXME, this has no longer functioned since dropping python2
-        # If we want this again, reimplement 'istext'
-        # if u.netloc == "git.ligo.org" or u.netloc== "code.pycbc.phy.syr.edu":
+        if u.netloc == "git.ligo.org" or u.netloc== "code.pycbc.phy.syr.edu":
             # Check if we have downloaded a binary file.
-        #    if istext(r.content):
-        #        soup = BeautifulSoup(r.content, "html.parser")
-        #        desc = soup.findAll(attrs={"property": "og:url"})
-        #        if (
-        #            len(desc)
-        #            and desc[0]["content"]
-        #            == "https://git.ligo.org/users/sign_in"
-        #        ):
-        #            raise ValueError(ecp_cookie_error.format(url))
+            # FIXME, this has no longer functioned since dropping python2
+            # If we want this again, reimplement 'istext'
+            if istext(r.content):
+
+            soup = BeautifulSoup(r.content, "html.parser")
+            desc = soup.findAll(attrs={"property": "og:url"})
+            if (
+                len(desc)
+                and desc[0]["content"]
+                == "https://git.ligo.org/users/sign_in"
+            ):
+                raise ValueError(ecp_cookie_error.format(url))
 
         output_fp = open(filename, "wb")
         output_fp.write(r.content)
