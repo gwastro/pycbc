@@ -234,9 +234,10 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
         # did not get redirected to the sign-in page
         if u.netloc == "git.ligo.org" or u.netloc== "code.pycbc.phy.syr.edu":
             # Check if we have downloaded a binary file.
-            # FIXME, this has no longer functioned since dropping python2
+
+            # this has no longer functioned since dropping python2
             # If we want this again, reimplement 'istext'
-            if istext(r.content):
+            # if istext(r.content):
 
             soup = BeautifulSoup(r.content, "html.parser")
             desc = soup.findAll(attrs={"property": "og:url"})
