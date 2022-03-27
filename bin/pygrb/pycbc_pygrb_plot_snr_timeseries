@@ -29,6 +29,7 @@ import glob
 import os
 import logging
 import numpy
+import h5py
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import pycbc.version
@@ -48,6 +49,34 @@ __program__ = "pycbc_pygrb_plot_snr_timeseries"
 # =============================================================================
 # Functions
 # =============================================================================
+# Function to load time and necessary SNR data from an HDF trigger/injection file
+def load_data_from_hdf(input_file, vetoes, opts, injections=False, sim_table=False):
+    """Build a dictionary containing time and SNR data extracted from 
+    a trigger/injection file""" 
+
+    # Initialize the dictionary
+    data = {} 
+    data['time'] = None
+    snr_type = opts.y_variable
+    data[snr_type] = None
+
+    if input_file:
+        trigs_or_injs = h5py.File(input_file, 'r')
+        data['time'] = numpy.asarray(trigs_or_injs['network/end_time_gc'][:])
+        if snr_type == 'coherent':
+            data['coherent'] = numpy.asarray(trigs_or_injs['network/coherent_snr'][:])
+        elif snr_type == 'null':
+            data['null'] = numpy.asarray(trigs_or_injs['network/null_snr'][:])
+        elif snr_type == 'reweighted': 
+            data['reweighted'] = numpy.array(trigs_or_injs['network/reweighted_snr'][:]) 
+        elif snr_type == 'single':
+            ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l', 'V1': 'v', 'T1': 't'} 
+            ifo = opts.ifo
+            att = ifo_att[ifo]
+            data['single'] = trigs_or_injs['%s/snr_%s' % (ifo,att)][:]
+
+    return data
+
 # Function to load time and necessary SNR data from a trigger/injection file
 def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
     """Build a dictionary containing time and SNR data extracted from
@@ -153,10 +182,10 @@ _, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                         opts.veto_category)
 
 # Load trigger data
-trig_data = load_data(trig_file, vetoes, opts)
+trig_data = load_data_from_hdf(trig_file, vetoes, opts)
 
 # Load (or initialize) injection data
-inj_data = load_data(found_file, vetoes, opts, injections=True, sim_table=False)
+inj_data = load_data_from_hdf(found_file, vetoes, opts, injections=True, sim_table=False)
 
 # Determine the central time (t=0): default is the GRB trigger time
 central_time = opts.central_time if opts.central_time is not None else\
