@@ -74,6 +74,7 @@ container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, args.workflow_name + '-main')
 finalize_workflow = wf.Workflow(args, args.workflow_name + '-finalization')
 
+wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 
 rdir = layout.SectionNumber('results', ['analysis_time',
@@ -770,10 +771,6 @@ wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
 
 container += workflow
 container += finalize_workflow
-
-import Pegasus.DAX3 as dax
-dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
-container._adag.addDependency(dep)
 
 container.add_subworkflow_dependancy(workflow, finalize_workflow)
 
