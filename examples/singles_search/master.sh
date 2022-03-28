@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-bash -e get.sh
-bash -e bank.sh
-bash -e stats.sh
+bash -e ../search/get.sh
+bash -e ../search/bank.sh
+bash -e ../search/stats.sh
 bash -e gen.sh
 
 cp *.gwf output
 cd output
-bash -e ../submit.sh
-python ../check_job.py
+bash -e ../../search/submit.sh
+python ../../search/check_job.py
