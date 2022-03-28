@@ -8,7 +8,6 @@ GPS_START=$((START - 32))
 GPS_END=$((END + 32))
 DUR=$((GPS_END - GPS_START))
 CONFIG_URL=https://github.com/gwastro/pycbc-config/raw/master/test/multi_inspiral
-CONFIG_URL=https://github.com/a-r-williamson/pycbc-config/raw/pycbc_multi_inspiral_tests/test/multi_inspiral
 INJ_FILE=faceon_faceaway_injs.hdf
 
 echo -e "\\n\\n>> [`date`] Getting injection file"

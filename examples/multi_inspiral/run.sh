@@ -1,7 +1,6 @@
 #!/bin/bash -e
 
 CONFIG_URL=https://github.com/gwastro/pycbc-config/raw/master/test/multi_inspiral
-CONFIG_URL=https://github.com/a-r-williamson/pycbc-config/raw/pycbc_multi_inspiral_tests/test/multi_inspiral
 BANK_FILE=gw170817_single_template.hdf
 BANK_VETO_FILE=bank_veto_bank.xml
 H1_FRAME=https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW170817/v3/H-H1_GWOSC_4KHZ_R1-1187006835-4096.gwf

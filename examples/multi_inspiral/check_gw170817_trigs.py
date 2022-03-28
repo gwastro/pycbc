@@ -25,7 +25,6 @@ mask = (
     & (snrs[2] > 25)
     )
 n = mask.sum()
-status = 0
 if n > 0:
     result = 'PASS'
     status = 0
