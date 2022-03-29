@@ -17,7 +17,6 @@
 """
 Provides a class representing a time series.
 """
-from __future__ import division
 import os as _os, h5py
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex

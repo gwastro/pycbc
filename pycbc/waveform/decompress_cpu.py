@@ -23,7 +23,6 @@
 """ Utilities for handling frequency compressed an unequally spaced frequency
 domain waveforms.
 """
-from __future__ import absolute_import
 import numpy
 from ..types import real_same_precision_as
 from ..types import complex_same_precision_as

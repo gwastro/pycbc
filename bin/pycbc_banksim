@@ -16,7 +16,6 @@
 
 """Calculate the fitting factors of simulated signals with a template bank."""
 
-from __future__ import print_function
 
 import logging
 from tqdm import tqdm

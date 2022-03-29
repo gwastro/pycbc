@@ -29,7 +29,6 @@ workflows.
 
 # FIXME: Is this module still relevant for any code? Can it be removed?
 
-from __future__ import division
 import logging
 import configparser as ConfigParser
 from pycbc.workflow.core import FileList

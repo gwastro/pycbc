@@ -29,7 +29,6 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 
-from __future__ import division
 
 import os
 import logging

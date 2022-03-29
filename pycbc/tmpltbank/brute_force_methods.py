@@ -1,4 +1,3 @@
-from __future__ import division
 import numpy
 from pycbc.tmpltbank.coord_utils import get_cov_params
 

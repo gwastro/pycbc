@@ -20,7 +20,6 @@ allowing it to be specified in an OS-independent way and searched for preferenti
 according to the paths that pkg-config specifies.
 """
 
-from __future__ import print_function
 import os, fnmatch, ctypes, sys, subprocess
 from ctypes.util import find_library
 from collections import deque

@@ -23,7 +23,6 @@
 """ Utilities for handling frequency compressed an unequally spaced frequency
 domain waveforms.
 """
-from __future__ import absolute_import
 import lal, numpy, logging, h5py
 from pycbc import filter
 from scipy import interpolate

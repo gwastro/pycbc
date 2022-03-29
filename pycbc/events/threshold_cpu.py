@@ -21,7 +21,6 @@
 #
 # =============================================================================
 #
-from __future__ import absolute_import
 import numpy
 from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
 from .eventmgr import _BaseThresholdCluster

@@ -25,7 +25,6 @@
 """
 This modules provides a device independent Array class based on PyCUDA and Numpy.
 """
-from __future__ import division
 
 BACKEND_PREFIX="pycbc.types.array_"
 
