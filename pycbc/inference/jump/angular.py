@@ -15,8 +15,6 @@
 
 """Jump proposals that use cyclic boundaries on [0, 2pi)."""
 
-
-
 from epsie import proposals as epsie_proposals
 
 from .normal import (epsie_from_config, epsie_adaptive_from_config,
