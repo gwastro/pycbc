@@ -143,6 +143,10 @@ def fit_above_thresh(distr, vals, thresh=None, weights=None):
     else:
         w = numpy.ones_like(vals)
 
+    if len(w) == 0:
+        # Nothing is above threshold - return empty arrays
+        return numpy.array([]), numpy.array([])
+
     alpha = fitalpha_dict[distr](vals, thresh, w)
     return alpha, fitstd_dict[distr](w, alpha)
 
