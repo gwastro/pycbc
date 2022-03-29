@@ -31,8 +31,8 @@ http://pycbc.org/pycbc/latest/html/workflow.html
 from __future__ import print_function
 import os
 import shutil
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
+from urllib.request import pathname2url
+from urllib.parse import urljoin
 from ligo import segments
 from ligo.lw import ligolw, lsctables, utils
 from pycbc.workflow.core import File, FileList, resolve_url_to_file

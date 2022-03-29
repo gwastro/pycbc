@@ -22,19 +22,15 @@
 # =============================================================================
 #
 
-"""Base classes for models with data.
+"""Base classes for mofdels with data.
 """
 
 import numpy
 from abc import (ABCMeta, abstractmethod)
-
-from six import add_metaclass
-
 from .base import BaseModel
 
 
-@add_metaclass(ABCMeta)
-class BaseDataModel(BaseModel):
+class BaseDataModel(BaseModel, metaclass=ABCMeta):
     r"""Base class for models that require data and a waveform generator.
 
     This adds propeties for the log of the likelihood that the data contain
@@ -68,6 +64,7 @@ class BaseDataModel(BaseModel):
 
     See ``BaseModel`` for additional attributes and properties.
     """
+
     def __init__(self, variable_params, data, recalibration=None, gates=None,
                  injection_file=None, no_save_data=False, **kwargs):
         self._data = None

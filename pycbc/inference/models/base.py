@@ -28,8 +28,7 @@
 import numpy
 import logging
 from abc import (ABCMeta, abstractmethod)
-from six.moves.configparser import NoSectionError
-from six import add_metaclass
+from configparser import NoSectionError
 from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 
@@ -286,8 +285,7 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
-@add_metaclass(ABCMeta)
-class BaseModel(object):
+class BaseModel(metaclass=ABCMeta):
     r"""Base class for all models.
 
     Given some model :math:`h` with parameters :math:`\Theta`, Bayes Theorem

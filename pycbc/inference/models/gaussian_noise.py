@@ -19,7 +19,6 @@
 import logging
 import shlex
 from abc import ABCMeta
-from six import add_metaclass
 import numpy
 
 from pycbc import filter as pyfilter
@@ -38,8 +37,7 @@ from .data_utils import (data_opts_from_config, data_from_cli,
                          fd_data_from_strain_dict, gate_overwhitened_data)
 
 
-@add_metaclass(ABCMeta)
-class BaseGaussianNoise(BaseDataModel):
+class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
     r"""Model for analyzing GW data with assuming a wide-sense stationary
     Gaussian noise model.
 

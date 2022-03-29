@@ -27,8 +27,7 @@ from __future__ import (absolute_import, division)
 import logging
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 
-from six import add_metaclass
-from six.moves import configparser as ConfigParser
+import configparser as ConfigParser
 
 import numpy
 
@@ -154,8 +153,7 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
 #
 
 
-@add_metaclass(ABCMeta)
-class BaseMCMC(object):
+class BaseMCMC(object, metaclass=ABCMeta):
     """Abstract base class that provides methods common to MCMCs.
 
     This is not a sampler class itself. Sampler classes can inherit from this
