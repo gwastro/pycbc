@@ -130,7 +130,7 @@ for tnum in template_ids:
 =======
 logging.info('Opening trigger file: %s', trigger_file)
 trigf = io.HFile(trigger_file, 'r')
-ifo = trigf.keys()[0]
+ifo = list(trigf.keys())[0]
 
 # Set up to only load triggers from the templates of interest
 
@@ -153,7 +153,7 @@ if args.randomize_template_order:
 else:
     template_ids = range(tmin, tmax)
 from pycbc.io.hdf import ReadByTemplate
-trigs = ReadByTemplate(args.trigger_files,
+trigs = ReadByTemplate(trigger_file,
                        args.template_bank,
                        args.segment_name,
                        args.veto_files,
