@@ -15,8 +15,6 @@
 
 """Jump proposals that use a bounded normal distribution."""
 
-
-
 from epsie import proposals as epsie_proposals
 
 from .normal import (epsie_from_config, epsie_adaptive_from_config)

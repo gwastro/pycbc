@@ -14,8 +14,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """Provides custom jump proposals for samplers."""
 
-
-
 from .normal import (EpsieNormal, EpsieAdaptiveNormal, EpsieATAdaptiveNormal)
 from .bounded_normal import (EpsieBoundedNormal, EpsieAdaptiveBoundedNormal,
                              EpsieATAdaptiveBoundedNormal)

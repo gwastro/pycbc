@@ -26,8 +26,6 @@ This modules provides classes and functions for using the dynesty sampler
 packages for parameter estimation.
 """
 
-
-
 import logging
 import time
 import numpy
