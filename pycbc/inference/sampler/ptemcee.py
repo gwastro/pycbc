@@ -19,7 +19,6 @@ This modules provides classes and functions for using the emcee_pt sampler
 packages for parameter estimation.
 """
 
-from __future__ import absolute_import
 
 import shlex
 import numpy

@@ -23,7 +23,6 @@
 #
 """Provides constructor classes and convenience functions for MCMC samplers."""
 
-from __future__ import (absolute_import, division)
 import logging
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 

@@ -16,7 +16,6 @@
 """Jump proposals that use a bounded normal distribution."""
 
 
-from __future__ import absolute_import
 
 from epsie import proposals as epsie_proposals
 
