@@ -32,6 +32,7 @@ import os
 import shutil
 from urllib.request import pathname2url
 from urllib.parse import urljoin
+import numpy as np
 from ligo import segments
 from ligo.lw import ligolw, lsctables, utils
 from pycbc.workflow.core import File, FileList, resolve_url_to_file
@@ -333,7 +334,6 @@ def get_sky_grid_scale(
         # bound, hence use (2 * containment - 1)
         if upscale:
             from scipy.stats import rayleigh
-            scale = rayleigh.interval(2 * containment - 1)[-1]
+            return sky_error * rayleigh.interval(2 * containment - 1)[-1]
         else:
-            scale = 1.0
-        return scale * sky_error
+            return sky_error
