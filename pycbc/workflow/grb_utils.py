@@ -33,6 +33,7 @@ import shutil
 from urllib.request import pathname2url
 from urllib.parse import urljoin
 import numpy as np
+from scipy.stats import rayleigh
 from ligo import segments
 from ligo.lw import ligolw, lsctables, utils
 from pycbc.workflow.core import File, FileList, resolve_url_to_file
@@ -326,14 +327,13 @@ def get_sky_grid_scale(
         s2 = np.sqrt(sky_error**2 + tail_sigma**2)
         part1 = core_frac * (1 - np.exp(-0.5 * (r / s1)**2))
         part2 = tail_frac * (1 - np.exp(-0.5 * (r / s2)**2))
-        return r[(np.abs(part1 + part2 - containment)).argmin()]
+        out = r[(np.abs(part1 + part2 - containment)).argmin()]
     else:
         # Use Rayleigh distribution to go from 1 sigma containment to
         # containment given by function variable. Interval method returns
         # bounds of equal probability about the median, but we want 1-sided
         # bound, hence use (2 * containment - 1)
+        out = sky_error
         if upscale:
-            from scipy.stats import rayleigh
-            return sky_error * rayleigh.interval(2 * containment - 1)[-1]
-        else:
-            return sky_error
+            out *= rayleigh.interval(2 * containment - 1)[-1]
+    return out
