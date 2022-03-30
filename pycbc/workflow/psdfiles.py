@@ -31,7 +31,7 @@ workflows.
 
 from __future__ import division
 import logging
-from six.moves import configparser as ConfigParser
+import configparser as ConfigParser
 from pycbc.workflow.core import FileList
 from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
 

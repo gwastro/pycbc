@@ -32,7 +32,7 @@ from __future__ import division
 
 import os
 import logging
-from six.moves import configparser as ConfigParser
+import configparser as ConfigParser
 import pycbc
 from pycbc.workflow.core import FileList
 from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file

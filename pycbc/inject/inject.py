@@ -30,7 +30,6 @@ import numpy as np
 import lal
 import copy
 import logging
-from six import add_metaclass
 from abc import ABCMeta, abstractmethod
 import lalsimulation as sim
 import h5py
@@ -333,8 +332,7 @@ class _XMLInjectionSet(object):
 # -----------------------------------------------------------------------------
 
 
-@add_metaclass(ABCMeta)
-class _HDFInjectionSet(object):
+class _HDFInjectionSet(metaclass=ABCMeta):
     """Manages sets of injections: reads injections from hdf files
     and injects them into time series.
 
@@ -356,6 +354,7 @@ class _HDFInjectionSet(object):
         Parameter names that must exist in the injection HDF file in order to
         create an injection of that type.
     """
+
     _tableclass = pycbc.io.FieldArray
     injtype = None
     required_params = ()

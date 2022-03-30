@@ -28,7 +28,6 @@ import os
 import logging
 
 from abc import (ABCMeta, abstractmethod)
-from six import add_metaclass
 
 from . import waveform
 from .waveform import (FailedWaveformError)
@@ -492,8 +491,7 @@ class TDomainSupernovaeGenerator(BaseGenerator):
 #
 
 
-@add_metaclass(ABCMeta)
-class BaseFDomainDetFrameGenerator(object):
+class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
     """Base generator for frquency-domain waveforms in a detector frame.
 
     Parameters
