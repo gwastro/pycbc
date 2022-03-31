@@ -70,19 +70,25 @@ class DynestySampler(BaseSampler):
                  checkpoint_time_interval=None, maxcall=None,
                  loglikelihood_function=None, use_mpi=False,
                  no_save_state=False,
-                 run_kwds=None, **kwargs):
+                 run_kwds=None,
+                 extra_kwds=None,
+                 internal_kwds=None,
+                 **kwargs):
 
         self.model = model
         self.no_save_state = no_save_state
         log_likelihood_call, prior_call = setup_calls(
             model,
-            loglikelihood_function=loglikelihood_function)
+            loglikelihood_function=loglikelihood_function,
+            copy_prior=True)
         # Set up the pool
         self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
 
         self.maxcall = maxcall
         self.checkpoint_time_interval = checkpoint_time_interval
         self.run_kwds = {} if run_kwds is None else run_kwds
+        self.extra_kwds = {} if extra_kwds is None else extra_kwds
+        self.internal_kwds = {} if internal_kwds is None else internal_kwds
         self.nlive = nlive
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
@@ -122,11 +128,11 @@ class DynestySampler(BaseSampler):
         if len(reflective) == 0:
             reflective = None
 
-        if 'sample' in kwargs:
-            if 'rwalk2' in kwargs['sample']:
+        if 'sample' in extra_kwds:
+            if 'rwalk2' in extra_kwds['sample']:
                 dynesty.dynesty._SAMPLING["rwalk"] = sample_rwalk_mod
                 dynesty.nestedsamplers._SAMPLING["rwalk"] = sample_rwalk_mod
-                kwargs['sample'] = 'rwalk'
+                extra_kwds['sample'] = 'rwalk'
 
         if self.nlive < 0:
             # Interpret a negative input value for the number of live points
@@ -137,7 +143,7 @@ class DynestySampler(BaseSampler):
                                                          pool=self.pool,
                                                          reflective=reflective,
                                                          periodic=periodic,
-                                                         **kwargs)
+                                                         **extra_kwds)
             self.run_with_checkpoint = False
             logging.info("Checkpointing not currently supported with"
                          "DYNAMIC nested sampler")
@@ -147,7 +153,8 @@ class DynestySampler(BaseSampler):
                                                   nlive=self.nlive,
                                                   reflective=reflective,
                                                   periodic=periodic,
-                                                  pool=self.pool, **kwargs)
+                                                  pool=self.pool, **extra_kwds)
+        self._sampler.kwargs.update(internal_kwds)
 
         # properties of the internal sampler which should not be pickled
         self.no_pickle = ['loglikelihood',
@@ -293,14 +300,24 @@ class DynestySampler(BaseSampler):
                  'first_update_min_ncall': int,
                  'first_update_min_eff': float,
                  'walks': int,
+                 }
+
+        # optional arguments that must be set internally
+        internal_args = {
                  'maxmcmc': int,
                  'nact': int,
                  }
+
         extra = {}
         run_extra = {}
-        for karg in cargs:
-            if cp.has_option(section, karg):
-                extra[karg] = cargs[karg](cp.get(section, karg))
+        internal_extra = {}
+        for args, argt in [(extra, cargs),
+                           (run_extra, rargs),
+                           (internal_extra, internal_args),
+                          ]:
+            for karg in argt:
+                if cp.has_option(section, karg):
+                    args[karg] = argt[karg](cp.get(section, karg))
 
         #This arg needs to be a dict
         first_update = {}
@@ -313,14 +330,12 @@ class DynestySampler(BaseSampler):
             logging.info('First update: min_eff:%s', first_update['min_eff'])
         extra['first_update'] = first_update
 
-        for karg in rargs:
-            if cp.has_option(section, karg):
-                run_extra[karg] = rargs[karg](cp.get(section, karg))
-
         obj = cls(model, nlive=nlive, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
                   no_save_state=no_save_state,
-                  use_mpi=use_mpi, run_kwds=run_extra, **extra)
+                  use_mpi=use_mpi, run_kwds=run_extra, 
+                  extra_kwds=extra,
+                  internal_kwds=internal_extra,)
         setup_output(obj, output_file, check_nsamples=False)
 
         if not obj.new_checkpoint:
@@ -464,13 +479,18 @@ def sample_rwalk_mod(args):
     try:
         # dynesty <= 1.1
         from dynesty.utils import unitcheck, reflect
-    except:
+
+        # Unzipping.
+        (u, loglstar, axes, scale,
+        prior_transform, loglikelihood, kwargs) = args
+        
+    except ImportError:
         # dynest >= 1.2
         from dynesty.utils import unitcheck, apply_reflect as reflect
 
-    # Unzipping.
-    (u, loglstar, axes, scale,
-     prior_transform, loglikelihood, kwargs) = args
+        (u, loglstar, axes, scale,
+        prior_transform, loglikelihood, _, kwargs) = args
+
     rstate = numpy.random
 
     # Bounds
@@ -495,7 +515,9 @@ def sample_rwalk_mod(args):
     logl_list = []
 
     ii = 0
+    print("SAMPLING", u)
     while ii < nact * act:
+        print(ii, nact * act, act, nact, accept, reject, nfail)
         ii += 1
 
         # Propose a direction on the unit n-sphere.
@@ -517,6 +539,11 @@ def sample_rwalk_mod(args):
             u_prop[reflective] = reflect(u_prop[reflective])
 
         # Check unit cube constraints.
+        print(scale, axes, u, du, u_prop, u_prop.min(), u_prop.max())
+        #if u_prop.max() < 0:
+        #    exit()
+        if u.max() < 0:
+            break
         if unitcheck(u_prop, nonbounded):
             pass
         else:
@@ -578,6 +605,7 @@ def sample_rwalk_mod(args):
     kwargs["old_act"] = act
 
     ncall = accept + reject
+    print(ncall)
     return u, v, logl, ncall, blob
 
 
