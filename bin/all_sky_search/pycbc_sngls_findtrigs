@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import argparse, logging, numpy as np
+import argparse, logging, h5py, numpy as np
 from ligo.segments import infinity
 from numpy.random import seed, shuffle
 from pycbc.events import veto, coinc, stat
@@ -94,17 +94,11 @@ trigs = ReadByTemplate(trigger_file,
                        args.gating_veto_windows)
 logging.info("%d triggers in file", trigf[ifo + '/snr'].size)
 
-data_init = {}
-#FIXME - this feels like it should be easier to define
-all_dsets = ['sigmasq', 'chisq', 'chisq_dof', 'coa_phase', 'end_time',
-             'snr', 'template_id', 'sg_chisq', 'psd_var_val']
-
-for ds in all_dsets:
-    data_init[ds] = []
-data_init['trigger_id'] = []
-
-trigs_out = io.DictArray(data=data_init)
 stat_all = []
+trigger_ids_all = []
+template_ids_all = []
+trigger_times_all = []
+
 
 rank_method = stat.get_statistic_from_opts(args, [ifo])
 
@@ -113,18 +107,7 @@ for tnum in template_ids:
     tids_full = trigs.set_template(tnum)
     logging.info("%d triggers in this template", len(tids_full))
 
-    t_data_init = {}
-    for ds in all_dsets:
-        if not ds == "template_id":
-            t_data_init[ds] = trigs[ds]
-    t_data_init['template_id'] = np.repeat(tnum, len(tids_full))
-    t_data_init['trigger_id'] = tids_full
-
-    logging.info("Putting data into DictArray")
-    t_trigs = io.DictArray(data=t_data_init)
-
-    snr = t_trigs.data['snr']
-    n_tot_trigs = len(snr)
+    n_tot_trigs = tids_full.size
     if not n_tot_trigs: continue
 
     logging.info('Setting up ranking method')
@@ -140,25 +123,30 @@ for tnum in template_ids:
                       "Received {}".format(args.statistic_keywords)
             raise ValueError(err_txt)
 
-
+    sds = rank_method.single(trigs)
     logging.info("Calculating single-detector statistic")
-    stat_t = rank_method.rank_stat_single((ifo, t_trigs.data),
+    stat_t = rank_method.rank_stat_single((ifo, sds),
                                           **extra_kwargs)
+    trigger_times = sds['end_time']
     if args.cluster_window:
         logging.info("Clustering")
-        cid = coinc.cluster_over_time(stat_t, t_trigs.data['end_time'],
+        cid = coinc.cluster_over_time(stat_t, trigger_times,
                                       args.cluster_window)
-        t_trigs = t_trigs.select(cid)
         stat_t = stat_t[cid]
-    trigs_out += t_trigs
+        tids_full = tids_full[cid]
+        trigger_times = trigger_times[cid]
+
+    trigger_ids_all += list(tids_full)
+    template_ids_all += list(tnum * np.ones_like(tids_full))
+    trigger_times_all += list(trigger_times)
     stat_all += list(stat_t)
 
 data = {"stat": stat_all,
         "decimation_factor": np.ones_like(stat_all),
         "timeslide_id": np.zeros_like(stat_all),
-        "template_id": trigs_out.data['template_id'],
-        "%s/time" % ifo : trigs_out.data['end_time'],
-        "%s/trigger_id" % ifo: trigs_out.data['trigger_id']}
+        "template_id": template_ids_all,
+        "%s/time" % ifo : trigger_times_all,
+        "%s/trigger_id" % ifo: trigger_ids_all}
 
 logging.info("saving triggers")
 f = io.HFile(args.output_file, 'w')

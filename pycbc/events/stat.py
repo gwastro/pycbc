@@ -1010,11 +1010,10 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        sngl_rnk = self.single(single_info[1])
         if self.single_increasing:
-            sngl_multiifo = sngl_rnk['snglstat']
+            sngl_multiifo = single_info[1]['snglstat']
         else:
-            sngl_multiifo = -1.0 * sngl_rnk['snglstat']
+            sngl_multiifo = -1.0 * single_info[1]['snglstat']
         return sngl_multiifo
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
@@ -1465,7 +1464,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         numpy.ndarray
             The array of single detector statistics
         """
-        sngls = self.single(single_info[1])
+        sngls = single_info[1]
 
         ln_noise_rate = sngls['snglstat']
         ln_noise_rate -= self.benchmark_lograte
