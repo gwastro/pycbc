@@ -515,9 +515,7 @@ def sample_rwalk_mod(args):
     logl_list = []
 
     ii = 0
-    print("SAMPLING", u)
     while ii < nact * act:
-        print(ii, nact * act, act, nact, accept, reject, nfail)
         ii += 1
 
         # Propose a direction on the unit n-sphere.
@@ -539,9 +537,6 @@ def sample_rwalk_mod(args):
             u_prop[reflective] = reflect(u_prop[reflective])
 
         # Check unit cube constraints.
-        print(scale, axes, u, du, u_prop, u_prop.min(), u_prop.max())
-        #if u_prop.max() < 0:
-        #    exit()
         if u.max() < 0:
             break
         if unitcheck(u_prop, nonbounded):
@@ -605,7 +600,6 @@ def sample_rwalk_mod(args):
     kwargs["old_act"] = act
 
     ncall = accept + reject
-    print(ncall)
     return u, v, logl, ncall, blob
 
 
