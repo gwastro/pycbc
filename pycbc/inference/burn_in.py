@@ -26,7 +26,6 @@ This modules provides classes and functions for determining when Markov Chains
 have burned in.
 """
 
-from __future__ import division
 
 import logging
 from abc import ABCMeta, abstractmethod

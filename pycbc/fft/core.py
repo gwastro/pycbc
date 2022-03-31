@@ -25,7 +25,6 @@
 This package provides a front-end to various fast Fourier transform
 implementations within PyCBC.
 """
-from __future__ import division
 from pycbc.types import Array as _Array
 from pycbc.types import TimeSeries as _TimeSeries
 from pycbc.types import FrequencySeries as _FrequencySeries

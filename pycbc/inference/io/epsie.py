@@ -16,7 +16,6 @@
 """This module provides IO classes for epsie samplers.
 """
 
-from __future__ import (absolute_import, division)
 
 import numpy
 from pickle import UnpicklingError

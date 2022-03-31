@@ -23,7 +23,6 @@ translation between points in the chirp parameters parameter space is done
 in a workflow.
 """
 
-from __future__ import division
 import os
 import copy
 import argparse

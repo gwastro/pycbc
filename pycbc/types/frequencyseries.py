@@ -17,7 +17,6 @@
 """
 Provides a class representing a frequency series.
 """
-from __future__ import division
 import os as _os, h5py
 from pycbc.types.array import Array, _convert, zeros, _noreal
 import lal as _lal

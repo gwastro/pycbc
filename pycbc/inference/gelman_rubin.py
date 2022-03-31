@@ -16,7 +16,6 @@
 diagnostic statistic.
 """
 
-from __future__ import division
 import numpy
 
 

@@ -25,7 +25,6 @@
 """This module contains the CPU-specific code for
    convenience utilities for manipulating waveforms
 """
-from __future__ import absolute_import
 from pycbc.types import FrequencySeries
 import numpy
 

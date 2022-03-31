@@ -17,7 +17,6 @@
 This modules provides a list of implemented samplers for parameter estimation.
 """
 
-from __future__ import absolute_import
 # pylint: disable=unused-import
 from .base import (initial_dist_from_config, create_new_output_file)
 from .multinest import MultinestSampler
