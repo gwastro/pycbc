@@ -86,6 +86,9 @@ class LiveEventManager(object):
 
         self.run_snr_optimization = run_snr_optimization
 
+        # Keep track of which events have been uploaded
+        self.last_ten_coinc_events_uploaded = []
+
         if self.run_snr_optimization and self.rank == 0:
             # preestimate the number of CPU cores that we can afford giving to
             # followup processes without slowing down the main search
@@ -267,6 +270,10 @@ class LiveEventManager(object):
                                    testing=self.gracedb_testing,
                                    extra_strings=[comment],
                                    search=args.gracedb_search)
+                self.last_ten_coinc_events_uploaded.append(event.merger_time)
+                if len(self.last_ten_coinc_events_uploaded) > 10:
+                    self.last_ten_coinc_events_uploaded = \
+                        self.last_ten_coinc_events_uploaded[-10:]
             else:
                 gid = None
                 event.save(fname)
@@ -404,6 +411,11 @@ class LiveEventManager(object):
                        'FAR is based on {0} only.<br />'
                        'Followup detectors: {1}')
             comment = comment.format(ifo, ppdets(followup_ifos))
+
+            # Has a coinc event at this time been uploaded recently?
+            # If so, skip
+            if event.merger_time in self.last_ten_coinc_events_uploaded:
+                continue
 
             if args.enable_single_detector_upload \
                     and self.ifar_upload_threshold < ifar:
