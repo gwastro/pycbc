@@ -23,23 +23,16 @@
 #
 """Provides constructor classes and convenience functions for MCMC samplers."""
 
-from __future__ import (absolute_import, division)
-
-import os
-import signal
 import logging
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 
-from six import (add_metaclass, string_types)
-from six.moves import configparser as ConfigParser
+import configparser as ConfigParser
 
 import numpy
 
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import (validate_checkpoint_files, loadfile)
 from pycbc.inference.io.base_mcmc import nsamples_in_chain
-
-from .base import setup_output
 from .base import initial_dist_from_config
 
 #
@@ -159,8 +152,7 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
 #
 
 
-@add_metaclass(ABCMeta)
-class BaseMCMC(object):
+class BaseMCMC(object, metaclass=ABCMeta):
     """Abstract base class that provides methods common to MCMCs.
 
     This is not a sampler class itself. Sampler classes can inherit from this
@@ -192,26 +184,6 @@ class BaseMCMC(object):
     * compute_acl(filename, \**kwargs)
         [`classmethod`] Should compute the autocorrelation length using
         the given filename. Also allows for other keyword arguments.
-
-    Attributes
-    ----------
-    p0
-    pos
-    nchains
-    niterations
-    checkpoint_interval
-    checkpoint_signal
-    target_niterations
-    target_eff_nsamples
-    thin_interval
-    max_samples_per_chain
-    thin_safety_factor
-    burn_in
-    effective_nsamples
-    acl
-    raw_acls
-    act
-    raw_acts
     """
     _lastclear = None  # the iteration when samples were cleared from memory
     _itercounter = None  # the number of iterations since the last clear
@@ -460,7 +432,8 @@ class BaseMCMC(object):
             init_prior = None
         else:
             start_file = None
-            init_prior = initial_dist_from_config(cp, self.variable_params)
+            init_prior = initial_dist_from_config(
+                cp, self.variable_params, self.static_params)
         self.set_p0(samples_file=start_file, prior=init_prior)
 
     def resume_from_checkpoint(self):
@@ -900,7 +873,7 @@ def ensemble_compute_acf(filename, start_index=None, end_index=None,
     with loadfile(filename, 'r') as fp:
         if parameters is None:
             parameters = fp.variable_params
-        if isinstance(parameters, string_types):
+        if isinstance(parameters, str):
             parameters = [parameters]
         for param in parameters:
             if per_walker:

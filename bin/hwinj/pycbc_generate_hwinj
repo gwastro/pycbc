@@ -17,10 +17,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-from glue.ligolw import ilwd
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils
 import logging
 import numpy
 import pycbc
@@ -42,8 +41,7 @@ import sys
 
 def _empty_row(obj):
     """Create an empty sim_inspiral or sngl_inspiral row where the columns have
-    default values of 0.0 for a float, 0 for an int, '' for a string. The ilwd
-    columns have a default where the index is 0.
+    default values of 0.0 for a float, 0 for an int, '' for a string. 
     """
 
     # check if sim_inspiral or sngl_inspiral
@@ -63,11 +61,11 @@ def _empty_row(obj):
         elif cols[entry] == 'lstring':
             setattr(row,entry,'')
         elif entry == 'process_id':
-            row.process_id = ilwd.ilwdchar("sim_inspiral:process_id:0")
+            row.process_id = 0
         elif entry == 'simulation_id':
-            row.simulation_id = ilwd.ilwdchar("sim_inspiral:simulation_id:0")
+            row.simulation_id = 0
         elif entry == 'event_id':
-            row.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
+            row.event_id = 0
         else:
             raise ValueError("Column %s not recognized." %(entry) )
 
@@ -278,7 +276,7 @@ opts_dict = convert_to_process_params_dict(opts)
 # create process table
 proc_id = utils.process.register_to_xmldoc(
                     outdoc, sys.argv[0], opts_dict,
-                    comment="", ifos=[''.join(opts.instruments)],
+                    comment="", instruments=[''.join(opts.instruments)],
                     version=pycbc.version.git_hash,
                     cvs_repository='pycbc/'+pycbc.version.git_branch,
                     cvs_entry_time=pycbc.version.date).process_id

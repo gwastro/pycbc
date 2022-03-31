@@ -12,7 +12,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-from __future__ import division
 
 import sys, h5py
 import argparse, logging
@@ -21,7 +20,7 @@ import copy, numpy as np
 
 from pycbc import io, events
 from pycbc.events import triggers, trigger_fits as trstats
-from pycbc.events import ranking
+from pycbc.events import stat as statsmod
 from pycbc.types.optparse import MultiDetOptionAction
 import pycbc.version
 
@@ -42,7 +41,10 @@ def get_stat(statname, trigs, threshold):
         # read and format chunk of data so it can be read by key
         # as the stat classes expect.
         chunk = {k: trigs[k][s:e] for k in trigs if len(trigs[k]) == size}
-        chunk_stat = ranking.get_sngls_ranking_from_trigs(chunk, statname)
+        
+        rank_method = statsmod.get_statistic_from_opts(args, [args.ifo])
+        chunk_stat = rank_method.get_sngl_ranking(chunk)
+
         above = chunk_stat >= threshold
         stat.append(chunk_stat[above])
         select.append(above)
@@ -88,9 +90,6 @@ parser.add_argument("--ifo", required=True,
 parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
-parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=ranking.sngls_ranking_function_dict.keys(),
-                    help="Function of SNR and chisq to perform fits with")
 parser.add_argument("--stat-threshold", type=float,
                     help="Only fit triggers with statistic value above this "
                     "threshold.  Required.  Typically 6-6.5")
@@ -121,6 +120,8 @@ parser.add_argument("--min-duration", default=0.,
 parser.add_argument("--approximant", default="SEOBNRv4",
                     help="Approximant for template duration. Default SEOBNRv4")
 
+statsmod.insert_statistic_option_group(parser,
+    default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 
 args.veto_segment_name = sum(args.veto_segment_name, [])
@@ -169,8 +170,8 @@ count_in_template = count_in_template_hashorder[tid_sort]
 
 # get the stat values
 logging.info('Calculating stat values')
-abovethresh, stat = get_stat(args.sngl_stat, trigf[args.ifo],
-                                 args.stat_threshold)
+abovethresh, stat = get_stat(args, trigf[args.ifo], args.stat_threshold)
+
 tid = trigf[args.ifo + '/template_id'][abovethresh]
 time = trigf[args.ifo + '/end_time'][abovethresh]
 if args.save_trig_param:
@@ -366,7 +367,7 @@ outfile.create_dataset("median_sigma", data=median_sigma)
 # add some metadata
 outfile.attrs.create("ifo", data=args.ifo.encode())
 outfile.attrs.create("fit_function", data=args.fit_function.encode())
-outfile.attrs.create("sngl_stat", data=args.sngl_stat.encode())
+outfile.attrs.create("sngl_stat", data=args.sngl_ranking)
 if args.save_trig_param:
     outfile.attrs.create("save_trig_param", data=args.save_trig_param.encode())
 outfile.attrs.create("stat_threshold", data=args.stat_threshold)

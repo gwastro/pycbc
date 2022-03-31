@@ -28,9 +28,6 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
-
-from __future__ import division
-
 import os
 import logging
 from pycbc.workflow.core import FileList, make_analysis_dir

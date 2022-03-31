@@ -1,18 +1,13 @@
-#!/usr/bin/env /usr/bin/python
+#!/usr/bin/env python
 
 # Copyright (C) 2014 Andrew Lundgren
-import sys
 import argparse
-from six.moves import range
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import ligolw, lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import lsctables
 from itertools import cycle
 import pycbc.version
+from pycbc.io.ligolw import LIGOLWContentHandler
 
-
-# The following is required for reasons
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 # Parse command line
 parser = argparse.ArgumentParser()
@@ -33,12 +28,9 @@ args = parser.parse_args()
 if args.output_files and args.output_dir:
     parser.error("Provide only one of --output-dir or --output-files")
 
-# The XML reading will hang if you forget this line
-lsctables.use_in(LIGOLWContentHandler)
-
 # Read in input file
-xmldoc = ligolw_utils.load_filename\
-    (args.input_file, verbose=True, contenthandler=LIGOLWContentHandler)
+xmldoc = ligolw_utils.load_filename(
+        args.input_file, verbose=True, contenthandler=LIGOLWContentHandler)
 tabletype = lsctables.SimInspiralTable
 allinjs = tabletype.get_table(xmldoc)
 
@@ -56,7 +48,7 @@ new_inj_tables = [lsctables.New(tabletype, columns=allinjs.columnnames) \
                   for idx in range(num_splits)]
 
 table_cycle = cycle(new_inj_tables)
-for inj in sorted(allinjs, key=lambda x: x.get_time_geocent()):
+for inj in sorted(allinjs, key=lambda x: x.time_geocent):
     next(table_cycle).append(inj)
 
 if not args.output_files:

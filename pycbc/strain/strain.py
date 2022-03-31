@@ -18,17 +18,16 @@ This modules contains functions reading, generating, and segmenting strain data
 """
 import copy
 import logging, numpy
-import pycbc.noise
 import pycbc.types
 from pycbc.types import TimeSeries, zeros
-from pycbc.types import Array, FrequencySeries, complex_same_precision_as
+from pycbc.types import Array, FrequencySeries
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
-from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
+from pycbc.filter import resample_to_delta_t, lowpass, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
 from pycbc.waveform.spa_tmplt import spa_distance
 import pycbc.psd
@@ -233,6 +232,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     elif opt.fake_strain or opt.fake_strain_from_file:
         logging.info("Generating Fake Strain")
         duration = opt.gps_end_time - opt.gps_start_time
+        duration += 2 * opt.pad_data
         pdf = 1.0 / opt.fake_strain_filter_duration
         fake_flow = opt.fake_strain_flow
         fake_rate = opt.fake_strain_sample_rate
@@ -253,7 +253,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             logging.info("Making zero-noise time series")
             strain = TimeSeries(pycbc.types.zeros(duration * fake_rate),
                                 delta_t=1.0 / fake_rate,
-                                epoch=opt.gps_start_time)
+                                epoch=opt.gps_start_time - opt.pad_data)
         else:
             logging.info("Making colored noise")
             from pycbc.noise.reproduceable import colored_noise
@@ -263,6 +263,13 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                    seed=opt.fake_strain_seed,
                                    sample_rate=fake_rate,
                                    low_frequency_cutoff=fake_flow)
+        if not strain.sample_rate_close(fake_rate):
+            err_msg = "Actual sample rate of generated data does not match "
+            err_msg += "that expected. Possible causes of this:\n"
+            err_msg += "The desired duration is not a multiple of delta_t. "
+            err_msg += "e.g. If using LISA with delta_t = 15 the duration "
+            err_msg += "must be a multiple of 15 seconds."
+            raise ValueError(err_msg)
 
     if not opt.channel_name and (opt.injection_file \
                                  or opt.sgburst_injection_file):
@@ -323,7 +330,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         gate_params = numpy.loadtxt(opt.gating_file)
         if len(gate_params.shape) == 1:
             gate_params = [gate_params]
-        strain = gate_data(strain, gate_params)
+        for gate_time, gate_window, gate_taper in gate_params:
+            strain = strain.gate(gate_time, window=gate_window,
+                                 method=opt.gating_method,
+                                 copy=False,
+                                 taper_width=gate_taper)
         gating_info['file'] = \
                 [gp for gp in gate_params \
                  if (gp[0] + gp[1] + gp[2] >= strain.start_time) \
@@ -340,7 +351,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             gate_params = [[gt, opt.autogating_width, opt.autogating_taper]
                            for gt in glitch_times]
             gating_info['auto'] += gate_params
-            strain = gate_data(strain, gate_params)
+            for gate_time, gate_window, gate_taper in gate_params:
+                strain = strain.gate(gate_time, window=gate_window,
+                                     method=opt.gating_method,
+                                     copy=False,
+                                     taper_width=gate_taper)
             if len(glitch_times) > 0:
                 logging.info('Autogating at %s',
                              ', '.join(['%.3f' % gt
@@ -351,6 +366,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if opt.strain_high_pass:
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
+
+    if opt.strain_low_pass:
+        logging.info("Lowpass Filtering")
+        strain = lowpass(strain, frequency=opt.strain_low_pass)
 
     if hasattr(opt, 'witness_frame_type') and opt.witness_frame_type:
         stilde = strain.to_frequencyseries()
@@ -450,18 +469,20 @@ def insert_strain_option_group(parser, gps_times=True):
                                      "(integer seconds)", type=int)
         data_reading_group.add_argument("--gps-end-time",
                                 help="The gps end time of the data "
-                                     " (integer seconds)", type=int)
+                                     "(integer seconds)", type=int)
 
     data_reading_group.add_argument("--strain-high-pass", type=float,
-                            help="High pass frequency")
+              help="High pass frequency")
+    data_reading_group.add_argument("--strain-low-pass", type=float,
+              help="Low pass frequency")
     data_reading_group.add_argument("--pad-data", default=8,
               help="Extra padding to remove highpass corruption "
-                   "(integer seconds)", type=int)
+                   "(integer seconds, default 8)", type=int)
     data_reading_group.add_argument("--taper-data",
               help="Taper ends of data to zero using the supplied length as a "
                    "window (integer seconds)", type=int, default=0)
-    data_reading_group.add_argument("--sample-rate", type=int,
-                            help="The sample rate to use for h(t) generation (integer Hz).")
+    data_reading_group.add_argument("--sample-rate", type=float,
+              help="The sample rate to use for h(t) generation (integer Hz)")
     data_reading_group.add_argument("--channel-name", type=str,
                    help="The channel containing the gravitational strain data")
 
@@ -490,7 +511,7 @@ def insert_strain_option_group(parser, gps_times=True):
     # Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
                 help="Name of model PSD for generating fake gaussian noise.",
-                     choices=pycbc.psd.get_lalsim_psd_list() + ['zeroNoise'])
+                choices=pycbc.psd.get_lalsim_psd_list() + ['zeroNoise'])
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
@@ -508,29 +529,32 @@ def insert_strain_option_group(parser, gps_times=True):
 
     # Injection options
     data_reading_group.add_argument("--injection-file", type=str,
-                      help="(optional) Injection file used to add "
-                           "waveforms into the strain")
+                      help="(optional) Injection file containing parameters"
+                           " of CBC signals to be added to the strain")
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
-                      help="(optional) Injection file used to add "
-                      "sine-Gaussian burst waveforms into the strain")
+                      help="(optional) Injection file containing parameters"
+                      "of sine-Gaussian burst signals to add to the strain")
     data_reading_group.add_argument("--injection-scale-factor", type=float,
-                    default=1, help="Divide injections by this factor "
-                    "before injecting into the data.")
+                      default=1,
+                      help="Divide injections by this factor "
+                           "before adding to the strain data")
     data_reading_group.add_argument("--injection-sample-rate", type=float,
-                    help="Sample rate for injections")
-    data_reading_group.add_argument('--injection-f-ref', type=float,
-                                    help='Reference frequency in Hz for '
-                                         'creating CBC injections from an XML '
-                                         'file.')
-    data_reading_group.add_argument('--injection-f-final', type=float,
-                                    help='Override the f_final field of a CBC '
-                                         'XML injection file.')
+                      help="Sample rate to use for injections (integer Hz). "
+                           "Typically similar to the strain data sample rate."
+                           "If not provided, the strain sample rate will be "
+                           "used")
+    data_reading_group.add_argument("--injection-f-ref", type=float,
+                      help="Reference frequency in Hz for creating CBC "
+                           "injections from an XML file")
+    data_reading_group.add_argument("--injection-f-final", type=float,
+                      help="Override the f_final field of a CBC XML "
+                           "injection file (frequency in Hz)")
 
     # Gating options
     data_reading_group.add_argument("--gating-file", type=str,
                     help="(optional) Text file of gating segments to apply."
-                        " Format of each line is (all times in secs):"
-                        "  gps_time zeros_half_width pad_half_width")
+                         " Format of each line is (all values in seconds):"
+                         "  gps_time zeros_half_width pad_half_width")
     data_reading_group.add_argument('--autogating-threshold', type=float,
                                     metavar='SIGMA',
                                     help='If given, find and gate glitches '
@@ -558,6 +582,11 @@ def insert_strain_option_group(parser, gps_times=True):
                                     help='Ignore the given length of whitened '
                                          'strain at the ends of a segment, to '
                                          'avoid filters ringing.')
+    data_reading_group.add_argument('--gating-method', type=str,
+                                    default='taper',
+                                    help='Choose the method for gating. '
+                                         'Default: `taper`',
+                                    choices=['hard', 'taper', 'paint'])
     # Optional
     data_reading_group.add_argument("--normalize-strain", type=float,
                     help="(optional) Divide frame data by constant.")
@@ -624,17 +653,22 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             action=MultiDetOptionAction,
                             type=float, metavar='IFO:FREQUENCY',
                             help="High pass frequency")
+    data_reading_group_multi.add_argument("--strain-low-pass", nargs='+',
+                            action=MultiDetOptionAction,
+                            type=float, metavar='IFO:FREQUENCY',
+                            help="Low pass frequency")
     data_reading_group_multi.add_argument("--pad-data", nargs='+', default=8,
                             action=MultiDetOptionAction,
                             type=int, metavar='IFO:LENGTH',
                             help="Extra padding to remove highpass corruption "
-                                "(integer seconds)")
+                                "(integer seconds, default 8)")
     data_reading_group_multi.add_argument("--taper-data", nargs='+',
                             action=MultiDetOptionAction,
                             type=int, default=0, metavar='IFO:LENGTH',
                             help="Taper ends of data to zero using the "
                                 "supplied length as a window (integer seconds)")
-    data_reading_group_multi.add_argument("--sample-rate", type=int, nargs='+',
+    data_reading_group_multi.add_argument("--sample-rate", type=float,
+                            nargs='+',
                             action=MultiDetOptionAction, metavar='IFO:RATE',
                             help="The sample rate to use for h(t) generation "
                                 " (integer Hz).")
@@ -702,34 +736,36 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
 
     # Injection options
     data_reading_group_multi.add_argument("--injection-file", type=str,
-                            nargs="+", action=MultiDetOptionAction,
-                            metavar='IFO:FILE',
-                            help="(optional) Injection file used to add "
-                            "waveforms into the strain")
+                    nargs="+", action=MultiDetOptionAction,
+                    metavar='IFO:FILE',
+                    help="(optional) Injection file containing parameters"
+                         "of CBC signals to be added to the strain")
     data_reading_group_multi.add_argument("--sgburst-injection-file", type=str,
-                      nargs="+", action=MultiDetOptionAction,
-                      metavar='IFO:FILE',
-                      help="(optional) Injection file used to add "
-                      "sine-Gaussian burst waveforms into the strain")
+                    nargs="+", action=MultiDetOptionAction,
+                    metavar='IFO:FILE',
+                    help="(optional) Injection file containing parameters"
+                         "of sine-Gaussian burst signals to add to the strain")
     data_reading_group_multi.add_argument("--injection-scale-factor",
                     type=float, nargs="+", action=MultiDetOptionAction,
                     metavar="IFO:VAL", default=1.,
-                    help="Multiple injections by this factor "
-                         "before injecting into the data.")
+                    help="Divide injections by this factor "
+                         "before adding to the strain data")
     data_reading_group_multi.add_argument("--injection-sample-rate",
                     type=float, nargs="+", action=MultiDetOptionAction,
                     metavar="IFO:VAL",
-                    help="Sample rate to generate injection with")
+                    help="Sample rate to use for injections (integer Hz). "
+                         "Typically similar to the strain data sample rate."
+                         "If not provided, the strain sample rate will be "
+                         "used")
 
-    data_reading_group_multi.add_argument('--injection-f-ref', type=float,
-                               action=MultiDetOptionAction, metavar='IFO:VALUE',
-                               help='Reference frequency in Hz for '
-                                    'creating CBC injections from an XML '
-                                    'file.')
+    data_reading_group_multi.add_argument("--injection-f-ref", type=float,
+                    action=MultiDetOptionAction, metavar='IFO:VALUE',
+                    help="Reference frequency in Hz for creating CBC "
+                         "injections from an XML file")
     data_reading_group_multi.add_argument('--injection-f-final', type=float,
-                               action=MultiDetOptionAction, metavar='IFO:VALUE',
-                               help='Override the f_final field of a CBC '
-                                    'XML injection file.')
+                    action=MultiDetOptionAction, metavar='IFO:VALUE',
+                    help="Override the f_final field of a CBC XML "
+                         "injection file (frequency in Hz)")
 
     # Gating options
     data_reading_group_multi.add_argument("--gating-file", nargs="+",
@@ -739,12 +775,11 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                            ' Format of each line (units s) :'
                            ' gps_time zeros_half_width pad_half_width')
     data_reading_group_multi.add_argument('--autogating-threshold', type=float,
-                                    nargs="+", action=MultiDetOptionAction,
-                                    metavar='IFO:SIGMA',
-                                    help='If given, find and gate glitches '
-                                         'producing a deviation larger than '
-                                         'SIGMA in the whitened strain time '
-                                         'series.')
+                      nargs="+", action=MultiDetOptionAction,
+                      metavar='IFO:SIGMA',
+                      help='If given, find and gate glitches producing a '
+                           'deviation larger than SIGMA in the whitened strain'
+                           ' time series')
     data_reading_group_multi.add_argument('--autogating-max-iterations', type=int,
                                     metavar='SIGMA', default=1,
                                     help='If given, iteratively apply '
@@ -770,6 +805,12 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                                     help='Ignore the given length of whitened '
                                          'strain at the ends of a segment, to '
                                          'avoid filters ringing.')
+    data_reading_group_multi.add_argument('--gating-method', type=str,
+                                    nargs='+', action=MultiDetOptionAction,
+                                    default='taper',
+                                    help='Choose the method for gating. '
+                                         'Default: `taper`',
+                                    choices=['hard', 'taper', 'paint'])
 
     # Optional
     data_reading_group_multi.add_argument("--normalize-strain", type=float,

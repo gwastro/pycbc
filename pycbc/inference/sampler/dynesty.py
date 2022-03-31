@@ -26,12 +26,7 @@ This modules provides classes and functions for using the dynesty sampler
 packages for parameter estimation.
 """
 
-
-from __future__ import absolute_import
-
 import logging
-import copy
-import os
 import time
 import numpy
 import dynesty, dynesty.dynesty, dynesty.nestedsamplers
@@ -40,7 +35,6 @@ from pycbc.pool import choose_pool
 from dynesty import utils as dyfunc
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files,
                                 loadfile)
-from pycbc.distributions import read_constraints_from_config
 from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 from .base_cube import setup_calls
@@ -76,9 +70,11 @@ class DynestySampler(BaseSampler):
     def __init__(self, model, nlive, nprocesses=1,
                  checkpoint_time_interval=None, maxcall=None,
                  loglikelihood_function=None, use_mpi=False,
+                 no_save_state=False,
                  run_kwds=None, **kwargs):
 
         self.model = model
+        self.no_save_state = no_save_state
         log_likelihood_call, prior_call = setup_calls(
             model,
             loglikelihood_function=loglikelihood_function)
@@ -160,7 +156,9 @@ class DynestySampler(BaseSampler):
                           'propose_point',
                           'update_proposal',
                           '_UPDATE', '_PROPOSE',
-                          'evolve_point']
+                          'evolve_point', 'use_pool', 'queue_size',
+                          'use_pool_ptform', 'use_pool_logl',
+                          'use_pool_evolve']
 
     def run(self):
         diff_niter = 1
@@ -202,7 +200,8 @@ class DynestySampler(BaseSampler):
         dynesty documentation for more details on these.
 
         The following options are retrieved in the ``[sampler]`` section:
-        * ``name = STR`` :
+
+        * ``name = STR``:
             Required. This must match the sampler's name.
         * ``maxiter = INT``:
             The maximum number of iterations to run.
@@ -242,9 +241,9 @@ class DynestySampler(BaseSampler):
             factor.
         * ``maxcall = INT``:
             The maximum number of calls before checking if we should checkpoint
-        * ``checkpoint_time_interval`` :
+        * ``checkpoint_time_interval``:
             Sets the time in seconds between checkpointing.
-        * ``loglikelihood-function`` :
+        * ``loglikelihood-function``:
             The attribute of the model to use for the loglikelihood. If
             not provided, will default to ``loglikelihood``.
 
@@ -274,6 +273,8 @@ class DynestySampler(BaseSampler):
         nlive = int(cp.get(section, "nlive"))
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
+
+        no_save_state = cp.has_option(section, 'no-save-state')
 
         # optional run_nested arguments for dynesty
         rargs = {'maxiter': int,
@@ -319,6 +320,7 @@ class DynestySampler(BaseSampler):
 
         obj = cls(model, nlive=nlive, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
+                  no_save_state=no_save_state,
                   use_mpi=use_mpi, run_kwds=run_extra, **extra)
         setup_output(obj, output_file, check_nsamples=False)
 
@@ -344,13 +346,7 @@ class DynestySampler(BaseSampler):
                 # Write pickled data
                 fp.write_pickled_data_into_checkpoint_file(self._sampler)
 
-                # Write nested samples
-                fp.write_raw_samples(self.samples)
-
-                # Write logz and dlogz
-                logz = self._sampler.results.logz[-1:][0]
-                dlogz = self._sampler.results.logzerr[-1:][0]
-                fp.write_logevidence(logz, dlogz)
+            self.write_results(fn)
 
         # Restore properties that couldn't be pickled if we are continuing
         for key in saved:
@@ -389,12 +385,16 @@ class DynestySampler(BaseSampler):
         logz = self._sampler.results.logz[-1:][0]
         dlogz = self._sampler.results.logzerr[-1:][0]
         logging.info("log Z, dlog Z: {}, {}".format(logz, dlogz))
-        self.checkpoint()
-        logging.info("Validating checkpoint and backup files")
-        checkpoint_valid = validate_checkpoint_files(
-            self.checkpoint_file, self.backup_file, check_nsamples=False)
-        if not checkpoint_valid:
-            raise IOError("error writing to checkpoint file")
+
+        if self.no_save_state:
+            self.write_results(self.checkpoint_file)
+        else:
+            self.checkpoint()
+            logging.info("Validating checkpoint and backup files")
+            checkpoint_valid = validate_checkpoint_files(
+                self.checkpoint_file, self.backup_file, check_nsamples=False)
+            if not checkpoint_valid:
+                raise IOError("error writing to checkpoint file")
 
     @property
     def samples(self):
@@ -428,12 +428,13 @@ class DynestySampler(BaseSampler):
             in an an append state.
         """
         with self.io(filename, 'a') as fp:
-            # write samples
+            # Write nested samples
             fp.write_raw_samples(self.samples)
 
-            # write log evidence
-            fp.write_logevidence(self._sampler.results.logz[-1:][0],
-                                 self._sampler.results.logzerr[-1:][0])
+            # Write logz and dlogz
+            logz = self._sampler.results.logz[-1:][0]
+            dlogz = self._sampler.results.logzerr[-1:][0]
+            fp.write_logevidence(logz, dlogz)
 
     @property
     def model_stats(self):
@@ -576,12 +577,13 @@ def sample_rwalk_mod(args):
 
 
 def estimate_nmcmc(accept_ratio, old_act, maxmcmc, safety=5, tau=None):
-    """ Estimate autocorrelation length of chain using acceptance fraction
+    """Estimate autocorrelation length of chain using acceptance fraction
 
     Using ACL = (2/acc) - 1 multiplied by a safety margin. Code adapated from
     CPNest:
-        - https://github.com/johnveitch/cpnest/blob/master/cpnest/sampler.py
-        - http://github.com/farr/Ensemble.jl
+
+    * https://github.com/johnveitch/cpnest/blob/master/cpnest/sampler.py
+    * https://github.com/farr/Ensemble.jl
 
     Parameters
     ----------
@@ -595,7 +597,6 @@ def estimate_nmcmc(accept_ratio, old_act, maxmcmc, safety=5, tau=None):
         A safety factor applied in the calculation
     tau: int (optional)
         The ACT, if given, otherwise estimated.
-
     """
     if tau is None:
         tau = maxmcmc / safety

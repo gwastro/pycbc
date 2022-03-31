@@ -64,8 +64,8 @@ class BatchCorrelator(object):
         self.zs = zs
 
         # Store each pointer as in integer array
-        self.x = Array([v.ptr for v in xs], dtype=numpy.int)
-        self.z = Array([v.ptr for v in zs], dtype=numpy.int)
+        self.x = Array([v.ptr for v in xs], dtype=int)
+        self.z = Array([v.ptr for v in zs], dtype=int)
 
     @pycbc.scheme.schemed(BACKEND_PREFIX)
     def batch_correlate_execute(self, y):
@@ -474,7 +474,11 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
                                                       out=None, thresh=0,
                                                       analyse_slice=None):
     """
-    Compute the maximized over sky location statistic.
+    Matched filter maximised over polarization and orbital phase.
+
+    This implements the statistic derived in 1603.02444. It is encouraged
+    to read that work to understand the limitations and assumptions implicit
+    in this statistic before using it.
 
     Parameters
     -----------
@@ -661,9 +665,13 @@ def compute_max_snr_over_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
                                                out=None, thresh=0,
                                                analyse_slice=None):
     """
-    Compute the match maximized over polarization phase.
+    Matched filter maximised over polarization phase.
 
-    In contrast to compute_max_snr_over_sky_loc_stat_no_phase this function
+    This implements the statistic derived in 1709.09181. It is encouraged
+    to read that work to understand the limitations and assumptions implicit
+    in this statistic before using it.
+
+    In contrast to compute_max_snr_over_sky_loc_stat this function
     performs no maximization over orbital phase, treating that as an intrinsic
     parameter. In the case of aligned-spin 2,2-mode only waveforms, this
     collapses to the normal statistic (at twice the computational cost!)
@@ -1148,7 +1156,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
     else:
         kmin = 1
     if fhigh:
-        kmax = int(fhigh / df )
+        kmax = int(fhigh / df)
         if kmax > int((N + 1)/2.):
             kmax = int((N + 1)/2.)
     else:
@@ -1314,12 +1322,27 @@ def matched_filter(template, data, psd=None, low_frequency_cutoff=None,
     return snr * norm
 
 _snr = None
-def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
-          high_frequency_cutoff=None, v1_norm=None, v2_norm=None):
-    """ Return the match between the two TimeSeries or FrequencySeries.
+def match(
+    vec1,
+    vec2,
+    psd=None,
+    low_frequency_cutoff=None,
+    high_frequency_cutoff=None,
+    v1_norm=None,
+    v2_norm=None,
+    subsample_interpolation=False,
+    return_phase=False,
+):
+    """Return the match between the two TimeSeries or FrequencySeries.
 
     Return the match between two waveforms. This is equivalent to the overlap
     maximized over time and phase.
+
+    The maximization is only performed with discrete time-shifts,
+    or a quadratic interpolation of them if the subsample_interpolation
+    option is turned on; for a more precise computation
+    of the match between two waveforms, use the optimized_match function.
+    The accuracy of this function is guaranteed up to the fourth decimal place.
 
     Parameters
     ----------
@@ -1339,28 +1362,62 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     v2_norm : {None, float}, optional
         The normalization of the second waveform. This is equivalent to its
         sigmasq value. If None, it is internally calculated.
+    subsample_interpolation : {False, bool}, optional
+        If True the peak will be interpolated between samples using a simple
+        quadratic fit. This can be important if measuring matches very close to
+        1 and can cause discontinuities if you don't use it as matches move
+        between discrete samples. If True the index returned will be a float.
+    return_phase : {False, bool}, optional
+        If True, also return the phase shift that gives the match.
 
     Returns
     -------
     match: float
     index: int
         The number of samples to shift to get the match.
+    phi: float
+        Phase to rotate complex waveform to get the match, if desired.
     """
 
     htilde = make_frequency_series(vec1)
     stilde = make_frequency_series(vec2)
 
-    N = (len(htilde)-1) * 2
+    N = (len(htilde) - 1) * 2
 
     global _snr
     if _snr is None or _snr.dtype != htilde.dtype or len(_snr) != N:
-        _snr = zeros(N,dtype=complex_same_precision_as(vec1))
-    snr, _, snr_norm = matched_filter_core(htilde,stilde,psd,low_frequency_cutoff,
-                             high_frequency_cutoff, v1_norm, out=_snr)
+        _snr = zeros(N, dtype=complex_same_precision_as(vec1))
+    snr, _, snr_norm = matched_filter_core(
+        htilde,
+        stilde,
+        psd,
+        low_frequency_cutoff,
+        high_frequency_cutoff,
+        v1_norm,
+        out=_snr,
+    )
     maxsnr, max_id = snr.abs_max_loc()
     if v2_norm is None:
         v2_norm = sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
-    return maxsnr * snr_norm / sqrt(v2_norm), max_id
+
+    if subsample_interpolation:
+        # This uses the implementation coded up in sbank. Thanks Nick!
+        # The maths for this is well summarized here:
+        # https://ccrma.stanford.edu/~jos/sasp/Quadratic_Interpolation_Spectral_Peaks.html
+        # We use adjacent points to interpolate, but wrap off the end if needed
+        left = abs(snr[-1]) if max_id == 0 else abs(snr[max_id - 1])
+        middle = maxsnr
+        right = abs(snr[0]) if max_id == (len(snr) - 1) else abs(snr[max_id + 1])
+        # Get derivatives
+        id_shift, maxsnr = quadratic_interpolate_peak(left, middle, right)
+        max_id = max_id + id_shift
+
+    if return_phase:
+        rounded_max_id = int(round(max_id))
+        phi = numpy.angle(snr[rounded_max_id])
+        return maxsnr * snr_norm / sqrt(v2_norm), max_id, phi
+    else:
+        return maxsnr * snr_norm / sqrt(v2_norm), max_id
 
 def overlap(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, normalized=True):
@@ -1456,7 +1513,7 @@ def quadratic_interpolate_peak(left, middle, right):
         Array of the estimated peak values at the interpolated offset
     """
     bin_offset = 1.0/2.0 * (left - right) / (left - 2 * middle + right)
-    peak_value = middle + 0.25 * (left - right) * bin_offset
+    peak_value = middle - 0.25 * (left - right) * bin_offset
     return bin_offset, peak_value
 
 
@@ -1903,7 +1960,136 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
                            onsource_idx + half_dur_samples + 1)
     return snr[onsource_slice] * norm
 
-__all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
+def optimized_match(
+    vec1,
+    vec2,
+    psd=None,
+    low_frequency_cutoff=None,
+    high_frequency_cutoff=None,
+    v1_norm=None,
+    v2_norm=None,
+    return_phase=False,
+):
+    """Given two waveforms (as numpy arrays),
+    compute the optimized match between them, making use
+    of scipy.minimize_scalar.
+
+    This function computes the same quantities as "match";
+    it is more accurate and slower.
+
+    Parameters
+    ----------
+    vec1 : TimeSeries or FrequencySeries
+        The input vector containing a waveform.
+    vec2 : TimeSeries or FrequencySeries
+        The input vector containing a waveform.
+    psd : FrequencySeries
+        A power spectral density to weight the overlap.
+    low_frequency_cutoff : {None, float}, optional
+        The frequency to begin the match.
+    high_frequency_cutoff : {None, float}, optional
+        The frequency to stop the match.
+    v1_norm : {None, float}, optional
+        The normalization of the first waveform. This is equivalent to its
+        sigmasq value. If None, it is internally calculated.
+    v2_norm : {None, float}, optional
+        The normalization of the second waveform. This is equivalent to its
+        sigmasq value. If None, it is internally calculated.
+    return_phase : {False, bool}, optional
+        If True, also return the phase shift that gives the match.
+
+    Returns
+    -------
+    match: float
+    index: int
+        The number of samples to shift to get the match.
+    phi: float
+        Phase to rotate complex waveform to get the match, if desired.
+    """
+
+    from scipy.optimize import minimize_scalar
+
+    htilde = make_frequency_series(vec1)
+    stilde = make_frequency_series(vec2)
+
+    assert numpy.isclose(htilde.delta_f, stilde.delta_f)
+    delta_f = stilde.delta_f
+
+    assert numpy.isclose(htilde.delta_t, stilde.delta_t)
+    delta_t = stilde.delta_t
+
+    # a first time shift to get in the nearby region;
+    # then the optimization is only used to move to the
+    # correct subsample-timeshift witin (-delta_t, delta_t)
+    # of this
+    _, max_id, _ = match(
+        htilde,
+        stilde,
+        psd=psd,
+        low_frequency_cutoff=low_frequency_cutoff,
+        high_frequency_cutoff=high_frequency_cutoff,
+        return_phase=True,
+    )
+
+    stilde = stilde.cyclic_time_shift(-max_id * delta_t)
+
+    frequencies = stilde.sample_frequencies.numpy()
+    waveform_1 = htilde.numpy()
+    waveform_2 = stilde.numpy()
+
+    N = (len(stilde) - 1) * 2
+    kmin, kmax = get_cutoff_indices(
+        low_frequency_cutoff, high_frequency_cutoff, delta_f, N
+    )
+    mask = slice(kmin, kmax)
+
+    waveform_1 = waveform_1[mask]
+    waveform_2 = waveform_2[mask]
+    frequencies = frequencies[mask]
+
+    if psd is not None:
+        psd_arr = psd.numpy()[mask]
+    else:
+        psd_arr = numpy.ones_like(waveform_1)
+
+    def product(a, b):
+        integral = numpy.sum(numpy.conj(a) * b / psd_arr) * delta_f
+        return 4 * abs(integral), numpy.angle(integral)
+
+    def product_offset(dt):
+        offset = numpy.exp(2j * numpy.pi * frequencies * dt)
+        return product(waveform_1, waveform_2 * offset)
+
+    def to_minimize(dt):
+        return -product_offset(dt)[0]
+
+    norm_1 = (
+        sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)
+        if v1_norm is None
+        else v1_norm
+    )
+    norm_2 = (
+        sigmasq(stilde, psd, low_frequency_cutoff, high_frequency_cutoff)
+        if v2_norm is None
+        else v2_norm
+    )
+
+    norm = numpy.sqrt(norm_1 * norm_2)
+
+    res = minimize_scalar(
+        to_minimize,
+        method="brent",
+        bracket=(-delta_t, delta_t)
+    )
+    m, angle = product_offset(res.x)
+
+    if return_phase:
+        return m / norm, res.x / delta_t + max_id, -angle
+    else:
+        return m / norm, res.x / delta_t + max_id
+
+
+__all__ = ['match', 'optimized_match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap',
            'overlap_cplx', 'matched_filter_core', 'correlate',
            'MatchedFilterControl', 'LiveBatchMatchedFilter',

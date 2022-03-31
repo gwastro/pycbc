@@ -17,20 +17,16 @@
 """
 
 import numpy
-import scipy.special
-from scipy.special import logsumexp
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import get_fd_waveform
 from pycbc.detector import Detector
 
 from .gaussian_noise import BaseGaussianNoise
-
-# In this model we only calculate terms up to a constant.
-# We are primarily interested in the posterior result
+from .tools import DistMarg
 
 
-class SingleTemplate(BaseGaussianNoise):
+class SingleTemplate(DistMarg, BaseGaussianNoise):
     r"""Model that assumes we know all the intrinsic parameters.
 
     This model assumes we know all the intrinsic parameters, and are only
@@ -62,7 +58,14 @@ class SingleTemplate(BaseGaussianNoise):
     name = 'single_template'
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
-                 sample_rate=32768, polarization_samples=None, **kwargs):
+                 sample_rate=32768,
+                 polarization_samples=None,
+                 **kwargs):
+
+        variable_params, kwargs = self.setup_distance_marginalization(
+                                       variable_params,
+                                       marginalize_phase=True,
+                                       **kwargs)
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
 
@@ -81,7 +84,8 @@ class SingleTemplate(BaseGaussianNoise):
         #polarization array to marginalize over if num_samples given
         self.pflag = 0
         if polarization_samples is not None:
-            self.polarization = numpy.linspace(0, 2*numpy.pi, polarization_samples)
+            self.polarization = numpy.linspace(0, 2*numpy.pi,
+                                               int(polarization_samples))
             self.pflag = 1
 
         # Calculate high sample rate SNR time series
@@ -101,7 +105,7 @@ class SingleTemplate(BaseGaussianNoise):
                 high_frequency_cutoff=fhigh)
 
             self.sh[ifo] = 4 * df * snr
-            self.hh[ifo] = -0.5 * pyfilter.sigmasq(
+            self.hh[ifo] = pyfilter.sigmasq(
                 hp, psd=self.psds[ifo],
                 low_frequency_cutoff=flow,
                 high_frequency_cutoff=fhigh)
@@ -126,24 +130,17 @@ class SingleTemplate(BaseGaussianNoise):
         if self.time is None:
             self.time = p['tc']
 
-        shloglr = hhloglr = 0
+        sh_total = hh_total = 0
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
-                                                   polarization,
-                                                   self.time)
-            dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
-                                                            p['dec'],
+                                                   polarization, self.time)
+            dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
                                                             self.time)
             ic = numpy.cos(p['inclination'])
             ip = 0.5 * (1.0 + ic * ic)
             htf = (fp * ip + 1.0j * fc * ic) / p['distance']
-
             sh = self.sh[ifo].at_time(p['tc'] + dt) * htf
-            shloglr += sh
-            hhloglr += self.hh[ifo] * abs(htf) ** 2.0
-        vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
-        vloglr += abs(shloglr) + hhloglr
-        if self.pflag == 0:
-            return float(vloglr)
-        else:
-            return float(logsumexp(vloglr))
+            sh_total += sh
+            hh_total += self.hh[ifo] * abs(htf) ** 2.0
+
+        return self.marginalize_loglr(sh_total, hh_total)

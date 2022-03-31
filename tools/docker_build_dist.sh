@@ -36,24 +36,22 @@ fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
-  ENV_OS="x86_64_rhel_7"
-  yum -y install python2-pip python-setuptools which
-  yum -y install curl
-  curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
+  ENV_OS="x86_64_rhel_8"
+  yum -y install python38 python38-devel
+  yum -y groupinstall "Development Tools"
+  yum -y install which rsync
   yum clean all
   yum makecache
-  yum -y install openssl-devel openssl-static
-  yum -y install pegasus-4.9.3
+  yum -y install openssl-devel
   yum -y install ligo-proxy-utils
-  yum -y install ecp-cookie-init
-  yum -y install python-virtualenv
+  yum -y install python3-virtualenv
   yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static fftw-static gsl-static --skip-broken
 
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
 
   VENV_PATH=${CVMFS_PATH}/pycbc-${SOURCE_TAG}
-  virtualenv ${VENV_PATH}
+  virtualenv -p python3.8 ${VENV_PATH}
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
   echo "export XDG_CACHE_HOME=\${HOME}/cvmfs-pycbc-${SOURCE_TAG}/.cache" >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate
@@ -62,8 +60,8 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
 
   echo -e "\\n>> [`date`] Upgrading pip and setuptools"
-  pip install --upgrade pip setuptools
-  pip install six packaging appdirs
+  pip install --upgrade 'pip<22.0' setuptools pytest
+  pip install six packaging appdirs mkl
 
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
@@ -76,7 +74,11 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   echo -e "\\n>> [`date`] Installing ipython and jupyter"
   pip install jupyter
 
+  echo -e "\\n>> [`date`] Running basic tests"
+  pytest
+
   cat << EOF >> $VIRTUAL_ENV/bin/activate
+
 
 # if a suitable MKL exists, set it up
 if [ -f /opt/intel/composer_xe_2015/mkl/bin/mklvars.sh ] ; then
@@ -98,12 +100,6 @@ export LAL_DATA_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-ext
 EOF
 
   deactivate
-
-  echo -e "\\n>> [`date`] Running test_coinc_search_workflow.sh"
-  mkdir -p /pycbc/workflow-test
-  pushd /pycbc/workflow-test
-  /pycbc/tools/test_coinc_search_workflow.sh ${VENV_PATH} ${SOURCE_TAG}
-  popd
 
   if [ "x${DOCKER_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Setting virtual environment permissions for deployment"

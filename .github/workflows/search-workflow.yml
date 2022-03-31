@@ -22,12 +22,12 @@ jobs:
         sudo systemctl enable condor
     - name: install pegasus
       run: |
-        wget https://download.pegasus.isi.edu/pegasus/ubuntu/dists/bionic/main/binary-amd64/pegasus_4.9.3-1+ubuntu18_amd64.deb
-        sudo apt install ./pegasus_4.9.3-1+ubuntu18_amd64.deb
+        wget https://download.pegasus.isi.edu/pegasus/ubuntu/dists/bionic/main/binary-amd64/pegasus_5.0.1-1+ubuntu18_amd64.deb
+        sudo apt install ./pegasus_5.0.1-1+ubuntu18_amd64.deb
     - run: sudo apt-get install *fftw3* intel-mkl*
     - name: Install pycbc
       run: |
-        python -m pip install --upgrade pip setuptools
+        python -m pip install --upgrade 'pip<22.0' setuptools
         pip install -r requirements.txt
         pip install .
     - name: retrieving frame data
@@ -36,24 +36,21 @@ jobs:
       run: bash -e examples/search/bank.sh
     - name: generating statistic files
       run: bash -e examples/search/stats.sh
-    - name: generating workflow
+    - name: running workflow
       run: |
         cp examples/search/*.ini ./
         bash -e examples/search/gen.sh
         cp *.gwf output/
-    - name: running workflow
-      run: |
-        condor_status
         cd output
         bash -e ../examples/search/submit.sh
-        ./status
         python ../examples/search/check_job.py
+        find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
       if: always()
       uses: actions/upload-artifact@v2
       with:
         name: logs
-        path: output/submitdir/work/**/*.out.001
+        path: output/submitdir/work
     - name: store result page
       uses: actions/upload-artifact@v2
       with:

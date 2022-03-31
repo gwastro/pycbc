@@ -21,8 +21,6 @@ Reduce a template bank using some input parameter cuts
 """
 
 
-from __future__ import print_function
-from __future__ import division
 import numpy
 import logging
 import imp

@@ -2,6 +2,6 @@
 
 PyCBC is developed collaboratively and lead by a team of GW astronomers with the aim to build accessible tools for gravitational-wave data analysis. One of the easiest ways to get a full software environment is by `downloading one of our docker images. <http://pycbc.org/pycbc/latest/html/docker.html>`_
 
-Some interactive examples using portions of the PyCBC library are also hosted as jupyter notebooks on Microsoft Azure. `Feel free to give them a try. <https://notebooks.azure.com/nitz/libraries/pycbc>`_  You can also explore the `full documentation pages <http://pycbc.org/pycbc/latest/html/index.html>`_ or the `source code on GitHub. <https://github.com/ligo-cbc/pycbc>`_ 
+Some interactive examples using portions of the PyCBC library are also hosted as jupyter notebooks on Microsoft Azure. `Feel free to give them a try. <https://notebooks.azure.com/nitz/libraries/pycbc>`_  You can also explore the `full documentation pages <http://pycbc.org/pycbc/latest/html/index.html>`_ or the `source code on GitHub. <https://github.com/gwastro/pycbc>`_ 
 
 If you use PyCBC in scientific publications, please see our `citation guidelines. <http://pycbc.org/pycbc/latest/html/credit.html>`_ 

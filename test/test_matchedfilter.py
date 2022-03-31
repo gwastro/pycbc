@@ -24,26 +24,22 @@
 """
 These are the unittests for the pycbc.filter.matchedfilter module
 """
-import sys
-import pycbc
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 from pycbc.filter import *
 from math import sqrt
-import pycbc.fft
 import numpy
 from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("Matched Filter")
-import pycbc.fft.fftw
-pycbc.fft.fftw.set_measure_level(0)
+#import pycbc.fft.fftw
+#pycbc.fft.fftw.set_measure_level(0)
 
 class TestMatchedFilter(unittest.TestCase):
     def setUp(self,*args):
         self.context = _context
         self.scheme = _scheme
-        from math import sin
         # Use sine wave as test signal
         data = numpy.sin(numpy.arange(0,100,100/(4096.0*64)))
         self.filt = TimeSeries(data,dtype=float32,delta_t=1.0/4096)
@@ -59,6 +55,20 @@ class TestMatchedFilter(unittest.TestCase):
                                       delta_t=1.0/4096)
 
         self.filt_short =TimeSeries([0,1,2,3,4],dtype=float32,delta_t=1.0/4096)
+
+        self.filt_highres = TimeSeries(data,dtype=float,delta_t=1.0/4096)
+        frequency_series = make_frequency_series(self.filt_highres)
+        
+        # the number is 2pi*delta_t*(5+1/2), which is where the standard 
+        # SNR interpolation does the worst
+        # the .3j phase is added to test the phase retrieval
+        phase = numpy.exp(-0.008436894333371026j * frequency_series.sample_frequencies - .3j)
+        self.filt_offset_subsample = (
+            frequency_series*phase
+        )
+        
+        self.psd = FrequencySeries(2 * numpy.ones_like(frequency_series), 
+            delta_f=frequency_series.delta_f)
 
     def test_correlate (self):
         from pycbc.filter.matchedfilter import correlate
@@ -103,6 +113,12 @@ class TestMatchedFilter(unittest.TestCase):
             o,i = match(self.filtD,self.filtD)
             self.assertAlmostEqual(1,o,places=4)
             self.assertEqual(0,i)
+            o,i = match(self.filt,self.filt, subsample_interpolation=True)
+            self.assertAlmostEqual(1,o,places=4)
+            self.assertAlmostEqual(0,i,places=1)
+            o,i = match(self.filtD,self.filtD, subsample_interpolation=True)
+            self.assertAlmostEqual(1,o,places=4)
+            self.assertAlmostEqual(0,i,places=1)
 
     def test_perfect_match_offset(self):
         with self.context:
@@ -113,6 +129,70 @@ class TestMatchedFilter(unittest.TestCase):
             o,i = match(self.filtD,self.filt_offsetD)
             self.assertAlmostEqual(1,o,places=4)
             self.assertEqual(4096*32,i)
+
+            o,i = match(self.filt, self.filt_offset,
+                        subsample_interpolation=True)
+            self.assertAlmostEqual(1, o, places=4)
+            self.assertAlmostEqual(4096*32, i, places=1)
+
+            o,i = match(self.filtD, self.filt_offsetD,
+                        subsample_interpolation=True)
+            self.assertAlmostEqual(1, o, places=4)
+            self.assertAlmostEqual(4096*32, i, places=1)
+
+    def test_perfect_match_subsample_offset(self):
+        with self.context:
+            o, i, ph = optimized_match(
+                self.filt_highres,
+                self.filt_offset_subsample,
+                return_phase=True
+            )
+            self._check_accuracy_subsample_offset(
+                o, i, ph
+            )
+
+            # but the standard implementation is not correct 
+            # even when checked to a much lower degree of accuracy:
+            # the following tests are just a sanity check,
+            # they can be removed
+
+            o2, _ = match(self.filt_highres, self.filt_offset_subsample)
+            self.assertNotAlmostEqual(1., o2, places=7)
+
+            o3, _ = match(self.filt_highres, self.filt_offset_subsample, 
+                subsample_interpolation=True)
+            self.assertNotAlmostEqual(1., o3, places=7)
+
+    def test_perfect_match_subsample_offset_bandlimited(self):
+        with self.context:
+            o, i, ph = optimized_match(
+                self.filt_highres,
+                self.filt_offset_subsample,
+                return_phase=True,
+                low_frequency_cutoff=20.,
+                high_frequency_cutoff=1500.
+            )
+            self._check_accuracy_subsample_offset(
+                o, i, ph
+            )
+
+    def test_perfect_match_subsample_offset_with_psd(self):
+        with self.context:
+            o, i, ph = optimized_match(
+                self.filt_highres,
+                self.filt_offset_subsample,
+                return_phase=True,
+                psd=self.psd
+            )
+            self._check_accuracy_subsample_offset(
+                o, i, ph
+            )
+
+
+    def _check_accuracy_subsample_offset(self, o, i, ph):
+        self.assertAlmostEqual(1.0, o, places=10)
+        self.assertAlmostEqual(5 + 1 / 2, i, places=4)
+        self.assertAlmostEqual(0.3, ph, places=4)        
 
     def test_imperfect_match(self):
         with self.context:
@@ -125,6 +205,17 @@ class TestMatchedFilter(unittest.TestCase):
             f2 = make_frequency_series(self.filt2D)
             o,i = match(self.filtD,self.filt2D)
             self.assertAlmostEqual(sqrt(0.5),o,places=3)
+
+            f = make_frequency_series(self.filt)
+            f2 = make_frequency_series(self.filt2)
+            o,i = match(self.filt, self.filt2, subsample_interpolation=True)
+            self.assertAlmostEqual(sqrt(0.5), o, places=3)
+
+            f = make_frequency_series(self.filtD)
+            f2 = make_frequency_series(self.filt2D)
+            o,i = match(self.filtD, self.filt2D, subsample_interpolation=True)
+            self.assertAlmostEqual(sqrt(0.5), o, places=3)
+            self.assertAlmostEqual(132327.27060, i, places=2)
 
     def test_errors(self):
         with self.context:

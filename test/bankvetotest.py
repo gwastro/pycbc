@@ -4,7 +4,6 @@ from pycbc.filter import *
 from pycbc.waveform import *
 from pycbc.vetoes import *
 import pycbc.psd
-from numpy.random import normal
 
 sr = 4096.0
 dt = 1.0/sr

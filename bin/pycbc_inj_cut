@@ -31,9 +31,9 @@ import logging
 import numpy
 import pycbc
 import pycbc.inject
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import utils as ligolw_utils
 from pycbc.types import MultiDetOptionAction
-from glue.ligolw import lsctables
+from ligo.lw import lsctables
 import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__)

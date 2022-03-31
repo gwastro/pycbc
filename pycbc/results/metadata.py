@@ -3,8 +3,8 @@ This Module contains generic utility functions for creating plots within
 PyCBC.
 """
 import os.path, pycbc.version
-from six.moves import configparser as ConfigParser
-from six.moves.html_parser import HTMLParser
+import configparser as ConfigParser
+from html.parser import HTMLParser
 from xml.sax.saxutils import escape, unescape
 
 escape_table = {
@@ -97,7 +97,7 @@ def save_pdf_with_metadata(fig, filename, fig_kwds, kwds):
                 metadata[str(key)] = str(kwds[key])
 
 def load_png_metadata(filename):
-    from PIL import Image, PngImagePlugin
+    from PIL import Image
     data = Image.open(filename).info
     cp = ConfigParser.ConfigParser(data)
     cp.add_section(os.path.basename(filename))

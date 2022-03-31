@@ -72,11 +72,14 @@ for col in trigger_columns:
     logging.info("trigger column: %s", col)
 
 logging.info('reading the metadata from the files')
-segments = set()
+
 tpc = numpy.array([], dtype=numpy.float64)
 frpc = numpy.array([], dtype=numpy.float64)
 stf = numpy.array([], dtype=numpy.float64)
 rtime = numpy.array([], dtype=numpy.float64)
+starts = numpy.array([], dtype=numpy.float64)
+ends = numpy.array([], dtype=numpy.float64)
+
 gating = {}
 for filename in args.trigger_files:
     try:
@@ -86,11 +89,9 @@ for filename in args.trigger_files:
         raise e
     ifo_data = data[ifo]
 
-    # duplicate segments (due, for example, to bank splitting)
-    # will be deduplicated by the set here
-    segments.add((float(ifo_data['search/start_time'][:]),
-                  float(ifo_data['search/end_time'][:])))
-
+    starts = numpy.append(starts, ifo_data['search/start_time'][:])
+    ends = numpy.append(ends, ifo_data['search/end_time'][:])
+    
     if 'templates_per_core' in ifo_data['search'].keys():
         tpc = numpy.append(tpc, ifo_data['search/templates_per_core'][:])
     if 'filter_rate_per_core' in ifo_data['search'].keys():
@@ -111,10 +112,13 @@ for filename in args.trigger_files:
                 gating[gk] = numpy.append(gating[gk], gk_data[:])
     data.close()
 
-# store segments sorted by start time
-segments = numpy.array(sorted(segments), dtype=numpy.float64)
-f['%s/search/start_time' % ifo] = segments[:,0]
-f['%s/search/end_time' % ifo] = segments[:,1]
+# store de-duplicated segments sorted by start time
+starts, uindex = numpy.unique(starts, return_index=True)
+ends = ends[uindex]
+sort = starts.argsort()
+
+f['%s/search/start_time' % ifo] = starts[sort]
+f['%s/search/end_time' % ifo] = ends[sort]
 
 if len(tpc) > 0:
     f['%s/search/templates_per_core' % ifo] = tpc

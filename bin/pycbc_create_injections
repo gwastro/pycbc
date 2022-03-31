@@ -21,7 +21,7 @@
 Config file syntax
 ------------------
 The configuration file should have a [variable_params], a [static_params],
-and one or more [distribution] sections. Multiple [constraint] sections and
+and one or more [prior] sections. Multiple [constraint] sections and
 one or more [waveform_transforms] sections may also be provided. An example:
 
     [variable_params]
@@ -35,12 +35,12 @@ one or more [waveform_transforms] sections may also be provided. An example:
     approximant = IMRPhenomPv2
     f_lower = 19
 
-    [distribution-mass1]
+    [prior-mass1]
     name = uniform
     min-mass1 = 3
     max-mass1 = 12
 
-    [distribution-mass2]
+    [prior-mass2]
     name = uniform
     min-mass2 = 1
     max-mass2 = 3
@@ -49,12 +49,12 @@ one or more [waveform_transforms] sections may also be provided. An example:
     name = custom
     constraint_arg = q_from_mass1_mass2(mass1, mass2) <= 4
 
-    [distribution-spin1_a]
+    [prior-spin1_a]
     name = uniform
     min-spin1_a = 0.0
     max-spin1_a = 0.9
 
-    [distribution-spin1_polar+spin1_azimuthal]
+    [prior-spin1_polar+spin1_azimuthal]
     name = uniform_solidangle
     polar-angle = spin1_polar
     azimuthal-angle = spin1_azimuthal
@@ -73,14 +73,14 @@ The [variable_params] section gives the list of waveform parameters to
 randomize.  The [static_params] section gives parameters that are fixed for all
 of the injections.
 
-The [distribution-{tag}] sections provide the arguments needed to initialize
-the distribution for each parameter. Every parameter specified in
-[variable_params] must have a distribution section; the name of the parameter(s)
-used by that distribution must be in the 'tag' part of the section header (the
-bit after the dash). If a distribution covers multiple parameters, the
-parameters should be separated by a '+'.  Any distribution in the distributions
+The [prior-{tag}] sections provide the arguments needed to initialize
+the prior for each parameter. Every parameter specified in
+[variable_params] must have a prior section; the name of the parameter(s)
+used by that prior must be in the 'tag' part of the section header (the
+bit after the dash). If a prior covers multiple parameters, the
+parameters should be separated by a '+'.  Any prior in the distributions
 module may be used.  The rest of the options should provide the necessary
-arguments to initialize that distribution; see the distributions module for
+arguments to initialize that prior; see the distributions module for
 details.
 
 The variable_params need not be parameters understood by the waveform module.  In
@@ -93,7 +93,7 @@ No attempt is made to check that provided parameter names are sensible. It is
 up to the user to ensure that written parameters are understood by the waveform
 approximant that will be used.
 
-One or more constraints may be applied to the distributions; these are
+One or more constraints may be applied to the priors; these are
 specified by the [constraint] section(s). Additional constraints may be
 supplied by adding more [constraint-{tag}] sections. Any tag may be used; the
 only requirement is that they be unique. If multiple constaint sections are
@@ -190,7 +190,8 @@ variable_params, static_params = distributions.read_params_from_config(cp,
     prior_section=opts.dist_section,
     vargs_section=opts.variable_params_section,
     sargs_section=opts.static_params_section)
-constraints = distributions.read_constraints_from_config(cp)
+constraints = distributions.read_constraints_from_config(
+    cp, static_args=static_params)
 
 if any(cp.get_subsections('waveform_transforms')):
     waveform_transforms = transforms.read_transforms_from_config(cp,
@@ -238,7 +239,7 @@ while True:
         if old_samples is None:
             tstart = opts.gps_start_time
         else:
-            tstart = old_samples['tc'].max()
+            tstart = old_samples['tc'].max() + opts.time_step
 
         tc = numpy.arange(0, draw_size) * opts.time_step + tstart
         tc += uniform(0, high=opts.time_window, size=draw_size).cumsum()

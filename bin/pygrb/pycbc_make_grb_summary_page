@@ -20,21 +20,32 @@
 # Preamble
 # =============================================================================
 
-from __future__ import (division, print_function)
-
-import os,sys,datetime,re,glob,shutil
-from argparse import ArgumentParser
+import glob
+import os
 import random
+import shutil
 import string
-from pycbc.workflow.core import make_external_call
-from pycbc.results.legacy_grb import *
-from glue import markup
-from pylal import grbsummary,rate,antenna,git_version
-from lal.gpstime import gps_to_utc,LIGOTimeGPS
+import sys
+from argparse import ArgumentParser
+
+from pycbc import version as pycbc_version
+from pycbc.results.legacy_grb import (
+    initialize_page,
+    write_antenna,
+    write_banner,
+    write_chisq,
+    write_exclusion_distances,
+    write_found_missed,
+    write_inj_snrs,
+    write_loudest_events,
+    write_offsource,
+    write_recovery,
+    write_summary,
+)
 
 __author__  = "Andrew Williamson <andrew.williamson@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__    = git_version.date
+__version__ = pycbc_version.version
+__date__    = pycbc_version.date
 
 
 def parse_command_line():

@@ -1,0 +1,56 @@
+name: run small inference workflow using pegasus + condor
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: install condor
+      run: |
+        wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
+        echo "deb http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
+        echo "deb-src http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
+        sudo apt-get update
+        sudo apt-get install minihtcondor
+        sudo systemctl start condor
+        sudo systemctl enable condor
+    - name: install pegasus
+      run: |
+        wget https://download.pegasus.isi.edu/pegasus/ubuntu/dists/bionic/main/binary-amd64/pegasus_5.0.1-1+ubuntu18_amd64.deb
+        sudo apt install ./pegasus_5.0.1-1+ubuntu18_amd64.deb
+    - run: sudo apt-get install *fftw3* intel-mkl*
+    - name: Install pycbc
+      run: |
+        python -m pip install --upgrade 'pip<22.0' setuptools
+        pip install -r requirements.txt
+        pip install .
+    - name: retrieving data
+      run: bash -e examples/inference/single/get.sh
+    - name: generating, submitting and running workflow
+      run: |
+        cp examples/inference/single/single.ini ./
+        cp examples/workflow/inference/small_test/*.ini ./
+        bash -e examples/workflow/inference/small_test/gen.sh
+        condor_status
+        cd gw_output
+        bash -e ../examples/search/submit.sh
+        ./status
+        python ../examples/search/check_job.py
+        find submitdir/work/ -type f -name '*.tar.gz' -delete
+    - name: store log files
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: logs
+        path: gw_output/submitdir/work
+    - name: store result page
+      uses: actions/upload-artifact@v2
+      with:
+        name: results
+        path: html

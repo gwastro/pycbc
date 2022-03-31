@@ -39,6 +39,7 @@ class CommonNestedMetadataIO(object):
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
         """Create a parser to parse sampler-specific arguments for loading
         samples.
+
         Parameters
         ----------
         parser : argparse.ArgumentParser, optional
@@ -52,6 +53,7 @@ class CommonNestedMetadataIO(object):
         \**kwargs :
             All other keyword arguments are passed to the parser that is
             created.
+
         Returns
         -------
         parser : argparse.ArgumentParser
@@ -123,7 +125,7 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
             weights = numpy.exp(logwt - logz)
             N = len(weights)
             positions = (numpy.random.random() + numpy.arange(N)) / N
-            idx = numpy.zeros(N, dtype=numpy.int)
+            idx = numpy.zeros(N, dtype=int)
             cumulative_sum = numpy.cumsum(weights)
             cumulative_sum /= cumulative_sum[-1]
             i, j = 0, 0
@@ -169,8 +171,9 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
 
     def validate(self):
         """Runs a validation test.
-           This checks that a samples group exist, and that pickeled data can
-           be loaded.
+        This checks that a samples group exist, and that pickeled data can
+        be loaded.
+
         Returns
         -------
         bool :

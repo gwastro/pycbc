@@ -20,11 +20,9 @@
 # Preamble
 # =============================================================================
 
-from __future__ import division
 
 import re
 import os
-from argparse import ArgumentParser
 from ligo import segments
 from glue import markup
 

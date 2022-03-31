@@ -4,6 +4,8 @@ echo -e "\\n>> [`date`] Starting PyCBC test suite"
 
 PYTHON_VERSION=`python -c 'import sys; print(sys.version_info.major)'`
 echo -e "\\n>> [`date`] Python Major Version:" $PYTHON_VERSION
+PYTHON_MINOR_VERSION=`python -c 'import sys; print(sys.version_info.minor)'`
+echo -e "\\n>> [`date`] Python Minor Version:" $PYTHON_MINOR_VERSION
 
 LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
 
@@ -29,7 +31,7 @@ fi
 if [ "$PYCBC_TEST_TYPE" = "help" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     # check that all executables that do not require
     # special environments can return a help message
-    for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print 2>/dev/null | egrep -v '(pycbc_live_nagios_monitor|pycbc_make_grb_summary_page|pycbc_make_offline_grb_workflow|pycbc_mvsc_get_features|pycbc_upload_xml_to_gracedb|pycbc_make_skymap)'`
+    for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print 2>/dev/null | egrep -v '(pycbc_live_nagios_monitor|pycbc_make_offline_grb_workflow|pycbc_mvsc_get_features|pycbc_upload_xml_to_gracedb)'`
     do
         echo -e ">> [`date`] running $prog --help"
         $prog --help &> $LOG_FILE
@@ -46,7 +48,7 @@ if [ "$PYCBC_TEST_TYPE" = "help" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
-    #run pycbc inspiral test
+    # run pycbc inspiral test
     pushd examples/inspiral
     bash -e run.sh
     if test $? -ne 0 ; then
@@ -58,20 +60,20 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     fi
     popd
 
-
-    # run PyCBC Live test if running in Python 3
-    if [ "$PYTHON_VERSION" = "3" ]
-    then
-        pushd examples/live
-        bash -e run.sh
-        if test $? -ne 0 ; then
-            RESULT=1
-            echo -e "    FAILED!"
-            echo -e "---------------------------------------------------------"
-        else
-            echo -e "    Pass."
-        fi
-        popd
+    # run PyCBC Live test
+    if ((${PYTHON_MINOR_VERSION} > 7)); then
+      # ligo.skymap is only supporting python3.8+, and older releases are
+      # broken by a new release of python-ligo-lw
+      pushd examples/live
+      bash -e run.sh
+      if test $? -ne 0 ; then
+          RESULT=1
+          echo -e "    FAILED!"
+          echo -e "---------------------------------------------------------"
+      else
+          echo -e "    Pass."
+      fi
+      popd
     fi
 fi
 
@@ -160,6 +162,22 @@ if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
         echo -e "    Pass."
     fi
     popd
+
+    ## Run pycbc_make_skymap example
+    if ((${PYTHON_MINOR_VERSION} > 7)); then
+      # ligo.skymap is only supporting python3.8+, and older releases are
+      # broken by a new release of python-ligo-lw
+      pushd examples/make_skymap
+      bash -e simulated_data.sh
+      if test $? -ne 0 ; then
+          RESULT=1
+          echo -e "    FAILED!"
+          echo -e "---------------------------------------------------------"
+      else
+          echo -e "    Pass."
+      fi
+      popd
+    fi
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "docs" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then

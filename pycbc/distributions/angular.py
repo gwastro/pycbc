@@ -16,7 +16,7 @@
 This modules provides classes for evaluating angular distributions.
 """
 
-from six.moves.configparser import Error
+from configparser import Error
 import numpy
 from pycbc import VARARGS_DELIM
 from pycbc import boundaries
@@ -46,17 +46,6 @@ class UniformAngle(uniform.Uniform):
         `boundaries.Bounds` instances or tuples. The bounds must be
         in [0,2PI). These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
-
-    Attributes
-    ----------
-    name : 'uniform_angle'
-        The name of this distribution.
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds, in radians.
-    domain : boundaries.Bounds
-        The domain of the distribution.
 
     Notes
     ------
@@ -196,15 +185,6 @@ class SinAngle(UniformAngle):
         `boundaries.Bounds` instances or tuples. The bounds must be
         in [0,PI]. These are converted to radians for storage. None may also
         be passed; in that case, the domain bounds will be used.
-
-    Attributes
-    ----------
-    name : 'sin_angle'
-        The name of this distribution.
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds, in radians.
     """
     name = 'sin_angle'
     _func = numpy.cos
@@ -255,38 +235,6 @@ class SinAngle(UniformAngle):
                 numpy.array([kwargs[p] for p in self._params]))).sum()
 
 
-    def rvs(self, size=1, param=None):
-        """Gives a set of random values drawn from this distribution.
-
-        Parameters
-        ----------
-        size : {1, int}
-            The number of values to generate; default is 1.
-        param : {None, string}
-            If provided, will just return values for the given parameter.
-            Otherwise, returns random values for each parameter.
-
-        Returns
-        -------
-        structured array
-            The random values in a numpy structured array. If a param was
-            specified, the array will only have an element corresponding to the
-            given parameter. Otherwise, the array will have an element for each
-            parameter in self's params.
-        """
-        if param is not None:
-            dtype = [(param, float)]
-        else:
-            dtype = [(p, float) for p in self.params]
-        arr = numpy.zeros(size, dtype=dtype)
-        for (p,_) in dtype:
-            arr[p] = self._arcfunc(numpy.random.uniform(
-                                    self._func(self._bounds[p][0]),
-                                    self._func(self._bounds[p][1]),
-                                    size=size))
-        return arr
-
-
 class CosAngle(SinAngle):
     r"""A cosine distribution. This is the same thing as a sine distribution,
     but with the domain shifted to `[-pi/2, pi/2]`. See SinAngle for more
@@ -299,15 +247,6 @@ class CosAngle(SinAngle):
         (optionally) their corresponding bounds, as either
         `boundaries.Bounds` instances or tuples. The bounds must be
         in [-PI/2, PI/2].
-
-    Attributes
-    ----------------
-    name : 'cos_angle'
-        The name of this distribution.
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds, in radians.
     """
     name = 'cos_angle'
     _func = numpy.sin
@@ -350,23 +289,6 @@ class UniformSolidAngle(bounded.BoundedDist):
         values are constrained to be in [0, 2pi) using cyclic boundaries prior
         to applying any other boundary conditions and prior to evaluating the
         pdf. Default is False.
-
-    Attributes
-    ----------
-    name : 'uniform_solidangle'
-        The name of the distribution.
-    bounds : dict
-        The bounds on each angle. The keys are the names of the polar and
-        azimuthal angles, the values are the minimum and maximum of each, in
-        radians. For example, if the distribution was initialized with
-        `polar_angle='theta', polar_bounds=(0,0.5)` then the bounds will have
-        `'theta': 0, 1.5707963267948966` as an entry.
-    params : list
-        The names of the polar and azimuthal angles.
-    polar_angle : str
-        The name of the polar angle.
-    azimuthal_angle : str
-        The name of the azimuthal angle.
     """
     name = 'uniform_solidangle'
     _polardistcls = SinAngle
@@ -392,14 +314,23 @@ class UniformSolidAngle(bounded.BoundedDist):
         self._bounds.update(self._azimuthaldist.bounds)
         self._params = sorted(self._bounds.keys())
 
+    @property
+    def bounds(self):
+        """dict: The bounds on each angle. The keys are the names of the polar
+        and azimuthal angles, the values are the minimum and maximum of each,
+        in radians. For example, if the distribution was initialized with
+        `polar_angle='theta', polar_bounds=(0,0.5)` then the bounds will have
+        `'theta': 0, 1.5707963267948966` as an entry."""
+        return self._bounds
 
     @property
     def polar_angle(self):
+        """str: The name of the polar angle."""
         return self._polar_angle
-
 
     @property
     def azimuthal_angle(self):
+        """str: The name of the azimuthal angle."""
         return self._azimuthal_angle
 
     def _cdfinv_param(self, param, value):
@@ -475,40 +406,6 @@ class UniformSolidAngle(bounded.BoundedDist):
         """
         return self._polardist._logpdf(**kwargs) +\
             self._azimuthaldist._logpdf(**kwargs)
-
-
-    def rvs(self, size=1, param=None):
-        """Gives a set of random values drawn from this distribution.
-
-        Parameters
-        ----------
-        size : {1, int}
-            The number of values to generate; default is 1.
-        param : {None, string}
-            If provided, will just return values for the given parameter.
-            Otherwise, returns random values for each parameter.
-
-        Returns
-        -------
-        structured array
-            The random values in a numpy structured array. If a param was
-            specified, the array will only have an element corresponding to the
-            given parameter. Otherwise, the array will have an element for each
-            parameter in self's params.
-        """
-        if param is not None:
-            dtype = [(param, float)]
-        else:
-            dtype = [(p, float) for p in self.params]
-        arr = numpy.zeros(size, dtype=dtype)
-        for (p,_) in dtype:
-            if p == self._polar_angle:
-                arr[p] = self._polardist.rvs(size=size)
-            elif p == self._azimuthal_angle:
-                arr[p] = self._azimuthaldist.rvs(size=size)
-            else:
-                raise ValueError("unrecognized parameter %s" %(p))
-        return arr
 
     @classmethod
     def from_config(cls, cp, section, variable_args):

@@ -23,24 +23,20 @@ translation between points in the chirp parameters parameter space is done
 in a workflow.
 """
 
-from __future__ import division
 import os
 import copy
 import argparse
 import tempfile
-from six.moves import configparser as ConfigParser
 import numpy
 import logging
-import distutils.spawn
 import h5py
+import configparser
 from scipy import spatial
-from six.moves import range
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import table
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 import pycbc
 import pycbc.psd
 import pycbc.strain
@@ -48,6 +44,7 @@ import pycbc.version
 import pycbc.tmpltbank
 import pycbc.workflow as wf
 import pycbc.workflow.pegasus_workflow as pwf
+from pycbc.workflow import WorkflowConfigParser
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -193,32 +190,19 @@ parser.add_argument("--print-chi-points", action="store", default=None,
                     "using pycbc_tmpltbank_to_chi_params. This will be "
                     "written to FILENAME. If this argument is not given, no "
                     "chi points file will be written.")
-parser.add_argument("--workflow-name", type=str, default='bank_gen',
-                    help="Name to use for the produced .dax file.")
-parser.add_argument("--dax-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the dax filename.")
-parser.add_argument("--map-filename", type=str, default=None,
-                    help="This can be used if running this job in a "
-                         "sub-workflow to specify the output map filename. "
-                         "WARNING: Giving this if not running as a "
-                         "sub-workflow will cause pycbc_submit_dax to not "
-                         "work.")
-parser.add_argument("--transformation-catalog-filename", type=str, default=None,
-                    help="See workflow/core.py")
 parser.add_argument("--intermediate-data-file", type=str, required=True,
                     help="The HDF file to be used to store data to pass down "
                     "to the various worker jobs.")
 parser.add_argument("--metadata-file", type=str, required=True,
                     help="Location of the output file containing the metadata "
                     "that will be added to the final XML file.")
-parser.add_argument("--is-sub-workflow", default=False, action="store_true",
-                    help="Only give this option if this code is being run "
-                    "as a sub-workflow within pegasus. If this means nothing "
-                    "to you, do not give this option.")
 parser.add_argument("--storage-path-base", default=None,
                     help="If running this code as a sub-workflow then this "
                     "path is pretended to all storage directories.")
+parser.add_argument("--supplement-config-file", action="append",
+                    help="This can be used to add additional options to those "
+                    "that this code will supply. If there are conflicts the "
+                    "code will fail. Can be supplied multiple times.")
 
 pycbc.tmpltbank.insert_base_bank_options(parser)
 
@@ -237,6 +221,9 @@ data_opts = pycbc.strain.insert_strain_option_group(parser)
 # Add the ethinca calculation options - applied in the combiner
 ethinca_opts = pycbc.tmpltbank.insert_ethinca_metric_options(parser)
 
+# Workflow options
+wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
+
 opts = parser.parse_args()
 # Going to need this for setting up the dag later
 orig_opts = copy.deepcopy(opts)
@@ -246,7 +233,7 @@ cmds_file_name = opts.metadata_file
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
 ligolw_process.register_to_xmldoc(outdoc, __program__, vars(opts), comment="",
-                            ifos="", version=pycbc.version.git_hash,
+                            instruments="", version=pycbc.version.git_hash,
                             cvs_repository='pycbc/'+pycbc.version.git_branch,
                             cvs_entry_time=pycbc.version.date)
 ligolw_utils.write_filename(outdoc, cmds_file_name)
@@ -449,26 +436,43 @@ h5file.close()
 
 # And begin dag generation
 # First: Set up the config parser.
-cp = ConfigParser.ConfigParser()
+# FIXME: We really should just let *all* of this be provided in the input
+#        config file. The issue is in ensuring consistency with options above.
+#        Maybe this becomes a Workflow->SubWorkflow set-up?
+#        With other bank generators being used a lot now, this is perhaps not
+#        so high priority.
+cp = WorkflowConfigParser(configFiles=opts.supplement_config_file)
 # Workflow first:
-cp.add_section('workflow')
+try:
+    cp.add_section('workflow')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('workflow', 'file-retention-level', 'all_files')
 cp.set('workflow', 'start-time', '900000000')
 cp.set('workflow', 'end-time', '900010000')
-cp.add_section('workflow-ifos')
+try:
+    cp.add_section('workflow-ifos')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('workflow-ifos', 'h1', '')
 cp.set('workflow-ifos', 'l1', '')
 cp.set('workflow-ifos', 'v1', '')
 
 # Then executables
-cp.add_section('executables')
+try:
+    cp.add_section('executables')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('executables', 'aligned2dstack', '${which:pycbc_geom_aligned_2dstack}')
 cp.set('executables', 'alignedbankcat', '${which:pycbc_aligned_bank_cat}')
 cp.set('executables', 'dumptochis', '${which:pycbc_tmpltbank_to_chi_params}')
 cp.set('executables', 'bankverify', '${which:pycbc_bank_verification}')
 
 # Shared option groups
-cp.add_section('sharedoptions')
+try:
+    cp.add_section('sharedoptions')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('sharedoptions', 'massranges', 'aligned2dstack,dumptochis,bankverify')
 cp.set('sharedoptions', 'metric', 'alignedbankcat,dumptochis,bankverify')
 cp.set('sharedoptions', 'psd', 'alignedbankcat,dumptochis,bankverify')
@@ -502,25 +506,37 @@ if opts.threed_lattice:
     cp.set('aligned2dstack', 'threed-lattice', '')
 if opts.random_seed:
     cp.set('aligned2dstack', 'random-seed', str(opts.random_seed))
-cp.add_section('pegasus_profile-aligned2dstack')
+try:
+    cp.add_section('pegasus_profile-aligned2dstack')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('pegasus_profile-aligned2dstack', 'condor|request_memory', '3000')
 
 # alignedcat
 cp.add_section('alignedbankcat')
 if opts.f_low_column is not None:
     cp.set('alignedbankcat', 'f-low-column', opts.f_low_column)
-cp.add_section('pegasus_profile-alignedbankcat')
+try:
+    cp.add_section('pegasus_profile-alignedbankcat')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('pegasus_profile-alignedbankcat', 'condor|request_memory', '3000')
 
 # dumptochis
 cp.add_section('dumptochis')
-cp.add_section('pegasus_profile-dumptochis')
+try:
+    cp.add_section('pegasus_profile-dumptochis')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('pegasus_profile-dumptochis', 'condor|request_memory', '3000')
 
 # bank verification
 cp.add_section('bankverify')
 cp.set('bankverify', 'bin-spacing', str(1 - opts.min_match))
-cp.add_section('pegasus_profile-bankverify')
+try:
+    cp.add_section('pegasus_profile-bankverify')
+except configparser.DuplicateSectionError:
+    pass
 cp.set('pegasus_profile-bankverify', 'condor|request_memory', '3000')
 
 temp_fp = open('temp.ini', 'w')
@@ -532,7 +548,7 @@ opts.config_overrides = []
 opts.config_delete = []
 
 # Now setup the workflow
-workflow = wf.Workflow(opts, opts.workflow_name)
+workflow = wf.Workflow(opts)
 
 # Start with 2dstack jobs
 if opts.storage_path_base:
@@ -542,16 +558,10 @@ else:
 #wf.makedir(curr_dir)
 
 stack_exe = GeomAligned2DStackExecutable(workflow.cp, 'aligned2dstack',
-                                   ifos=workflow.ifos, out_dir=curr_dir)
+                                         ifos=workflow.ifos, out_dir=curr_dir)
 num_banks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
-if not opts.is_sub_workflow:
-    input_h5file = wf.File.from_path(opts.intermediate_data_file)
-else:
-    # Basically, if this is a sub-workflow do not store a PFN, as it will be
-    # some meaningless temporary path, but instead tell the uber-workflow
-    # that these files are outputs and used within the sub-dax and let it
-    # handle the rest.
-    input_h5file = pwf.File(os.path.basename(opts.intermediate_data_file))
+input_h5file = wf.File.from_path(opts.intermediate_data_file)
+
 
 
 all_outs = wf.FileList([])
@@ -574,11 +584,7 @@ else:
 
 combine_exe = AlignedBankCatExecutable(workflow.cp, 'alignedbankcat',
                                         ifos=workflow.ifos, out_dir=curr_dir)
-if not opts.is_sub_workflow:
-    metadata_file = wf.File.from_path(cmds_file_name)
-else:
-    metadata_file = pwf.File(os.path.basename(cmds_file_name))
-
+metadata_file = wf.File.from_path(cmds_file_name)
 combine_node = combine_exe.create_node(all_outs, metadata_file,
                                        workflow.analysis_time,
                                        output_file_path=opts.output_file)
@@ -598,8 +604,7 @@ bankverify_exe = BankVerification(workflow.cp, 'bankverify',
 bankverify_node = bankverify_exe.create_node(out_bank, workflow.analysis_time)
 workflow += bankverify_node
 
-workflow.save(filename=opts.dax_filename, output_map_path=opts.map_filename,
-              transformation_catalog_path=opts.transformation_catalog_filename)
+workflow.save()
 
 logging.info("GENERATION SUCCESSFUL.")
 logging.info("Submit the resulting dax file to generate your template bank.")

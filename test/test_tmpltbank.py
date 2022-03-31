@@ -27,6 +27,7 @@ These are the unittests for the pycbc.tmpltbank module
 
 from __future__ import division
 import os
+import math
 import numpy
 import pycbc.tmpltbank
 import pycbc.psd
@@ -35,12 +36,8 @@ from pycbc import pnutils
 from pycbc.types import Array
 from pycbc.filter import match
 from pycbc.waveform import get_fd_waveform
-from six.moves import range
-import difflib
-import sys
 import matplotlib
 matplotlib.use('Agg')
-import pylab
 
 import unittest
 from utils import parse_args_cpu_only, simple_exit
@@ -242,41 +239,47 @@ class TmpltbankTestClass(unittest.TestCase):
 
             # Check that if the mass limits have changed, it was right to do so
             # This is not exhaustive, but gets most things
-            if not self.min_total_mass == curr_min_mass:
+            if (curr_min_mass is None) or \
+                    not math.isclose(self.min_total_mass, curr_min_mass,
+                                     rel_tol=1e-06):
                 min_comp_mass = self.min_mass1 + self.min_mass2
                 min_eta = self.min_mass1 * self.min_mass2 /\
                            (min_comp_mass * min_comp_mass)
                 min_chirp_mass = min_comp_mass * min_eta**(3./5.)
-                if self.min_total_mass == min_comp_mass:
+                if (min_comp_mass is not None) and \
+                        math.isclose(self.min_total_mass, min_comp_mass,
+                                     rel_tol=1e-06):
                     # Okay, the total mass is changed by the components
                     pass
                 elif (self.min_eta and min_eta < self.min_eta) or \
                         (self.max_eta and min_eta > self.max_eta):
                     # Okay, not possible from eta
                     pass
-                elif min_chirp_mass < self.min_chirp_mass:
+                elif self.min_chirp_mass and \
+                        min_chirp_mass < self.min_chirp_mass:
                     # Okay, not possible from chirp mass
                     pass
                 else:
                     err_msg = "Minimum total mass changed unexpectedly."
-                    print(self.min_total_mass, curr_min_mass)
-                    print(self.min_mass1, self.min_mass2, min_comp_mass)
-                    print(min_eta, self.min_eta, self.max_eta)
-                    print(min_chirp_mass, self.min_chirp_mass)
                     self.fail(err_msg)
-            if not self.max_total_mass == curr_max_mass:
+            if (curr_max_mass is None) or \
+                    not math.isclose(self.max_total_mass, curr_max_mass,
+                                 rel_tol=1e-06):
                 max_comp_mass = self.max_mass1 + self.max_mass2
                 max_eta = self.max_mass1 * self.max_mass2 /\
                            (max_comp_mass * max_comp_mass)
                 max_chirp_mass = max_comp_mass * max_eta**(3./5.)
-                if self.max_total_mass == max_comp_mass:
+                if (max_comp_mass is not None) and \
+                        math.isclose(self.max_total_mass, max_comp_mass,
+                                     rel_tol=1e-06):
                     # Okay, the total mass is changed by the components
                     pass
                 elif (self.min_eta and max_eta < self.min_eta) or\
                         (self.max_eta and max_eta > self.max_eta):
                     # Okay, not possible from eta
                     pass
-                elif max_chirp_mass > self.max_chirp_mass:
+                elif self.max_chirp_mass and \
+                        max_chirp_mass > self.max_chirp_mass:
                     # Okay, not possible from chirp mass
                     pass
                 else:

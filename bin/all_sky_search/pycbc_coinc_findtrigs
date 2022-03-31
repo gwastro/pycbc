@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-import h5py, argparse, logging, numpy, numpy.random
+import h5py, copy, argparse, logging, numpy, numpy.random
+import shutil, uuid, os.path, atexit
 from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat, ranking
 import pycbc.version
+from pycbc import pool
 from numpy.random import seed, shuffle
 from pycbc.io.hdf import ReadByTemplate
 from pycbc.types.optparse import MultiDetOptionAction
@@ -37,11 +39,16 @@ parser.add_argument("--coinc-threshold", type=float, default=0.0,
 parser.add_argument("--timeslide-interval", type=float,
                     help="Interval between timeslides in seconds. Timeslides are"
                          " disabled if the option is omitted.")
-parser.add_argument("--loudest-keep-values", type=str, nargs='*',
-                    default=['6:1'],
-                    help="Apply successive multiplicative levels of decimation"
-                         " to coincs with stat value below the given thresholds"
-                         " Ex. 9:10 8.5:30 8:30 7.5:30. Default: no decimation")
+parser.add_argument("--loudest-keep-values",
+                    default='[6:1]',
+                    help="Apply successive multiplicative levels of"
+                         " decimation to coincs with stat value below the"
+                         " given thresholds. Supply as a comma-separated list"
+                         " of threshold:decimation value pairs surrounded by"
+                         " square brackets (no spaces!). Decimation values must"
+                         " be positive integers."
+                         " Ex. [15:5,10:30,5:30,0:30]."
+                         " Default: no decimation")
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. Format"
                          " PART/NUM_PARTS")
@@ -55,6 +62,13 @@ parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
 parser.add_argument("--batch-singles", default=5000, type=int,
                     help="Number of single triggers to process at once")
+parser.add_argument('--nprocesses', type=int, default=1,
+                    help="Number of processes to use")
+parser.add_argument('--stage-input', action='store_true',
+                    help="Stage input files through to speed up"
+                         "access by multiple processes")
+parser.add_argument('--stage-input-dir', type=str, default='/dev/shm',
+                    help="Directory to stage input files")
 stat.insert_statistic_option_group(parser)
 args = parser.parse_args()
 
@@ -88,15 +102,48 @@ class MultiifoTrigs(object):
         self.singles = []
 
 trigs = MultiifoTrigs()
+cleanup_files = []
+
+def exit_cleaning():
+    for fname in cleanup_files:
+        logging.info('cleaning up %s', fname)
+        try:
+            os.remove(fname)
+        except OSError as e:
+            print(e)
+            pass
+atexit.register(exit_cleaning)
+
+# If some templates have no triggers one or more ifos, there can be no
+# coincs: so, track which templates contain triggers in all ifos
+tids_with_trigs = None
+
 for i in range(len(args.trigger_files)):
-    logging.info('Opening trigger file %s: %s' % (i,args.trigger_files[i]))
-    reader = ReadByTemplate(args.trigger_files[i],
+    if args.stage_input:
+        dest = os.path.join(args.stage_input_dir, str(uuid.uuid4()) + '.hdf')
+        logging.info("Moving %s to shared memory as %s",
+                     args.trigger_files[i], dest)
+        cleanup_files.append(dest)
+        shutil.copyfile(args.trigger_files[i], dest)
+    else:
+        dest = args.trigger_files[i]
+
+    logging.info('Opening trigger file %s: %s' % (i, dest))
+    reader = ReadByTemplate(dest,
                             args.template_bank,
                             args.segment_name,
                             args.veto_files,
                             args.gating_veto_windows)
     ifo = reader.ifo
     trigs.ifos.append(ifo)
+    
+    # We don't have that many triggers, see if we can skip some templates
+    if len(reader.file[ifo]['template_id']) < 2**27:
+        uniq = numpy.unique(reader.file[ifo]['template_id'][:])
+        if tids_with_trigs is None:
+            tids_with_trigs = numpy.arange(0, num_templates)
+        tids_with_trigs = numpy.intersect1d(tids_with_trigs, uniq)
+
     # time shift is subtracted from pivot ifo time
     trigs.to_shift.append(-1 if ifo == args.pivot_ifo else 0)
     logging.info('Applying time shift multiple %i to ifo %s' %
@@ -133,6 +180,10 @@ if args.randomize_template_order:
 else:
     template_ids = range(tmin, tmax)
 
+# Only analyze templates which might have coincs
+if tids_with_trigs is not None:
+    template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
+
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and
 # ids in each ifo
@@ -141,18 +192,33 @@ for ifo in trigs.ifos:
     data['%s/time' % ifo] = []
     data['%s/trigger_id' % ifo] = []
 
-total_factors = [1]
+factors = [1]
 threshes = [numpy.inf]
-for decstr in args.loudest_keep_values:
+loudest_keep_vals = args.loudest_keep_values.strip('[]').split(',')
+
+for decstr in loudest_keep_vals:
     thresh, factor = decstr.split(':')
+    if float(factor) % 1:
+        raise RuntimeError("Non-integer decimation is not supported") 
+    if int(factor) < 1:
+        raise RuntimeError("Negative or zero decimation does not make sense")
     if int(factor) == 1:
         continue
     threshes.append(float(thresh))
-    # throws an error if 'factor' is not the string representation
-    # of an integer
-    total_factors.append(total_factors[-1] * int(factor))
+    factors.append(int(factor))
 
-for tnum in template_ids:
+# Sort the threshes into descending order
+# - allows decimation factors to be given in any order
+threshorder = numpy.argsort(threshes)[::-1]
+threshes = numpy.array(threshes)[threshorder]
+factors = numpy.array(factors)[threshorder]
+
+# Decimation factors are applied successively in descending order of threshold
+total_factors = numpy.cumprod(factors)
+
+# Gather the coincs from a single template
+def process_template(tnum):
+    local_data = copy.deepcopy(data)
     times_full = {}
     sds_full = {}
     tids_full = {}
@@ -164,12 +230,12 @@ for tnum in template_ids:
 
         # get single-detector statistic
         sds_full[i] = rank_method.single(sngl)
-         
+
     mintrigs = min([len(ti) for ti in tids_full.values()])
     if mintrigs == 0:
         logging.info('No triggers in at least one ifo for template %i, '
                      'skipping' % tnum)
-        continue
+        return local_data
 
     if type(rank_method.single_dtype) == list:
         entries = [e[0] for e in rank_method.single_dtype]
@@ -214,7 +280,7 @@ for tnum in template_ids:
 
         times = times_full.copy()
         times[args.fixed_ifo] = times_full[args.fixed_ifo][fixed_idxs]
-        
+
         sds = sds_full.copy()
         sds[args.fixed_ifo] = sds_full[args.fixed_ifo][fixed_idxs]
 
@@ -387,15 +453,26 @@ for tnum in template_ids:
             for ifo in trigs.ifos:
                 addtime = times[ifo][ids[ifo]]
                 addtriggerid = tids[ifo][ids[ifo]]
-                data['%s/time' % ifo] += [addtime]
-                data['%s/trigger_id' % ifo] += [addtriggerid]
-            data['stat'] += [cstat]
-            data['decimation_factor'] += [dec]
-            data['timeslide_id'] += [slide]
-            data['template_id'] += [numpy.repeat(tnum, len(slide))]
-
+                local_data['%s/time' % ifo] += [addtime]
+                local_data['%s/trigger_id' % ifo] += [addtriggerid]
+            local_data['stat'] += [cstat]
+            local_data['decimation_factor'] += [dec]
+            local_data['timeslide_id'] += [slide]
+            local_data['template_id'] += [numpy.repeat(tnum, len(slide))]
             start1 += args.batch_singles
         start0 += args.batch_singles
+    return local_data
+
+if args.nprocesses == 1:
+    ldatas = list(map(process_template, list(template_ids)))
+else:
+    p = pool.BroadcastPool(args.nprocesses)
+    ldatas = p.map(process_template, list(template_ids))
+
+logging.info('merging data from the templates')
+for ldata in ldatas:
+    for key in data:
+        data[key] += ldata[key]
 
 if len(data['stat']) > 0:
     for key in data:
@@ -438,5 +515,6 @@ if args.timeslide_interval:
 else:
     nslides = 0
 f.attrs['num_slides'] = nslides
+
 
 logging.info('Done')

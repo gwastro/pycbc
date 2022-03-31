@@ -41,7 +41,6 @@ import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
                       spa_length_in_time
-from six.moves import range as xrange
 
 
 class NoWaveformError(Exception):
@@ -274,20 +273,20 @@ def _lalsim_sgburst_waveform(**p):
 
     return hp, hc
 
-for approx_enum in xrange(0, lalsimulation.NumApproximants):
+for approx_enum in range(0, lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
         approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
 
-for approx_enum in xrange(0, lalsimulation.NumApproximants):
+for approx_enum in range(0, lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
         approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
         _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
 
 # sine-Gaussian burst
-for approx_enum in xrange(0, lalsimulation.NumApproximants):
+for approx_enum in range(0, lalsimulation.NumApproximants):
     if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
         approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
         _lalsim_enum[approx_name] = approx_enum
@@ -388,17 +387,48 @@ def get_obj_attrs(obj):
 
     return pr
 
+
+def parse_mode_array(input_params):
+    """Ensures mode_array argument in a dictionary of input parameters is
+    a list of tuples of (l, m), where l and m are ints.
+
+    Accepted formats for the ``mode_array`` argument is a list of tuples of
+    ints (e.g., ``[(2, 2), (3, 3), (4, 4)]``), a space-separated string giving
+    the modes (e.g., ``22 33 44``), or an array of ints or floats (e.g.,
+    ``[22., 33., 44.]``.
+    """
+    if 'mode_array' in input_params and input_params['mode_array'] is not None:
+        mode_array = input_params['mode_array']
+        if isinstance(mode_array, str):
+            mode_array = mode_array.split()
+        if not isinstance(mode_array, (numpy.ndarray, list)):
+            mode_array = [mode_array]
+        for ii, ma in enumerate(mode_array):
+            # if ma is a float or int, convert to str (e.g., 22. -> '22'), so
+            # that...
+            if isinstance(ma, (float, int)):
+                ma = str(int(ma))
+            # if ma is a str convert to (int, int) (e.g., '22' -> (2, 2))
+            if isinstance(ma, str):
+                l, m = ma
+                ma = (int(l), int(m))
+            mode_array[ii] = ma
+        input_params['mode_array'] = mode_array
+    return input_params
+
+
 def props(obj, **kwargs):
     """ Return a dictionary built from the combination of defaults, kwargs,
     and the attributes of the given object.
     """
     pr = get_obj_attrs(obj)
     pr.update(kwargs)
-
     # Get the parameters to generate the waveform
     # Note that keyword arguments override values in the template object
     input_params = default_args.copy()
     input_params.update(pr)
+    # if mode array present and is a string, convert to a list of tuples
+    input_params = parse_mode_array(input_params)
     return input_params
 
 def check_args(args, required_args):
@@ -872,6 +902,7 @@ def seobnrv4hm_length_in_time(**kwargs):
     return get_hm_length_in_time('SEOBNRv4', 5, **kwargs)
 
 def get_hm_length_in_time(lor_approx, maxm_default, **kwargs):
+    kwargs = parse_mode_array(kwargs)
     if 'mode_array' in kwargs and kwargs['mode_array'] is not None:
         maxm = max(m for _, m in kwargs['mode_array'])
     else:

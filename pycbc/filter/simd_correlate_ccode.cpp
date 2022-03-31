@@ -35,7 +35,10 @@
 #ifndef __clang__
     #include <omp.h>
 #endif
-#include <x86intrin.h>
+
+#if (defined(__x86_64__) || defined(__i386__))
+    #include <x86intrin.h>
+#endif
 
 #ifdef __AVX2__
 #define _HAVE_AVX2 1

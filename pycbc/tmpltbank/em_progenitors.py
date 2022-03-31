@@ -14,7 +14,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from __future__ import division
 import math
 import numpy as np
 import pycbc
@@ -60,14 +59,14 @@ def ISSO_eq_at_pole(r, chi):
     between 6 and 1+sqrt[3]+sqrt[3+2sqrt[3]].
 
     Parameters
-    -----------
+    ----------
     r: float
         the radial coordinate in BH mass units
     chi: float
         the BH dimensionless spin parameter
 
     Returns
-    ----------
+    -------
     float
         r**3*(r**2*(r-6)+chi**2*(3*r+4))+chi**4*(3*r*(r-2)+chi**2)
     """
@@ -76,15 +75,13 @@ def ISSO_eq_at_pole(r, chi):
 # Equation that determines the ISSO radius (in BH mass units) for a generic
 # orbital inclination
 def PG_ISSO_eq(r, chi, incl):
-    """
-    Polynomial that enables the calculation of a generic innermost
+    """Polynomial that enables the calculation of a generic innermost
     stable spherical orbit (ISSO) radius via its roots.  Physical
     solutions are between the equatorial ISSO (aka the ISCO) radius
-    and the polar ISSO radius.
-    [See Stone, Loeb, Berger, PRD 87, 084053 (2013)]
+    and the polar ISSO radius. See Stone, Loeb, Berger, PRD 87, 084053 (2013).
 
     Parameters
-    -----------
+    ----------
     r: float
         the radial coordinate in BH mass units
     chi: float
@@ -94,15 +91,13 @@ def PG_ISSO_eq(r, chi, incl):
         momentum in radians
 
     Returns
-    ----------
+    -------
     float
-        r**8*Z+chi**2*(1-cos_incl**2)*(chi**2*(1-cos_incl**2)*Y-2*r**4*X)
+        ``r**8*Z+chi**2*(1-cos_incl**2)*(chi**2*(1-cos_incl**2)*Y-2*r**4*X)``
         where
-        X=chi**2*(chi**2*(3*chi**2+4*r*(2*r-3))+r**2*(15*r*(r-4)+28))-
-          6*r**4*(r**2-4)
-        Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*
-          (chi**2*(3*r+2)+3*r**2*(r-2)))
-        Z=ISCO_eq(r,chi)
+        ``X=chi**2*(chi**2*(3*chi**2+4*r*(2*r-3))+r**2*(15*r*(r-4)+28))-6*r**4*(r**2-4)``
+        ``Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*(chi**2*(3*r+2)+3*r**2*(r-2)))``
+        ``Z=ISCO_eq(r,chi)``
     """
     chi2 = chi*chi
     chi4 = chi2*chi2
@@ -121,14 +116,13 @@ def PG_ISSO_eq(r, chi, incl):
 
 # ISSO radius solver
 def PG_ISSO_solver(chi,incl):
-    """
-    Function that determines the radius of the innermost stable
+    """Function that determines the radius of the innermost stable
     spherical orbit (ISSO) for a Kerr BH and a generic inclination
     angle between the BH spin and the orbital angular momentum.
     This function finds the appropriat root of PG_ISSO_eq.
 
     Parameters
-    -----------
+    ----------
     chi: float
         the BH dimensionless spin parameter
     incl: float
@@ -136,7 +130,7 @@ def PG_ISSO_solver(chi,incl):
         angular momentum in radians
 
     Returns
-    ----------
+    -------
     solution: float
         the radius of the orbit in BH mass units
     """

@@ -1,6 +1,7 @@
-import pylab
+import matplotlib.pyplot as pp
 from pycbc.waveform import get_td_waveform
 from pycbc.detector import Detector
+
 
 apx = 'SEOBNRv4'
 # NOTE: Inclination runs from 0 to pi, with poles at 0 and pi
@@ -33,11 +34,11 @@ signal_h1 = det_h1.project_wave(hp, hc,  right_ascension, declination, polarizat
 signal_l1 = det_l1.project_wave(hp, hc,  right_ascension, declination, polarization)
 signal_v1 = det_v1.project_wave(hp, hc,  right_ascension, declination, polarization)
 
-pylab.plot(signal_h1.sample_times, signal_h1, label='H1')
-pylab.plot(signal_l1.sample_times, signal_l1, label='L1')
-pylab.plot(signal_v1.sample_times, signal_v1, label='V1')
+pp.plot(signal_h1.sample_times, signal_h1, label='H1')
+pp.plot(signal_l1.sample_times, signal_l1, label='L1')
+pp.plot(signal_v1.sample_times, signal_v1, label='V1')
 
-pylab.ylabel('Strain')
-pylab.xlabel('Time (s)')
-pylab.legend()
-pylab.show()
+pp.ylabel('Strain')
+pp.xlabel('Time (s)')
+pp.legend()
+pp.show()

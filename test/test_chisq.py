@@ -24,8 +24,6 @@
 """
 These are the unittests for the pycbc.waveform module
 """
-import sys
-import pycbc
 import unittest
 import numpy
 from pycbc.types import *
@@ -37,7 +35,7 @@ _scheme, _context = parse_args_all_schemes("correlate")
 from pycbc.vetoes.chisq_cpu import chisq_accum_bin_numpy
 from pycbc.vetoes import chisq_accum_bin, power_chisq_bins, power_chisq
 from pycbc.vetoes import power_chisq_at_points_from_precomputed
-from pycbc.filter import resample_to_delta_t, highpass
+from pycbc.filter import resample_to_delta_t
 from pycbc.catalog import Merger
 from pycbc.psd import interpolate, inverse_spectrum_truncation
 from pycbc.waveform import get_fd_waveform

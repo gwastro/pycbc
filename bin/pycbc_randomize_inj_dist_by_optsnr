@@ -1,22 +1,21 @@
 #! /usr/bin/env python
 
-from __future__ import print_function
 
 __prog__ = 'pycbc_randr_by_snr'
 __author__ = 'Collin Capano <collin.capano@ligo.org>, Miriam Cabero Mueller <miriam.cabero@ligo.org>'
 __description__ = 'Resets the distance distribution in a sim_inspiral table based on desired SNR. The SNRs are chosen randomly from a given range.'
 
 import numpy
-import os, sys
+import sys
 import time
 from scipy import stats, special
 from argparse import ArgumentParser
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import table
-from glue.ligolw.utils import process
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import table
+from pycbc.io.ligolw import LIGOLWContentHandler
+
 
 def r_uniform_in_volume(r1, r2, N):
     xi = numpy.random.uniform(0., 1., size=N)
@@ -95,13 +94,6 @@ parser.add_argument('--verbose', action = 'store_true', help = 'Be verbose.')
 
 opts = parser.parse_args()
 
-# The following is required for reasons
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-
-# The XML reading will hang if you forget this line
-lsctables.use_in(LIGOLWContentHandler)
-
 # parse the distributions
 # beta is the only special one
 if opts.distribution in ['volume', 'distance', 'logdist']:
@@ -150,8 +142,8 @@ if opts.verbose:
     print("Cycling over injections...", file=sys.stdout)
 
 # Read in input file
-xmldoc = ligolw_utils.load_filename\
-    (opts.xml_file, verbose=True, contenthandler=LIGOLWContentHandler)
+xmldoc = ligolw_utils.load_filename(
+        opts.xml_file, verbose=True, contenthandler=LIGOLWContentHandler)
 tabletype = lsctables.SimInspiralTable
 injections = tabletype.get_table(xmldoc)
 

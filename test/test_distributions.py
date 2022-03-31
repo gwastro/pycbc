@@ -30,7 +30,8 @@ from pycbc.workflow import WorkflowConfigParser
 
 # distributions to exclude from one-dimensional distribution unit tests
 # some of these distributons have their own specific unit test
-EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary", "external",
+EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
+                      "external", "external_func_fromfile",
                       "uniform_solidangle", "uniform_sky",
                       "independent_chip_chieff",
                       "uniform_f0_tau", "fixed_samples"]
@@ -67,7 +68,8 @@ class TestDistributions(unittest.TestCase):
         self.cp = WorkflowConfigParser.from_cli(self.opts)
         self.variable_args, self.static_args = \
             distributions.read_params_from_config(self.cp)
-        self.constraints = distributions.read_constraints_from_config(self.cp)
+        self.constraints = distributions.read_constraints_from_config(
+            self.cp, static_args=self.static_args)
 
         # read distributions
         self.dists = distributions.read_distributions_from_config(self.cp)
@@ -209,22 +211,27 @@ class TestDistributions(unittest.TestCase):
             pdf_2 = numpy.array([polar_dist.pdf(**{"theta" : p})
                                  * ang_dist.pdf(**{"theta" : a})
                                  for p, a in cart_sin])
-            if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
-                       < tolerance)):
-                raise ValueError("The {} distribution PDF does not match its "
-                                 "component distriubtions.".format(dist.name))
 
-            # check logarithm of PDF equilvalent
-            pdf_1 = numpy.array([dist.logpdf(**{dist.polar_angle : p,
-                                                dist.azimuthal_angle : a})
-                                 for p, a in cart_sin])
-            pdf_2 = numpy.array([polar_dist.logpdf(**{"theta" : p})
-                                 + ang_dist.logpdf(**{"theta" : a})
-                                 for p, a in cart_sin])
-            if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
-                       < tolerance)):
-                raise ValueError("The {} distribution PDF does not match its "
-                                 "component distriubtions.".format(dist.name))
+            # Catch and silence warnings here
+            with numpy.errstate(invalid="ignore", divide='ignore'):
+                if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
+                                  < tolerance)):
+                    raise ValueError("The {} distribution PDF does not match "
+                                     "its component "
+                                     "distributions.".format(dist.name))
+
+                # check logarithm of PDF equivalent
+                pdf_1 = numpy.array([dist.logpdf(**{dist.polar_angle : p,
+                                                    dist.azimuthal_angle : a})
+                                     for p, a in cart_sin])
+                pdf_2 = numpy.array([polar_dist.logpdf(**{"theta" : p})
+                                     + ang_dist.logpdf(**{"theta" : a})
+                                     for p, a in cart_sin])
+                if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
+                           < tolerance)):
+                    raise ValueError("The {} distribution PDF does not match "
+                                     "its component "
+                                     "distriubtions.".format(dist.name))
 
             # check random draws from polar angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.polar_angle]

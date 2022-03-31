@@ -17,7 +17,6 @@
 """
 Provides a class representing a frequency series.
 """
-from __future__ import division
 import os as _os, h5py
 from pycbc.types.array import Array, _convert, zeros, _noreal
 import lal as _lal
@@ -38,15 +37,6 @@ class FrequencySeries(Array):
         Sample data type.
     copy : boolean, optional
         If True, samples are copied to a new array.
-
-    Attributes
-    ----------
-    delta_f : float
-        Frequency spacing
-    epoch : lal.LIGOTimeGPS
-        Time at 0 index.
-    sample_frequencies : Array
-        Frequencies that each index corresponds to.
     """
 
     def __init__(self, initial_array, delta_f=None, epoch="", dtype=None, copy=True):
@@ -409,7 +399,7 @@ class FrequencySeries(Array):
             _numpy.savetxt(path, output)
         elif ext == '.xml' or path.endswith('.xml.gz'):
             from pycbc.io.live import make_psd_xmldoc
-            from glue.ligolw import utils
+            from ligo.lw import utils
 
             if self.kind != 'real':
                 raise ValueError('XML only supports real frequency series')
@@ -430,7 +420,8 @@ class FrequencySeries(Array):
                 ds = f.create_dataset(key, data=self.numpy(),
                                       compression='gzip',
                                       compression_opts=9, shuffle=True)
-                ds.attrs['epoch'] = float(self.epoch)
+                if self.epoch is not None:
+                    ds.attrs['epoch'] = float(self.epoch)
                 ds.attrs['delta_f'] = float(self.delta_f)
         else:
             raise ValueError('Path must end with .npy, .txt, .xml, .xml.gz '
@@ -561,24 +552,51 @@ class FrequencySeries(Array):
                      low_frequency_cutoff=low_frequency_cutoff,
                      high_frequency_cutoff=high_frequency_cutoff)
 
+    def plot(self, **kwds):
+        """ Basic plot of this frequency series
+        """
+        from matplotlib import pyplot
+
+        if self.kind == 'real':
+            plot = pyplot.plot(self.sample_frequencies, self, **kwds)
+            return plot
+        elif self.kind == 'complex':
+            plot1 = pyplot.plot(self.sample_frequencies, self.real(), **kwds)
+            plot2 = pyplot.plot(self.sample_frequencies, self.imag(), **kwds)
+            return plot1, plot2
+
 def load_frequencyseries(path, group=None):
-    """
-    Load a FrequencySeries from a .hdf, .txt or .npy file. The
-    default data types will be double precision floating point.
+    """Load a FrequencySeries from an HDF5, ASCII or Numpy file. The file type
+    is inferred from the file extension, which must be `.hdf`, `.txt` or
+    `.npy`.
+
+    For ASCII and Numpy files, the first column of the array is assumed to
+    contain the frequency. If the array has two columns, a real frequency
+    series is returned. If the array has three columns, the second and third
+    ones are assumed to contain the real and imaginary parts of a complex
+    frequency series.
+
+    For HDF files, the dataset is assumed to contain the attribute `delta_f`
+    giving the frequency resolution in Hz. The attribute `epoch`, if present,
+    is taken as the start GPS time (epoch) of the data in the series.
+
+    The default data types will be double precision floating point.
 
     Parameters
     ----------
     path: string
-        source file path. Must end with either .npy or .txt.
+        Input file path. Must end with either `.npy`, `.txt` or `.hdf`.
 
     group: string
-        Additional name for internal storage use. Ex. hdf storage uses
-        this as the key value.
+        Additional name for internal storage use. When reading HDF files, this
+        is the path to the HDF dataset to read.
 
     Raises
     ------
     ValueError
-        If path does not end in .npy or .txt.
+        If the path does not end in a supported extension.
+        For Numpy and ASCII input files, this is also raised if the array
+        does not have 2 or 3 dimensions.
     """
     ext = _os.path.splitext(path)[1]
     if ext == '.npy':
@@ -587,24 +605,21 @@ def load_frequencyseries(path, group=None):
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        f = h5py.File(path, 'r')
-        data = f[key][:]
-        series = FrequencySeries(data, delta_f=f[key].attrs['delta_f'],
-                                       epoch=f[key].attrs['epoch'])
-        f.close()
+        with h5py.File(path, 'r') as f:
+            data = f[key][:]
+            delta_f = f[key].attrs['delta_f']
+            epoch = f[key].attrs['epoch'] if 'epoch' in f[key].attrs else None
+            series = FrequencySeries(data, delta_f=delta_f, epoch=epoch)
         return series
     else:
         raise ValueError('Path must end with .npy, .hdf, or .txt')
 
+    delta_f = (data[-1][0] - data[0][0]) / (len(data) - 1)
     if data.ndim == 2:
-        delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = _lal.LIGOTimeGPS(data[0][0])
-        return FrequencySeries(data[:,1], delta_f=delta_f, epoch=epoch)
+        return FrequencySeries(data[:,1], delta_f=delta_f, epoch=None)
     elif data.ndim == 3:
-        delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
-        epoch = _lal.LIGOTimeGPS(data[0][0])
         return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f,
-                               epoch=epoch)
-    else:
-        raise ValueError('File has %s dimensions, cannot convert to Array, \
-                          must be 2 (real) or 3 (complex)' % data.ndim)
+                               epoch=None)
+
+    raise ValueError('File has %s dimensions, cannot convert to FrequencySeries, \
+                      must be 2 (real) or 3 (complex)' % data.ndim)

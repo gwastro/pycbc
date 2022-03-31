@@ -17,7 +17,9 @@ This modules provides classes for evaluating distributions with bounds.
 """
 
 import warnings
-from six.moves.configparser import Error
+from configparser import Error
+
+import numpy
 from pycbc import boundaries
 from pycbc import VARARGS_DELIM
 
@@ -206,13 +208,6 @@ class BoundedDist(object):
         The keyword arguments should provide the names of parameters and their
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
     """
     def __init__(self, **params):
         # convert input bounds to Bounds class, if necessary
@@ -233,10 +228,12 @@ class BoundedDist(object):
 
     @property
     def params(self):
+        """list of strings: The list of parameter names."""
         return self._params
 
     @property
     def bounds(self):
+        """dict: A dictionary of the parameter names and their bounds."""
         return self._bounds
 
     def __contains__(self, params):
@@ -314,6 +311,18 @@ class BoundedDist(object):
         for param in self.params:
             updated[param] = self._cdfinv_param(param, kwds[param])
         return updated
+
+    def rvs(self, size=1, **kwds):
+        "Draw random value"
+        dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        draw = {}
+        for param in self.params:
+            draw[param] = numpy.random.uniform(0, 1, size=size)
+        exp = self.cdfinv(**draw)
+        for param in self.params:
+            arr[param] = exp[param]
+        return arr
 
     @classmethod
     def from_config(cls, cp, section, variable_args, bounds_required=False):

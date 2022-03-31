@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-from __future__ import print_function
 
 __prog__ = 'pycbc_get_ffinal'
 __author__ = 'Collin Capano <collin.capano@ligo.org>'
@@ -15,10 +14,10 @@ import optparse
 
 from pycbc import waveform
 
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import table
-from glue.ligolw.utils import process
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import table
+from ligo.lw.utils import process
 
 def fstr(input):
     """
@@ -128,7 +127,7 @@ if infile is not None:
     xmldoc = ligolw_utils.load_filename(infile, gz=infile.endswith('.gz'),
         verbose=opts.verbose)
     this_process = process.register_to_xmldoc(xmldoc, __prog__, opts.__dict__)
-    sngl_insp_table = table.get_table(xmldoc, 'sngl_inspiral')
+    sngl_insp_table = table.Table.get_table(xmldoc, 'sngl_inspiral')
 else:
     # FIXME: try to get this from the waveformOpts group
     tmplt_args = ['mass1', 'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x',

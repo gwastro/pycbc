@@ -24,9 +24,7 @@
 """Provides I/O support for multi-tempered sampler.
 """
 
-from __future__ import absolute_import
 import argparse
-from six import string_types
 import numpy
 from .base_mcmc import (CommonMCMCMetadataIO, thin_samples_for_writing,
                         _ensemble_get_index, _ensemble_get_walker_index,
@@ -46,7 +44,7 @@ class ParseTempsArg(argparse.Action):
         super(ParseTempsArg, self).__init__(type=type, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        singlearg = isinstance(values, string_types)
+        singlearg = isinstance(values, str)
         if singlearg:
             values = [values]
         if values[0] == 'all':
@@ -241,7 +239,7 @@ def read_raw_samples(fp, fields,
     dict
         A dictionary of field name -> numpy array pairs.
     """
-    if isinstance(fields, string_types):
+    if isinstance(fields, str):
         fields = [fields]
     if group is None:
         group = fp.samples_group
@@ -337,7 +335,7 @@ def ensemble_read_raw_samples(fp, fields, thin_start=None,
     dict
         A dictionary of field name -> numpy array pairs.
     """
-    if isinstance(fields, string_types):
+    if isinstance(fields, str):
         fields = [fields]
     # walkers to load
     widx, nwalkers = _ensemble_get_walker_index(fp, walkers)

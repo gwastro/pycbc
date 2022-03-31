@@ -6,25 +6,23 @@ import h5py
 import numpy as np
 import logging
 import inspect
+import pickle
 
 from itertools import chain
-from six.moves import range
-from six.moves import cPickle as pickle
-from six import raise_from
-
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 
 from pycbc import version as pycbc_version
-from pycbc.tmpltbank import return_search_summary
-from pycbc.tmpltbank import return_empty_sngl
+from pycbc.io.ligolw import return_search_summary, return_empty_sngl
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
+from pycbc.events import mean_if_greater_than_zero
+from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -462,7 +460,7 @@ class SingleDetTriggers(object):
             return self.bank[key][:][self.template_id]
         except (RuntimeError, KeyError) as exc:
             err_msg = "Cannot find {} in input files".format(key)
-            raise_from(ValueError(err_msg), exc)
+            raise ValueError(err_msg) from exc
 
     def checkbank(self, param):
         if self.bank == {}:
@@ -505,6 +503,10 @@ class SingleDetTriggers(object):
 
         # If this becomes memory intensive we can optimize
         stat = rank_method.rank_stat_single((self.ifo, self.trig_dict()))
+        if len(stat) == 0:
+            # No triggers, so just return here
+            self.stat = np.array([])
+            return
 
         times = self.end_time
         index = stat.argsort()[::-1]
@@ -722,6 +724,7 @@ class ForegroundTriggers(object):
         self._sort_arr = None
         self._template_id = None
         self._trig_ids = None
+        self.get_active_segments()
 
     @property
     def sort_arr(self):
@@ -746,18 +749,10 @@ class ForegroundTriggers(object):
             return self._trig_ids
         self._trig_ids = {}
 
-        try:  # New style multi-ifo file
-            ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
-            for ifo in ifos:
-                trigid = self.get_coincfile_array(ifo + '/trigger_id')
-                self._trig_ids[ifo] = trigid
-        except KeyError:  # Old style two-ifo file
-            ifo1 = self.coinc_file.h5file.attrs['detector_1']
-            ifo2 = self.coinc_file.h5file.attrs['detector_2']
-            trigid1 = self.get_coincfile_array('trigger_id1')
-            trigid2 = self.get_coincfile_array('trigger_id2')
-            self._trig_ids[ifo1] = trigid1
-            self._trig_ids[ifo2] = trigid2
+        ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
+        for ifo in ifos:
+            trigid = self.get_coincfile_array(ifo + '/trigger_id')
+            self._trig_ids[ifo] = trigid
         return self._trig_ids
 
     def get_coincfile_array(self, variable):
@@ -799,18 +794,20 @@ class ForegroundTriggers(object):
             return_dict[ifo] = (curr, np.logical_not(lgc))
         return return_dict
 
+    def get_active_segments(self):
+        self.active_segments = {}
+        for ifo in self.ifos:
+            starts = self.sngl_files[ifo].get_column('search/start_time')
+            ends = self.sngl_files[ifo].get_column('search/end_time')
+            self.active_segments[ifo] = veto.start_end_to_segments(starts,
+                                                                   ends)
+
     def get_end_time(self):
-        try:  # First try new-style format
-            ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
-            ref_times = None
-            for ifo in ifos:
-                times = self.get_coincfile_array('{}/time'.format(ifo))
-                if ref_times is None:
-                    ref_times = times
-                else:
-                    ref_times[ref_times < 0] = times[ref_times < 0]
-        except KeyError:  # Else fall back on old two-det format
-            ref_times = self.get_coincfile_array('time1')
+        ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
+        times_gen = (self.get_coincfile_array('{}/time'.format(ifo))
+                     for ifo in ifos)
+        ref_times = np.array([mean_if_greater_than_zero(t)[0]
+                              for t in zip(*times_gen)])
         return ref_times
 
     def get_ifos(self):
@@ -835,7 +832,7 @@ class ForegroundTriggers(object):
 
         ifos = list(self.sngl_files.keys())
         proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
-                     {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
+                     {}, instruments=ifos, comment='', version=pycbc_version.git_hash,
                      cvs_repository='pycbc/'+pycbc_version.git_branch,
                      cvs_entry_time=pycbc_version.date).process_id
 
@@ -934,7 +931,7 @@ class ForegroundTriggers(object):
                 for name in sngl_col_names:
                     val = sngl_col_vals[name][ifo][0][idx]
                     if name == 'end_time':
-                        sngl.set_end(LIGOTimeGPS(val))
+                        sngl.end = LIGOTimeGPS(val)
                     else:
                         setattr(sngl, name, val)
                 for name in bank_col_names:
@@ -967,17 +964,17 @@ class ForegroundTriggers(object):
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
             coinc_event_row.nevents = len(triggered_ifos)
-            coinc_event_row.instruments = ','.join(triggered_ifos)
-            coinc_inspiral_row.set_ifos(triggered_ifos)
+            # note that simply `coinc_event_row.instruments = triggered_ifos`
+            # does not lead to a correct result with ligo.lw 1.7.1
+            coinc_event_row.instruments = ','.join(sorted(triggered_ifos))
+            coinc_inspiral_row.instruments = triggered_ifos
             coinc_event_row.time_slide_id = time_slide_id
             coinc_event_row.process_id = proc_id
             coinc_event_row.coinc_event_id = coinc_id
             coinc_inspiral_row.coinc_event_id = coinc_id
             coinc_inspiral_row.mchirp = sngl_combined_mchirp
             coinc_inspiral_row.mass = sngl_combined_mtot
-            coinc_inspiral_row.set_end(
-                LIGOTimeGPS(coinc_event_vals['time'][idx])
-            )
+            coinc_inspiral_row.end = LIGOTimeGPS(coinc_event_vals['time'][idx])
             coinc_inspiral_row.snr = net_snrsq**0.5
             coinc_inspiral_row.false_alarm_rate = coinc_event_vals['fap'][idx]
             coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
@@ -998,6 +995,113 @@ class ForegroundTriggers(object):
 
         ligolw_utils.write_filename(outdoc, file_name)
 
+    def to_coinc_hdf_object(self, file_name):
+        ofd = h5py.File(file_name,'w')
+
+        # Some fields are special cases:
+
+        logging.info("Outputting search results")
+        time = self.get_end_time()
+        ofd.create_dataset('time', data=time, dtype=np.float32)
+
+        ifar = self.get_coincfile_array('ifar')
+        ofd.create_dataset('ifar', data=ifar, dtype=np.float32)
+
+        ifar_exc = self.get_coincfile_array('ifar_exc')
+        ofd.create_dataset('ifar_exclusive', data=ifar_exc,
+                           dtype=np.float32)
+
+        fap = self.get_coincfile_array('fap')
+        ofd.create_dataset('p_value', data=fap,
+                           dtype=np.float32)
+
+        fap_exc = self.get_coincfile_array('fap_exc')
+        ofd.create_dataset('p_value_exclusive', data=fap_exc,
+                           dtype=np.float32)
+
+        # Coinc fields
+        for field in ['stat']:
+            vals = self.get_coincfile_array(field)
+            ofd.create_dataset(field, data=vals, dtype=np.float32)
+
+        logging.info("Outputting template information")
+        # Bank fields
+        for field in ['mass1','mass2','spin1z','spin2z']:
+            vals = self.get_bankfile_array(field)
+            ofd.create_dataset(field, data=vals, dtype=np.float32)
+
+        mass1 = self.get_bankfile_array('mass1')
+        mass2 = self.get_bankfile_array('mass2')
+        mchirp, _ = mass1_mass2_to_mchirp_eta(mass1, mass2)
+
+        ofd.create_dataset('chirp_mass', data=mchirp, dtype=np.float32)
+
+        logging.info("Outputting single-trigger information")
+        logging.info("reduced chisquared")
+        chisq_vals_valid = self.get_snglfile_array_dict('chisq')
+        chisq_dof_vals_valid = self.get_snglfile_array_dict('chisq_dof')
+        for ifo in self.ifos:
+            chisq_vals = chisq_vals_valid[ifo][0]
+            chisq_valid = chisq_vals_valid[ifo][1]
+            chisq_dof_vals = chisq_dof_vals_valid[ifo][0]
+            rchisq = chisq_vals / (2. * chisq_dof_vals - 2.)
+            rchisq[np.logical_not(chisq_valid)] = -1.
+            ofd.create_dataset(ifo + '_chisq', data=rchisq,
+                               dtype=np.float64)
+
+        # Single-detector fields
+        for field in ['sg_chisq', 'end_time', 'sigmasq',
+                      'psd_var_val']:
+            logging.info(field)
+            try:
+                vals_valid = self.get_snglfile_array_dict(field)
+            except KeyError:
+                logging.info(field + " is not present in the "
+                             "single-detector files")
+            for ifo in self.ifos:
+                vals = vals_valid[ifo][0]
+                valid = vals_valid[ifo][1]
+                vals[np.logical_not(valid)] = -1.
+                ofd.create_dataset(ifo + '_'+field, data=vals,
+                                   dtype=np.float32)
+
+        snr_vals_valid = self.get_snglfile_array_dict('snr')
+        network_snr_sq = np.zeros_like(snr_vals_valid[self.ifos[0]][0])
+        for ifo in self.ifos:
+            vals = snr_vals_valid[ifo][0]
+            valid = snr_vals_valid[ifo][1]
+            vals[np.logical_not(valid)] = -1.
+            ofd.create_dataset(ifo + '_snr', data=vals,
+                               dtype=np.float32)
+            network_snr_sq[valid] += vals[valid] ** 2.0
+        network_snr = np.sqrt(network_snr_sq)
+        ofd.create_dataset('network_snr', data=network_snr, dtype=np.float32)
+
+        logging.info("Triggered detectors")
+        # This creates a n_ifos by n_events matrix, with the ifo letter
+        # if the event contains a trigger from the ifo, empty string if not
+        triggered_matrix = [[ifo[0] if v else ''
+                             for v in snr_vals_valid[ifo][1]]
+                            for ifo in self.ifos]
+        # This combines the ifo letters to make a single string per event
+        triggered_detectors = [''.join(triggered).encode('ascii')
+                               for triggered in zip(*triggered_matrix)]
+        ofd.create_dataset('trig', data=triggered_detectors,
+                           dtype='<S3')
+
+        logging.info("active detectors")
+        # This creates a n_ifos by n_events matrix, with the ifo letter
+        # if the ifo was active at the event time, empty string if not
+        active_matrix = [[ifo[0] if t in self.active_segments[ifo]
+                          else '' for t in time]
+                         for ifo in self.ifos]
+        # This combines the ifo letters to make a single string per event
+        active_detectors = [''.join(active_at_time).encode('ascii')
+                            for active_at_time in zip(*active_matrix)]
+        ofd.create_dataset('obs', data=active_detectors,
+                           dtype='<S3')
+
+        ofd.close()
 
 class ReadByTemplate(object):
     # default assignment to {} is OK for a variable used only in __init__
@@ -1038,7 +1142,7 @@ class ReadByTemplate(object):
         self.valid = veto.segments_to_start_end(self.segs)
 
     def get_data(self, col, num):
-        """ Get a column of data for template with id 'num'
+        """Get a column of data for template with id 'num'.
 
         Parameters
         ----------
@@ -1056,16 +1160,17 @@ class ReadByTemplate(object):
         return self.file['%s/%s' % (self.ifo, col)][ref]
 
     def set_template(self, num):
-        """ Set the active template to read from
+        """Set the active template to read from.
 
-        Parameters        ----------
+        Parameters
+        ----------
         num: int
-            The template id to read triggers for
+            The template id to read triggers for.
 
         Returns
         -------
         trigger_id: numpy.ndarray
-            The indices of this templates triggers
+            The indices of this templates triggers.
         """
         self.template_num = num
         times = self.get_data('end_time', num)
@@ -1336,3 +1441,12 @@ def load_state(fp, path=None, dsetname='state'):
         fp = fp[path]
     bdata = fp[dsetname][()].tobytes()
     return pickle.load(BytesIO(bdata))
+
+
+__all__ = ('HFile', 'DictArray', 'StatmapData', 'MultiifoStatmapData',
+           'FileData', 'DataFromFiles', 'SingleDetTriggers',
+           'ForegroundTriggers', 'ReadByTemplate', 'chisq_choices',
+           'get_chisq_from_file_choice', 'save_dict_to_hdf5',
+           'recursively_save_dict_contents_to_group', 'load_hdf5_to_dict',
+           'combine_and_copy', 'name_all_datasets', 'get_all_subkeys',
+           'dump_state', 'dump_pickle_to_hdf', 'load_state')

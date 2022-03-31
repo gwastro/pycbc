@@ -19,7 +19,6 @@
 """Prints an RST table of available models from the inference.models
 module.
 """
-from __future__ import (print_function, absolute_import)
 from pycbc.inference.models import models
 from _dict_to_rst import (rst_dict_table, format_class)
 

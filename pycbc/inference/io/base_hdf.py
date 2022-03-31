@@ -25,19 +25,12 @@
 inference samplers generate.
 """
 
-from __future__ import absolute_import
 
 import sys
 import logging
-# python 2.7 needs to use StingIO from the StringIO module; this was
-# deprecated in python 3
-if sys.version_info.major == 2:
-    from StringIO import StringIO
-else:
-    from io import StringIO
+from io import StringIO
 
 from abc import (ABCMeta, abstractmethod)
-from six import (add_metaclass, string_types)
 
 import numpy
 import h5py
@@ -46,6 +39,7 @@ from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
 from pycbc.io import (dump_state, load_state)
 from pycbc.workflow import WorkflowConfigParser
+from pycbc.types import FrequencySeries
 
 
 def format_attr(val):
@@ -80,8 +74,7 @@ def format_attr(val):
     return val
 
 
-@add_metaclass(ABCMeta)
-class BaseInferenceFile(h5py.File):
+class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
     """Base class for all inference hdf files.
 
     This is a subclass of the h5py.File object. It adds functions for
@@ -637,7 +630,7 @@ class BaseInferenceFile(h5py.File):
         # copy non-samples/stats data
         if ignore is None:
             ignore = []
-        if isinstance(ignore, string_types):
+        if isinstance(ignore, str):
             ignore = [ignore]
         ignore = set(ignore + [self.samples_group])
         copy_groups = set(self.keys()) - ignore
@@ -728,7 +721,7 @@ class BaseInferenceFile(h5py.File):
         # info
         if ignore is None:
             ignore = []
-        if isinstance(ignore, string_types):
+        if isinstance(ignore, str):
             ignore = [ignore]
         self.copy_info(other, ignore=ignore)
         # samples
@@ -913,3 +906,44 @@ class BaseInferenceFile(h5py.File):
             cp.read_file(cf)
             return cp
         return cf
+
+    def read_data(self):
+        """Loads the data stored in the file as a FrequencySeries.
+
+        Only works for models that store data as a frequency series in
+        ``data/DET/stilde``. A ``KeyError`` will be raised if the model used
+        did not store data in that path.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector name -> FrequencySeries.
+        """
+        data = {}
+        fmt = 'data/{}/stilde'
+        for det in self['data'].keys():
+            group = self[fmt.format(det)]
+            data[det] = FrequencySeries(
+                group[()], delta_f=group.attrs['delta_f'],
+                epoch=group.attrs['epoch'])
+        return data
+
+    def read_psds(self):
+        """Loads the PSDs stored in the file as a FrequencySeries.
+
+        Only works for models that store PSDs in
+        ``data/DET/psds/0``. A ``KeyError`` will be raised if the model used
+        did not store PSDs in that path.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector name -> FrequencySeries.
+        """
+        psds = {}
+        fmt = 'data/{}/psds/0'
+        for det in self['data'].keys():
+            group = self[fmt.format(det)]
+            psds[det] = FrequencySeries(
+                group[()], delta_f=group.attrs['delta_f'])
+        return psds

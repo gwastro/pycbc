@@ -29,7 +29,6 @@ This module retrives a timeseries and then calculates
 the q-transform of that time series
 """
 
-from six.moves import range
 import numpy
 from numpy import ceil, log, exp
 from pycbc.types.timeseries import FrequencySeries, TimeSeries

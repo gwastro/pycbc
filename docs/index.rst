@@ -29,7 +29,7 @@ Getting Started
         <script type="text/javascript">
             document.addEventListener("DOMContentLoaded", function(){
                 Typed.new(".element", {
-                    strings: ["^500<strong>docker pull pycbc/pycbc-el7:latest</strong><br>$ ^500<strong>docker run -it pycbc/pycbc-el7:latest</strong><br>&#40;pycbc-software&#41;&#91;pycbc@37184573e664 &#126;&#93;$ ^500<strong>python</strong><br>Python 2.7.5 &#40;default, Nov  6 2016, 00:28:07&#41;<br>&#91;GCC 4.8.5 20150623 &#40;Red Hat 4.8.5-11&#41;&#93; on linux2<br>&gt;&gt;&gt; ^500<strong>execfile&#40;&quot;/opt/pycbc/src/pycbc/examples/waveform/match_waveform.py&quot;&#41;</strong><br>^1000The match is: 0.953<br>&gt;&gt;&gt; ^500<strong>from pycbc.waveform import td_approximants</strong><br>&gt;&gt;&gt; ^500<strong>print td_approximants&#40;&#41;&#91;20:24&#93;</strong><br>['SEOBNRv3', 'SEOBNRv2', 'SpinTaylorT1', 'SEOBNRv4']<br>&gt;&gt;&gt; "],
+                    strings: ["^500<strong>docker pull pycbc/pycbc-el8:latest</strong><br>$ ^500<strong>docker run -it pycbc/pycbc-el8:latest</strong><br>&#40;pycbc-software&#41;&#91;pycbc@37184573e664 &#126;&#93;$ ^500<strong>python</strong><br>Python 2.7.5 &#40;default, Nov  6 2016, 00:28:07&#41;<br>&#91;GCC 4.8.5 20150623 &#40;Red Hat 4.8.5-11&#41;&#93; on linux2<br>&gt;&gt;&gt; ^500<strong>execfile&#40;&quot;/opt/pycbc/src/pycbc/examples/waveform/match_waveform.py&quot;&#41;</strong><br>^1000The match is: 0.953<br>&gt;&gt;&gt; ^500<strong>from pycbc.waveform import td_approximants</strong><br>&gt;&gt;&gt; ^500<strong>print td_approximants&#40;&#41;&#91;20:24&#93;</strong><br>['SEOBNRv3', 'SEOBNRv2', 'SpinTaylorT1', 'SEOBNRv4']<br>&gt;&gt;&gt; "],
                     typeSpeed: 0
                 });
             });
@@ -61,7 +61,7 @@ Installation
 
 Note, if you are a LIGO / Virgo member with access to LDG resources, PyCBC is *already*
 installed on your cluster through CVMFS! Instructions to source any release of PyCBC
-is available from the `releases page <https://github.com/ligo-cbc/pycbc/releases>`_.
+is available from the `releases page <https://github.com/gwastro/pycbc/releases>`_.
 
 You may also install PyCBC directly with pip. You may ommit `lalsuite` if you have
 your own build.
@@ -76,10 +76,12 @@ Full detailed installation instructions which covers other installation cases:
    :maxdepth: 1
 
    install
+   install_virtualenv
+   install_lalsuite
 
-====================================================
+==================================================
 Parameter Estimation of Gravitational-wave Sources
-====================================================
+==================================================
 
 Users who want to create and run parameter estimation workflows should read the
 documentation at:
@@ -89,9 +91,9 @@ documentation at:
 
    inference
 
-==========================================
+========================================
 Searching for Gravitational-wave Signals
-==========================================
+========================================
 
 Users who want to create and run scientific workflows to search for compact
 binaries should read the documentation in the links at:
@@ -103,9 +105,9 @@ binaries should read the documentation in the links at:
    workflow/pycbc_make_coinc_search_workflow
    workflow/pygrb.rst
 
-===================================================
-Template Banks, Hardware Injections, and more...
-===================================================
+=============================================
+Template Banks, Hardware Injections, and more
+=============================================
 
 Users who are interested in tools that PyCBC provides for various other
 analysis tasks (e.g. template bank generation, hardware injections, and testing
@@ -119,10 +121,11 @@ template banks) should read the documentation at:
    banksim
    faithsim
    upload_to_gracedb
+   pycbc_condition_strain
 
-==========================================
+=====================================
 Extending PyCBC with external plugins
-==========================================
+=====================================
 
 Would you like to use a waveform model that PyCBC doesn't have? Or maybe
 you have your own waveform you'd like to use for a search, parameter estimation
@@ -148,6 +151,7 @@ In addition we have some examples below.
    catalog
    dataquality
    frame
+   fft
    gw150914
    detector
    psd
@@ -199,9 +203,16 @@ Full Module Documentation is available at:
 
    modules
 
-===================
+Instructions for building the GitHub pages documentation are at:
+
+.. toctree::
+   :maxdepth: 1
+
+   build_gh_pages
+
+==================
 Indexes and Tables
-===================
+==================
 
 * :ref:`modindex`
 * :ref:`genindex`

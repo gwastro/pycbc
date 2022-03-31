@@ -8,13 +8,10 @@ import numpy as np
 import h5py
 import pycbc
 from pycbc.io import FieldArray
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw import ligolw, lsctables
+from pycbc.io.ligolw import LIGOLWContentHandler
+from ligo.lw.utils import load_filename as load_xml_doc
+from ligo.lw import lsctables
 
-
-# dummy class needed for loading LIGOLW files
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
 
 def close(a, b, c):
     return abs(a - b) <= c
@@ -109,6 +106,15 @@ def check_single_results(args):
 
 def check_coinc_results(args):
     coinc_fail = False
+
+    # read injections
+    with h5py.File(args.injections, 'r') as injfile:
+        inj_mass1 = injfile['mass1'][:]
+        inj_mass2 = injfile['mass2'][:]
+        inj_spin1z = injfile['spin1z'][:]
+        inj_spin2z = injfile['spin2z'][:]
+        inj_time = injfile['tc'][:]
+
     # gather coincident triggers
     coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
     n_coincs = len(coinc_trig_paths)
@@ -121,17 +127,6 @@ def check_coinc_results(args):
     else:
         log.info('%d coincident trigger(s) detected', n_coincs)
 
-    with h5py.File(args.injections, 'r') as injfile:
-        inj_mass1 = injfile['mass1'][:]
-        inj_mass2 = injfile['mass2'][:]
-        inj_spin1z = injfile['spin1z'][:]
-        inj_spin2z = injfile['spin2z'][:]
-        inj_time = injfile['tc'][:]
-
-    if len(inj_mass1) > n_coincs:
-        log.error('More injections than coincident triggers')
-        coinc_fail = True
-
     # create field array to store properties of triggers
     dtype = [('mass1', float), ('mass2', float),
              ('spin1z', float), ('spin2z', float),
@@ -141,22 +136,22 @@ def check_coinc_results(args):
     # store properties of coincident triggers
     for x, ctrigfp in enumerate(coinc_trig_paths):
         log.info('Checking trigger %s', ctrigfp)
-        xmldoc = ligolw_utils.load_filename(
+        xmldoc = load_xml_doc(
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
-        sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
+        si_table = lsctables.SnglInspiralTable.get_table(xmldoc)
 
-        trig_props['tc'][x] = sngl_inspiral_table.get_column('end_time')[0]
-        trig_props['mass1'][x] = sngl_inspiral_table.get_column('mass1')[0]
-        trig_props['mass2'][x] = sngl_inspiral_table.get_column('mass2')[0]
-        trig_props['spin1z'][x] = sngl_inspiral_table.get_column('spin1z')[0]
-        trig_props['spin2z'][x] = sngl_inspiral_table.get_column('spin2z')[0]
+        trig_props['tc'][x] = si_table[0].end
+        trig_props['mass1'][x] = si_table[0].mass1
+        trig_props['mass2'][x] = si_table[0].mass2
+        trig_props['spin1z'][x] = si_table[0].spin1z
+        trig_props['spin2z'][x] = si_table[0].spin2z
 
-        snr_list = sngl_inspiral_table.get_column('snr')
+        snr_list = si_table.getColumnByName('snr').asarray()
         trig_props['net_snr'][x] = sum(snr_list ** 2) ** 0.5
 
-        log.info('IFO SNRs: %s', snr_list)
+        log.info('Single-detector SNRs: %s', snr_list)
         log.info('Network SNR: %f', trig_props['net_snr'][x])
-        log.info('IFO End Time: %f', trig_props['tc'][x])
+        log.info('Merger time: %f', trig_props['tc'][x])
         log.info('Mass 1: %f', trig_props['mass1'][x])
         log.info('Mass 2: %f', trig_props['mass2'][x])
         log.info('Spin1z: %f', trig_props['spin1z'][x])
@@ -169,17 +164,17 @@ def check_coinc_results(args):
             # FIXME should calculate the optimal SNRs of the injections
             # and use those for checking net_snr
             if (close(inj_time[i], trig_props['tc'][j], 1.0)
-                    and close(inj_mass1[i], trig_props['mass1'][j], 5e-7)
-                    and close(inj_mass2[i], trig_props['mass2'][j], 5e-7)
-                    and close(inj_spin1z[i], trig_props['spin1z'][j], 5e-7)
-                    and close(inj_spin2z[i], trig_props['spin2z'][j], 5e-7)
+                    and close(inj_mass1[i], trig_props['mass1'][j], 1e-5)
+                    and close(inj_mass2[i], trig_props['mass2'][j], 1e-5)
+                    and close(inj_spin1z[i], trig_props['spin1z'][j], 1e-5)
+                    and close(inj_spin2z[i], trig_props['spin2z'][j], 1e-5)
                     and close(15.0, trig_props['net_snr'][j], 2.0)):
                 has_match = True
                 break
 
         if not has_match:
             coinc_fail = True
-            log.error('Injection %i has no match', i)
+            log.error('Injection %i was missed', i)
 
     if coinc_fail:
         log.error('Coincident Trigger Test Failed')
@@ -196,8 +191,6 @@ parser.add_argument('--detectors', type=str, required=True, nargs='+')
 args = parser.parse_args()
 
 log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
-
-lsctables.use_in(LIGOLWContentHandler)
 
 single_fail = check_single_results(args)
 coinc_fail = check_coinc_results(args)

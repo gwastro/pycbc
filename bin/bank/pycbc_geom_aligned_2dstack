@@ -26,13 +26,11 @@ remaining points.
 It also prints information about the discarded points for debugging.
 """
 
-from __future__ import division
 import argparse
 import copy
 import numpy
 import logging
 import h5py
-from six.moves import range
 import pycbc.tmpltbank
 import pycbc.version
 from pycbc import pnutils

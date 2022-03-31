@@ -59,7 +59,8 @@ parser.add_argument('--include-gracedb-link', action='store_true',
 parser.add_argument('--significance-file',
     help="If given, will search for this trigger's id in the file to see if "
          "stat and p_astro values exists for this trigger.")
-stat.insert_statistic_option_group(parser)
+stat.insert_statistic_option_group(parser,
+    default_ranking_statistic='single_ranking_only')
 
 
 args = parser.parse_args()
@@ -130,8 +131,8 @@ elif args.sngl_ranking == "newsnr_sgveto_psdvar":
 elif args.sngl_ranking == "snr":
     sngl_stat_name = "SNR"
 else:
-    sngl_stat_name = ranking_statistic
- 
+    sngl_stat_name = args.sngl_ranking
+
 if args.ranking_statistic in ["quadsum", "single_ranking_only"]:
     stat_name = sngl_stat_name
 else:

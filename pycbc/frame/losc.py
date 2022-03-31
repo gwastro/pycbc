@@ -20,10 +20,32 @@ from pycbc.io import get_file
 
 _losc_url = "https://www.gw-openscience.org/archive/links/%s/%s/%s/%s/json/"
 
-def get_run(time):
-    if 1164556817 <= time <= 1187733618:
+def get_run(time, ifo=None):
+    """ Return the run name for a given time
+
+    Parameters
+    ----------
+    time: int
+        The gps time
+    ifo: str
+        The ifo prefix string. Optional and normally unused,
+        except for some special times where data releases
+        were made for a single detector under
+        unusual circumstances. For example, to get the data around GW170608
+        in the Hanford detector.
+    """
+
+    # ifo is only needed in this special case, otherwise, the run name is
+    # the same for all ifos
+    if (1180911618 <= time <= 1180982427) and (ifo == 'H1'):
+        return 'BKGW170608_16KHZ_R1'
+    elif 1253977219 <= time <= 1320363336:
+        return 'O3b_16KHZ_R1'
+    elif 1238166018 <= time <= 1253977218:
+        return 'O3a_16KHZ_R1'
+    elif 1164556817 <= time <= 1187733618:
         return 'O2_16KHZ_R1'
-    if 1126051217 <= time <= 1137254417:
+    elif 1126051217 <= time <= 1137254417:
         return 'O1'
     elif 815011213 <= time <= 875318414:
         return 'S5'
@@ -33,10 +55,10 @@ def get_run(time):
         raise ValueError('Time %s not available in a public dataset' % time)
 
 def _get_channel(time):
-    if 1164556817 <= time <= 1187733618:
-        return 'GWOSC-16KHZ_R1_STRAIN'
-    else:
+    if time < 1164556817:
         return 'LOSC-STRAIN'
+    else:
+        return 'GWOSC-16KHZ_R1_STRAIN'
 
 def losc_frame_json(ifo, start_time, end_time):
     """ Get the information about the public data files in a duration of time

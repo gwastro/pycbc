@@ -25,6 +25,7 @@
 gravitational-wave detectors from public sources and/or dqsegdb.
 """
 
+import logging
 import json
 import numpy
 from ligo.segments import segmentlist, segment
@@ -50,9 +51,8 @@ def parse_veto_definer(veto_def_filename, ifos):
         Returns a dictionary first indexed by ifo, then category level, and
         finally a list of veto definitions.
     """
-    from glue.ligolw import table, lsctables, utils as ligolw_utils
-    from glue.ligolw.ligolw import LIGOLWContentHandler as h
-    lsctables.use_in(h)
+    from ligo.lw import table, utils as ligolw_utils
+    from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     data = {}
     for ifo_name in ifos:
@@ -63,7 +63,7 @@ def parse_veto_definer(veto_def_filename, ifos):
 
     indoc = ligolw_utils.load_filename(veto_def_filename, False,
                                        contenthandler=h)
-    veto_table = table.get_table(indoc, 'veto_definer')
+    veto_table = table.Table.get_table(indoc, 'veto_definer')
 
     ifo = veto_table.getColumnByName('ifo')
     name = veto_table.getColumnByName('name')
@@ -104,6 +104,25 @@ def parse_veto_definer(veto_def_filename, ifos):
 GWOSC_URL = 'https://www.gw-openscience.org/timeline/segments/json/{}/{}_{}/{}/{}/'
 
 
+def query_dqsegdb2(detector, flag_name, start_time, end_time, server):
+    """Utility function for better error reporting when calling dqsegdb2.
+    """
+    from dqsegdb2.query import query_segments
+
+    complete_flag = detector + ':' + flag_name
+    try:
+        query_res = query_segments(complete_flag,
+                                   int(start_time),
+                                   int(end_time),
+                                   host=server)
+        return query_res['active']
+    except Exception as e:
+        logging.error('Could not query segment database, check name '
+                      '(%s), times (%d-%d) and server (%s)',
+                      complete_flag, int(start_time), int(end_time),
+                      server)
+        raise e
+
 def query_flag(ifo, segment_name, start_time, end_time,
                source='any', server="https://segments.ligo.org",
                veto_definer=None, cache=False):
@@ -132,7 +151,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
     Returns
     ---------
-    segments: glue.segments.segmentlist
+    segments: ligo.segments.segmentlist
         List of segments
     """
     flag_segments = segmentlist([])
@@ -154,7 +173,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
         duration = end_time - start_time
         try:
-            url = GWOSC_URL.format(get_run(start_time + duration/2),
+            url = GWOSC_URL.format(get_run(start_time + duration/2, ifo),
                                    ifo, segment_name,
                                    int(start_time), int(duration))
 
@@ -173,13 +192,6 @@ def query_flag(ifo, segment_name, start_time, end_time,
                               veto_definer=veto_definer)
 
     elif source == 'dqsegdb':
-        # Let's not hard require dqsegdb to be installed if we never get here.
-        try:
-            from dqsegdb2.query import query_segments as query
-        except ImportError:
-            raise ValueError("Could not query flag. Install dqsegdb2"
-                             ":'pip install dqsegdb2'")
-
         # The veto definer will allow the use of MACRO names
         # These directly correspond to the name in the veto definer file
         if veto_definer is not None:
@@ -190,9 +202,8 @@ def query_flag(ifo, segment_name, start_time, end_time,
         if veto_definer is not None and segment_name in veto_def[ifo]:
             for flag in veto_def[ifo][segment_name]:
                 partial = segmentlist([])
-                segs = query(ifo + ':' + flag['full_name'], int(start_time),
-                             int(end_time), host=server)['active']
-
+                segs = query_dqsegdb2(ifo, flag['full_name'],
+                                      start_time, end_time, server)
                 # Apply padding to each segment
                 for rseg in segs:
                     seg_start = rseg[0] + flag['start_pad']
@@ -210,16 +221,10 @@ def query_flag(ifo, segment_name, start_time, end_time,
                 flag_segments += (partial.coalesce() & send)
 
         else:  # Standard case just query directly
-            try:
-                segs = query(':'.join([ifo, segment_name]),
-                             int(start_time), int(end_time),
-                             host=server)['active']
-                for rseg in segs:
-                    flag_segments.append(segment(rseg[0], rseg[1]))
-            except Exception as e:
-                print("Could not query flag, check name "
-                      "(%s) or times" % segment_name)
-                raise e
+            segs = query_dqsegdb2(ifo, segment_name, start_time, end_time,
+                                  server)
+            for rseg in segs:
+                flag_segments.append(segment(rseg[0], rseg[1]))
 
         # dqsegdb output is not guaranteed to lie entirely within start
         # and end times, hence restrict to this range
@@ -227,7 +232,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
             segmentlist([segment(int(start_time), int(end_time))])
 
     else:
-        raise ValueError("Source must be dqsegdb or GWOSC."
+        raise ValueError("Source must be `dqsegdb`, `GWOSC` or `any`."
                          " Got {}".format(source))
 
     return segmentlist(flag_segments).coalesce()
@@ -273,7 +278,7 @@ def query_cumulative_flags(ifo, segment_names, start_time, end_time,
 
     Returns
     ---------
-    segments: glue.segments.segmentlist
+    segments: ligo.segments.segmentlist
         List of segments
     """
     total_segs = segmentlist([])

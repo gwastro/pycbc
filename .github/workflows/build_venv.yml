@@ -1,26 +1,26 @@
-name: docker build
+name: build the LVK virtualenv
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
-  build: 
+  build:
     runs-on: ubuntu-20.04
-    steps: 
-      - 
+    steps:
+      -
         uses: actions/checkout@v1
-      - 
+      -
         name: "Set up Python"
         uses: actions/setup-python@v1
-        with: 
-          python-version: 2.7
-      - 
+        with:
+          python-version: 3.8
+      -
         env:
           OSG_ACCESS: "${{secrets.OSG_ACCESS}}"
         name: "Preparing ssh stuff"
         run: "bash -e tools/docker_build_prepssh.sh"
-      - 
+      -
         env:
-          DOCKER_IMG: ligo/lalsuite-dev:el7
+          DOCKER_IMG: igwn/base:el8
           PYCBC_CONTAINER: pycbc_rhel_virtualenv
           DOCKER_SECURE_ENV_VARS: true
         name: "Creating the virtual environment"

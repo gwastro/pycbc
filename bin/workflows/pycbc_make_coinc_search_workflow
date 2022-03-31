@@ -31,7 +31,7 @@ import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
 import os, argparse, logging
-from six.moves import configparser as ConfigParser
+import configparser as ConfigParser
 from ligo import segments
 import numpy, lal, datetime, itertools
 from pycbc.results import create_versioning_page, static_table, layout
@@ -65,18 +65,17 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument('--workflow-name', default='my_unamed_run')
-parser.add_argument("-d", "--output-dir", default=None,
-                    help="Path to output directory.")
 wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+# FIXME: opts.tags is currently unused here.
 
 wf.makedir(args.output_dir)
 
-container = wf.Workflow(args, args.workflow_name)
-workflow = wf.Workflow(args, args.workflow_name + '-main')
-finalize_workflow = wf.Workflow(args, args.workflow_name + '-finalization')
-
+container = wf.Workflow(args, name=args.workflow_name)
+workflow = wf.Workflow(args, name=args.workflow_name + '-main')
+finalize_workflow = wf.Workflow(args, name=args.workflow_name + '-finalization')
 os.chdir(args.output_dir)
 
 rdir = layout.SectionNumber('results', ['analysis_time',
@@ -759,9 +758,7 @@ wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
 container += workflow
 container += finalize_workflow
 
-import Pegasus.DAX3 as dax
-dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
-container._adag.addDependency(dep)
+container.add_subworkflow_dependancy(workflow, finalize_workflow)
 
 container.save()
 

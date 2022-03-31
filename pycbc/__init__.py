@@ -24,8 +24,7 @@
 #
 """PyCBC contains a toolkit for CBC gravitational wave analysis
 """
-from __future__ import (absolute_import, print_function)
-import subprocess, os, sys, tempfile, signal, warnings
+import subprocess, os, sys, signal, warnings
 
 # Filter annoying Cython warnings that serve no good purpose.
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
@@ -141,6 +140,13 @@ except ImportError:
 # platforms (mac) that are silly and don't use the standard gcc.
 if sys.platform == 'darwin':
     HAVE_OMP = False
+
+    # MacosX after python3.7 switched to 'spawn', however, this does not
+    # preserve common state information which we have relied on when using
+    # multiprocessing based pools.
+    import multiprocessing
+    if hasattr(multiprocessing, 'set_start_method'):
+        multiprocessing.set_start_method('fork')
 else:
     HAVE_OMP = True
 

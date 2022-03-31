@@ -6,11 +6,19 @@ healpy
 
 # Needed for gracedb uploads and skymap generation
 ligo-gracedb
-ligo.skymap; python_version >= '3.5'
+ligo.skymap
+
+# Needed for ringdown
+pykerr
 
 # auxiliary samplers
-cpnest; python_version >= '3.5'
+cpnest
 pymultinest
 ultranest
 https://github.com/willvousden/ptemcee/archive/master.tar.gz
 
+# useful to look at PyCBC Live with htop
+setproctitle
+
+# Needed for `population_models` module
+sympy>=1.9

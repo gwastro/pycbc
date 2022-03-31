@@ -25,7 +25,6 @@
 Defines the base sampler class to be inherited by all samplers.
 """
 
-from __future__ import absolute_import
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 import shutil
@@ -221,7 +220,7 @@ def create_new_output_file(sampler, filename, **kwargs):
         fp.write_sampler_metadata(sampler)
 
 
-def initial_dist_from_config(cp, variable_params):
+def initial_dist_from_config(cp, variable_params, static_params=None):
     r"""Loads a distribution for the sampler start from the given config file.
 
     A distribution will only be loaded if the config file has a [initial-\*]
@@ -233,6 +232,9 @@ def initial_dist_from_config(cp, variable_params):
         The config parser to try to load from.
     variable_params : list of str
         The variable parameters for the distribution.
+    static_params : dict, optional
+        The static parameters used to place constraints on the
+        distribution.
 
     Returns
     -------
@@ -246,7 +248,8 @@ def initial_dist_from_config(cp, variable_params):
         initial_dists = distributions.read_distributions_from_config(
             cp, section="initial")
         constraints = distributions.read_constraints_from_config(
-            cp, constraint_section="initial_constraint")
+            cp, constraint_section="initial_constraint",
+            static_args=static_params)
         init_dist = distributions.JointDistribution(
             variable_params, *initial_dists,
             **{"constraints": constraints})

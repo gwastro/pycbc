@@ -1,0 +1,31 @@
+name: tutorial tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 60
+      matrix:
+        os: [ubuntu-20.04]
+        python-version: [3.7, 3.8, 3.9, '3.10']
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: installing packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install *fftw3* mpi intel-mkl*
+        pip install tox pip setuptools notebook --upgrade
+        pip install .
+    - name: retrieving pycbc tutorials
+      run: |
+        git clone https://github.com/gwastro/PyCBC-Tutorials
+    - name: running pycbc tutorials
+      run: |
+        cd PyCBC-Tutorials
+        ./test_notebooks

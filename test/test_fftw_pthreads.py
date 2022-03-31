@@ -51,13 +51,14 @@ else:
 # Most of the work is now done in fft_base.
 
 FFTTestClasses = []
-kdict = {'backends' : ['fftw'],
-         'scheme' : 'cpu',
-         'context' : CPUScheme(num_threads=2)}
-klass = type('FFTW_pthreads_test',
-             (_BaseTestFFTClass,),kdict)
-klass.__test__ = True
-FFTTestClasses.append(klass)
+for num_threads in [2,4,6,8]:
+    kdict = {'backends' : ['fftw'],
+             'scheme' : 'cpu',
+             'context' : CPUScheme(num_threads=num_threads)}
+    klass = type('FFTW_OpenMP_test',
+                 (_BaseTestFFTClass,),kdict)
+    klass.__test__ = True
+    FFTTestClasses.append(klass)
 
 # Finally, we create suites and run them
 

@@ -16,15 +16,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys, os
+import sys, os, copy
 import logging, argparse, numpy, itertools
-from six.moves import range
 import pycbc
 import pycbc.version
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
+from multiprocessing import Pool
 import pycbc.version
 import pycbc.opt
 import pycbc.inject
@@ -86,8 +86,6 @@ taper_choices = ["start","end","startend"]
 parser.add_argument("--taper-template", choices=taper_choices,
                     help="For time-domain approximants, taper the start and/or"
                     " end of the waveform before FFTing.")
-parser.add_argument("--cluster-method", choices=["template", "window"],
-                    help="FIXME: ADD")
 parser.add_argument("--cluster-function", choices=["findchirp", "symmetric"],
                     help="How to cluster together triggers within a window. "
                     "'findchirp' uses a forward sliding window; 'symmetric' "
@@ -178,7 +176,7 @@ parser.add_argument("--finalize-events-template-rate", default=None,
                          "at the end of the job. This can help control memory "
                          "usage if a lot of triggers that would be rejected "
                          "are being retained. A suggested value for this is "
-                         "500, but a good number may depend on other settings "
+                         "512, but a good number may depend on other settings "
                          "and your specific use-case.")
 parser.add_argument("--gpu-callback-method", default='none')
 parser.add_argument("--use-compressed-waveforms", action="store_true", default=False,
@@ -197,6 +195,12 @@ parser.add_argument("--checkpoint-exit-maxtime", type=int,
                          " time is exceeded. Default is no checkpointing.")
 parser.add_argument("--checkpoint-exit-code", type=int, default=77,
                     help="Exit code returned if exiting after a checkpoint")
+parser.add_argument("--multiprocessing-nprocesses", type=int,
+                    help="Parallelize over multiple processes, note this is "
+                         "separate from threading using the proc. scheme. "
+                         "Used in conjunction with the option"
+                         "--finalize-events-template-rate which should be set"
+                         "to a multiple of the number of processes.")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -228,6 +232,73 @@ gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
 
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
+def template_triggers(t_num):
+    """ Get the triggers for a specific template
+    """
+    template = None
+    tparam = None
+    out_vals_all = []
+    for s_num, stilde in enumerate(segments):
+        # Filter check checks the 'inj_filter_rejector' options to
+        # determine whether
+        # to filter this template/segment if injections are present.
+        if not inj_filter_rejector.template_segment_checker(
+                bank, t_num, stilde):
+            continue
+        if template is None:
+            template = bank[t_num]
+            tparam = template.params
+
+        if opt.update_progress:
+            update_progress((t_num + (s_num / float(len(segments))) ) / len(bank),
+                            opt.update_progress, opt.update_progress_file)
+        logging.info("Filtering template %d/%d segment %d/%d" %
+                     (t_num + 1, len(bank), s_num + 1, len(segments)))
+
+        sigmasq = template.sigmasq(stilde.psd)
+        snr, norm, corr, idx, snrv = \
+           matched_filter.matched_filter_and_cluster(s_num,
+                                                     sigmasq,
+                                                     cluster_window,
+                                                     epoch=stilde._epoch)
+        if not len(idx):
+            continue
+
+        out_vals = out_vals_ref.copy()
+        out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
+              bank_chisq.values(template, stilde.psd, stilde, snrv, norm,
+                                idx+stilde.analyze.start)
+
+        out_vals['chisq'], out_vals['chisq_dof'] = \
+              power_chisq.values(corr, snrv, norm, stilde.psd,
+                                 idx+stilde.analyze.start, template)
+
+        out_vals['sg_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
+                                      snrv, norm,
+                                      out_vals['chisq'],
+                                      out_vals['chisq_dof'],
+                                      idx+stilde.analyze.start)
+
+        out_vals['cont_chisq'] = \
+              autochisq.values(snr, idx+stilde.analyze.start, template,
+                               stilde.psd, norm, stilde=stilde,
+                               low_frequency_cutoff=flow)
+
+        idx += stilde.cumulative_index
+
+        out_vals['time_index'] = idx
+        out_vals['snr'] = snrv * norm
+        out_vals['sigmasq'] = numpy.zeros(len(snrv), dtype=float32) + sigmasq
+        if opt.psdvar_short_segment is not None:
+            out_vals['psd_var_val'] = \
+                        pycbc.psd.find_trigger_value(psd_var,
+                                      out_vals['time_index'],
+                                      opt.gps_start_time, opt.sample_rate)
+        #print(idx, out_vals['time_index'])
+        
+        out_vals_all.append(copy.deepcopy(out_vals))
+        #print(out_vals_all)
+    return out_vals_all, tparam
 
 with ctx:
     # The following FFTW specific options needed to wait until
@@ -265,10 +336,11 @@ with ctx:
         'bank_chisq_dof' : int,
         'cont_chisq'     : float32,
         'psd_var_val'    : float32,
+        'sigmasq'        : float32,
                 }
     out_types.update(SingleDetSGChisq.returns)
-    out_vals = {key: None for key in out_types}
-    names = sorted(out_vals.keys())
+    out_vals_ref = {key: None for key in out_types}
+    names = sorted(out_vals_ref.keys())
 
     if len(strain_segments.segment_slices) == 0:
         logging.info("--filter-inj-only specified and no injections in analysis time")
@@ -329,6 +401,8 @@ with ctx:
             ncores = ctx.num_threads
     else:
             ncores = 1
+    if opt.multiprocessing_nprocesses:
+        ncores *= opt.multiprocessing_nprocesses
 
 
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
@@ -371,106 +445,47 @@ with ctx:
 
     sg_chisq = SingleDetSGChisq.from_cli(opt, bank, opt.chisq_bins)
 
-    ntemplates = len(bank)
-    nfilters = 0
-
-    logging.info("Full template bank size: %s", ntemplates)
+    logging.info("Full template bank size: %s", len(bank))
     bank.template_thinning(inj_filter_rejector)
-    if not len(bank) == ntemplates:
-        logging.info("Template bank size after thinning: %s", len(bank))
+    logging.info("Template bank size after thinning: %s", len(bank))
 
     tsetup = time.time() - tstart
     tcheckpoint = time.time()
+    
+    tanalyze = list(range(tnum_start, len(bank)))
+    n = opt.finalize_events_template_rate
+    n = 1 if n is None else n
+    tchunks = [tanalyze[i:i + n] for i in range(0, len(tanalyze), n)] 
+    
+    mmap = map
+    if opt.multiprocessing_nprocesses:
+        mmap = Pool(opt.multiprocessing_nprocesses).map
+    
+    for tchunk in tchunks:
+        data = list(mmap(template_triggers, tchunk))
 
-    # Note: in the class-based approach used now, 'template' is not explicitly used
-    # within the loop.  Rather, the iteration simply fills the memory specifed in
-    # the 'template_mem' argument to MatchedFilterControl with the next template
-    # from the bank.
-    for t_num in range(len(bank) - tnum_start):
-        t_num += tnum_start
-        tmplt_generated = False
+        for elem in data:
+            out_vals_all, tparam = elem
+            if len(out_vals_all) > 0:
+                event_mgr.new_template(tmplt=tparam)
 
-        for s_num, stilde in enumerate(segments):
-            # Filter check checks the 'inj_filter_rejector' options to
-            # determine whether
-            # to filter this template/segment if injections are present.
-            if not inj_filter_rejector.template_segment_checker(
-                    bank, t_num, stilde, opt.gps_start_time):
-                continue
-            if not tmplt_generated:
-                template = bank[t_num]
-                event_mgr.new_template(tmplt=template.params,
-                    sigmasq=template.sigmasq(segments[0].psd))
-                tmplt_generated = True
-
-            if opt.cluster_method == "window":
-                cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
-            if opt.cluster_method == "template":
-                cluster_window = \
-                    int(template.chirp_length * gwstrain.sample_rate)
-
-            if opt.update_progress:
-                update_progress((t_num + (s_num / float(len(segments))) ) / len(bank),
-                                opt.update_progress, opt.update_progress_file)
-            logging.info("Filtering template %d/%d segment %d/%d" %
-                         (t_num + 1, len(bank), s_num + 1, len(segments)))
-
-            nfilters = nfilters + 1
-            snr, norm, corr, idx, snrv = \
-               matched_filter.matched_filter_and_cluster(s_num,
-                                                         template.sigmasq(stilde.psd),
-                                                         cluster_window,
-                                                         epoch=stilde._epoch)
-
-            if not len(idx):
-                continue
-
-            out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
-                  bank_chisq.values(template, stilde.psd, stilde, snrv, norm,
-                                    idx+stilde.analyze.start)
-
-            out_vals['chisq'], out_vals['chisq_dof'] = \
-                  power_chisq.values(corr, snrv, norm, stilde.psd,
-                                     idx+stilde.analyze.start, template)
-
-            out_vals['sg_chisq'] = sg_chisq.values(stilde, template, stilde.psd,
-                                          snrv, norm,
-                                          out_vals['chisq'],
-                                          out_vals['chisq_dof'],
-                                          idx+stilde.analyze.start)
-
-            out_vals['cont_chisq'] = \
-                  autochisq.values(snr, idx+stilde.analyze.start, template,
-                                   stilde.psd, norm, stilde=stilde,
-                                   low_frequency_cutoff=flow)
-
-            idx += stilde.cumulative_index
-
-            out_vals['time_index'] = idx
-            out_vals['snr'] = snrv * norm
-
-            if opt.psdvar_short_segment is not None:
-                out_vals['psd_var_val'] = \
-                            pycbc.psd.find_trigger_value(psd_var,
-                                          out_vals['time_index'],
-                                          opt.gps_start_time, opt.sample_rate)
-
-            event_mgr.add_template_events(names, [out_vals[n] for n in names])
-
-        event_mgr.cluster_template_events("time_index", "snr", cluster_window)
-        event_mgr.finalize_template_events()
-        if opt.finalize_events_template_rate is not None and \
-                not (t_num+1) % opt.finalize_events_template_rate:
+                for edata in out_vals_all:
+                    event_mgr.add_template_events(names, [edata[n] for n in names])              
+                                    
+                event_mgr.cluster_template_events("time_index", "snr", cluster_window)
+                event_mgr.finalize_template_events()
+        
+        if opt.finalize_events_template_rate is not None:
             event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 
         if opt.checkpoint_interval and \
             (time.time() - tcheckpoint > opt.checkpoint_interval):
-            event_mgr.save_state(t_num, opt.output + '.checkpoint')
+            event_mgr.save_state(max(tchunk), opt.output + '.checkpoint')
             tcheckpoint = time.time()
 
         if opt.checkpoint_exit_maxtime and \
             (time.time() - tstart > opt.checkpoint_exit_maxtime):
-            event_mgr.save_state(t_num, opt.output + '.checkpoint')
+            event_mgr.save_state(max(tchunk), opt.output + '.checkpoint')
             sys.exit(opt.checkpoint_exit_code)           
 
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
@@ -479,7 +494,7 @@ logging.info("Outputting %s triggers" % str(len(event_mgr.events)))
 
 tstop = time.time()
 run_time = tstop - tstart
-event_mgr.save_performance(ncores, nfilters, ntemplates, run_time, tsetup)
+event_mgr.save_performance(ncores, len(segments), len(bank), run_time, tsetup)
 
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)

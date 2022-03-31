@@ -243,7 +243,7 @@ with ctx:
                              flow, dyn_range_factor=pycbc.DYN_RANGE_FAC,
                              precision='single')
 
-    logging.info("Making template: %s" % opt.approximant)
+    logging.info("Making template: %s", opt.approximant)
     if opt.use_params_of_closest_injection:
         if not hasattr(gwstrain, 'injections') or not opt.trigger_time:
             err_msg = "To use --use-params-of-closest-injection you must "
@@ -281,7 +281,7 @@ with ctx:
         if isinstance(inj, numpy.record):
             ra, dec, time = inj.ra, inj.dec, inj.tc
         else:
-            ra, dec, time = inj.longitude, inj.latitude, inj.get_end()
+            ra, dec, time = inj.longitude, inj.latitude, inj.time_geocent
         ltt = detector.time_delay_from_earth_center(ra, dec, time)
         td_template._epoch -= time + ltt
         # Check if waveform is too long
@@ -345,8 +345,8 @@ with ctx:
         if opt.minimum_chisq_bins:
             chisq_bins = opt.minimum_chisq_bins
             logging.warning("Number of chisq bins is less than requested "
-                            "minimum or is NaN. Using %d bins." %
-                            (opt.minimum_chisq_bins))
+                            "minimum or is NaN. Using %d bins.",
+                            opt.minimum_chisq_bins)
         else:
             raise ValueError(
                 "Chisq bins is NaN or negative and no minimum is set.")
@@ -354,6 +354,7 @@ with ctx:
         chisq_bins = int(chisq_bins_float)
 
     f['template'] = template.numpy()
+    f['template'].attrs['delta_f'] = template.delta_f
     snrs, chisqs = [], []
     raw_bins = [[] for b in range(chisq_bins)]
 

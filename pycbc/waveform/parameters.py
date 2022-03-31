@@ -59,11 +59,13 @@ class Parameter(str):
         <prefix>``name`` : {``default``, ``dtype``}
         <prefix>   ``description`` Label: ``label``.
         """
-        outstr = "%s%s : {%s, %s}\n" %(prefix, self.name, str(self.default),
-            str(self.dtype).replace("<type '", '').replace("'>", '')) + \
-            "%s    %s" %(prefix, self.description)
+        dtype_str = str(self.dtype).replace("<type '", '').replace("'>", '')
+        dtype_str = dtype_str.replace("<class '", '')
+        outstr = "%s%s : {%s, %s}\n%s    %s" % (
+                prefix, self.name, str(self.default), dtype_str, prefix,
+                self.description)
         if include_label:
-            outstr += " Label: %s" %(self.label)
+            outstr += " Label: %s" % (self.label)
         return outstr
 
 
@@ -397,8 +399,12 @@ coa_phase = Parameter("coa_phase",
 inclination = Parameter("inclination",
                 dtype=float, default=0., label=r"$\iota$",
                 description="Inclination (rad), defined as the angle between "
-                            "the total angular momentum J and the "
-                            "line-of-sight.")
+                            "the orbital angular momentum L and the "
+                            "line-of-sight at the reference frequency.")
+thetajn = Parameter("thetajn",
+                    dtype=float, default=0., label=r"$\theta_{JN}$",
+                    description="The angle between the total angular momentum "
+                                "J and the line-of-sight.")
 long_asc_nodes = Parameter("long_asc_nodes",
                 dtype=float, default=0., label=r"$\Omega$",
                 description="Longitude of ascending nodes axis (rad).")

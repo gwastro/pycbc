@@ -24,14 +24,12 @@
 """
 These are simple unit tests for lalsimulation
 """
-import sys
 import unittest
 import copy
 
 import numpy
 
 import lal, lalsimulation
-import pycbc
 from pycbc.filter import match, overlap, sigma, make_frequency_series
 from pycbc.waveform import td_approximants, fd_approximants, \
         get_td_waveform, get_fd_waveform, TimeSeries

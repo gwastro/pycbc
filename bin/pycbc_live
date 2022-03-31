@@ -14,12 +14,12 @@ import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
 import os.path
 import itertools
 import platform
-import distutils
 import subprocess
+from shutil import which
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
-from pycbc.types import MultiDetOptionAction
+from pycbc.types import MultiDetOptionAction, MultiDetMultiColonOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
@@ -108,6 +108,7 @@ class LiveEventManager(object):
                 self.fu_cores = 1
 
     def commit_results(self, results):
+        logging.info('Committing triggers')
         self.comm.gather(results, root=0)
 
     def barrier(self):
@@ -121,28 +122,28 @@ class LiveEventManager(object):
         contiguous sets of arrays.
         """
 
-        if self.rank == 0:
-            all_results = self.comm.gather(None, root=0)
-            data_ends = [a[1] for a in all_results if a is not None]
-            results = [a[0] for a in all_results if a is not None]
+        if self.rank != 0:
+            raise RuntimeError('Not root process')
 
-            combined = {}
-            for ifo in results[0]:
+        logging.info('Gathering triggers')
+        all_results = self.comm.gather(None, root=0)
+        data_ends = [a[1] for a in all_results if a is not None]
+        results = [a[0] for a in all_results if a is not None]
 
-                # check if any of the results returned invalid
-                try:
-                    for r in results:
-                        if r[ifo] is False:
-                            raise ValueError
-                except ValueError:
-                    continue
-                combined[ifo] = {}
-                for key in results[0][ifo]:
-                    combined[ifo][key] = numpy.concatenate([r[ifo][key] for r in results])
+        combined = {}
+        for ifo in results[0]:
+            # check if any of the results returned invalid
+            try:
+                for r in results:
+                    if r[ifo] is False:
+                        raise ValueError
+            except ValueError:
+                continue
+            combined[ifo] = {}
+            for key in results[0][ifo]:
+                combined[ifo][key] = numpy.concatenate([r[ifo][key] for r in results])
 
-            return combined, data_ends[0]
-        else:
-            raise RuntimeError("Not root process")
+        return combined, data_ends[0]
 
     def compute_followup_data(self, ifos, triggers, data_readers, bank,
                               followup_ifos=None, recalculate_ifar=False):
@@ -291,7 +292,7 @@ class LiveEventManager(object):
                 flen = int(tlen / 2 + 1)
                 delta_f = bank.sample_rate / float(tlen)
                 cmd = 'timeout {} '.format(args.snr_opt_timeout)
-                exepath = distutils.spawn.find_executable('pycbc_optimize_snr')
+                exepath = which('pycbc_optimize_snr')
                 cmd += exepath + ' '
                 data_fils_str = '--data-files '
                 psd_fils_str = '--psd-files '
@@ -353,14 +354,26 @@ class LiveEventManager(object):
                 if self.enable_gracedb_upload:
                     cmd += '--enable-gracedb-upload '
 
-                cmd += '--cores {}'.format(self.fu_cores)
+                cmd += '--cores {} '.format(self.fu_cores)
+                if args.processing_scheme:
+                    # we will use the cores for multiple workers of the
+                    # optimization routine, so we force the processing scheme
+                    # to a single core here.  This may be enforcing some
+                    # assumptions about the optimal way to do FFTs on the
+                    # machine. However, the dominant cost of pycbc_optimize_snr
+                    # is expected to be in waveform generation, which is
+                    # unlikely to benefit from a processing scheme with more
+                    # than 1 thread anyway.
+                    opt_scheme = args.processing_scheme.split(':')[0]
+                    cmd += '--processing-scheme {}:1 '.format(opt_scheme)
 
-                log_fname = \
-                        fname.replace('.xml.gz', '_optimize_snr_log.dat')
+                log_fname = fname.replace('.xml.gz', '_optimize_snr.log')
 
-                cmd += '&> {} '.format(log_fname)
-                logging.info('Running %s', cmd)
-                subprocess.Popen(cmd, shell=True)
+                logging.info('Running %s with log to %s', cmd, log_fname)
+                with open(log_fname, "w") as logfile:
+                    subprocess.Popen(
+                        cmd, shell=True, stdout=logfile, stderr=logfile
+                    )
 
 
     def check_singles(self, results, data_reader, psds, f_low):
@@ -483,15 +496,16 @@ parser.add_argument('--snr-threshold', type=float,
                     help='SNR threshold for generating a trigger')
 parser.add_argument('--snr-abort-threshold', type=float)
 
-parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+',
+parser.add_argument('--channel-name', action=MultiDetMultiColonOptionAction,
                     required=True)
-parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+',
+parser.add_argument('--state-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel containing frame status information. Used "
                          "to determine when to analyze the hoft data. This somewhat "
                          "corresponds to CAT1 information")
 parser.add_argument('--analyze-flags', action=MultiDetOptionAction, nargs='+',
                     help='The flags that must be in the "good" state to analyze data')
-parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+',
+parser.add_argument('--data-quality-channel',
+                    action=MultiDetMultiColonOptionAction,
                     help="Channel containing data quality information. Used "
                          "to determine when hoft may be suspect and may be used to veto"
                          "triggers or not analyze a segment of data. This roughly "
@@ -574,8 +588,12 @@ parser.add_argument('--output-background-n-loudest', type=int, default=10000,
 parser.add_argument('--newsnr-threshold', type=float, default=0)
 parser.add_argument('--max-batch-size', type=int, default=2**27)
 parser.add_argument('--store-loudest-index', type=int, default=0)
-parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf)
-parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf)
+parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf,
+                    help="Safety BNS horizon distance (in Mpc) above which a "
+                    "detector's data is discarded.")
+parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf,
+                    help="Safety BNS horizon distance (in Mpc) below which a "
+                    "detector's data is discarded.")
 parser.add_argument('--max-triggers-in-batch', type=int)
 parser.add_argument('--max-length', type=float,
                     help='Maximum duration of templates, used to set the data buffer size')

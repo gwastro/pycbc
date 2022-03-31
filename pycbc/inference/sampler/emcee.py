@@ -26,7 +26,6 @@ This modules provides classes and functions for using the emcee sampler
 packages for parameter estimation.
 """
 
-from __future__ import absolute_import
 
 import numpy
 import emcee

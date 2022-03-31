@@ -25,7 +25,7 @@
 coincident triggers.
 """
 
-import numpy, logging, pycbc.pnutils, copy, lal
+import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector
 
 
@@ -49,46 +49,72 @@ def background_bin_from_string(background_bins, data):
     used = numpy.array([], dtype=numpy.uint32)
     bins = {}
     for mbin in background_bins:
-        name, bin_type, boundary = tuple(mbin.split(':'))
+        locs = None
+        name, bin_type_list, boundary_list = tuple(mbin.split(':'))
 
-        if boundary[0:2] == 'lt':
-            member_func = lambda vals, bd=boundary : vals < float(bd[2:])
-        elif boundary[0:2] == 'gt':
-            member_func = lambda vals, bd=boundary : vals > float(bd[2:])
-        else:
-            raise RuntimeError("Can't parse boundary condition! Must begin "
-                               "with 'lt' or 'gt'")
+        bin_type_list = bin_type_list.split(',')
+        boundary_list = boundary_list.split(',')
 
-        if bin_type == 'component' and boundary[0:2] == 'lt':
-            # maximum component mass is less than boundary value
-            vals = numpy.maximum(data['mass1'], data['mass2'])
-        if bin_type == 'component' and boundary[0:2] == 'gt':
-            # minimum component mass is greater than bdary
-            vals = numpy.minimum(data['mass1'], data['mass2'])
-        elif bin_type == 'total':
-            vals = data['mass1'] + data['mass2']
-        elif bin_type == 'chirp':
-            vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-                                               data['mass1'], data['mass2'])[0]
-        elif bin_type == 'SEOBNRv2Peak':
-            vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
-                  data['mass1'], data['mass2'], data['spin1z'], data['spin2z'])
-        elif bin_type == 'SEOBNRv4Peak':
-            vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
-                                          data['mass2'], data['spin1z'],
-                                          data['spin2z'])
-        elif bin_type == 'SEOBNRv2duration':
-            vals = pycbc.pnutils.get_imr_duration(data['mass1'], data['mass2'],
-                               data['spin1z'], data['spin2z'], data['f_lower'],
-                                                        approximant='SEOBNRv2')
-        else:
-            raise ValueError('Invalid bin type %s' % bin_type)
+        for bin_type, boundary in zip(bin_type_list, boundary_list):
+            if boundary[0:2] == 'lt':
+                member_func = lambda vals, bd=boundary : vals < float(bd[2:])
+            elif boundary[0:2] == 'gt':
+                member_func = lambda vals, bd=boundary : vals > float(bd[2:])
+            else:
+                raise RuntimeError("Can't parse boundary condition! Must begin "
+                                   "with 'lt' or 'gt'")
 
-        locs = member_func(vals)
-        del vals
+            if bin_type == 'component' and boundary[0:2] == 'lt':
+                # maximum component mass is less than boundary value
+                vals = numpy.maximum(data['mass1'], data['mass2'])
+            elif bin_type == 'component' and boundary[0:2] == 'gt':
+                # minimum component mass is greater than bdary
+                vals = numpy.minimum(data['mass1'], data['mass2'])
+            elif bin_type == 'total':
+                vals = data['mass1'] + data['mass2']
+            elif bin_type == 'chirp':
+                vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
+                                                   data['mass1'], data['mass2'])[0]
+            elif bin_type == 'ratio':
+                vals = pycbc.conversions.q_from_mass1_mass2(
+                                                   data['mass1'], data['mass2'])
+            elif bin_type == 'eta':
+                vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
+                                                   data['mass1'], data['mass2'])[1]
+            elif bin_type == 'chi_eff':
+                vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
+                                                 data['spin1z'], data['spin2z'])
+            elif bin_type == 'SEOBNRv2Peak':
+                vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
+                                              data['mass1'], data['mass2'],
+                                              data['spin1z'], data['spin2z'])
+            elif bin_type == 'SEOBNRv4Peak':
+                vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
+                                              data['mass2'], data['spin1z'],
+                                              data['spin2z'])
+            elif bin_type == 'SEOBNRv2duration':
+                vals = pycbc.pnutils.get_imr_duration(
+                                   data['mass1'], data['mass2'],
+                                   data['spin1z'], data['spin2z'],
+                                   data['f_lower'], approximant='SEOBNRv2')
+            elif bin_type == 'SEOBNRv4duration':
+                vals = pycbc.pnutils.get_imr_duration(
+                                   data['mass1'][:], data['mass2'][:],
+                                   data['spin1z'][:], data['spin2z'][:],
+                                   data['f_lower'][:], approximant='SEOBNRv4')
+            else:
+                raise ValueError('Invalid bin type %s' % bin_type)
+
+            sub_locs = member_func(vals)
+            del vals
+            sub_locs = numpy.where(sub_locs)[0]
+            if locs is not None:
+                # find intersection of boundary conditions
+                locs = numpy.intersect1d(locs, sub_locs)
+            else:
+                locs = sub_locs
 
         # make sure we don't reuse anything from an earlier bin
-        locs = numpy.where(locs)[0]
         locs = numpy.delete(locs, numpy.where(numpy.in1d(locs, used))[0])
         used = numpy.concatenate([used, locs])
         bins[name] = locs
@@ -897,14 +923,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     def save_state(self, filename):
         """Save the current state of the background buffers"""
-        from six.moves import cPickle
-        cPickle.dump(self, filename)
+        import pickle
+        pickle.dump(self, filename)
 
     @staticmethod
     def restore_state(filename):
         """Restore state of the background buffers from a file"""
-        from six.moves import cPickle
-        return cPickle.load(filename)
+        import pickle
+        return pickle.load(filename)
 
     def ifar(self, coinc_stat):
         """Return the far that would be associated with the coincident given.

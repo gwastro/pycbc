@@ -28,8 +28,7 @@
 import numpy
 import logging
 from abc import (ABCMeta, abstractmethod)
-from six.moves.configparser import NoSectionError
-from six import (add_metaclass, string_types)
+from configparser import NoSectionError
 from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 
@@ -286,8 +285,7 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
-@add_metaclass(ABCMeta)
-class BaseModel(object):
+class BaseModel(metaclass=ABCMeta):
     r"""Base class for all models.
 
     Given some model :math:`h` with parameters :math:`\Theta`, Bayes Theorem
@@ -343,29 +341,13 @@ class BaseModel(object):
         the likelihood is most easily defined in. Since these are used solely
         for converting parameters, and not for rescaling the parameter space,
         a Jacobian is not required for these transforms.
-
-    Properties
-    ----------
-    logjacobian :
-        Returns the log of the jacobian needed to go from the parameter space
-        of the ``variable_params`` to the sampling params.
-    logprior :
-        Returns the log of the prior.
-    loglikelihood :
-        A function that returns the log of the likelihood function.
-    logposterior :
-        A function that returns the log of the posterior.
-    loglr :
-        A function that returns the log of the likelihood ratio.
-    logplr :
-        A function that returns the log of the prior-weighted likelihood ratio.
     """
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,
                  sampling_transforms=None, waveform_transforms=None):
         # store variable and static args
-        if isinstance(variable_params, string_types):
+        if isinstance(variable_params, str):
             variable_params = (variable_params,)
         if not isinstance(variable_params, tuple):
             variable_params = tuple(variable_params)
@@ -687,7 +669,7 @@ class BaseModel(object):
         return kwargs
 
     @staticmethod
-    def prior_from_config(cp, variable_params, prior_section,
+    def prior_from_config(cp, variable_params, static_params, prior_section,
                           constraint_section):
         """Gets arguments and keyword arguments from a config file.
 
@@ -696,7 +678,9 @@ class BaseModel(object):
         cp : WorkflowConfigParser
             Config file parser to read.
         variable_params : list
-            List of of model parameter names.
+            List of variable model parameter names.
+        static_params : dict
+            Dictionary of static model parameters and their values.
         prior_section : str
             Section to read prior(s) from.
         constraint_section : str
@@ -711,7 +695,7 @@ class BaseModel(object):
         logging.info("Setting up priors for each parameter")
         dists = distributions.read_distributions_from_config(cp, prior_section)
         constraints = distributions.read_constraints_from_config(
-            cp, constraint_section)
+            cp, constraint_section, static_args=static_params)
         return distributions.JointDistribution(variable_params, *dists,
                                                constraints=constraints)
 
@@ -751,8 +735,9 @@ class BaseModel(object):
             cp, prior_section=prior_section, vargs_section=vparams_section,
             sargs_section=sparams_section)
         # get prior
-        prior = cls.prior_from_config(cp, variable_params, prior_section,
-                                      constraint_section)
+        prior = cls.prior_from_config(
+            cp, variable_params, static_params, prior_section,
+            constraint_section)
         args = {'variable_params': variable_params,
                 'static_params': static_params,
                 'prior': prior}

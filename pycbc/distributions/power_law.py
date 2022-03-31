@@ -107,22 +107,9 @@ class UniformPowerLaw(bounded.BoundedDist):
 
     Attributes
     ----------
-    name : 'uniform_radius'
-        The name of this distribution.
     dim : int
         The dimension of volume space. In the notation above `dim`
         is :math:`n+1`. For a 3-dimensional sphere this is 3.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
     """
     name = "uniform_power_law"
     def __init__(self, dim=None, **params):
@@ -134,47 +121,17 @@ class UniformPowerLaw(bounded.BoundedDist):
             self._norm *= self.dim  / \
                                    (self._bounds[p][1]**(self.dim) -
                                     self._bounds[p][0]**(self.dim))
-            self._lognorm = numpy.log(self._norm)
+        self._lognorm = numpy.log(self._norm)
 
     @property
     def norm(self):
+        """float: The normalization of the multi-dimensional pdf."""
         return self._norm
 
     @property
     def lognorm(self):
+        """float: The log of the normalization."""
         return self._lognorm
-
-    def rvs(self, size=1, param=None):
-        """Gives a set of random values drawn from this distribution.
-
-        Parameters
-        ----------
-        size : {1, int}
-            The number of values to generate; default is 1.
-        param : {None, string}
-            If provided, will just return values for the given parameter.
-            Otherwise, returns random values for each parameter.
-
-        Returns
-        -------
-        structured array
-            The random values in a numpy structured array. If a param was
-            specified, the array will only have an element corresponding to the
-            given parameter. Otherwise, the array will have an element for each
-            parameter in self's params.
-        """
-        if param is not None:
-            dtype = [(param, float)]
-        else:
-            dtype = [(p, float) for p in self.params]
-        arr = numpy.zeros(size, dtype=dtype)
-        for (p,_) in dtype:
-            offset = numpy.power(self._bounds[p][0], self.dim)
-            factor = numpy.power(self._bounds[p][1], self.dim) - \
-                                      numpy.power(self._bounds[p][0], self.dim)
-            arr[p] = numpy.random.uniform(0.0, 1.0, size=size)
-            arr[p] = numpy.power(factor * arr[p] + offset, 1.0 / self.dim)
-        return arr
 
     def _cdfinv_param(self, param, value):
         """Return inverse of cdf to map unit interval to parameter bounds.

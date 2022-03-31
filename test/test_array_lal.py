@@ -24,12 +24,11 @@
 """
 These are the unittests for the pycbc.filter.matchedfilter module
 """
-import sys
 import unittest
 from pycbc.types import *
 from pycbc.scheme import *
 from lal import LIGOTimeGPS as LTG
-from utils import array_base, parse_args_all_schemes, simple_exit
+from utils import parse_args_all_schemes, simple_exit
 
 _scheme, _context = parse_args_all_schemes("lal() method")
 

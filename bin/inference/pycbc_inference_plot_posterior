@@ -70,6 +70,12 @@ option_utils.add_plot_posterior_option_group(parser)
 option_utils.add_scatter_option_group(parser)
 # density configuration
 option_utils.add_density_option_group(parser)
+parser.add_argument("--plot-maxl", action="store_true", default=False,
+                    help="Put a marker on the 2D marginal where the maxL "
+                         "point is.")
+parser.add_argument('--legend-location', default='upper right',
+                    help='Where to put the legend (if multiple files are '
+                         'provided). Default is "upper right".')
 parser.add_argument('--dpi', type=int, default=200,
                     help="Set the DPI of the plot. Default is 200.")
 # style option
@@ -81,11 +87,37 @@ opts = parser.parse_args()
 # set mpl style
 set_style_from_cli(opts)
 
+# get any kdeargs; we'll always pass through the kde max samples
+kdeargs = {'max_kde_samples': opts.max_kde_samples}
+# add any other options that were specified
+if opts.kde_args is not None:
+    for opt in opts.kde_args:
+        opt, val = opt.split(':')
+        try:
+            val = float(val)
+            # convert to int if no remainder
+            if val % 1 == 0:
+                val = int(val)
+        except TypeError:
+            pass
+        kdeargs[opt] = val
+
+if opts.plot_maxl:
+    # add loglikelihood to list of parameters
+    add_logl = 'loglikelihood' not in opts.parameters
+    if add_logl:
+        opts.parameters.append('loglikelihood')
+else:
+    add_logl = False
+
 # set logging
 pycbc.init_logging(opts.verbose)
 
 # load the samples
 fps, parameters, labels, samples = io.results_from_cli(opts)
+
+if add_logl:
+    parameters = [p for p in parameters if p != 'loglikelihood']
 
 # typecast to list so the input files can be iterated over
 fps = fps if isinstance(fps, list) else [fps]
@@ -143,7 +175,7 @@ if opts.plot_prior is not None:
         for func, param in fp.attrs['remapped_params']:
             try:
                 remapped_params[param] = prior_samples[func]
-            except (NameError, TypeError):
+            except (NameError, TypeError, AttributeError):
                 continue
         prior_samples = FieldArray.from_kwargs(**remapped_params)
         for param in fp.attrs['static_params']:
@@ -184,7 +216,7 @@ if opts.plot_injection_parameters:
     for p in parameters:
         try:
             vals = injections[p]
-        except (NameError, TypeError):
+        except (NameError, TypeError, AttributeError):
             # injection doesn't have this parameter, skip
             logging.warn("Could not find injection parameter {}".format(p))
             continue
@@ -257,7 +289,10 @@ for (i, s) in enumerate(samples):
     fig, axis_dict = create_multidim_plot(
                     parameters, s, labels=labels, fig=fig, axis_dict=axis_dict,
                     plot_marginal=opts.plot_marginal,
+                    plot_marginal_lines=not opts.no_marginal_lines,
+                    plot_maxl=opts.plot_maxl,
                     marginal_percentiles=opts.marginal_percentiles,
+                    marginal_title=not opts.no_marginal_titles,
                     plot_scatter=opts.plot_scatter,
                     zvals=zvals[i] if zvals is not None else None,
                     show_colorbar=opts.z_arg is not None,
@@ -269,10 +304,13 @@ for (i, s) in enumerate(samples):
                     contour_percentiles=opts.contour_percentiles,
                     density_cmap=opts.density_cmap,
                     contour_color=contour_color,
+                    contour_linestyles=opts.contour_linestyles,
+                    label_contours=not opts.no_contour_labels,
                     hist_color=hist_color,
                     line_color=linecolor,
                     fill_color=fill_color,
                     use_kombine=opts.use_kombine_kde,
+                    kdeargs=kdeargs,
                     mins=mins, maxs=maxs,
                     expected_parameters=expected_parameters,
                     expected_parameters_color=opts.expected_parameters_color)
@@ -298,8 +336,14 @@ if len(opts.input_file) > 1:
         label = opts.input_file_labels[fn]
         handles.append(patches.Patch(color=color, label=label))
         labels.append(label)
-    fig.legend(loc="upper right", handles=handles,
-               labels=labels)
+    if len(parameters) == 2:
+        addto = axis_dict[parameters[0], parameters[1]][0]
+    elif len(parameters) == 1:
+        addto = axis_dict[parameters[0], parameters[0]][0]
+    else:
+        addto = fig
+    addto.legend(loc=opts.legend_location, handles=handles,
+                 labels=labels)
 
 # set DPI
 fig.set_dpi(opts.dpi)

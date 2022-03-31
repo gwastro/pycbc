@@ -12,7 +12,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-from __future__ import division
 
 import sys, h5py
 import argparse, logging
@@ -111,7 +110,6 @@ else:
     tcount = False
 
 nabove = fits['count_above_thresh'][:]
-nabove = nabove/np.mean(nabove)
 if tcount: ntotal = fits['count_in_template'][:]
 # for an exponential fit 1/alpha is linear in the trigger statistic values
 # so taking weighted sums/averages of 1/alpha is appropriate

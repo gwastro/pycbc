@@ -22,19 +22,15 @@
 # =============================================================================
 #
 
-"""Base classes for models with data.
+"""Base classes for mofdels with data.
 """
 
 import numpy
 from abc import (ABCMeta, abstractmethod)
-
-from six import add_metaclass
-
 from .base import BaseModel
 
 
-@add_metaclass(ABCMeta)
-class BaseDataModel(BaseModel):
+class BaseDataModel(BaseModel, metaclass=ABCMeta):
     r"""Base class for models that require data and a waveform generator.
 
     This adds propeties for the log of the likelihood that the data contain
@@ -65,33 +61,23 @@ class BaseDataModel(BaseModel):
     \**kwargs :
         All other keyword arguments are passed to ``BaseModel``.
 
-    Attributes
-    ----------
-    data : dict
-        The data that the class was initialized with.
-    detectors : list
-        List of detector names used.
-    lognl :
-        Returns the log likelihood of the noise.
-    loglr :
-        Returns the log of the likelihood ratio.
-    logplr :
-        Returns the log of the prior-weighted likelihood ratio.
 
     See ``BaseModel`` for additional attributes and properties.
     """
+
     def __init__(self, variable_params, data, recalibration=None, gates=None,
-                 injection_file=None, **kwargs):
+                 injection_file=None, no_save_data=False, **kwargs):
         self._data = None
         self.data = data
         self.recalibration = recalibration
+        self.no_save_data = no_save_data
         self.gates = gates
         self.injection_file = injection_file
         super(BaseDataModel, self).__init__(variable_params, **kwargs)
 
     @property
     def data(self):
-        """Dictionary mapping detector names to data."""
+        """dict: Dictionary mapping detector names to data."""
         return self._data
 
     @data.setter
@@ -151,7 +137,7 @@ class BaseDataModel(BaseModel):
 
     @property
     def detectors(self):
-        """Returns the detectors used."""
+        """list: Returns the detectors used."""
         return list(self._data.keys())
 
     def write_metadata(self, fp):
@@ -163,7 +149,8 @@ class BaseDataModel(BaseModel):
             The inference file to write to.
         """
         super(BaseDataModel, self).write_metadata(fp)
-        fp.write_stilde(self.data)
+        if not self.no_save_data:
+            fp.write_stilde(self.data)
         # save injection parameters
         if self.injection_file is not None:
             fp.write_injections(self.injection_file)

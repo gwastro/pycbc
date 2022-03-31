@@ -1,6 +1,5 @@
 """ Tools for creating pools of worker processes
 """
-from __future__ import absolute_import
 import multiprocessing.pool
 import functools
 from multiprocessing import TimeoutError
@@ -126,7 +125,6 @@ def use_mpi(require_mpi=False, log=True):
     """ Get whether MPI is enabled and if so the current size and rank
     """
     use_mpi = False
-    size = rank = 0
     try:
         from mpi4py import MPI
         comm = MPI.COMM_WORLD
@@ -141,6 +139,8 @@ def use_mpi(require_mpi=False, log=True):
         if require_mpi:
             print(e)
             raise ValueError("Failed to load mpi, ensure mpi4py is installed")
+    if not use_mpi:
+        size = rank = 0
     return use_mpi, size, rank
 
 def choose_pool(processes, mpi=False):

@@ -62,11 +62,6 @@ class Gaussian(bounded.BoundedDist):
         will be a normal, unbounded Gaussian (equivalent to setting the bounds
         to `[-inf, inf)`).
 
-    Attributes
-    ----------------
-    name : 'guassian'
-        The name of this distribution.
-
     Examples
     --------
     Create an unbounded Gaussian distribution with zero mean and unit variance:
@@ -199,40 +194,6 @@ class Gaussian(bounded.BoundedDist):
         else:
             return -numpy.inf
 
-
-    def rvs(self, size=1, param=None):
-        """Gives a set of random values drawn from this distribution.
-
-        Parameters
-        ----------
-        size : {1, int}
-            The number of values to generate; default is 1.
-        param : {None, string}
-            If provided, will just return values for the given parameter.
-            Otherwise, returns random values for each parameter.
-
-        Returns
-        -------
-        structured array
-            The random values in a numpy structured array. If a param was
-            specified, the array will only have an element corresponding to the
-            given parameter. Otherwise, the array will have an element for each
-            parameter in self's params.
-        """
-        if param is not None:
-            dtype = [(param, float)]
-        else:
-            dtype = [(p, float) for p in self.params]
-        arr = numpy.zeros(size, dtype=dtype)
-        for (p,_) in dtype:
-            sigma = numpy.sqrt(self._var[p])
-            mu = self._mean[p]
-            a,b = self._bounds[p]
-            arr[p][:] = scipy.stats.truncnorm.rvs((a-mu)/sigma, (b-mu)/sigma,
-                loc=self._mean[p], scale=sigma, size=size)
-        return arr
-
-
     @classmethod
     def from_config(cls, cp, section, variable_args):
         """Returns a Gaussian distribution based on a configuration file. The
@@ -269,7 +230,7 @@ class Gaussian(bounded.BoundedDist):
 
         Returns
         -------
-        Gaussain
+        Gaussian
             A distribution instance from the pycbc.inference.prior module.
         """
         return bounded.bounded_from_config(cls, cp, section, variable_args,

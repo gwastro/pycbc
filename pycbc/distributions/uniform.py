@@ -33,27 +33,12 @@ class Uniform(bounded.BoundedDist):
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
 
-    Attributes
-    ----------
-    name : 'uniform'
-        The name of this distribution.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
-
     Examples
     --------
     Create a 2 dimensional uniform distribution:
 
-    >>> dist = prior.Uniform(mass1=(10.,50.), mass2=(10.,50.))
+    >>> from pycbc import distributions
+    >>> dist = distributions.Uniform(mass1=(10.,50.), mass2=(10.,50.))
 
     Get the log of the pdf at a particular value:
 
@@ -95,18 +80,19 @@ class Uniform(bounded.BoundedDist):
         super(Uniform, self).__init__(**params)
         # compute the norm and save
         # temporarily suppress numpy divide by 0 warning
-        numpy.seterr(divide='ignore')
-        self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
-                                    for bnd in self._bounds.values()])
-        self._norm = numpy.exp(self._lognorm)
-        numpy.seterr(divide='warn')
+        with numpy.errstate(divide="ignore"):
+            self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
+                                  for bnd in self._bounds.values()])
+            self._norm = numpy.exp(self._lognorm)
 
     @property
     def norm(self):
+        """float: The normalization of the multi-dimensional pdf."""
         return self._norm
 
     @property
     def lognorm(self):
+        """float: The log of the normalization"""
         return self._lognorm
 
     def _cdfinv_param(self, param, value):
@@ -135,37 +121,6 @@ class Uniform(bounded.BoundedDist):
             return self._lognorm
         else:
             return -numpy.inf
-
-
-    def rvs(self, size=1, param=None):
-        """Gives a set of random values drawn from this distribution.
-
-        Parameters
-        ----------
-        size : {1, int}
-            The number of values to generate; default is 1.
-        param : {None, string}
-            If provided, will just return values for the given parameter.
-            Otherwise, returns random values for each parameter.
-
-        Returns
-        -------
-        structured array
-            The random values in a numpy structured array. If a param was
-            specified, the array will only have an element corresponding to the
-            given parameter. Otherwise, the array will have an element for each
-            parameter in self's params.
-        """
-        if param is not None:
-            dtype = [(param, float)]
-        else:
-            dtype = [(p, float) for p in self.params]
-        arr = numpy.zeros(size, dtype=dtype)
-        for (p,_) in dtype:
-            arr[p] = numpy.random.uniform(self._bounds[p][0],
-                                        self._bounds[p][1],
-                                        size=size)
-        return arr
 
     @classmethod
     def from_config(cls, cp, section, variable_args):

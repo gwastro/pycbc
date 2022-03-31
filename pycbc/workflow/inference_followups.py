@@ -16,15 +16,9 @@
 """
 Module that contains functions for setting up the inference workflow.
 """
-
-import logging, os.path
-from Pegasus import DAX3 as dax
-from pycbc.workflow.core import (Executable, FileList, Node, makedir, File,
-                                 Workflow)
-from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
-from pycbc.workflow import WorkflowConfigParser
+from pycbc.workflow.core import (Executable, makedir)
+from pycbc.workflow.plotting import PlotExecutable
 from pycbc.results import layout
-from pycbc.workflow import pegasus_workflow as wdax
 
 
 def make_inference_plot(workflow, input_file, output_dir,
@@ -948,6 +942,11 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
     make_skymap = ("create_fits_file" in workflow.cp.options("executables") and
                    "plot_skymap" in workflow.cp.options("executables"))
 
+    make_prior = ("plot_prior" in workflow.cp.options("executables"))
+    _config = None
+    if make_prior:
+        _config = config_file
+
     # make node for running extract samples
     posterior_file = create_posterior_files(
         workflow, samples_files, posterior_file_dir,
@@ -966,7 +965,7 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
         summary_plots += make_inference_posterior_plot(
             workflow, posterior_file, rdir.base,
             name='plot_posterior_summary',
-            parameters=params, plot_prior_from_file=config_file,
+            parameters=params, plot_prior_from_file=_config,
             analysis_seg=analysis_seg,
             tags=tags+[label, group])
 
@@ -984,25 +983,25 @@ def make_posterior_workflow(workflow, samples_files, config_file, label,
 
     summary_files += list(layout.grouper(summary_plots, 2))
 
-    # files for priors summary section
-    base = "priors/{}".format(label)
-    prior_plots = make_inference_prior_plot(
-        workflow, config_file, rdir[base],
-        analysis_seg=workflow.analysis_time,
-        tags=tags+[label])
-    layout.single_layout(rdir[base], prior_plots)
-
     # files for posteriors summary subsection
     base = "posteriors/{}".format(label)
     posterior_plots = []
     for group, params in plot_params.items():
         posterior_plots += make_inference_posterior_plot(
             workflow, posterior_file, rdir[base],
-            parameters=params, plot_prior_from_file=config_file,
+            parameters=params, plot_prior_from_file=_config,
             analysis_seg=analysis_seg,
             tags=tags+[label, group])
     layout.single_layout(rdir[base], posterior_plots)
 
+    prior_plots = []
+    # files for priors summary section
+    if make_prior:
+        base = "priors/{}".format(label)
+        prior_plots += make_inference_prior_plot(
+            workflow, config_file, rdir[base],
+            analysis_seg=workflow.analysis_time, tags=tags+[label])
+        layout.single_layout(rdir[base], prior_plots)
     return posterior_file, summary_files, prior_plots, posterior_plots
 
 

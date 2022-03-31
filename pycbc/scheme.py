@@ -26,7 +26,6 @@
 This modules provides python contexts that set the default behavior for PyCBC
 objects.
 """
-from __future__ import print_function
 import os
 import pycbc
 from decorator import decorator

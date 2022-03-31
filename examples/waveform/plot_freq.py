@@ -1,5 +1,6 @@
-import pylab
+import matplotlib.pyplot as pp
 from pycbc import waveform
+
 
 for phase_order in [2, 3, 4, 5, 6, 7]:
     hp, hc = waveform.get_td_waveform(approximant='SpinTaylorT4',
@@ -12,9 +13,9 @@ for phase_order in [2, 3, 4, 5, 6, 7]:
     amp = waveform.utils.amplitude_from_polarizations(hp, hc)
     f = waveform.utils.frequency_from_polarizations(hp, hc)
 
-    pylab.plot(f.sample_times, f, label="PN Order = %s" % phase_order)
+    pp.plot(f.sample_times, f, label="PN Order = %s" % phase_order)
 
-pylab.ylabel('Frequency (Hz)')
-pylab.xlabel('Time (s)')
-pylab.legend(loc='upper left')
-pylab.show()
+pp.ylabel('Frequency (Hz)')
+pp.xlabel('Time (s)')
+pp.legend(loc='upper left')
+pp.show()

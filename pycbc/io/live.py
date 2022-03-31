@@ -4,15 +4,14 @@ import pycbc
 import numpy
 import lal
 import json
-from six import u as unicode
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw import param as ligolw_param
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.param import Param as LIGOLWParam
+from ligo.lw.array import Array as LIGOLWArray
 from pycbc import version as pycbc_version
 from pycbc import pnutils
-from pycbc.tmpltbank import return_empty_sngl
+from pycbc.io.ligolw import return_empty_sngl, create_process_table
 from pycbc.results import ifo_color
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
@@ -21,15 +20,13 @@ from pycbc.mchirp_area import calc_probabilities
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
-    from glue.ligolw import array as ligolw_array
     Attributes = ligolw.sax.xmlreader.AttributesImpl
     elem = ligolw.LIGO_LW(
-            Attributes({u"Name": unicode(series.__class__.__name__)}))
+            Attributes({'Name': str(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
-    elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
-    elem.appendChild(ligolw_param.Param.from_pyvalue(u"f0", series.f0,
-                                                     unit=u"s^-1"))
+    elem.appendChild(ligolw.Time.from_gps(series.epoch, 'epoch'))
+    elem.appendChild(LIGOLWParam.from_pyvalue('f0', series.f0, unit='s^-1'))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
@@ -37,7 +34,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     else:
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
                                 series.data.data))
-    a = ligolw_array.Array.build(series.name, data, dim_names=dim_names)
+    a = LIGOLWArray.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -53,11 +50,10 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     snr_lal = snr_series.lal()
     snr_lal.name = 'snr'
     snr_lal.sampleUnits = ''
-    snr_xml = _build_series(snr_lal, (u'Time', u'Time,Real,Imaginary'), None,
+    snr_xml = _build_series(snr_lal, ('Time', 'Time,Real,Imaginary'), None,
                             'deltaT', 's')
     snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = ligolw_param.Param.build(u'event_id', u'ilwd:char',
-                                         sngl_inspiral_id)
+    eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
 def make_psd_xmldoc(psddict, xmldoc=None):
@@ -67,17 +63,16 @@ def make_psd_xmldoc(psddict, xmldoc=None):
     xmldoc = ligolw.Document() if xmldoc is None else xmldoc.childNodes[0]
 
     # the PSDs must be children of a LIGO_LW with name "psd"
-    root_name = u"psd"
+    root_name = 'psd'
     Attributes = ligolw.sax.xmlreader.AttributesImpl
     lw = xmldoc.appendChild(
-        ligolw.LIGO_LW(Attributes({u"Name": root_name})))
+        ligolw.LIGO_LW(Attributes({'Name': root_name})))
 
     for instrument, psd in psddict.items():
-        xmlseries = _build_series(psd, (u"Frequency,Real", u"Frequency"),
+        xmlseries = _build_series(psd, ('Frequency,Real', 'Frequency'),
                                   None, 'deltaF', 's^-1')
         fs = lw.appendChild(xmlseries)
-        fs.appendChild(ligolw_param.Param.from_pyvalue(u"instrument",
-                                                       instrument))
+        fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
     return xmldoc
 
 class SingleCoincForGraceDB(object):
@@ -146,11 +141,10 @@ class SingleCoincForGraceDB(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        proc_id = ligolw_process.register_to_xmldoc(
-            outdoc, 'pycbc', {}, ifos=usable_ifos, comment='',
-            version=pycbc_version.version,
-            cvs_repository='pycbc/'+pycbc_version.git_branch,
-            cvs_entry_time=pycbc_version.date).process_id
+        # FIXME is it safe (in terms of downstream operations) to let
+        # `program_name` default to the actual script name?
+        proc_id = create_process_table(outdoc, program_name='pycbc',
+                                       detectors=usable_ifos).process_id
 
         # Set up coinc_definer table
         coinc_def_table = lsctables.New(lsctables.CoincDefTable)
@@ -194,7 +188,7 @@ class SingleCoincForGraceDB(object):
                 val = coinc_results['foreground/%s/%s' % (ifo, name)]
                 if name == 'end_time':
                     val += self.time_offset
-                    sngl.set_end(lal.LIGOTimeGPS(val))
+                    sngl.end = lal.LIGOTimeGPS(val)
                 else:
                     try:
                         setattr(sngl, name, val)
@@ -235,7 +229,7 @@ class SingleCoincForGraceDB(object):
             if sngl.ifo in followup_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
-                sngl.set_end(lal.LIGOTimeGPS(self.merger_time))
+                sngl.end = lal.LIGOTimeGPS(self.merger_time)
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
@@ -246,7 +240,7 @@ class SingleCoincForGraceDB(object):
         # This seems to be used as FAP, which should not be in gracedb
         coinc_inspiral_row.false_alarm_rate = 0
         coinc_inspiral_row.minimum_duration = 0.
-        coinc_inspiral_row.set_ifos(usable_ifos)
+        coinc_inspiral_row.instruments = tuple(usable_ifos)
         coinc_inspiral_row.coinc_event_id = coinc_id
         coinc_inspiral_row.mchirp = sngl_populated.mchirp
         coinc_inspiral_row.mass = sngl_populated.mtotal
@@ -283,7 +277,7 @@ class SingleCoincForGraceDB(object):
             self.probabilities = None
 
         self.outdoc = outdoc
-        self.time = sngl_populated.get_end()
+        self.time = sngl_populated.end
 
     def save(self, filename):
         """Write this trigger to gracedb compatible xml format
@@ -293,8 +287,7 @@ class SingleCoincForGraceDB(object):
         filename: str
             Name of file to write to disk.
         """
-        gz = filename.endswith('.gz')
-        ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
+        ligolw_utils.write_filename(self.outdoc, filename, compress='auto')
 
         # save source probabilities in a json file
         if self.probabilities is not None:
@@ -329,6 +322,35 @@ class SingleCoincForGraceDB(object):
         # as GraceDB operations can fail later
         self.save(fname)
 
+        gid = None
+        try:
+            # try connecting to GraceDB
+            gracedb = GraceDb(gracedb_server) \
+                    if gracedb_server is not None else GraceDb()
+
+            # create GraceDB event
+            group = 'Test' if testing else 'CBC'
+            r = gracedb.createEvent(group, "pycbc", fname, search).json()
+            gid = r["graceid"]
+            logging.info("Uploaded event %s", gid)
+
+            if self.is_hardware_injection:
+                gracedb.writeLabel(gid, 'INJ')
+                logging.info("Tagging event %s as an injection", gid)
+
+            # add info for tracking code version
+            gracedb_tag_with_version(gracedb, gid)
+
+            extra_strings = [] if extra_strings is None else extra_strings
+            for text in extra_strings:
+                gracedb.writeLog(gid, text, tag_name=['analyst_comments'])
+        except Exception as exc:
+            logging.error('Something failed during the upload/annotation of '
+                          'event %s on GraceDB. The event may not have been '
+                          'uploaded!', fname)
+            logging.error(str(exc))
+
+        # plot the SNR timeseries and noise PSDs
         if self.snr_series is not None:
             if fname.endswith('.xml.gz'):
                 snr_series_fname = fname.replace('.xml.gz', '.hdf')
@@ -352,7 +374,6 @@ class SingleCoincForGraceDB(object):
                           + self.time_offset)
                     pl.plot([mt - ref_time], [snr], c=ifo_color(ifo),
                             marker='x')
-
             pl.legend()
             pl.xlabel('GPS time from {:d} (s)'.format(ref_time))
             pl.ylabel('SNR')
@@ -360,7 +381,7 @@ class SingleCoincForGraceDB(object):
             pl.close()
 
             pl.figure()
-            for ifo in sorted(self.snr_series):
+            for ifo in sorted(self.psds):
                 # Undo dynamic range factor
                 curr_psd = self.psds[ifo].astype(numpy.float64)
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
@@ -391,66 +412,49 @@ class SingleCoincForGraceDB(object):
             fig.savefig(prob_plot_fname)
             pl.close()
 
-        gid = None
-        try:
-            # try connecting to GraceDB
-            gracedb = GraceDb(gracedb_server) \
-                    if gracedb_server is not None else GraceDb()
+        # upload SNR series in HDF format and plots
+        if gid is not None and self.snr_series is not None:
+            try:
+                gracedb.writeLog(
+                    gid, 'SNR timeseries HDF file upload',
+                    filename=snr_series_fname
+                )
+                gracedb.writeLog(
+                    gid, 'SNR timeseries plot upload',
+                    filename=snr_series_plot_fname,
+                    tag_name=['background'],
+                    displayName=['SNR timeseries']
+                )
+                gracedb.writeLog(
+                    gid, 'PSD plot upload',
+                    filename=psd_series_plot_fname,
+                    tag_name=['psd'], displayName=['PSDs']
+                )
+            except Exception as exc:
+                logging.error('Failed to upload plots for %s', gid)
+                logging.error(str(exc))
 
-            # create GraceDB event
-            group = 'Test' if testing else 'CBC'
-            r = gracedb.createEvent(group, "pycbc", fname, search).json()
-            gid = r["graceid"]
-            logging.info("Uploaded event %s", gid)
-
-            if self.is_hardware_injection:
-                gracedb.writeLabel(gid, 'INJ')
-                logging.info("Tagging event %s as an injection", gid)
-
-            # upload PSDs. Note that the PSDs are already stored in the
-            # original event file and we just upload a copy of that same file
-            # here. This keeps things as they were in O2 and can be removed
-            # after updating the follow-up infrastructure
-            psd_fname = 'psd.xml.gz' if fname.endswith('.gz') else 'psd.xml'
-            gracedb.writeLog(gid, "PyCBC PSD estimate from the time of event",
-                             psd_fname, open(fname, "rb").read(), "psd")
-            logging.info("Uploaded PSDs for event %s", gid)
-
-            # add info for tracking code version
-            gracedb_tag_with_version(gracedb, gid)
-
-            extra_strings = [] if extra_strings is None else extra_strings
-            for text in extra_strings:
-                gracedb.writeLog(gid, text, tag_name=['analyst_comments'])
-
-            # upload SNR series in HDF format and plots
-            if self.snr_series is not None:
-                gracedb.writeLog(gid, 'SNR timeseries HDF file upload',
-                                 filename=snr_series_fname)
-                gracedb.writeLog(gid, 'SNR timeseries plot upload',
-                                 filename=snr_series_plot_fname,
-                                 tag_name=['background'],
-                                 displayName=['SNR timeseries'])
-                gracedb.writeLog(gid, 'PSD plot upload',
-                                 filename=psd_series_plot_fname,
-                                 tag_name=['psd'], displayName=['PSDs'])
-
-            # upload source probabilities in json format and plot
-            if self.probabilities is not None:
-                gracedb.writeLog(gid, 'source probabilities JSON file upload',
-                                 filename=prob_fname, tag_name=['em_follow'])
+        # upload source probabilities in JSON format and plot
+        if gid is not None and self.probabilities is not None:
+            try:
+                gracedb.writeLog(
+                    gid, 'Source probabilities JSON file upload',
+                    filename=prob_fname, tag_name=['em_follow']
+                )
                 logging.info('Uploaded source probabilities for event %s', gid)
-                gracedb.writeLog(gid, 'source probabilities plot upload',
-                                 filename=prob_plot_fname,
-                                 tag_name=['em_follow'])
+                gracedb.writeLog(
+                    gid, 'Source probabilities plot upload',
+                    filename=prob_plot_fname,
+                    tag_name=['em_follow']
+                )
                 logging.info('Uploaded source probabilities pie chart for '
                              'event %s', gid)
-
-        except Exception as exc:
-            logging.error('Something failed during the upload/annotation of '
-                          'event %s on GraceDB. The event may not have been '
-                          'uploaded!', fname)
-            logging.error(str(exc))
+            except Exception as exc:
+                logging.error(
+                    'Failed to upload source probability results for %s',
+                    gid
+                )
+                logging.error(str(exc))
 
         return gid
 

@@ -19,6 +19,7 @@
 """
 
 import os
+import sys
 import argparse
 import logging
 import shutil
@@ -82,9 +83,8 @@ opts = parser.parse_args()
 # setup log
 # If we're running in MPI mode, only allow the parent to print
 use_mpi, size, rank = pycbc.pool.use_mpi(opts.use_mpi, log=False)
-pycbc.init_logging(opts.verbose)
-if use_mpi and rank != 0:
-    logging.disable(logging.WARNING)
+if pool.is_main_process():
+    pycbc.init_logging(opts.verbose)
 
 # verify options are sane
 fft.verify_fft_options(opts, parser)
@@ -139,12 +139,16 @@ with ctx:
         use_mpi=opts.use_mpi)
 
     # store the checkpoint file
-    for fn in [sampler.checkpoint_file, sampler.backup_file]:
-        with loadfile(fn, 'a') as fp:
-            fp.write_config_file(cp)
+    if pool.is_main_process():
+        for fn in [sampler.checkpoint_file, sampler.backup_file]:
+            with loadfile(fn, 'a') as fp:
+                fp.write_config_file(cp)
 
     # Run the sampler
     sampler.run()
+    
+    if not pool.is_main_process():
+        sys.exit(0)
 
     # Finalize the output
     sampler.finalize()

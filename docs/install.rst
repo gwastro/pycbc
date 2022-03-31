@@ -23,7 +23,7 @@ Full Virtualenv for Development and Production
 
 This document explains how to set up a virtual environment to install PyCBC
 either for development or use in a production analysis with a release. The
-code build will be a standard Python install which requires that the
+code build will be a standard Python install, which requires that the
 installation directory containing the Python libraries is accessible at
 runtime.
 
@@ -31,7 +31,7 @@ PyCBC uses the `fork and pull <https://help.github.com/articles/using-pull-reque
 
 
 Create a virtual environment for your development or production environment and
-do a clean install. The following will create a python3 environment.
+do a clean install. The following will create a python3 environment: currently PyCBC requires python3.7 or higher.
 
 .. code-block:: bash
 
@@ -53,7 +53,32 @@ as follows.
     cd pycbc
     pip install -r requirements.txt
     pip install -r companion.txt
-    python setup.py install
+    pip install .
+
+========================================
+Development build on LDG / IGWN clusters
+========================================
+
+The above instructions require some adjustment when working on a LIGO or other GW collaboration 
+compute cluster (eg CIT).  The main issue is that the default environment may not include a 
+sufficiently recent python version (>=3.7).  The standard workaround is to use a python executable
+available in a 'IGWN Conda' environment.  To see what environments are available, you can run
+
+.. code-block:: bash
+
+    conda info --envs
+
+This should yield ``igwn-py37`` as one choice.  The output of this command will also
+tell you the location of the environment in the file system.  Then, the location of the
+python3.7 executable is for instance ``/cvmfs/oasis.opensciencegrid.org/ligo/sw/conda/envs/igwn-py37/bin/python``
+and you will create the virtualenv via the command 
+
+.. code-block:: bash
+
+    virtualenv -p /cvmfs/oasis.opensciencegrid.org/ligo/sw/conda/envs/igwn-py37/bin/python env
+
+The rest of the install instructions should then be usable as-is. 
+    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Other scenarios
