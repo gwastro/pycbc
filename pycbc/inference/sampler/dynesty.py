@@ -30,7 +30,6 @@ import logging
 import time
 import numpy
 import dynesty, dynesty.dynesty, dynesty.nestedsamplers
-from dynesty.utils import unitcheck, reflect
 from pycbc.pool import choose_pool
 from dynesty import utils as dyfunc
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files,
@@ -462,6 +461,12 @@ def sample_rwalk_mod(args):
 
         Adapted from version used in bilby/dynesty
     """
+    try:
+        # dynesty <= 1.1
+        from dynesty.utils import unitcheck, reflect
+    except:
+        # dynest >= 1.2
+        from dynesty.utils import unitcheck, apply_reflect as reflect
 
     # Unzipping.
     (u, loglstar, axes, scale,
