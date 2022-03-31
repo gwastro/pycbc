@@ -335,7 +335,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
         self.two_det_weights = {}
-        if pregenerate_hist:
+        if pregenerate_hist and not len(ifos) == 1:
             self.get_hist()
 
     def get_hist(self, ifos=None):
@@ -367,7 +367,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 selected = name
                 break
 
-        if selected is None:
+        if selected is None and len(ifos) > 1:
             raise RuntimeError("Couldn't figure out which stat file to use")
 
         logging.info("Using signal histogram %s for ifos %s", selected, ifos)
@@ -493,6 +493,10 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         # Convert time shift vector to dict, as hist ifos and self.ifos may
         # not be in same order
         to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
+
+        # This is a workaround for single-detector work
+        if len(self.ifos) == 1:
+            return np.zeros_like(stats[self.ifos[0]]['snr'])
 
         if not self.has_hist:
             self.get_hist()
@@ -804,6 +808,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         alphai = self.fits_by_tid[ifo]['smoothed_fit_coeff'][tnum]
         ratei = self.fits_by_tid[ifo]['smoothed_rate_above_thresh'][tnum]
         thresh = self.fits_by_tid[ifo]['thresh']
+
         return alphai, ratei, thresh
 
     def lognoiserate(self, trigs):
