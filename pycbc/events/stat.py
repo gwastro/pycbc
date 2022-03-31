@@ -494,10 +494,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         # not be in same order
         to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
 
-        # This is a workaround for single-detector work
-        if len(self.ifos) == 1:
-            return np.zeros_like(stats[self.ifos[0]]['snr'])
-
         if not self.has_hist:
             self.get_hist()
 
