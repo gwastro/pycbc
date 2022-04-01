@@ -282,36 +282,66 @@ def make_gating_node(workflow, datafind_files, outdir=None, tags=None):
     return condition_strain_nodes, condition_strain_outs
 
 
-def get_sky_grid_scale(
-        sky_error=0.0, Fermi=False, upscale=False, core_sigma=3.6,
-        core_frac=0.98, tail_sigma=29.6, containment=0.9, precision=1000):
+def fermi_core_tail_model(
+        sky_err, rad, core_frac=0.98, core_sigma=3.6, tail_sigma=29.6):
+    """Fermi systematic error model following
+    https://arxiv.org/abs/1909.03006, with default values valid
+    before 11 September 2019.
+
+    Parameters
+    ----------
+    core_frac : float
+        Fraction of the systematic uncertainty contained within the core
+        component.
+    core_sigma : float
+        Size of the GBM systematic core component.
+    tail_sigma : float
+        Size of the GBM systematic tail component.
+
+    Returns
+    _______
+    tuple
+        Tuple containing the core and tail probability distributions
+        as a function of radius.
     """
-    Calculate the angular radius corresponding to a desired localization
-    uncertainty level. This is used to generate the search grid and involves
-    scaling up the standard 1-sigma value provided to the workflow, assuming
-    a normal probability profile. Fermi systematic errors can be included,
-    following https://arxiv.org/abs/1909.03006, with default values valid
-    before 11 September 2019. The default probability coverage is 90%.
+    scaledsq = sky_err**2 / -2 / np.log(0.32)
+    return (
+        frac * (1 - np.exp(-0.5 * (rad / np.sqrt(scaledsq + sigma**2))**2))
+        for frac, sigma
+        in zip([core_frac, 1 - core_frac], [core_sigma, tail_sigma]))
+
+
+def get_sky_grid_scale(
+        sky_error=0.0, containment=0.9, upscale=False, fermi_sys=False,
+        precision=1e-3, **kwargs):
+    """
+    Calculate the angular radius corresponding to a desired
+    localization uncertainty level. This is used to generate the search
+    grid and involves scaling up the standard 1-sigma value provided to
+    the workflow, assuming a normal probability profile. Fermi
+    systematic errors can be included, following
+    https://arxiv.org/abs/1909.03006, with default values valid before
+    11 September 2019. The default probability coverage is 90%.
 
     Parameters
     ----------
     sky_error : float
         The reported statistical 1-sigma sky error of the trigger.
-    Fermi : bool
-        Whether to apply Fermi-GBM systematics. Default = False.
-    upscale : bool
+    containment : float
+        The desired localization probability to be covered by the sky
+        grid.
+    upscale : bool, optional
         Whether to apply rescale to convert from 1 sigma -> containment
         for non-Fermi triggers. Default = True as Swift reports 90%
         radius directly.
-    core_sigma : float
-        Size of the GBM systematic core component.
-    core_frac : float
-        Fraction of the systematic uncertainty contained within the core
-        component.
-    tail_sigma : float
-        Size of the GBM systematic tail component.
-    containment : float
-        The desired localization probability to be covered by the sky grid.
+    fermi_sys : bool, optional
+        Whether to apply Fermi-GBM systematics via
+        ``fermi_core_tail_model``. Default = False.
+    precision : float, optional
+        Precision (in degrees) for calculating the error radius via
+        Fermi-GBM model.
+    **kwargs
+        Additional keyword arguments passed to `fermi_core_tail_model`.
 
     Returns
     _______
@@ -319,15 +349,13 @@ def get_sky_grid_scale(
     float
         Sky error radius in degrees.
     """
-    if Fermi:
-        r = np.linspace(sky_error*0.5, sky_error*4.0, precision)
-        sky_error /= np.sqrt(-2 * np.log(0.32))
-        tail_frac = 1.0 - core_frac
-        s1 = np.sqrt(sky_error**2 + core_sigma**2)
-        s2 = np.sqrt(sky_error**2 + tail_sigma**2)
-        part1 = core_frac * (1 - np.exp(-0.5 * (r / s1)**2))
-        part2 = tail_frac * (1 - np.exp(-0.5 * (r / s2)**2))
-        out = r[(np.abs(part1 + part2 - containment)).argmin()]
+    if fermi_sys:
+        lims = (0.5, 4)
+        radii = np.linspace(
+            lims[0] * sky_error, lims[1] * sky_error,
+            int((lims[1] - lims[0]) * sky_error / precision) + 1)
+        core, tail = fermi_core_tail_model(sky_error, radii, **kwargs)
+        out = radii[(abs(core + tail - containment)).argmin()]
     else:
         # Use Rayleigh distribution to go from 1 sigma containment to
         # containment given by function variable. Interval method returns
