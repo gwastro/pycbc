@@ -15,7 +15,6 @@
 
 """Provides abstract base class for all samplers."""
 
-from __future__ import absolute_import
 
 import time
 from abc import (ABCMeta, abstractmethod)

@@ -27,7 +27,6 @@ This modules provides a library of functions that calculate waveform parameters
 from other parameters. All exposed functions in this module's namespace return
 one parameter given a set of inputs.
 """
-from __future__ import division
 
 import copy
 import numpy

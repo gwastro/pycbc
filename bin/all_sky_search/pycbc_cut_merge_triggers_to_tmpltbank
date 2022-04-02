@@ -20,8 +20,6 @@
 Reduce a MERGE triggers file to a reduced template bank
 """
 
-from __future__ import print_function
-from __future__ import division
 import logging
 import imp
 import argparse

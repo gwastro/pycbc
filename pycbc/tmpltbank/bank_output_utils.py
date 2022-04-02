@@ -1,4 +1,3 @@
-from __future__ import division
 import numpy
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from ligo.lw import ligolw, lsctables, utils as ligolw_utils

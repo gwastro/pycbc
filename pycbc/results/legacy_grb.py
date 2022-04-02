@@ -20,7 +20,6 @@
 # Preamble
 # =============================================================================
 
-from __future__ import division
 
 import re
 import os

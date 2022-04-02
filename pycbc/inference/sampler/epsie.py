@@ -16,7 +16,6 @@
 """This module provides classes for interacting with epsie samplers.
 """
 
-from __future__ import absolute_import
 
 import numpy
 

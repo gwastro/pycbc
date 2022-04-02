@@ -28,7 +28,6 @@ generation of pygrb workflows. For details about pycbc.workflow see here:
 http://pycbc.org/pycbc/latest/html/workflow.html
 """
 
-from __future__ import print_function
 import os
 import shutil
 from urllib.request import pathname2url

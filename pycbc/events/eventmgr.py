@@ -24,7 +24,6 @@
 """This modules defines functions for clustering and thresholding timeseries to
 produces event triggers
 """
-from __future__ import absolute_import
 import numpy, copy, os.path
 import logging
 import h5py

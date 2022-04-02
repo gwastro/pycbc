@@ -17,7 +17,6 @@
 """Provides I/O support for multinest.
 """
 
-from __future__ import absolute_import
 
 from .base_sampler import BaseSamplerFile
 
