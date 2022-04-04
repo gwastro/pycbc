@@ -594,7 +594,9 @@ parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf,
 parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf,
                     help="Safety BNS horizon distance (in Mpc) below which a "
                     "detector's data is discarded.")
-parser.add_argument('--max-triggers-in-batch', type=int)
+parser.add_argument('--max-triggers-in-batch', type=int, metavar="N",
+                    help="Tells each matched-filtering process to only report "
+                         "the loudest N single-detector triggers by SNR.")
 parser.add_argument('--max-length', type=float,
                     help='Maximum duration of templates, used to set the data buffer size')
 
