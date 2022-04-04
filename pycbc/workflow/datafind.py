@@ -29,7 +29,6 @@ documentation for this function can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
 """
 
-from __future__ import print_function
 import os, copy
 import logging
 from ligo import segments

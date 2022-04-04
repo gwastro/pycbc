@@ -1,6 +1,5 @@
 """ Tools for creating pools of worker processes
 """
-from __future__ import absolute_import
 import multiprocessing.pool
 import functools
 from multiprocessing import TimeoutError

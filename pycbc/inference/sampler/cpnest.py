@@ -26,7 +26,6 @@ This modules provides classes and functions for using the cpnest sampler
 packages for parameter estimation.
 """
 
-from __future__ import absolute_import
 
 import logging
 import os

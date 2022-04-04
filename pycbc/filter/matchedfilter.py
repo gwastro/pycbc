@@ -1156,7 +1156,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
     else:
         kmin = 1
     if fhigh:
-        kmax = int(fhigh / df )
+        kmax = int(fhigh / df)
         if kmax > int((N + 1)/2.):
             kmax = int((N + 1)/2.)
     else:

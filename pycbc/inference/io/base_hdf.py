@@ -25,14 +25,12 @@
 inference samplers generate.
 """
 
-from __future__ import absolute_import
 
 import sys
 import logging
 from io import StringIO
 
 from abc import (ABCMeta, abstractmethod)
-from six import add_metaclass
 
 import numpy
 import h5py
@@ -76,8 +74,7 @@ def format_attr(val):
     return val
 
 
-@add_metaclass(ABCMeta)
-class BaseInferenceFile(h5py.File):
+class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
     """Base class for all inference hdf files.
 
     This is a subclass of the h5py.File object. It adds functions for

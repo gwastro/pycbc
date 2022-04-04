@@ -24,11 +24,10 @@
 """This modules defines functions for clustering and thresholding timeseries to
 produces event triggers
 """
-from __future__ import absolute_import
 import numpy, copy, os.path
 import logging
 import h5py
-from six.moves import cPickle
+import pickle
 
 from pycbc.types import Array
 from pycbc.scheme import schemed
@@ -199,7 +198,7 @@ class EventManager(object):
         self.tnum_finished = tnum_finished
         logging.info('Writing checkpoint file at template %s', tnum_finished)
         fp = h5py.File(filename, 'w')
-        dump_state(self, fp, protocol=cPickle.HIGHEST_PROTOCOL)
+        dump_state(self, fp, protocol=pickle.HIGHEST_PROTOCOL)
         fp.close()
 
     @staticmethod

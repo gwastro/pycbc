@@ -17,7 +17,6 @@
 """Provides I/O support for ptemcee.
 """
 
-from __future__ import absolute_import
 
 from .base_sampler import BaseSamplerFile
 from . import base_mcmc

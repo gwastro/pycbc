@@ -29,8 +29,8 @@ provides additional abstraction and argument handling.
 import os
 import shutil
 import tempfile
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin, urlsplit
+from urllib.request import pathname2url
+from urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
 
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
