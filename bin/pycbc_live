@@ -87,7 +87,7 @@ class LiveEventManager(object):
         self.run_snr_optimization = run_snr_optimization
 
         # Keep track of which events have been uploaded
-        self.last_few_coincs_uploaded = np.zeros(10, dtype=float)
+        self.last_few_coincs_uploaded = numpy.zeros(10, dtype=float)
 
         if self.run_snr_optimization and self.rank == 0:
             # preestimate the number of CPU cores that we can afford giving to
