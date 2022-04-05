@@ -175,6 +175,7 @@ def check_coinc_results(args):
         if not has_match:
             coinc_fail = True
             log.error('Injection %i was missed', i)
+            print(trig_props['net_snr'])
 
     if coinc_fail:
         log.error('Coincident Trigger Test Failed')
