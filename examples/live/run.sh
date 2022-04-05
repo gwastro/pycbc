@@ -43,6 +43,16 @@ else
 fi
 
 
+# test if there is a single fits file. If not, make a representative one
+if [[ ! -f single_trigger_fits.hdf ]]
+then
+    echo -e "\\n\\n>> [`date`] Making single fits file"
+    python make_singles_fits_file.py
+else
+    echo -e "\\n\\n>> [`date`] Pre-existing single fits file found"
+fi
+
+
 # test if there is a injection file.
 # If not, make one and delete any existing strain
 
@@ -183,6 +193,12 @@ python -m mpi4py `which pycbc_live` \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
 --run-snr-optimization \
+--enable-single-detector-background \
+--single-newsnr-threshold 9 \
+--single-duration-threshold 7 \
+--single-reduced-chisq-threshold 2 \
+--single-fit-file single_trigger_fits.hdf \
+--sngl-ifar-est-dist conservative \
 --verbose
 
 # cat the logs of pycbc_optimize_snr so we can check them
