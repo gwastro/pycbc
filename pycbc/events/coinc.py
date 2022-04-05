@@ -27,6 +27,7 @@ coincident triggers.
 
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector
+from pycbc.results import ppdets
 
 
 def background_bin_from_string(background_bins, data):
@@ -1110,7 +1111,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         num_zerolag = 0
         num_background = 0
 
-        logging.info('%s background and zerolag coincs', len(cstat))
+        logging.info(
+            '%s: %s background and zerolag coincs',
+            ppdets(self.ifos), len(cstat)
+        )
         if len(cstat) > 0:
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
@@ -1195,8 +1199,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             A dictionary of arrays containing the coincident results.
         """
         # Let's see how large everything is
-        logging.info('BKG Coincs %s stored %s bytes',
-                     len(self.coincs), self.coincs.nbytes)
+        logging.info(
+            "%s: %s coincs, %s bytes",
+            ppdets(self.ifos, "-"), len(self.coincs), self.coincs.nbytes
+        )
 
         # If there are no results just return
         valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]

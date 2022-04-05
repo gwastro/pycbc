@@ -32,6 +32,7 @@ import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
 from pycbc import mchirp_area
+from pycbc.results import ppdets
 
 try:
     from setproctitle import setproctitle
@@ -39,14 +40,6 @@ except ImportError:
     def setproctitle(title):
         pass
 
-
-def ppdets(ifos, separator=', '):
-    """Pretty-print a list (or set) of detectors: return a string listing
-    the given detectors alphabetically and separated by commas.
-    """
-    if ifos:
-        return separator.join(sorted(ifos))
-    return 'no detectors'
 
 def ptof(p, ft):
     """Convert p-value to FAR via foreground time `ft`.
@@ -770,9 +763,10 @@ with ctx:
         ifo_combos = itertools.combinations(ifos, 2)
         estimators = []
         for combo in ifo_combos:
-            logging.info('Will calculate %s background', combo)
-            estimators.append(Coincer.from_cli(args,
-                              len(bank), args.analysis_chunk, list(combo)))
+            logging.info('Will calculate %s background', ppdets(combo, "-"))
+            estimators.append(Coincer.from_cli(
+                args, len(bank), args.analysis_chunk, list(combo)
+            ))
 
         my_coinc_id = 999999
         def set_coinc_id(i):
