@@ -120,7 +120,7 @@ def get_segments_file(workflow, name, option_name, out_dir):
             segs[key] = segments.segmentlist([])
         elif flag_str.upper() == "ON":
             all_seg = segments.segment([start, end])
-            segs[key] = segments.segmentlist(all_seg)
+            segs[key] = segments.segmentlist([all_seg])
         else:
             segs[key] = query_str(ifo, flag_str, start, end,
                                   source=source, server=server,
