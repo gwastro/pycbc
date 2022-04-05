@@ -115,9 +115,9 @@ def get_segments_file(workflow, name, option_name, out_dir):
         flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
         key = ifo + ':' + name
         
-        if source == "OFF":
+        if source.upper() == "OFF":
             segs[key] = segments.segmentlist([])
-        elif source == "ON":
+        elif source.upper() == "ON":
             all_seg = segments.segment([start, end])
             segs[key] = segments.segmentlist(all_seg)
         else:
