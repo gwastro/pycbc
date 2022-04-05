@@ -99,9 +99,10 @@ def get_segments_file(workflow, name, option_name, out_dir):
         server = cp.get("workflow-segments",
                                  "segments-database-url")
 
-    source = "any"
     if cp.has_option("workflow-segments", "segments-source"):
         source = cp.get("workflow-segments", "segments-source")
+    else:
+        source = "any"
 
     if source == "file":
         local_file_path = \
