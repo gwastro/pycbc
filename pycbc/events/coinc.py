@@ -687,7 +687,11 @@ class CoincExpireBuffer(object):
 
     @property
     def nbytes(self):
-        return self.buffer.nbytes
+        """Returns the approximate memory usage of self.
+        """
+        nbs = [self.timer[ifo].nbytes for ifo in self.ifos]
+        nbs.append(self.buffer.nbytes)
+        return sum(nbs)
 
     def increment(self, ifos):
         """Increment without adding triggers"""
