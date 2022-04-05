@@ -91,25 +91,11 @@ then
             --frame-duration 32 \
             --injection-file injections.hdf
     }
-    # L1 ends 64s later, so that we can inject in single-detector time
-    simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234 $((gps_end_time - 64))
+    # L1 ends 32s later, so that we can inject in single-detector time
+    simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234 $((gps_end_time - 32))
     simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345 $gps_end_time
-    simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456 $((gps_end_time - 64))
+    simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456 $((gps_end_time - 32))
 
-    function simulate_strain_zero { # detector PSD_model random_seed
-
-        pycbc_condition_strain \
-            --fake-strain zeroNoise \
-            --output-strain-file $out_path \
-            --gps-start-time $2 \
-            --gps-end-time $gps_end_time \
-            --sample-rate 16384 \
-            --low-frequency-cutoff 10 \
-            --channel-name $1:SIMULATED_STRAIN \
-            --frame-duration 32
-    }
-    simulate_strain_zero H1 $((gps_end_time - 64))
-    simulate_strain_zero V1 $((gps_end_time - 64))
 else
     echo -e "\\n\\n>> [`date`] Pre-existing strain data found"
 fi
@@ -133,11 +119,12 @@ rm -rf ./output
 
 echo -e "\\n\\n>> [`date`] Running PyCBC Live"
 
+# -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
+
 mpirun \
 -host localhost,localhost \
 -n 2 \
 --bind-to none \
--x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
 python -m mpi4py `which pycbc_live` \
 --bank-file template_bank.hdf \
