@@ -1112,8 +1112,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         num_background = 0
 
         logging.info(
-            '%s: %s background and zerolag coincs',
-            ppdets(self.ifos), len(cstat)
+            "%s: %s background and zerolag coincs",
+            ppdets(self.ifos, "-"), len(cstat)
         )
         if len(cstat) > 0:
             offsets = numpy.concatenate(offsets)
