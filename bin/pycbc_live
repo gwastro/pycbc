@@ -87,7 +87,7 @@ class LiveEventManager(object):
         self.run_snr_optimization = run_snr_optimization
 
         # Keep track of which events have been uploaded
-        self.last_ten_coinc_events_uploaded = []
+        self.last_few_coincs_uploaded = np.zeros(10, dtype=float)
 
         if self.run_snr_optimization and self.rank == 0:
             # preestimate the number of CPU cores that we can afford giving to
@@ -270,10 +270,12 @@ class LiveEventManager(object):
                                    testing=self.gracedb_testing,
                                    extra_strings=[comment],
                                    search=args.gracedb_search)
-                self.last_ten_coinc_events_uploaded.append(event.merger_time)
-                if len(self.last_ten_coinc_events_uploaded) > 10:
-                    self.last_ten_coinc_events_uploaded = \
-                        self.last_ten_coinc_events_uploaded[-10:]
+                # Keep track of the last few coincs uploaded in order to
+                # prevent singles being uploaded as well for coinc events
+                self.last_few_coincs_uploaded.append(event.merger_time)
+                # Only need to keep a few (10) events
+                self.last_few_coincs_uploaded = \
+                    self.last_few_coincs_uploaded[-10:]
             else:
                 gid = None
                 event.save(fname)
@@ -413,12 +415,19 @@ class LiveEventManager(object):
             comment = comment.format(ifo, ppdets(followup_ifos))
 
             # Has a coinc event at this time been uploaded recently?
-            # If so, skip
-            if event.merger_time in self.last_ten_coinc_events_uploaded:
-                continue
+            # If so, skip upload
+            coinc_tdiffs =  abs(event.merger_time -
+                                self.last_few_coincs_uploaded)
+            nearby_coincs = coinc_tdiffs < 0.1
+            if any(nearby_coincs):
+                logging.info("Single detetor event at time %.2f not "
+                             "uploaded due to coinc event at %.2f.",
+                             event.merger_time,
+                             self.last_few_coincs_uploaded[nearby_coincs])
 
             if args.enable_single_detector_upload \
-                    and self.ifar_upload_threshold < ifar:
+                    and self.ifar_upload_threshold < ifar \
+                    and not any(nearby_coincs):
                 event.upload(fname, gracedb_server=args.gracedb_server,
                              testing=self.gracedb_testing,
                              extra_strings=[comment],
