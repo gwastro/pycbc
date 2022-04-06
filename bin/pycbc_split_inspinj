@@ -54,7 +54,7 @@ for col in allinjs.validcolumns:
     if att in allinjs.columnnames:
         used_columns.append(col)
 
-new_inj_tables = [lsctables.New(tabletype, columns=used_columns) \
+new_inj_tables = [lsctables.New(tabletype, columns=used_columns) 
                   for idx in range(num_splits)]
 
 table_cycle = cycle(new_inj_tables)
