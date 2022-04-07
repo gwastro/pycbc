@@ -29,7 +29,6 @@ a relative binning likelihood for parameter estimation.
 import logging
 import numpy
 from scipy.interpolate import interp1d
-from scipy import special
 
 from pycbc.waveform import get_fd_waveform_sequence
 from pycbc.detector import Detector

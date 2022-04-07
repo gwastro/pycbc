@@ -2,10 +2,10 @@
 """
 
 import logging
+from distutils.util import strtobool
+
 import numpy
 import tqdm
-
-from distutils.util import strtobool
 
 from scipy.special import logsumexp, i0e
 from scipy.interpolate import RectBivariateSpline, interp1d
@@ -16,11 +16,13 @@ def str_to_tuple(sval, ftype):
     """ Convenience parsing to convert str to tuple"""
     return tuple(ftype(x) for x in sval.split(','))
 
+
 def str_to_bool(sval):
+    """ Ensure value is a bool if it can be converted """
     if isinstance(sval, str):
         return strtobool(sval)
-    else:
-        return sval
+    return sval
+
 
 class DistMarg():
     """Help class to add bookkeeping for distance marginalization"""
