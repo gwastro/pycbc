@@ -55,7 +55,7 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # Functions
 # =============================================================================
 # Function to load necessary SNR data from an HDF trigger/injection file
-def load_data_from_hdf(input_file, vetoes, ifos, opts, injections=False):
+def load_data(input_file, vetoes, ifos, opts, injections=False):
     """Build a dictionary containing SNR and sensitivity data extracted
     from a trigger/injection file"""
 
@@ -117,55 +117,6 @@ def load_data_from_hdf(input_file, vetoes, ifos, opts, injections=False):
         data['ifo_snr'] = trigs_or_injs['%s/snr_%s' % (opts.ifo,att)][:] 
 
     return data
-
-# Function to load necessary SNR data from a trigger/injection file
-def load_data(input_file, vetoes, ifos, opts, injections=False):
-    """Build a dictionary containing SNR and sensitivity data extracted
-    from a trigger/injection file"""
-
-    # Inizialize the dictionary
-    data = {}
-    data['snr'] = None
-    data['ifo_snr'] = None
-    data['f_resp_mean'] = dict((ifo, None) for ifo in ifos)
-    data['sigma_mean'] = dict((ifo, None) for ifo in ifos)
-    data['sigma_max'] = None
-    data['sigma_min'] = None
-
-    # Fill in with required data
-    if input_file:
-        if injections:
-            trigs_or_injs = ppu.load_injections(input_file, vetoes)
-        else:
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-            sigma = trigs_or_injs.get_sigmasqs()
-            sigma_tot = numpy.zeros(len(trigs_or_injs))
-            for ifo in ifos:
-                antenna = Detector(ifo)
-                ifo_f_resp = \
-                    ppu.get_antenna_responses(antenna,
-                                              trigs_or_injs.get_column('ra'),
-                                              trigs_or_injs.get_column('dec'),
-                                              numpy.asarray(trigs_or_injs.get_end()))
-                data['f_resp_mean'][ifo] = ifo_f_resp.mean()
-                sigma_tot += (sigma[ifo] * ifo_f_resp)
-            for ifo in ifos:
-                try:
-                    sigma_norm = sigma[ifo]/sigma_tot
-                    data['sigma_mean'][ifo] = sigma_norm.mean()
-                    if ifo == opts.ifo:
-                        data['sigma_max'] = sigma_norm.max()
-                        data['sigma_min'] = sigma_norm.min()
-                except ValueError:
-                    data['sigma_mean'][ifo] = 0
-                    if ifo == opts.ifo:
-                        data['sigma_max'] = 0
-                        data['sigma_min'] = 0
-        data['snr'] = numpy.asarray(trigs_or_injs.get_column('snr'))
-        data['ifo_snr'] = trigs_or_injs.get_sngl_snr(opts.ifo)
-
-    return data
-
 
 # Plot lines representing deviations based on non-central chi-square
 def plot_deviation(percentile, snr_grid, y, ax, style):
@@ -236,10 +187,10 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Extract trigger data
-trig_data = load_data_from_hdf(trig_file, vetoes, ifos, opts)
+trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data_from_hdf(found_file, vetoes, ifos, opts, injections=True)
+inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")

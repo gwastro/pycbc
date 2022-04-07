@@ -49,7 +49,7 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 # Functions
 # =============================================================================
 # Function to load latitude and longitude data from an HDF trigger/injection file
-def load_data_from_hdf(input_file, vetoes):
+def load_data(input_file, vetoes):
     """Build a dictionary containing latitude and longitude data extracted
     from a trigger file"""
 
@@ -65,25 +65,6 @@ def load_data_from_hdf(input_file, vetoes):
         data['latitude'] = numpy.degrees(trigs['network/latitude'])
 
     return data
-
-# Function to load latitude and longitude data from a trigger/injection file
-def load_data(trig_file, vetoes):
-    """Build a dictionary containing latitude and longitude data extracted
-    from a trigger file"""
-
-    # Inizialize the dictionary
-    data = {}
-    data['longitude'] = None
-    data['latitude'] = None
-
-    # Fill the dictionary in with required data
-    if trig_file:
-        trigs = ppu.load_triggers(trig_file, vetoes)
-        data['longitude'] = numpy.degrees(trigs.get_column('ra'))
-        data['latitude'] = numpy.degrees(trigs.get_column('dec'))
-
-    return data
-
 
 # =============================================================================
 # Main script starts here
@@ -115,7 +96,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Load trigger data
-trig_data = load_data_from_hdf(trig_file, vetoes)
+trig_data = load_data(trig_file, vetoes)
 
 #
 # Generate sky grid plot
