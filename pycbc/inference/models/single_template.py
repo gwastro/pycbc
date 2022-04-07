@@ -60,11 +60,12 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
     def __init__(self, variable_params, data, low_frequency_cutoff,
                  sample_rate=32768,
                  polarization_samples=None,
+                 marginalize_phase=True,
                  **kwargs):
 
         variable_params, kwargs = self.setup_distance_marginalization(
                                        variable_params,
-                                       marginalize_phase=True,
+                                       marginalize_phase=marginalize_phase,
                                        **kwargs)
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
