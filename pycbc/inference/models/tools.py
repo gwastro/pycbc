@@ -5,6 +5,7 @@ import logging
 from distutils.util import strtobool
 
 import numpy
+import numpy.random
 import tqdm
 
 from scipy.special import logsumexp, i0e
@@ -77,6 +78,7 @@ class DistMarg():
             The keyword arguments to the model initialization, may be modified
             from the original set by this function.
         """
+        self.reconstructing_distance = False
         self.marginalize_phase = str_to_bool(marginalize_phase)
         self.distance_marginalization = False
         self.distance_interpolator = None
@@ -152,9 +154,10 @@ class DistMarg():
 
         dist_weights /= dist_weights.sum()
         dist_ref = 0.5 * (dmax + dmin)
+        self.dist_locs = dist_locs
         self.distance_marginalization = dist_ref / dist_locs, dist_weights
         self.distance_interpolator = None
-        if marginalize_distance_interpolator:
+        if str_to_bool(marginalize_distance_interpolator):
             setup_args = {}
             if marginalize_distance_snr_range:
                 setup_args['snr_range'] = marginalize_distance_snr_range
@@ -167,7 +170,8 @@ class DistMarg():
         kwargs['static_params']['distance'] = dist_ref
         return variable_params, kwargs
 
-    def marginalize_loglr(self, sh_total, hh_total, skip_vector=False):
+    def marginalize_loglr(self, sh_total, hh_total,
+                          skip_vector=False):
         """ Return the marginal likelihood
 
         Parameters
@@ -180,12 +184,33 @@ class DistMarg():
             If true, and input is a vector, do not marginalize over that
             vector, instead return the likelihood values as a vector.
         """
+        interpolator = self.distance_interpolator
+        if self.reconstructing_distance:
+            skip_vector = True
+            interpolator = None
+        
         return marginalize_likelihood(sh_total, hh_total,
                                       phase=self.marginalize_phase,
-                                      interpolator=self.distance_interpolator,
+                                      interpolator=interpolator,
                                       distance=self.distance_marginalization,
                                       skip_vector=skip_vector)
 
+    def reconstruct_distance(self):
+        # turn off interpolator and set to return vector output
+        self.reconstructing_distance = True
+        
+        # call likelihood to get vector output
+        loglr = self.loglr
+        _, weights = self.distance_marginalization
+        loglr += numpy.log(weights)
+        
+        # draw distance sample
+        x = numpy.random.uniform()
+        cdf = numpy.exp(loglr).cumsum()
+        cdf /= cdf[-1]
+        xl = numpy.searchsorted(cdf, x)
+        dist = self.dist_locs[xl]
+        return dist
 
 def setup_distance_marg_interpolant(dist_marg,
                                     phase=False,
