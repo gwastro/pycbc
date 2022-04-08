@@ -32,7 +32,7 @@ import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
 from pycbc import mchirp_area
-from pycbc.results import ppdets
+from pycbc.detector import ppdets
 
 try:
     from setproctitle import setproctitle

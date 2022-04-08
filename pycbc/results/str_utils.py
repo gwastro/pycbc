@@ -241,20 +241,10 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
         txt = r'%s%s' %(valtxt, powfactor)
     return txt
 
-def ppdets(ifos, separator=', '):
-    """Pretty-print a list (or set) of detectors: return a string listing
-    the given detectors alphabetically and separated by the given string
-    (comma by default).
-    """
-    if ifos:
-        return separator.join(sorted(ifos))
-    return 'no detectors'
-
 
 __all__ = [
     "mathjax_html_header",
     "drop_trailing_zeros",
     "get_signum",
-    "format_value",
-    "ppdets"
+    "format_value"
 ]

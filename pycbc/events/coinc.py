@@ -26,8 +26,7 @@ coincident triggers.
 """
 
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
-from pycbc.detector import Detector
-from pycbc.results.str_utils import ppdets
+from pycbc.detector import Detector, ppdets
 
 
 def background_bin_from_string(background_bins, data):
