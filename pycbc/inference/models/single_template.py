@@ -63,10 +63,19 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
                  marginalize_phase=True,
                  **kwargs):
 
+        #polarization array to marginalize over if num_samples given
+        self.pflag = 0
+        if polarization_samples is not None:
+            self.polarization = numpy.linspace(0, 2*numpy.pi,
+                                               int(polarization_samples))
+            self.pflag = 1
+
         variable_params, kwargs = self.setup_distance_marginalization(
-                                       variable_params,
-                                       marginalize_phase=marginalize_phase,
-                                       **kwargs)
+                                   variable_params,
+                                   marginalize_phase=marginalize_phase,
+                                   marginalize_vector=self.pflag,
+                                   marginalize_vector_params=self.polarization,
+                                   **kwargs)
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
 
@@ -82,12 +91,6 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         # Extend template to high sample rate
         flen = int(int(sample_rate) / df) / 2 + 1
         hp.resize(flen)
-        #polarization array to marginalize over if num_samples given
-        self.pflag = 0
-        if polarization_samples is not None:
-            self.polarization = numpy.linspace(0, 2*numpy.pi,
-                                               int(polarization_samples))
-            self.pflag = 1
 
         # Calculate high sample rate SNR time series
         self.sh = {}

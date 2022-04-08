@@ -41,6 +41,8 @@ class DistMarg():
                                        marginalize_distance_interpolator=False,
                                        marginalize_distance_snr_range=None,
                                        marginalize_distance_density=None,
+                                       marginalize_vector=False,
+                                       marginalize_vector_params=None,
                                        **kwargs):
         """ Setup the model for use with distance marginalization
 
@@ -78,6 +80,9 @@ class DistMarg():
             The keyword arguments to the model initialization, may be modified
             from the original set by this function.
         """
+        self.marginalize_vector = marginalize_vector
+        self.marginalize_vector_params = marginalize_vector_params
+        
         self.reconstructing_distance = False
         self.marginalize_phase = str_to_bool(marginalize_phase)
         self.distance_marginalization = False
@@ -195,22 +200,45 @@ class DistMarg():
                                       distance=self.distance_marginalization,
                                       skip_vector=skip_vector)
 
-    def reconstruct_distance(self):
-        # turn off interpolator and set to return vector output
-        self.reconstructing_distance = True
+    def reconstruct(self):
+        if self.distance_marginalization:
+            # turn off interpolator and set to return vector output
+            self.reconstructing_distance = True
+
+        loglr_full = self.loglr
+        if self.marginalize_vector and self.distance_marginalization:
+            loglr = logsumexp(loglr_full, axis=0)
+        else:
+            loglr = loglr_full
         
-        # call likelihood to get vector output
-        loglr = self.loglr
-        _, weights = self.distance_marginalization
-        loglr += numpy.log(weights)
-        
-        # draw distance sample
-        x = numpy.random.uniform()
-        cdf = numpy.exp(loglr).cumsum()
-        cdf /= cdf[-1]
-        xl = numpy.searchsorted(cdf, x)
-        dist = self.dist_locs[xl]
+        if self.distance_marginalization:
+            # call likelihood to get vector output
+            _, weights = self.distance_marginalization
+            loglr += numpy.log(weights)
+            
+            # draw distance sample
+            x = numpy.random.uniform()
+            cdf = numpy.exp(loglr).cumsum()
+            cdf /= cdf[-1]
+            
+            xl = numpy.searchsorted(cdf, x)
+            dist = self.dist_locs[xl]
+            
+        if self.marginalize_vector:
+            # logl along for the selected distance
+            vlr = loglr_full[:, xl]
+            x = numpy.random.uniform()
+            cdf = numpy.exp(vlr).cumsum()
+            cdf /= cdf[-1]
+            xl2 = numpy.searchsorted(cdf, x)
+            vec_param = self.marginalize_vector_params[xl2]    
+            
+            if self.distance_marginalization:
+                return dist, vec_param  
+            else:
+                return vec_param              
         return dist
+
 
 def setup_distance_marg_interpolant(dist_marg,
                                     phase=False,
@@ -281,7 +309,9 @@ def marginalize_likelihood(sh, hh,
                            phase=False,
                            distance=False,
                            skip_vector=False,
-                           interpolator=None):
+                           interpolator=None,
+                           return_peak=False,
+                           ):
     """ Return the marginalized likelihood
 
     Parameters
@@ -348,12 +378,16 @@ def marginalize_likelihood(sh, hh,
         # Calculate loglikelihood ratio
         vloglr = sh - 0.5 * hh
 
+    if return_peak:
+        maxv = vloglr.argmax()
+        maxl = vloglr[maxv]    
+
     # Do brute-force marginalization if loglr is a vector
     if isinstance(vloglr, float):
         vloglr = float(vloglr)
-    elif skip_vector:
-        return vloglr
-    else:
+    elif not skip_vector:
         vloglr = float(logsumexp(vloglr, b=vweights)) - clogweights
 
+    if return_peak:
+        return vloglr, maxv, maxl
     return vloglr

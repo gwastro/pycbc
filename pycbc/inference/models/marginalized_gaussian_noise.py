@@ -335,13 +335,12 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
             sh_total += cplx_hd
             hh_total += hh
 
-        lr = self.marginalize_loglr(sh_total, hh_total, skip_vector=True)
-        lr_total = special.logsumexp(lr) - numpy.log(len(self.pol))
-
+        lr, maxl, idx = self.marginalize_loglr(sh_total, hh_total,
+                  return_peak=True)
+        
         # store the maxl polarization
-        idx = lr.argmax()
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
-        setattr(self._current_stats, 'maxl_loglr', lr[idx])
+        setattr(self._current_stats, 'maxl_loglr', maxl)
 
         # just store the maxl optimal snrsq
         for det in wfs:
@@ -349,7 +348,7 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
             setattr(self._current_stats, p,
                     getattr(self._current_stats, p)[idx])
 
-        return float(lr_total)
+        return lr
 
 
 class MarginalizedHMPolPhase(BaseGaussianNoise):
