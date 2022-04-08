@@ -890,6 +890,7 @@ class TimeSeries(Array):
                            dtype=complex_same_precision_as(self)),
                            delta_f=delta_f)
         fft(tmp, f)
+        f._delta_f = delta_f
         return f
 
     def inject(self, other, copy=True):

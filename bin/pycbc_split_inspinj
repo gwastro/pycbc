@@ -44,7 +44,17 @@ if args.num_splits:
 else:
     num_splits = len(args.output_files)
 
-new_inj_tables = [lsctables.New(tabletype, columns=allinjs.columnnames) \
+# make a list of columns that are present in the input table.
+# The : split is needed for columns like `process:process_id`,
+# which must be listed as `process:process_id` in `lsctables.New()`,
+# but are listed as just `process_id` in the `columnnames` attribute
+used_columns = []
+for col in allinjs.validcolumns:
+    att = col.split(':')[-1]
+    if att in allinjs.columnnames:
+        used_columns.append(col)
+
+new_inj_tables = [lsctables.New(tabletype, columns=used_columns) 
                   for idx in range(num_splits)]
 
 table_cycle = cycle(new_inj_tables)
