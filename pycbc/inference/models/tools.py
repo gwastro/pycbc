@@ -201,6 +201,18 @@ class DistMarg():
                                       skip_vector=skip_vector)
 
     def reconstruct(self):
+        """ Reconstruct the distance or vectored marginalized parameter
+        of this class.
+        """
+        rec = {}
+        
+        def draw_sample(params, loglr):
+            x = numpy.random.uniform()
+            cdf = numpy.exp(loglr).cumsum()
+            cdf /= cdf[-1]
+            xl = numpy.searchsorted(cdf, x)
+            return params[xl], xl
+        
         if self.distance_marginalization:
             # turn off interpolator and set to return vector output
             self.reconstructing_distance = True
@@ -217,27 +229,21 @@ class DistMarg():
             loglr += numpy.log(weights)
             
             # draw distance sample
-            x = numpy.random.uniform()
-            cdf = numpy.exp(loglr).cumsum()
-            cdf /= cdf[-1]
-            
-            xl = numpy.searchsorted(cdf, x)
-            dist = self.dist_locs[xl]
+            dist, xl = draw_sample(self.dist_locs, loglr)
+            rec['distance'] = dist
             
         if self.marginalize_vector:
-            # logl along for the selected distance
-            vlr = loglr_full[:, xl]
-            x = numpy.random.uniform()
-            cdf = numpy.exp(vlr).cumsum()
-            cdf /= cdf[-1]
-            xl2 = numpy.searchsorted(cdf, x)
-            vec_param = self.marginalize_vector_params[xl2]    
-            
             if self.distance_marginalization:
-                return dist, vec_param  
+                # logl along for the selected distance
+                vlr = loglr_full[:, xl]
             else:
-                return vec_param              
-        return dist
+                vlr = loglr    
+                
+            vec_param, _ = draw_sample(self.marginalize_vector_params, vlr) 
+            rec[self.marginalize_vector] = vec_param
+              
+        self.reconstructing_distance = False          
+        return rec
 
 
 def setup_distance_marg_interpolant(dist_marg,

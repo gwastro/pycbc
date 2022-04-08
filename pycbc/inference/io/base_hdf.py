@@ -213,6 +213,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         addatrs = (list(self.static_params.items()) +
                    list(self[self.samples_group].attrs.items()))
         for (p, val) in addatrs:
+            if p in loadfields:
+                continue
             setattr(samples, format_attr(p), format_attr(val))
         return samples
 

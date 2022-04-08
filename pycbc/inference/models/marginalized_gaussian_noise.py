@@ -210,8 +210,15 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
                  high_frequency_cutoff=None, normalize=False,
                  polarization_samples=1000, **kwargs):
 
+        self.polarization_samples = int(polarization_samples)
+        self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
+
         variable_params, kwargs = self.setup_distance_marginalization(
-                               variable_params, **kwargs)
+                               variable_params, 
+                               marginalize_phase=marginalize_phase,
+                               marginalize_vector='polarization',
+                               marginalize_vector_params=self.pol,
+                               **kwargs)
 
         # set up the boiler-plate attributes
         super(MarginalizedPolarization, self).__init__(
@@ -238,8 +245,6 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
                     generator_class=generator.FDomainDetFrameTwoPolGenerator,
                     gates=self.gates, **kwargs['static_params'])
 
-        self.polarization_samples = int(polarization_samples)
-        self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
         self.dets = {}
 
     @property
