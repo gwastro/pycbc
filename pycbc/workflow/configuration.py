@@ -28,134 +28,14 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 """
 
 import os
-import re
 import stat
 import shutil
-import time
-import requests
 from shutil import which
-from bs4 import BeautifulSoup
-from pycbc.types.config import InterpolatingConfigParser
 from urllib.parse import urlparse
-import http.cookiejar as cookielib
-from http.cookiejar import (
-    _warn_unhandled_exception,
-    LoadError,
-    Cookie,
-)
 
+import ciecplib
 
-def _really_load(self, f, filename, ignore_discard, ignore_expires):
-    """
-    This function is required to monkey patch MozillaCookieJar's _really_load
-    function which does not understand the curl format cookie file created
-    by ecp-cookie-init. It patches the code so that #HttpOnly_ get loaded.
-
-    https://bugs.python.org/issue2190
-    https://bugs.python.org/file37625/httponly.patch
-    """
-    now = time.time()
-
-    magic = f.readline()
-    if not re.search(self.magic_re, magic):
-        f.close()
-        raise LoadError(
-            "%r does not look like a Netscape format cookies file" % filename
-        )
-
-    try:
-        while 1:
-            line = f.readline()
-            if line == "":
-                break
-
-            # last field may be absent, so keep any trailing tab
-            if line.endswith("\n"):
-                line = line[:-1]
-
-            sline = line.strip()
-            # support HttpOnly cookies (as stored by curl or old Firefox).
-            if sline.startswith("#HttpOnly_"):
-                line = sline[10:]
-            # skip comments and blank lines ... what is $ for?
-            elif sline.startswith(("#", "$")) or sline == "":
-                continue
-
-            (
-                domain,
-                domain_specified,
-                path,
-                secure,
-                expires,
-                name,
-                value,
-            ) = line.split("\t")
-            secure = secure == "TRUE"
-            domain_specified = domain_specified == "TRUE"
-            if name == "":
-                # cookies.txt regards 'Set-Cookie: foo' as a cookie
-                # with no name, whereas cookielib regards it as a
-                # cookie with no value.
-                name = value
-                value = None
-
-            initial_dot = domain.startswith(".")
-            assert domain_specified == initial_dot
-
-            discard = False
-            if expires == "":
-                expires = None
-                discard = True
-
-            # assume path_specified is false
-            c = Cookie(
-                0,
-                name,
-                value,
-                None,
-                False,
-                domain,
-                domain_specified,
-                initial_dot,
-                path,
-                False,
-                secure,
-                expires,
-                discard,
-                None,
-                None,
-                {},
-            )
-            if not ignore_discard and c.discard:
-                continue
-            if not ignore_expires and c.is_expired(now):
-                continue
-            self.set_cookie(c)
-
-    except IOError:
-        raise
-    except Exception:
-        _warn_unhandled_exception()
-        raise LoadError(
-            "invalid Netscape format cookies file %r: %r" % (filename, line)
-        )
-
-
-# Now monkey patch the code
-cookielib.MozillaCookieJar._really_load = _really_load  # noqa
-
-ecp_cookie_error = """The attempt to download the file at
-
-{}
-
-was redirected to the git.ligo.org sign-in page. This means that you likely
-forgot to initialize your ECP cookie or that your LIGO.ORG credentials are
-otherwise invalid. Create a valid ECP cookie for git.ligo.org by running
-
-ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback albert.einstein
-
-before attempting to download files from git.ligo.org.
-"""
+from pycbc.types.config import InterpolatingConfigParser
 
 
 def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
@@ -197,56 +77,12 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
                 shutil.copy(u.path, filename)
 
     elif u.scheme == "http" or u.scheme == "https":
-        s = requests.Session()
-        s.mount(
-            str(u.scheme) + "://", requests.adapters.HTTPAdapter(max_retries=5)
-        )
-
-        # look for an ecp cookie file and load the cookies
-        cookie_dict = {}
-        ecp_file = "/tmp/ecpcookie.u%d" % os.getuid()
-        if os.path.isfile(ecp_file):
-            cj = cookielib.MozillaCookieJar()
-            cj.load(ecp_file, ignore_discard=True, ignore_expires=True)
-        else:
-            cj = []
-
-        for c in cj:
-            if c.domain == u.netloc:
-                # load cookies for this server
-                cookie_dict[c.name] = c.value
-            elif (
-                u.netloc == "code.pycbc.phy.syr.edu"
-                and c.domain == "git.ligo.org"
-            ):
-                # handle the redirect for code.pycbc to git.ligo.org
-                cookie_dict[c.name] = c.value
-
-        r = s.get(url, cookies=cookie_dict, allow_redirects=True)
-        if r.status_code != 200:
-            errmsg = "Unable to download %s\nError code = %d" % (
-                url,
-                r.status_code,
-            )
-            raise ValueError(errmsg)
-
-        # if we are downloading from git.ligo.org, check that we
-        # did not get redirected to the sign-in page
-        if u.netloc == "git.ligo.org" or u.netloc == "code.pycbc.phy.syr.edu":
-            # Check if we have downloaded a binary file.
-
-            # this has no longer functioned since dropping python2
-            # If we want this again, reimplement 'istext'
-            # if istext(r.content):
-
-            soup = BeautifulSoup(r.content, "html.parser")
-            desc = soup.findAll(attrs={"property": "og:url"})
-            if (
-                len(desc)
-                and desc[0]["content"]
-                == "https://git.ligo.org/users/sign_in"
-            ):
-                raise ValueError(ecp_cookie_error.format(url))
+        with ciecplib.Session() as s:
+            if u.netloc in ("git.ligo.org", "code.pycbc.phy.syr.edu"):
+                # authenticate with git.ligo.org using callback
+                s.get("https://git.ligo.org/users/auth/shibboleth/callback")
+            r = s.get(url, allow_redirects=True)
+            r.raise_for_status()
 
         output_fp = open(filename, "wb")
         output_fp.write(r.content)
