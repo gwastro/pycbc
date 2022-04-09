@@ -103,9 +103,9 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
             data[veto_type] = data[veto_type][data['reweighted_snr'] != 0]
         
         # Gather data on degrees of freedom. TODO: cont_chisq_dof not available for test hdf file. 
-        #for cs in ['', 'bank_', 'cont_']:
-        #    dof = cs+'chisq_dof'
-        #    data[dof] = numpy.unique(trigs_or_injs['%s/%s' % (ifo,dof)][:])
+        for cs in ['', 'bank_']:
+            dof = cs+'chisq_dof'
+            data[dof] = numpy.unique(trigs_or_injs['%s/%s' % (ifo,dof)][:])
 
     return data
 
