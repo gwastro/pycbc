@@ -176,7 +176,7 @@ class DistMarg():
         return variable_params, kwargs
 
     def marginalize_loglr(self, sh_total, hh_total,
-                          skip_vector=False):
+                          skip_vector=False, return_peak=False):
         """ Return the marginal likelihood
 
         Parameters
@@ -198,7 +198,8 @@ class DistMarg():
                                       phase=self.marginalize_phase,
                                       interpolator=interpolator,
                                       distance=self.distance_marginalization,
-                                      skip_vector=skip_vector)
+                                      skip_vector=skip_vector,
+                                      return_peak=return_peak)
 
     def reconstruct(self):
         """ Reconstruct the distance or vectored marginalized parameter
