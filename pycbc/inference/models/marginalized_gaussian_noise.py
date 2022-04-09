@@ -208,7 +208,9 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 polarization_samples=1000, **kwargs):
+                 polarization_samples=1000,
+                 marginalize_phase=False,
+                 **kwargs):
 
         self.polarization_samples = int(polarization_samples)
         self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
