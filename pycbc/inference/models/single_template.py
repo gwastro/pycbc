@@ -65,6 +65,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
 
         #polarization array to marginalize over if num_samples given
         self.pflag = 0
+        self.polarization = None
         if polarization_samples is not None:
             self.polarization = numpy.linspace(0, 2*numpy.pi,
                                                int(polarization_samples))
