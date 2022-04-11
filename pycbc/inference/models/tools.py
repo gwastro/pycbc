@@ -2,6 +2,8 @@
 """
 
 import logging
+from distutils.util import strtobool
+
 import numpy
 import tqdm
 
@@ -13,6 +15,13 @@ from pycbc.distributions import JointDistribution
 def str_to_tuple(sval, ftype):
     """ Convenience parsing to convert str to tuple"""
     return tuple(ftype(x) for x in sval.split(','))
+
+
+def str_to_bool(sval):
+    """ Ensure value is a bool if it can be converted """
+    if isinstance(sval, str):
+        return strtobool(sval)
+    return sval
 
 
 class DistMarg():
@@ -68,9 +77,11 @@ class DistMarg():
             The keyword arguments to the model initialization, may be modified
             from the original set by this function.
         """
-        self.marginalize_phase = marginalize_phase
+        self.marginalize_phase = str_to_bool(marginalize_phase)
         self.distance_marginalization = False
         self.distance_interpolator = None
+
+        marginalize_distance = str_to_bool(marginalize_distance)
         if not marginalize_distance:
             return variable_params, kwargs
 
@@ -271,7 +282,7 @@ def marginalize_likelihood(sh, hh,
     loglr: float
         The marginalized loglikehood ratio
     """
-    if isinstance(sh, float):
+    if isinstance(hh, float):
         clogweights = 0
     else:
         sh = sh.flatten()
