@@ -329,8 +329,8 @@ class DynestySampler(BaseSampler):
         extra['first_update'] = first_update
 
         # populate options for checkpointing
-        checkpoint_time_interval=None
-        maxcall=None
+        checkpoint_time_interval = None
+        maxcall = None
         if cp.has_option(section, 'checkpoint_time_interval'):
             ck_time = float(cp.get(section, 'checkpoint_time_interval'))
             checkpoint_time_interval = ck_time
@@ -342,7 +342,7 @@ class DynestySampler(BaseSampler):
                   checkpoint_time_interval=checkpoint_time_interval,
                   maxcall=maxcall,
                   no_save_state=no_save_state,
-                  use_mpi=use_mpi, run_kwds=run_extra, 
+                  use_mpi=use_mpi, run_kwds=run_extra,
                   extra_kwds=extra,
                   internal_kwds=internal_extra,)
         setup_output(obj, output_file, check_nsamples=False)
@@ -491,7 +491,7 @@ def sample_rwalk_mod(args):
         # Unzipping.
         (u, loglstar, axes, scale,
         prior_transform, loglikelihood, kwargs) = args
-        
+
     except ImportError:
         # dynest >= 1.2
         from dynesty.utils import unitcheck, apply_reflect as reflect
