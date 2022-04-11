@@ -342,7 +342,7 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
             sh_total += cplx_hd
             hh_total += hh
 
-        lr, maxl, idx = self.marginalize_loglr(sh_total, hh_total,
+        lr, idx, maxl = self.marginalize_loglr(sh_total, hh_total,
                   return_peak=True)
         
         # store the maxl polarization
