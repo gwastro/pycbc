@@ -216,7 +216,7 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
         self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
 
         variable_params, kwargs = self.setup_distance_marginalization(
-                               variable_params, 
+                               variable_params,
                                marginalize_phase=marginalize_phase,
                                marginalize_vector='polarization',
                                marginalize_vector_params=self.pol,
@@ -344,7 +344,7 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
 
         lr, idx, maxl = self.marginalize_loglr(sh_total, hh_total,
                   return_peak=True)
-        
+
         # store the maxl polarization
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
         setattr(self._current_stats, 'maxl_loglr', maxl)

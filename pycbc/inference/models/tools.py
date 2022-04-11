@@ -82,7 +82,7 @@ class DistMarg():
         """
         self.marginalize_vector = marginalize_vector
         self.marginalize_vector_params = marginalize_vector_params
-        
+
         self.reconstructing_distance = False
         self.marginalize_phase = str_to_bool(marginalize_phase)
         self.distance_marginalization = False
@@ -193,7 +193,7 @@ class DistMarg():
         if self.reconstructing_distance:
             skip_vector = True
             interpolator = None
-        
+
         return marginalize_likelihood(sh_total, hh_total,
                                       phase=self.marginalize_phase,
                                       interpolator=interpolator,
@@ -206,14 +206,14 @@ class DistMarg():
         of this class.
         """
         rec = {}
-        
+
         def draw_sample(params, loglr):
             x = numpy.random.uniform()
             cdf = numpy.exp(loglr).cumsum()
             cdf /= cdf[-1]
             xl = numpy.searchsorted(cdf, x)
             return params[xl], xl
-        
+
         if self.distance_marginalization:
             # turn off interpolator and set to return vector output
             self.reconstructing_distance = True
@@ -223,27 +223,27 @@ class DistMarg():
             loglr = logsumexp(loglr_full, axis=0)
         else:
             loglr = loglr_full
-        
+
         if self.distance_marginalization:
             # call likelihood to get vector output
             _, weights = self.distance_marginalization
             loglr += numpy.log(weights)
-            
+
             # draw distance sample
             dist, xl = draw_sample(self.dist_locs, loglr)
             rec['distance'] = dist
-            
+
         if self.marginalize_vector:
             if self.distance_marginalization:
                 # logl along for the selected distance
                 vlr = loglr_full[:, xl]
             else:
-                vlr = loglr    
-                
-            vec_param, _ = draw_sample(self.marginalize_vector_params, vlr) 
+                vlr = loglr
+
+            vec_param, _ = draw_sample(self.marginalize_vector_params, vlr)
             rec[self.marginalize_vector] = vec_param
-              
-        self.reconstructing_distance = False          
+
+        self.reconstructing_distance = False
         return rec
 
 
@@ -387,7 +387,7 @@ def marginalize_likelihood(sh, hh,
 
     if return_peak:
         maxv = vloglr.argmax()
-        maxl = vloglr[maxv]    
+        maxl = vloglr[maxv]
 
     # Do brute-force marginalization if loglr is a vector
     if isinstance(vloglr, float):
