@@ -422,6 +422,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             Specify the random state to write. If None, will use
             ``numpy.random.get_state()``.
         """
+        # Write out the default numpy random state
         group = self.sampler_group if group is None else group
         dataset_name = "/".join([group, "random_state"])
         if state is None:
@@ -451,6 +452,7 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         tuple
             A tuple with 5 elements that can be passed to numpy.set_state.
         """
+        # Read numpy randomstate
         group = self.sampler_group if group is None else group
         dataset_name = "/".join([group, "random_state"])
         arr = self[dataset_name][:]
@@ -458,7 +460,8 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         pos = self[dataset_name].attrs["pos"]
         has_gauss = self[dataset_name].attrs["has_gauss"]
         cached_gauss = self[dataset_name].attrs["cached_gauss"]
-        return s, arr, pos, has_gauss, cached_gauss
+        state = s, arr, pos, has_gauss, cached_gauss
+        return state
 
     def write_strain(self, strain_dict, group=None):
         """Writes strain for each IFO to file.
