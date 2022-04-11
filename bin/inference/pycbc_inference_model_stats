@@ -103,7 +103,6 @@ def callmodel(paramvals):
     if opts.reconstruct_parameters:
         model.update(**{p: paramvals[p] for p in model.variable_params})
         rec = model.reconstruct()
-        print(rec)
     return stats, rec
 
 # these help for parallelization for MPI
