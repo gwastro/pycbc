@@ -208,10 +208,19 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 polarization_samples=1000, **kwargs):
+                 polarization_samples=1000,
+                 marginalize_phase=False,
+                 **kwargs):
+
+        self.polarization_samples = int(polarization_samples)
+        self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
 
         variable_params, kwargs = self.setup_distance_marginalization(
-                               variable_params, **kwargs)
+                               variable_params,
+                               marginalize_phase=marginalize_phase,
+                               marginalize_vector='polarization',
+                               marginalize_vector_params=self.pol,
+                               **kwargs)
 
         # set up the boiler-plate attributes
         super(MarginalizedPolarization, self).__init__(
@@ -238,8 +247,6 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
                     generator_class=generator.FDomainDetFrameTwoPolGenerator,
                     gates=self.gates, **kwargs['static_params'])
 
-        self.polarization_samples = int(polarization_samples)
-        self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
         self.dets = {}
 
     @property
@@ -335,13 +342,12 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
             sh_total += cplx_hd
             hh_total += hh
 
-        lr = self.marginalize_loglr(sh_total, hh_total, skip_vector=True)
-        lr_total = special.logsumexp(lr) - numpy.log(len(self.pol))
+        lr, idx, maxl = self.marginalize_loglr(sh_total, hh_total,
+                  return_peak=True)
 
         # store the maxl polarization
-        idx = lr.argmax()
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
-        setattr(self._current_stats, 'maxl_loglr', lr[idx])
+        setattr(self._current_stats, 'maxl_loglr', maxl)
 
         # just store the maxl optimal snrsq
         for det in wfs:
@@ -349,7 +355,7 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
             setattr(self._current_stats, p,
                     getattr(self._current_stats, p)[idx])
 
-        return float(lr_total)
+        return lr
 
 
 class MarginalizedHMPolPhase(BaseGaussianNoise):

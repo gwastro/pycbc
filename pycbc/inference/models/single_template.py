@@ -63,10 +63,21 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
                  marginalize_phase=True,
                  **kwargs):
 
+        #polarization array to marginalize over if num_samples given
+        self.pflag = 0
+        self.polarization = None
+        if polarization_samples is not None:
+            self.polarization = numpy.linspace(0, 2*numpy.pi,
+                                               int(polarization_samples))
+            self.pflag = 1
+        marg_vector = 'polarization' if self.pflag else False
+
         variable_params, kwargs = self.setup_distance_marginalization(
-                                       variable_params,
-                                       marginalize_phase=marginalize_phase,
-                                       **kwargs)
+                                   variable_params,
+                                   marginalize_phase=marginalize_phase,
+                                   marginalize_vector=marg_vector,
+                                   marginalize_vector_params=self.polarization,
+                                   **kwargs)
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
 
@@ -82,12 +93,6 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         # Extend template to high sample rate
         flen = int(int(sample_rate) / df) / 2 + 1
         hp.resize(flen)
-        #polarization array to marginalize over if num_samples given
-        self.pflag = 0
-        if polarization_samples is not None:
-            self.polarization = numpy.linspace(0, 2*numpy.pi,
-                                               int(polarization_samples))
-            self.pflag = 1
 
         # Calculate high sample rate SNR time series
         self.sh = {}
@@ -131,6 +136,10 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         if self.time is None:
             self.time = p['tc']
 
+        phase = 1
+        if 'coa_phase' in p:
+            phase = numpy.exp(1.0j * 2 * p['coa_phase'])
+
         sh_total = hh_total = 0
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
@@ -139,7 +148,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
                                                             self.time)
             ic = numpy.cos(p['inclination'])
             ip = 0.5 * (1.0 + ic * ic)
-            htf = (fp * ip + 1.0j * fc * ic) / p['distance']
+            htf = (fp * ip + 1.0j * fc * ic) / p['distance'] * phase
             sh = self.sh[ifo].at_time(p['tc'] + dt) * htf
             sh_total += sh
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
