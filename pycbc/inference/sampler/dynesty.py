@@ -291,12 +291,10 @@ class DynestySampler(BaseSampler):
 
         # optional arguments for dynesty
         cargs = {'bound': str,
-                 'maxcall': int,
                  'bootstrap': int,
                  'enlarge': float,
                  'update_interval': float,
                  'sample': str,
-                 'checkpoint_time_interval': float,
                  'first_update_min_ncall': int,
                  'first_update_min_eff': float,
                  'walks': int,
@@ -330,10 +328,21 @@ class DynestySampler(BaseSampler):
             logging.info('First update: min_eff:%s', first_update['min_eff'])
         extra['first_update'] = first_update
 
+        # populate options for checkpointing
+        checkpoint_time_interval = None
+        maxcall = None
+        if cp.has_option(section, 'checkpoint_time_interval'):
+            ck_time = float(cp.get(section, 'checkpoint_time_interval'))
+            checkpoint_time_interval = ck_time
+        if cp.has_option(section, 'maxcall'):
+            maxcall = int(cp.get(section, 'maxcall'))
+
         obj = cls(model, nlive=nlive, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
+                  checkpoint_time_interval=checkpoint_time_interval,
+                  maxcall=maxcall,
                   no_save_state=no_save_state,
-                  use_mpi=use_mpi, run_kwds=run_extra, 
+                  use_mpi=use_mpi, run_kwds=run_extra,
                   extra_kwds=extra,
                   internal_kwds=internal_extra,)
         setup_output(obj, output_file, check_nsamples=False)
@@ -387,11 +396,10 @@ class DynestySampler(BaseSampler):
         """Sets the state of the sampler back to the instance saved in a file.
         """
         with self.io(filename, 'r') as fp:
-            numpy.random.set_state(fp.read_random_state())
-
-        self._sampler.rstate = numpy.random
-        #if self.nlive < 0:
-        #    self._sampler.sampler.rstate = numpy.random
+            state = fp.read_random_state()
+            # Dynesty handles most randomeness through rstate which is
+            # pickled along with the class instance
+            numpy.random.set_state(state)
 
     def finalize(self):
         """Finalze and write it to the results file
@@ -483,7 +491,7 @@ def sample_rwalk_mod(args):
         # Unzipping.
         (u, loglstar, axes, scale,
         prior_transform, loglikelihood, kwargs) = args
-        
+
     except ImportError:
         # dynest >= 1.2
         from dynesty.utils import unitcheck, apply_reflect as reflect
