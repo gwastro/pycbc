@@ -23,7 +23,7 @@
 #
 import numpy, logging, math, pycbc.fft
 
-from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
+from pycbc.types import zeros, real_same_precision_as, TimeSeries, FrequencySeries, complex_same_precision_as
 from pycbc.filter import sigmasq_series, make_frequency_series, matched_filter_core, get_cutoff_indices
 from pycbc.scheme import schemed
 import pycbc.pnutils
@@ -107,6 +107,13 @@ def shift_sum(v1, shifts, bins):
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
+@schemed(BACKEND_PREFIX)
+def shift_multibin(v1, shifts, scales, bins):
+    """ Calculate the time shifted sum of the FrequencySeries
+    """
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     """Calculate the chisq timeseries from precomputed values for only select points.
@@ -532,8 +539,20 @@ class SingleDetTHAPowerChisq(SingleDetPowerChisq):
         """
         num_bins = int(self.parse_option(template, self.num_bins))
         # Here template must be whitened, so psd=None implies a flat PSD.
-        bins = power_chisq_bins(template, num_bins, None, template.f_lower)
+        bins = power_chisq_bins(template, num_bins, psd=None,
+                                low_frequency_cutoff=template.f_lower,
+                                high_frequency_cutoff=None)
         return bins
+    
+    def reconstruct_template(self, templates, snrs, num_comps):
+        scales = snrs / numpy.sum(numpy.abs(snrs) ** 2.) ** 0.5
+        template = templates[0] * scales[0]
+        for i in range(1, num_comps):
+            template += templates[i] * scales[i]
+
+        template.f_lower = templates[0].f_lower
+        template.params = templates[0].params
+        return template
 
     def values(self, corrs, snrs, snrv, snr_norm, psd, indices, templates):
         """ Calculate the chisq at points given by indices.
@@ -562,48 +581,33 @@ class SingleDetTHAPowerChisq(SingleDetPowerChisq):
                 above_snrv = snrv
 
             if num_above > 0:
-                chisq = []
+                bins = []
+                scales = []
                 num_comps = len([t for t in templates if t is not None])
-                #if self.template_mem is None or \
-                #        (not len(self.template_mem) == len(template_plus)):
-                #    self.template_mem = zeros(len(template_plus),
-                #                dtype=complex_same_precision_as(corr_plus))
-                #if self.corr_mem is None or \
-                #                (not len(self.corr_mem) == len(corr_plus)):
-                #    self.corr_mem = zeros(len(corr_plus),
-                #                dtype=complex_same_precision_as(corr_plus))
-
                 for lidx, index in enumerate(above_indices):
-                    above_local_indices = numpy.array([index])
-                    above_local_snr = numpy.array([above_snrv[lidx]])
-                    local_snrs = [s[index] for s in snrs[:num_comps]]
-                    local_amps = [numpy.abs(s) for s in local_snrs]
-                    local_phases = [numpy.angle(s) for s in local_snrs]
-                    # Construct template from templates and phases
-                    # Initially making no attempt to optimize ...
-                    template = sum([t * amp * numpy.exp(1j * - phase) 
-                                    for t, amp, phase in
-                                    zip(templates[:num_comps], local_amps, local_phases)])
+                    local_snrs = numpy.array([s[index] for s in snrs[:num_comps]])
+                    template = self.reconstruct_template(templates, local_snrs, num_comps)
 
-                    corr = sum([c * amp * numpy.exp(1j * - phase)
-                                for c, amp, phase in
-                                zip(corrs[:num_comps], local_amps, local_phases)])
-
-                    # Re-normalize
-                    norm = numpy.sum(numpy.array(local_amps) ** 2.) ** 0.5
-                    template = template / norm
-                    corr = corr / norm
-
-                    template.f_lower = templates[0].f_lower
-                    template.params = templates[0].params
-
-                    bins = self.calculate_chisq_bins(template)
-                    dof = (len(bins) - 1) * 2 - 2
-                    curr_chisq = power_chisq_at_points_from_precomputed(corr,
-                                          above_local_snr, snr_norm,
-                                          bins, above_local_indices)
-                    chisq.append(curr_chisq[0])
-                chisq = numpy.array(chisq)
+                    bs = self.calculate_chisq_bins(template)
+                    bins += [bs]
+                    scales += [
+                        local_snrs.conj()
+                        / numpy.sum((local_snrs * local_snrs.conj()).real) ** 0.5
+                    ]
+                    
+                bins = numpy.stack(bins, axis=0)
+                scales = numpy.stack(scales, axis=0)
+                
+                dof = (bins.shape[1] - 1) * 2 - 2
+                chisq = numpy.zeros(
+                    (len(above_indices), bins.shape[1] - 1),
+                    dtype=complex_same_precision_as(corrs[0])
+                )
+                
+                for i in range(num_comps):
+                    chisq += shift_multibin(corrs[i], above_indices, scales[:, i], bins)
+                chisq = numpy.sum((chisq * chisq.conj()).real, axis=1) * (bins.shape[1] - 1)
+                chisq = (chisq - (above_snrv.conj() * above_snrv).real) * (snr_norm ** 2.0)
 
             if self.snr_threshold:
                 if num_above > 0:

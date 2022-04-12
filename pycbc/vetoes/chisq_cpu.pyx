@@ -2,9 +2,9 @@
 import numpy
 cimport numpy
 from libc.stdlib cimport malloc, free
-from libc.math cimport cos, sin # This imports c's sin and cos function from the math library
+from libc.math cimport cos, sin, sqrt # This imports c's sin and cos function from the math library
 from cython import wraparound, boundscheck, cdivision
-from pycbc.types import real_same_precision_as
+from pycbc.types import real_same_precision_as, complex_same_precision_as
 
 ctypedef fused REALTYPE:
     float
@@ -129,6 +129,61 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
     free(outr_tmp)
     free(outi_tmp)
 
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def point_chisq_multibin_code(numpy.ndarray[COMPLEXTYPE, ndim=2] chisq,
+                              numpy.ndarray[COMPLEXTYPE, ndim=1] v1,
+                              int n, int slen,
+                              numpy.ndarray[REALTYPE, ndim=1] shifts,
+                              numpy.ndarray[COMPLEXTYPE, ndim=1] scales,
+                              numpy.ndarray[numpy.uint32_t, ndim=2] bins,
+                              int bnum):
+
+    cdef int blen, i, j, k, bi
+    cdef REALTYPE pr, pi, sr, si, scale_r, scale_i, phase_diff_r, phase_diff_i, vr, vi, bsum_r, bsum_i
+    cdef COMPLEXTYPE s, v
+
+    for i in range(n):
+        k = 0
+        k += bins[i, 0]
+
+        pr = cos(2 * 3.141592653 * shifts[i] * (k) / slen)
+        pi = sin(2 * 3.141592653 * shifts[i] * (k) / slen)
+        
+        s = scales[i]
+        sr = s.real
+        si = s.imag
+        
+        scale_r = pr * sr - pi * si
+        scale_i = pr * si + pi * sr
+        
+        phase_diff_r = cos(2 * 3.141592653 * shifts[i] / slen)
+        phase_diff_i = sin(2 * 3.141592653 * shifts[i] / slen)
+
+        for j in range(bnum):
+            blen = bins[i, j+1] - bins[i, j]
+            bsum_r = 0
+            bsum_i = 0
+            
+            for bi in range(blen):
+                v = v1[k]
+                vr = v.real
+                vi = v.imag
+                
+                sr = scale_r
+                si = scale_i
+
+                bsum_r += vr * sr - vi * si
+                bsum_i += vr * si + vi * sr
+
+                k += 1
+                scale_r = sr * phase_diff_r - si * phase_diff_i
+                scale_i = sr * phase_diff_i + si * phase_diff_r
+
+            chisq[i, j].real = bsum_r
+            chisq[i, j].imag = bsum_i
+
 def chisq_accum_bin_numpy(chisq, q):
     chisq += q.squared_norm()
 
@@ -155,3 +210,23 @@ def shift_sum(v1, shifts, bins):
 
     return  chisq
 
+def shift_multibin(v1, shifts, scales, bins):
+    real_type = real_same_precision_as(v1)
+    complex_type = complex_same_precision_as(v1)
+    
+    shifts = numpy.array(shifts, dtype=real_type)
+    scales = numpy.array(scales, dtype=complex_type)
+
+    bins = numpy.array(bins, dtype=numpy.uint32)
+    bnum = bins.shape[1] - 1
+    
+    v1 = numpy.array(v1.data, copy=False)
+    slen = len(v1)
+    n = int(len(shifts))
+
+    # Create some output memory
+    chisq = numpy.zeros((n, bnum), dtype=complex_type)
+
+    point_chisq_multibin_code(chisq, v1, n, slen, shifts, scales, bins, bnum)
+
+    return chisq
