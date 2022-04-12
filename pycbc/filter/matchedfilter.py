@@ -1124,7 +1124,7 @@ class MatchedFilterTHAControl(object):
                 self.snr_mem[:] += abs(self.snr_mem_comps[i])**2
                 # This test was checking if comp1 was the loudest and rejecting
                 # if not. I think it is not wanted though!
-                # curr_lgc = curr_lgc & (abs(self.snr_mem_comps[0].data)**2 > abs(self.snr_mem_comps[i].data)**2) 
+                # curr_lgc = curr_lgc & (abs(self.snr_mem_comps[0].data)**2 > abs(self.snr_mem_comps[i].data)**2)
         self.snr_mem[:] = self.snr_mem[:]**0.5
         self.snr_mem.data[~curr_lgc] = 0
 
@@ -1136,25 +1136,14 @@ class MatchedFilterTHAControl(object):
         logging.info("%s points above threshold" % str(len(idx)))
 
         snr_full = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
-
-        snr1 = TimeSeries(self.snr_mem1, epoch=epoch, delta_t=self.delta_t,
-                          copy=False)
-        snr2 = TimeSeries(self.snr_mem2, epoch=epoch, delta_t=self.delta_t, 
-                          copy=False)
-        snr3 = TimeSeries(self.snr_mem3, epoch=epoch, delta_t=self.delta_t, 
-                          copy=False)
-        snr4 = TimeSeries(self.snr_mem4, epoch=epoch, delta_t=self.delta_t, 
-                          copy=False)
-        snr5 = TimeSeries(self.snr_mem5, epoch=epoch, delta_t=self.delta_t, 
-                          copy=False)
-        snrs = [snr1, snr2, snr3, snr4, snr5]
-        crr1 = FrequencySeries(self.corr_mem1, delta_f=self.delta_f, copy=False)
-        crr2 = FrequencySeries(self.corr_mem2, delta_f=self.delta_f, copy=False)
-        crr3 = FrequencySeries(self.corr_mem3, delta_f=self.delta_f, copy=False)
-        crr4 = FrequencySeries(self.corr_mem4, delta_f=self.delta_f, copy=False)
-        crr5 = FrequencySeries(self.corr_mem5, delta_f=self.delta_f, copy=False)
-        corrs = [crr1, crr2, crr3, crr4, crr5]
-        offset = self.threshold_and_clusterers[segnum].mem_slice.start
+        snrs = [
+            TimeSeries(self.snr_mem_comps[i], epoch=epoch, delta_t=self.delta_t, copy=False)
+            if i < num_comps else None for i in range(5)
+        ]
+        corrs = [
+            FrequencySeries(self.corr_mem_comps, delta_f=self.delta_f, copy=False)
+            if i < num_comps else None for i in range(5)
+        ]
         return snr_full, norm, corrs, snrs, idx, snrv
 
 

@@ -453,6 +453,17 @@ class EventManager(object):
             except Exception:
                 # Not precessing
                 f['coa_phase'] = numpy.angle(self.events['snr'])
+            if 'snr_comp_1' in self.events.dtype.names:
+                f['snr_comp_1'] = abs(self.events['snr_comp_1'])
+                f['snr_comp_2'] = abs(self.events['snr_comp_2'])
+                f['snr_comp_3'] = abs(self.events['snr_comp_3'])
+                f['snr_comp_4'] = abs(self.events['snr_comp_4'])
+                f['snr_comp_5'] = abs(self.events['snr_comp_5'])
+                f['coa_phase_comp_1'] = numpy.angle(self.events['snr_comp_1'])
+                f['coa_phase_comp_2'] = numpy.angle(self.events['snr_comp_2'])
+                f['coa_phase_comp_3'] = numpy.angle(self.events['snr_comp_3'])
+                f['coa_phase_comp_4'] = numpy.angle(self.events['snr_comp_4'])
+                f['coa_phase_comp_5'] = numpy.angle(self.events['snr_comp_5'])
             f['chisq'] = self.events['chisq']
             f['bank_chisq'] = self.events['bank_chisq']
             f['bank_chisq_dof'] = self.events['bank_chisq_dof']

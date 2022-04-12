@@ -72,6 +72,8 @@ parser.add_argument("--max-template-length", type=float,
                   help="The maximum length of a template is seconds. The "
                        "starting frequency of the template is modified to "
                        "ensure the proper length")
+parser.add_argument("--max-num-comps", type=int,
+                  help="The maximum number of harmonics to use for each template.")
 parser.add_argument("--enable-q-transform", action='store_true',
                   help="compute the q-transform for each segment of a "
                        "given analysis run. (default = False)")
@@ -291,10 +293,17 @@ def template_triggers(t_num):
                                stilde.psd, norm, stilde=stilde,
                                low_frequency_cutoff=flow)
 
-        idx += stilde.cumulative_index
-
-        out_vals['time_index'] = idx
         out_vals['snr'] = snrv_full * norm
+        for i, snr_comp in enumerate(snrs):
+            if snr_comp is None:
+                out_vals['snr_comp_{0}'.format(i + 1)] = numpy.zeros(len(snrv_full), dtype=complex64)
+            else:
+                out_vals['snr_comp_{0}'.format(i + 1)] = snr_comp[idx+stilde.analyze.start] * norm
+            
+
+        idx += stilde.cumulative_index
+        out_vals['time_index'] = idx
+
         out_vals['sigmasq'] = numpy.zeros(len(snrv_full), dtype=float32) + sigmasq
         if opt.psdvar_short_segment is not None:
             out_vals['psd_var_val'] = \
@@ -337,6 +346,11 @@ with ctx:
     out_types = {
         'time_index'     : int,
         'snr'            : complex64,
+        'snr_comp_1'     : complex64,
+        'snr_comp_2'     : complex64,
+        'snr_comp_3'     : complex64,
+        'snr_comp_4'     : complex64,
+        'snr_comp_5'     : complex64,
         'chisq'          : float32,
         'chisq_dof'      : int,
         'bank_chisq'     : float32,
@@ -443,12 +457,16 @@ with ctx:
         seg /= (seg.psd ** 0.5)
 
     logging.info("Read in template bank")
-    bank = waveform.FilterBankTHA(opt.bank_file, flen, delta_f,
+    bank = waveform.FilterBankTHA(
+        opt.bank_file, flen, delta_f,
         low_frequency_cutoff=flow,
         dtype=complex64, approximant=opt.approximant,
         out_comp1=template_mem1, out_comp2=template_mem2,
         out_comp3=template_mem3, out_comp4=template_mem4,
-        out_comp5=template_mem5, max_template_length=opt.max_template_length)
+        out_comp5=template_mem5,
+        max_template_length=opt.max_template_length,
+        max_num_comps=opt.max_num_comps
+    )
 
     sg_chisq = SingleDetSGChisq.from_cli(opt, bank, opt.chisq_bins)
 
