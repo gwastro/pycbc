@@ -1141,7 +1141,7 @@ class MatchedFilterTHAControl(object):
             if i < num_comps else None for i in range(5)
         ]
         corrs = [
-            FrequencySeries(self.corr_mem_comps, delta_f=self.delta_f, copy=False)
+            FrequencySeries(self.corr_mem_comps[i], delta_f=self.delta_f, copy=False)
             if i < num_comps else None for i in range(5)
         ]
         return snr_full, norm, corrs, snrs, idx, snrv
