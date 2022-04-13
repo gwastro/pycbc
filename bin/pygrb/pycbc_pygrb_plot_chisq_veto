@@ -201,27 +201,18 @@ if use_sngl_ifo_snr:
         err_msg = "--ifo must be given when using --use-sngl-ifo-snr"
         parser.error(err_msg)
     snr_type += '_sngl'
-# If this is false, network vetoes are used on the vertical axis
-# otherwise the veto is intended as a single IFO quantity
-use_sngl_ifo_veto = opts.use_sngl_ifo_veto
-if use_sngl_ifo_veto:
-    if ifo is None:
-        err_msg = "--ifo must be given when using --use-sngl-ifo-snr-veto"
-        parser.error(err_msg)
-    elif veto_type != 'standard':
-        err_msg = "Single IFO values are available only for the standard chi-square"
-        parser.error(err_msg)
-    else:
-        veto_type += '_sngl'
+
+# Veto is intended as a single IFO quantity. Network chisq will be obsolete.
+if ifo is None:
+    err_msg = "--ifo must be given to plot single IFO SNR veto"
+    parser.error(err_msg)
 
 # Prepare plot title and caption
 veto_labels = {'standard': "Chi Square Veto",
                'bank': "Bank Veto",
                'auto': "Auto Veto"}
 if opts.plot_title is None:
-    opts.plot_title = veto_labels[veto_type.replace('_sngl', '')]
-    if use_sngl_ifo_veto:
-        opts.plot_title = "%s %s" %(ifo, opts.plot_title)
+    opts.plot_title = "%s %s" %(ifo, veto_labels[veto_type])
     if use_sngl_ifo_snr:
         opts.plot_title += " vs %s SNR" %(ifo)
     else:
@@ -280,11 +271,8 @@ x_min = opts.sngl_snr_threshold
 x_max = 1.1*plu.axis_max_value(trig_data[snr_type], inj_data[snr_type], found_file)
 
 # Determine y-axis minimum value and label
-y_label = veto_labels[veto_type.replace('_sngl', '')]
-y_min = 1
-if opts.use_sngl_ifo_veto:
-    y_label = "%s Single %s" % (ifo, y_label)
-    y_min = 0.001
+y_label = "%s Single %s" % (ifo, veto_labels[veto_type])
+y_min = 0.001
 
 # Determine the maximum bank veto value we are dealing with
 y_max = plu.axis_max_value(trig_data[veto_type], inj_data[veto_type], found_file)
