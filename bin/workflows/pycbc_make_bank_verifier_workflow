@@ -176,7 +176,7 @@ inp_bank = workflow.cp.get('workflow', 'input-bank')
 inp_bank = wf.resolve_url_to_file(inp_bank)
 inp_bank.tags = []
 inp_bank.description='TEMPLATEBANK'
-inp_bank.ifo_list=(['H1','L1','V1'])
+inp_bank.ifo_list = workflow.ifos
 inp_bank.segment = workflow.analysis_time
 
 # Inspinj job

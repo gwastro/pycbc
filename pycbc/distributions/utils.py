@@ -29,7 +29,7 @@ in a Python script, rather than in the command line.
 import numpy as np
 from pycbc.types.config import InterpolatingConfigParser
 from pycbc import transforms
-import pycbc.distributions as distributions
+from pycbc import distributions
 
 
 def draw_samples_from_config(path, num=1, seed=150914):

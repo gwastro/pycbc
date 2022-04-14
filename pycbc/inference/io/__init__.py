@@ -701,7 +701,6 @@ def results_from_cli(opts, load_samples=True, **kwargs):
             # read samples from file
             samples = fp.samples_from_cli(opts, parameters=opts.parameters,
                                           **kwargs)
-
             logging.info("Loaded {} samples".format(samples.size))
 
             if input_file in constraints:

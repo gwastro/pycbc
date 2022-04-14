@@ -174,7 +174,7 @@ def colored_noise(psd, start_time, end_time,
     # Here we color. Do not want to duplicate memory here though so use '*='
     white_noise *= asd
     del asd
-    colored = white_noise.to_timeseries()
+    colored = white_noise.to_timeseries(delta_t=1.0/sample_rate)
     del white_noise
     return colored.time_slice(start_time, end_time)
 

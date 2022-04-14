@@ -474,6 +474,7 @@ class FrequencySeries(Array):
                            dtype=real_same_precision_as(self)),
                            delta_t=delta_t)
         ifft(tmp, f)
+        f._delta_t = delta_t
         return f
 
     @_noreal
