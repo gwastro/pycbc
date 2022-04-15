@@ -384,7 +384,7 @@ def reweight_snr_by_null(
     return rw_snr
 
 
-def reweightedsnr_cut(rw_snr, rw_snr_threshhold):
+def reweightedsnr_cut(rw_snr, rw_snr_threshold):
     """
     Performs a cut on reweighted snr based on a given threshold
 
@@ -398,9 +398,6 @@ def reweightedsnr_cut(rw_snr, rw_snr_threshhold):
     rw_snr: array of reweighted snr with cut values as 0
 
     """
-    if rw_snr_threshhold is None:
-        return rw_snr
-    for i in range(len(rw_snr)):
-        if rw_snr[i] < rw_snr_threshhold:
-            rw_snr[i] = 0
+    if rw_snr_threshold is not None:
+        rw_snr = np.where(rw_snr < rw_snr_threshold, 0, rw_snr)
     return rw_snr
