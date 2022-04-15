@@ -631,7 +631,7 @@ def get_grb_time(seg_files):
 # =============================================================================
 # Function to extract ifos from hdfs
 # =============================================================================
-def extract_ifos_from_hdf(trig_file):
+def extract_ifos(trig_file):
     """Extracts IFOs from hdf file"""
     
     # Load hdf file
@@ -641,37 +641,22 @@ def extract_ifos_from_hdf(trig_file):
     ifos = list(hdf_file.keys()) 
     
     # Remove 'network' key from list of ifos 
-    ifos.remove('network')
+    if 'network' in ifos:
+        ifos.remove('network')
     
     return ifos
-
-# =============================================================================
-# Function to extract ifos
-# =============================================================================
-def extract_ifos(trig_file):
-    """Extracts IFOs from search summary table"""
-
-    # Load search summary
-    search_summ = load_xml_table(trig_file,
-                                 lsctables.SearchSummaryTable.tableName)
-
-    # Extract IFOs
-    ifos = sorted(search_summ[0].instruments)
-
-    return ifos
-
 
 # =============================================================================
 # Function to extract IFOs and vetoes
 # =============================================================================
 def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
-    """Extracts IFOs from search summary table and vetoes from a directory"""
+    """Extracts IFOs from HDF files and vetoes from a directory"""
 
     logging.info("Extracting IFOs and vetoes.")
 
     # Extract IFOs
     # ifos = extract_ifos(trig_file)
-    ifos = extract_ifos_from_hdf(trig_file)
+    ifos = extract_ifos(trig_file)
 
     # Extract vetoes
     vetoes = extract_vetoes(veto_files, ifos, veto_cat)
