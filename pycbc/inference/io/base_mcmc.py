@@ -24,7 +24,6 @@
 """Provides I/O that is specific to MCMC samplers.
 """
 
-from __future__ import (absolute_import, division)
 
 import numpy
 import argparse

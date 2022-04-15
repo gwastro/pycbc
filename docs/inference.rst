@@ -376,12 +376,6 @@ quadrupole moment of a neutron star ``dquad_mon1`` to its tidal deformation
    waveform generator understands. This is why in the above example we are
    able to use a custom transform without needing to provide a Jacobian.
 
-Some common transforms are pre-defined in the code. These are: the mass
-parameters ``mass1`` and ``mass2`` can be substituted with ``mchirp`` and
-``eta`` or ``mchirp`` and ``q``.  The component spin parameters ``spin1x``,
-``spin1y``, and ``spin1z`` can be substituted for polar coordinates
-``spin1_a``, ``spin1_azimuthal``, and ``spin1_polar`` (ditto for ``spin2``).
-
 ^^^^^^^^^^^^^^^^^^^^^^
 Calibration parameters
 ^^^^^^^^^^^^^^^^^^^^^^

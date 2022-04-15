@@ -373,6 +373,12 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         logging.info("Using signal histogram %s for ifos %s", selected, ifos)
         histfile = self.files[selected]
         self.hist_ifos = histfile.attrs['ifos']
+        # Patch for pre-hdf5=3.0 histogram files
+        try:
+            logging.info("Decoding hist ifos ..")
+            self.hist_ifos = [i.decode('UTF-8') for i in self.hist_ifos]
+        except (UnicodeDecodeError, AttributeError):
+            pass
         n_ifos = len(self.hist_ifos)
 
         # Histogram bin attributes

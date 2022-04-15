@@ -25,7 +25,6 @@
 """This module contains the CUDA-specific code for
    convenience utilities for manipulating waveforms
 """
-from __future__ import absolute_import
 from pycbc.types import FrequencySeries
 from mako.template import Template
 from pycuda.compiler import SourceModule

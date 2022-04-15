@@ -26,7 +26,6 @@
 """This module contains convenience pN functions. This includes calculating conversions
 between quantities.
 """
-from __future__ import division
 import lal, lalsimulation
 import numpy
 from scipy.optimize import bisect, brentq, minimize

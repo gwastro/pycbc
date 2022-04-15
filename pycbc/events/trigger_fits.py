@@ -45,7 +45,6 @@ ks_stat, ks_pval = KS_test('exponential', snrs, alpha, thresh)
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-from __future__ import division
 import numpy
 from scipy.stats import kstest
 

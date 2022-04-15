@@ -28,7 +28,6 @@ import os
 import logging
 
 from abc import (ABCMeta, abstractmethod)
-from six import add_metaclass
 
 from . import waveform
 from .waveform import (FailedWaveformError)
@@ -194,23 +193,19 @@ class BaseCBCGenerator(BaseGenerator):
         # parameters to those used by the waveform generation interface
         all_args = set(list(self.frozen_params.keys()) +
                        list(self.variable_args))
-        # compare a set of all args of the generator to the input parameters
-        # of the functions that do conversions and adds to list of pregenerate
-        # functions if it is needed
-        params_used, cs = transforms.get_common_cbc_transforms(
-                                       list(self.possible_args), variable_args)
-        for c in cs:
-            self._add_pregenerate(c)
         # check that there are no unused (non-calibration) parameters
         calib_args = set([a for a in self.variable_args if
                           a.startswith('calib_')])
         all_args = all_args - calib_args
-        unused_args = all_args.difference(params_used) \
-                              .difference(self.possible_args)
+        unused_args = all_args - self.possible_args
         if len(unused_args):
-            logging.warning("WARNING: The following args are not being used "
-                            "for waveform generation: %s",
-                            ', '.join(unused_args))
+            logging.warning("WARNING: The following parameters are generally "
+                            "not used by CBC waveform generators: %s. If you "
+                            "have provided a transform that converted these "
+                            "into known parameters (e.g., mchirp, q to "
+                            "mass1, mass2) or you are using a custom model "
+                            "that uses these parameters, you can safely "
+                            "ignore this message.", ', '.join(unused_args))
 
 
 class FDomainCBCGenerator(BaseCBCGenerator):
@@ -219,13 +214,6 @@ class FDomainCBCGenerator(BaseCBCGenerator):
     Uses `waveform.get_fd_waveform` as a generator function to create
     frequency- domain CBC waveforms in the radiation frame; i.e., with no
     detector response function applied. For more details, see `BaseGenerator`.
-
-    Derived parameters not understood by `get_fd_waveform` may be used as
-    variable args and/or frozen parameters, as long as they can be converted
-    into parameters that `get_fd_waveform` can use. For example, `mchirp` and
-    `eta` (currently, the only supported derived parameters) may be used as
-    variable/frozen params; these are converted to `mass1` and `mass2` prior to
-    calling the waveform generator function.
 
     Examples
     --------
@@ -239,26 +227,6 @@ class FDomainCBCGenerator(BaseCBCGenerator):
     >>> generator.generate(mass1=1.4, mass2=1.4)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
-
-    Initialize a generator using mchirp, eta as the variable args, and generate
-    a waveform:
-
-    >>> generator = FDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
-    >>> generator.generate(mchirp=1.5, eta=0.25)
-        (<pycbc.types.frequencyseries.FrequencySeries at 0x109a104d0>,
-         <pycbc.types.frequencyseries.FrequencySeries at 0x109a10b50>)
-
-    Note that the `current_params` contains the mchirp and eta values, along
-    with the mass1 and mass2 they were converted to:
-
-    >>> generator.current_params
-        {'approximant': 'TaylorF2',
-         'delta_f': 0.03125,
-         'eta': 0.25,
-         'f_lower': 30.0,
-         'mass1': 1.7230475324955525,
-         'mass2': 1.7230475324955525,
-         'mchirp': 1.5}
 
     """
     def __init__(self, variable_args=(), **frozen_params):
@@ -288,13 +256,6 @@ class TDomainCBCGenerator(BaseCBCGenerator):
     domain CBC waveforms in the radiation frame; i.e., with no detector
     response function applied. For more details, see `BaseGenerator`.
 
-    Derived parameters not understood by `get_td_waveform` may be used as
-    variable args and/or frozen parameters, as long as they can be converted
-    into parameters that `get_td_waveform` can use. For example, `mchirp` and
-    `eta` (currently, the only supported derived parameters) may be used as
-    variable/frozen params; these are converted to `mass1` and `mass2` prior to
-    calling the waveform generator function.
-
     Examples
     --------
     Initialize a generator:
@@ -307,14 +268,6 @@ class TDomainCBCGenerator(BaseCBCGenerator):
     >>> generator.generate(mass1=2., mass2=1.3)
         (<pycbc.types.timeseries.TimeSeries at 0x10e546710>,
          <pycbc.types.timeseries.TimeSeries at 0x115f37690>)
-
-    Initialize a generator using mchirp, eta as the variable args, and generate
-    a waveform:
-
-    >>> generator = TDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
-    >>> generator.generate(mchirp=1.75, eta=0.2)
-        (<pycbc.types.timeseries.TimeSeries at 0x116ac6050>,
-         <pycbc.types.timeseries.TimeSeries at 0x116ac6950>)
 
     """
     def __init__(self, variable_args=(), **frozen_params):
@@ -492,8 +445,7 @@ class TDomainSupernovaeGenerator(BaseGenerator):
 #
 
 
-@add_metaclass(ABCMeta)
-class BaseFDomainDetFrameGenerator(object):
+class BaseFDomainDetFrameGenerator(metaclass=ABCMeta):
     """Base generator for frquency-domain waveforms in a detector frame.
 
     Parameters

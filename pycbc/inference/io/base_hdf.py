@@ -25,14 +25,12 @@
 inference samplers generate.
 """
 
-from __future__ import absolute_import
 
 import sys
 import logging
 from io import StringIO
 
 from abc import (ABCMeta, abstractmethod)
-from six import add_metaclass
 
 import numpy
 import h5py
@@ -76,8 +74,7 @@ def format_attr(val):
     return val
 
 
-@add_metaclass(ABCMeta)
-class BaseInferenceFile(h5py.File):
+class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
     """Base class for all inference hdf files.
 
     This is a subclass of the h5py.File object. It adds functions for
@@ -216,6 +213,8 @@ class BaseInferenceFile(h5py.File):
         addatrs = (list(self.static_params.items()) +
                    list(self[self.samples_group].attrs.items()))
         for (p, val) in addatrs:
+            if p in loadfields:
+                continue
             setattr(samples, format_attr(p), format_attr(val))
         return samples
 
@@ -425,6 +424,7 @@ class BaseInferenceFile(h5py.File):
             Specify the random state to write. If None, will use
             ``numpy.random.get_state()``.
         """
+        # Write out the default numpy random state
         group = self.sampler_group if group is None else group
         dataset_name = "/".join([group, "random_state"])
         if state is None:
@@ -454,6 +454,7 @@ class BaseInferenceFile(h5py.File):
         tuple
             A tuple with 5 elements that can be passed to numpy.set_state.
         """
+        # Read numpy randomstate
         group = self.sampler_group if group is None else group
         dataset_name = "/".join([group, "random_state"])
         arr = self[dataset_name][:]
@@ -461,7 +462,8 @@ class BaseInferenceFile(h5py.File):
         pos = self[dataset_name].attrs["pos"]
         has_gauss = self[dataset_name].attrs["has_gauss"]
         cached_gauss = self[dataset_name].attrs["cached_gauss"]
-        return s, arr, pos, has_gauss, cached_gauss
+        state = s, arr, pos, has_gauss, cached_gauss
+        return state
 
     def write_strain(self, strain_dict, group=None):
         """Writes strain for each IFO to file.

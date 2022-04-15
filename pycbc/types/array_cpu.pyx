@@ -23,7 +23,6 @@
 #
 """Numpy based CPU backend for PyCBC Array
 """
-from __future__ import absolute_import
 import numpy as _np
 from pycbc.types.array import common_kind, complex128, float64
 from . import aligned as _algn

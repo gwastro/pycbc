@@ -236,8 +236,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         pdf = 1.0 / opt.fake_strain_filter_duration
         fake_flow = opt.fake_strain_flow
         fake_rate = opt.fake_strain_sample_rate
-        plen = int(opt.sample_rate / pdf) // 2 + 1
-
+        plen = round(opt.sample_rate / pdf) // 2 + 1
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
             strain_psd = pycbc.psd.from_txt(opt.fake_strain_from_file,
@@ -263,6 +262,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                    seed=opt.fake_strain_seed,
                                    sample_rate=fake_rate,
                                    low_frequency_cutoff=fake_flow)
+
         if not strain.sample_rate_close(fake_rate):
             err_msg = "Actual sample rate of generated data does not match "
             err_msg += "that expected. Possible causes of this:\n"

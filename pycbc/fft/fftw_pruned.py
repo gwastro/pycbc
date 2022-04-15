@@ -11,7 +11,6 @@ http://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
 I use a similar naming convention here, with minor simplifications to the
 twiddle factors.
 """
-from __future__ import absolute_import
 import numpy, ctypes, pycbc.types
 from pycbc.libutils import get_ctypes_library
 import logging

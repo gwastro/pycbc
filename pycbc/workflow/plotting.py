@@ -25,8 +25,8 @@
 This module is responsible for setting up plotting jobs.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
+from urllib.request import pathname2url
+from urllib.parse import urljoin
 from pycbc.workflow.core import File, FileList, makedir, Executable
 
 def excludestr(tags, substr):

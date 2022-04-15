@@ -29,7 +29,6 @@ a relative binning likelihood for parameter estimation.
 import logging
 import numpy
 from scipy.interpolate import interp1d
-from scipy import special
 
 from pycbc.waveform import get_fd_waveform_sequence
 from pycbc.detector import Detector
@@ -37,6 +36,7 @@ from pycbc.types import Array
 
 from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import likelihood_parts, likelihood_parts_v
+from .tools import DistMarg
 
 
 def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
@@ -102,7 +102,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     return nbin, fbin, fbin_ind
 
 
-class Relative(BaseGaussianNoise):
+class Relative(BaseGaussianNoise, DistMarg):
     r"""Model that assumes the likelihood in a region around the peak
     is slowly varying such that a linear approximation can be made, and
     likelihoods can be calculated at a coarser frequency resolution. For
@@ -157,8 +157,15 @@ class Relative(BaseGaussianNoise):
         gammas=None,
         epsilon=0.5,
         earth_rotation=False,
+        marginalize_phase=True,
         **kwargs
     ):
+
+        variable_params, kwargs = self.setup_distance_marginalization(
+                               variable_params,
+                               marginalize_phase=marginalize_phase,
+                               **kwargs)
+
         super(Relative, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs
         )
@@ -410,9 +417,7 @@ class Relative(BaseGaussianNoise):
             hd += hdp
             hh += hhp
 
-        hd = abs(hd)
-        llr = numpy.log(special.i0e(hd)) + hd - 0.5 * hh
-        return float(llr)
+        return self.marginalize_loglr(hd, hh)
 
     def write_metadata(self, fp):
         """Adds writing the fiducial parameters and epsilon to file's attrs.

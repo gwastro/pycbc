@@ -25,7 +25,6 @@
 Defines the base sampler class to be inherited by all samplers.
 """
 
-from __future__ import absolute_import
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 import shutil
