@@ -714,3 +714,13 @@ class LISA(object):
             np.array([np.float32(earth.x), np.float32(earth.y),
                       np.float32(earth.z)]), right_ascension,
             declination, t_gps)
+
+
+def ppdets(ifos, separator=', '):
+    """Pretty-print a list (or set) of detectors: return a string listing
+    the given detectors alphabetically and separated by the given string
+    (comma by default).
+    """
+    if ifos:
+        return separator.join(sorted(ifos))
+    return 'no detectors'

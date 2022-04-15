@@ -26,7 +26,7 @@ coincident triggers.
 """
 
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
-from pycbc.detector import Detector
+from pycbc.detector import Detector, ppdets
 
 
 def background_bin_from_string(background_bins, data):
@@ -687,7 +687,11 @@ class CoincExpireBuffer(object):
 
     @property
     def nbytes(self):
-        return self.buffer.nbytes
+        """Returns the approximate memory usage of self.
+        """
+        nbs = [self.timer[ifo].nbytes for ifo in self.ifos]
+        nbs.append(self.buffer.nbytes)
+        return sum(nbs)
 
     def increment(self, ifos):
         """Increment without adding triggers"""
@@ -1106,7 +1110,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         num_zerolag = 0
         num_background = 0
 
-        logging.info('%s background and zerolag coincs', len(cstat))
+        logging.info(
+            "%s: %s background and zerolag coincs",
+            ppdets(self.ifos, "-"), len(cstat)
+        )
         if len(cstat) > 0:
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
@@ -1191,8 +1198,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             A dictionary of arrays containing the coincident results.
         """
         # Let's see how large everything is
-        logging.info('BKG Coincs %s stored %s bytes',
-                     len(self.coincs), self.coincs.nbytes)
+        logging.info(
+            "%s: %s coincs, %s bytes",
+            ppdets(self.ifos, "-"), len(self.coincs), self.coincs.nbytes
+        )
 
         # If there are no results just return
         valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
@@ -1209,3 +1218,19 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             coinc_results['coinc_possible'] = True
 
         return coinc_results
+
+
+__all__ = [
+    "background_bin_from_string",
+    "calculate_n_louder",
+    "timeslide_durations",
+    "time_coincidence",
+    "time_multi_coincidence",
+    "cluster_coincs",
+    "cluster_coincs_multiifo",
+    "mean_if_greater_than_zero",
+    "cluster_over_time",
+    "MultiRingBuffer",
+    "CoincExpireBuffer",
+    "LiveCoincTimeslideBackgroundEstimator"
+]
