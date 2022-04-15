@@ -62,18 +62,25 @@ def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
 
     if input_file:
         trigs_or_injs = h5py.File(input_file, 'r')
-        data['time'] = numpy.asarray(trigs_or_injs['network/end_time_gc'][:])
+
         if snr_type == 'coherent':
+            data['time'] = numpy.asarray(trigs_or_injs['network/end_time_gc'][:])
             data['coherent'] = numpy.asarray(trigs_or_injs['network/coherent_snr'][:])
         elif snr_type == 'null':
+            data['time'] = numpy.asarray(trigs_or_injs['network/end_time_gc'][:])
             data['null'] = numpy.asarray(trigs_or_injs['network/null_snr'][:])
         elif snr_type == 'reweighted': 
+            data['time'] = numpy.asarray(trigs_or_injs['network/end_time_gc'][:])
             data['reweighted'] = numpy.array(trigs_or_injs['network/reweighted_snr'][:]) 
         elif snr_type == 'single':
+            ifo = opts.ifo 
+            data['time'] = numpy.asarray(trigs_or_injs['%s/end_time' %ifo][:])
             ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l', 'V1': 'v', 'T1': 't'} 
-            ifo = opts.ifo
             att = ifo_att[ifo]
-            data['single'] = trigs_or_injs['%s/snr_%s' % (ifo,att)][:]
+            if injections:
+                data['single'] = trigs_or_injs['%s/snr' % ifo][:]
+            else:
+                data['single'] = trigs_or_injs['%s/snr_%s' % (ifo,att)][:]
 
     return data
 
