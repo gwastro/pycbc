@@ -240,3 +240,11 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     else:
         txt = r'%s%s' %(valtxt, powfactor)
     return txt
+
+
+__all__ = [
+    "mathjax_html_header",
+    "drop_trailing_zeros",
+    "get_signum",
+    "format_value"
+]
