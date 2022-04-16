@@ -272,7 +272,7 @@ x_max = 1.1*plu.axis_max_value(trig_data[snr_type], inj_data[snr_type], found_fi
 
 # Determine y-axis minimum value and label
 y_label = "%s Single %s" % (ifo, veto_labels[veto_type])
-y_min = 0.001
+y_min = 1
 
 # Determine the maximum bank veto value we are dealing with
 y_max = plu.axis_max_value(trig_data[veto_type], inj_data[veto_type], found_file)
