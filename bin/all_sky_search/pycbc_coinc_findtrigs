@@ -242,7 +242,7 @@ def process_template(tnum):
 
         tids_full[i] = tids_uncut[trigger_keep_ids]
         times_full[i] = sngl['end_time'][trigger_keep_ids]
-        logging.info('%s:%s' % (i, len(tids_uncut)))
+        logging.info('%s:%s', i, len(tids_uncut))
         if len(tids_full[i]) < len(tids_uncut):
             logging.info("%s triggers cut",
                          len(tids_uncut) - len(tids_full[i]))
