@@ -1364,7 +1364,7 @@ class PhenomTemplate():
                 overlap = hs[i].inner(hs[j]) * 4. * df
                 hs[j] = (
                     (hs[j] - overlap * hs[i])
-                    / (1 - overlap * overlap.conj())
+                    / (1 - overlap * overlap.conj()) ** 0.5
                 )
 
         orthogonal += [None] * (5 - len(hs))
