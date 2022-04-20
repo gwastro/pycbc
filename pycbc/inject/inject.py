@@ -47,8 +47,8 @@ from ligo.lw import utils as ligolw_utils, ligolw, lsctables
 sim = libutils.import_optional('lalsimulation')
 
 injection_func_map = {
-    np.dtype(float32): lambda a, b, c: sim.SimAddInjectionREAL4TimeSeries(a, b, c),
-    np.dtype(float64): lambda a, b, c: sim.SimAddInjectionREAL4TimeSeries(a, b ,c),
+    np.dtype(float32): lambda *args: sim.SimAddInjectionREAL4TimeSeries(*args),
+    np.dtype(float64): lambda *args: sim.SimAddInjectionREAL8TimeSeries(*args),
 }
 
 # Map parameter names used in pycbc to names used in the sim_inspiral
