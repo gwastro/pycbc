@@ -42,7 +42,7 @@ from pycbc.detector import Detector
 from pycbc.filter import resample_to_delta_t
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.opt import LimitedSizeDict
-from pycbc.types import TimeSeries, float32, float64, load_timeseries
+from pycbc.types import float32, float64, load_timeseries
 from pycbc.waveform import (
     fd_det,
     get_td_det_waveform_from_fd_det,
@@ -54,11 +54,6 @@ from pycbc.waveform import utils as wfutils
 logger = logging.getLogger("pycbc.inject.inject")
 
 sim = libutils.import_optional("lalsimulation")
-
-injection_func_map = {
-    np.dtype(float32): lambda *args: sim.SimAddInjectionREAL4TimeSeries(*args),
-    np.dtype(float64): lambda *args: sim.SimAddInjectionREAL8TimeSeries(*args),
-}
 
 # Map parameter names used in pycbc to names used in the sim_inspiral
 # table, if they are different
@@ -244,13 +239,9 @@ class _XMLInjectionSet:
                 "Strain dtype must be float32 or float64, not " + str(strain.dtype)
             )
 
-        lalstrain = strain.lal()
         earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
-
-        # pick lalsimulation injection function
-        add_injection = injection_func_map[strain.dtype]
 
         delta_t = strain.delta_t
         if injection_sample_rate is not None:
@@ -281,14 +272,11 @@ class _XMLInjectionSet:
                 continue
 
             signal = signal.astype(strain.dtype)
-            signal_lal = signal.lal()
-            add_injection(lalstrain, signal_lal, None)
+            strain = strain.inject(signal)
             injection_parameters.append(inj)
             if inj_filter_rejector is not None:
                 sid = inj.simulation_id
                 inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
-
-        strain.data[:] = lalstrain.data.data[:]
 
         injected = copy.copy(self)
         injected.table = lsctables.SimInspiralTable()
@@ -639,12 +627,6 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             t0 = float(strain.start_time) - earth_travel_time
             t1 = float(strain.end_time) + earth_travel_time
 
-        if generate_injections:
-            lalstrain = strain.lal()
-
-            # pick lalsimulation injection function
-            add_injection = injection_func_map[strain.dtype]
-
         delta_t = strain.delta_t
         if injection_sample_rate is not None:
             delta_t = 1.0 / injection_sample_rate
@@ -682,11 +664,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                     inj_filter_rejector.generate_short_inj_from_inj(signal, ii)
 
             if generate_injections:
-                signal_lal = signal.lal()
-                add_injection(lalstrain, signal_lal, None)
-
-        if generate_injections:
-            strain.data[:] = lalstrain.data.data[:]
+                strain = strain.inject(signal)
 
         injected = copy.copy(self)
         injected.table = injections[np.array(injected_ids).astype(int)]
@@ -839,11 +817,6 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
                 "Strain dtype must be float32 or float64, not " + str(strain.dtype)
             )
 
-        lalstrain = strain.lal()
-
-        # pick lalsimulation injection function
-        add_injection = injection_func_map[strain.dtype]
-
         delta_t = strain.delta_t
         if injection_sample_rate is not None:
             delta_t = 1.0 / injection_sample_rate
@@ -858,10 +831,7 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
             )
             signal = resample_to_delta_t(signal, strain.delta_t, method="ldas")
             signal = signal.astype(strain.dtype)
-            signal_lal = signal.lal()
-            add_injection(lalstrain, signal_lal, None)
-
-            strain.data[:] = lalstrain.data.data[:]
+            strain = strain.inject(signal)
 
     def make_strain_from_inj_object(
         self, inj, delta_t, detector_name, distance_scale=1
@@ -1339,108 +1309,3 @@ class InjectionSet:
         if opt.injection_f_final is not None:
             kwa["f_final"] = opt.injection_f_final
         return InjectionSet(opt.injection_file, **kwa)
-
-
-class SGBurstInjectionSet:
-    """
-    Manages sets of sine-Gaussian burst injections: reads injections
-    from LIGOLW XML files and injects them into time series.
-
-    Parameters
-    ----------
-    sim_file : string
-        Path to a LIGOLW XML file containing a SimBurstTable
-        with injection definitions.
-
-    Attributes
-    ----------
-    indoc
-    table
-
-    """
-
-    def __init__(self, sim_file, **kwds):
-        self.indoc = ligolw_utils.load_filename(
-            sim_file, False, contenthandler=LIGOLWContentHandler
-        )
-        self.table = lsctables.SimBurstTable.get_table(self.indoc)
-        self.extra_args = kwds
-
-    def apply(self, strain, detector_name, f_lower=None, distance_scale=1):
-        """
-        Add injections (as seen by a particular detector) to a time series.
-
-        Parameters
-        ----------
-        strain : TimeSeries
-            Time series to inject signals into, of type float32 or float64.
-        detector_name : string
-            Name of the detector used for projecting injections.
-        f_lower : {None, float}, optional
-            Low-frequency cutoff for injected signals. If None, use value
-            provided by each injection.
-        distance_scale: {1, foat}, optional
-            Factor to scale the distance of an injection with. The default is
-            no scaling.
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        TypeError
-            For invalid types of `strain`.
-
-        """
-        if strain.dtype not in (float32, float64):
-            raise TypeError(
-                "Strain dtype must be float32 or float64, not " + str(strain.dtype)
-            )
-
-        lalstrain = strain.lal()
-        # detector = Detector(detector_name)
-        earth_travel_time = lal.REARTH_SI / lal.C_SI
-        t0 = float(strain.start_time) - earth_travel_time
-        t1 = float(strain.end_time) + earth_travel_time
-
-        # pick lalsimulation injection function
-        add_injection = injection_func_map[strain.dtype]
-
-        for inj in self.table:
-            # roughly estimate if the injection may overlap with the segment
-            end_time = inj.time_geocent
-            # CHECK: This is a hack (10.0s); replace with an accurate estimate
-            inj_length = 10.0
-            eccentricity = 0.0
-            polarization = 0.0
-            start_time = end_time - 2 * inj_length
-            if end_time < t0 or start_time > t1:
-                continue
-
-            # compute the waveform time series
-            hp, hc = sim.SimBurstSineGaussian(
-                float(inj.q),
-                float(inj.frequency),
-                float(inj.hrss),
-                float(eccentricity),
-                float(polarization),
-                float(strain.delta_t),
-            )
-            hp = TimeSeries(hp.data.data[:], delta_t=hp.deltaT, epoch=hp.epoch)
-            hc = TimeSeries(hc.data.data[:], delta_t=hc.deltaT, epoch=hc.epoch)
-            hp._epoch += float(end_time)
-            hc._epoch += float(end_time)
-            if float(hp.start_time) > t1:
-                continue
-
-            # compute the detector response, taper it if requested
-            # and add it to the strain
-            tapermethod, taper_window = wfutils.get_taper_settings(inj)
-            hp = hp.taper_timeseries(
-                location=inj.taper, tapermethod=tapermethod, taper_window=taper_window
-            )
-            signal_lal = hp.astype(strain.dtype).lal()
-            add_injection(lalstrain, signal_lal, None)
-
-        strain.data[:] = lalstrain.data.data[:]
