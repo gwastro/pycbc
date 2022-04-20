@@ -27,13 +27,13 @@ waveforms.
 """
 
 import os
-import lal, lalsimulation, numpy, copy
+import lal, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
 import pycbc.scheme as _scheme
 import inspect
 from pycbc.fft import fft
-from pycbc import pnutils
+from pycbc import pnutils, libutils
 from pycbc.waveform import utils as wfutils
 from pycbc.waveform import parameters
 from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
@@ -41,7 +41,6 @@ import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
                       spa_length_in_time
-
 
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
@@ -73,6 +72,31 @@ _lalsim_td_approximants = {}
 _lalsim_fd_approximants = {}
 _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
+
+# Populate waveform approximants from lalsimulation if the library is
+# available
+try:
+    import lalsimulation
+    for approx_enum in range(0, lalsimulation.NumApproximants):
+        if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
+            approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
+            _lalsim_enum[approx_name] = approx_enum
+            _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
+
+    for approx_enum in range(0, lalsimulation.NumApproximants):
+        if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
+            approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
+            _lalsim_enum[approx_name] = approx_enum
+            _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
+
+    # sine-Gaussian burst
+    for approx_enum in range(0, lalsimulation.NumApproximants):
+        if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
+            approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
+            _lalsim_enum[approx_name] = approx_enum
+            _lalsim_sgburst_approximants[approx_name] = _lalsim_sgburst_waveform
+except ImportError:
+    lalsimulation = libutils.import_optional('lalsimulation')
 
 def _check_lal_pars(p):
     """ Create a laldict object from the dictionary of waveform parameters
@@ -273,27 +297,7 @@ def _lalsim_sgburst_waveform(**p):
 
     return hp, hc
 
-for approx_enum in range(0, lalsimulation.NumApproximants):
-    if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
-        approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
-        _lalsim_enum[approx_name] = approx_enum
-        _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
-
-for approx_enum in range(0, lalsimulation.NumApproximants):
-    if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
-        approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
-        _lalsim_enum[approx_name] = approx_enum
-        _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
-
-# sine-Gaussian burst
-for approx_enum in range(0, lalsimulation.NumApproximants):
-    if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
-        approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
-        _lalsim_enum[approx_name] = approx_enum
-        _lalsim_sgburst_approximants[approx_name] = _lalsim_sgburst_waveform
-
 cpu_sgburst = _lalsim_sgburst_approximants
-
 cpu_td = dict(_lalsim_td_approximants.items())
 cpu_fd = _lalsim_fd_approximants
 

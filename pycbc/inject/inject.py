@@ -31,10 +31,8 @@ import lal
 import copy
 import logging
 from abc import ABCMeta, abstractmethod
-import lalsimulation as sim
 import h5py
-from pycbc import waveform
-from pycbc import frame
+from pycbc import waveform, frame, libutils
 from pycbc.opt import LimitedSizeDict
 from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
@@ -46,12 +44,12 @@ import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw import utils as ligolw_utils, ligolw, lsctables
 
+sim = libutils.import_optional('lalsimulation')
 
 injection_func_map = {
-    np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
-    np.dtype(float64): sim.SimAddInjectionREAL8TimeSeries
+    np.dtype(float32): lambda *args: sim.SimAddInjectionREAL4TimeSeries(*args),
+    np.dtype(float64): lambda *args: sim.SimAddInjectionREAL4TimeSeries(*args),
 }
-
 
 # Map parameter names used in pycbc to names used in the sim_inspiral
 # table, if they are different
