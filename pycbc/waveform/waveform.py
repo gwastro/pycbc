@@ -73,31 +73,6 @@ _lalsim_fd_approximants = {}
 _lalsim_enum = {}
 _lalsim_sgburst_approximants = {}
 
-# Populate waveform approximants from lalsimulation if the library is
-# available
-try:
-    import lalsimulation
-    for approx_enum in range(0, lalsimulation.NumApproximants):
-        if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
-            approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
-            _lalsim_enum[approx_name] = approx_enum
-            _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
-
-    for approx_enum in range(0, lalsimulation.NumApproximants):
-        if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
-            approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
-            _lalsim_enum[approx_name] = approx_enum
-            _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
-
-    # sine-Gaussian burst
-    for approx_enum in range(0, lalsimulation.NumApproximants):
-        if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
-            approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
-            _lalsim_enum[approx_name] = approx_enum
-            _lalsim_sgburst_approximants[approx_name] = _lalsim_sgburst_waveform
-except ImportError:
-    lalsimulation = libutils.import_optional('lalsimulation')
-
 def _check_lal_pars(p):
     """ Create a laldict object from the dictionary of waveform parameters
 
@@ -297,6 +272,31 @@ def _lalsim_sgburst_waveform(**p):
 
     return hp, hc
 
+# Populate waveform approximants from lalsimulation if the library is
+# available
+try:
+    import lalsimulation
+    for approx_enum in range(0, lalsimulation.NumApproximants):
+        if lalsimulation.SimInspiralImplementedTDApproximants(approx_enum):
+            approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
+            _lalsim_enum[approx_name] = approx_enum
+            _lalsim_td_approximants[approx_name] = _lalsim_td_waveform
+
+    for approx_enum in range(0, lalsimulation.NumApproximants):
+        if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
+            approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
+            _lalsim_enum[approx_name] = approx_enum
+            _lalsim_fd_approximants[approx_name] = _lalsim_fd_waveform
+
+    # sine-Gaussian burst
+    for approx_enum in range(0, lalsimulation.NumApproximants):
+        if lalsimulation.SimInspiralImplementedFDApproximants(approx_enum):
+            approx_name = lalsimulation.GetStringFromApproximant(approx_enum)
+            _lalsim_enum[approx_name] = approx_enum
+            _lalsim_sgburst_approximants[approx_name] = _lalsim_sgburst_waveform
+except ImportError:
+    lalsimulation = libutils.import_optional('lalsimulation')
+
 cpu_sgburst = _lalsim_sgburst_approximants
 cpu_td = dict(_lalsim_td_approximants.items())
 cpu_fd = _lalsim_fd_approximants
@@ -313,7 +313,6 @@ if pycbc.HAVE_CUDA:
 
 cuda_td = dict(list(_lalsim_td_approximants.items()) + list(_cuda_td_approximants.items()))
 cuda_fd = dict(list(_lalsim_fd_approximants.items()) + list(_cuda_fd_approximants.items()))
-
 
 # List the various available approximants ####################################
 

@@ -19,6 +19,7 @@
 from string import Formatter
 import lal
 
+from pycbc import libutils
 from pycbc.types import (TimeSeries, FrequencySeries)
 from .waveform import (props, _check_lal_pars, check_args)
 from . import parameters
