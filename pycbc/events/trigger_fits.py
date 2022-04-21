@@ -28,6 +28,9 @@ exponential_fit = expfit(xvals, alpha, thresh)
 # or access function by name
 exponential_fit_1 = fit_fn('exponential', xvals, alpha, thresh)
 
+# Use weighting factors to e.g. take decimation into account
+alpha, sigma_alpha = fit_above_thresh('exponential', snrs, weights=weights)
+
 # get the KS test statistic and p-value - see scipy.stats.kstest
 ks_stat, ks_pval = KS_test('exponential', snrs, alpha, thresh)
 
@@ -46,22 +49,23 @@ ks_stat, ks_pval = KS_test('exponential', snrs, alpha, thresh)
 # Public License for more details.
 
 import numpy
+import logging
 from scipy.stats import kstest
 
 fitalpha_dict = {
-    'exponential' : lambda vals, thresh : 1. / (numpy.mean(vals) - thresh),
-    'rayleigh'    : lambda vals, thresh : 2. / (numpy.mean(vals**2.) - thresh**2.),
-    'power'       : lambda vals, thresh : numpy.mean(numpy.log(vals/thresh))**-1. + 1.
+    'exponential' : lambda vals, thresh, w : 1. / (numpy.average(vals, weights=w) - thresh),
+    'rayleigh'    : lambda vals, thresh, w : 2. / (numpy.average(vals**2., weights=w) - thresh**2.),
+    'power'       : lambda vals, thresh, w : numpy.average(numpy.log(vals/thresh), weights=w)**-1. + 1.
 }
 
 # measurement standard deviation = (-d^2 log L/d alpha^2)^(-1/2)
 fitstd_dict = {
-    'exponential' : lambda vals, alpha : alpha / len(vals)**0.5,
-    'rayleigh'    : lambda vals, alpha : alpha / len(vals)**0.5,
-    'power'       : lambda vals, alpha : (alpha - 1.) / len(vals)**0.5
+    'exponential' : lambda weights, alpha : alpha / sum(weights)**0.5,
+    'rayleigh'    : lambda weights, alpha : alpha / sum(weights)**0.5,
+    'power'       : lambda weights, alpha : (alpha - 1.) / sum(weights)**0.5
 }
 
-def fit_above_thresh(distr, vals, thresh=None):
+def fit_above_thresh(distr, vals, thresh=None, weights=None):
     """
     Maximum likelihood fit for the coefficient alpha
 
@@ -80,6 +84,9 @@ def fit_above_thresh(distr, vals, thresh=None):
         Values to fit
     thresh : float
         Threshold to apply before fitting; if None, use min(vals)
+    weights: sequence of floats
+        Weighting factors to use for the snrs when fitting.
+        Default=None - all the same
 
     Returns
     -------
@@ -91,10 +98,27 @@ def fit_above_thresh(distr, vals, thresh=None):
     vals = numpy.array(vals)
     if thresh is None:
         thresh = min(vals)
+        above_thresh = numpy.ones_like(vals, dtype=bool)
     else:
-        vals = vals[vals >= thresh]
-    alpha = fitalpha_dict[distr](vals, thresh)
-    return alpha, fitstd_dict[distr](vals, alpha)
+        above_thresh = vals >= thresh
+        if numpy.count_nonzero(above_thresh) == 0:
+            # Nothing is above threshold - warn and return -1
+            logging.warning("No values are above the threshold, %.2f, "
+                            "maximum is %.2f.", thresh, vals.max())
+            return -1., -1.
+
+        vals = vals[above_thresh]
+
+    # Set up the weights
+    if weights is not None:
+        weights = numpy.array(weights)
+        w = weights[above_thresh]
+    else:
+        w = numpy.ones_like(vals)
+
+    alpha = fitalpha_dict[distr](vals, thresh, w)
+    return alpha, fitstd_dict[distr](w, alpha)
+
 
 
 fitfn_dict = {

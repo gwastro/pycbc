@@ -6,7 +6,7 @@ coincs with the highest stat value.
 import h5py, numpy as np, argparse, logging, pycbc, pycbc.events, pycbc.io
 import pycbc.version
 import pycbc.conversions as conv
-from pycbc.events import coinc
+from pycbc.events import coinc, significance
 from ligo import segments
 import sys, copy
 
@@ -56,6 +56,7 @@ parser.add_argument('--hierarchical-removal-ifar-thresh', type=float,
     default=100.,
     help="Minimum IFAR for a foreground event to be hierarchically removed "
          "from background of quieter events (years) [default=100yr]")
+significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file', help="name of output file")
 
 args = parser.parse_args()
@@ -66,11 +67,22 @@ if args.max_hierarchical_removal and injection_style:
     raise NotImplementedError("Hierarchical background removal doesn't make "
                               "sense for injections.")
 
+significance.check_significance_option_group(args)
+
 pycbc.init_logging(args.verbose)
 
 files = [h5py.File(n, 'r') for n in args.statmap_files]
 
 f = h5py.File(args.output_file, "w")
+
+# For a few things, we will want singles and coinc files separated
+all_ifo_combos = []
+for fi in files:
+    ifo_list = get_ifo_string(fi).split(' ')
+    all_ifo_combos.append(''.join(ifo_list))
+
+significance_dict = significance.digest_significance_options(all_ifo_combos,
+                                                             args, parser)
 
 logging.info('Copying segments and attributes to %s' % args.output_file)
 # Move segments information into the final file - remove some duplication
@@ -98,8 +110,8 @@ logging.info('Combining foreground segments')
 
 # combine the segment list from each ifo
 foreground_segs = segments.segmentlist([])
-for segs in indiv_segs.values():
-    foreground_segs += segs
+for k in all_ifo_combos:
+    foreground_segs += indiv_segs[k]
 
 f.attrs['foreground_time'] = abs(foreground_segs)
 
@@ -148,11 +160,11 @@ bg_exc_trig_times = {}
 bg_exc_trig_ids = {}
 
 for ifo in all_ifos:
-    fg_trig_times[ifo] = np.array([], dtype=np.uint32)
+    fg_trig_times[ifo] = np.array([], dtype=np.floast64)
     fg_trig_ids[ifo] = np.array([], dtype=np.uint32)
-    bg_trig_times[ifo] = np.array([], dtype=np.uint32)
+    bg_trig_times[ifo] = np.array([], dtype=np.float64)
     bg_trig_ids[ifo] = np.array([], dtype=np.uint32)
-    bg_exc_trig_times[ifo] = np.array([], dtype=np.uint32)
+    bg_exc_trig_times[ifo] = np.array([], dtype=np.float64)
     bg_exc_trig_ids[ifo] = np.array([], dtype=np.uint32)
 
 # For each file, append the trigger time and id data for each ifo
@@ -241,6 +253,7 @@ test_times = np.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
 # each interferometer combination
 is_in_combo_time = {}
 for key in all_ifo_combos:
+    logging.info("Checking if events are in %s time", key)
     is_in_combo_time[key] = np.zeros(n_triggers)
     end_times = np.array(f['segments/%s/end' % key][:])
     start_times = np.array(f['segments/%s/start' % key][:])
@@ -263,14 +276,19 @@ if injection_style:
         bg_f = h5py.File(bg_fname, 'r')
         ifo_combo_key = bg_f.attrs['ifos'].replace(' ','')
         _, fnlouder[ifo_combo_key] = \
-            coinc.calculate_n_louder(bg_f['background/stat'][:],
-                                     f['foreground/stat'][:],
-                                     bg_f['background/decimation_factor'][:])
+            significance.calculate_n_louder(
+                significance_dict[ifo_combo_key],
+                bg_f['background/stat'][:],
+                f['foreground/stat'][:],
+                bg_f['background/decimation_factor'][:])
+
         far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / bg_f.attrs['background_time']
         _, fnlouder_exc[ifo_combo_key] = \
-            coinc.calculate_n_louder(bg_f['background_exc/stat'][:],
-                                     f['foreground/stat'][:],
-                                     bg_f['background_exc/decimation_factor'][:])
+            significance.calculate_n_louder(
+                significance_dict[ifo_combo_key],
+                bg_f['background_exc/stat'][:],
+                f['foreground/stat'][:],
+                bg_f['background_exc/decimation_factor'][:])
         far_exc[ifo_combo_key] = (fnlouder_exc[ifo_combo_key] + 1) / bg_f.attrs['background_time_exc']
 else:
     # if not injection style input files, then the input files will have the
@@ -278,14 +296,18 @@ else:
     for f_in in files:
         ifo_combo_key = get_ifo_string(f_in).replace(' ','')
         _, fnlouder[ifo_combo_key] = \
-            coinc.calculate_n_louder(f_in['background/stat'][:],
-                                     f['foreground/stat'][:],
-                                     f_in['background/decimation_factor'][:])
+            significance.calculate_n_louder(
+                significance_dict[ifo_combo_key],
+                f_in['background/stat'][:],
+                f['foreground/stat'][:],
+                f_in['background/decimation_factor'][:])
         far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / f_in.attrs['background_time']
         _, fnlouder_exc[ifo_combo_key] = \
-            coinc.calculate_n_louder(f_in['background_exc/stat'][:],
-                                     f['foreground/stat'][:],
-                                     f_in['background_exc/decimation_factor'][:])
+            significance.calculate_n_louder(
+                significance_dict[ifo_combo_key],
+                f_in['background_exc/stat'][:],
+                f['foreground/stat'][:],
+                f_in['background_exc/decimation_factor'][:])
         far_exc[ifo_combo_key] = (fnlouder_exc[ifo_combo_key] + 1) / f_in.attrs['background_time_exc']
 
 logging.info('Combining false alarm rates from all available backgrounds')
@@ -525,9 +547,11 @@ while True:
     test_times = np.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
                            for tc in zip(*times_tuple)])
     for key in all_ifo_combos:
-        bnlouder, fnlouder = coinc.calculate_n_louder(sep_bg_data[key].data['stat'],
-                                    sep_fg_data[key].data['stat'],
-                                    sep_bg_data[key].data['decimation_factor'])
+        bnlouder, fnlouder = significance.calculate_n_louder(
+            significance_dict[ifo_combo_key],
+            sep_bg_data[key].data['stat'],
+            sep_fg_data[key].data['stat'],
+            sep_bg_data[key].data['decimation_factor'])
         # In principle, bg time should be adjusted, but is expected to be a
         # negligible corection
         fg_time_ct[key] -= args.cluster_window
@@ -540,9 +564,11 @@ while True:
 
     logging.info("Recalculating combined IFARs")
     for key in all_ifo_combos:
-        bnlouder, fnlouder = coinc.calculate_n_louder(sep_bg_data[key].data['stat'],
-                                    combined_fg_data.data['stat'],
-                                    sep_bg_data[key].data['decimation_factor'])
+        bnlouder, fnlouder = significance.calculate_n_louder(
+            significance_dict[ifo_combo_key],
+            sep_bg_data[key].data['stat'],
+            combined_fg_data.data['stat'],
+            sep_bg_data[key].data['decimation_factor'])
         far[key] = (fnlouder + 1) / bg_time_ct[key]
         # Set up variable for whether each coincidence is available in each coincidence time
         is_in_combo_time[key] = np.zeros(n_triggers)
