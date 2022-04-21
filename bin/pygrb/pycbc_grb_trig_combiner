@@ -482,7 +482,7 @@ for i in offtrials:
     _ts += i*trialtime
     _te = _ts + trialtime
     bins["OFFTRIAL_{}".format(i+1)] = seg = segments.segment(_ts, _te)
-    print("          off-trial {} : {}".format(i+1, seg))
+    vprint("          off-trial {} : {}".format(i+1, seg))
 
 # -- read triggers ------------------------------
 
