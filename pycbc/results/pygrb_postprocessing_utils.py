@@ -182,7 +182,7 @@ def build_veto_filelist(workflow):
     veto_dir = workflow.cp.get('workflow', 'veto-directory')
     veto_files = glob.glob(veto_dir + '/*CAT*.xml')
     veto_files = [resolve_url_to_file(vf) for vf in veto_files]
-    veto_files = _worklow.FileList(veto_files)
+    veto_files = _workflow.FileList(veto_files)
 
     return veto_files
 
