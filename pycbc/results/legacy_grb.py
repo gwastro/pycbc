@@ -16,10 +16,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-# =============================================================================
-# Preamble
-# =============================================================================
-
 from ligo import segments
 
 def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,

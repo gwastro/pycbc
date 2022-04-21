@@ -1156,7 +1156,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
     else:
         kmin = 1
     if fhigh:
-        kmax = int(fhigh / df )
+        kmax = int(fhigh / df)
         if kmax > int((N + 1)/2.):
             kmax = int((N + 1)/2.)
     else:
@@ -1545,11 +1545,11 @@ class LiveBatchMatchedFilter(object):
             If the SNR is above this threshold, do not record any triggers.
         newsnr_threshold: {float, None}
             Only record triggers that have a re-weighted NewSNR above this
-        threshold.
+            threshold.
         max_triggers_in_batch: {int, None}
-            Record X number of the loudest triggers by newsnr in each mpi
-        process group. Signal consistency values will also only be calculated
-        for these triggers.
+            Record X number of the loudest triggers by SNR in each MPI
+            process. Signal consistency values will also only be calculated
+            for these triggers.
         """
         self.snr_threshold = snr_threshold
         self.snr_abort_threshold = snr_abort_threshold

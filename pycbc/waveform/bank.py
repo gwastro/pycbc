@@ -543,14 +543,14 @@ class LiveFilterBank(TemplateBank):
         Parameters
         ----------
         num : int
-            Proposed size of waveform in seconds
+            Proposed size of waveform in samples.
 
         Returns
         -------
         size: int
-            The rounded size to use for the waveform buffer in seconds. This
-        is calculaed using an internal `increment` attribute, which determines
-        the discreteness of the rounding.
+            The rounded size to use for the waveform buffer in samples.
+            This is calculated using an internal `increment` attribute, which
+            determines the discreteness of the rounding.
         """
         inc = self.increment
         size = np.ceil(num / self.sample_rate / inc) * self.sample_rate * inc

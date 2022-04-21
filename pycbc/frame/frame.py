@@ -24,7 +24,7 @@ import math
 import os.path, glob, time
 import gwdatafind
 import pycbc
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 from pycbc.types import TimeSeries, zeros
 
 
@@ -223,7 +223,7 @@ def read_frame(location, channels, start_time=None,
     series = create_series_func(first_channel, stream.epoch, 0, 0,
                                 lal.ADCCountUnit, 0)
     get_series_metadata_func(series, stream)
-    data_duration = data_length * series.deltaT
+    data_duration = (data_length + 0.5) * series.deltaT
 
     if start_time is None:
         start_time = stream.epoch*1

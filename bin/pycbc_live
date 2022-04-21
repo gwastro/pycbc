@@ -32,6 +32,7 @@ import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
 from pycbc import mchirp_area
+from pycbc.detector import ppdets
 
 try:
     from setproctitle import setproctitle
@@ -39,14 +40,6 @@ except ImportError:
     def setproctitle(title):
         pass
 
-
-def ppdets(ifos, separator=', '):
-    """Pretty-print a list (or set) of detectors: return a string listing
-    the given detectors alphabetically and separated by commas.
-    """
-    if ifos:
-        return separator.join(sorted(ifos))
-    return 'no detectors'
 
 def ptof(p, ft):
     """Convert p-value to FAR via foreground time `ft`.
@@ -560,10 +553,17 @@ parser.add_argument('--autogating-taper', type=float, metavar='SECONDS',
                          'each gating window over a duration '
                          'of SECONDS.')
 
-parser.add_argument('--sync', action='store_true')
+parser.add_argument('--sync', action='store_true',
+                    help="Imposes an MPI synchronization at each transfer of"
+                         " single-detector triggers. Can help with debugging"
+                         " and avoiding memory issues when running offline"
+                         " analyses.")
 parser.add_argument('--increment-update-cache', action=MultiDetOptionAction, nargs='+')
 parser.add_argument('--frame-read-timeout', type=float, default=30)
-parser.add_argument('--increment', type=int, default=8)
+parser.add_argument('--increment', type=int, default=8, metavar="T",
+                    help="When generating the template waveforms, their"
+                         " durations are binned such that T is their greatest"
+                         " common divisor.")
 
 parser.add_argument('--start-time', type=int, default=None,
                     help='Start the analysis at the given GPS time')
@@ -594,7 +594,9 @@ parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf,
 parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf,
                     help="Safety BNS horizon distance (in Mpc) below which a "
                     "detector's data is discarded.")
-parser.add_argument('--max-triggers-in-batch', type=int)
+parser.add_argument('--max-triggers-in-batch', type=int, metavar="N",
+                    help="Tells each matched-filtering process to only report "
+                         "the loudest N single-detector triggers by SNR.")
 parser.add_argument('--max-length', type=float,
                     help='Maximum duration of templates, used to set the data buffer size')
 
@@ -768,9 +770,10 @@ with ctx:
         ifo_combos = itertools.combinations(ifos, 2)
         estimators = []
         for combo in ifo_combos:
-            logging.info('Will calculate %s background', combo)
-            estimators.append(Coincer.from_cli(args,
-                              len(bank), args.analysis_chunk, list(combo)))
+            logging.info('Will calculate %s background', ppdets(combo, "-"))
+            estimators.append(Coincer.from_cli(
+                args, len(bank), args.analysis_chunk, list(combo)
+            ))
 
         my_coinc_id = 999999
         def set_coinc_id(i):

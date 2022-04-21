@@ -24,7 +24,6 @@
 #
 """This module contains convenience utilities for manipulating waveforms
 """
-from __future__ import absolute_import
 from pycbc.types import TimeSeries, FrequencySeries, Array, float32, float64, complex_same_precision_as, real_same_precision_as
 import lal
 import lalsimulation as sim

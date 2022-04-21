@@ -28,11 +28,10 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
 """
 
-from __future__ import division
 
 import os
 import logging
-from six.moves import configparser as ConfigParser
+import configparser as ConfigParser
 import pycbc
 from pycbc.workflow.core import FileList
 from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file

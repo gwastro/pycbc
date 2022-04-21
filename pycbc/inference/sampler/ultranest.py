@@ -26,9 +26,6 @@ This modules provides classes and functions for using the ultranest sampler
 packages for parameter estimation.
 """
 
-
-from __future__ import absolute_import
-
 import sys
 import logging
 import numpy

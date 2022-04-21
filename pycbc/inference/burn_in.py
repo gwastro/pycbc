@@ -26,11 +26,9 @@ This modules provides classes and functions for determining when Markov Chains
 have burned in.
 """
 
-from __future__ import division
 
 import logging
 from abc import ABCMeta, abstractmethod
-from six import add_metaclass
 import numpy
 from scipy.stats import ks_2samp
 
@@ -246,9 +244,9 @@ def evaluate_tests(burn_in_test, test_is_burned_in, test_burn_in_iter):
 #
 
 
-@add_metaclass(ABCMeta)
-class BaseBurnInTests(object):
+class BaseBurnInTests(metaclass=ABCMeta):
     """Base class for burn in tests."""
+
     available_tests = ('halfchain', 'min_iterations', 'max_posterior',
                        'posterior_step', 'nacl',
                        )
