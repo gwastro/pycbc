@@ -182,7 +182,7 @@ def build_veto_filelist(workflow):
     veto_dir = workflow.cp.get('workflow', 'veto-directory')
     veto_files = glob.glob(veto_dir + '/*CAT*.xml')
     veto_files = [resolve_url_to_file(vf) for vf in veto_files]
-    veto_files = _workflow.FileList(veto_files)
+    veto_files = _worklow.FileList(veto_files)
 
     return veto_files
 
@@ -346,10 +346,10 @@ def get_id_numbers(ligolw_table, column):
 
 
 # =============================================================================
-# Function to build a dictionary (indexed by ifo) of time-slide vetoes
+# Function to build a dictionary (indexed by ifo) of time-slid vetoes
 # =============================================================================
-def slide_vetoes(vetoes, slide_dict, slide_id):
-    """Build a dictionary (indexed by ifo) of time-slide vetoes"""
+def slide_vetoes(vetoes, slide_dict_or_list, slide_id):
+    """Build a dictionary (indexed by ifo) of time-slid vetoes"""
 
     # Copy vetoes
     slid_vetoes = copy.deepcopy(vetoes)
@@ -357,7 +357,7 @@ def slide_vetoes(vetoes, slide_dict, slide_id):
     # Slide them
     ifos = vetoes.keys()
     for ifo in ifos:
-        slid_vetoes[ifo].shift(-slide_dict[slide_id][ifo])
+        slid_vetoes[ifo].shift(-slide_dict_or_list[slide_id][ifo])
 
     return slid_vetoes
 
@@ -374,10 +374,10 @@ def load_triggers(trig_file, vetoes):
 
     logging.info("Loading triggers...")
 
-    # Extract time-slides
-    multis, slide_dict = \
+    # Extract time-slides from a multi-inspiral table
+    multis, slides_list = \
         read_multiinspiral_timeslides_from_files([trig_file])
-    num_slides = len(slide_dict)
+
     glsctables.MultiInspiralTable.loadcolumns =\
         [slot for slot in multis[0].__slots__ if hasattr(multis[0], slot)]
 
@@ -386,9 +386,9 @@ def load_triggers(trig_file, vetoes):
                            columns=glsctables.MultiInspiralTable.loadcolumns)
 
     # Time-slid vetoes
-    for slide_id in range(num_slides):
+    for slide_id in range(len(slides_list)):
         # Construct the ifo-indexed dictionary of slid veteoes
-        slid_vetoes = slide_vetoes(vetoes, slide_dict, slide_id)
+        slid_vetoes = slide_vetoes(vetoes, slides_list, slide_id)
 
         # Add time-slid triggers
         vets = slid_vetoes.union(slid_vetoes.keys())
@@ -526,7 +526,7 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
 # =============================================================================
 # Construct sorted triggers from trials
 # =============================================================================
-def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
+def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     """Constructs sorted triggers from a trials dictionary"""
 
     sorted_trigs = {}
@@ -534,12 +534,12 @@ def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
     # Begin by sorting the triggers into each slide
     # New seems pretty slow, so run it once and then use deepcopy
     tmp_table = glsctables.New(glsctables.MultiInspiralTable)
-    for slide_id in range(num_slides):
+    for slide_id in slide_dict:
         sorted_trigs[slide_id] = copy.deepcopy(tmp_table)
     for trig in trigs:
         sorted_trigs[int(trig.time_slide_id)].append(trig)
 
-    for slide_id in range(num_slides):
+    for slide_id in slide_dict:
         # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
@@ -569,13 +569,13 @@ def sort_trigs(trial_dict, trigs, num_slides, seg_dict):
 # =============================================================================
 # Extract basic trigger properties and store them as dictionaries
 # =============================================================================
-def extract_basic_trig_properties(trial_dict, trigs, num_slides, seg_dict,
+def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
                                   opts):
     """Extract and store as dictionaries time, SNR, and BestNR of
     time-slid triggers"""
 
     # Sort the triggers into each slide
-    sorted_trigs = sort_trigs(trial_dict, trigs, num_slides, seg_dict)
+    sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
     logging.info("Triggers sorted.")
 
     # Local copies of variables entering the BestNR definition
@@ -592,7 +592,7 @@ def extract_basic_trig_properties(trial_dict, trigs, num_slides, seg_dict,
     trig_time = {}
     trig_snr = {}
     trig_bestnr = {}
-    for slide_id in range(num_slides):
+    for slide_id in slide_dict:
         slide_trigs = sorted_trigs[slide_id]
         if slide_trigs:
             trig_time[slide_id] = numpy.asarray(slide_trigs.get_end()).\
@@ -694,57 +694,30 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
 # Function to load timeslides
 # =============================================================================
 def load_time_slides(xml_file):
-    """Loads timeslides from PyGRB output file"""
+    """Loads timeslides from PyGRB output file as a dictionary"""
 
+    # Get all timeslides: these are number_of_ifos * number_of_timeslides
     time_slide = load_xml_table(xml_file, glsctables.TimeSlideTable.tableName)
-    time_slide_unsorted = [dict(i) for i in time_slide.as_dict().values()]
-    # NB: sorting not necessary if using python 3
-    sort_idx = numpy.argsort(numpy.array([
-        int(time_slide.get_time_slide_id(ov)) for ov in time_slide_unsorted
-    ]))
-    time_slide_list = numpy.array(time_slide_unsorted)[sort_idx]
+    # Get a list of unique timeslide dictionaries
+    time_slide_list = [dict(i) for i in time_slide.as_dict().values()]
+    # Turn it into a dictionary indexed by the timeslide ID
+    time_slide_dict = {int(time_slide.get_time_slide_id(ov)): ov
+                       for ov in time_slide_list}
     # Check time_slide_ids are ordered correctly.
     ids = get_id_numbers(time_slide,
-                         "time_slide_id")[::len(time_slide_list[0].keys())]
+                         "time_slide_id")[::len(time_slide_dict[0].keys())]
     if not (numpy.all(ids[1:] == numpy.array(ids[:-1])+1) and ids[0] == 0):
         err_msg = "time_slide_ids list should start at zero and increase by "
         err_msg += "one for every element"
         raise RuntimeError(err_msg)
     # Check that the zero-lag slide has time_slide_id == 0.
-    if not numpy.all(numpy.array(list(time_slide_list[0].values())) == 0):
-        err_msg = "The zero-lag slide should have time_slide_id == 0 "
-        err_msg += "but the first element of time_slide_list is "
-        err_msg += f"{time_slide_list[0]}."
+    if not numpy.all(numpy.array(list(time_slide_dict[0].values())) == 0):
+        err_msg = "The slide with time_slide_id == 0 should be the "
+        err_msg += "zero-lag-slide but it has non-zero slide values: "
+        err_msg += f"{time_slide_dict[0]}."
         raise RuntimeError(err_msg)
 
-    return time_slide_list
-
-
-# =============================================================================
-# Function to determine the id of the zero-lag timeslide
-# =============================================================================
-def find_zero_lag_slide_id(slide_dict):
-    """Loads timeslides from PyGRB output file"""
-
-    zero_lag_slide_id = None
-    num_slides = len(slide_dict)
-    for i in range(num_slides):
-        # Is this slide the zero-lag?
-        if max(slide_dict[i].values()) == 0:
-            if min(slide_dict[i].values()) == 0:
-                if zero_lag_slide_id is None:
-                    zero_lag_slide_id = i
-                else:
-                    err_msg = 'zero_lag_slide_id was already assigned: there'
-                    err_msg += 'seems to be more than one zero-lag slide!'
-                    raise RuntimeError(err_msg)
-
-    if zero_lag_slide_id is None:
-        err_msg = 'Unable to assign zero_lag_slide_id: '
-        err_msg += 'there seems to be no zero-lag slide!'
-        raise RuntimeError(err_msg)
-
-    return zero_lag_slide_id
+    return time_slide_dict
 
 
 # =============================================================================
@@ -791,7 +764,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
     # Separate segments
     trial_time = abs(segs['on'])
 
-    for slide_id, _ in enumerate(slide_dict):
+    for slide_id in slide_dict:
         # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
@@ -846,11 +819,11 @@ def sort_stat(time_veto_max_stat):
 # =============================================================================
 # Find max and median of loudest SNRs or BestNRs
 # =============================================================================
-def max_median_stat(num_slides, time_veto_max_stat, trig_stat, total_trials):
+def max_median_stat(slide_dict, time_veto_max_stat, trig_stat, total_trials):
     """Deterine the maximum and median of the loudest SNRs/BestNRs"""
 
     max_stat = max([trig_stat[slide_id].max() if trig_stat[slide_id].size
-                   else 0 for slide_id in range(num_slides)])
+                   else 0 for slide_id in slide_dict])
 
     full_time_veto_max_stat = sort_stat(time_veto_max_stat)
 
