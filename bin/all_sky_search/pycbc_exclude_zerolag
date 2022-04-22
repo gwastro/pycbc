@@ -6,7 +6,7 @@ coincidences from *any* coincidence type with ifar above a certain threshold
 
 import h5py, numpy as np, argparse, logging, pycbc, pycbc.io
 import pycbc.version
-from pycbc.events import veto, coinc
+from pycbc.events import veto, coinc, significance
 import pycbc.conversions as conv
 
 parser = argparse.ArgumentParser()
@@ -33,8 +33,9 @@ f_out = h5py.File(args.output_file, "w")
 f_others = [h5py.File(fname,'r') for fname in args.other_statmap_files]
 
 all_ifos = f_in.attrs['ifos'].split(' ')
+all_ifo_key = ''.join(all_ifos)
 
-significance_dict = significance.digest_significance_options([''.join(all_ifos)],
+significance_dict = significance.digest_significance_options([all_ifo_key],
                                                              args, parser)
 
 logging.info('Copying attributes to %s' % args.output_file)
@@ -92,8 +93,8 @@ for k in filtered_trigs.data:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
 
 logging.info('Recalculating IFARs')
-back_cnum, fnlouder = significance.calculate_n_louder(
-    significance_dict,
+bnlouder, fnlouder = significance.calculate_n_louder(
+    significance_dict[all_ifo_key],
     filtered_trigs.data['stat'],
     f_in['foreground/stat'][:],
     filtered_trigs.data['decimation_factor'])

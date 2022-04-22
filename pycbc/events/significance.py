@@ -176,7 +176,8 @@ def digest_significance_options(combo_keys, args, parser):
             if key not in combo_keys:
                 # This is a warning not an exit, so we can reuse the same
                 # settings for multiple jobs in workflow
-                logging.warn("Key %s not in allowed list: %s", key, combo_keys)
+                logging.warn("Key %s not used by this code, uses %s",
+                             key, combo_keys)
 
 
     # Third: Unpack the arguments into a standard-format dictionary
@@ -211,8 +212,6 @@ def digest_significance_options(combo_keys, args, parser):
     # Grab the fit function for each key:
     for key_function in fit_functions:
         key, function = tuple(key_function.split(':'))
-        if key not in combo_keys:
-            parser.error("key %s not in allowed list" % key)
         if not significance_dict[key]['method'] == 'trigger_fit':
             parser.error("Fit function given for detector "
                          "combination %s which has method "

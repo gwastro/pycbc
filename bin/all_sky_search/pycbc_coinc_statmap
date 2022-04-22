@@ -107,7 +107,8 @@ else:
     ifos = args.ifos
     logging.info('using ifos from command line input')
 
-significance_dict = significance.digest_significance_options([''.join(ifos)],
+ifo_combo = ''.join(ifos)
+significance_dict = significance.digest_significance_options([ifo_combo],
                                                              args, parser)
 
 logging.info("We have %s triggers" % len(all_trigs.stat))
@@ -243,7 +244,7 @@ fore_stat = all_trigs.stat[fore_locs]
 # Cumulative array of inclusive background triggers and the number of
 # inclusive background triggers louder than each foreground trigger
 back_cnum, fnlouder = significance.calculate_n_louder(
-    significance_dict,
+    significance_dict[ifo_combo],
     back_stat,
     fore_stat,
     all_trigs.decimation_factor[back_locs])
@@ -251,7 +252,7 @@ back_cnum, fnlouder = significance.calculate_n_louder(
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
 back_cnum_exc, fnlouder_exc = significance.calculate_n_louder(
-    significance_dict, 
+    significance_dict[ifo_combo],
     exc_zero_trigs.stat,
     fore_stat,
     exc_zero_trigs.decimation_factor)
