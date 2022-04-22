@@ -1,6 +1,8 @@
-# This script will make a valid singles-fits file for use in the
-# pycbc_live CI tests. It doesn't have much physical meaning,
-# but will give broadly representative numbers for singles
+"""
+This script will make a valid singles-fits file for use in the
+pycbc_live CI tests. It doesn't have much physical meaning,
+but will give broadly representative numbers for singles.
+"""
 import h5py
 import numpy as np
 
