@@ -48,18 +48,21 @@ ks_stat, ks_pval = KS_test('exponential', snrs, alpha, thresh)
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-import numpy
 import logging
+import numpy
 from scipy.stats import kstest
 
 def exponential_fitalpha(vals, thresh, w):
     return 1. / (numpy.average(vals, weights=w) - thresh)
 
+
 def rayleigh_fitalpha(vals, thresh, w):
     return 2. / (numpy.average(vals**2., weights=w) - thresh**2.)
 
+
 def power_fitalpha(vals, thresh, w):
     return numpy.average(numpy.log(vals/thresh), weights=w)**-1. + 1.
+
 
 fitalpha_dict = {
     'exponential' : exponential_fitalpha,
