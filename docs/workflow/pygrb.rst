@@ -18,7 +18,9 @@ same point in the sky and at the same time as an observed short duration
 gamma-ray burst.
 
 The output will be a webpage containing plots and other data files that can be
-used to understand the results of the analysis.
+used to understand the results of the analysis.  At the moment, the old
+results webage generator (pycbc_make_grb_summary_page) is gradually being replaced
+by pycbc_pygrb_pp_workflow, which needs to be run serparatly, for the time being.
 
 ==================
 Configuration File
@@ -118,7 +120,6 @@ We set the executables to be used for the analysis in the following way::
     efficiency              = ${which:pylal_cbc_cohptf_efficiency}
     inj_efficiency          = ${which:pylal_cbc_cohptf_efficiency}
     horizon_dist            = ${which:pylal_cbc_cohptf_inspiral_horizon}
-    html_summary            = ${which:pycbc_make_grb_summary_page}
 
 Here we are getting the executable paths from our environment for flexibility,
 rather than supplying them as fixed paths.

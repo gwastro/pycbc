@@ -33,7 +33,7 @@ import numpy as np
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
-from pycbc.results import pygrb_postprocessing_utils as ppu 
+from pycbc.results import pygrb_postprocessing_utils as ppu
 try:
     from glue.ligolw import lsctables
 except ImportError:
@@ -292,27 +292,24 @@ slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
 segment_dict = ppu.load_segment_dict(trig_file)
 
-# Identify the number of slides
-num_slides = len(slide_dict)
-
 # Construct trials
 logging.info("Constructing trials.")
 trial_dict = ppu.construct_trials(opts.seg_files, segment_dict,
                                   ifos, slide_dict, vetoes)
-total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
+total_trials = sum([len(trial_dict[slide_id]) for slide_id in slide_dict])
 logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
 trig_time, _, trig_bestnr = \
-    ppu.extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
+    ppu.extract_basic_trig_properties(trial_dict, trigs, slide_dict, segment_dict, opts)
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_bestnr = {}
-for slide_id in range(num_slides):
+for slide_id in slide_dict:
     num_slide_segs = len(trial_dict[slide_id])
     time_veto_max_bestnr[slide_id] = np.zeros(num_slide_segs)
 
-for slide_id in range(num_slides):
+for slide_id in slide_dict:
     for j, trial in enumerate(trial_dict[slide_id]):
         trial_cut = (trial[0] <= trig_time[slide_id])\
                           & (trig_time[slide_id] < trial[1])
@@ -322,7 +319,7 @@ for slide_id in range(num_slides):
         time_veto_max_bestnr[slide_id][j] = \
                         max(trig_bestnr[slide_id][trial_cut])
 
-max_bestnr, _, full_time_veto_max_bestnr = ppu.max_median_stat(num_slides,
+max_bestnr, _, full_time_veto_max_bestnr = ppu.max_median_stat(slide_dict,
                                                                time_veto_max_bestnr,
                                                                trig_bestnr,
                                                                total_trials)

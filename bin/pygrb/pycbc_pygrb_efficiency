@@ -177,29 +177,25 @@ slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
 segment_dict = ppu.load_segment_dict(trig_file)
 
-# Identify the zero-lag slide and the number of slides
-zero_lag_slide_id = ppu.find_zero_lag_slide_id(slide_dict)
-num_slides = len(slide_dict)
-
 # Construct trials
 logging.info("Constructing trials.")
 trial_dict = ppu.construct_trials(opts.seg_files, segment_dict,
                                   ifos, slide_dict, vetoes)
-total_trials = sum([len(trial_dict[slide_id]) for slide_id in range(num_slides)])
+total_trials = sum([len(trial_dict[slide_id]) for slide_id in slide_dict])
 logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
 trig_time, trig_snr, trig_bestnr = \
-    ppu.extract_basic_trig_properties(trial_dict, trigs, num_slides, segment_dict, opts)
+    ppu.extract_basic_trig_properties(trial_dict, trigs, slide_dict, segment_dict, opts)
 
 # Calculate BestNR values and maximum
 time_veto_max_bestnr = {}
 
-for slide_id in range(num_slides):
+for slide_id in slide_dict:
     num_slide_segs = len(trial_dict[slide_id])
     time_veto_max_bestnr[slide_id] = np.zeros(num_slide_segs)
 
-for slide_id in range(num_slides):
+for slide_id in slide_dict:
     for j, trial in enumerate(trial_dict[slide_id]):
         trial_cut = (trial[0] <= trig_time[slide_id])\
                           & (trig_time[slide_id] < trial[1])
@@ -213,8 +209,8 @@ logging.info("SNR and bestNR maxima calculated.")
 
 # Output details of loudest offsouce triggers
 offsource_trigs = []
-sorted_trigs = ppu.sort_trigs(trial_dict, trigs, num_slides, segment_dict)
-for slide_id in range(num_slides):
+sorted_trigs = ppu.sort_trigs(trial_dict, trigs, slide_dict, segment_dict)
+for slide_id in slide_dict:
     offsource_trigs.extend(zip(trig_bestnr[slide_id], sorted_trigs[slide_id]))
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
@@ -226,7 +222,7 @@ offsource_trigs.reverse()
 # and loudest SNR, so could just add this to the above's caption.
 # ==========================
 max_bestnr, _, full_time_veto_max_bestnr =\
-    ppu.max_median_stat(num_slides, time_veto_max_bestnr, trig_bestnr, total_trials)
+    ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_bestnr, total_trials)
 
 
 # =======================
@@ -272,7 +268,7 @@ if onsource_file:
         trig = loud_on_bestnr_trigs
         num_trials_louder = 0
         tot_off_snr = np.array([])
-        for slide_id in range(num_slides):
+        for slide_id in slide_dict:
             num_trials_louder += sum(time_veto_max_bestnr[slide_id] > \
                                      loud_on_bestnr)
             tot_off_snr = np.concatenate([tot_off_snr,\
@@ -282,7 +278,7 @@ if onsource_file:
 
 else:
     tot_off_snr = np.array([])
-    for slide_id in range(num_slides):
+    for slide_id in slide_dict:
         tot_off_snr = np.concatenate([tot_off_snr,\
                                       time_veto_max_bestnr[slide_id]])
     med_snr = np.median(tot_off_snr)
@@ -479,8 +475,9 @@ if do_injections:
     near_test = np.zeros((found_excl).sum()).astype(bool)
     for j, (t, bestnr) in enumerate(zip(found_inj['time'][found_excl],\
                                         found_trig['bestnr'][found_excl])):
-        near_bestnr = trig_bestnr[zero_lag_slide_id]\
-                      [np.abs(trig_time[zero_lag_slide_id]-t) < cluster_window]
+        # 0 is the zero-lag timeslide
+        near_bestnr = trig_bestnr[0]\
+                      [np.abs(trig_time[0]-t) < cluster_window]
         near_test[j] = ~((near_bestnr * glitch_check_fac > bestnr).any())
     # Apply the local test
     c = 0
