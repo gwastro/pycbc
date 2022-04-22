@@ -159,23 +159,40 @@ def digest_significance_options(combo_keys, args, parser):
         as appropriate
     """
     # First: check that the arguments can be read as lists:
-    calc_methods = args.far_calculation_method if args.far_calculation_method else []
+    if args.far_calculation_method:
+        calc_methods = args.far_calculation_method
+    else:
+        calc_methods = []
+    fit_threshes = args.fit_threshold if args.fit_threshold else []
+    fit_functions = args.fit_function if args.fit_function else []
 
+    # Second: Check that the key:method/function/threshold are in the
+    # right format, and are in allowed combinations
+    for list_to_check in [calc_methods, fit_threshes, fit_functions]:
+        for key_value in list_to_check:
+            try:
+                key, value = tuple(key_value.split(':'))
+            except ValueError:
+                parser.error("Need exactly one colon in argument %s" % key_value)
+            if key not in combo_keys:
+                # This is a warning not an exit, so we can reuse the same
+                # settings for multiple jobs in workflow
+                logging.warn("Key %s not in allowed list: %s", key, combo_keys)
+
+
+    # Third: Unpack the arguments into a standard-format dictionary
     significance_dict = {}
-    # There should be an entry into the --far-calculation-method list for
-    # each detector combination:
+    # Go through --far-calculation-method list
     for key_method in calc_methods:
         key, method = tuple(key_method.split(':'))
-        if key not in combo_keys:
-            parser.error("key %s not in allowed list" % key)
         if key in significance_dict:
-            parser.error("key %s is duplicated" % key)
+            parser.error("--far-calculation-method key %s given already" % key)
         if method not in _significance_meth_dict:
             parser.error("Method %s is not possible" % method)
         significance_dict[key] = {}
         significance_dict[key]['method'] = method
 
-    # Apply the default n_louder to combinations not already filled:
+    # Apply the default values to combinations not already filled:
     for key in combo_keys:
         if key in significance_dict: continue
         significance_dict[key] = {}
@@ -183,19 +200,15 @@ def digest_significance_options(combo_keys, args, parser):
         significance_dict[key]['threshold'] = None
         significance_dict[key]['function'] = None
 
-    fit_threshes = args.fit_threshold if args.fit_threshold else []
     # Grab the fit threshold for each key:
     for key_thresh in fit_threshes:
         key, thresh = tuple(key_thresh.split(':'))
-        if key not in combo_keys:
-            parser.error("key %s not in allowed list" % key)
         if significance_dict[key]['method'] == 'n_louder':
             parser.error("Fit threshold given for detector "
                          "combination %s which has method "
                          "other than trigger_fit" % key)
         significance_dict[key]['threshold'] = float(thresh)
 
-    fit_functions = args.fit_function if args.fit_function else []
     # Grab the fit function for each key:
     for key_function in fit_functions:
         key, function = tuple(key_function.split(':'))
@@ -210,19 +223,20 @@ def digest_significance_options(combo_keys, args, parser):
         significance_dict[key]['function'] = function
 
     # Use the default exponential trigger fit where function not given
-    for key in combo_keys:
+    for key in significance_dict.keys():
         if not significance_dict[key]['method'] == 'trigger_fit': continue
         if 'function' not in significance_dict[key]:
             significance_dict[key]['function'] = 'exponential'
 
     # Check that the threshold and function were given for all keys where the
     # method is trigger_fit
-    for key in combo_keys:
+    for key in significance_dict.keys():
         if not significance_dict[key]['method'] == 'trigger_fit': continue
         if 'threshold' not in significance_dict[key]:
             parser.error( "No threshold given for %s" % key)
 
-    for key in combo_keys:
+    # If n_louder is specified, then set the default theshold/function values
+    for key in significance_dict.keys():
         if 'threshold' not in significance_dict[key]:
             significance_dict[key]['threshold'] = None
         if 'function' not in significance_dict[key]:

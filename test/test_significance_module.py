@@ -31,11 +31,6 @@ class SignificanceParserTest(unittest.TestCase):
 # Tuples of inputs and the errors they should create
 tests_which_sysexit = []
 
-# Try to add a detector combination which does not exist
-tests_which_sysexit.append((['--far-calculation-method',
-                             'H1G1:trigger_fit'],
-                            'combo_doesnt_exist'))
-
 # Try to use a caluclation method which doesn't exist
 tests_which_sysexit.append((['--far-calculation-method',
                              'H1L1:nonexistant_method'],
@@ -87,15 +82,53 @@ for combo in combos:
     default_dict[combo]['threshold'] = None
 
 tests_which_pass = []
+
+# Does passing no options return the default dictionary?
 tests_which_pass.append(([], default_dict, 'default_vals'))
+
+# Try to add a detector combination which does not exist
+# - should return dictionary including the nonexistant combination
+extra_combo_dict = copy.deepcopy(default_dict)
+extra_combo_dict['H1G1'] = {}
+extra_combo_dict['H1G1']['method'] = 'trigger_fit'
+extra_combo_dict['H1G1']['function'] = 'exponential'
+extra_combo_dict['H1G1']['threshold'] = 6.
+tests_which_pass.append((['--far-calculation-method',
+                          'H1G1:trigger_fit',
+                          '--fit-threshold', 'H1G1:6'],
+                         extra_combo_dict,
+                         'extra_combo'))
+
+# Supply different methods for the different combinations, and check that
+# they are taken in properly
+test_dict = copy.deepcopy(default_dict)
+test_dict['H1L1']['method'] = 'trigger_fit'
+test_dict['H1']['method'] = 'trigger_fit'
+test_dict['L1']['method'] = 'trigger_fit'
+test_dict['H1L1']['function'] = 'power'
+test_dict['H1']['function'] = 'rayleigh'
+test_dict['L1']['function'] = 'exponential'
+test_dict['H1L1']['threshold'] = 6
+test_dict['H1']['threshold'] = 5.5
+test_dict['L1']['threshold'] = 5
+
+calc_methods = ['H1L1:trigger_fit', 'H1:trigger_fit', 'L1:trigger_fit']
+functions = ['H1L1:power', 'H1:rayleigh', 'L1:exponential']
+thresholds = ['H1L1:6', 'H1:5.5', 'L1:5']
+tests_which_pass.append((['--far-calculation-method'] + calc_methods +
+                         ['--fit-function'] + functions + 
+                         ['--fit-threshold'] + thresholds,
+                         test_dict,
+                         'different_combos'))
 
 # Dynamically add value tests for the parser
 for test_values in tests_which_pass:
     parser, args = parse_args(test_values[0])
-    def digest_values_test(self, p=parser, a=args):
+    def digest_values_test(self, p=parser, a=args, tv=test_values[1]):
         method_dict = significance.digest_significance_options(
             self.combos, a, p)
-        self.assertEqual(method_dict, test_values[1])
+        self.assertEqual(method_dict, tv)
+
 
     setattr(SignificanceParserTest,
             'test_parser_values_' + test_values[2],
@@ -103,8 +136,8 @@ for test_values in tests_which_pass:
 
 class SignificanceMethodTest(unittest.TestCase):
     def setUp(self):
-        self.test_fg_stat = np.random.rand(50)
-        self.test_bg_stat = np.random.rand(500)
+        self.test_fg_stat = np.random.normal(loc=5,scale=2,size=50)
+        self.test_bg_stat = np.random.normal(loc=5,scale=2,size=500)
         self.dec_facs = np.ones_like(self.test_bg_stat)
 
 
