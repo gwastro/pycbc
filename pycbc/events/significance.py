@@ -87,8 +87,7 @@ _significance_meth_dict = {
 }
 
 
-def calculate_n_louder(method_dict, back_stat, fore_stat, dec_facs,
-                       fit_func=None, fit_thresh=None):
+def calculate_n_louder(method_dict, back_stat, fore_stat, dec_facs):
     """
     Wrapper to find the correct n_louder calculation method using standard
     inputs

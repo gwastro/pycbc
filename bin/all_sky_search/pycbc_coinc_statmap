@@ -9,7 +9,7 @@ the FANs of any other gravitational waves in the dataset.
 """
 import argparse, h5py, itertools
 import lal, logging, numpy
-from pycbc.events import veto, coinc
+from pycbc.events import veto, coinc, significance
 import pycbc.version, pycbc.pnutils, pycbc.io
 import sys
 import pycbc.conversions as conv
@@ -72,6 +72,7 @@ parser.add_argument('--additional-event-times', type=float, nargs="+",
                     help="Additional event times which will be removed from "
                          "both inclusive and exclusive background "
                           "(gps seconds)")
+significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
@@ -92,6 +93,8 @@ else :
                      "inclusive or exclusive. Use with --help for more "
                      "information.")
 
+
+
 pycbc.init_logging(args.verbose)
 
 logging.info("Loading coinc triggers")
@@ -103,6 +106,9 @@ if 'ifos' in all_trigs.attrs:
 else:
     ifos = args.ifos
     logging.info('using ifos from command line input')
+
+significance_dict = significance.digest_significance_options([''.join(ifos)],
+                                                             args, parser)
 
 logging.info("We have %s triggers" % len(all_trigs.stat))
 
@@ -236,13 +242,19 @@ fore_stat = all_trigs.stat[fore_locs]
 
 # Cumulative array of inclusive background triggers and the number of
 # inclusive background triggers louder than each foreground trigger
-back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat,
-                               all_trigs.decimation_factor[back_locs])
+back_cnum, fnlouder = significance.calculate_n_louder(
+    significance_dict,
+    back_stat,
+    fore_stat,
+    all_trigs.decimation_factor[back_locs])
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
-back_cnum_exc, fnlouder_exc = coinc.calculate_n_louder(
-        exc_zero_trigs.stat, fore_stat, exc_zero_trigs.decimation_factor)
+back_cnum_exc, fnlouder_exc = significance.calculate_n_louder(
+    significance_dict, 
+    exc_zero_trigs.stat,
+    fore_stat,
+    exc_zero_trigs.decimation_factor)
 
 f['background/ifar'] = conv.sec_to_year(background_time / (back_cnum + 1))
 f['background_exc/ifar'] = conv.sec_to_year(background_time_exc /
@@ -397,8 +409,11 @@ while numpy.any(louder_foreground == 0):
     logging.info("Calculating FAN from background statistic values")
     back_stat = all_trigs.stat[back_locs]
     fore_stat = all_trigs.stat[fore_locs]
-    back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat,
-                                                   all_trigs.decimation_factor[back_locs])
+    back_cnum, fnlouder = significance.calculate_n_louder(
+        significance_dict,
+        back_stat,
+        fore_stat,
+        all_trigs.decimation_factor[back_locs])
 
     # Update the louder_foreground criteria depending on whether foreground
     # triggers are being removed via inclusive or exclusive background.
@@ -408,9 +423,11 @@ while numpy.any(louder_foreground == 0):
     # Exclusive background doesn't change when removing foreground triggers.
     # So we don't have to take back_cnum_exc, jut repopulate fnlouder_exc
     else :
-        _, fnlouder_exc = coinc.calculate_n_louder(exc_zero_trigs.stat,
-                                                   fore_stat,
-                                                   exc_zero_trigs.decimation_factor)
+        _, fnlouder_exc = significance.calculate_n_louder(
+            significance_dict,
+            exc_zero_trigs.stat,
+            fore_stat,
+            exc_zero_trigs.decimation_factor)
         louder_foreground = fnlouder_exc
     # louder_foreground has been updated and the code can continue.
 

@@ -33,7 +33,7 @@ tests_which_sysexit = []
 
 # Try to use a caluclation method which doesn't exist
 tests_which_sysexit.append((['--far-calculation-method',
-                             'H1L1:nonexistant_method'],
+                             'H1L1:nonexistent_method'],
                             'method_doesnt_exist'))
 
 # Try to set a fit threshold when using n_louder method
@@ -87,7 +87,8 @@ tests_which_pass = []
 tests_which_pass.append(([], default_dict, 'default_vals'))
 
 # Try to add a detector combination which does not exist
-# - should return dictionary including the nonexistant combination
+# - should return dictionary including the nonexistent combination
+# as we want to be able to give combos to scripts where they aren't valid
 extra_combo_dict = copy.deepcopy(default_dict)
 extra_combo_dict['H1G1'] = {}
 extra_combo_dict['H1G1']['method'] = 'trigger_fit'
