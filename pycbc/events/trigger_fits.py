@@ -52,10 +52,19 @@ import numpy
 import logging
 from scipy.stats import kstest
 
+def exponential_fitalpha(vals, thresh, w):
+    return 1. / (numpy.average(vals, weights=w) - thresh)
+
+def rayleigh_fitalpha(vals, thresh, w):
+    return 2. / (numpy.average(vals**2., weights=w) - thresh**2.)
+
+def power_fitalpha(vals, thresh, w):
+    return numpy.average(numpy.log(vals/thresh), weights=w)**-1. + 1.
+
 fitalpha_dict = {
-    'exponential' : lambda vals, thresh, w : 1. / (numpy.average(vals, weights=w) - thresh),
-    'rayleigh'    : lambda vals, thresh, w : 2. / (numpy.average(vals**2., weights=w) - thresh**2.),
-    'power'       : lambda vals, thresh, w : numpy.average(numpy.log(vals/thresh), weights=w)**-1. + 1.
+    'exponential' : exponential_fitalpha,
+    'rayleigh'    : rayleigh_fitalpha,
+    'power'       : power_fitalpha
 }
 
 # measurement standard deviation = (-d^2 log L/d alpha^2)^(-1/2)
@@ -118,7 +127,6 @@ def fit_above_thresh(distr, vals, thresh=None, weights=None):
 
     alpha = fitalpha_dict[distr](vals, thresh, w)
     return alpha, fitstd_dict[distr](w, alpha)
-
 
 
 fitfn_dict = {
@@ -186,7 +194,6 @@ def cum_fit(distr, xvals, alpha, thresh):
     # set fitted values below threshold to 0
     numpy.putmask(cum_fit, xvals < thresh, 0.)
     return cum_fit
-
 
 def tail_threshold(vals, N=1000):
     """Determine a threshold above which there are N louder values"""

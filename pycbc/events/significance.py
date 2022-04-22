@@ -32,7 +32,7 @@ import logging
 import numpy as np
 from pycbc.events import coinc
 from pycbc.events import trigger_fits as trstats
-from pycbc.types.optparse import MultiDetOptionAction
+
 
 def n_louder(bstat, fstat, dec, **kwargs):  # pylint:disable=unused-argument
     """
@@ -43,7 +43,7 @@ def n_louder(bstat, fstat, dec, **kwargs):  # pylint:disable=unused-argument
 
 
 def trig_fit(back_stat, fore_stat, dec_facs, fit_func=None,
-             fit_thresh=None, **kwargs):  # pylint:disable=unused-argument
+             fit_thresh=None):
     """
     Use a fit to events in back_stat in order to estimate the
     distribution for use in recovering the ifars. Below the
@@ -66,17 +66,20 @@ def trig_fit(back_stat, fore_stat, dec_facs, fit_func=None,
     fnlouder = np.zeros_like(fore_stat)
 
     # estimate number of louder events according to the fit
-    back_cnum[bg_above] = trstats.cum_fit(fit_func, back_stat[bg_above],
-                                        alpha, fit_thresh) * bg_above_thresh
-    fnlouder[fg_above] = trstats.cum_fit(fit_func, fore_stat[fg_above],
-                                        alpha, fit_thresh) * bg_above_thresh
+    for cnum, stat, above in zip([back_cnum, fnlouder],
+                                 [back_stat, fore_stat],
+                                 [bg_above, fg_above]):
+        cnum[above] = trstats.cum_fit(fit_func, stat[above],
+                                      alpha, fit_thresh) * bg_above_thresh
 
     # below the fit threshold, we count the number of louder events,
     # as things get complicated by clustering below this point
     below_back_cnum, below_fnlouder = n_louder(back_stat, fore_stat, dec_facs)
 
-    back_cnum[np.logical_not(bg_above)] = below_back_cnum[np.logical_not(bg_above)]
-    fnlouder[np.logical_not(fg_above)] = below_fnlouder[np.logical_not(fg_above)]
+    for cnum_all, cnum_below, above in zip([back_cnum, fnlouder],
+                                           [below_back_cnum, below_fnlouder],
+                                           [bg_above, fg_above]):
+        cnum_all[np.logical_not(above)] = cnum_below[np.logical_not(above)]
 
     return back_cnum, fnlouder
 
@@ -170,15 +173,14 @@ def digest_significance_options(combo_keys, args, parser):
     for list_to_check in [calc_methods, fit_threshes, fit_functions]:
         for key_value in list_to_check:
             try:
-                key, value = tuple(key_value.split(':'))
+                key, _ = tuple(key_value.split(':'))
             except ValueError:
-                parser.error("Need exactly one colon in argument %s" % key_value)
+                parser.error("Need one colon in argument, got %s" % key_value)
             if key not in combo_keys:
                 # This is a warning not an exit, so we can reuse the same
                 # settings for multiple jobs in workflow
-                logging.warn("Key %s not used by this code, uses %s",
-                             key, combo_keys)
-
+                logging.warning("Key %s not used by this code, uses %s",
+                                key, combo_keys)
 
     # Third: Unpack the arguments into a standard-format dictionary
     significance_dict = {}
@@ -194,7 +196,8 @@ def digest_significance_options(combo_keys, args, parser):
 
     # Apply the default values to combinations not already filled:
     for key in combo_keys:
-        if key in significance_dict: continue
+        if key in significance_dict:
+            continue
         significance_dict[key] = {}
         significance_dict[key]['method'] = 'n_louder'
         significance_dict[key]['threshold'] = None
@@ -221,24 +224,24 @@ def digest_significance_options(combo_keys, args, parser):
         significance_dict[key]['function'] = function
 
     # Use the default exponential trigger fit where function not given
-    for key in significance_dict.keys():
-        if not significance_dict[key]['method'] == 'trigger_fit': continue
+    for key in significance_dict:
+        if not significance_dict[key]['method'] == 'trigger_fit':
+            continue
         if 'function' not in significance_dict[key]:
             significance_dict[key]['function'] = 'exponential'
 
     # Check that the threshold and function were given for all keys where the
     # method is trigger_fit
-    for key in significance_dict.keys():
-        if not significance_dict[key]['method'] == 'trigger_fit': continue
+    for key in significance_dict:
+        if not significance_dict[key]['method'] == 'trigger_fit':
+            continue
         if 'threshold' not in significance_dict[key]:
-            parser.error( "No threshold given for %s" % key)
+            parser.error("No threshold given for %s" % key)
 
     # If n_louder is specified, then set the default theshold/function values
-    for key in significance_dict.keys():
-        if 'threshold' not in significance_dict[key]:
-            significance_dict[key]['threshold'] = None
-        if 'function' not in significance_dict[key]:
-            significance_dict[key]['function'] = None
+    for key in significance_dict:
+        for k in ['threshold', 'function']:
+            if k not in significance_dict[key]:
+                significance_dict[key][k] = None
 
     return significance_dict
-
