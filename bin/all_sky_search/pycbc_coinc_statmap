@@ -411,7 +411,7 @@ while numpy.any(louder_foreground == 0):
     back_stat = all_trigs.stat[back_locs]
     fore_stat = all_trigs.stat[fore_locs]
     back_cnum, fnlouder = significance.calculate_n_louder(
-        significance_dict,
+        significance_dict[ifo_combo],
         back_stat,
         fore_stat,
         all_trigs.decimation_factor[back_locs])
@@ -425,7 +425,7 @@ while numpy.any(louder_foreground == 0):
     # So we don't have to take back_cnum_exc, jut repopulate fnlouder_exc
     else :
         _, fnlouder_exc = significance.calculate_n_louder(
-            significance_dict,
+            significance_dict[ifo_combo],
             exc_zero_trigs.stat,
             fore_stat,
             exc_zero_trigs.decimation_factor)
