@@ -28,63 +28,18 @@ through different estimation methods of the background, and functions that
 read in the associated options to do so.
 """
 
+import logging
 import numpy as np
+from pycbc.events import coinc
 from pycbc.events import trigger_fits as trstats
 from pycbc.types.optparse import MultiDetOptionAction
 
-
-def n_louder(back_stat, fore_stat, dec_facs, **kwargs):  # pylint:disable=unused-argument
-    """ Calculate for each foreground event the number of background events
-    that are louder than it.
-
-    Parameters
-    ----------
-    bstat: numpy.ndarray
-        Array of the background statistic values
-    fstat: numpy.ndarray or scalar
-        Array of the foreground statistic values or single value
-    dec: numpy.ndarray
-        Array of the decimation factors for the background statistics
-
-    Returns
-    -------
-    cum_back_num: numpy.ndarray
-        The cumulative array of background triggers
-    fore_n_louder: numpy.ndarray
-        The number of background triggers above each foreground trigger
+def n_louder(bstat, fstat, dec, **kwargs):  # pylint:disable=unused-argument
     """
-    sort = bstat.argsort()
-    bstat = bstat[sort]
-    dec = dec[sort]
-
-    # calculate cumulative number of triggers louder than the trigger in
-    # a given index. We need to subtract the decimation factor, as the cumsum
-    # includes itself in the first sum (it is inclusive of the first value)
-    n_bg_louder = dec[::-1].cumsum()[::-1] - dec
-
-    # Determine how many values are louder than the foreground ones
-    # We need to subtract one from the index, to be consistent with the definition
-    # of n_bg_louder, as here we do want to include the background value at the
-    # found index
-    idx = np.searchsorted(bstat, fstat, side='left') - 1
-
-    # If the foreground are *quieter* than the background or at the same value
-    # then the search sorted algorithm will choose position -1, which does not exist
-    # We force it back to zero.
-    if isinstance(idx, np.ndarray):  # Case where our input is an array
-        idx[idx < 0] = 0
-    else:  # Case where our input is just a scalar value
-        if idx < 0:
-            idx = 0
-
-    fore_n_louder = n_bg_louder[idx]
-
-    # For background, need to get the number of louder events back into
-    # the original order
-    unsort = sort.argsort()
-    back_cum_num = n_bg_louder[unsort]
-
-    return back_cum_num, fore_n_louder
+    Count the number of louder background events, taking decimation
+    into account
+    """
+    return coinc.calculate_n_louder(bstat, fstat, dec)
 
 
 def trig_fit(back_stat, fore_stat, dec_facs, fit_func=None,
@@ -120,8 +75,8 @@ def trig_fit(back_stat, fore_stat, dec_facs, fit_func=None,
     # as things get complicated by clustering below this point
     below_back_cnum, below_fnlouder = n_louder(back_stat, fore_stat, dec_facs)
 
-    back_cnum[np.logical_not(fg_above)] = below_back_cnum[np.logical_not(fg_above)]
-    fnlouder[np.logical_not(bg_above)] = below_fnlouder[np.logical_not(bg_above)]
+    back_cnum[np.logical_not(bg_above)] = below_back_cnum[np.logical_not(bg_above)]
+    fnlouder[np.logical_not(fg_above)] = below_fnlouder[np.logical_not(fg_above)]
 
     return back_cnum, fnlouder
 
@@ -153,7 +108,6 @@ def insert_significance_option_group(parser):
     events or event distributions.
     """
     parser.add_argument('--far-calculation-method', nargs='+',
-                        default={},
                         help="Method used for FAR calculation in each "
                              "detector combination, given as "
                              "combination:method pairs, i.e. "
@@ -170,8 +124,7 @@ def insert_significance_option_group(parser):
                              "H1:0 L1:0 V1:-4, for all combinations which "
                              "have --far-calculation-method "
                              "of trigger_fit")
-    parser.add_argument("--fit-function", default='exponential',
-                        choices=["exponential", "rayleigh", "power"],
+    parser.add_argument("--fit-function", nargs='+',
                         help="Functional form for the statistic slope fit if "
                              "--far-calculation-method is 'trigger_fit'. "
                              "Given as combination:function pairs, i.e. "
@@ -181,7 +134,7 @@ def insert_significance_option_group(parser):
                              "Default = exponential for all")
 
 
-def digest_significance_option_group(combo_keys, args, parser):
+def digest_significance_options(combo_keys, args, parser):
     """
     Read in information from the significance option group and ensure
     it makes sense before putting into a dictionary
@@ -197,68 +150,83 @@ def digest_significance_option_group(combo_keys, args, parser):
         from argparse ArgumentParser parse_args()
 
     parser: argparse ArgumentParser instance
-        This is just for being able to use the parser error
+        just for the parser.error method
 
     Returns
     -------
     significance_dict: dictionary
         Dictionary containing method, threshold and function for trigger fits
-        ass appropriate
+        as appropriate
     """
+    # First: check that the arguments can be read as lists:
+    calc_methods = args.far_calculation_method if args.far_calculation_method else []
 
     significance_dict = {}
     # There should be an entry into the --far-calculation-method list for
     # each detector combination:
-    for key_method in args.far_calculation_method:
-        key, method = key_method.split(':')
+    for key_method in calc_methods:
+        key, method = tuple(key_method.split(':'))
+        if key not in combo_keys:
+            parser.error("key %s not in allowed list" % key)
         if key in significance_dict:
-            raise parser.error("key %s is duplicated", key)
+            parser.error("key %s is duplicated" % key)
+        if method not in _significance_meth_dict:
+            parser.error("Method %s is not possible" % method)
         significance_dict[key] = {}
         significance_dict[key]['method'] = method
 
     # Apply the default n_louder to combinations not already filled:
-    for combo_key in combo_keys:
-        if combo_key in significance_dict: continue
+    for key in combo_keys:
+        if key in significance_dict: continue
         significance_dict[key] = {}
         significance_dict[key]['method'] = 'n_louder'
         significance_dict[key]['threshold'] = None
         significance_dict[key]['function'] = None
 
+    fit_threshes = args.fit_threshold if args.fit_threshold else []
     # Grab the fit threshold for each key:
-    for key_thresh in args.fit_threshold:
-        key, thresh = key_thresh.split(':')
+    for key_thresh in fit_threshes:
+        key, thresh = tuple(key_thresh.split(':'))
+        if key not in combo_keys:
+            parser.error("key %s not in allowed list" % key)
         if significance_dict[key]['method'] == 'n_louder':
-            logging.warn("Fit threshold given for detector "
+            parser.error("Fit threshold given for detector "
                          "combination %s which has method "
-                         "other than trigger_fit. IGNORING",
-                         key)
-            continue
-        significance_dict[key]['threshold'] = thresh
+                         "other than trigger_fit" % key)
+        significance_dict[key]['threshold'] = float(thresh)
 
+    fit_functions = args.fit_function if args.fit_function else []
     # Grab the fit function for each key:
-    for key_function in args.fit_function:
-        key, function = key_function.split(':')
+    for key_function in fit_functions:
+        key, function = tuple(key_function.split(':'))
+        if key not in combo_keys:
+            parser.error("key %s not in allowed list" % key)
         if not significance_dict[key]['method'] == 'trigger_fit':
-            logging.warn("Fit function given for detector "
+            parser.error("Fit function given for detector "
                          "combination %s which has method "
-                         "other than trigger_fit. IGNORING",
-                          key)
-            continue
+                         "other than trigger_fit. IGNORING" % key)
         if 'threshold' not in significance_dict[key]:
-            parser.error("Function given without threshold for %s", key)
+            parser.error("Function given without threshold for %s" % key)
         significance_dict[key]['function'] = function
 
     # Use the default exponential trigger fit where function not given
-    for combo_key in combo_keys:
+    for key in combo_keys:
         if not significance_dict[key]['method'] == 'trigger_fit': continue
         if 'function' not in significance_dict[key]:
             significance_dict[key]['function'] = 'exponential'
 
     # Check that the threshold and function were given for all keys where the
     # method is trigger_fit
-    for combo_key in combo_keys:
+    for key in combo_keys:
         if not significance_dict[key]['method'] == 'trigger_fit': continue
         if 'threshold' not in significance_dict[key]:
-            parser.error("No threshold given for %s", key)
+            parser.error( "No threshold given for %s" % key)
+
+    for key in combo_keys:
+        if 'threshold' not in significance_dict[key]:
+            significance_dict[key]['threshold'] = None
+        if 'function' not in significance_dict[key]:
+            significance_dict[key]['function'] = None
 
     return significance_dict
+

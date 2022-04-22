@@ -67,8 +67,6 @@ if args.max_hierarchical_removal and injection_style:
     raise NotImplementedError("Hierarchical background removal doesn't make "
                               "sense for injections.")
 
-significance.check_significance_option_group(args)
-
 pycbc.init_logging(args.verbose)
 
 files = [h5py.File(n, 'r') for n in args.statmap_files]
@@ -160,12 +158,12 @@ bg_exc_trig_times = {}
 bg_exc_trig_ids = {}
 
 for ifo in all_ifos:
-    fg_trig_times[ifo] = np.array([], dtype=np.floast64)
-    fg_trig_ids[ifo] = np.array([], dtype=np.uint32)
-    bg_trig_times[ifo] = np.array([], dtype=np.float64)
-    bg_trig_ids[ifo] = np.array([], dtype=np.uint32)
-    bg_exc_trig_times[ifo] = np.array([], dtype=np.float64)
-    bg_exc_trig_ids[ifo] = np.array([], dtype=np.uint32)
+    fg_trig_times[ifo] = np.array([], dtype=float)
+    fg_trig_ids[ifo] = np.array([], dtype=int)
+    bg_trig_times[ifo] = np.array([], dtype=float)
+    bg_trig_ids[ifo] = np.array([], dtype=int)
+    bg_exc_trig_times[ifo] = np.array([], dtype=float)
+    bg_exc_trig_ids[ifo] = np.array([], dtype=int)
 
 # For each file, append the trigger time and id data for each ifo
 # If an ifo does not participate in any given coinc then fill with -1 values
