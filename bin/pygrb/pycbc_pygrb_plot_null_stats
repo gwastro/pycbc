@@ -25,7 +25,6 @@ Plot null statistic or coincident SNR vs coherent SNR for a PyGRB run.
 # Preamble
 # =============================================================================
 import sys
-import glob
 import os
 import logging
 import numpy
@@ -33,8 +32,8 @@ from matplotlib import rc
 import matplotlib.pyplot as plt
 import pycbc.version
 from pycbc import init_logging
-from pycbc.results import pygrb_postprocessing_utils as ppu 
-from pycbc.results import pygrb_plotting_utils as plu 
+from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.results import pygrb_plotting_utils as plu
 
 plt.switch_backend('Agg')
 

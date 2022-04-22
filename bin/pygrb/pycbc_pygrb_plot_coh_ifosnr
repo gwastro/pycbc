@@ -25,7 +25,6 @@ Plot single IFO SNR vs coherent SNR for a PyGRB run.
 # Preamble
 # =============================================================================
 import sys
-import glob
 import os
 import logging
 import collections
