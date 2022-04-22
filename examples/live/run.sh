@@ -165,7 +165,7 @@ python -m mpi4py `which pycbc_live` \
     H1:strain/H1/* \
     L1:strain/L1/* \
     V1:strain/V1/* \
---frame-read-timeout 100 \
+--frame-read-timeout 10 \
 --channel-name \
     H1:SIMULATED_STRAIN \
     L1:SIMULATED_STRAIN \
