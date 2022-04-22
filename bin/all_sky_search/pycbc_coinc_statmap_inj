@@ -36,12 +36,16 @@ parser.add_argument('--ranking-statistic-threshold', type=float,
                          ' a unique inclusive background.')
 parser.add_argument('--ifos', nargs='+',
                     help='List of ifos used in these coincidence files')
+significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+
+significance_dict = significance.digest_significance_options([''.join(all_ifos)],
+                                                             args, parser)
 
 window = args.cluster_window
 logging.info("Loading coinc zerolag triggers")
@@ -146,8 +150,12 @@ if len(zdata) > 0:
         inj_dec = numpy.concatenate(
                      [numpy.repeat(1, len(v1) + len(v2)), dec_fac])
 
-        fnlouder[i] = coinc.calculate_n_louder(inj_stat, fstat, inj_dec,
-                                               skip_background=True)
+        _, fnlouder[i] = significance.calculate_n_louder(
+            significance_dict,
+            inj_stat,
+            fstat,
+            inj_dec)
+
         ifar[i] = background_time / (fnlouder[i] + 1)
         fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])
         logging.info('processed %s, %s' % (i, fstat))
