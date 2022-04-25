@@ -491,6 +491,8 @@ with ctx:
                         )
                     reweighted_snr = ranking.newsnr(
                         rho_sngl, network_chisq_dict)
+                # Cut based on reweighted snr and the given newsnr_threshold parameter
+                reweighted_snr = coh.reweightedsnr_cut(reweighted_snr, args.newsnr_threshold)
                 # Need all out vals to be the same length. This means the
                 # entries that are single values need to be repeated once
                 # per event.
