@@ -27,9 +27,9 @@ This module contains functions to calculate the significance
 through different estimation methods of the background, and functions that
 read in the associated options to do so.
 """
-import logging, copy
+import logging
+import copy
 import numpy as np
-from pycbc import bin_utils
 from pycbc.events import coinc
 from pycbc.events import trigger_fits as trstats
 
@@ -162,18 +162,18 @@ def check_significance_options(args, parser):
                 parser.error("Need key:value format, got %s" % key_value)
 
             if key in key_list:
-                parser.error("Key %s duplicated in a significance option" % key)
+                parser.error("Duplicate key %s in a significance option" % key)
             key_list.append(key)
 
             try:
                 type_to_convert(value)
             except ValueError:
-                parser.error("Value %s of key %s "
-                             "cannot be converted as appropriate" % (value, key))
+                err_fmat("Value {} of key {} can't be converted as appropriate"
+                parser.error(err_fmat.format(value, key))
 
             if type_to_convert(value) not in allowed_values:
-                parser.error("Value %s of key %s is not in allowed values: %s" %
-                             (value, key, allowed_values))
+                err_fmat = "Value {} of key {} is not in allowed values: {}"
+                parser.error(err_fmat.format(value, key, allowed_values))
 
     # Are the functions/thresholds appropriate for the methods given?
     methods = {}
@@ -234,7 +234,7 @@ def digest_significance_options(combo_keys, args):
 
     # Set everything as a default to start with:
     for key in combo_keys:
-        significance_dict[key] = copy.copy(default_dict)
+        significance_dict[key] = copy.deepcopy(default_dict)
 
     # Unpack everything from the arguments into the dictionary
     for unpack_key, arg_to_unpack, conv_func in lists_to_unpack:
@@ -247,7 +247,7 @@ def digest_significance_options(combo_keys, args):
                 # just want to accept this silently
                 logging.warning("Key %s not used by this code, uses %s",
                                 key, combo_keys)
-                significance_dict[key] = copy.copy(default_dict)
+                significance_dict[key] = copy.deepcopy(default_dict)
             significance_dict[key][unpack_key] = conv_func(value)
 
     return significance_dict
