@@ -188,7 +188,7 @@ def check_significance_options(args, parser):
                          "cannot be converted to a float" % (value, key))
         thresh_given.append(key)
 
-    # Get places where the default method is used
+    # Get places where the threshold or function are given
     function_or_thresh_given = set(function_given + thresh_given)
 
     for key in function_or_thresh_given:
@@ -200,7 +200,7 @@ def check_significance_options(args, parser):
             # Function/Threshold given for key not using trigger_fit method
             parser.error("--fit-function or --fit-threshold given for key "
                          + key + " which has method " + value)
-        elif key not in thresh_given:
+        elif value == 'trigger_fit' and key not in thresh_given:
             parser.error("Threshold required for key " + key)
 
 def digest_significance_options(combo_keys, args):
@@ -248,11 +248,17 @@ def digest_significance_options(combo_keys, args):
     for key in list(significance_dict.keys()) + combo_keys:
         if key not in significance_dict:
             significance_dict[key] = {}
+        # If method not given, then default is n_louder
         if 'method' not in significance_dict[key]:
             significance_dict[key]['method'] = 'n_louder'
+
+        if significance_dict[key]['method'] == 'n_louder':
+            # If method is n_louder, dont need threshold or function,
+            # but they need to be given
             significance_dict[key]['threshold'] = None
             significance_dict[key]['function'] = None
         elif significance_dict[key]['method'] == 'trigger_fit':
+            # Default function with trigger_fit method is exponential
             if 'function' not in significance_dict[key]:
                 significance_dict[key]['function'] = 'exponential'
 
