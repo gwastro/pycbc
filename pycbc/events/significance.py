@@ -168,7 +168,7 @@ def check_significance_options(args, parser):
             try:
                 type_to_convert(value)
             except ValueError:
-                err_fmat("Value {} of key {} can't be converted as appropriate"
+                err_fmat = "Value {} of key {} can't be converted"
                 parser.error(err_fmat.format(value, key))
 
             if type_to_convert(value) not in allowed_values:
