@@ -65,21 +65,18 @@ def trig_fit(back_stat, fore_stat, dec_facs, fit_func=None,
     back_cnum = np.zeros_like(back_stat)
     fnlouder = np.zeros_like(fore_stat)
 
-    # estimate number of louder events according to the fit
-    for cnum, stat, above in zip([back_cnum, fnlouder],
-                                 [back_stat, fore_stat],
-                                 [bg_above, fg_above]):
-        cnum[above] = trstats.cum_fit(fit_func, stat[above],
-                                      alpha, fit_thresh) * bg_above_thresh
+    # Ue the fit above the threshold
+    back_cnum[bg_above] = trstats.cum_fit(fit_func, back_stat[bg_above],
+        alpha, fit_thresh) * bg_above_thresh
+    fnlouder[fg_above] = trstats.cum_fit(fit_func, fore_stat[fg_above],
+        alpha, fit_thresh) * bg_above_thresh
 
     # below the fit threshold, we count the number of louder events,
     # as things get complicated by clustering below this point
-    below_back_cnum, below_fnlouder = n_louder(back_stat, fore_stat, dec_facs)
+    fg_below = np.logical_not(fg_above)
+    bg_below = np.logical_not(bg_above)
 
-    for cnum_all, cnum_below, above in zip([back_cnum, fnlouder],
-                                           [below_back_cnum, below_fnlouder],
-                                           [bg_above, fg_above]):
-        cnum_all[np.logical_not(above)] = cnum_below[np.logical_not(above)]
+    back_cnum[bg_below], fnlouder[fg_below] = n_louder(back_stat, fore_stat, dec_facs)
 
     return back_cnum, fnlouder
 

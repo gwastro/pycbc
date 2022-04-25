@@ -53,14 +53,26 @@ import numpy
 from scipy.stats import kstest
 
 def exponential_fitalpha(vals, thresh, w):
+    """
+    Maximum likelihood estimator for the fit factor for
+    an exponential decrease model
+    """
     return 1. / (numpy.average(vals, weights=w) - thresh)
 
 
 def rayleigh_fitalpha(vals, thresh, w):
+    """
+    Maximum likelihood estimator for the fit factor for
+    a rayleigh distribution of events
+    """
     return 2. / (numpy.average(vals**2., weights=w) - thresh**2.)
 
 
 def power_fitalpha(vals, thresh, w):
+    """
+    Maximum likelihood estimator for the fit factor for
+    a power law model
+    """
     return numpy.average(numpy.log(vals/thresh), weights=w)**-1. + 1.
 
 
