@@ -75,6 +75,18 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
       fi
       popd
     fi
+
+    # run pycbc_multi_inspiral (PyGRB) test
+    pushd examples/multi_inspiral
+    bash -e run.sh
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!"
+        echo -e "---------------------------------------------------------"
+    else
+        echo -e "    Pass."
+    fi
+    popd
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
