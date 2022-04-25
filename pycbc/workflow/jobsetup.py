@@ -38,7 +38,7 @@ def int_gps_time_to_str(t):
     converts it to a string. If a LIGOTimeGPS with nonzero decimal part is
     given, raises a ValueError."""
     int_t = int(t)
-    if abs(float((t - int_t)) > 0.:
+    if abs(float(t - int_t)) > 0.:
         raise ValueError('Need an integer GPS time, got %s' % str(t))
     return str(int_t)
 
