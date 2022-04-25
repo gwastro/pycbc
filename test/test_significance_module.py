@@ -25,6 +25,7 @@ for l in np.arange(len(ifos)) + 1:
 class SignificanceParserTest(unittest.TestCase):
     def setUp(self):
         # Set up some things we will want to use in the tests:
+        self.maxDiff = None
         self.ifos = copy.copy(ifos)
         self.combos = copy.copy(combos)
 
@@ -62,13 +63,13 @@ tests_which_sysexit.append((['--far-calculation-method',
 # Dynamically add sysexit tests into the class
 for test_sysexit in tests_which_sysexit:
     parser, args = parse_args(test_sysexit[0])
-    def digest_sysexit_test(self, a=args, p=parser):
+    def check_sysexit_test(self, a=args, p=parser):
         with self.assertRaises(SystemExit):
-            method_dict = significance.digest_significance_options(
-                self.combos,a, p)
+            significance.check_significance_options(
+                a, p)
     setattr(SignificanceParserTest,
         'test_parser_' + test_sysexit[1],
-        digest_sysexit_test)
+        check_sysexit_test)
 
 
 # Set up the default values of the output dictionary, we will edit this
@@ -125,9 +126,9 @@ tests_which_pass.append((['--far-calculation-method'] + calc_methods +
 # Dynamically add value tests for the parser
 for test_values in tests_which_pass:
     parser, args = parse_args(test_values[0])
-    def digest_values_test(self, p=parser, a=args, tv=test_values[1]):
+    def digest_values_test(self, a=args, tv=test_values[1]):
         method_dict = significance.digest_significance_options(
-            self.combos, a, p)
+            self.combos, a)
         self.assertEqual(method_dict, tv)
 
 

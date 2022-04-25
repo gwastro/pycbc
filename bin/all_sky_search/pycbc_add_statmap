@@ -63,6 +63,7 @@ args = parser.parse_args()
 
 injection_style = args.background_files != None
 
+significance.check_significance_options(args, parser)
 if args.max_hierarchical_removal and injection_style:
     raise NotImplementedError("Hierarchical background removal doesn't make "
                               "sense for injections.")
@@ -80,7 +81,7 @@ for fi in files:
     all_ifo_combos.append(''.join(ifo_list))
 
 significance_dict = significance.digest_significance_options(all_ifo_combos,
-                                                             args, parser)
+                                                             args)
 
 logging.info('Copying segments and attributes to %s' % args.output_file)
 # Move segments information into the final file - remove some duplication

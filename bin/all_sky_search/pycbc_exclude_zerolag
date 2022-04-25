@@ -25,6 +25,7 @@ parser.add_argument('--veto-window', type=float, default=0.1,
 significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file', help="name of output file")
 args = parser.parse_args()
+significance.check_significance_options(args, parser)
 
 pycbc.init_logging(args.verbose)
 
@@ -36,7 +37,7 @@ all_ifos = f_in.attrs['ifos'].split(' ')
 all_ifo_key = ''.join(all_ifos)
 
 significance_dict = significance.digest_significance_options([all_ifo_key],
-                                                             args, parser)
+                                                             args)
 
 logging.info('Copying attributes to %s' % args.output_file)
 for attrk in f_in.attrs.keys():

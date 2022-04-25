@@ -76,6 +76,7 @@ significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
+significance.check_significance_options(args, parser)
 # Check that the user chose inclusive or exclusive background to perform
 # hierarchical removals of foreground triggers against.
 if args.max_hierarchical_removal == 0:
@@ -108,8 +109,7 @@ else:
     logging.info('using ifos from command line input')
 
 ifo_combo = ''.join(ifos)
-significance_dict = significance.digest_significance_options([ifo_combo],
-                                                             args, parser)
+significance_dict = significance.digest_significance_options([ifo_combo], args)
 
 logging.info("We have %s triggers" % len(all_trigs.stat))
 

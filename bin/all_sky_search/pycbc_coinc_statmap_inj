@@ -40,13 +40,14 @@ significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
+significance.check_significance_options(args, parser)
+
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 ifo_key = ''.join(args.ifos)
-significance_dict = significance.digest_significance_options([ifo_key],
-                                                             args, parser)
+significance_dict = significance.digest_significance_options([ifo_key], args)
 
 window = args.cluster_window
 logging.info("Loading coinc zerolag triggers")
