@@ -93,7 +93,7 @@ tests_which_pass.append(([], default_dict, 'default_vals'))
 extra_combo_dict = copy.deepcopy(default_dict)
 extra_combo_dict['H1G1'] = {}
 extra_combo_dict['H1G1']['method'] = 'trigger_fit'
-extra_combo_dict['H1G1']['function'] = 'exponential'
+extra_combo_dict['H1G1']['function'] = None
 extra_combo_dict['H1G1']['threshold'] = 6.
 tests_which_pass.append((['--far-calculation-method',
                           'H1G1:trigger_fit',

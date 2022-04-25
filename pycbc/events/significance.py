@@ -27,9 +27,9 @@ This module contains functions to calculate the significance
 through different estimation methods of the background, and functions that
 read in the associated options to do so.
 """
-
-import logging
+import logging, copy
 import numpy as np
+from pycbc import bin_utils
 from pycbc.events import coinc
 from pycbc.events import trigger_fits as trstats
 
@@ -49,6 +49,10 @@ def trig_fit(back_stat, fore_stat, dec_facs, fit_func=None,
     distribution for use in recovering the ifars. Below the
     fit threshold, use the n_louder method for these triggers
     """
+    # Manually set some defaults:
+    fit_func = fit_func if fit_func else 'exponential'
+    fit_thresh = fit_thresh if fit_thresh else 0
+
     # Calculate the fitting factor of the ranking statistic distribution
     alpha, _ = trstats.fit_above_thresh(fit_func, back_stat,
                                         thresh=fit_thresh,
@@ -141,66 +145,58 @@ def check_significance_options(args, parser):
     """
     # Check that the key:method/function/threshold are in the
     # right format, and are in allowed combinations
-    lists_to_check = [args.far_calculation_method,
-                      args.fit_threshold,
-                      args.fit_function]
+    lists_to_check = [(args.far_calculation_method, str,
+                       _significance_meth_dict.keys()),
+                      (args.fit_function, str,
+                       trstats.fitalpha_dict.keys()),
+                      (args.fit_threshold, float,
+                       range(-10000, 10000))]
+    # (10,000 is suitable for current use but can be changed if wanted)
 
-    for list_to_check in lists_to_check:
+    for list_to_check, type_to_convert, allowed_values in lists_to_check:
         key_list = []
         for key_value in list_to_check:
             try:
                 key, value = tuple(key_value.split(':'))
             except ValueError:
-                parser.error("Need one colon in argument, got %s" % key_value)
+                parser.error("Need key:value format, got %s" % key_value)
+
             if key in key_list:
-                parser.error("Key %s duplicated in significance option" % key)
+                parser.error("Key %s duplicated in a significance option" % key)
             key_list.append(key)
 
-    # Keep track of the methods used for later checks
+            try:
+                type_to_convert(value)
+            except ValueError:
+                parser.error("Value %s of key %s "
+                             "cannot be converted as appropriate" % (value, key))
+
+            if type_to_convert(value) not in allowed_values:
+                parser.error("Value %s of key %s is not in allowed values: %s" %
+                             (value, key, allowed_values))
+
+    # Are the functions/thresholds appropriate for the methods given?
     methods = {}
+    # A method has been specified
     for key_value in args.far_calculation_method:
         key, value = tuple(key_value.split(':'))
-        if value not in _significance_meth_dict.keys():
-            parser.error(("--far-calculation-method value %s for key %s "
-                          "is not valid, choose from [" +
-                          ','.join(_significance_meth_dict.keys()) +
-                          "].") % (value, key))
         methods[key] = value
 
-    function_given = []
-    for key_value in args.fit_function:
-        key, value = tuple(key_value.split(':'))
-        if value not in trstats.fitalpha_dict.keys():
-            parser.error(("--fit-function value %s for key %s "
-                          "is not valid, choose from [" +
-                          ','.join(trstats.fitalpha_dict.keys()) +
-                          "].") % (value, key))
-        function_given.append(key)
-
-    thresh_given = []
-    for key_value in args.fit_threshold:
-        # must be able to convert to a float
-        key, value = tuple(key_value.split(':'))
-        try:
-            float(value)
-        except ValueError:
-            parser.error("--fit-threshold value %s for key %s "
-                         "cannot be converted to a float" % (value, key))
-        thresh_given.append(key)
-
-    # Get places where the threshold or function are given
-    function_or_thresh_given = set(function_given + thresh_given)
-
-    for key in function_or_thresh_given:
+    # A function or threshold has been specified
+    function_or_thresh_given = []
+    for key_value in args.fit_function + args.fit_threshold:
+        key, _ = tuple(key_value.split(':'))
         if key not in methods:
             methods[key] = 'n_louder'
+        function_or_thresh_given.append(key)
 
     for key, value in methods.items():
         if value != 'trigger_fit' and key in function_or_thresh_given:
             # Function/Threshold given for key not using trigger_fit method
-            parser.error("--fit-function or --fit-threshold given for key "
+            parser.error("--fit-function and/or --fit-threshold given for "
                          + key + " which has method " + value)
-        elif value == 'trigger_fit' and key not in thresh_given:
+        elif value == 'trigger_fit' and key not in function_or_thresh_given:
+            # Threshold not given for trigger_fit key
             parser.error("Threshold required for key " + key)
 
 
@@ -230,37 +226,28 @@ def digest_significance_options(combo_keys, args):
                        ('function', args.fit_function, str),
                        ('threshold', args.fit_threshold, float)]
 
+    # Set up the defaults
+    default_dict = {'method': 'n_louder', 'threshold': None, 'function': None}
+
     # Unpack the string arguments into a standard-format dictionary
     significance_dict = {}
+
+    # Set everything as a default to start with:
+    for key in combo_keys:
+        significance_dict[key] = copy.copy(default_dict)
+
+    # Unpack everything from the arguments into the dictionary
     for unpack_key, arg_to_unpack, conv_func in lists_to_unpack:
         for key_value in arg_to_unpack:
             key, value = tuple(key_value.split(':'))
-            if key not in combo_keys:
+            if key not in significance_dict:
+                # This is a newly added key, not actually used by the code
                 # This is a warning not an exit, so we can reuse the same
                 # settings for multiple jobs in a workflow. However we don't
                 # just want to accept this silently
                 logging.warning("Key %s not used by this code, uses %s",
                                 key, combo_keys)
-            if key not in significance_dict:
-                significance_dict[key] = {}
+                significance_dict[key] = copy.copy(default_dict)
             significance_dict[key][unpack_key] = conv_func(value)
-
-    # Apply the default values to combinations not already filled:
-    for key in list(significance_dict.keys()) + combo_keys:
-        if key not in significance_dict:
-            significance_dict[key] = {}
-        # If method not given, then default is n_louder
-        if 'method' not in significance_dict[key]:
-            significance_dict[key]['method'] = 'n_louder'
-
-        if significance_dict[key]['method'] == 'n_louder':
-            # If method is n_louder, dont need threshold or function,
-            # but they need to be given
-            significance_dict[key]['threshold'] = None
-            significance_dict[key]['function'] = None
-        elif significance_dict[key]['method'] == 'trigger_fit':
-            # Default function with trigger_fit method is exponential
-            if 'function' not in significance_dict[key]:
-                significance_dict[key]['function'] = 'exponential'
 
     return significance_dict
