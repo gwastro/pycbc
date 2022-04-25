@@ -114,7 +114,7 @@ def insert_significance_option_group(parser):
                              "combination:method pairs, i.e. "
                              "H1:trigger_fit H1L1:n_louder H1L1V1:n_louder "
                              "etc. Method options are ["
-                             + ",".join(_significance_meth_dict.keys()) + 
+                             + ",".join(_significance_meth_dict.keys()) +
                              "]. Default = n_louder for all not given")
     parser.add_argument('--fit-threshold', nargs='+', default=[],
                         help="Thresholds for the fits to statistic "
@@ -162,7 +162,7 @@ def check_significance_options(args, parser):
         key, value = tuple(key_value.split(':'))
         if value not in _significance_meth_dict.keys():
             parser.error(("--far-calculation-method value %s for key %s "
-                          "is not valid, choose from [" + 
+                          "is not valid, choose from [" +
                           ','.join(_significance_meth_dict.keys()) +
                           "].") % (value, key))
         methods[key] = value
@@ -202,6 +202,7 @@ def check_significance_options(args, parser):
                          + key + " which has method " + value)
         elif value == 'trigger_fit' and key not in thresh_given:
             parser.error("Threshold required for key " + key)
+
 
 def digest_significance_options(combo_keys, args):
     """
