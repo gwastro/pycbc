@@ -382,3 +382,22 @@ def reweight_snr_by_null(
         )
     rw_snr = np.where(downweight, network_snr / rw_fac, network_snr)
     return rw_snr
+
+
+def reweightedsnr_cut(rw_snr, rw_snr_threshold):
+    """
+    Performs a cut on reweighted snr based on a given threshold
+
+    Parameters
+    ----------
+    rw_snr: array of reweighted snr
+    rw_snr_threshhold: any reweighted snr below this threshold is set to 0
+
+    Returns
+    -------
+    rw_snr: array of reweighted snr with cut values as 0
+
+    """
+    if rw_snr_threshold is not None:
+        rw_snr = np.where(rw_snr < rw_snr_threshold, 0, rw_snr)
+    return rw_snr
