@@ -33,8 +33,6 @@ import shutil
 from shutil import which
 from urllib.parse import urlparse
 
-import ciecplib
-
 from pycbc.types.config import InterpolatingConfigParser
 
 
@@ -77,6 +75,9 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
                 shutil.copy(u.path, filename)
 
     elif u.scheme == "http" or u.scheme == "https":
+        # FIXME: Move to top and make optional once 4001 functionality is
+        #        merged
+        import ciecplib
         with ciecplib.Session() as s:
             if u.netloc in ("git.ligo.org", "code.pycbc.phy.syr.edu"):
                 # authenticate with git.ligo.org using callback
