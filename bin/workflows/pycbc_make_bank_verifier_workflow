@@ -195,8 +195,8 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
     if workflow.cp.has_option('workflow-injections', 'em-bright-only'):
         # Job to carry on with em-bright injections only
         em_filter_job = PycbcDarkVsBrightInjectionsExecutable(workflow.cp,
-                                       'em_bright_filter',
-                                       out_dir='.', ifos='HL', tags=curr_tags)
+                                       'em_bright_filter', out_dir='.',
+                                       ifos=workflow.ifos, tags=curr_tags)
         node = em_filter_job.create_node(inj_file, t_seg, curr_tags)
         workflow += node
         inj_file = node.output_files[0]
@@ -206,15 +206,15 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
     # Banksim job
     banksim_job = BanksimExecutable(workflow.cp, 'banksim',
                                     out_dir=file_tag+'match',
-                                    ifos='HL', tags=[file_tag])
+                                    ifos=workflow.ifos, tags=[file_tag])
     bscombine_job = \
         BanksimBankCombineExecutable(workflow.cp, 'banksim_bank_combine',
-                                     out_dir=file_tag+'match', ifos='HL',
-                                     tags=[file_tag])
+                                     out_dir=file_tag+'match',
+                                     ifos=workflow.ifos, tags=[file_tag])
     mcombine_job = \
         BanksimMatchCombineExecutable(workflow.cp, 'banksim_match_combine',
-                                      out_dir=file_tag+'match', ifos='HL',
-                                      tags=[file_tag])
+                                      out_dir=file_tag+'match',
+                                      ifos=workflow.ifos, tags=[file_tag])
     banksim_files = wf.FileList([])
 
     for inj_idx, split_inj in enumerate(split_injs):
@@ -266,12 +266,13 @@ plotting_nodes = []
 out_dir = rdir.base
 point_injs_table_exe = BanksimTablePointInjsExecutable\
     (workflow.cp, 'banksim_table_point_injs',
-     out_dir=rdir['point_injection_sets'], ifos='HL')
+     out_dir=rdir['point_injection_sets'], ifos=workflow.ifos)
 eff_fitting_facs_exe = BanksimPlotEffFittingFactorsExecutable\
-    (workflow.cp, 'banksim_plot_eff_fitting_fac', out_dir=out_dir, ifos='HL')
+    (workflow.cp, 'banksim_plot_eff_fitting_fac', out_dir=out_dir,
+     ifos=workflow.ifos)
 plot_fitting_facs_exe = BanksimPlotFittingFactorsExecutable\
     (workflow.cp, 'banksim_plot_fitting_factors',
-     out_dir=rdir['point_injection_sets'], ifos='HL')
+     out_dir=rdir['point_injection_sets'], ifos=workflow.ifos)
 
 summary_page_files = []
 # Add files to point_inj_summ_files in pairs. A tuple of one entry will span
