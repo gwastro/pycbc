@@ -120,7 +120,7 @@ parser.add_argument("-t", "--trig-file", action="store",
 parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
 parser.add_argument("-y", "--y-variable", default=None,
-                    choices=['coincident', 'nullstat', 'overwhitened'],
+                    choices=['coincident', 'null'], #TODO: overwhitened?
                     help="Quantity to plot on the vertical axis.")
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
@@ -134,9 +134,8 @@ zoom_in = opts.zoom_in
 null_stat_type = opts.y_variable
 
 # Prepare plot title and caption
-y_labels = {'nullstat': "Null statistic",
-            'overwhitened': "Overwhitened null statistic",
-            'coincident': "Coincident SNR"}
+y_labels = {'null': "Null SNR",
+            'coincident': "Coincident SNR"} #TODO: overwhitened
 if opts.plot_title is None:
     opts.plot_title = y_labels[null_stat_type] + " vs Coherent SNR"
 if opts.plot_caption is None:
@@ -163,14 +162,14 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-_, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                         opts.veto_category)
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, opts)
+trig_data = ppu.load_trig_data(trig_file, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, opts, injections=True, sim_table=False)
+inj_data = ppu.load_trig_data(found_file, ifos, opts)
 
 # Generate plots
 logging.info("Plotting...")
@@ -183,7 +182,7 @@ x_max = None
 # Coincident SNR plot case: we want a coinc=coh diagonal line on the plot
 if null_stat_type == 'coincident':
     cont_colors = ['g-']
-    x_max = plu.axis_max_value(trig_data['snr'], inj_data['snr'], found_file)
+    x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'], found_file)
     snr_vals = [4, x_max]
     null_stat_conts = [[4, x_max]]
 # Overwhitened null stat (null SNR) and null stat  cases: newSNR contours
@@ -210,8 +209,8 @@ rc('font', size=14)
 # Set color for out-of-range values
 # Determine y-axis values of triggers and injections
 y_label = y_labels[null_stat_type]
-trigs = [trig_data['snr'], trig_data[null_stat_type]]
-injs = [inj_data['snr'], inj_data[null_stat_type]]
+trigs = [trig_data['coherent'], trig_data[null_stat_type]]
+injs = [inj_data['coherent'], inj_data[null_stat_type]]
 plu.pygrb_plotter(trigs, injs, "Coherent SNR", y_label, opts,
                   snr_vals=snr_vals, conts=null_stat_conts,
                   shade_cont_value=shade_cont_value,
