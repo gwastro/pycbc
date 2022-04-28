@@ -22,14 +22,12 @@
 # Preamble
 # =============================================================================
 import sys
-import logging
 import argparse
+from datetime import datetime
+import numpy
+import lal
 import pycbc.version
 import pycbc.results
-import lal
-import numpy
-from datetime import datetime
-from pycbc import init_logging
 from pycbc.detector import Detector
 from pycbc.results.pygrb_postprocessing_utils import get_antenna_dist_factor
 
@@ -43,59 +41,56 @@ __program__ = "pycbc_pygrb_grb_info_table"
 # =============================================================================
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=
                                  argparse.ArgumentDefaultsHelpFormatter)
-
 parser.add_argument("--version", action="version", version=__version__)
-
-parser.add_argument("-v", "--verbose", default=False, action="store_true",
-                    help="verbose output")
-
 parser.add_argument("--trigger-time", action="store",
                     default=None, required=True,
                     help="GPS time of the GRB.")
-
 parser.add_argument("--ra", action="store",
                     default=None, required=True,
                     help="Right ascention (degrees) of the GRB.")
-
 parser.add_argument("--dec", action="store",
                     default=None, required=True,
                     help="Declination (degrees) of the GRB.")
-
+parser.add_argument("--sky-error", action="store",
+                    default=0, required=False,
+                    help="Sky-localisation error (degrees) of the GRB.")
 parser.add_argument("--ifos", action="store", nargs='+',
                     default=None, required=True,
                     help="List containing the active IFOs.")
-
 parser.add_argument("--output-file", action="store",
                     default=None, required=True,
                     help="The output file to write tha table to.")
 
 opts = parser.parse_args()
 
-init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
-
 headers = []
 data = [[]]
 
 data[0].append(str(opts.trigger_time))
-headers.append('GPS')
+headers.append('GPS Time')
 
 utc_time = datetime(*lal.GPSToUTC(int(opts.trigger_time))[0:6]).strftime("%B %d %Y, %H:%M:%S UTC")
-
 data[0].append(utc_time)
-headers.append('Date')
+headers.append('Coordinated Universal Time')
 
 data[0].append(str(opts.ra))
-headers.append('RA')
+headers.append('R.A.')
 
 data[0].append(str(opts.dec))
-headers.append('DEC')
+headers.append('Dec')
+
+data[0].append(str(opts.sky_error))
+headers.append('Sky Error')
 
 data[0].append(''.join(opts.ifos))
 headers.append('IFOs')
 
 for ifo in opts.ifos:
     antenna = Detector(ifo)
-    factor = get_antenna_dist_factor(antenna, float(opts.ra) / 180. * numpy.pi, float(opts.dec) / 180. * numpy.pi, float(opts.trigger_time))
+    factor = get_antenna_dist_factor(antenna,
+                                     numpy.deg2rad(float(opts.ra)),
+                                     numpy.deg2rad(float(opts.dec)),
+                                     float(opts.trigger_time))
     data[0].append('%.3f' % factor)
     headers.append(ifo + ' Antenna Factor')
 
@@ -103,8 +98,9 @@ html = pycbc.results.dq.redirect_javascript + \
         str(pycbc.results.static_table(data, headers))
 
 title = 'GRB Summary Information'
-caption = 'Parameters of the GRB. The reported antenna factors are the dist / eff distance'
-caption += ' as defined by (4.3) in https://arxiv.org/abs/0705.1514.' 
+caption = 'Parameters of the GRB. The reported antenna factors are the '
+caption += 'dist / eff distance  as defined by (4.3) in '
+caption += 'https://arxiv.org/abs/0705.1514.'
 
 pycbc.results.save_fig_with_metadata(html, opts.output_file, {},
                         cmd = ' '.join(sys.argv),

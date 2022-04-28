@@ -77,8 +77,14 @@ and you will create the virtualenv via the command
 
     virtualenv -p /cvmfs/oasis.opensciencegrid.org/ligo/sw/conda/envs/igwn-py37/bin/python env
 
-The rest of the install instructions should then be usable as-is. 
-    
+Once the virtualenv has been created you can install PyCBC from PyPI or a local
+copy with the `[igwn]` extra specifier to install the optional extra requirements
+recommended for IGWN users:
+
+.. code-block:: bash
+
+    pip install .[igwn]
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Other scenarios

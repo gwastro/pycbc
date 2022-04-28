@@ -47,7 +47,6 @@ install_requires =  setup_requires + [
                       'h5py>=3.0.0',
                       'jinja2',
                       'Mako>=1.0.1',
-                      'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
                       'tqdm',
                       'setuptools',
@@ -199,7 +198,15 @@ cmdclass = { 'build_docs' : build_docs,
              'build_ext':cbuild_ext
             }
 
-extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
+extras_require = {
+    'cuda': [
+        'pycuda>=2015.1',
+        'scikit-cuda',
+    ],
+    'igwn': [
+        'ciecplib>=0.4.4',
+    ],
+}
 
 # do the actual work of building the package
 VERSION = get_version_info()

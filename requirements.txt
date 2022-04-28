@@ -9,7 +9,6 @@ pillow
 h5py>=3.0.0
 jinja2
 mpld3>=0.3
-requests>=1.2.1
 beautifulsoup4>=4.6.0
 cython
 lalsuite!=7.2
@@ -33,6 +32,7 @@ dynesty
 epsie==0.7.1
 
 # For LDG service access
+ciecplib>=0.4.4
 dqsegdb2>=1.0.1
 amqplib
 htchirp >= 2.0

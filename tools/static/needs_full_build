@@ -7,7 +7,7 @@ pycbc_make_html_page
 pycbc_make_sngl_workflow
 pycbc_gen_ranking_data
 pycbc_make_offline_grb_workflow
-pycbc_make_grb_summary_page
+pycbc_pygrb_pp_workflow
 pycbc_get_ffinal
 pycbc_banksim
 pycbc_geom_nonspinbank

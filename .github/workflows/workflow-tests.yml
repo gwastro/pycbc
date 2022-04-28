@@ -29,7 +29,7 @@ jobs:
       run: |
         wget https://download.pegasus.isi.edu/pegasus/ubuntu/dists/bionic/main/binary-amd64/pegasus_5.0.1-1+ubuntu18_amd64.deb
         sudo apt install ./pegasus_5.0.1-1+ubuntu18_amd64.deb
-    - run: sudo apt-get install *fftw3* intel-mkl*
+    - run: sudo apt-get install *fftw3* intel-mkl* libkrb5-dev libssl-dev
     - name: Install pycbc
       run: |
         python -m pip install --upgrade 'pip<22.0' setuptools
