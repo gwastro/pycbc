@@ -226,6 +226,131 @@ def read_seg_files(seg_files):
 
 
 # =============================================================================
+# Function to load data from an HDF file
+# =============================================================================
+def load_trig_data(input_file, ifos, opts):
+    """Load data from a trigger/injection file""" 
+    logging.info("Loading triggers...")
+
+    # Initialize the dictionary
+    data = {} 
+    data['time'] = None
+    data['longitude'] = None
+    data['latitude'] = None
+    data['coherent'] = None
+    data['null'] = None
+    data['reweighted'] = None
+    data['single'] = dict((ifo, None) for ifo in ifos)
+    data['coincident'] = None
+    data['f_resp_mean'] = dict((ifo, None) for ifo in ifos)
+    data['sigma_mean'] = dict((ifo, None) for ifo in ifos)
+    data['sigma_max'] = None
+    data['sigma_min'] = None
+    data['bank_chisq'] = dict((ifo, None) for ifo in ifos)
+    data['chisq'] = dict((ifo, None) for ifo in ifos)
+    data['cont_chisq'] = dict((ifo, None) for ifo in ifos)
+    data['sigmasq'] = dict((ifo, None) for ifo in ifos)
+    data['chisq_dof'] = dict((ifo, None) for ifo in ifos)
+    data['bank_chisq_dof'] = dict((ifo, None) for ifo in ifos)
+    data['cont_chisq_dof'] = dict((ifo, None) for ifo in ifos)
+
+    if input_file:
+        trigs = h5py.File(input_file, 'r')
+
+        num_trigs = len(trigs['network/end_time_gc'][:]) 
+
+        # Load network and single trigger times
+        if opts.ifo:
+            data['time'] = numpy.asarray(
+                trigs['%s/end_time' %opts.ifo][:])
+        else:
+            data['time'] = numpy.asarray(
+                trigs['network/end_time_gc'][:])
+
+        # Load latitude and longitude data
+        data['longitude'] = numpy.degrees(trigs['network/longitude'])
+        data['latitude'] = numpy.degrees(trigs['network/latitude'])
+
+        # Load SNR data
+        data['coherent'] = numpy.asarray(
+            trigs['network/coherent_snr'][:])
+        data['null'] = numpy.asarray(
+            trigs['network/null_snr'][:])
+        data['reweighted'] = numpy.array(
+            trigs['network/reweighted_snr'][:])
+        # Get single ifo SNR data
+        for ifo in ifos:
+            ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
+                      'V1': 'v', 'T1': 't'} 
+            att = ifo_att[ifo]  
+            data['single'][ifo] = numpy.asarray(
+                trigs['%s/snr_%s' % (ifo,att)][:])
+        # Calculate coincident SNR
+        if len(ifos) > 1:
+            # Initialize some dictionaries we will use
+            single_snr_sq = dict((ifo, None) for ifo in ifos)
+            snr_sum_square = numpy.zeros(num_trigs)
+            for ifo in ifos:
+                # First square the individual SNR's
+                single_snr_sq[ifo] = numpy.square(data['single'][ifo])
+                # Then add them
+                snr_sum_square = numpy.add(snr_sum_square,
+                                           single_snr_sq[ifo])
+            # Now obtain the square root
+            data['coincident'] = numpy.sqrt(snr_sum_square)
+        
+        # Get sigma for each ifo
+        for ifo in ifos: 
+            sigma = dict((ifo, list(
+                trigs['%s/sigmasq' % ifo])) for ifo in ifos)
+
+        # Create array for sigma_tot 
+        sigma_tot = numpy.zeros(num_trigs)
+
+        # Get antenna response based parameters 
+        for ifo in ifos:
+            antenna = Detector(ifo)
+            ifo_f_resp = \
+                get_antenna_responses(antenna, data['longitude'], 
+                                      data['latitude'], data['time'])
+                
+            # Get the average for f_resp_mean and calculate sigma_tot 
+            data['f_resp_mean'][ifo] = ifo_f_resp.mean()
+            sigma_tot += (sigma[ifo] * ifo_f_resp)
+                
+            for ifo in ifos:
+                try:
+                    sigma_norm = sigma[ifo]/sigma_tot
+                    data['sigma_mean'][ifo] = sigma_norm.mean()
+                    if ifo == opts.ifo:
+                        data['sigma_max'] = sigma_norm.max()
+                        data['sigma_min'] = sigma_norm.min()
+                except ValueError:
+                    data['sigma_mean'][ifo] = 0
+                    if ifo == opts.ifo:
+                        data['sigma_max'] = 0
+                        data['sigma_min'] = 0
+
+        # Get single IFO chisq data
+        for ifo in ifos:
+            data['bank_chisq'][ifo] = numpy.asarray(
+                trigs['%s/bank_chisq' % ifo][:])
+            data['chisq'][ifo] = numpy.asarray(
+                trigs['%s/chisq' % ifo][:])
+            data['cont_chisq'][ifo] = numpy.asarray(
+                trigs['%s/cont_chisq' % ifo][:])
+            data['chisq_dof'][ifo] = numpy.unique(
+                trigs['%s/chisq_dof' % ifo][:])
+            data['bank_chisq_dof'][ifo] = numpy.unique(
+                trigs['%s/bank_chisq_dof' % ifo][:])
+            #data['cont_chisq_dof'][ifo] = numpy.asarray(
+            #trigs['%s/cont_chisq_dof' % ifo][:]) THIS IS NOT AVAILABLE
+
+        logging.info("%d triggers found.", num_trigs)
+        
+    return data
+
+# =============================================================================
 # Function to load a table from an xml file
 # =============================================================================
 def load_xml_table(file_name, table_name): 
