@@ -96,7 +96,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Load trigger data
-trig_data = load_data(trig_file, vetoes)
+trig_data = ppu.load_trig_data(trig_file, ifos, opts)
 
 #
 # Generate sky grid plot
