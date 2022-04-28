@@ -187,10 +187,10 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, ifos, opts)
+trig_data = ppu.load_trig_data(trig_file, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
+inj_data = ppu.load_trig_data(found_file, ifos, opts)
 
 # Generate plots
 logging.info("Plotting...")
@@ -206,13 +206,13 @@ ifo_senstvty = collections.OrderedDict(sorted(ifo_senstvty.items(),
 loudness_labels = ['Loudest', 'Second loudest', 'Third loudest']
 
 # Determine the maximum coherent SNR value we are dealing with
-x_max = plu.axis_max_value(trig_data['snr'], inj_data['snr'], found_file)
+x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'], found_file)
 max_snr = x_max
 if x_max < 50.:
     max_snr = 50.
 
 # Determine the maximum auto veto value we are dealing with
-y_max = plu.axis_max_value(trig_data['ifo_snr'], inj_data['ifo_snr'], found_file)
+y_max = plu.axis_max_value(trig_data['single'][opts.ifo], inj_data['single'][opts.ifo], found_file)
 
 # Setup the plots
 x_label = "Coherent SNR"
@@ -220,11 +220,11 @@ y_label = "%s sngl SNR" % ifo
 fig = plt.figure()
 ax = fig.gca()
 # Plot trigger data
-ax.plot(trig_data['snr'], trig_data['ifo_snr'], 'bx')
+ax.plot(trig_data['coherent'], trig_data['single'][opts.ifo], 'bx')
 ax.grid()
 # Plot injection data
 if found_file:
-    ax.plot(inj_data['snr'], inj_data['ifo_snr'], 'r+')
+    ax.plot(inj_data['coherent'], inj_data['single'][opts.ifo], 'r+')
 # Sigma-mean, min, max
 y_data = {'mean': trig_data['sigma_mean'][ifo],
           'min': trig_data['sigma_min'],
