@@ -59,8 +59,8 @@ as follows.
 Development build on LDG / IGWN clusters
 ========================================
 
-The above instructions require some adjustment when working on a LIGO or other GW collaboration 
-compute cluster (eg CIT).  The main issue is that the default environment may not include a 
+The above instructions require some adjustment when working on a LIGO or other GW collaboration
+compute cluster (eg CIT).  The main issue is that the default environment may not include a
 sufficiently recent python version (>=3.7).  The standard workaround is to use a python executable
 available in a 'IGWN Conda' environment.  To see what environments are available, you can run
 
@@ -71,7 +71,7 @@ available in a 'IGWN Conda' environment.  To see what environments are available
 This should yield ``igwn-py37`` as one choice.  The output of this command will also
 tell you the location of the environment in the file system.  Then, the location of the
 python3.7 executable is for instance ``/cvmfs/oasis.opensciencegrid.org/ligo/sw/conda/envs/igwn-py37/bin/python``
-and you will create the virtualenv via the command 
+and you will create the virtualenv via the command
 
 .. code-block:: bash
 
@@ -83,6 +83,7 @@ recommended for IGWN users:
 
 .. code-block:: bash
 
+    pip install -r requirements-igwn.txt
     pip install .[igwn]
 
 
