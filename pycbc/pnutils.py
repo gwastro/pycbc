@@ -26,10 +26,12 @@
 """This module contains convenience pN functions. This includes calculating conversions
 between quantities.
 """
-import lal, lalsimulation
+import lal
 import numpy
 from scipy.optimize import bisect, brentq, minimize
-from pycbc import conversions
+from pycbc import conversions, libutils
+
+lalsimulation = libutils.import_optional('lalsimulation')
 
 def nearest_larger_binary_number(input_len):
     """ Return the nearest binary number larger than input_len.

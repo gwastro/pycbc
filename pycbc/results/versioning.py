@@ -21,7 +21,7 @@ import os
 import subprocess
 from pycbc.results import save_fig_with_metadata, html_escape
 
-import lal, lalframe, lalsimulation
+import lal, lalframe
 import pycbc.version, glue.git_version
 
 def get_library_version_info():
@@ -74,6 +74,7 @@ def get_library_version_info():
     lalsimulationinfo = {}
     lalsimulationinfo['Name'] = 'LALSimulation'
     try:
+        import lalsimulation
         lalsimulationinfo['ID'] = lalsimulation.SimulationVCSId
         lalsimulationinfo['Status'] = lalsimulation.SimulationVCSStatus
         lalsimulationinfo['Version'] = lalsimulation.SimulationVCSVersion
@@ -84,6 +85,8 @@ def get_library_version_info():
         lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
     except AttributeError:
         add_info_new_version(lalsimulationinfo, lalsimulation, 'Simulation')
+    except ImportError:
+        pass
     library_list.append(lalsimulationinfo)
 
     glueinfo = {}
@@ -124,8 +127,8 @@ def write_library_information(path):
         kwds = {'render-function' : 'render_text',
                 'title' : '%s Version Information'%lib_name,
         }
-        
-        save_fig_with_metadata(html_escape(text), 
+
+        save_fig_with_metadata(html_escape(text),
           os.path.join(path,'%s_version_information.html' %(lib_name)), **kwds)
 
 def get_code_version_numbers(cp):
@@ -149,7 +152,7 @@ def get_code_version_numbers(cp):
                 if value.startswith('file://'):
                     value = value[7:]
                 version_string = subprocess.check_output([value, '--version'],
-                                                        stderr=subprocess.STDOUT) 
+                                                        stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError:
                 version_string = "Executable fails on %s --version" % (value)
             except OSError:
@@ -173,7 +176,7 @@ def write_code_versions(path, cp):
     kwds = {'render-function' : 'render_text',
             'title' : 'Version Information from Executables',
     }
-    save_fig_with_metadata(html_escape(html_text), 
+    save_fig_with_metadata(html_escape(html_text),
         os.path.join(path,'version_information_from_executables.html'), **kwds)
 
 def create_versioning_page(path, cp):

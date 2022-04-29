@@ -31,14 +31,12 @@ one parameter given a set of inputs.
 import copy
 import numpy
 import lal
-import lalsimulation as lalsim
 from pycbc.detector import Detector
 import pycbc.cosmology
 from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
-try:
-    import pykerr
-except ImportError:
-    pykerr = None
+
+pykerr = pycbc.libutils.import_optional('pykerr')
+lalsim = pycbc.libutils.import_optional('lalsimulation')
 
 #
 # =============================================================================
@@ -840,8 +838,6 @@ def get_lm_f0tau(mass, spin, l, m, n=0, which='both'):
         Returned if ``which`` is 'both' or 'tau'.
         The damping time of the QNM(s), in seconds.
     """
-    if pykerr is None:
-        raise ImportError("pykerr must be installed to get f0 or tau")
     # convert to arrays
     mass, spin, l, m, n, input_is_array = ensurearray(
         mass, spin, l, m, n)

@@ -26,7 +26,6 @@
 """
 from pycbc.types import TimeSeries, FrequencySeries, Array, float32, float64, complex_same_precision_as, real_same_precision_as
 import lal
-import lalsimulation as sim
 from math import frexp
 import numpy
 from pycbc.scheme import schemed
@@ -301,20 +300,26 @@ def frequency_from_polarizations(h_plus, h_cross):
 
 # map between tapering string in sim_inspiral table or inspiral
 # code option and lalsimulation constants
-taper_map = {
-    'TAPER_NONE'    : None,
-    'TAPER_START'   : sim.SIM_INSPIRAL_TAPER_START,
-    'start'         : sim.SIM_INSPIRAL_TAPER_START,
-    'TAPER_END'     : sim.SIM_INSPIRAL_TAPER_END,
-    'end'           : sim.SIM_INSPIRAL_TAPER_END,
-    'TAPER_STARTEND': sim.SIM_INSPIRAL_TAPER_STARTEND,
-    'startend'      : sim.SIM_INSPIRAL_TAPER_STARTEND
-}
+try:
+    import lalsimulation as sim
 
-taper_func_map = {
-    numpy.dtype(float32): sim.SimInspiralREAL4WaveTaper,
-    numpy.dtype(float64): sim.SimInspiralREAL8WaveTaper
-}
+    taper_map = {
+        'TAPER_NONE'    : None,
+        'TAPER_START'   : sim.SIM_INSPIRAL_TAPER_START,
+        'start'         : sim.SIM_INSPIRAL_TAPER_START,
+        'TAPER_END'     : sim.SIM_INSPIRAL_TAPER_END,
+        'end'           : sim.SIM_INSPIRAL_TAPER_END,
+        'TAPER_STARTEND': sim.SIM_INSPIRAL_TAPER_STARTEND,
+        'startend'      : sim.SIM_INSPIRAL_TAPER_STARTEND
+    }
+
+    taper_func_map = {
+        numpy.dtype(float32): sim.SimInspiralREAL4WaveTaper,
+        numpy.dtype(float64): sim.SimInspiralREAL8WaveTaper
+    }
+except ImportError:
+    taper_map = {}
+    taper_func_map = {}
 
 def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
     """
