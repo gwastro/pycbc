@@ -83,8 +83,10 @@ def get_library_version_info():
         lalsimulationinfo['Branch'] = lalsimulation.SimulationVCSBranch
         lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
         lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
-    except (AttributeError, ImportError):
+    except AttributeError:
         add_info_new_version(lalsimulationinfo, lalsimulation, 'Simulation')
+    except ImportError:
+        pass
     library_list.append(lalsimulationinfo)
 
     glueinfo = {}
