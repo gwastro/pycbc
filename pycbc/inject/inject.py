@@ -47,28 +47,6 @@ from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw import utils as ligolw_utils, ligolw, lsctables
 
 
-# Map parameter names used in pycbc to names used in the sim_inspiral
-# table, if they are different
-sim_inspiral_map = {
-    'ra': 'longitude',
-    'dec': 'latitude',
-    'approximant': 'waveform',
-    }
-
-def set_sim_data(inj, field, data):
-    """Sets data of a SimInspiral instance."""
-    try:
-        sim_field = sim_inspiral_map[field]
-    except KeyError:
-        sim_field = field
-    # for tc, map to geocentric times
-    if sim_field == 'tc':
-        inj.geocent_end_time = int(data)
-        inj.geocent_end_time_ns = int(1e9*(data % 1))
-    else:
-        setattr(inj, sim_field, data)
-
-
 def projector(detector_name, inj, hp, hc, distance_scale=1):
     """ Use the injection row to project the polarizations into the
     detector frame
@@ -110,213 +88,6 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
                                    method=projection_method,
                                    reference_time=tc,)
     return signal
-
-def legacy_approximant_name(apx):
-    """Convert the old style xml approximant name to a name
-    and phase_order. Alex: I hate this function. Please delete this when we
-    use Collin's new tables.
-    """
-    apx = str(apx)
-    try:
-        order = sim.GetOrderFromString(apx)
-    except:
-        print("Warning: Could not read phase order from string, using default")
-        order = -1
-    name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))
-    return name, order
-
-
-class _XMLInjectionSet(object):
-
-    """Manages sets of injections: reads injections from LIGOLW XML files
-    and injects them into time series.
-
-    Parameters
-    ----------
-    sim_file : string
-        Path to a LIGOLW XML file containing a SimInspiralTable
-        with injection definitions.
-
-    Attributes
-    ----------
-    indoc
-    table
-    """
-
-    def __init__(self, sim_file, **kwds):
-        self.indoc = ligolw_utils.load_filename(
-            sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = lsctables.SimInspiralTable.get_table(self.indoc)
-        self.extra_args = kwds
-
-    def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
-              simulation_ids=None,
-              inj_filter_rejector=None,
-              injection_sample_rate=None,):
-        """Add injections (as seen by a particular detector) to a time series.
-
-        Parameters
-        ----------
-        strain : TimeSeries
-            Time series to inject signals into, of type float32 or float64.
-        detector_name : string
-            Name of the detector used for projecting injections.
-        f_lower : {None, float}, optional
-            Low-frequency cutoff for injected signals. If None, use value
-            provided by each injection.
-        distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is
-            no scaling.
-        simulation_ids: iterable, optional
-            If given, only inject signals with the given simulation IDs.
-        inj_filter_rejector: InjFilterRejector instance; optional, default=None
-            If given send each injected waveform to the InjFilterRejector
-            instance so that it can store a reduced representation of that
-            injection if necessary.
-        injection_sample_rate: float, optional
-            The sample rate to generate the signal before injection
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        TypeError
-            For invalid types of `strain`.
-        """
-        if strain.dtype not in (float32, float64):
-            raise TypeError("Strain dtype must be float32 or float64, not " \
-                    + str(strain.dtype))
-
-        earth_travel_time = lal.REARTH_SI / lal.C_SI
-        t0 = float(strain.start_time) - earth_travel_time
-        t1 = float(strain.end_time) + earth_travel_time
-
-        delta_t = strain.delta_t
-        if injection_sample_rate is not None:
-            delta_t = 1.0 / injection_sample_rate
-
-        injections = self.table
-        if simulation_ids:
-            injections = [inj for inj in injections \
-                          if inj.simulation_id in simulation_ids]
-        injection_parameters = []
-        for inj in injections:
-            f_l = inj.f_lower if f_lower is None else f_lower
-            # roughly estimate if the injection may overlap with the segment
-            # Add 2s to end_time to account for ringdown and light-travel delay
-            end_time = inj.time_geocent + 2
-            inj_length = tau0_from_mass1_mass2(inj.mass1, inj.mass2, f_l)
-            # Start time is taken as twice approx waveform length with a 1s
-            # safety buffer
-            start_time = inj.time_geocent - 2 * (inj_length + 1)
-            if end_time < t0 or start_time > t1:
-                continue
-            signal = self.make_strain_from_inj_object(inj, delta_t,
-                    detector_name, f_lower=f_l, distance_scale=distance_scale)
-            signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
-            if float(signal.start_time) > t1:
-                continue
-
-            signal = signal.astype(strain.dtype)
-            strain = strain.inject(signal)
-            injection_parameters.append(inj)
-            if inj_filter_rejector is not None:
-                sid = inj.simulation_id
-                inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
-
-        injected = copy.copy(self)
-        injected.table = lsctables.SimInspiralTable()
-        injected.table += injection_parameters
-        if inj_filter_rejector is not None:
-            inj_filter_rejector.injection_params = injected
-        return injected
-
-    def make_strain_from_inj_object(self, inj, delta_t, detector_name,
-                                    f_lower=None, distance_scale=1):
-        """Make a h(t) strain time-series from an injection object as read from
-        a sim_inspiral table, for example.
-
-        Parameters
-        -----------
-        inj : injection object
-            The injection object to turn into a strain h(t).
-        delta_t : float
-            Sample rate to make injection at.
-        detector_name : string
-            Name of the detector used for projecting injections.
-        f_lower : {None, float}, optional
-            Low-frequency cutoff for injected signals. If None, use value
-            provided by each injection.
-        distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is
-            no scaling.
-
-        Returns
-        --------
-        signal : float
-            h(t) corresponding to the injection.
-        """
-        f_l = inj.f_lower if f_lower is None else f_lower
-
-        name, phase_order = legacy_approximant_name(inj.waveform)
-
-        # compute the waveform time series
-        hp, hc = get_td_waveform(
-            inj, approximant=name, delta_t=delta_t,
-            phase_order=phase_order,
-            f_lower=f_l, distance=inj.distance,
-            **self.extra_args)
-        return projector(detector_name,
-                         inj, hp, hc, distance_scale=distance_scale)
-
-    def end_times(self):
-        """Return the end times of all injections"""
-        return [inj.time_geocent for inj in self.table]
-
-    @staticmethod
-    def write(filename, samples, write_params=None, static_args=None):
-        """Writes the injection samples to the given xml.
-
-        Parameters
-        ----------
-        filename : str
-            The name of the file to write to.
-        samples : io.FieldArray
-            FieldArray of parameters.
-        write_params : list, optional
-            Only write the given parameter names. All given names must be keys
-            in ``samples``. Default is to write all parameters in ``samples``.
-        static_args : dict, optional
-            Dictionary mapping static parameter names to values. These are
-            written to the ``attrs``.
-        """
-        xmldoc = ligolw.Document()
-        xmldoc.appendChild(ligolw.LIGO_LW())
-        simtable = lsctables.New(lsctables.SimInspiralTable)
-        xmldoc.childNodes[0].appendChild(simtable)
-        if static_args is None:
-            static_args = {}
-        if write_params is None:
-            write_params = samples.fieldnames
-        for ii in range(samples.size):
-            sim = lsctables.SimInspiral()
-            # initialize all elements to None
-            for col in sim.__slots__:
-                setattr(sim, col, None)
-            for field in write_params:
-                data = samples[ii][field]
-                set_sim_data(sim, field, data)
-            # set any static args
-            for (field, value) in static_args.items():
-                set_sim_data(sim, field, value)
-            simtable.append(sim)
-        ligolw_utils.write_filename(xmldoc, filename,
-                                    gz=filename.endswith('gz'))
-
-
-# -----------------------------------------------------------------------------
 
 
 class _HDFInjectionSet(metaclass=ABCMeta):
@@ -552,7 +323,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                 continue
 
             signal = signal.astype(strain.dtype)
-            strain = strain.inject(signal)
+            strain.data = strain.inject(signal).data
             injected_ids.append(ii)
             if inj_filter_rejector is not None:
                 inj_filter_rejector.generate_short_inj_from_inj(signal, ii)
@@ -681,7 +452,7 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
                 distance_scale=distance_scale)
             signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
             signal = signal.astype(strain.dtype)
-            strain = strain.inject(signal)
+            strain.data = strain.inject(signal).data
 
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     distance_scale=1):
@@ -1034,13 +805,12 @@ def hdf_injtype_from_approximant(approximant):
 class InjectionSet(object):
     """Manages sets of injections and injects them into time series.
 
-    Injections are read from either LIGOLW XML files or HDF files.
+    Injections are read from HDF files.
 
     Parameters
     ----------
     sim_file : string
-        Path to an hdf file or a LIGOLW XML file that contains a
-        SimInspiralTable.
+        Path to an hdf file that contains the injection parameters
     \**kwds :
         The rest of the keyword arguments are passed to the waveform generation
         function when generating injections.
@@ -1052,12 +822,7 @@ class InjectionSet(object):
 
     def __init__(self, sim_file, **kwds):
         ext = os.path.basename(sim_file)
-        if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
-            self._injhandler = _XMLInjectionSet(sim_file, **kwds)
-            self.indoc = self._injhandler.indoc
-        else:
-            # assume hdf file
-            self._injhandler = get_hdf_injtype(sim_file)(sim_file, **kwds)
+        self._injhandler = get_hdf_injtype(sim_file)(sim_file, **kwds)
         self.table = self._injhandler.table
         self.extra_args = self._injhandler.extra_args
         self.apply = self._injhandler.apply
@@ -1089,34 +854,28 @@ class InjectionSet(object):
         \**metadata :
             All other keyword arguments will be written to the file's attrs.
         """
-        # DELETE the following "if" once xml is dropped
-        ext = os.path.basename(filename)
-        if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
-            _XMLInjectionSet.write(filename, samples, write_params,
-                                   static_args)
-        else:
-            # try determine the injtype if it isn't given
-            if injtype is None:
-                if static_args is not None and 'approximant' in static_args:
-                    injcls = hdf_injtype_from_approximant(
-                        static_args['approximant'])
-                elif 'approximant' in samples.fieldnames:
-                    apprxs = np.unique(samples['approximant'])
-                    # make sure they all correspond to the same injection type
-                    injcls = [hdf_injtype_from_approximant(a) for a in apprxs]
-                    if not all(c == injcls[0] for c in injcls):
-                        raise ValueError("injections must all be of the same "
-                                         "type")
-                    injcls = injcls[0]
-                else:
-                    raise ValueError("Could not find an approximant in the "
-                                     "static args or samples to determine the "
-                                     "injection type. Please specify an "
-                                     "injtype instead.")
+        # try determine the injtype if it isn't given
+        if injtype is None:
+            if static_args is not None and 'approximant' in static_args:
+                injcls = hdf_injtype_from_approximant(
+                    static_args['approximant'])
+            elif 'approximant' in samples.fieldnames:
+                apprxs = np.unique(samples['approximant'])
+                # make sure they all correspond to the same injection type
+                injcls = [hdf_injtype_from_approximant(a) for a in apprxs]
+                if not all(c == injcls[0] for c in injcls):
+                    raise ValueError("injections must all be of the same "
+                                     "type")
+                injcls = injcls[0]
             else:
-                injcls = hdfinjtypes[injtype]
-            injcls.write(filename, samples, write_params, static_args,
-                         **metadata)
+                raise ValueError("Could not find an approximant in the "
+                                 "static args or samples to determine the "
+                                 "injection type. Please specify an "
+                                 "injtype instead.")
+        else:
+            injcls = hdfinjtypes[injtype]
+        injcls.write(filename, samples, write_params, static_args,
+                     **metadata)
 
     @staticmethod
     def from_cli(opt):
