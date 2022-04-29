@@ -91,7 +91,7 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                                               'parallelization-factor',
                                               tags))
     except Exception as e:
-        print(e)
+        logging.warning(e)
         factor = 1
 
     if factor == 1:
