@@ -37,7 +37,6 @@ requires = []
 setup_requires = ['numpy>=1.16.0']
 install_requires =  setup_requires + [
                       'cython>=0.29',
-                      'decorator>=3.4.2',
                       'numpy>=1.16.0,!=1.19.0',
                       'scipy>=0.16.0',
                       'astropy>=2.0.3,!=4.2.1,!=4.0.5',
