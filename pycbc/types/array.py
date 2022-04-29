@@ -31,7 +31,7 @@ BACKEND_PREFIX="pycbc.types.array_"
 import h5py
 import os as _os
 
-from decorator import decorator
+from functools import wraps
 
 import lal as _lal
 import numpy as _numpy
@@ -58,25 +58,30 @@ def _convert_to_scheme(ary):
         ary._data = converted_array._data
         ary._scheme = _scheme.mgr.state
       
-@decorator  
-def _convert(fn, self, *args):
-    # Convert this array to the current processing scheme
-    _convert_to_scheme(self)
-    return fn(self, *args)
+def _convert(func):
+    @wraps(func)
+    def convert(self, *args):
+        _convert_to_scheme(self)
+        return func(self, *args)
+    return convert
     
-@decorator
-def _nocomplex(fn, self, *args):
-    if self.kind == 'real':
-        return fn(self, *args)
-    else:
-        raise TypeError( fn.__name__ + " does not support complex types")
-        
-@decorator
-def _noreal(fn, self, *args):
-    if self.kind == 'complex':
-        return fn(self, *args)
-    else:
-        raise TypeError( fn.__name__ + " does not support real types")
+def _nocomplex(func):
+    @wraps(func)
+    def nocomplex(self, *args):
+        if self.kind == 'real':
+            return func(self, *args)
+        else:
+            raise TypeError( func.__name__ + " does not support complex types")
+    return nocomplex
+
+def _noreal(func):
+    @wraps(func)
+    def noreal(self, *args):
+        if self.kind == 'complex':
+            return func(self, *args)
+        else:
+            raise TypeError( func.__name__ + " does not support real types")
+    return noreal
 
 def force_precision_to_match(scalar, precision):
     if _numpy.iscomplexobj(scalar):
@@ -224,27 +229,33 @@ class Array(object):
     def shape(self):
         return self._data.shape
      
-    @decorator
-    def _memoize_single(fn, self, arg):
-        badh = str(arg)
-        
-        if badh in self._saved:
-            return self._saved[badh]
+    def _memoize_single(func):
+        @wraps(func)
+        def memoize_single(self, arg):
+            badh = str(arg)
 
-        res = fn(self, arg) # pylint:disable=not-callable
-        self._saved[badh] = res      
-        return res
-                   
-    @decorator
-    def _returnarray(fn, self, *args):
-        return Array(fn(self, *args), copy=False) # pylint:disable=not-callable
+            if badh in self._saved:
+                return self._saved[badh]
 
-    @decorator
-    def _returntype(fn, self, *args):
-        ary = fn(self,*args) # pylint:disable=not-callable
-        if ary is NotImplemented:
-            return NotImplemented
-        return self._return(ary)
+            res = func(self, arg) # pylint:disable=not-callable
+            self._saved[badh] = res
+            return res
+        return memoize_single
+
+    def _returnarray(func):
+        @wraps(func)
+        def returnarray(self, *args):
+            return Array(func(self, *args), copy=False) 
+        return returnarray
+
+    def _returntype(func):
+        @wraps(func)
+        def returntype(self, *args):
+            ary = func(self, *args) # pylint:disable=not-callable
+            if ary is NotImplemented:
+                return NotImplemented
+            return self._return(ary)
+        return returntype
         
     def _return(self, ary):
         """Wrap the ary to return an Array type """
@@ -252,68 +263,76 @@ class Array(object):
             return ary
         return Array(ary, copy=False)
 
-    @decorator
-    def _checkother(fn, self, *args):
-        nargs = ()
-        for other in args:
-            self._typecheck(other)  
+    def _checkother(func):
+        @wraps(func)
+        def checkother(self, *args):
+            nargs = ()
+            for other in args:
+                self._typecheck(other)
+                if type(other) in _ALLOWED_SCALARS:
+                    other = force_precision_to_match(other, self.precision)
+                    nargs +=(other,)
+                elif isinstance(other, type(self)) or type(other) is Array:
+                    check_same_len_precision(self, other)
+                    _convert_to_scheme(other)
+                    nargs += (other._data,)
+                else:
+                    return NotImplemented
+
+            return func(self, *nargs) # pylint:disable=not-callable
+        return checkother
+
+    def _vcheckother(func):
+        @wraps(func)
+        def vcheckother(self, *args):
+            nargs = ()
+            for other in args:
+                self._typecheck(other)
+                if isinstance(other, type(self)) or type(other) is Array:
+                    check_same_len_precision(self, other)
+                    _convert_to_scheme(other)
+                    nargs += (other._data,)
+                else:
+                    raise TypeError('array argument required')
+
+            return func(self,*nargs) # pylint:disable=not-callable
+        return vcheckother
+        
+    def _vrcheckother(func):
+        @wraps(func)
+        def vrcheckother(self, *args):
+            nargs = ()
+            for other in args:
+                if isinstance(other, type(self)) or type(other) is Array:
+                    check_same_len_precision(self, other)
+                    _convert_to_scheme(other)
+                    nargs += (other._data,)
+                else:
+                    raise TypeError('array argument required')
+
+            return func(self, *nargs) # pylint:disable=not-callable
+        return vrcheckother
+
+    def _icheckother(func):
+        @wraps(func)
+        def icheckother(self, other):
+            """ Checks the input to in-place operations """
+            self._typecheck(other)
             if type(other) in _ALLOWED_SCALARS:
+                if self.kind == 'real' and type(other) == complex:
+                    raise TypeError('dtypes are incompatible')
                 other = force_precision_to_match(other, self.precision)
-                nargs +=(other,)
             elif isinstance(other, type(self)) or type(other) is Array:
                 check_same_len_precision(self, other)
+                if self.kind == 'real' and other.kind == 'complex':
+                    raise TypeError('dtypes are incompatible')
                 _convert_to_scheme(other)
-                nargs += (other._data,)
+                other = other._data
             else:
                 return NotImplemented
 
-        return fn(self, *nargs) # pylint:disable=not-callable
-    
-    @decorator  
-    def _vcheckother(fn, self, *args):
-        nargs = ()
-        for other in args:
-            self._typecheck(other)  
-            if isinstance(other, type(self)) or type(other) is Array:
-                check_same_len_precision(self, other)
-                _convert_to_scheme(other)
-                nargs += (other._data,)
-            else:
-                raise TypeError('array argument required')                    
-
-        return fn(self,*nargs) # pylint:disable=not-callable
-        
-    @decorator  
-    def _vrcheckother(fn, self, *args):
-        nargs = ()
-        for other in args:
-            if isinstance(other, type(self)) or type(other) is Array:
-                check_same_len_precision(self, other)
-                _convert_to_scheme(other)
-                nargs += (other._data,)
-            else:
-                raise TypeError('array argument required')                    
-
-        return fn(self, *nargs) # pylint:disable=not-callable
-
-    @decorator
-    def _icheckother(fn, self, other):
-        """ Checks the input to in-place operations """
-        self._typecheck(other) 
-        if type(other) in _ALLOWED_SCALARS:
-            if self.kind == 'real' and type(other) == complex:
-                raise TypeError('dtypes are incompatible')
-            other = force_precision_to_match(other, self.precision)
-        elif isinstance(other, type(self)) or type(other) is Array:
-            check_same_len_precision(self, other)
-            if self.kind == 'real' and other.kind == 'complex':
-                raise TypeError('dtypes are incompatible')
-            _convert_to_scheme(other)
-            other = other._data
-        else:
-            return NotImplemented
-
-        return fn(self, other) # pylint:disable=not-callable
+            return func(self, other) # pylint:disable=not-callable
+        return icheckother
 
     def _typecheck(self, other):
         """ Additional typechecking for other. Placeholder for use by derived
@@ -1060,9 +1079,11 @@ def complex_same_precision_as(data):
     elif data.precision == 'double':
         return complex128
 
-@decorator
-def _return_array(fn, *args, **kwds):
-    return Array(fn(*args, **kwds), copy=False)
+def _return_array(func):
+    @wraps(func)
+    def return_array(*args, **kwds):
+        return Array(func(*args, **kwds), copy=False)
+    return return_array
 
 @_return_array
 @schemed(BACKEND_PREFIX)
