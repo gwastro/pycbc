@@ -60,25 +60,25 @@ def _convert_to_scheme(ary):
       
 def _convert(func):
     @wraps(func)
-    def convert(self, *args):
+    def convert(self, *args, **kwargs):
         _convert_to_scheme(self)
-        return func(self, *args)
+        return func(self, *args, **kwargs)
     return convert
     
 def _nocomplex(func):
     @wraps(func)
-    def nocomplex(self, *args):
+    def nocomplex(self, *args, **kwargs):
         if self.kind == 'real':
-            return func(self, *args)
+            return func(self, *args, **kwargs)
         else:
             raise TypeError( func.__name__ + " does not support complex types")
     return nocomplex
 
 def _noreal(func):
     @wraps(func)
-    def noreal(self, *args):
+    def noreal(self, *args, **kwargs):
         if self.kind == 'complex':
-            return func(self, *args)
+            return func(self, *args, **kwargs)
         else:
             raise TypeError( func.__name__ + " does not support real types")
     return noreal
@@ -244,14 +244,14 @@ class Array(object):
 
     def _returnarray(func):
         @wraps(func)
-        def returnarray(self, *args):
-            return Array(func(self, *args), copy=False) 
+        def returnarray(self, *args, **kwargs):
+            return Array(func(self, *args, **kwargs), copy=False) 
         return returnarray
 
     def _returntype(func):
         @wraps(func)
-        def returntype(self, *args):
-            ary = func(self, *args) # pylint:disable=not-callable
+        def returntype(self, *args, **kwargs):
+            ary = func(self, *args, **kwargs) # pylint:disable=not-callable
             if ary is NotImplemented:
                 return NotImplemented
             return self._return(ary)
@@ -295,7 +295,7 @@ class Array(object):
                 else:
                     raise TypeError('array argument required')
 
-            return func(self,*nargs) # pylint:disable=not-callable
+            return func(self, *nargs) # pylint:disable=not-callable
         return vcheckother
         
     def _vrcheckother(func):
