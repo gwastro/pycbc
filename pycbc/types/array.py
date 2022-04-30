@@ -245,7 +245,7 @@ class Array(object):
     def _returnarray(func):
         @wraps(func)
         def returnarray(self, *args, **kwargs):
-            return Array(func(self, *args, **kwargs), copy=False) 
+            return Array(func(self, *args, **kwargs), copy=False) # pylint:disable=not-callable
         return returnarray
 
     def _returntype(func):
