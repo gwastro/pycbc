@@ -185,7 +185,7 @@ _import_cache = {}
 def schemed(prefix):
 
     def scheming_function(func):
-        @wraps
+        @wraps(func)
         def _scheming_function(*args, **kwds):
             try:
                 return _import_cache[mgr.state][func](*args, **kwds)
@@ -217,7 +217,7 @@ def schemed(prefix):
     return scheming_function
 
 def cpuonly(func):
-    @wraps
+    @wraps(func)
     def _cpuonly(*args, **kwds):
         if not issubclass(type(mgr.state), CPUScheme):
             raise TypeError(fn.__name__ +
