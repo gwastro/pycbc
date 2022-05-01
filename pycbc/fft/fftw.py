@@ -1,5 +1,6 @@
 from pycbc.types import zeros
 import numpy as _np
+import functools
 import ctypes
 import pycbc.scheme as _scheme
 from pycbc.libutils import get_ctypes_library
@@ -239,6 +240,7 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                                    'complex128': double_lib.fftw_execute_dft}
                    }
 
+@functools.lru_cache
 def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     if not _fftw_threaded_set:
         set_threads_backend()
@@ -323,14 +325,14 @@ def fft(invec, outvec, prec, itype, otype):
                             get_measure_level(),(check_aligned(invec.data) and check_aligned(outvec.data)),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
-    destroy(theplan)
+    #destroy(theplan)
 
 def ifft(invec, outvec, prec, itype, otype):
     theplan, destroy = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
                             get_measure_level(),(check_aligned(invec.data) and check_aligned(outvec.data)),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
-    destroy(theplan)
+    #destroy(theplan)
 
 # Class based API
 
