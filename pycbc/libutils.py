@@ -20,13 +20,11 @@ allowing it to be specified in an OS-independent way and searched for preferenti
 according to the paths that pkg-config specifies.
 """
 
+import importlib, inspect
 import os, fnmatch, ctypes, sys, subprocess
 from ctypes.util import find_library
 from collections import deque
-try:
-    from subprocess import getoutput
-except ImportError:
-    from commands import getoutput
+from subprocess import getoutput
 
 def pkg_config(pkg_libraries):
     """Use pkg-config to query for the location of libraries, library directories,
@@ -187,3 +185,44 @@ def get_ctypes_library(libname, packages, mode=None):
             return ctypes.CDLL(fullpath)
         else:
             return ctypes.CDLL(fullpath, mode=mode)
+
+def import_optional(library_name):
+    """ Try to import library but and return stub if not found
+
+    Parameters
+    ----------
+    library_name: str
+        The name of the python library to import
+
+    Returns
+    -------
+    library: library or stub
+        Either returns the library if importing is sucessful or it returns
+        a stub which raises an import error and message when accessed.
+    """
+    try:
+        return importlib.import_module(library_name)
+    except ImportError:
+        # module wasn't found so let's return a stub instead to inform
+        # the user what has happened when they try to use related functions
+        class no_module(object):
+            def __init__(self, library):
+                self.library = library
+
+            def __getattribute__(self, attr):
+                if attr == 'library':
+                    return super().__getattribute__(attr)
+
+                lib = self.library
+
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                fun = calframe[1][3]
+                msg =""" The function {} tried to access
+                         '{}' of library '{}', however,
+                        '{}' is not currently installed. To enable this
+                        functionality install '{}' (e.g. through pip
+                        / conda / system packages / source).
+                      """.format(fun, attr, lib, lib, lib)
+                raise ImportError(inspect.cleandoc(msg))
+        return no_module(library_name)

@@ -18,12 +18,13 @@
 
 from string import Formatter
 import lal
-import lalsimulation
 
+from pycbc import libutils
 from pycbc.types import (TimeSeries, FrequencySeries)
 from .waveform import (props, _check_lal_pars, check_args)
 from . import parameters
 
+lalsimulation = libutils.import_optional('lalsimulation')
 
 def _formatdocstr(docstr):
     """Utility for formatting docstrings with parameter information.
