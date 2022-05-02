@@ -967,6 +967,7 @@ class LalappsInspinjExecutable(Executable):
     The class used to create jobs for the lalapps_inspinj Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
+    extension = '.xml'
     def create_node(self, segment, exttrig_file=None, tags=None):
         if tags is None:
             tags = []
@@ -977,9 +978,7 @@ class LalappsInspinjExecutable(Executable):
         # in the config file. Used for coh_PTF as segment length is unknown
         # before run time.
         if self.get_opt('write-compress') is not None:
-            ext = '.xml.gz'
-        else:
-            ext = '.xml'
+            extension = '.xml.gz'
 
         # Check if these injections are using trigger information to choose
         # sky positions for the simulated signals
@@ -1013,7 +1012,7 @@ class LalappsInspinjExecutable(Executable):
             node.add_opt('--time-interval', inj_tspace)
             node.add_opt('--time-step', inj_tspace)
 
-        node.new_output_file_opt(segment, ext, '--output',
+        node.new_output_file_opt(segment, self.extension, '--output',
                                  store_file=self.retain_files)
 
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
