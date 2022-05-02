@@ -25,7 +25,7 @@ from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
-from pycbc.types import copy_opts_for_single_ifo
+from pycbc.types import copy_opts_for_single_ifo, complex_same_precision_as
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, lowpass, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
@@ -1529,7 +1529,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 vec = TimeSeries(
                     zeros(
                         npoints_time,
-                        dtype=complex_same_precision_as(self.strain)
+                        dtype=self.strain.dtype
                     ),
                     delta_t=self.strain.delta_t,
                     copy=False
@@ -1547,6 +1547,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             vec, fseries, fft_class = self.make_freq_cache[npoints_time]
             vec._data[:] = self.strain[s:e]
             fft_class.execute()
+            fseries._data *= vec._delta_t
 
             # we haven't calculated a resample psd for this delta_f
             if delta_f not in self.psds:
