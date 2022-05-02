@@ -1218,7 +1218,7 @@ class PycbcCreateInjectionsExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
     extension = '.hdf'
 
-    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
+    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
                  universe=None, tags=None):
         super(PycbcCreateInjectionsExecutable, self).__init__(
                                cp, exe_name, universe, ifos, out_dir, tags)
