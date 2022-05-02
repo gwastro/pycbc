@@ -1027,13 +1027,8 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
                  tags=None):
-        if tags is None:
-            tags = []
-        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
-                            tags=tags)
-        self.cp = cp
-        self.out_dir = out_dir
-        self.exe_name = exe_name
+        super(PycbcDarkVsBrightInjectionsExecutable, self).__init__(
+                               cp, exe_name, universe, ifos, out_dir, tags)
 
     def create_node(self, parent, segment, tags=None):
         if tags is None:
