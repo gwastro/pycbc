@@ -127,7 +127,7 @@ def select_generic_executable(workflow, exe_tag):
     exe_to_class_map = {
         'ligolw_add'               : LigolwAddExecutable,
         'lalapps_inspinj'          : LalappsInspinjExecutable,
-        'pycbc_create_injections'  : PyCBCCreateInjectionsExecutable,
+        'pycbc_create_injections'  : PycbcCreateInjectionsExecutable,
         'pycbc_dark_vs_bright_injections' : PycbcDarkVsBrightInjectionsExecutable,
         "pycbc_condition_strain"         : PycbcConditionStrainExecutable
     }
@@ -946,21 +946,6 @@ class PycbcSplitInspinjExecutable(Executable):
         node.add_output_list_opt('--output-files', out_files)
         return node
 
-
-class PyCBCCreateInjectionsExecutable(Executable):
-    """
-    The class used to create jobs for the lalapps_inspinj Executable.
-    """
-    current_retention_level = Executable.FINAL_RESULT
-    def create_node(self, segment, tags=None):
-        if tags is None:
-            tags = []
-        node = Node(self)
-        node.new_output_file_opt(segment, '.hdf', '--output-file',
-                                 store_file=self.retain_files, tags=tags)
-        node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
-        node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
-        return node
 
 class LalappsInspinjExecutable(Executable):
     """
