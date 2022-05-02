@@ -25,13 +25,15 @@ template bank.
 #imports
 import os
 import argparse
+import shutil
 
 from ligo import segments
 
 import pycbc.version
 import pycbc.workflow as wf
-from pycbc.results import create_versioning_page, static_table, layout
-from pycbc.workflow import LalappsInspinjExecutable, PycbcDarkVsBrightInjectionsExecutable
+from pycbc.results import (create_versioning_page, static_table, layout)
+from pycbc.workflow.jobsetup import (select_generic_executable,
+                                     int_gps_time_to_str)
 from pycbc.workflow import setup_splittable_dax_generated
 
 # Boiler-plate stuff
@@ -160,7 +162,6 @@ args = parser.parse_args()
 # Create the workflow object
 workflow = wf.Workflow(args)
 
-
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 args.output_dir = '.'
@@ -170,6 +171,16 @@ rdir = layout.SectionNumber('results', ['point_injection_sets',
                                         'workflow'])
 wf.makedir(rdir.base)
 wf.makedir(rdir['workflow'])
+# Save config file to results directory
+conf_dir = rdir['workflow/configuration']
+wf.makedir(conf_dir)
+conf_path = os.path.join(conf_dir, 'configuration.ini')
+with open(conf_path, 'w') as conf_fh:
+    workflow.cp.write(conf_fh)
+conf_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
+                         file_url='file://' + conf_path)])
+
+request_disk = workflow.cp.get('pegasus_profile', 'condor|request_disk')
 
 # Input bank file
 inp_bank = workflow.cp.get('workflow', 'input-bank')
@@ -179,24 +190,51 @@ inp_bank.description='TEMPLATEBANK'
 inp_bank.ifo_list = workflow.ifos
 inp_bank.segment = workflow.analysis_time
 
+# Inspinj Executable
+inspinj_exe = select_generic_executable(workflow, 'injection')
+# The output must be in xml format for pycbc_splitinj to work
+inspinj_exe.extension = ".xml"
+# The following line and the previous one are redundant for
+# lalapps_inspinj, but not for pycbc_create_injections
+inspinj_exe.current_retention_level = wf.Executable.FINAL_RESULT
+
 # Inspinj job
-inspinj_job = LalappsInspinjExecutable(workflow.cp, 'injection', out_dir='.',
-                                       ifos='HL', tags=[])
+inspinj_job = inspinj_exe(workflow.cp, 'injection', out_dir='.',
+                          ifos=workflow.ifos, tags=[])
 
 def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
     """Add a group of jobs that does a complete banksim.
     """
-    inspinj_job.update_current_tags(curr_tags)
     t_seg = segments.segment([1000000000, 1000000000+int(num_injs)])
-    node = inspinj_job.create_node(t_seg)
+    if 'LalappsInspinjExecutable' in str(inspinj_exe):
+        inspinj_job.update_current_tags(curr_tags)
+        node = inspinj_job.create_node(t_seg)
+        inj_file = node.output_file
+    elif 'PycbcCreateInjectionsExecutable' in str(inspinj_exe):
+        subsection_name = ('-'.join(['injection']+curr_tags))
+        inj_conf_file_url = workflow.cp.get(subsection_name, 'config-file') 
+        inj_conf_file = wf.resolve_url_to_file(inj_conf_file_url)
+        conf_file.append(inj_conf_file)
+        shutil.copy2(inj_conf_file.storage_path, conf_dir+'/'+inj_conf_file.lfn)
+        # inspinj_job.update_current_tags is wrapped by two commands that
+        # avoid having --config-file in the call to pycbc_create_injections
+        # but preserve it in the configuration.ini written at the end
+        workflow.cp.remove_option(subsection_name, 'config-file')
+        inspinj_job.update_current_tags(curr_tags)
+        workflow.cp.add_options_to_section(subsection_name, [('config-file', inj_conf_file_url)])
+        node, inj_file = inspinj_job.create_node(inj_conf_file, tags=[])
+        node.add_opt("--gps-start-time", int_gps_time_to_str(t_seg[0]))
+        node.add_opt("--gps-end-time", int_gps_time_to_str(t_seg[1]))
+    else:
+        raise NotImplementedError
     workflow += node
-    inj_file = node.output_file
     # Here we apply the em-bright criterion
     if workflow.cp.has_option('workflow-injections', 'em-bright-only'):
         # Job to carry on with em-bright injections only
-        em_filter_job = PycbcDarkVsBrightInjectionsExecutable(workflow.cp,
-                                       'em_bright_filter', out_dir='.',
-                                       ifos=workflow.ifos, tags=curr_tags)
+        em_filter_exe = select_generic_executable(workflow, 'em_bright_filter')
+        em_filter_job = em_filter_exe(workflow.cp, 'em_bright_filter',
+                                      out_dir='.', ifos=workflow.ifos,
+                                      tags=curr_tags)
         node = em_filter_job.create_node(inj_file, t_seg, curr_tags)
         workflow += node
         inj_file = node.output_files[0]
@@ -344,14 +382,7 @@ for tag in sorted(output_pointinjs):
     layout.two_column_layout(rdir['point_injection_sets/{}'.format(tag)],
                              curr_outs)
 
-# save global config file to results directory
-conf_dir = rdir['workflow/configuration']
-wf.makedir(conf_dir)
-conf_path = os.path.join(conf_dir, 'configuration.ini')
-with open(conf_path, 'w') as conf_fh:
-    workflow.cp.write(conf_fh)
-conf_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
-                         file_url='file://' + conf_path)])
+# Save config file(s) to results directory
 layout.single_layout(conf_dir, conf_file)
 
 # Create versioning information
