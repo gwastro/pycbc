@@ -1216,10 +1216,12 @@ class PycbcCreateInjectionsExecutable(Executable):
     """
 
     current_retention_level = Executable.ALL_TRIGGERS
+    extension = '.hdf'
+
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
                  universe=None, tags=None):
         super(PycbcCreateInjectionsExecutable, self).__init__(
-                               cp, exe_name, universe, ifo, out_dir, tags)
+                               cp, exe_name, universe, ifos, out_dir, tags)
 
     def create_node(self, config_file=None, seed=None, tags=None):
         """ Set up a CondorDagmanNode class to run ``pycbc_create_injections``.
@@ -1254,7 +1256,8 @@ class PycbcCreateInjectionsExecutable(Executable):
         if seed:
             node.add_opt("--seed", seed)
         injection_file = node.new_output_file_opt(analysis_time,
-                                                  ".hdf", "--output-file",
+                                                  self.extension,
+                                                  "--output-file",
                                                   tags=tags)
 
         return node, injection_file
