@@ -84,8 +84,19 @@ output_bright = opts.output_bright
 if opts.write_compress:
     if not output_bright.endswith('gz'):
         output_bright = output_bright+'.gz'
+# make a list of columns that are present in the input table.
+# The : split is needed for columns like `process:process_id`,
+# which must be listed as `process:process_id` in `lsctables.New()`,
+# but are listed as just `process_id` in the `columnnames` attribute
+used_columns = []
+for col in injections.table.validcolumns:
+    att = col.split(':')[-1]
+    if att in injections.table.columnnames:
+        used_columns.append(col)
+
 out_sim_inspiral_bright = lsctables.New(lsctables.SimInspiralTable,
-                                 columns=injections.table.columnnames)
+                                        columns=used_columns)
+
 if opts.max_keep is not None:
     out_sim_inspiral_bright_trimmed = deepcopy(out_sim_inspiral_bright)
 # EM dim sources: table and name of the file that will store it
@@ -105,7 +116,7 @@ for i, inj in enumerate(injections.table):
         out_sim_inspiral_bright.append(inj)
     # NSBH systems
     elif numpy.logical_not(numpy.logical_and(m1 >= opts.ns_bh_boundary, m2 >= opts.ns_bh_boundary)):
-        eta = inj.eta
+        eta = inj.eta if inj.eta is not None else m1*m2/(m1+m2)**2
         s1x = inj.spin1x
         s1y = inj.spin1y
         s1z = inj.spin1z
