@@ -311,7 +311,7 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
     tids_out = np.arange(bank['mass1'].size) \
         if template_ids is None else template_ids[:]
 
-    if (bool(statistic) ^ bool(ifos)):
+    if (statistic is None) ^ (ifos is None):
         raise NotImplementedError("Either both or neither of statistic and "
                                   "ifos must be supplied.")
 
@@ -333,7 +333,10 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
-                    ifos, parameter, cut_function_thresh, tids_out)
+                               ifos,
+                               parameter,
+                               cut_function_thresh,
+                               tids_out)
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
