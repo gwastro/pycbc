@@ -60,6 +60,7 @@ ineq_functions = {
 }
 ineq_choices = list(ineq_functions.keys())
 
+
 def insert_cuts_option_group(parser):
     """
     Add options to the parser for cuts to the templates/triggers
@@ -80,16 +81,6 @@ def insert_cuts_option_group(parser):
                              "PARAMETER:VALUE:LIMIT. Format is the same as in "
                              "--trigger-cuts. PARAMETER can be one of '"
                              + "', '".join(template_param_choices) + "'.")
-
-
-# What are the inequalities associated with the cuts?
-# 'upper' means upper limit, and so requires value < the threshold
-ineq_functions = {
-    'upper': np.less,
-    'lower': np.greater,
-    'upper_inc': np.less_equal,
-    'lower_inc': np.greater_equal
-}
 
 
 def convert_inputstr(inputstr, choices):
