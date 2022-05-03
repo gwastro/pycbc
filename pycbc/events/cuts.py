@@ -333,10 +333,10 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
         elif parameter in template_fit_param_choices:
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
-                               ifos,
-                               parameter,
-                               cut_function_thresh,
-                               tids_out)
+                                                  ifos,
+                                                  parameter,
+                                                  cut_function_thresh,
+                                                  tids_out)
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
