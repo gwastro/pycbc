@@ -153,9 +153,8 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
     ----------
     triggers: ReadByTemplate object
         The triggers in this particular template. This
-        must have the correct datasets required tio calculate
-        the values we cut on. This will be okay when used in standard
-        searches.
+        must have the correct datasets required to calculate
+        the values we cut on.
 
     trigger_cut_dict: dictionary
         Dictionary with parameters as keys, and tuples of
