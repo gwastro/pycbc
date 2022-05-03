@@ -1525,7 +1525,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             npoints_time = e - s
             if npoints_time not in self.make_freq_cache:
                 npoints_freq = npoints_time // 2 + 1
-                delta_f = 1.0 / (npoints_time * self.strain.delta_t)
+                delta_f_tmp = 1.0 / (npoints_time * self.strain.delta_t)
                 vec = TimeSeries(
                     zeros(
                         npoints_time,
@@ -1539,7 +1539,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                         npoints_freq,
                         dtype=complex_same_precision_as(self.strain)
                     ),
-                    delta_f=delta_f,
+                    delta_f=delta_f_tmp,
                     copy=False
                 )
                 fft_class = pycbc.fft.FFT(vec, vectilde)
