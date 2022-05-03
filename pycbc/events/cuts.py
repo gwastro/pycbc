@@ -34,6 +34,7 @@ from pycbc.io import hdf
 from pycbc.bank import conversions as bank_conv
 from pycbc.io import get_chisq_from_file_choice
 
+# sngl_rank_keys are the allowed names of reweighted SNR functions
 sngl_rank_keys = ranking.sngls_ranking_function_dict.keys()
 
 trigger_param_choices = list(sngl_rank_keys)
@@ -48,8 +49,16 @@ template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
 template_param_choices = bank_conv.conversion_options + \
                              template_fit_param_choices
 
-ineq_choices = ['upper', 'lower', 'upper_inc', 'lower_inc']
-
+# What are the inequalities associated with the cuts?
+# 'upper' means upper limit, and so requires value < threshold
+# to keep a trigger
+ineq_functions = {
+    'upper': np.less,
+    'lower': np.greater,
+    'upper_inc': np.less_equal,
+    'lower_inc': np.greater_equal
+}
+ineq_choices = list(ineq_functions.keys())
 
 def insert_cuts_option_group(parser):
     """
@@ -59,14 +68,13 @@ def insert_cuts_option_group(parser):
                         help="Cuts to apply to the triggers, supplied as "
                              "PARAMETER:VALUE:LIMIT, where, PARAMETER is the "
                              "parameter to be cut, VALUE is the value at "
-                             "which it is cut, which must be convertible to "
-                             "a float, and LIMIT is one of '"
+                             "which it is cut, and LIMIT is one of '"
                              + "', '".join(ineq_choices) +
                              "' to indicate the inequality needed. "
                              "PARAMETER is one of:'"
                              + "', '".join(trigger_param_choices) +
-                             "'. For example snr:6:LOWER places the "
-                             "requirement that matched filter SNR must be > 6")
+                             "'. For example snr:6:LOWER removes triggers "
+                             "with matched filter SNR < 6")
     parser.add_argument('--template-cuts', nargs='+',
                         help="Cuts to apply to the triggers, supplied as "
                              "PARAMETER:VALUE:LIMIT. Format is the same as in "
@@ -89,7 +97,7 @@ def convert_inputstr(inputstr, choices):
     Convert the inputstr into a dictionary keyed on parameter
     with a tuple of the function to be used in the cut, and
     the float to compare to.
-    Do some checks as to whether the inputstr fits input requirements
+    Do input checks
     """
     try:
         cut_param, cut_value_str, cut_limit = inputstr.split(':')
@@ -120,17 +128,16 @@ def convert_inputstr(inputstr, choices):
 
 def ingest_cuts_option_group(args):
     """
-    Check that the inputs given to options in insert_cuts_option_group
-    are sensible, and return the objects used to handle the cuts.
+    Return dictionaries for trigger and template cuts.
     """
     # Deal with the case where no cuts are supplied:
     if not args.trigger_cuts and not args.template_cuts:
         return {}, {}
 
-    # So that we can deal with the case where one set of cuts is supplied
-    # but not the other, assign an empty list if no argument given
-    trigger_cut_strs = args.trigger_cuts if args.trigger_cuts else []
-    template_cut_strs = args.template_cuts if args.template_cuts else []
+    # Deal with the case where one set of cuts is supplied
+    # but not the other
+    trigger_cut_strs = args.trigger_cuts or []
+    template_cut_strs = args.template_cuts or []
 
     # Handle trigger cuts
     trigger_cut_dict = {}
@@ -153,7 +160,11 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
 
     Parameters
     ----------
-    triggers:
+    triggers: ReadByTemplate object
+        The triggers in this particular template. This
+        must have the correct datasets required tio calculate
+        the values we cut on. This will be okay when used in standard
+        searches.
 
     trigger_cut_dict: dictionary
         Dictionary with parameters as keys, and tuples of
