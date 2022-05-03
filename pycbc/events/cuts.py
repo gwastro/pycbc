@@ -265,8 +265,8 @@ def apply_template_fit_cut(statistic, ifos, parameter, cut_function_thresh,
     return tids_out
 
 
-def apply_template_cuts(statistic, ifos, bank,
-                        template_cut_dict, template_ids=None):
+def apply_template_cuts(bank, template_cut_dict, template_ids=None,
+                        statistic=None, ifos=None):
     """
     Fetch/calculate the parameter for the templates, possibly already
     preselected by template_ids, and then apply the cuts defined
@@ -276,17 +276,6 @@ def apply_template_cuts(statistic, ifos, bank,
 
     Parameters
     ----------
-    statistic:
-        A PyCBC ranking statistic instance. Used for the template fit
-        cuts. If fits_by_tid does not exist for each ifo, then
-        template fit cuts will be skipped. If a fit cut has been specified
-        and fits_by_tid does not exist for all ifos, an error will be raised.
-
-    ifos: list of strings
-        List of IFOS used in this findtrigs instance.
-        Templates must pass cuts in all IFOs. This is important
-        e.g. for template fit parameter cuts.
-
     bank: h5py File object, or a dictionary
         Must contain the usual template bank datasets
 
@@ -301,6 +290,18 @@ def apply_template_cuts(statistic, ifos, bank,
         Indices of templates to consider within the bank, useful if
         templates have already been down-selected
 
+    statistic:
+        A PyCBC ranking statistic instance. Used for the template fit
+        cuts. If fits_by_tid does not exist for each ifo, then
+        template fit cuts will be skipped. If a fit cut has been specified
+        and fits_by_tid does not exist for all ifos, an error will be raised.
+        If not supplied, no template fit cuts will be attempted.
+
+    ifos: list of strings
+        List of IFOS used in this findtrigs instance.
+        Templates must pass cuts in all IFOs. This is important
+        e.g. for template fit parameter cuts.
+
     Returns
     -------
     tids_out: numpy array
@@ -309,6 +310,10 @@ def apply_template_cuts(statistic, ifos, bank,
     # Get the initial list of templates:
     tids_out = np.arange(bank['mass1'].size) \
         if template_ids is None else template_ids[:]
+
+    if (bool(statistic) ^ bool(ifos)):
+        raise NotImplementedError("Either both or neither of statistic and "
+                                  "ifos must be supplied.")
 
     if not template_cut_dict:
         # No cuts are defined in the dictionary: just return the
@@ -326,8 +331,9 @@ def apply_template_cuts(statistic, ifos, bank,
             # Only keep templates which pass this cut
             tids_out = tids_out[cut_function(values, cut_thresh)]
         elif parameter in template_fit_param_choices:
-            tids_out = apply_template_fit_cut(statistic, ifos, parameter,
-                                              cut_function_thresh, tids_out)
+            if statistic and ifos:
+                tids_out = apply_template_fit_cut(statistic,
+                    ifos, parameter, cut_function_thresh, tids_out)
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")

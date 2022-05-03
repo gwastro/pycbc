@@ -189,10 +189,10 @@ if tids_with_trigs is not None:
 
 # Apply cuts as defined on the command line
 template_ids = cuts.apply_template_cuts(
-    rank_method,
-    trigs.ifos,
     trigs.singles[0].bank,
     template_cut_dict,
+    statistic=rank_method,
+    ifos=trigs.ifos,
     template_ids=template_ids)
 
 
