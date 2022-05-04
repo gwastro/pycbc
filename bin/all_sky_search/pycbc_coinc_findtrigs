@@ -187,7 +187,7 @@ else:
 if tids_with_trigs is not None:
     template_ids = numpy.intersect1d(tids_with_trigs, template_ids)
 
-# Apply cuts as defined on the command line
+# Apply cuts to templates
 template_ids = cuts.apply_template_cuts(
     trigs.singles[0].bank,
     template_cut_dict,
@@ -236,7 +236,7 @@ def process_template(tnum):
     tids_full = {}
     logging.info('Obtaining trigs for template %i ..' % (tnum))
     for i, sngl in zip(trigs.ifos, trigs.singles):
-        # Apply single-trigger cuts as defined on the command line
+        # Apply cuts to triggers
         tids_uncut = sngl.set_template(tnum)
         trigger_keep_ids = cuts.apply_trigger_cuts(sngl, trigger_cut_dict)
 

@@ -31,7 +31,7 @@ import copy
 import numpy as np
 from pycbc.events import ranking
 from pycbc.io import hdf
-from pycbc.bank import conversions as bank_conv
+from pycbc.bank import bank_conversions as bank_conv
 from pycbc.io import get_chisq_from_file_choice
 
 # sngl_rank_keys are the allowed names of reweighted SNR functions
@@ -325,8 +325,8 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
         cut_function, cut_thresh = cut_function_thresh
 
         if parameter in bank_conv.conversion_options:
-            # Calculate the parameter values using the bank_conversion helper
-            values = bank_conv.bank_conversion(parameter, bank, tids_out)
+            # Calculate the parameter values using the bank property helper
+            values = bank_conv.get_bank_property(parameter, bank, tids_out)
             # Only keep templates which pass this cut
             tids_out = tids_out[cut_function(values, cut_thresh)]
         elif parameter in template_fit_param_choices:
@@ -341,6 +341,6 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
                              " This shouldn't happen with input sanitisation")
 
     logging.info("%d out of %d templates kept after applying template cuts",
-                 len(tids_out), len(template_ids))
+                 len(tids_out), bank['mass1'].size)
 
     return tids_out

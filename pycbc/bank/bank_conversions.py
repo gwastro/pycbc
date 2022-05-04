@@ -55,7 +55,8 @@ spin_conversions = {
 }
 
 
-def bank_conversion(parameter, bank, template_ids):
+def get_bank_property(parameter, bank, template_ids,
+                      duration_approximant="SEOBNRv4"):
     """ Get a specific value from a hdf file object in standard PyCBC
     template bank format
 
@@ -70,6 +71,12 @@ def bank_conversion(parameter, bank, template_ids):
 
     template_ids: numpy array
         Array of template IDs for reading a set of templates from the bank
+
+    Optional Parameters
+    -------------------
+    duration_approximant: string
+        The approximant used to calculate the duration of the template if
+        not already given
 
     Returns
     -------
@@ -94,7 +101,7 @@ def bank_conversion(parameter, bank, template_ids):
                                               bank['spin1z'][:][template_ids],
                                               bank['spin2z'][:][template_ids],
                                               bank['f_lower'][:][template_ids],
-                                              approximant="SEOBNRv4")
+                                              approximant=duration_approximant)
     # Basic conversions
     elif parameter in mass_conversions.keys():
         values = mass_conversions[parameter](bank['mass1'][:][template_ids],
