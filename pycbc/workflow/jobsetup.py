@@ -483,16 +483,8 @@ class PyCBCInspiralExecutable(Executable):
                  injection_file=None, tags=None, reuse_executable=False):
         if tags is None:
             tags = []
-        super(PyCBCInspiralExecutable, self).__init__(
-            cp,
-            exe_name,
-            None,
-            ifo,
-            out_dir,
-            tags=tags,
-            reuse_executable=reuse_executable,
-            set_submit_subdir=False
-        )
+        super().__init__(cp, exe_name, None, ifo, out_dir, tags=tags,
+            reuse_executable=reuse_executable, set_submit_subdir=False)
         self.cp = cp
         self.injection_file = injection_file
         self.ext = '.hdf'
@@ -670,8 +662,7 @@ class PyCBCMultiInspiralExecutable(Executable):
                  gate_files=None, out_dir=None, tags=None):
         if tags is None:
             tags = []
-        super(PyCBCMultiInspiralExecutable, self).__init__(cp, name, universe,
-                ifo, out_dir=out_dir, tags=tags)
+        super().__init__(cp, name, universe, ifo, out_dir=out_dir, tags=tags)
         self.injection_file = injection_file
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
@@ -793,7 +784,7 @@ class PyCBCTmpltbankExecutable(Executable):
                  tags=None, write_psd=False, psd_files=None):
         if tags is None:
             tags = []
-        super(PyCBCTmpltbankExecutable, self).__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
+        super().__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
         self.cp = cp
         self.write_psd = write_psd
         self.psd_files = psd_files
@@ -887,7 +878,7 @@ class LigolwAddExecutable(Executable):
 
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, *args, **kwargs):
-        super(LigolwAddExecutable, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def create_node(self, jobSegment, input_files, output=None,
                     use_tmp_subdirs=True, tags=None):
@@ -918,8 +909,7 @@ class PycbcSplitInspinjExecutable(Executable):
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
     def __init__(self, cp, exe_name, num_splits, universe=None, ifo=None,
                  out_dir=None):
-        super(PycbcSplitInspinjExecutable, self).__init__(cp, exe_name,
-                universe, ifo, out_dir, tags=[])
+        super().__init__(cp, exe_name, universe, ifo, out_dir, tags=[])
         self.num_splits = int(num_splits)
     def create_node(self, parent, tags=None):
         if tags is None:
@@ -963,7 +953,7 @@ class LalappsInspinjExecutable(Executable):
         # in the config file. Used for coh_PTF as segment length is unknown
         # before run time.
         if self.get_opt('write-compress') is not None:
-            extension = '.xml.gz'
+            self.extension = '.xml.gz'
 
         # Check if these injections are using trigger information to choose
         # sky positions for the simulated signals
@@ -1012,8 +1002,7 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
     current_retention_level = Executable.FINAL_RESULT
     def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
                  tags=None):
-        super(PycbcDarkVsBrightInjectionsExecutable, self).__init__(
-                               cp, exe_name, universe, ifos, out_dir, tags)
+        super().__init__(cp, exe_name, universe, ifos, out_dir, tags)
 
     def create_node(self, parent, segment, tags=None):
         if tags is None:
@@ -1110,8 +1099,7 @@ class PycbcSplitBankExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, num_banks,
                  ifo=None, out_dir=None, universe=None):
-        super(PycbcSplitBankExecutable, self).__init__(cp, exe_name, universe,
-                ifo, out_dir, tags=[])
+        super().__init__(cp, exe_name, universe, ifo, out_dir, tags=[])
         self.num_banks = int(num_banks)
 
     def create_node(self, bank, tags=None):
@@ -1161,8 +1149,7 @@ class PycbcConditionStrainExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, ifo=None, out_dir=None, universe=None,
             tags=None):
-        super(PycbcConditionStrainExecutable, self).__init__(cp, exe_name, universe,
-              ifo, out_dir, tags)
+        super().__init__(cp, exe_name, universe, ifo, out_dir, tags)
 
     def create_node(self, input_files, tags=None):
         if tags is None:
@@ -1200,8 +1187,7 @@ class PycbcCreateInjectionsExecutable(Executable):
 
     def __init__(self, cp, exe_name, ifos=None, out_dir=None,
                  universe=None, tags=None):
-        super(PycbcCreateInjectionsExecutable, self).__init__(
-                               cp, exe_name, universe, ifos, out_dir, tags)
+        super().__init__(cp, exe_name, universe, ifos, out_dir, tags)
 
     def create_node(self, config_file=None, seed=None, tags=None):
         """ Set up a CondorDagmanNode class to run ``pycbc_create_injections``.
@@ -1250,11 +1236,8 @@ class PycbcInferenceExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, ifos=None, out_dir=None,
                  universe=None, tags=None):
-        super(PycbcInferenceExecutable, self).__init__(cp, exe_name,
-                                                       universe=universe,
-                                                       ifos=ifos,
-                                                       out_dir=out_dir,
-                                                       tags=tags)
+        super().__init__(cp, exe_name, universe=universe, ifos=ifos,
+                         out_dir=out_dir, tags=tags)
 
     def create_node(self, config_file, seed=None, tags=None,
                     analysis_time=None):
