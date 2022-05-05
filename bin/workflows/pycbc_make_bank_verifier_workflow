@@ -180,8 +180,6 @@ with open(conf_path, 'w') as conf_fh:
 conf_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
                          file_url='file://' + conf_path)])
 
-request_disk = workflow.cp.get('pegasus_profile', 'condor|request_disk')
-
 # Input bank file
 inp_bank = workflow.cp.get('workflow', 'input-bank')
 inp_bank = wf.resolve_url_to_file(inp_bank)
