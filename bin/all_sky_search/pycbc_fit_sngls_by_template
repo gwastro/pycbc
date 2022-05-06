@@ -172,16 +172,19 @@ count_in_template = count_in_template_hashorder[tid_sort]
 # get the stat values
 logging.info('Calculating stat values')
 abovethresh, stat = get_stat(args, trigf[args.ifo], args.stat_threshold)
+logging.info('%i trigs left after thresholding' % len(stat))
 
 tid = trigf[args.ifo + '/template_id'][abovethresh]
 time = trigf[args.ifo + '/end_time'][abovethresh]
 if args.save_trig_param:
     tparam_region = trigf[args.ifo][args.save_trig_param + '_template'][:]
-    # Note: this breaks if there are no triggers in the template, but that
-    # is pretty rare
-    tparam = [trigf[args.ifo][args.save_trig_param][region][0]
-              for region in tparam_region]
-logging.info('%i trigs left after thresholding' % len(stat))
+    tparam = []
+    for region in tparam_region:
+        try:
+            tparam.append(trigf[args.ifo][args.save_trig_param][region][0])
+        except IndexError:
+            # Should only happen if there are no triggers in the template
+            tparam.append(np.nan)
 
 # Calculate total time being analysed from segments
 # use set() to eliminate duplicates
