@@ -204,23 +204,15 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
     """Add a group of jobs that does a complete banksim.
     """
     t_seg = segments.segment([1000000000, 1000000000+int(num_injs)])
+    inspinj_job.update_current_tags(curr_tags)
     if 'LalappsInspinjExecutable' in str(inspinj_exe):
-        inspinj_job.update_current_tags(curr_tags)
         node = inspinj_job.create_node(t_seg)
         inj_file = node.output_file
     elif 'PycbcCreateInjectionsExecutable' in str(inspinj_exe):
-        subsection_name = ('-'.join(['injection']+curr_tags))
-        inj_conf_file_url = workflow.cp.get(subsection_name, 'config-file') 
-        inj_conf_file = wf.resolve_url_to_file(inj_conf_file_url)
-        conf_file.append(inj_conf_file)
-        shutil.copy2(inj_conf_file.storage_path, conf_dir+'/'+inj_conf_file.lfn)
-        # inspinj_job.update_current_tags is wrapped by two commands that
-        # avoid having --config-file in the call to pycbc_create_injections
-        # but preserve it in the configuration.ini written at the end
-        workflow.cp.remove_option(subsection_name, 'config-file')
-        inspinj_job.update_current_tags(curr_tags)
-        workflow.cp.add_options_to_section(subsection_name, [('config-file', inj_conf_file_url)])
-        node, inj_file = inspinj_job.create_node(inj_conf_file, tags=[])
+        # Ensure pycbc_create_injections dedicated configuration files
+        # are copied over to the results directory
+        shutil.copy2(inspinj_job.get_opt('config-files'), conf_dir)
+        node, inj_file = inspinj_job.create_node()
         node.add_opt("--gps-start-time", int_gps_time_to_str(t_seg[0]))
         node.add_opt("--gps-end-time", int_gps_time_to_str(t_seg[1]))
     else:
