@@ -240,8 +240,20 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                                    'complex128': double_lib.fftw_execute_dft}
                    }
 
-@functools.lru_cache
+
+class CachedPlan(object):
+    def __del__(self):
+        self.delplan(self.plan)
+
+
 def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
+    curr_plan = _plan(size, idtype, odtype, direction, mlvl, aligned,
+                      nthreads, inplace)
+    return curr_plan.plan
+
+
+@functools.lru_cache(maxsize=128)
+def _plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     if not _fftw_threaded_set:
         set_threads_backend()
     if nthreads != _fftw_current_nthreads:
@@ -308,8 +320,11 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
 
     destroy.argtypes = [ctypes.c_void_p]
 
+    cplan = CachedPlan()
+    cplan.plan = theplan
+    cplan.delplan = destroy
 
-    return theplan, destroy
+    return cplan
 
 
 # Note that we don't need to check whether we've set the threading backend
@@ -321,18 +336,18 @@ def execute(plan, invec, outvec):
     f(plan, invec.ptr, outvec.ptr)
 
 def fft(invec, outvec, prec, itype, otype):
-    theplan, destroy = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
-                            get_measure_level(),(check_aligned(invec.data) and check_aligned(outvec.data)),
+    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
+                   get_measure_level(),
+                   (check_aligned(invec.data) and check_aligned(outvec.data)),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
-    #destroy(theplan)
 
 def ifft(invec, outvec, prec, itype, otype):
-    theplan, destroy = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
-                            get_measure_level(),(check_aligned(invec.data) and check_aligned(outvec.data)),
+    theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
+                   get_measure_level(),
+                   (check_aligned(invec.data) and check_aligned(outvec.data)),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
-    #destroy(theplan)
 
 # Class based API
 
