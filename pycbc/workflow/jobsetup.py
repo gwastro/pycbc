@@ -484,7 +484,8 @@ class PyCBCInspiralExecutable(Executable):
         if tags is None:
             tags = []
         super().__init__(cp, exe_name, None, ifo, out_dir, tags=tags,
-            reuse_executable=reuse_executable, set_submit_subdir=False)
+                         reuse_executable=reuse_executable,
+                         set_submit_subdir=False)
         self.cp = cp
         self.injection_file = injection_file
         self.ext = '.hdf'
