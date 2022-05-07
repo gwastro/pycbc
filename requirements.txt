@@ -1,6 +1,5 @@
 # requirements for most basic library use
-astropy==5.1rc1; python_version >= '3.8'
-astropy>=2.0.3,!=4.2.1,!=4.0.5; python_version == '3.7'
+astropy>=2.0.3,!=4.2.1,!=4.0.5
 Mako>=1.0.1
 scipy>=0.16.0
 matplotlib>=2.0.0
