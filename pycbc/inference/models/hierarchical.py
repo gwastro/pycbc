@@ -51,11 +51,13 @@ class HierarhcicalModel(BaseModel):
     Submodels are provided as a dictionary upon initialization with a unique
     label assigned to each model, e.g.,
     `{'event1' -> model1, 'event2' -> model2}`. Variable and static parameters
-    that are specific to each submodel should be prepended with `{label}_`,
+    that are specific to each submodel should be prepended with `{label}__`,
     where `{label}__` is the label associated with the given submodel. Shared
-    parameters across multiple models have no labels prepended. Parameters with
-    labels prepended will override parameters without labels for the event
-    they are assigned.
+    parameters across multiple models have no labels prepended. To specify
+    shared models over a subset of models, separate models with an underscore.
+    For example, `event1_event2__foo` will result in `foo` being common between
+    models `event1` and `event2`. For more details on parameter naming see
+    :py:class:`HierarchicalParam`.
 
     Parameters
     ----------
@@ -63,6 +65,8 @@ class HierarhcicalModel(BaseModel):
         A tuple of parameter names that will be varied.
     submodels: dict
         Dictionary of model labels -> model instances of all the submodels.
+    \**kwargs :
+        All other keyword arguments are passed to :py:class:`base.BaseModel`.
     """
     name = 'hierarchical'
 
