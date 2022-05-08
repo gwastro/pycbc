@@ -88,48 +88,6 @@ class HierarhcicalModel(BaseModel):
         self._static_params = {HierarchicalParam(p, self.submodels): val
                                for p, val in static_params.items()}
 
-    @staticmethod
-    def map_params(params, submodels, modeldelim='__', ):
-        """Parses list of parameters, assigning them to the submodel they
-        belong to.
-
-        Parameters
-        ----------
-        params : list of str
-            List of parameter names. Should include both global and sub-model
-            names.
-        submodels : list of str
-            List of submodel names to assign parameters to.
-        modeldelim : str, optional
-            The delimiter between model names and model parameters in parameter
-            names. Default is `__`; e.g., ``model1__foo``.
-
-        Returns
-        -------
-        dict :
-        """
-        # pull out the global parameters
-        global_params = []
-        event_params = []
-        for p in params:
-            subp = p.split(self._modeldelim, 1)
-            if len(subp) == 1:
-                global_params.append(p)
-            else:
-                event_params.append((mname, p, subp))
-        # initialize the param_map 
-        param_map = {mname: {p: p for p in global_params}
-                     for mname in submodels}
-        # update it with the event parameters
-        for mname, param, subp event_params:
-            # check if multiple models are specified
-            mname = mname.split('_')
-            for mn in mname:
-                # note that this will override any global parameter with the
-                # same name as subp
-                param_map[mn].update({subp: p})
-        return param_map
-
     def update(self, **params):
         """Updates the current parameter positions, resets stats, and updates
         the sub-models.
