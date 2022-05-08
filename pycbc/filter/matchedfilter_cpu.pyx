@@ -45,10 +45,10 @@ def _batch_correlate(numpy.ndarray [long, ndim=1] x,
 
     cdef unsigned int i, j
 
-    for i in range(nvec):
+    for i in prange(nvec, nogil=True):
         xp = <float complex*> x[i]
         zp = <float complex*> z[i]
-        for j in prange(vsize, nogil=True):
+        for j in range(vsize):
             zp[j] = xp[j].conjugate() * y[j]
 
 def batch_correlate_execute(self, y):
