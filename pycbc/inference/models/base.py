@@ -347,14 +347,8 @@ class BaseModel(metaclass=ABCMeta):
     def __init__(self, variable_params, static_params=None, prior=None,
                  sampling_transforms=None, waveform_transforms=None):
         # store variable and static args
-        if isinstance(variable_params, str):
-            variable_params = (variable_params,)
-        if not isinstance(variable_params, tuple):
-            variable_params = tuple(variable_params)
-        self._variable_params = variable_params
-        if static_params is None:
-            static_params = {}
-        self._static_params = static_params
+        self.variable_params = variable_params
+        self.static_params = static_params
         # store prior
         if prior is None:
             self.prior_distribution = _NoPrior()
@@ -375,10 +369,24 @@ class BaseModel(metaclass=ABCMeta):
         """Returns the model parameters."""
         return self._variable_params
 
+    @variable_params.setter
+    def variable_params(self, variable_params):
+        if isinstance(variable_params, str):
+            variable_params = (variable_params,)
+        if not isinstance(variable_params, tuple):
+            variable_params = tuple(variable_params)
+        self._variable_params = variable_params
+
     @property
     def static_params(self):
         """Returns the model's static arguments."""
         return self._static_params
+
+    @static_params.setter
+    def static_params(self, static_params):
+        if static_params is None:
+            static_params = {}
+        self._static_params = static_params
 
     @property
     def sampling_params(self):
