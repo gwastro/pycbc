@@ -35,6 +35,8 @@ from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
 from pycbc.io.live import gracedb_tag_with_version
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.psd import interpolate
+from pycbc.types import FrequencySeries
 
 
 def check_gracedb_for_event(gdb_handle, query, far):
@@ -181,38 +183,43 @@ for event in coinc_table:
                     "at GPS time {2}".format(
                     " ".join(args.psd_files), sngl.ifo, sngl.end))
 
+            # Resample the psd so it can be uploaded to GDB
+            df = 0.25
+            psd_fs = FrequencySeries(psd, delta_f=psd.attrs["delta_f"],
+                                     dtype=np.float64)
+            psd_fs = interpolate(psd_fs, df)
+
             flow = psd.file.attrs['low_frequency_cutoff']
-            df = psd.attrs["delta_f"]
             kmin = int(flow / df)
 
             fseries = lal.CreateREAL8FrequencySeries(
                 "psd", lal.LIGOTimeGPS(int(psd.attrs["epoch"])), kmin * df, df,
-                lal.StrainUnit**2 / lal.HertzUnit, len(psd) - kmin)
-            fseries.data.data = psd[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
+                lal.StrainUnit**2 / lal.HertzUnit, len(psd_fs) - kmin)
+            fseries.data.data = psd_fs[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
             psddict[sngl.ifo] = fseries
 
     xmldoc.childNodes[-1].appendChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].appendChild(coinc_inspiral_table_curr)
     xmldoc.childNodes[-1].appendChild(coinc_event_map_table_curr)
     xmldoc.childNodes[-1].appendChild(sngl_inspiral_table_curr)
+    lal.series.make_psd_xmldoc(psddict, xmldoc.childNodes[-1])
 
     ifos = sorted([sngl.ifo for sngl in sngl_inspiral_table_curr])
     ifos_str = ''.join(ifos)
     id_str = args.search_id_string
-    filename_xml = "{}-PYCBC_{}-{:d}-1.xml.gz".format(ifos_str, id_str, time)
+    filename_xml = "{}-PYCBC_{}-{:d}-1.xml".format(ifos_str, id_str, time)
     fullpath_xml = os.path.join(args.output_directory, filename_xml)
 
-    xmldoc = lal.series.make_psd_xmldoc(psddict, xmldoc=xmldoc)
     ligolw_utils.write_filename(xmldoc, fullpath_xml)
 
     if args.no_upload:
         # We have saved the file, and aren't uploading, so reset the tables
         # and move to the next event
         logging.info("Not uploading event")
-        xmldoc.childNodes[-2].removeChild(coinc_event_table_curr)
-        xmldoc.childNodes[-2].removeChild(coinc_inspiral_table_curr)
-        xmldoc.childNodes[-2].removeChild(coinc_event_map_table_curr)
-        xmldoc.childNodes[-2].removeChild(sngl_inspiral_table_curr)
+        xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
+        xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
+        xmldoc.childNodes[-1].removeChild(coinc_event_map_table_curr)
+        xmldoc.childNodes[-1].removeChild(sngl_inspiral_table_curr)
         continue
 
     group_tag = 'Test' if args.testing else 'CBC'
@@ -235,7 +242,7 @@ for event in coinc_table:
         gracedb.writeLog(r['graceid'], args.log_message,
                          tag_name=['analyst_comments'])
 
-    xmldoc.childNodes[-2].removeChild(coinc_event_table_curr)
-    xmldoc.childNodes[-2].removeChild(coinc_inspiral_table_curr)
-    xmldoc.childNodes[-2].removeChild(coinc_event_map_table_curr)
-    xmldoc.childNodes[-2].removeChild(sngl_inspiral_table_curr)
+    xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
+    xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
+    xmldoc.childNodes[-1].removeChild(coinc_event_map_table_curr)
+    xmldoc.childNodes[-1].removeChild(sngl_inspiral_table_curr)
