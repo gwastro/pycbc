@@ -71,10 +71,44 @@ class HierarhcicalModel(BaseModel):
     name = 'hierarchical'
 
     def __init__(self, variable_params, submodels, **kwargs):
-        self.submodels = submodels
         super().__init__(variable_params, **kwargs)
-        # store a map of model names -> parameters for quick look up later
+        # sub models is assumed to be a dict of model labels -> model instances
+        self.submodels = submodels
+        # store a map of model labels -> parameters for quick look up later
         self.param_map = map_params(self.variable_params)
+        # add any parameters created by waveform transforms
+        if self.waveform_transforms is not None:
+            derived_params = set()
+            derived_params.update(*[t.outputs
+                                    for t in self.waveform_transforms])
+            self.param_map.update(map_params(list(derived_params)))
+        # make sure the static parameters of all submodels are set correctly
+        self.static_param_map = map_params(self.static_params.keys())
+        # also create a map of model label -> extra stats created by each model
+        # stats are prepended with the model label. We'll include the
+        # loglikelihood returned by each submodel in the extra stats.
+        self.extra_stats_map = {}
+        self._extra_stats = []
+        for lbl, model in self.submodels.items():
+            model.static_params = {p.subname: self.static_params[p.fullname]
+                                   for p in self.static_param_map[lbl]}
+            self.extra_stats_map.update(map_params([
+                HiearchicalParam.from_subname(p, lbl)
+                for p in model.extra_stats+['loglikelihood']])
+            self._extra_stats += self.extra_stats_map[lbl]
+            # also make sure the model's sampling transforms and waveform
+            # transforms are not set, as these are handled by the hierarchical
+            # model
+            if model.sampling_transforms is not None:
+                raise ValueError("Model {} has sampling transforms set; "
+                                 "in a hierarchical analysis, these are "
+                                 "handled by the hiearchical model"
+                                 .format(lbl))
+            if model.waveform_transforms is not None:
+                raise ValueError("Model {} has waveform transforms set; "
+                                 "in a hierarchical analysis, these are "
+                                 "handled by the hiearchical model"
+                                 .format(lbl))
 
     @BaseModel.variable_params.setter
     def variable_params(self, variable_params):
@@ -92,25 +126,23 @@ class HierarhcicalModel(BaseModel):
         self._static_params = {HierarchicalParam(p, self.submodels): val
                                for p, val in static_params.items()}
 
-    def update(self, **params):
-        """Updates the current parameter positions, resets stats, and updates
-        the sub-models.
-
-        Model labels are stripped from parameters before being passed to
-        the submodels.
-        """
-        # update the hierarchical parameters
-        super().update(**params)
-        # update each of the submodels
-        for lbl, model in self.submodels.items():
-            model.update(**{p.subname: params[p.fullname]
-                            for p in self.param_map[lbl]})
-
     def _loglikelihood(self):
         # takes the sum of the constitutent models' loglikelihoods
         logl = 0.
         for lbl, model in self.submodels.items():
-            logl += model.loglikelihood
+            # update the model with the current params. This is done here
+            # instead of in `update` because waveform transforms are not
+            # applied until the loglikelihood function is called
+            model.update(**{p.subname: self.current_params[p.fullname]
+                            for p in self.param_map[lbl]})
+            # now get the loglikelihood from the model
+            sublogl = model.loglikelihood
+            # store the extra stats
+            mstats = model.current_stats
+            for stat in self.extra_stats_map[lbl]:
+                setattr(self._current_stats, stat, mstats[stat.subname])
+            # add to the total loglikelihood
+            logl += sublogl
         return logl
 
 
@@ -119,6 +151,15 @@ class HierarchicalParam(str):
 
     This adds attributes that keep track of the model label(s) the parameter
     is associated with, along with the name that is passed to the models.
+
+    Parameters
+    ----------
+    fullname : str
+        Name of the hierarchical parameter. Should have format
+        ``{model1}[_{model2}[_{...}]]__{param}``.
+    possible_models : set of str
+        The possible sub-models a parameter can belong to. Should a set of
+        model labels.
     """
     delim = '__'
     model_delim = '_'
@@ -131,6 +172,12 @@ class HierarchicalParam(str):
         obj.models = models
         obj.subname = subp
         return obj
+
+    @classmethod
+    def from_subname(cls, subname, model_label):
+        """Creates a HierarchicalParam from the given subname and model label.
+        """
+        return cls(cls.delim.join([model_label, subname]), set([model_label]))
 
     @classmethod
     def parse(cls, fullname, possible_models):
