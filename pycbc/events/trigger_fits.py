@@ -145,10 +145,10 @@ def fit_above_thresh(distr, vals, thresh=None, weights=None):
 
 
 fitfn_dict = {
-    'exponential' : lambda x, alpha, t : alpha * numpy.exp(-alpha * (x - t)),
-    'rayleigh' : lambda x, alpha, t : (alpha * x * \
-                                       numpy.exp(-alpha * (x ** 2 - t ** 2) / 2.)),
-    'power' : lambda x, alpha, t : (alpha - 1.) * x ** (-alpha) * t ** (alpha - 1.)
+    'exponential' : lambda x, a, t : a * numpy.exp(-a * (x - t)),
+    'rayleigh' : lambda x, a, t : (a * x * \
+                                       numpy.exp(-a * (x ** 2 - t ** 2) / 2.)),
+    'power' : lambda x, a, t : (a - 1.) * x ** (-a) * t ** (a - 1.)
 }
 
 def fit_fn(distr, xvals, alpha, thresh):

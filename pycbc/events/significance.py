@@ -29,13 +29,12 @@ read in the associated options to do so.
 """
 import logging
 import copy
-import sys
 import numpy as np
-from pycbc.events import coinc
 from pycbc.events import trigger_fits as trstats
 
 
-def n_louder(bstat, fstat, dec, skip_background=False, **kwargs):  # pylint:disable=unused-argument
+def count_n_louder(bstat, fstat, dec, skip_background=False,
+                   **kwargs):  # pylint:disable=unused-argument
     """ Calculate for each foreground event the number of background events
     that are louder than it.
 
@@ -68,14 +67,14 @@ def n_louder(bstat, fstat, dec, skip_background=False, **kwargs):  # pylint:disa
     n_louder = dec[::-1].cumsum()[::-1] - dec
 
     # Determine how many values are louder than the foreground ones
-    # We need to subtract one from the index, to be consistent with the definition
+    # We need to subtract one from the index, to be consistent with definition
     # of n_louder, as here we do want to include the background value at the
     # found index
     idx = np.searchsorted(bstat, fstat, side='left') - 1
 
     # If the foreground are *quieter* than the background or at the same value
-    # then the search sorted algorithm will choose position -1, which does not exist
-    # We force it back to zero.
+    # then the search sorted algorithm will choose position -1, which does not
+    # exist. We force it back to zero.
     if isinstance(idx, np.ndarray):  # Case where our input is an array
         idx[idx < 0] = 0
     else:  # Case where our input is just a scalar value
@@ -88,8 +87,8 @@ def n_louder(bstat, fstat, dec, skip_background=False, **kwargs):  # pylint:disa
         unsort = sort.argsort()
         back_cum_num = n_louder[unsort]
         return back_cum_num, fore_n_louder
-    else:
-        return fore_n_louder
+
+    return fore_n_louder
 
 
 def trig_fit(back_stat, fore_stat, dec_facs, fit_func='exponential',
@@ -128,14 +127,14 @@ def trig_fit(back_stat, fore_stat, dec_facs, fit_func='exponential',
     bg_below = np.logical_not(bg_above)
 
     back_cnum[bg_below], fnlouder[fg_below] = \
-        n_louder(back_stat, fore_stat, dec_facs)
+        count_n_louder(back_stat, fore_stat, dec_facs)
 
     return back_cnum, fnlouder
 
 
 _significance_meth_dict = {
     'trigger_fit': trig_fit,
-    'n_louder': n_louder
+    'n_louder': count_n_louder
 }
 
 _default_opt_dict = {
@@ -145,9 +144,10 @@ _default_opt_dict = {
 
 
 def get_n_louder(back_stat, fore_stat, dec_facs,
-    method=_default_opt_dict['method'],
-    fit_function=_default_opt_dict['fit_function'],
-    fit_threshold=_default_opt_dict['fit_threshold'], **kwargs):  # pylint:disable=unused-argument
+        method=_default_opt_dict['method'],
+        fit_function=_default_opt_dict['fit_function'],
+        fit_threshold=_default_opt_dict['fit_threshold'],
+        **kwargs):  # pylint:disable=unused-argument
     """
     Wrapper to find the correct n_louder calculation method using standard
     inputs
@@ -211,7 +211,8 @@ def check_significance_options(args, parser):
                 parser.error("Need combo:value format, got %s" % combo_value)
 
             if combo in combo_list:
-                parser.error("Duplicate combo %s in a significance option" % combo)
+                parser.error("Duplicate combo %s in a significance "
+                             "option" % combo)
             combo_list.append(combo)
 
             try:
@@ -221,7 +222,7 @@ def check_significance_options(args, parser):
                 parser.error(err_fmat.format(value, combo))
 
             if allowed_values is not None and \
-                type_to_convert(value) not in allowed_values:
+                    type_to_convert(value) not in allowed_values:
                 err_fmat = "Value {} of combo {} is not in allowed values: {}"
                 parser.error(err_fmat.format(value, combo, allowed_values))
 
@@ -297,4 +298,3 @@ def digest_significance_options(combo_keys, args):
             significance_dict[combo][argument_key] = conv_func(value)
 
     return significance_dict
-
