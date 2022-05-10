@@ -63,7 +63,7 @@ def exponential_fitalpha(vals, thresh, w):
 def rayleigh_fitalpha(vals, thresh, w):
     """
     Maximum likelihood estimator for the fit factor for
-    a rayleigh distribution of events
+    a Rayleigh distribution of events
     """
     return 2. / (numpy.average(vals ** 2., weights=w) - thresh ** 2.)
 

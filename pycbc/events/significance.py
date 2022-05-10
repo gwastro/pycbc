@@ -182,6 +182,11 @@ def insert_significance_option_group(parser):
                              "Default = exponential for all")
 
 
+_default_opt_dict = {
+    'method': 'n_louder',
+    'threshold': None,
+    'function': None}
+
 def check_significance_options(args, parser):
     """
     Check the significance group options
@@ -231,7 +236,7 @@ def check_significance_options(args, parser):
         combo, _ = tuple(combo_value.split(':'))
         if combo not in methods:
             # Assign the default method for use in further tests
-            methods[combo] = 'n_louder'
+            methods[combo] = _default_opt_dict['method']
         function_or_thresh_given.append(combo)
 
     for combo, value in methods.items():
@@ -270,13 +275,10 @@ def digest_significance_options(combo_keys, args):
                        ('function', args.fit_function, str),
                        ('threshold', args.fit_threshold, float)]
 
-    # Set up the defaults
-    default_dict = {'method': 'n_louder', 'threshold': None, 'function': None}
-
     significance_dict = {}
     # Set everything as a default to start with:
     for combo in combo_keys:
-        significance_dict[combo] = copy.deepcopy(default_dict)
+        significance_dict[combo] = copy.deepcopy(_default_opt_dict)
 
     # Unpack everything from the arguments into the dictionary
     for argument_key, arg_to_unpack, conv_func in lists_to_unpack:
@@ -289,7 +291,7 @@ def digest_significance_options(combo_keys, args):
                 # just want to accept this silently
                 logging.warning("Key %s not used by this code, uses %s",
                                 combo, combo_keys)
-                significance_dict[combo] = copy.deepcopy(default_dict)
+                significance_dict[combo] = copy.deepcopy(_default_opt_dict)
             significance_dict[combo][argument_key] = conv_func(value)
 
     return significance_dict

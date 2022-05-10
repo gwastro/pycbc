@@ -77,10 +77,7 @@ for test_sysexit in tests_which_sysexit:
 default_dict = {}
 # Default Values
 for combo in combos:
-    default_dict[combo] = {}
-    default_dict[combo]['method'] = 'n_louder'
-    default_dict[combo]['function'] = None
-    default_dict[combo]['threshold'] = None
+    default_dict[combo] = copy.deepcopy(significance._default_opt_dict)
 
 tests_which_pass = []
 
