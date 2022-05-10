@@ -628,8 +628,8 @@ class BaseModel(metaclass=ABCMeta):
     #
     # Methods for initiating from a config file.
     #
-    @staticmethod
-    def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
+    @classmethod
+    def extra_args_from_config(cls, cp, section, skip_args=None, dtypes=None):
         """Gets any additional keyword in the given config file.
 
         Parameters

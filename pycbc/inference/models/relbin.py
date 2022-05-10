@@ -36,7 +36,7 @@ from pycbc.types import Array
 
 from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import likelihood_parts, likelihood_parts_v
-from .tools import DistMarg
+from .tools import DistMarg, ReferenceAbort
 
 
 def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
@@ -102,7 +102,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     return nbin, fbin, fbin_ind
 
 
-class Relative(BaseGaussianNoise, DistMarg):
+class Relative(ReferenceAbort, BaseGaussianNoise, DistMarg):
     r"""Model that assumes the likelihood in a region around the peak
     is slowly varying such that a linear approximation can be made, and
     likelihoods can be calculated at a coarser frequency resolution. For
@@ -124,11 +124,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         A dictionary of data, in which the keys are the detector names and the
         values are the data (assumed to be unwhitened). All data must have the
         same frequency resolution.
-    low_frequency_cutoff : dict
-        A dictionary of starting frequencies, in which the keys are the
-        detector names and the values are the starting frequencies for the
-        respective detectors to be used for computing inner products.
-    figucial_params : dict
+    fiducial_params : dict
         A dictionary of waveform parameters to be used for generating the
         fiducial waveform. Keys must be parameter names in the form
         'PARAM_ref' where PARAM is a recognized extrinsic parameter or
@@ -152,8 +148,6 @@ class Relative(BaseGaussianNoise, DistMarg):
         self,
         variable_params,
         data,
-        low_frequency_cutoff,
-        fiducial_params=None,
         gammas=None,
         epsilon=0.5,
         earth_rotation=False,
@@ -167,7 +161,7 @@ class Relative(BaseGaussianNoise, DistMarg):
                                **kwargs)
 
         super(Relative, self).__init__(
-            variable_params, data, low_frequency_cutoff, **kwargs
+            variable_params, data, **kwargs
         )
 
         self.epsilon = float(epsilon)
@@ -185,10 +179,6 @@ class Relative(BaseGaussianNoise, DistMarg):
         # store data and psds as arrays for faster computation
         self.comp_data = {ifo: d.numpy() for ifo, d in self.data.items()}
         self.comp_psds = {ifo: p.numpy() for ifo, p in self.psds.items()}
-
-        # store fiducial waveform params
-        self.fid_params = self.static_params.copy()
-        self.fid_params.update(fiducial_params)
 
         for ifo in data:
             # store data and frequencies
@@ -387,8 +377,11 @@ class Relative(BaseGaussianNoise, DistMarg):
             The value of the log likelihood ratio.
         """
         # get model params
-        p = self.current_params.copy()
-        p.update(self.static_params)
+        p = self.current_params
+        floglr = self.fail_time()
+        if floglr:
+            return floglr
+        #m = self.fail_match()
         wfs = self.get_waveforms(p)
 
         hh = 0.0
@@ -417,7 +410,9 @@ class Relative(BaseGaussianNoise, DistMarg):
             hd += hdp
             hh += hhp
 
-        return self.marginalize_loglr(hd, hh)
+        loglr = self.marginalize_loglr(hd, hh)
+        #print(loglr, m)
+        return loglr
 
     def write_metadata(self, fp):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
@@ -432,42 +427,17 @@ class Relative(BaseGaussianNoise, DistMarg):
         for p, v in self.fid_params.items():
             fp.attrs["{}_ref".format(p)] = v
 
-    @staticmethod
-    def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
+    @classmethod
+    def extra_args_from_config(cls, cp, section, skip_args=None, dtypes=None):
         """Adds reading fiducial waveform parameters from config file."""
-        # add fiducial params to skip list
-        skip_args += [
-            option for option in cp.options(section) if option.endswith("_ref")
-        ]
-
-        # get frequency power-law indices if specified
-        # NOTE these should be supplied in units of 1/3
         gammas = None
         if cp.has_option(section, "gammas"):
             skip_args.append("gammas")
             gammas = numpy.array(
                 [float(g) / 3.0 for g in cp.get(section, "gammas").split()]
             )
-        args = super(Relative, Relative).extra_args_from_config(
+        args = super().extra_args_from_config(
             cp, section, skip_args=skip_args, dtypes=dtypes
         )
-
-        # get fiducial params from config
-        fid_params = {
-            p.replace("_ref", ""): float(cp.get("model", p))
-            for p in cp.options("model")
-            if p.endswith("_ref")
-        }
-
-        # add optional params with default values if not specified
-        opt_params = {
-            "ra": numpy.pi,
-            "dec": 0.0,
-            "inclination": 0.0,
-            "polarization": numpy.pi,
-        }
-        fid_params.update(
-            {p: opt_params[p] for p in opt_params if p not in fid_params}
-        )
-        args.update({"fiducial_params": fid_params, "gammas": gammas})
+        args.update({"gammas": gammas})
         return args
