@@ -243,7 +243,7 @@ fore_stat = all_trigs.stat[fore_locs]
 
 # Cumulative array of inclusive background triggers and the number of
 # inclusive background triggers louder than each foreground trigger
-back_cnum, fnlouder = significance.calculate_n_louder(
+back_cnum, fnlouder = significance.get_n_louder(
     significance_dict[ifo_combo],
     back_stat,
     fore_stat,
@@ -251,7 +251,7 @@ back_cnum, fnlouder = significance.calculate_n_louder(
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
-back_cnum_exc, fnlouder_exc = significance.calculate_n_louder(
+back_cnum_exc, fnlouder_exc = significance.get_n_louder(
     significance_dict[ifo_combo],
     exc_zero_trigs.stat,
     fore_stat,
@@ -410,7 +410,7 @@ while numpy.any(louder_foreground == 0):
     logging.info("Calculating FAN from background statistic values")
     back_stat = all_trigs.stat[back_locs]
     fore_stat = all_trigs.stat[fore_locs]
-    back_cnum, fnlouder = significance.calculate_n_louder(
+    back_cnum, fnlouder = significance.get_n_louder(
         significance_dict[ifo_combo],
         back_stat,
         fore_stat,
@@ -424,7 +424,7 @@ while numpy.any(louder_foreground == 0):
     # Exclusive background doesn't change when removing foreground triggers.
     # So we don't have to take back_cnum_exc, jut repopulate fnlouder_exc
     else :
-        _, fnlouder_exc = significance.calculate_n_louder(
+        _, fnlouder_exc = significance.get_n_louder(
             significance_dict[ifo_combo],
             exc_zero_trigs.stat,
             fore_stat,

@@ -94,7 +94,7 @@ for k in filtered_trigs.data:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
 
 logging.info('Recalculating IFARs')
-bnlouder, fnlouder = significance.calculate_n_louder(
+bnlouder, fnlouder = significance.get_n_louder(
     significance_dict[all_ifo_key],
     filtered_trigs.data['stat'],
     f_in['foreground/stat'][:],

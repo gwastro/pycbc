@@ -157,7 +157,7 @@ for method in significance._significance_meth_dict:
         method_dict['threshold'] = None if not function else 0
 
         def meth_test(self, md=method_dict):
-            back_cnum, fnlouder = significance.calculate_n_louder(
+            back_cnum, fnlouder = significance.get_n_louder(
                 method_dict,
                 self.test_bg_stat,
                 self.test_fg_stat,

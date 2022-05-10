@@ -275,7 +275,7 @@ if injection_style:
         bg_f = h5py.File(bg_fname, 'r')
         ifo_combo_key = bg_f.attrs['ifos'].replace(' ','')
         _, fnlouder[ifo_combo_key] = \
-            significance.calculate_n_louder(
+            significance.get_n_louder(
                 significance_dict[ifo_combo_key],
                 bg_f['background/stat'][:],
                 f['foreground/stat'][:],
@@ -283,7 +283,7 @@ if injection_style:
 
         far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / bg_f.attrs['background_time']
         _, fnlouder_exc[ifo_combo_key] = \
-            significance.calculate_n_louder(
+            significance.get_n_louder(
                 significance_dict[ifo_combo_key],
                 bg_f['background_exc/stat'][:],
                 f['foreground/stat'][:],
@@ -295,14 +295,14 @@ else:
     for f_in in files:
         ifo_combo_key = get_ifo_string(f_in).replace(' ','')
         _, fnlouder[ifo_combo_key] = \
-            significance.calculate_n_louder(
+            significance.get_n_louder(
                 significance_dict[ifo_combo_key],
                 f_in['background/stat'][:],
                 f['foreground/stat'][:],
                 f_in['background/decimation_factor'][:])
         far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / f_in.attrs['background_time']
         _, fnlouder_exc[ifo_combo_key] = \
-            significance.calculate_n_louder(
+            significance.get_n_louder(
                 significance_dict[ifo_combo_key],
                 f_in['background_exc/stat'][:],
                 f['foreground/stat'][:],
@@ -546,7 +546,7 @@ while True:
     test_times = np.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
                            for tc in zip(*times_tuple)])
     for key in all_ifo_combos:
-        bnlouder, fnlouder = significance.calculate_n_louder(
+        bnlouder, fnlouder = significance.get_n_louder(
             significance_dict[ifo_combo_key],
             sep_bg_data[key].data['stat'],
             sep_fg_data[key].data['stat'],
@@ -563,7 +563,7 @@ while True:
 
     logging.info("Recalculating combined IFARs")
     for key in all_ifo_combos:
-        bnlouder, fnlouder = significance.calculate_n_louder(
+        bnlouder, fnlouder = significance.get_n_louder(
             significance_dict[ifo_combo_key],
             sep_bg_data[key].data['stat'],
             combined_fg_data.data['stat'],

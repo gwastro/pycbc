@@ -99,7 +99,7 @@ f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 
 if len(zdata) > 0:
-    fnlouder_exc = coinc.calculate_n_louder(back_stat, zdata.stat, dec_fac,
+    fnlouder_exc = coinc.get_n_louder(back_stat, zdata.stat, dec_fac,
                                             skip_background=True)
     ifar_exc = background_time / (fnlouder_exc + 1)
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
@@ -152,7 +152,7 @@ if len(zdata) > 0:
         inj_dec = numpy.concatenate(
                      [numpy.repeat(1, len(v1) + len(v2)), dec_fac])
 
-        _, fnlouder[i] = significance.calculate_n_louder(
+        _, fnlouder[i] = significance.get_n_louder(
             significance_dict[ifo_key],
             inj_stat,
             fstat,

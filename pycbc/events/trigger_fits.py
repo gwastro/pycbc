@@ -65,7 +65,7 @@ def rayleigh_fitalpha(vals, thresh, w):
     Maximum likelihood estimator for the fit factor for
     a rayleigh distribution of events
     """
-    return 2. / (numpy.average(vals**2., weights=w) - thresh**2.)
+    return 2. / (numpy.average(vals ** 2., weights=w) - thresh ** 2.)
 
 
 def power_fitalpha(vals, thresh, w):
@@ -73,7 +73,7 @@ def power_fitalpha(vals, thresh, w):
     Maximum likelihood estimator for the fit factor for
     a power law model
     """
-    return numpy.average(numpy.log(vals/thresh), weights=w)**-1. + 1.
+    return numpy.average(numpy.log(vals/thresh), weights=w) ** -1. + 1.
 
 
 fitalpha_dict = {
@@ -84,9 +84,9 @@ fitalpha_dict = {
 
 # measurement standard deviation = (-d^2 log L/d alpha^2)^(-1/2)
 fitstd_dict = {
-    'exponential' : lambda weights, alpha : alpha / sum(weights)**0.5,
-    'rayleigh'    : lambda weights, alpha : alpha / sum(weights)**0.5,
-    'power'       : lambda weights, alpha : (alpha - 1.) / sum(weights)**0.5
+    'exponential' : lambda weights, alpha : alpha / sum(weights) ** 0.5,
+    'rayleigh'    : lambda weights, alpha : alpha / sum(weights) ** 0.5,
+    'power'       : lambda weights, alpha : (alpha - 1.) / sum(weights) ** 0.5
 }
 
 def fit_above_thresh(distr, vals, thresh=None, weights=None):
@@ -109,7 +109,7 @@ def fit_above_thresh(distr, vals, thresh=None, weights=None):
     thresh : float
         Threshold to apply before fitting; if None, use min(vals)
     weights: sequence of floats
-        Weighting factors to use for the snrs when fitting.
+        Weighting factors to use for the values when fitting.
         Default=None - all the same
 
     Returns
@@ -147,8 +147,8 @@ def fit_above_thresh(distr, vals, thresh=None, weights=None):
 fitfn_dict = {
     'exponential' : lambda x, alpha, t : alpha * numpy.exp(-alpha * (x - t)),
     'rayleigh' : lambda x, alpha, t : (alpha * x * \
-                                       numpy.exp(-alpha * (x**2 - t**2) / 2.)),
-    'power' : lambda x, alpha, t : (alpha - 1.) * x**(-alpha) * t**(alpha - 1.)
+                                       numpy.exp(-alpha * (x ** 2 - t ** 2) / 2.)),
+    'power' : lambda x, alpha, t : (alpha - 1.) * x ** (-alpha) * t ** (alpha - 1.)
 }
 
 def fit_fn(distr, xvals, alpha, thresh):
@@ -180,8 +180,8 @@ def fit_fn(distr, xvals, alpha, thresh):
 
 cum_fndict = {
     'exponential' : lambda x, alpha, t : numpy.exp(-alpha * (x - t)),
-    'rayleigh' : lambda x, alpha, t : numpy.exp(-alpha * (x**2. - t**2.) / 2.),
-    'power' : lambda x, alpha, t : x**(1. - alpha) * t**(alpha - 1.)
+    'rayleigh' : lambda x, alpha, t : numpy.exp(-alpha * (x ** 2. - t ** 2.) / 2.),
+    'power' : lambda x, alpha, t : x ** (1. - alpha) * t ** (alpha - 1.)
 }
 
 def cum_fit(distr, xvals, alpha, thresh):

@@ -29,29 +29,76 @@ read in the associated options to do so.
 """
 import logging
 import copy
+import sys
 import numpy as np
 from pycbc.events import coinc
 from pycbc.events import trigger_fits as trstats
 
 
-def n_louder(bstat, fstat, dec, **kwargs):  # pylint:disable=unused-argument
+def n_louder(bstat, fstat, dec, skip_background=False, **kwargs):  # pylint:disable=unused-argument
+    """ Calculate for each foreground event the number of background events
+    that are louder than it.
+
+    Parameters
+    ----------
+    bstat: numpy.ndarray
+        Array of the background statistic values
+    fstat: numpy.ndarray or scalar
+        Array of the foreground statistic values or single value
+    dec: numpy.ndarray
+        Array of the decimation factors for the background statistics
+    skip_background: optional, {boolean, False}
+        Skip calculating cumulative numbers for background triggers
+
+    Returns
+    -------
+    cum_back_num: numpy.ndarray
+        The cumulative array of background triggers. Does not return this
+        argument if skip_background == True
+    fore_n_louder: numpy.ndarray
+        The number of background triggers above each foreground trigger
     """
-    Count the number of louder background events, taking decimation
-    into account
-    """
-    return coinc.calculate_n_louder(bstat, fstat, dec)
+    sort = bstat.argsort()
+    bstat = bstat[sort]
+    dec = dec[sort]
+
+    # calculate cumulative number of triggers louder than the trigger in
+    # a given index. We need to subtract the decimation factor, as the cumsum
+    # includes itself in the first sum (it is inclusive of the first value)
+    n_louder = dec[::-1].cumsum()[::-1] - dec
+
+    # Determine how many values are louder than the foreground ones
+    # We need to subtract one from the index, to be consistent with the definition
+    # of n_louder, as here we do want to include the background value at the
+    # found index
+    idx = np.searchsorted(bstat, fstat, side='left') - 1
+
+    # If the foreground are *quieter* than the background or at the same value
+    # then the search sorted algorithm will choose position -1, which does not exist
+    # We force it back to zero.
+    if isinstance(idx, np.ndarray):  # Case where our input is an array
+        idx[idx < 0] = 0
+    else:  # Case where our input is just a scalar value
+        if idx < 0:
+            idx = 0
+
+    fore_n_louder = n_louder[idx]
+
+    if not skip_background:
+        unsort = sort.argsort()
+        back_cum_num = n_louder[unsort]
+        return back_cum_num, fore_n_louder
+    else:
+        return fore_n_louder
 
 
-def trig_fit(back_stat, fore_stat, dec_facs, fit_func=None,
-             fit_thresh=None):
+def trig_fit(back_stat, fore_stat, dec_facs, fit_func='exponential',
+             fit_thresh=0):
     """
     Use a fit to events in back_stat in order to estimate the
     distribution for use in recovering the ifars. Below the
     fit threshold, use the n_louder method for these triggers
     """
-    # Manually set some defaults:
-    fit_func = fit_func if fit_func else 'exponential'
-    fit_thresh = fit_thresh if fit_thresh else 0
 
     # Calculate the fitting factor of the ranking statistic distribution
     alpha, _ = trstats.fit_above_thresh(fit_func, back_stat,
@@ -92,7 +139,7 @@ _significance_meth_dict = {
 }
 
 
-def calculate_n_louder(method_dict, back_stat, fore_stat, dec_facs):
+def get_n_louder(method_dict, back_stat, fore_stat, dec_facs):
     """
     Wrapper to find the correct n_louder calculation method using standard
     inputs
@@ -121,13 +168,10 @@ def insert_significance_option_group(parser):
                              + ",".join(_significance_meth_dict.keys()) +
                              "]. Default = n_louder for all not given")
     parser.add_argument('--fit-threshold', nargs='+', default=[],
-                        help="Thresholds for the fits to statistic "
-                             "values for FAN approximation if "
-                             "--far-calculation-method is 'trigger_fit'. "
-                             "Given as combination-values pairs, e.g. "
-                             "H1:0 L1:0 V1:-4, for all combinations which "
-                             "have --far-calculation-method "
-                             "of trigger_fit")
+                        help="Trigger statistic fit thresholds for FAN "
+                             "estimation, given as combination-value pairs "
+                             "ex. H1:0 L1:0 V1:-4 for all combinations with "
+                             "--far-calculation-method = trigger_fit")
     parser.add_argument("--fit-function", nargs='+', default=[],
                         help="Functional form for the statistic slope fit if "
                              "--far-calculation-method is 'trigger_fit'. "
@@ -140,64 +184,64 @@ def insert_significance_option_group(parser):
 
 def check_significance_options(args, parser):
     """
-    Check that the arguments given for the insert_significance_option_group
-    options make sense
+    Check the significance group options
     """
-    # Check that the key:method/function/threshold are in the
+    # Check that the combo:method/function/threshold are in the
     # right format, and are in allowed combinations
     lists_to_check = [(args.far_calculation_method, str,
                        _significance_meth_dict.keys()),
                       (args.fit_function, str,
                        trstats.fitalpha_dict.keys()),
                       (args.fit_threshold, float,
-                       range(-10000, 10000))]
-    # (10,000 is suitable for current use but can be changed if wanted)
+                       None)]
 
     for list_to_check, type_to_convert, allowed_values in lists_to_check:
-        key_list = []
-        for key_value in list_to_check:
+        combo_list = []
+        for combo_value in list_to_check:
             try:
-                key, value = tuple(key_value.split(':'))
+                combo, value = tuple(combo_value.split(':'))
             except ValueError:
-                parser.error("Need key:value format, got %s" % key_value)
+                parser.error("Need combo:value format, got %s" % combo_value)
 
-            if key in key_list:
-                parser.error("Duplicate key %s in a significance option" % key)
-            key_list.append(key)
+            if combo in combo_list:
+                parser.error("Duplicate combo %s in a significance option" % combo)
+            combo_list.append(combo)
 
             try:
                 type_to_convert(value)
             except ValueError:
-                err_fmat = "Value {} of key {} can't be converted"
-                parser.error(err_fmat.format(value, key))
+                err_fmat = "Value {} of combo {} can't be converted"
+                parser.error(err_fmat.format(value, combo))
 
-            if type_to_convert(value) not in allowed_values:
-                err_fmat = "Value {} of key {} is not in allowed values: {}"
-                parser.error(err_fmat.format(value, key, allowed_values))
+            if allowed_values is not None and \
+                type_to_convert(value) not in allowed_values:
+                err_fmat = "Value {} of combo {} is not in allowed values: {}"
+                parser.error(err_fmat.format(value, combo, allowed_values))
 
     # Are the functions/thresholds appropriate for the methods given?
     methods = {}
     # A method has been specified
-    for key_value in args.far_calculation_method:
-        key, value = tuple(key_value.split(':'))
-        methods[key] = value
+    for combo_value in args.far_calculation_method:
+        combo, value = tuple(combo_value.split(':'))
+        methods[combo] = value
 
     # A function or threshold has been specified
     function_or_thresh_given = []
-    for key_value in args.fit_function + args.fit_threshold:
-        key, _ = tuple(key_value.split(':'))
-        if key not in methods:
-            methods[key] = 'n_louder'
-        function_or_thresh_given.append(key)
+    for combo_value in args.fit_function + args.fit_threshold:
+        combo, _ = tuple(combo_value.split(':'))
+        if combo not in methods:
+            # Assign the default method for use in further tests
+            methods[combo] = 'n_louder'
+        function_or_thresh_given.append(combo)
 
-    for key, value in methods.items():
-        if value != 'trigger_fit' and key in function_or_thresh_given:
-            # Function/Threshold given for key not using trigger_fit method
+    for combo, value in methods.items():
+        if value != 'trigger_fit' and combo in function_or_thresh_given:
+            # Function/Threshold given for combo not using trigger_fit method
             parser.error("--fit-function and/or --fit-threshold given for "
-                         + key + " which has method " + value)
-        elif value == 'trigger_fit' and key not in function_or_thresh_given:
-            # Threshold not given for trigger_fit key
-            parser.error("Threshold required for key " + key)
+                         + combo + " which has method " + value)
+        elif value == 'trigger_fit' and combo not in function_or_thresh_given:
+            # Threshold not given for trigger_fit combo
+            parser.error("Threshold required for combo " + combo)
 
 
 def digest_significance_options(combo_keys, args):
@@ -229,25 +273,24 @@ def digest_significance_options(combo_keys, args):
     # Set up the defaults
     default_dict = {'method': 'n_louder', 'threshold': None, 'function': None}
 
-    # Unpack the string arguments into a standard-format dictionary
     significance_dict = {}
-
     # Set everything as a default to start with:
-    for key in combo_keys:
-        significance_dict[key] = copy.deepcopy(default_dict)
+    for combo in combo_keys:
+        significance_dict[combo] = copy.deepcopy(default_dict)
 
     # Unpack everything from the arguments into the dictionary
-    for unpack_key, arg_to_unpack, conv_func in lists_to_unpack:
-        for key_value in arg_to_unpack:
-            key, value = tuple(key_value.split(':'))
-            if key not in significance_dict:
-                # This is a newly added key, not actually used by the code
+    for argument_key, arg_to_unpack, conv_func in lists_to_unpack:
+        for combo_value in arg_to_unpack:
+            combo, value = tuple(combo_value.split(':'))
+            if combo not in significance_dict:
+                # This is a newly added combo, not actually used by the code
                 # This is a warning not an exit, so we can reuse the same
                 # settings for multiple jobs in a workflow. However we don't
                 # just want to accept this silently
                 logging.warning("Key %s not used by this code, uses %s",
-                                key, combo_keys)
-                significance_dict[key] = copy.deepcopy(default_dict)
-            significance_dict[key][unpack_key] = conv_func(value)
+                                combo, combo_keys)
+                significance_dict[combo] = copy.deepcopy(default_dict)
+            significance_dict[combo][argument_key] = conv_func(value)
 
     return significance_dict
+
