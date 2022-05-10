@@ -138,6 +138,11 @@ _significance_meth_dict = {
     'n_louder': n_louder
 }
 
+_default_opt_dict = {
+    'method': 'n_louder',
+    'threshold': None,
+    'function': None}
+
 
 def get_n_louder(method_dict, back_stat, fore_stat, dec_facs):
     """
@@ -181,11 +186,6 @@ def insert_significance_option_group(parser):
                              + ",".join(trstats.fitalpha_dict.keys()) + "]. "
                              "Default = exponential for all")
 
-
-_default_opt_dict = {
-    'method': 'n_louder',
-    'threshold': None,
-    'function': None}
 
 def check_significance_options(args, parser):
     """
