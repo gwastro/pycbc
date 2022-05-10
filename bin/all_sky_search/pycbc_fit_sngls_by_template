@@ -171,12 +171,19 @@ count_in_template = count_in_template_hashorder[tid_sort]
 # get the stat values
 logging.info('Calculating stat values')
 abovethresh, stat = get_stat(args, trigf[args.ifo], args.stat_threshold)
+logging.info('%i trigs left after thresholding' % len(stat))
 
 tid = trigf[args.ifo + '/template_id'][abovethresh]
 time = trigf[args.ifo + '/end_time'][abovethresh]
 if args.save_trig_param:
-    tparam = trigf[args.ifo + '/' + args.save_trig_param][abovethresh]
-logging.info('%i trigs left after thresholding' % len(stat))
+    tparam_region = trigf[args.ifo][args.save_trig_param + '_template'][:]
+    tparam = []
+    for region in tparam_region:
+        try:
+            tparam.append(trigf[args.ifo][args.save_trig_param][region][0])
+        except IndexError:
+            # Should only happen if there are no triggers in the template
+            tparam.append(np.nan)
 
 # Calculate total time being analysed from segments
 # use set() to eliminate duplicates
@@ -194,8 +201,6 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     stat = stat[retain]
     tid = tid[retain]
     time = time[retain]
-    if args.save_trig_param:
-        tparam = tparam[retain]
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
 #now include gating veto
@@ -217,8 +222,6 @@ if args.gating_veto_windows:
         stat = stat[gveto_retain_idx]
         tid = tid[gveto_retain_idx]
         time = time[gveto_retain_idx]
-        if args.save_trig_param:
-            tparam = tparam[gveto_retain_idx]
         logging.info('%i trigs left after vetoing triggers near gates' % len(stat))
 
 total_time = abs(all_segments)
@@ -288,8 +291,6 @@ if args.prune_param:
             logging.info('%i trigs remain' % len(stat))
             tid = tid[retain]
             time = time[retain]
-            if args.save_trig_param:
-                tparam = tparam[retain]
             # also for the reference trig arrays
             retain = abs(timepruneall - ltime) > args.prune_window
             statpruneall = statpruneall[retain]
@@ -343,9 +344,7 @@ for j, tnum in enumerate(trange):
     counts_total.append(count_total)
     fits.append(alpha)
     if args.save_trig_param:
-        # save the param value of the first trig in this template
-        param_in_template = tparam[tid == tnum]
-        tpars.append(param_in_template[0])
+        tpars.append(tparam[tnum])
     if (tnum % 1000 == 0): logging.info('Fitted template %i / %i' %
                                                     (tnum - tmin, tmax - tmin))
 
