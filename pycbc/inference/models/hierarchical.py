@@ -24,9 +24,9 @@
 
 """Hierarchical model definitions."""
 
+import shlex
+from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
-
-
 
 #
 # =============================================================================
@@ -93,7 +93,7 @@ class HierarhcicalModel(BaseModel):
             model.static_params = {p.subname: self.static_params[p.fullname]
                                    for p in self.static_param_map[lbl]}
             self.extra_stats_map.update(map_params([
-                HiearchicalParam.from_subname(p, lbl)
+                HiearchicalParam.from_subname(lbl, p)
                 for p in model.extra_stats+['loglikelihood']])
             self._extra_stats += self.extra_stats_map[lbl]
             # also make sure the model's sampling transforms and waveform
@@ -145,6 +145,119 @@ class HierarhcicalModel(BaseModel):
             logl += sublogl
         return logl
 
+    @classmethod
+    def from_config(cls, cp, **kwargs):
+        """Initializes an instance of this class from the given config file.
+
+        Sub-models are initialized before initializing this class. The model
+        section must have a ``submodels`` argument that lists the names of all
+        the submodels to generate as a space-separated list. Each sub-model
+        should have its own ``[{label}__model]`` section that sets up the
+        model for that sub-model. For example:
+
+        .. code-block:: ini
+
+            [model]
+            name = hiearchical
+            submodels = event1 event2
+
+            [event1__model]
+            <event1 model options>
+
+            [event2__model]
+            <event2 model options>
+
+        Similarly, all other sections that are specific to a model should start
+        with the model's label. All sections starting with a model's label will
+        be passed to that model's ``from_config`` method with the label removed
+        from the section name. For example, if a sub-model requires a data
+        section to be specified, it should be titled ``[{label}__data]``. Upon
+        initialization, the `{label}__` will be stripped from the section
+        header and passed to the model. 
+
+        No model labels should preceed the ``variable_params``,
+        ``static_params``, ``waveform_transforms``, or ``sampling_transforms``
+        sections.  Instead, the parameters specified in these sections should
+        follow the naming conventions described in :py:class:`HierachicalParam`
+        to determine which sub-model(s) they belong to. (Sampling parameters
+        can follow any naming convention, as they are only handled by the
+        hierarchical model.) This is because the hierarchical model handles
+        all transforms, communication with the sampler, file IO, and prior
+        calculation. Only sub-model's loglikelihood functions are called.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser
+            Config file parser to read.
+        \**kwargs :
+            All additional keyword arguments are passed to the class. Any
+            provided keyword will over ride what is in the config file.
+        """
+        # we need the read from config function from the init; to prevent
+        # circular imports, we import it here
+        import pycbc.inference.models.read_from_config as read_model_from_cp
+        # get the submodels
+        submodel_lbls = shlex.split(cp.get('model', 'submodels'))
+        # sort parameters by model
+        vparam_map = map_params(cp.options('variable_params')
+        sparam_map = map_params(cp.options('static_params'))
+        # initialize the models
+        submodels = {}
+        logging.info("Loading submodels")
+        for lbl in submodel_lbls:
+            logging.info("=================================================\n",
+                         "      %s\n", lbl)
+            # create a config parser to pass to the model
+            subcp = WorkflowConfigParser()
+            # copy sections over that start with the model label (this should
+            # include the [model] section for that model)
+            copy_sections = [HierarchicalParam(sec) for sec in cp.sections()
+                             if sec.startswith(lbl+HierarchicalParam.delim)]
+            for sec in copy_sections:
+                # check that the user isn't trying to set variable or static
+                # params for the model (we won't worry about waveform or
+                # sampling transforms here, since that is checked for in the
+                # __init__)
+                if sec.subname in ['variable_params', 'static_params']:
+                    raise ValueError("Section {} found in the config file; "
+                                     "[variable_params] and [static_params] "
+                                     "sections should not include model "
+                                     "labels. To specify parameters unique to "
+                                     "one or more sub-models, prepend the "
+                                     "individual parameter names with the "
+                                     "model label. See HierarchicalParam for "
+                                     "details.".format(sec))
+                subcp.add_section(sec.subname)
+                for opt, val in cp.items(sec):
+                    subcp.set(opt, val)
+            # set the static params
+            subcp.add_section('static_params')
+            for param in sparam_map[lbl]:
+                subcp.set('static_params', param.subname,
+                          cp.get('static_params', param.fullname)
+            # set the variable params: for now we'll just set all the
+            # variable params as static params
+            # so that the model doesn't raise an error looking for
+            # prior sections. We'll then manually set the variable
+            # params after the model is initialized
+            subcp.add_section('variable_params')
+            for param in vparam_map[lbl]:
+                subcp.set('static_params', param.subname, '')
+            # initialize
+            submodel = read_model_from_cp(subcp)
+            subname = subcp.get('model', 'name')
+            submodel = read_model_from_cp(subcp)
+            # move the static params back to variable
+            for p in vparam_map[lbl]:
+                submodel.static_params.pop(p.subname)
+            submodel.variable_params = tuple(p.subname
+                                             for p in vparam_map[lbl])
+            submodels[lbl] = submodel
+            logging.info("=================================================")
+        # now load the model
+        logging.info("Loading hierarchical model")
+        return super().from_config(cp, submodels=submodels)
+
 
 class HierarchicalParam(str):
     """Sub-class of str for hierarchical parameter names.
@@ -174,7 +287,7 @@ class HierarchicalParam(str):
         return obj
 
     @classmethod
-    def from_subname(cls, subname, model_label):
+    def from_subname(cls, model_label, subname):
         """Creates a HierarchicalParam from the given subname and model label.
         """
         return cls(cls.delim.join([model_label, subname]), set([model_label]))
