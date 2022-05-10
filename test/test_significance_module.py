@@ -90,8 +90,8 @@ tests_which_pass.append(([], default_dict, 'default_vals'))
 extra_combo_dict = copy.deepcopy(default_dict)
 extra_combo_dict['H1G1'] = {}
 extra_combo_dict['H1G1']['method'] = 'trigger_fit'
-extra_combo_dict['H1G1']['function'] = None
-extra_combo_dict['H1G1']['threshold'] = 6.
+extra_combo_dict['H1G1']['fit_function'] = None
+extra_combo_dict['H1G1']['fit_threshold'] = 6.
 tests_which_pass.append((['--far-calculation-method',
                           'H1G1:trigger_fit',
                           '--fit-threshold', 'H1G1:6'],
@@ -104,12 +104,12 @@ test_dict = copy.deepcopy(default_dict)
 test_dict['H1L1']['method'] = 'trigger_fit'
 test_dict['H1']['method'] = 'trigger_fit'
 test_dict['L1']['method'] = 'trigger_fit'
-test_dict['H1L1']['function'] = 'power'
-test_dict['H1']['function'] = 'rayleigh'
-test_dict['L1']['function'] = 'exponential'
-test_dict['H1L1']['threshold'] = 6
-test_dict['H1']['threshold'] = 5.5
-test_dict['L1']['threshold'] = 5
+test_dict['H1L1']['fit_function'] = 'power'
+test_dict['H1']['fit_function'] = 'rayleigh'
+test_dict['L1']['fit_function'] = 'exponential'
+test_dict['H1L1']['fit_threshold'] = 6
+test_dict['H1']['fit_threshold'] = 5.5
+test_dict['L1']['fit_threshold'] = 5
 
 calc_methods = ['H1L1:trigger_fit', 'H1:trigger_fit', 'L1:trigger_fit']
 functions = ['H1L1:power', 'H1:rayleigh', 'L1:exponential']
@@ -150,15 +150,15 @@ for method in significance._significance_meth_dict:
     for function in method_functions[method]:
         method_dict = {}
         method_dict['method'] = method
-        method_dict['function'] = function
-        method_dict['threshold'] = None if not function else 0
+        method_dict['fit_function'] = function
+        method_dict['fit_threshold'] = None if not function else 0
 
         def meth_test(self, md=method_dict):
             back_cnum, fnlouder = significance.get_n_louder(
-                method_dict,
                 self.test_bg_stat,
                 self.test_fg_stat,
-                self.dec_facs)
+                self.dec_facs,
+                **method_dict)
 
             back_stat_sort = np.argsort(self.test_bg_stat)
             back_far_sort = np.argsort(back_cnum)

@@ -80,7 +80,7 @@ significance.check_significance_options(args, parser)
 # Check that the user chose inclusive or exclusive background to perform
 # hierarchical removals of foreground triggers against.
 if args.max_hierarchical_removal == 0:
-    if args.hierarchical_removal_against is not 'none':
+    if args.hierarchical_removal_against != 'none':
         parser.error("User Error: 0 maximum hierarchical removals chosen but "
                      "option for --hierarchical-removal-against was given. "
                      "These are conflicting options. Use with --help for more "
@@ -244,18 +244,18 @@ fore_stat = all_trigs.stat[fore_locs]
 # Cumulative array of inclusive background triggers and the number of
 # inclusive background triggers louder than each foreground trigger
 back_cnum, fnlouder = significance.get_n_louder(
-    significance_dict[ifo_combo],
     back_stat,
     fore_stat,
-    all_trigs.decimation_factor[back_locs])
+    all_trigs.decimation_factor[back_locs],
+    **significance_dict[ifo_combo])
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
 back_cnum_exc, fnlouder_exc = significance.get_n_louder(
-    significance_dict[ifo_combo],
     exc_zero_trigs.stat,
     fore_stat,
-    exc_zero_trigs.decimation_factor)
+    exc_zero_trigs.decimation_factor,
+    **significance_dict[ifo_combo])
 
 f['background/ifar'] = conv.sec_to_year(background_time / (back_cnum + 1))
 f['background_exc/ifar'] = conv.sec_to_year(background_time_exc /
@@ -411,10 +411,10 @@ while numpy.any(louder_foreground == 0):
     back_stat = all_trigs.stat[back_locs]
     fore_stat = all_trigs.stat[fore_locs]
     back_cnum, fnlouder = significance.get_n_louder(
-        significance_dict[ifo_combo],
         back_stat,
         fore_stat,
-        all_trigs.decimation_factor[back_locs])
+        all_trigs.decimation_factor[back_locs],
+        **significance_dict[ifo_combo])
 
     # Update the louder_foreground criteria depending on whether foreground
     # triggers are being removed via inclusive or exclusive background.
@@ -425,10 +425,10 @@ while numpy.any(louder_foreground == 0):
     # So we don't have to take back_cnum_exc, jut repopulate fnlouder_exc
     else :
         _, fnlouder_exc = significance.get_n_louder(
-            significance_dict[ifo_combo],
             exc_zero_trigs.stat,
             fore_stat,
-            exc_zero_trigs.decimation_factor)
+            exc_zero_trigs.decimation_factor,
+            **significance_dict[ifo_combo])
         louder_foreground = fnlouder_exc
     # louder_foreground has been updated and the code can continue.
 

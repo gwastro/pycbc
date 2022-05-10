@@ -100,10 +100,10 @@ f.attrs['foreground_time'] = coinc_time
 
 if len(zdata) > 0:
     _, fnlouder_exc = significance.get_n_louder(
-        significance_dict[ifo_key],
         back_stat,
         zdata.stat,
-        dec_fac)
+        dec_fac,
+        **significance_dict[ifo_key])
     ifar_exc = background_time / (fnlouder_exc + 1)
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
@@ -156,10 +156,10 @@ if len(zdata) > 0:
                      [numpy.repeat(1, len(v1) + len(v2)), dec_fac])
 
         _, fnlouder[i] = significance.get_n_louder(
-            significance_dict[ifo_key],
             inj_stat,
             fstat,
-            inj_dec)
+            inj_dec,
+            **significance_dict[ifo_key])
 
         ifar[i] = background_time / (fnlouder[i] + 1)
         fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])

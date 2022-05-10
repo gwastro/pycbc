@@ -140,22 +140,24 @@ _significance_meth_dict = {
 
 _default_opt_dict = {
     'method': 'n_louder',
-    'threshold': None,
-    'function': None}
+    'fit_threshold': None,
+    'fit_function': None}
 
 
-def get_n_louder(method_dict, back_stat, fore_stat, dec_facs):
+def get_n_louder(back_stat, fore_stat, dec_facs,
+    method=_default_opt_dict['method'],
+    fit_function=_default_opt_dict['fit_function'],
+    fit_threshold=_default_opt_dict['fit_threshold'], **kwargs):  # pylint:disable=unused-argument
     """
     Wrapper to find the correct n_louder calculation method using standard
     inputs
     """
-    calculation_method = method_dict['method']
-    fit_func = method_dict['function']
-    fit_thresh = method_dict['threshold']
-    return _significance_meth_dict[calculation_method](back_stat, fore_stat,
-                                                       dec_facs,
-                                                       fit_func=fit_func,
-                                                       fit_thresh=fit_thresh)
+    return _significance_meth_dict[method](
+        back_stat,
+        fore_stat,
+        dec_facs,
+        fit_func=fit_function,
+        fit_thresh=fit_threshold, **kwargs)
 
 
 def insert_significance_option_group(parser):
@@ -272,8 +274,8 @@ def digest_significance_options(combo_keys, args):
     """
 
     lists_to_unpack = [('method', args.far_calculation_method, str),
-                       ('function', args.fit_function, str),
-                       ('threshold', args.fit_threshold, float)]
+                       ('fit_function', args.fit_function, str),
+                       ('fit_threshold', args.fit_threshold, float)]
 
     significance_dict = {}
     # Set everything as a default to start with:

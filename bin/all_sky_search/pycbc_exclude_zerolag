@@ -95,10 +95,10 @@ for k in filtered_trigs.data:
 
 logging.info('Recalculating IFARs')
 bnlouder, fnlouder = significance.get_n_louder(
-    significance_dict[all_ifo_key],
     filtered_trigs.data['stat'],
     f_in['foreground/stat'][:],
-    filtered_trigs.data['decimation_factor'])
+    filtered_trigs.data['decimation_factor'],
+    **significance_dict[all_ifo_key])
 # In principle exc background time should be recalculated
 # However we expect exclude zerolag to be a (very) small correction
 fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])

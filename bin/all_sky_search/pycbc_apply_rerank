@@ -80,10 +80,10 @@ if args.ranking_file:
     dec = f['background_exc/decimation_factor'][:]
 
     bnum, fnum = significance.get_n_louder(
-        significance_dict[ifo_combo],
         backstat,
         fstat,
-        dec)
+        dec,
+        **significance_dict[ifo_combo])
 
     ifar = background_time / (fnum + 1)
     fap = 1 - numpy.exp(- coinc_time / ifar)
@@ -102,16 +102,16 @@ else:
     backstat_exc = o['background_exc/stat'][:]
 
     bnum, fnum = significance.get_n_louder(
-        significance_dict[ifo_combo],
         backstat,
         fstat,
-        dec)
+        dec,
+        **significance_dict[ifo_combo])
 
     bnum_exc, fnum_exc = significance.get_n_louder(
-        significance_dict[ifo_combo],
         backstat_exc,
         fstat,
-        dec_exc)
+        dec_exc,
+        **significance_dict[ifo_combo])
 
     o['background/ifar'][...] = sec_to_year(background_time / (bnum + 1))
     o['background_exc/ifar'][...] = sec_to_year(background_time_exc / (bnum_exc + 1))

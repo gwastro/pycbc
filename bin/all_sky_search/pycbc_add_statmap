@@ -276,18 +276,18 @@ if injection_style:
         ifo_combo_key = bg_f.attrs['ifos'].replace(' ','')
         _, fnlouder[ifo_combo_key] = \
             significance.get_n_louder(
-                significance_dict[ifo_combo_key],
                 bg_f['background/stat'][:],
                 f['foreground/stat'][:],
-                bg_f['background/decimation_factor'][:])
+                bg_f['background/decimation_factor'][:]
+                **significance_dict[ifo_combo_key])
 
         far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / bg_f.attrs['background_time']
         _, fnlouder_exc[ifo_combo_key] = \
             significance.get_n_louder(
-                significance_dict[ifo_combo_key],
                 bg_f['background_exc/stat'][:],
                 f['foreground/stat'][:],
-                bg_f['background_exc/decimation_factor'][:])
+                bg_f['background_exc/decimation_factor'][:],
+                **significance_dict[ifo_combo_key])
         far_exc[ifo_combo_key] = (fnlouder_exc[ifo_combo_key] + 1) / bg_f.attrs['background_time_exc']
 else:
     # if not injection style input files, then the input files will have the
@@ -296,17 +296,17 @@ else:
         ifo_combo_key = get_ifo_string(f_in).replace(' ','')
         _, fnlouder[ifo_combo_key] = \
             significance.get_n_louder(
-                significance_dict[ifo_combo_key],
                 f_in['background/stat'][:],
                 f['foreground/stat'][:],
-                f_in['background/decimation_factor'][:])
+                f_in['background/decimation_factor'][:],
+                **significance_dict[ifo_combo_key])
         far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / f_in.attrs['background_time']
         _, fnlouder_exc[ifo_combo_key] = \
             significance.get_n_louder(
-                significance_dict[ifo_combo_key],
                 f_in['background_exc/stat'][:],
                 f['foreground/stat'][:],
-                f_in['background_exc/decimation_factor'][:])
+                f_in['background_exc/decimation_factor'][:],
+                **significance_dict[ifo_combo_key])
         far_exc[ifo_combo_key] = (fnlouder_exc[ifo_combo_key] + 1) / f_in.attrs['background_time_exc']
 
 logging.info('Combining false alarm rates from all available backgrounds')
