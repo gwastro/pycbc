@@ -144,10 +144,8 @@ _default_opt_dict = {
 
 
 def get_n_louder(back_stat, fore_stat, dec_facs,
-        method=_default_opt_dict['method'],
-        fit_function=_default_opt_dict['fit_function'],
-        fit_threshold=_default_opt_dict['fit_threshold'],
-        **kwargs):  # pylint:disable=unused-argument
+                 method=_default_opt_dict['method'],
+                 **kwargs):  # pylint:disable=unused-argument
     """
     Wrapper to find the correct n_louder calculation method using standard
     inputs
@@ -156,8 +154,7 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
         back_stat,
         fore_stat,
         dec_facs,
-        fit_func=fit_function,
-        fit_thresh=fit_threshold, **kwargs)
+        **kwargs)
 
 
 def insert_significance_option_group(parser):
