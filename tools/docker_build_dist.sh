@@ -66,6 +66,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
   pip install -r requirements.txt
+  pip install -r requirements-igwn.txt
   pip install -r companion.txt
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"

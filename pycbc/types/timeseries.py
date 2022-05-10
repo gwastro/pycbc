@@ -73,6 +73,20 @@ class TimeSeries(Array):
         self._delta_t = delta_t
         self._epoch = epoch
 
+    def to_astropy(self, name='pycbc'):
+        """ Return an astropy.timeseries.TimeSeries instance
+        """
+        from astropy.timeseries import TimeSeries as ATimeSeries
+        from astropy.time import Time
+        from astropy.units import s
+
+        start = Time(float(self.start_time), format='gps', scale='utc')
+        delta = self.delta_t * s
+        return ATimeSeries({name: self.numpy()},
+                           time_start=start,
+                           time_delta=delta,
+                           n_samples=len(self))
+
     def epoch_close(self, other):
         """ Check if the epoch is close enough to allow operations """
         dt = abs(float(self.start_time - other.start_time))

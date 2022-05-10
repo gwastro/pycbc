@@ -35,6 +35,7 @@ from scipy import interpolate, integrate
 import astropy.cosmology
 from astropy import units
 from astropy.cosmology.core import CosmologyError
+from astropy.cosmology import parameters
 import pycbc.conversions
 
 
@@ -97,7 +98,7 @@ def get_cosmology(cosmology=None, **kwargs):
     else:
         if cosmology is None:
             cosmology = DEFAULT_COSMOLOGY
-        if cosmology not in astropy.cosmology.parameters.available:
+        if cosmology not in parameters.available:
             raise ValueError("unrecognized cosmology {}".format(cosmology))
         cosmology = getattr(astropy.cosmology, cosmology)
     return cosmology
@@ -294,7 +295,7 @@ class DistToZ(object):
 
 # set up D(z) interpolating classes for the standard cosmologies
 _d2zs = {_c: DistToZ(cosmology=_c)
-         for _c in astropy.cosmology.parameters.available}
+         for _c in parameters.available}
 
 
 def redshift(distance, **kwargs):
@@ -448,10 +449,10 @@ class ComovingVolInterpolator(object):
 
 # set up D(z) interpolating classes for the standard cosmologies
 _v2ds = {_c: ComovingVolInterpolator('luminosity_distance', cosmology=_c)
-         for _c in astropy.cosmology.parameters.available}
+         for _c in parameters.available}
 
 _v2zs = {_c: ComovingVolInterpolator('redshift', cosmology=_c)
-         for _c in astropy.cosmology.parameters.available}
+         for _c in parameters.available}
 
 
 def redshift_from_comoving_volume(vc, interp=True, **kwargs):
