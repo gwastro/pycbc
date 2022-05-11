@@ -315,49 +315,37 @@ class Relative(BaseGaussianNoise, DistMarg):
                     self.edge_unique.append(Array(self.fedges[ifo]))
         logging.info("%s unique ifo layouts", len(self.edge_unique))
 
-    def summary_data(self, ifo):
-        """Compute summary data bin coefficients encoding linear
-        approximation to full resolution likelihood.
-
-        Returns
-        -------
-        dict
-            Dictionary containing bin coefficients a0, b0, a1, b1,
-            for each frequency bin.
+    def summary_product(self, h1, h2, ifo):
+        """ Calculate the summary values for the inner product <h1|h2>
         """
         # calculate coefficients
-        hd = numpy.conjugate(self.comp_data[ifo]) * self.h00[ifo]
-        hd /= self.comp_psds[ifo]
-        hh = (numpy.absolute(self.h00[ifo]) ** 2.0) / self.comp_psds[ifo]
+        h1 = h1[ifo]
+        h2 = h2[ifo]
+        h12 = numpy.conjugate(h1) * h2
+        h12 /= self.comp_psds[ifo]
 
         # constant terms
         a0 = numpy.array([
-                4.0 * self.df[ifo] * numpy.sum(hd[l:h])
-                for l, h in self.bins[ifo]
-            ])
-        b0 = numpy.array([
-                4.0 * self.df[ifo] * numpy.sum(hh[l:h])
+                4.0 * self.df[ifo] * h12[l:h].sum()
                 for l, h in self.bins[ifo]
             ])
 
         # linear terms
         bin_lefts = [fl for fl, fh in self.fbins[ifo]]
         a1 = numpy.array([
-                4.0 * self.df[ifo]
-                * numpy.sum(hd[l:h] * (self.f[ifo][l:h] - bl))
-                for (l, h), bl in zip(self.bins[ifo], bin_lefts)
-            ])
-        b1 = numpy.array([
-                4.0 * self.df[ifo]
-                * numpy.sum(hh[l:h] * (self.f[ifo][l:h] - bl))
+                4.0 * self.df[ifo] * (h12[l:h] * (self.f[ifo][l:h] - bl)).sum()
                 for (l, h), bl in zip(self.bins[ifo], bin_lefts)
             ])
 
         freqs = self.fedges[ifo]
         df = (freqs[1:] - freqs[:-1])
         a1 /= df
-        b1 /= df
-        return {"a0": a0, "a1": a1, "b0": b0, "b1": b1}
+        return a0, a1
+
+    def summary_data(self, ifo):
+        a0, a1 = self.summary_product(self.comp_data, self.h00, ifo)
+        b0, b1 = self.summary_product(self.h00, self.h00, ifo)
+        return {"a0": a0, "a1": a1, "b0": abs(b0), "b1": abs(b1)}
 
     def get_waveforms(self, params):
         """ Get the waveform polarizations for each ifo
