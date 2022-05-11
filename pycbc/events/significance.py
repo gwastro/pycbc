@@ -91,12 +91,35 @@ def count_n_louder(bstat, fstat, dec, skip_background=False,
     return fore_n_louder
 
 
-def trig_fit(back_stat, fore_stat, dec_facs, fit_func='exponential',
-             fit_thresh=0):
+def n_louder_from_fit(back_stat, fore_stat, dec_facs,
+                      fit_func='exponential', fit_thresh=0):
     """
     Use a fit to events in back_stat in order to estimate the
-    distribution for use in recovering the ifars. Below the
-    fit threshold, use the n_louder method for these triggers
+    distribution for use in recovering the estimate count of louder
+    background events. Below the fit threshold, use the n_louder
+    method for these triggers
+
+    back_stat: numpy.ndarray
+        Array of the background statistic values
+    fore_stat: numpy.ndarray or scalar
+        Array of the foreground statistic values or single value
+    dec_facs: numpy.ndarray
+        Array of the decimation factors for the background statistics
+    fit_func: str
+        Name of the function to be used for the fit to background
+        statistic values
+    fit_thresh: float
+        Threshold above which triggers use the fitted value, below this
+        the counted number of louder events will be used
+
+    Returns
+    -------
+    back_cnum: numpy.ndarray
+        The estimated number of background events louder than each
+        background event
+    fn_louder: numpy.ndarray
+        The estimated number of background events louder than each
+        foreground event
     """
 
     # Calculate the fitting factor of the ranking statistic distribution
@@ -133,7 +156,7 @@ def trig_fit(back_stat, fore_stat, dec_facs, fit_func='exponential',
 
 
 _significance_meth_dict = {
-    'trigger_fit': trig_fit,
+    'trigger_fit': n_louder_from_fit,
     'n_louder': count_n_louder
 }
 
