@@ -37,7 +37,7 @@ from .base import BaseModel
 #
 
 
-class HierarhcicalModel(BaseModel):
+class HierarchicalModel(BaseModel):
     r"""Model that is a combination of other models.
 
     Sub-models are treated as being independent of each other, although
@@ -94,7 +94,7 @@ class HierarhcicalModel(BaseModel):
                                    for p in self.static_param_map[lbl]}
             self.extra_stats_map.update(map_params([
                 HiearchicalParam.from_subname(lbl, p)
-                for p in model.extra_stats+['loglikelihood']])
+                for p in model.extra_stats+['loglikelihood']]))
             self._extra_stats += self.extra_stats_map[lbl]
             # also make sure the model's sampling transforms and waveform
             # transforms are not set, as these are handled by the hierarchical
@@ -199,7 +199,7 @@ class HierarhcicalModel(BaseModel):
         # get the submodels
         submodel_lbls = shlex.split(cp.get('model', 'submodels'))
         # sort parameters by model
-        vparam_map = map_params(cp.options('variable_params')
+        vparam_map = map_params(cp.options('variable_params'))
         sparam_map = map_params(cp.options('static_params'))
         # initialize the models
         submodels = {}
@@ -234,7 +234,7 @@ class HierarhcicalModel(BaseModel):
             subcp.add_section('static_params')
             for param in sparam_map[lbl]:
                 subcp.set('static_params', param.subname,
-                          cp.get('static_params', param.fullname)
+                          cp.get('static_params', param.fullname))
             # set the variable params: for now we'll just set all the
             # variable params as static params
             # so that the model doesn't raise an error looking for
