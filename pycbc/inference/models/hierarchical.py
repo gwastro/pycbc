@@ -145,6 +145,30 @@ class HierarchicalModel(BaseModel):
             logl += sublogl
         return logl
 
+    def write_metadata(self, fp, group=None):
+        """Adds data to the metadata that's written.
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.BaseInferenceFile instance
+            The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
+        
+        """
+        # write information about self
+        super().write_metadata(fp, group=group)
+        # write information about each submodel into a different group for
+        # each one
+        if group is None or group == '/':
+            prefix = ''
+        else:
+            prefix = group+'/'
+        for lbl, model in self.submodels:
+            model.write_metadata(fp, group=prefix+lbl)
+    
     @classmethod
     def from_config(cls, cp, **kwargs):
         """Initializes an instance of this class from the given config file.

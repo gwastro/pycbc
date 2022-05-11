@@ -409,50 +409,46 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         # back the noise term that canceled in the log likelihood ratio
         return self.loglr + self.lognl
 
-    def write_metadata(self, fp):
-        """Adds writing the psds and lognl, since it's a constant.
-
-        The lognl is written to the sample group's ``attrs``.
+    def write_metadata(self, fp, group=None):
+        """Adds writing the psds and analyzed detectors.
 
         The analyzed detectors, their analysis segments, and the segments
-        used for psd estimation are written to the file's ``attrs``, as
+        used for psd estimation are written as
         ``analyzed_detectors``, ``{{detector}}_analysis_segment``, and
-        ``{{detector}}_psd_segment``, respectively.
+        ``{{detector}}_psd_segment``, respectively. These are either written
+        to the specified ``group``'s attrs, or to the top level attrs if
+        ``group`` is None.
 
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
         """
-        super(BaseGaussianNoise, self).write_metadata(fp)
+        super(BaseGaussianNoise, self).write_metadata(fp, group=group)
+        if group is None:
+            attrs = fp.attrs
+        else:
+            attrs = fp[group].attrs
         # write the analyzed detectors and times
-        fp.attrs['analyzed_detectors'] = self.detectors
+        attrs['analyzed_detectors'] = self.detectors
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
-            fp.attrs[key] = [float(data.start_time), float(data.end_time)]
+            attrs[key] = [float(data.start_time), float(data.end_time)]
         if self._psds is not None and not self.no_save_data:
-            fp.write_psd(self._psds)
+            fp.write_psd(self._psds, group=group)
         # write the times used for psd estimation (if they were provided)
         for det in self.psd_segments:
             key = '{}_psd_segment'.format(det)
-            fp.attrs[key] = list(map(float, self.psd_segments[det]))
-        try:
-            attrs = fp[fp.samples_group].attrs
-        except KeyError:
-            # group doesn't exist, create it
-            fp.create_group(fp.samples_group)
-            attrs = fp[fp.samples_group].attrs
-        attrs['lognl'] = self.lognl
+            attrs[key] = list(map(float, self.psd_segments[det]))
+        # save the frequency cutoffs
         for det in self.detectors:
-            # Save lognl for each IFO as attributes in the samples group
-            attrs['{}_lognl'.format(det)] = self.det_lognl(det)
-            # Save each IFO's low frequency cutoff used in the likelihood
-            # computation as an attribute
-            fp.attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
-            # Save the IFO's high frequency cutoff used in the likelihood
-            # computation as an attribute if one was provided the user
+            attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
             if self._f_upper[det] is not None:
-                fp.attrs['{}_likelihood_high_freq'.format(det)] = \
+                attrs['{}_likelihood_high_freq'.format(det)] = \
                     self._f_upper[det]
 
     @staticmethod
@@ -940,6 +936,47 @@ class GaussianNoise(BaseGaussianNoise):
             self._loglr()
             # now try returning again
             return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
+
+    def write_metadata(self, fp, group=None):
+        """Adds writing the lognl, since it's a constant.
+
+        The total and each detector's lognl is written to the sample group's
+        ``attrs``. If a group is specified, the group name will be prependend
+        to the lognl labels with ``{group}__``, with any ``/`` in the group
+        path replaced with ``__``. For example, if group is ``/a/b``, the
+        ``lognl`` will be written as ``a__b__lognl`` in the sample's group
+        attrs.
+
+        See :py:class:`BaseGaussianNoise` for other data that's written.
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.BaseInferenceFile instance
+            The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
+        """
+        super().write_metadata(fp, group=group)
+        # now write the lognl values to the samples attrs
+        try:
+            sampattrs = fp[fp.samples_group].attrs
+        except KeyError:
+            # group doesn't exist, create it
+            fp.create_group(fp.samples_group)
+            sampattrs = fp[fp.samples_group].attrs
+        # if a group is specified, prepend the lognl names with it
+        if group is None or group == '/':
+            prefix = ''
+        else:
+            prefix = group.replace('/', '__')
+            if not prefix.endswith('__'):
+                prefix += '__'
+        sampattrs['{}lognl'.format(prefix)] = self.lognl
+        # also save the lognl in each detector
+        for det in self.detectors:
+            sampattrs['{}{}_lognl'.format(prefix, det)] = self.det_lognl(det)
 
 
 #

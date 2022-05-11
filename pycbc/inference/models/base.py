@@ -792,18 +792,26 @@ class BaseModel(metaclass=ABCMeta):
         args.update(kwargs)
         return cls(**args)
 
-    def write_metadata(self, fp):
+    def write_metadata(self, fp, group=None):
         """Writes metadata to the given file handler.
 
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
         """
-        fp.attrs['model'] = self.name
-        fp.attrs['variable_params'] = list(self.variable_params)
-        fp.attrs['sampling_params'] = list(self.sampling_params)
-        fp.write_kwargs_to_attrs(fp.attrs, static_params=self.static_params)
+        if group is None:
+            attrs = fp.attrs
+        else:
+            attrs = fp[group].attrs
+        attrs['model'] = self.name
+        attrs['variable_params'] = list(self.variable_params)
+        attrs['sampling_params'] = list(self.sampling_params)
+        fp.write_kwargs_to_attrs(attrs, static_params=self.static_params)
 
 
 def check_for_cartesian_spins(which, variable_params, static_params,

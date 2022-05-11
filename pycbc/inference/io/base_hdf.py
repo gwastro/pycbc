@@ -511,12 +511,16 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
     def write_psd(self, psds, group=None):
         """Writes PSD for each IFO to file.
 
+        PSDs are written to ``[{group}/]data/{detector}/psds/0``, where {group}
+        is the optional keyword argument.
+
         Parameters
         -----------
-        psds : {dict, FrequencySeries}
-            A dict of FrequencySeries where the key is the IFO.
-        group : {None, str}
-            The group to write the psd to. Default is ``data_group``.
+        psds : dict
+            A dict of detector name -> FrequencySeries.
+        group : str, optional
+            Specify a top-level group to write the data to. If ``None`` (the
+            default), data will be written to the file's top level.
         """
         subgroup = self.data_group + "/{ifo}/psds/0"
         if group is None:
@@ -527,32 +531,54 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             self[group.format(ifo=ifo)] = psds[ifo]
             self[group.format(ifo=ifo)].attrs['delta_f'] = psds[ifo].delta_f
 
-    def write_injections(self, injection_file):
+    def write_injections(self, injection_file, group=None):
         """Writes injection parameters from the given injection file.
 
-        Everything in the injection file is copied to ``injections_group``.
+        Everything in the injection file is copied to
+        ``[{group}/]injections_group``, where ``{group}`` is the optional
+        keyword argument.
 
         Parameters
         ----------
         injection_file : str
             Path to HDF injection file.
+        group : str, optional
+            Specify a top-level group to write the injections group to. If
+            ``None`` (the default), injections group will be written to the
+            file's top level.
         """
         logging.info("Writing injection file to output")
+        if group is None or group == '/':
+            group = self.injections_group
+        else:
+            group = '/'.join([group, self.injections_group])
         try:
             with h5py.File(injection_file, "r") as fp:
-                super(BaseInferenceFile, self).copy(fp, self.injections_group)
+                super(BaseInferenceFile, self).copy(fp, group)
         except IOError:
             logging.warn("Could not read %s as an HDF file", injection_file)
 
-    def read_injections(self):
+    def read_injections(self, group=None):
         """Gets injection parameters.
+
+        Injections are retrieved from ``[{group}/]injections``.
+
+        Parameters
+        ----------
+        group : str, optional
+            Group that the injections group is in. Default (None) is to look
+            in the top-level.
 
         Returns
         -------
         FieldArray
             Array of the injection parameters.
         """
-        injset = InjectionSet(self.filename, hdf_group=self.injections_group)
+        if group is None or group == '/':
+            group = self.injections_group
+        else:
+            group = '/'.join([group, self.injections_group])
+        injset = InjectionSet(self.filename, hdf_group=group)
         injections = injset.table.view(FieldArray)
         # close the new open filehandler to self
         injset._injhandler.filehandler.close()
