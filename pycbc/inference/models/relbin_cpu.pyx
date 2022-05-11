@@ -8,6 +8,72 @@ cdef extern from "complex.h":
 
 cimport cython
 
+cpdef likelihood_parts_multi(double [::1] freqs,
+                     double[::1] fp,
+                     double[::1] fc,
+                     double[::1] dtc,
+                     double complex[::1, ::1] hp,
+                     double complex[::1, ::1] hc,
+                     double complex[::1] h00,
+                     double complex[::1] a0,
+                     double complex[::1] a1,
+                     double [::1] b0,
+                     double [::1] b1,
+                     ) :
+    cdef size_t i
+    cdef double complex hd=0, r0, r0n, r1
+    cdef double hh=0
+
+    N = freqs.shape[0]
+    for i in range(N):
+        r0n = 0
+        for j in range(WAVE_NUM):
+            r0n += (exp(-2.0j * 3.141592653 * dtc[j] * freqs[i])
+                   * (fp[j] * hp[j][i] + fc[j] * hc[j][i]))
+
+        r0n /= h00[i]
+        r1 = r0n - r0
+
+        if i > 0:
+            hd += a0[i-1] * r0 + a1[i-1] * r1
+            hh += b0[i-1] * norm(r0) + 2.0 * b1[i-1] * real(r1 * conj(r0))
+
+        r0 = r0n
+    return hd, hh
+
+cpdef likelihood_parts_multi_v(double [::1] freqs,
+                     double[::1, ::1] fp,
+                     double[::1, ::1] fc,
+                     double[::1, ::1] dtc,
+                     double complex[::1, ::1] hp,
+                     double complex[::1, ::1] hc,
+                     double complex[::1] h00,
+                     double complex[::1] a0,
+                     double complex[::1] a1,
+                     double [::1] b0,
+                     double [::1] b1,
+                     ) :
+    cdef size_t i
+    cdef double complex hd=0, r0, r0n, r1
+    cdef double hh=0
+
+    N = freqs.shape[0]
+    for i in range(N):
+        r0n = 0
+        for j in range(WAVE_NUM):
+            r0n += (exp(-2.0j * 3.141592653 * dtc[j][i] * freqs[i])
+                   * (fp[j][i] * hp[j][i] + fc[j][i] * hc[j][i]))
+
+        r0n /= h00[i]
+        r1 = r0n - r0
+
+        if i > 0:
+            hd += a0[i-1] * r0 + a1[i-1] * r1
+            hh += b0[i-1] * norm(r0) + 2.0 * b1[i-1] * real(r1 * conj(r0))
+
+        r0 = r0n
+    return hd, hh
+
 cpdef likelihood_parts(double [::1] freqs,
                      double fp,
                      double fc,

@@ -358,6 +358,15 @@ class Relative(BaseGaussianNoise, DistMarg):
             wfs.append((hp, hc))
         return {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
 
+    def init_multi_signal(self, other_models):
+        # Check that other models are consistent with self
+        # and setup common initialization needed to handle cross terms
+        pass
+
+    def loglr_multi_signal(self, other_models):
+        # calculate the combined loglr for multiple signals in the data
+        pass
+
     def _loglr(self):
         r"""Computes the log likelihood ratio,
 
