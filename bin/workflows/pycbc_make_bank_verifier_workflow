@@ -33,7 +33,9 @@ import pycbc.version
 import pycbc.workflow as wf
 from pycbc.results import (create_versioning_page, static_table, layout)
 from pycbc.workflow.jobsetup import (select_generic_executable,
-                                     int_gps_time_to_str)
+                                     int_gps_time_to_str,
+                                     PycbcCreateInjectionsExecutable,
+                                     LalappsInspinjExecutable)
 from pycbc.workflow import setup_splittable_dax_generated
 
 # Boiler-plate stuff
@@ -190,10 +192,12 @@ inp_bank.segment = workflow.analysis_time
 
 # Inspinj Executable
 inspinj_exe = select_generic_executable(workflow, 'injection')
-# The output must be in xml format for pycbc_splitinj to work
-inspinj_exe.extension = ".xml"
-# The following line and the previous one are redundant for
-# lalapps_inspinj, but not for pycbc_create_injections
+# The output must be in xml format for pycbc_split_inspinj to work,
+# while h5 will work when splitting with pycbc_hdf5_splitbank
+splitter = workflow.cp.get('executables', 'splitinj')
+inspinj_exe.extension = ".xml" if 'pycbc_split_inspinj' in splitter else ".h5"
+# The following line is redundant for lalapps_inspinj, but not
+# for pycbc_create_injections
 inspinj_exe.current_retention_level = wf.Executable.FINAL_RESULT
 
 # Inspinj job
@@ -205,10 +209,10 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
     """
     t_seg = segments.segment([1000000000, 1000000000+int(num_injs)])
     inspinj_job.update_current_tags(curr_tags)
-    if 'LalappsInspinjExecutable' in str(inspinj_exe):
+    if inspinj_exe is LalappsInspinjExecutable:
         node = inspinj_job.create_node(t_seg)
         inj_file = node.output_file
-    elif 'PycbcCreateInjectionsExecutable' in str(inspinj_exe):
+    if inspinj_exe is PycbcCreateInjectionsExecutable:
         # Ensure pycbc_create_injections dedicated configuration files
         # are copied over to the results directory
         shutil.copy2(inspinj_job.get_opt('config-files'), conf_dir)
