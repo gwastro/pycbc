@@ -31,6 +31,8 @@ ctypedef fused COMPLEXTYPE:
     float complex
     double complex
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def _batch_correlate(numpy.ndarray [long, ndim=1] x,
                      numpy.ndarray [float complex, ndim=1] y,
                      numpy.ndarray [long, ndim=1] z,
@@ -41,7 +43,9 @@ def _batch_correlate(numpy.ndarray [long, ndim=1] x,
     cdef float complex* xp
     cdef float complex* zp
 
-    for i in range(nvec):
+    cdef unsigned int i, j
+
+    for i in prange(nvec, nogil=True):
         xp = <float complex*> x[i]
         zp = <float complex*> z[i]
         for j in range(vsize):
