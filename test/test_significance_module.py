@@ -32,7 +32,7 @@ class SignificanceParserTest(unittest.TestCase):
 # Tuples of inputs and the errors they should create
 tests_which_sysexit = []
 
-# Try to use a caluclation method which doesn't exist
+# Try to use a calculation method which doesn't exist
 tests_which_sysexit.append((['--far-calculation-method',
                              'H1L1:nonexistent_method'],
                             'method_doesnt_exist'))
@@ -49,15 +49,15 @@ tests_which_sysexit.append((['--fit-function',
 
 # Try to set a fit threshold which is not a number
 tests_which_sysexit.append((['--fit-threshold',
-                             'H1L1:elephant'],
+                             'H1L1:not_a_number'],
                             'threshold_not_a_number'))
 
 
-# Try to set a fit function which isnt in the list
+# Try to set a fit function which isn't expected
 tests_which_sysexit.append((['--far-calculation-method',
                              'H1L1:trigger_fit',
                              '--fit-function',
-                             'H1L1:elephant'],
+                             'H1L1:spanish_inquisition'],
                             'function_doesnt_exist'))
 
 # Dynamically add sysexit tests into the class

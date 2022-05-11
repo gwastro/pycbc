@@ -144,6 +144,10 @@ def fit_above_thresh(distr, vals, thresh=None, weights=None):
     return alpha, fitstd_dict[distr](w, alpha)
 
 
+# Variables:
+# x: the trigger stat value(s) at which to evaluate the function
+# a: slope parameter of the fit
+# t: lower threshold stat value
 fitfn_dict = {
     'exponential' : lambda x, a, t : a * numpy.exp(-a * (x - t)),
     'rayleigh' : lambda x, a, t : (a * x * \

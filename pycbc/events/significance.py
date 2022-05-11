@@ -258,8 +258,7 @@ def digest_significance_options(combo_keys, args):
     ----------
 
     combo_keys: list of strings
-        list of combinations of detectors which could be used as keys
-        for the options
+        list of detector combinations for which keys are needed
 
     args: parsed arguments
         from argparse ArgumentParser parse_args()
@@ -285,10 +284,9 @@ def digest_significance_options(combo_keys, args):
         for combo_value in arg_to_unpack:
             combo, value = tuple(combo_value.split(':'))
             if combo not in significance_dict:
-                # This is a newly added combo, not actually used by the code
-                # This is a warning not an exit, so we can reuse the same
-                # settings for multiple jobs in a workflow. However we don't
-                # just want to accept this silently
+                # Allow options for detector combos that are not actually
+                # used/required for a given job. Such options have
+                # no effect, but emit a warning for (e.g.) diagnostic checks
                 logging.warning("Key %s not used by this code, uses %s",
                                 combo, combo_keys)
                 significance_dict[combo] = copy.deepcopy(_default_opt_dict)
