@@ -74,7 +74,7 @@ files = [h5py.File(n, 'r') for n in args.statmap_files]
 
 f = h5py.File(args.output_file, "w")
 
-# For a few things, we will want singles and coinc files separated
+# Work out the combinations of detectors used by each input file
 all_ifo_combos = []
 for fi in files:
     ifo_list = get_ifo_string(fi).split(' ')
