@@ -12,8 +12,8 @@ cpdef likelihood_parts_multi(double [::1] freqs,
                      double[::1] fp,
                      double[::1] fc,
                      double[::1] dtc,
-                     double complex[::1, ::1] hp,
-                     double complex[::1, ::1] hc,
+                     double complex[:, ::1] hp,
+                     double complex[:, ::1] hc,
                      double complex[::1] h00,
                      double complex[::1] a0,
                      double complex[::1] a1,
@@ -25,9 +25,10 @@ cpdef likelihood_parts_multi(double [::1] freqs,
     cdef double hh=0
 
     N = freqs.shape[0]
+    HNUM = hp.shape[0]
     for i in range(N):
         r0n = 0
-        for j in range(WAVE_NUM):
+        for j in range(HNUM):
             r0n += (exp(-2.0j * 3.141592653 * dtc[j] * freqs[i])
                    * (fp[j] * hp[j][i] + fc[j] * hc[j][i]))
 
@@ -42,11 +43,11 @@ cpdef likelihood_parts_multi(double [::1] freqs,
     return hd, hh
 
 cpdef likelihood_parts_multi_v(double [::1] freqs,
-                     double[::1, ::1] fp,
-                     double[::1, ::1] fc,
-                     double[::1, ::1] dtc,
-                     double complex[::1, ::1] hp,
-                     double complex[::1, ::1] hc,
+                     double[:, ::1] fp,
+                     double[:, ::1] fc,
+                     double[:, ::1] dtc,
+                     double complex[:, ::1] hp,
+                     double complex[:, ::1] hc,
                      double complex[::1] h00,
                      double complex[::1] a0,
                      double complex[::1] a1,
@@ -58,9 +59,10 @@ cpdef likelihood_parts_multi_v(double [::1] freqs,
     cdef double hh=0
 
     N = freqs.shape[0]
+    HNUM = hp.shape[0]
     for i in range(N):
         r0n = 0
-        for j in range(WAVE_NUM):
+        for j in range(HNUM):
             r0n += (exp(-2.0j * 3.141592653 * dtc[j][i] * freqs[i])
                    * (fp[j][i] * hp[j][i] + fc[j][i] * hc[j][i]))
 
