@@ -34,6 +34,7 @@ import numpy
 import pycbc
 import pycbc.inject
 import pycbc.tmpltbank.em_progenitors
+from pycbc.conversions import eta_from_mass1_mass2
 from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
 from random import sample
@@ -116,7 +117,7 @@ for i, inj in enumerate(injections.table):
         out_sim_inspiral_bright.append(inj)
     # NSBH systems
     elif numpy.logical_not(numpy.logical_and(m1 >= opts.ns_bh_boundary, m2 >= opts.ns_bh_boundary)):
-        eta = inj.eta if inj.eta is not None else m1*m2/(m1+m2)**2
+        eta = inj.eta if inj.eta is not None else eta_from_mass1_mass2(m1, m2)
         s1x = inj.spin1x
         s1y = inj.spin1y
         s1z = inj.spin1z
