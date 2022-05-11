@@ -212,7 +212,7 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
     if inspinj_exe is LalappsInspinjExecutable:
         node = inspinj_job.create_node(t_seg)
         inj_file = node.output_file
-    if inspinj_exe is PycbcCreateInjectionsExecutable:
+    elif inspinj_exe is PycbcCreateInjectionsExecutable:
         # Ensure pycbc_create_injections dedicated configuration files
         # are copied over to the results directory
         shutil.copy2(inspinj_job.get_opt('config-files'), conf_dir)
