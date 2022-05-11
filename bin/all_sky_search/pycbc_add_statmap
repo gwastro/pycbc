@@ -278,7 +278,7 @@ if injection_style:
             significance.get_n_louder(
                 bg_f['background/stat'][:],
                 f['foreground/stat'][:],
-                bg_f['background/decimation_factor'][:]
+                bg_f['background/decimation_factor'][:],
                 **significance_dict[ifo_combo_key])
 
         far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / bg_f.attrs['background_time']
