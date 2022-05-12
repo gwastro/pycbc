@@ -21,6 +21,7 @@
 #
 # =============================================================================
 #
+import functools
 import lal
 import numpy
 import scipy.signal
@@ -30,6 +31,13 @@ from pycbc.fft import ifft, fft
 
 _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
                  numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
+
+@functools.lru_cache(maxsize=20)
+def cached_firwin(*args, **kwargs):
+    """Cache the FIR filter coefficients.
+    This is mostly done for PyCBC Live, which rapidly and repeatedly resamples data.
+    """
+    return scipy.signal.firwin(*args, **kwargs)
 
 def lfilter(coefficients, timeseries):
     """ Apply filter coefficients to a time series
@@ -167,8 +175,8 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
 
         # The kaiser window has been testing using the LDAS implementation
         # and is in the same configuration as used in the original lalinspiral
-        filter_coefficients = scipy.signal.firwin(numtaps, 1.0 / factor,
-                                                  window=('kaiser', 5))
+        filter_coefficients = cached_firwin(numtaps, 1.0 / factor,
+                                            window=('kaiser', 5))
 
         # apply the filter and decimate
         data = fir_zero_filter(filter_coefficients, timeseries)[::factor]
@@ -219,7 +227,7 @@ def notch_fir(timeseries, f1, f2, order, beta=5.0):
     """
     k1 = f1 / float((int(1.0 / timeseries.delta_t) / 2))
     k2 = f2 / float((int(1.0 / timeseries.delta_t) / 2))
-    coeff = scipy.signal.firwin(order * 2 + 1, [k1, k2], window=('kaiser', beta))
+    coeff = cached_firwin(order * 2 + 1, [k1, k2], window=('kaiser', beta))
     return fir_zero_filter(coeff, timeseries)
 
 def lowpass_fir(timeseries, frequency, order, beta=5.0):
@@ -238,7 +246,7 @@ def lowpass_fir(timeseries, frequency, order, beta=5.0):
         Beta parameter of the kaiser window that sets the side lobe attenuation.
     """
     k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
-    coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', beta))
+    coeff = cached_firwin(order * 2 + 1, k, window=('kaiser', beta))
     return fir_zero_filter(coeff, timeseries)
 
 def highpass_fir(timeseries, frequency, order, beta=5.0):
@@ -257,7 +265,7 @@ def highpass_fir(timeseries, frequency, order, beta=5.0):
         Beta parameter of the kaiser window that sets the side lobe attenuation.
     """
     k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
-    coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', beta), pass_zero=False)
+    coeff = cached_firwin(order * 2 + 1, k, window=('kaiser', beta), pass_zero=False)
     return fir_zero_filter(coeff, timeseries)
 
 def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
