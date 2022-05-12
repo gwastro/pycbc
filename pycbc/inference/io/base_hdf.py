@@ -126,6 +126,36 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
         """
         return self.attrs[attr]
 
+    def getattrs(self, group=None, create_missing=True):
+        """Convenience function for getting the `attrs` from the file or group.
+
+        Parameters
+        ----------
+        group : str, optional
+            Get the attrs of the specified group. If None or ``/``, will
+            retrieve the file's ``attrs``.
+        create_missing: bool, optional
+            If ``group`` is provided, but doesn't yet exist in the file, create
+            the group. Otherwise, a KeyError will be raised. Default is True.
+
+        Returns
+        -------
+        h5py.File.attrs
+            An attrs instance of the file or requested group.
+        """
+        if group is None or group == "/":
+            attrs = self.attrs
+        else:
+            try:
+                attrs = self[group].attrs
+            except KeyError as e:
+                if create_missing:
+                    self.create_group(group)
+                    attrs = self[group].attrs
+                else:
+                    raise e
+        return attrs
+
     @abstractmethod
     def write_samples(self, samples, **kwargs):
         """This should write all of the provided samples.
@@ -792,11 +822,11 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             if val is None:
                 val = str(None)
             if isinstance(val, dict):
-                attrs[arg] = list(val.keys())
+                attrs[str(arg)] = list(map(str, val.keys()))
                 # just call self again with the dict as kwargs
                 cls.write_kwargs_to_attrs(attrs, **val)
             else:
-                attrs[arg] = val
+                attrs[str(arg)] = val
 
     def write_data(self, name, data, path=None, append=False):
         """Convenience function to write data.

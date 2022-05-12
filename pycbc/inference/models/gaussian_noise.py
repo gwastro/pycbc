@@ -429,10 +429,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             written to the top-level attrs (``fp.attrs``).
         """
         super(BaseGaussianNoise, self).write_metadata(fp, group=group)
-        if group is None:
-            attrs = fp.attrs
-        else:
-            attrs = fp[group].attrs
+        attrs = fp.getattrs(group=group)
         # write the analyzed detectors and times
         attrs['analyzed_detectors'] = self.detectors
         for det, data in self.data.items():
@@ -959,13 +956,7 @@ class GaussianNoise(BaseGaussianNoise):
             written to the top-level attrs (``fp.attrs``).
         """
         super().write_metadata(fp, group=group)
-        # now write the lognl values to the samples attrs
-        try:
-            sampattrs = fp[fp.samples_group].attrs
-        except KeyError:
-            # group doesn't exist, create it
-            fp.create_group(fp.samples_group)
-            sampattrs = fp[fp.samples_group].attrs
+        sampattrs = fp.getattrs(group=fp.samples_group)
         # if a group is specified, prepend the lognl names with it
         if group is None or group == '/':
             prefix = ''

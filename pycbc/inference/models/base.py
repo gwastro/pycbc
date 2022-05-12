@@ -352,9 +352,10 @@ class BaseModel(metaclass=ABCMeta):
         # store prior
         if prior is None:
             self.prior_distribution = _NoPrior()
+        elif set(prior.variable_args) != set(variable_params):
+            raise ValueError("variable params of prior and model must be the "
+                             "same")
         else:
-            assert prior.variable_args == variable_params, (
-                "variable params of prior and model must be the same")
             self.prior_distribution = prior
         # store transforms
         self.sampling_transforms = sampling_transforms
@@ -804,13 +805,10 @@ class BaseModel(metaclass=ABCMeta):
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
         """
-        if group is None:
-            attrs = fp.attrs
-        else:
-            attrs = fp[group].attrs
+        attrs = fp.getattrs(group=group)
         attrs['model'] = self.name
-        attrs['variable_params'] = list(self.variable_params)
-        attrs['sampling_params'] = list(self.sampling_params)
+        attrs['variable_params'] = list(map(str, self.variable_params))
+        attrs['sampling_params'] = list(map(str, self.sampling_params))
         fp.write_kwargs_to_attrs(attrs, static_params=self.static_params)
 
 
