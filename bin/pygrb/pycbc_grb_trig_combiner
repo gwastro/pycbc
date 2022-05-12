@@ -375,7 +375,7 @@ parser.add_argument(
     "-e",
     "--seed",
     type=int,
-    default=1234,
+    default=None,
     help="Seed for the random number generator, default: %(default)d",
 )
 parser.add_argument(
