@@ -25,6 +25,7 @@
 """Hierarchical model definitions."""
 
 import shlex
+import logging
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
 
@@ -81,7 +82,10 @@ class HierarchicalModel(BaseModel):
             derived_params = set()
             derived_params.update(*[t.outputs
                                     for t in self.waveform_transforms])
-            self.param_map.update(map_params(list(derived_params)))
+            # convert to hierarchical params
+            derived_params = hpiter(derived_params,
+                                    list(self.submodels.keys()))
+            self.param_map.update(map_params(derived_params))
         # make sure the static parameters of all submodels are set correctly
         self.static_param_map = map_params(self.static_params.keys())
         # also create a map of model label -> extra stats created by each model
@@ -219,23 +223,25 @@ class HierarchicalModel(BaseModel):
         """
         # we need the read from config function from the init; to prevent
         # circular imports, we import it here
-        import pycbc.inference.models.read_from_config as read_model_from_cp
+        from pycbc.inference.models import read_from_config
         # get the submodels
         submodel_lbls = shlex.split(cp.get('model', 'submodels'))
         # sort parameters by model
-        vparam_map = map_params(cp.options('variable_params'))
-        sparam_map = map_params(cp.options('static_params'))
+        vparam_map = map_params(hpiter(cp.options('variable_params'),
+                                       submodel_lbls))
+        sparam_map = map_params(hpiter(cp.options('static_params'),
+                                       submodel_lbls))
         # initialize the models
         submodels = {}
         logging.info("Loading submodels")
         for lbl in submodel_lbls:
-            logging.info("=================================================\n",
-                         "      %s\n", lbl)
+            logging.info("============= %s =============", lbl)
             # create a config parser to pass to the model
             subcp = WorkflowConfigParser()
             # copy sections over that start with the model label (this should
             # include the [model] section for that model)
-            copy_sections = [HierarchicalParam(sec) for sec in cp.sections()
+            copy_sections = [HierarchicalParam(sec, submodel_lbls)
+                             for sec in cp.sections()
                              if sec.startswith(lbl+HierarchicalParam.delim)]
             for sec in copy_sections:
                 # check that the user isn't trying to set variable or static
@@ -253,7 +259,7 @@ class HierarchicalModel(BaseModel):
                                      "details.".format(sec))
                 subcp.add_section(sec.subname)
                 for opt, val in cp.items(sec):
-                    subcp.set(opt, val)
+                    subcp.set(sec.subname, opt, val)
             # set the static params
             subcp.add_section('static_params')
             for param in sparam_map[lbl]:
@@ -266,11 +272,9 @@ class HierarchicalModel(BaseModel):
             # params after the model is initialized
             subcp.add_section('variable_params')
             for param in vparam_map[lbl]:
-                subcp.set('static_params', param.subname, '')
+                subcp.set('static_params', param.subname, '0')
             # initialize
-            submodel = read_model_from_cp(subcp)
-            subname = subcp.get('model', 'name')
-            submodel = read_model_from_cp(subcp)
+            submodel = read_from_config(subcp)
             # move the static params back to variable
             for p in vparam_map[lbl]:
                 submodel.static_params.pop(p.subname)
@@ -357,13 +361,31 @@ class HierarchicalParam(str):
         return models, subp
 
 
+def hpiter(params, possible_models):
+    """Turns a list of parameter strings into a list of HierarchicalParams.
+
+    Parameters
+    ----------
+    params : list of str
+        List of parameter names.
+    possible_models : set
+        Set of model labels the parameters can be associated with.
+
+    Returns
+    -------
+    iterator :
+        Iterator of :py:class:`HierarchicalParam` instances.
+    """
+    return map(lambda x: HierarchicalParam(x, possible_models), params)
+
+
 def map_params(params):
     """Creates a map of models -> parameters.
 
     Parameters
     ----------
     params : list of HierarchicalParam instances
-        The list of hierarchical parameter names to prase.
+        The list of hierarchical parameter names to parse.
 
     Returns
     -------
@@ -372,6 +394,8 @@ def map_params(params):
     """
     param_map = {}
     for p in params:
+        if not isinstance(p, HierarchicalParam):
+            p = HierarchicalParam(p)
         for lbl in p.models:
             try:
                 param_map[lbl].append(p)
