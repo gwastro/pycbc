@@ -43,6 +43,16 @@ else
 fi
 
 
+# test if there is a single fits file. If not, make a representative one
+if [[ ! -f single_trigger_fits.hdf ]]
+then
+    echo -e "\\n\\n>> [`date`] Making single fits file"
+    python make_singles_fits_file.py
+else
+    echo -e "\\n\\n>> [`date`] Pre-existing single fits file found"
+fi
+
+
 # test if there is a injection file.
 # If not, make one and delete any existing strain
 
@@ -58,7 +68,7 @@ else
 fi
 
 
-# test if strain files exist. If they dont, make them
+# test if strain files exist. If they don't, make them
 
 if [[ ! -d ./strain ]]
 then
@@ -74,17 +84,18 @@ then
             --fake-strain-seed $3 \
             --output-strain-file $out_path \
             --gps-start-time $gps_start_time \
-            --gps-end-time $gps_end_time \
+            --gps-end-time $4 \
             --sample-rate 16384 \
             --low-frequency-cutoff 10 \
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 32 \
             --injection-file injections.hdf
     }
+    # L1 ends 32s later, so that we can inject in single-detector time
+    simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234 $((gps_end_time - 32))
+    simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345 $gps_end_time
+    simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456 $((gps_end_time - 32))
 
-    simulate_strain H1 aLIGOMidLowSensitivityP1200087 1234
-    simulate_strain L1 aLIGOMidLowSensitivityP1200087 2345
-    simulate_strain V1 AdVEarlyLowSensitivityP1200087 3456
 else
     echo -e "\\n\\n>> [`date`] Pre-existing strain data found"
 fi
@@ -108,11 +119,12 @@ rm -rf ./output
 
 echo -e "\\n\\n>> [`date`] Running PyCBC Live"
 
+
 mpirun \
 -host localhost,localhost \
 -n 2 \
 --bind-to none \
--x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
+ -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
 python -m mpi4py `which pycbc_live` \
 --bank-file template_bank.hdf \
@@ -153,7 +165,7 @@ python -m mpi4py `which pycbc_live` \
     H1:strain/H1/* \
     L1:strain/L1/* \
     V1:strain/V1/* \
---frame-read-timeout 100 \
+--frame-read-timeout 10 \
 --channel-name \
     H1:SIMULATED_STRAIN \
     L1:SIMULATED_STRAIN \
@@ -183,6 +195,12 @@ python -m mpi4py `which pycbc_live` \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
 --run-snr-optimization \
+--enable-single-detector-background \
+--single-newsnr-threshold 9 \
+--single-duration-threshold 7 \
+--single-reduced-chisq-threshold 2 \
+--single-fit-file single_trigger_fits.hdf \
+--sngl-ifar-est-dist conservative \
 --verbose
 
 # cat the logs of pycbc_optimize_snr so we can check them
