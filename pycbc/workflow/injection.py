@@ -90,7 +90,8 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         factor = int(workflow.cp.get_opt_tags('workflow-optimal-snr',
                                               'parallelization-factor',
                                               tags))
-    except ConfigParser.Error:
+    except Exception as e:
+        logging.warning(e)
         factor = 1
 
     if factor == 1:

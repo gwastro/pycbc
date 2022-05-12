@@ -28,7 +28,7 @@ objects.
 """
 import os
 import pycbc
-from decorator import decorator
+from functools import wraps
 import logging
 from .libutils import get_ctypes_library
 
@@ -183,42 +183,48 @@ def current_prefix():
 
 _import_cache = {}
 def schemed(prefix):
-    @decorator
-    def scheming_function(fn, *args, **kwds):
-        try:
-            return _import_cache[mgr.state][fn](*args, **kwds)
-        except KeyError:
-            exc_errors = []
-            for sch in mgr.state.__class__.__mro__[0:-2]:
-                try:
-                    backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
-                    schemed_fn = getattr(backend, fn.__name__)
-                except (ImportError, AttributeError) as e:
-                    exc_errors += [e]
-                    continue
 
-                if mgr.state not in _import_cache:
-                    _import_cache[mgr.state] = {}
+    def scheming_function(func):
+        @wraps(func)
+        def _scheming_function(*args, **kwds):
+            try:
+                return _import_cache[mgr.state][func](*args, **kwds)
+            except KeyError:
+                exc_errors = []
+                for sch in mgr.state.__class__.__mro__[0:-2]:
+                    try:
+                        backend = __import__(prefix + scheme_prefix[sch],
+                                             fromlist=[func.__name__])
+                        schemed_fn = getattr(backend, func.__name__)
+                    except (ImportError, AttributeError) as e:
+                        exc_errors += [e]
+                        continue
 
-                _import_cache[mgr.state][fn] = schemed_fn
+                    if mgr.state not in _import_cache:
+                        _import_cache[mgr.state] = {}
 
-                return schemed_fn(*args, **kwds)
+                    _import_cache[mgr.state][func] = schemed_fn
 
-            err = """Failed to find implementation of (%s)
-                  for %s scheme." % (str(fn), current_prefix())"""
-            for emsg in exc_errors:
-                err += print(emsg)
-            raise RuntimeError(err)
+                    return schemed_fn(*args, **kwds)
+
+                err = """Failed to find implementation of (%s)
+                      for %s scheme." % (str(fn), current_prefix())"""
+                for emsg in exc_errors:
+                    err += print(emsg)
+                raise RuntimeError(err)
+        return _scheming_function
 
     return scheming_function
 
-@decorator
-def cpuonly(fn, *args, **kwds):
-    if not issubclass(type(mgr.state), CPUScheme):
-        raise TypeError(fn.__name__ +
-                        " can only be called from a CPU processing scheme.")
-    else:
-        return fn(*args, **kwds)
+def cpuonly(func):
+    @wraps(func)
+    def _cpuonly(*args, **kwds):
+        if not issubclass(type(mgr.state), CPUScheme):
+            raise TypeError(fn.__name__ +
+                            " can only be called from a CPU processing scheme.")
+        else:
+            return func(*args, **kwds)
+    return _cpuonly
 
 def insert_processing_option_group(parser):
     """

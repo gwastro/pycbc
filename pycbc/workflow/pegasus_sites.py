@@ -54,7 +54,7 @@ def add_ini_site_profile(site, cp, sec):
 
 
 def add_local_site(sitecat, cp, local_path, local_url):
-    """Add the local site to sitecatalog"""
+    """Add the local site to site catalog"""
     # local_url must end with a '/'
     if not local_url.endswith('/'):
         local_url = local_url + '/'
@@ -223,7 +223,7 @@ def add_osg_site(sitecat, cp):
 
 
 def add_site(sitecat, sitename, cp, out_dir=None):
-    """Add site sitename to sitecatalog"""
+    """Add site sitename to site catalog"""
     # Allow local site scratch to be overriden for any site which uses it
     sec = 'pegasus_profile-{}'.format(sitename)
     opt = 'pycbc|site-scratch'

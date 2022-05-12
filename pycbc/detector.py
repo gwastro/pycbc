@@ -31,6 +31,7 @@ between observatories.
 import os
 import numpy as np
 import lal
+import pycbc.libutils
 from pycbc.types import TimeSeries
 from pycbc.types.config import InterpolatingConfigParser
 from astropy.time import Time
@@ -176,7 +177,7 @@ class Detector(object):
         self.name = str(detector_name)
 
         if detector_name in [pfx for pfx, name in get_available_detectors()]:
-            import lalsimulation as lalsim
+            lalsim = pycbc.libutils.import_optional('lalsimulation')
             self._lal = lalsim.DetectorPrefixToLALDetector(self.name)
             self.response = self._lal.response
             self.location = self._lal.location

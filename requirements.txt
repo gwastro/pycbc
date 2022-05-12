@@ -1,7 +1,6 @@
 # requirements for most basic library use
 astropy>=2.0.3,!=4.2.1,!=4.0.5
 Mako>=1.0.1
-decorator>=3.4.2
 scipy>=0.16.0
 matplotlib>=2.0.0
 numpy>=1.16.0,!=1.19.0
@@ -9,7 +8,6 @@ pillow
 h5py>=3.0.0
 jinja2
 mpld3>=0.3
-requests>=1.2.1
 beautifulsoup4>=4.6.0
 cython
 lalsuite!=7.2
@@ -31,12 +29,6 @@ python-ligo-lw >= 1.7.0
 emcee==2.2.1
 dynesty
 epsie==0.7.1
-
-# For LDG service access
-dqsegdb2>=1.0.1
-amqplib
-htchirp >= 2.0
-dqsegdb >= 2.0.0
 
 # For building documentation
 Sphinx>=4.2.0

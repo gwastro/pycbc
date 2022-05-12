@@ -120,7 +120,7 @@ def abs_arg_max_complex(numpy.ndarray [COMPLEXTYPE, ndim=1] a):
     return idx  
 
 def abs_arg_max(self):
-    if self.kind == 'real':
+    if self.dtype == _np.float32 or self.dtype == _np.float64:
         return _np.argmax(abs(self.data))
     else:
         return abs_arg_max_complex(self._data)    
