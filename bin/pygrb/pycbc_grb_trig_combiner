@@ -374,9 +374,8 @@ parser.add_argument(
 parser.add_argument(
     "-e",
     "--seed",
-    type=int,
     default=None,
-    help="Seed for the random number generator, default: %(default)d",
+    help="Seed for the NumPy random number generator, default: %(default)s",
 )
 parser.add_argument(
     "-p",
