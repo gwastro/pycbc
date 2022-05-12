@@ -40,7 +40,7 @@ from pycbc.io.live import gracedb_tag_with_version
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.psd import interpolate
 from pycbc.types import FrequencySeries
-from pycbc.results import ifo_color
+from pycbc.results import generate_asd_plot
 
 def check_gracedb_for_event(gdb_handle, query, far):
     """
@@ -247,26 +247,15 @@ for event in coinc_table:
                              tag_name=['analyst_comments'])
 
     if args.generate_plots:
-        psd_fig, psd_ax = plt.subplots(1)
-        for ifo in sorted(psddict.keys()):
-            curr_psd = psddict[ifo]
-            psd_ax.loglog(curr_psd.sample_frequencies,
-                          curr_psd ** 0.5 / pycbc.DYN_RANGE_FAC,
-                          c=ifo_color(ifo), label=ifo)
-        psd_ax.legend()
-        psd_ax.set_xlim([10, 1300])
-        psd_ax.set_ylim([3E-24, 1E-20])
-        psd_ax.set_xlabel('Frequency (Hz)')
-        psd_ax.set_ylabel('ASD')
-        psd_png_filename = f'{ifos_str}-PYCBC_{id_str}_PSD-{time:d}-1.png'
-        fullpath_psd = os.path.join(args.output_directory, psd_png_filename)
-        psd_fig.savefig(fullpath_psd)
-        logging.info("Saved PSD plot %s", psd_png_filename)
+        asd_png_filename = f'{ifos_str}-PYCBC_{id_str}_ASD-{time:d}-1.png'
+        fullpath_asd = os.path.join(args.output_directory, asd_png_filename)
+        generate_asd_plot(psddict, fullpath_asd)
+        logging.info("Saved ASD plot %s", asd_png_filename)
         if not args.no_upload:
             gracedb.writeLog(
-            r["graceid"], "PyCBC PSD estimate from the time of event",
-            filename=psd_png_filename,
-            tag_name=["psd"], displayName=['PSDs'])
+            r["graceid"], "PyCBC ASD estimate from the time of event",
+            filename=fullpath_psd,
+            tag_name=["asd"], displayName=['ASDs'])
             logging.info("Uploaded file %s to event %s.", psd_png_filename,
                          r["graceid"])
 
@@ -275,7 +264,8 @@ for event in coinc_table:
     xmldoc.childNodes[-1].removeChild(coinc_event_map_table_curr)
     xmldoc.childNodes[-1].removeChild(sngl_inspiral_table_curr)
     # As the psds were added using a different format, we must remove these
-    # through the table name
+    # through the tag name. This may not work in future if other things use
+    # the LIGO_LW tag which we want to keep
     for cn in xmldoc.childNodes[-1].childNodes:
         if cn.tagName == 'LIGO_LW':
             xmldoc.childNodes[-1].removeChild(cn)
