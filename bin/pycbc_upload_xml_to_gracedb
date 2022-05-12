@@ -258,8 +258,7 @@ for event in coinc_table:
         psd_ax.set_ylim([3E-24, 1E-20])
         psd_ax.set_xlabel('Frequency (Hz)')
         psd_ax.set_ylabel('ASD')
-        psd_png_filename = '{}-PYCBC_{}-{:d}-psd.png'.format(ifos_str, id_str,
-                                                             time)
+        psd_png_filename = f'{ifos_str}-PYCBC_{id_str}_PSD-{time:d}-1.png'
         fullpath_psd = os.path.join(args.output_directory, psd_png_filename)
         psd_fig.savefig(fullpath_psd)
         logging.info("Saved PSD plot %s", psd_png_filename)
