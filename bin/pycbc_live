@@ -420,7 +420,7 @@ class LiveEventManager(object):
                                 self.last_few_coincs_uploaded)
             nearby_coincs = coinc_tdiffs < 0.1
             if any(nearby_coincs):
-                logging.info("Single detetor event at time %.2f not "
+                logging.info("Single detector event at time %.2f not "
                              "uploaded due to coinc event at %.2f.",
                              event.merger_time,
                              self.last_few_coincs_uploaded[nearby_coincs])
