@@ -34,6 +34,9 @@ _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
 
 @functools.lru_cache(maxsize=20)
 def cached_firwin(*args, **kwargs):
+    """Cache the FIR filter coefficients.
+    This is mostly done for PyCBC Live, which rapidly and repeatedly resamples data.
+    """
     return scipy.signal.firwin(*args, **kwargs)
 
 def lfilter(coefficients, timeseries):
