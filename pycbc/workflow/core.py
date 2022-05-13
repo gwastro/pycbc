@@ -98,8 +98,7 @@ class Executable(pegasus_workflow.Executable):
     # Sub classes, or instances, should override this. If not overriden the
     # file will be retained, but a warning given
     current_retention_level = KEEP_BUT_RAISE_WARNING
-    def __init__(self, cp, name,
-                 universe=None, ifos=None, out_dir=None, tags=None,
+    def __init__(self, cp, name, ifos=None, out_dir=None, tags=None,
                  reuse_executable=True, set_submit_subdir=True):
         """
         Initialize the Executable class.
@@ -133,7 +132,6 @@ class Executable(pegasus_workflow.Executable):
         else:
             self.ifo_string = None
         self.cp = cp
-        self.universe=universe
         self.name = name
         self.container_cls = None
         self.container_type = None
@@ -255,9 +253,6 @@ class Executable(pegasus_workflow.Executable):
         else:
             super(Executable, self).__init__(self.pegasus_name,
                                              installed=self.installed)
-
-        if self.universe:
-            self.set_universe(self.universe)
 
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)

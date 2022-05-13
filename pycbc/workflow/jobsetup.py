@@ -659,11 +659,11 @@ class PyCBCMultiInspiralExecutable(Executable):
     pycbc_multi_inspiral executable.
     """
     current_retention_level = Executable.ALL_TRIGGERS
-    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+    def __init__(self, cp, name, ifo=None, injection_file=None,
                  gate_files=None, out_dir=None, tags=None):
         if tags is None:
             tags = []
-        super().__init__(cp, name, universe, ifo, out_dir=out_dir, tags=tags)
+        super().__init__(cp, name, ifo, out_dir=out_dir, tags=tags)
         self.injection_file = injection_file
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
@@ -878,8 +878,6 @@ class LigolwAddExecutable(Executable):
     """ The class used to create nodes for the ligolw_add Executable. """
 
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def create_node(self, jobSegment, input_files, output=None,
                     use_tmp_subdirs=True, tags=None):
@@ -908,10 +906,7 @@ class PycbcSplitInspinjExecutable(Executable):
     The class responsible for running the pycbc_split_inspinj executable
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
-    def __init__(self, cp, exe_name, num_splits, universe=None, ifo=None,
-                 out_dir=None):
-        super().__init__(cp, exe_name, universe, ifo, out_dir, tags=[])
-        self.num_splits = int(num_splits)
+
     def create_node(self, parent, tags=None):
         if tags is None:
             tags = []
@@ -1001,9 +996,16 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
     The clase used to create jobs for the pycbc_dark_vs_bright_injections Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
-    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
+    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
                  tags=None):
-        super().__init__(cp, exe_name, universe, ifos, out_dir, tags)
+        super().__init__(cp, exe_name, ifos, out_dir, tags)
+        if tags is None:
+            tags = []
+        Executable.__init__(self, cp, exe_name, ifos, out_dir,
+                            tags=tags)
+        self.cp = cp
+        self.out_dir = out_dir
+        self.exe_name = exe_name
 
     def create_node(self, parent, segment, tags=None):
         if tags is None:
@@ -1037,11 +1039,11 @@ class LigolwCBCJitterSkylocExecutable(Executable):
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
+    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
                  tags=None):
         if tags is None:
             tags = []
-        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
+        Executable.__init__(self, cp, exe_name, ifos, out_dir,
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
@@ -1068,11 +1070,11 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
+    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
                  tags=None):
         if tags is None:
             tags = []
-        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
+        Executable.__init__(self, cp, exe_name, ifos, out_dir,
                             tags=tags)
         self.cp = cp
         self.out_dir = out_dir
@@ -1099,7 +1101,7 @@ class PycbcSplitBankExecutable(Executable):
     extension = '.hdf'
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, num_banks,
-                 ifo=None, out_dir=None, universe=None):
+                 ifo=None, out_dir=None):
         super().__init__(cp, exe_name, universe, ifo, out_dir, tags=[])
         self.num_banks = int(num_banks)
 
@@ -1148,9 +1150,6 @@ class PycbcConditionStrainExecutable(Executable):
     """ The class responsible for creating jobs for pycbc_condition_strain. """
 
     current_retention_level = Executable.ALL_TRIGGERS
-    def __init__(self, cp, exe_name, ifo=None, out_dir=None, universe=None,
-            tags=None):
-        super().__init__(cp, exe_name, universe, ifo, out_dir, tags)
 
     def create_node(self, input_files, tags=None):
         if tags is None:
@@ -1185,10 +1184,6 @@ class PycbcCreateInjectionsExecutable(Executable):
 
     current_retention_level = Executable.ALL_TRIGGERS
     extension = '.hdf'
-
-    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
-                 universe=None, tags=None):
-        super().__init__(cp, exe_name, universe, ifos, out_dir, tags)
 
     def create_node(self, config_file=None, seed=None, tags=None):
         """ Set up a CondorDagmanNode class to run ``pycbc_create_injections``.
@@ -1236,10 +1231,6 @@ class PycbcInferenceExecutable(Executable):
     """
 
     current_retention_level = Executable.ALL_TRIGGERS
-    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
-                 universe=None, tags=None):
-        super().__init__(cp, exe_name, universe=universe, ifos=ifos,
-                         out_dir=out_dir, tags=tags)
 
     def create_node(self, config_file, seed=None, tags=None,
                     analysis_time=None):
