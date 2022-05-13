@@ -483,7 +483,7 @@ class PyCBCInspiralExecutable(Executable):
                  injection_file=None, tags=None, reuse_executable=False):
         if tags is None:
             tags = []
-        super().__init__(cp, exe_name, None, ifo, out_dir, tags=tags,
+        super().__init__(cp, exe_name, ifo, out_dir, tags=tags,
                          reuse_executable=reuse_executable,
                          set_submit_subdir=False)
         self.cp = cp
