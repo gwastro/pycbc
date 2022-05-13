@@ -160,6 +160,36 @@ class JointDistribution(object):
         return params
 
     @staticmethod
+    def _return_atomic(params):
+        """Determins if an array or atomic value should be returned given a
+        set of input params.
+
+        Parameters
+        ----------
+        params : dict, numpy.record, array, or FieldArray
+            The input to evaluate.
+
+        Returns
+        -------
+        bool :
+            Whether or not functions run on the parameters should be returned
+            as atomic types or not.
+        """
+        if isinstance(params, dict):
+            return not any(isinstance(val, numpy.ndarray)
+                           for val in params.values())
+        elif isinstance(params, numpy.record):
+            return True
+        elif isinstance(params, numpy.ndarray):
+            return False
+            params = params.view(type=FieldArray)
+        elif isinstance(params, FieldArray):
+            return False
+        else:
+            raise ValueError("params must be either dict, FieldArray, "
+                             "record, or structured array")
+
+    @staticmethod
     def _ensure_fieldarray(params):
         """Ensures the given params are a ``FieldArray``.
 
@@ -171,29 +201,21 @@ class JointDistribution(object):
 
         Returns
         -------
-        params : FieldArray
+        FieldArray
             The given values as a FieldArray.
-        return_atomic : bool
-            Whether or not functions run on the parameters should be returned
-            as atomic types or not.
         """
         if isinstance(params, dict):
-            return_atomic = not any(isinstance(val, numpy.ndarray)
-                                    for val in params.values())
-            params = FieldArray.from_kwargs(**params)
+            return FieldArray.from_kwargs(**params)
         elif isinstance(params, numpy.record):
-            return_atomic = True
-            params = FieldArray.from_records(tuple(params),
-                                             names=params.dtype.names)
+            return FieldArray.from_records(tuple(params),
+                                           names=params.dtype.names)
         elif isinstance(params, numpy.ndarray):
-            return_atomic = False
-            params = params.view(type=FieldArray)
+            return params.view(type=FieldArray)
         elif isinstance(params, FieldArray):
-            return_atomic = False
+            return params
         else:
             raise ValueError("params must be either dict, FieldArray, "
                              "record, or structured array")
-        return params, return_atomic
 
     def contains(self, params):
         """Evaluates whether the given parameters satisfy the constraints.
@@ -210,7 +232,8 @@ class JointDistribution(object):
             of the parameters are arrays, will return an array of booleans.
             Otherwise, a boolean.
         """
-        params, return_atomic = self._ensure_fieldarray(params)
+        params = self._ensure_fieldarray(params)
+        return_atomic = self._return_atomic(params)
         # convert params to a field array if it isn't one
         result = numpy.ones(params.shape, dtype=bool)
         for constraint in self._constraints:
@@ -222,9 +245,10 @@ class JointDistribution(object):
     def __call__(self, **params):
         """Evaluate joint distribution for parameters.
         """
+        return_atomic = self._return_atomic(params)
         # check if statisfies constraints
         if len(self._constraints) != 0:
-            parray, return_atomic = self._ensure_fieldarray(params)
+            parray = self._ensure_fieldarray(params)
             isin = self.contains(parray)
             if not isin.any():
                 if return_atomic:
@@ -242,7 +266,7 @@ class JointDistribution(object):
         if len(self._constraints) != 0:
             logp += numpy.log(isin.astype(float))
 
-        if numpy.isscalar(logp):
+        if return_atomic:
             logp = logp.item()
 
         return logp - self._logpdf_scale
