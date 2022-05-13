@@ -996,16 +996,6 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
     The clase used to create jobs for the pycbc_dark_vs_bright_injections Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
-    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
-                 tags=None):
-        super().__init__(cp, exe_name, ifos, out_dir, tags)
-        if tags is None:
-            tags = []
-        Executable.__init__(self, cp, exe_name, ifos, out_dir,
-                            tags=tags)
-        self.cp = cp
-        self.out_dir = out_dir
-        self.exe_name = exe_name
 
     def create_node(self, parent, segment, tags=None):
         if tags is None:
@@ -1039,15 +1029,6 @@ class LigolwCBCJitterSkylocExecutable(Executable):
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
-                 tags=None):
-        if tags is None:
-            tags = []
-        Executable.__init__(self, cp, exe_name, ifos, out_dir,
-                            tags=tags)
-        self.cp = cp
-        self.out_dir = out_dir
-        self.exe_name = exe_name
 
     def create_node(self, parent, segment, tags=None):
         if tags is None:
@@ -1057,7 +1038,7 @@ class LigolwCBCJitterSkylocExecutable(Executable):
 
         node = Node(self)
         node.add_input_opt('--input-file', parent)
-        output_file = File(parent.ifo_list, self.exe_name,
+        output_file = File(parent.ifo_list, self.name,
                            segment, extension='.xml', store_file=True,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
@@ -1070,15 +1051,6 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
-                 tags=None):
-        if tags is None:
-            tags = []
-        Executable.__init__(self, cp, exe_name, ifos, out_dir,
-                            tags=tags)
-        self.cp = cp
-        self.out_dir = out_dir
-        self.exe_name = exe_name
 
     def create_node(self, parent, segment, tags=None):
         if tags is None:
@@ -1087,7 +1059,7 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
             raise ValueError("Must provide an input file.")
 
         node = Node(self)
-        output_file = File(parent.ifo_list, self.exe_name, segment,
+        output_file = File(parent.ifo_list, self.name, segment,
                            extension='.xml', store_file=self.retain_files,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
