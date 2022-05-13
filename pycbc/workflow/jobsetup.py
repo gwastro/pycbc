@@ -1102,7 +1102,7 @@ class PycbcSplitBankExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, num_banks,
                  ifo=None, out_dir=None):
-        super().__init__(cp, exe_name, universe, ifo, out_dir, tags=[])
+        super().__init__(cp, exe_name, ifo, out_dir, tags=[])
         self.num_banks = int(num_banks)
 
     def create_node(self, bank, tags=None):
