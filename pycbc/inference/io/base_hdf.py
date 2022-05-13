@@ -968,43 +968,63 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             return cp
         return cf
 
-    def read_data(self):
+    def read_data(self, group=None):
         """Loads the data stored in the file as a FrequencySeries.
 
         Only works for models that store data as a frequency series in
         ``data/DET/stilde``. A ``KeyError`` will be raised if the model used
         did not store data in that path.
 
+        Parameters
+        ----------
+        group : str, optional
+            Group that the data group is in. Default (None) is to look in the
+            top-level.
+
         Returns
         -------
         dict :
             Dictionary of detector name -> FrequencySeries.
         """
+        fmt = '{}/{}/stilde'
+        if group is None or group == '/':
+            path = self.data_group
+        else:
+            path = '/'.join([group, self.data_group])
         data = {}
-        fmt = 'data/{}/stilde'
-        for det in self['data'].keys():
-            group = self[fmt.format(det)]
+        for det in self[path].keys():
+            group = self[fmt.format(path, det)]
             data[det] = FrequencySeries(
                 group[()], delta_f=group.attrs['delta_f'],
                 epoch=group.attrs['epoch'])
         return data
 
-    def read_psds(self):
+    def read_psds(self, group=None):
         """Loads the PSDs stored in the file as a FrequencySeries.
 
         Only works for models that store PSDs in
         ``data/DET/psds/0``. A ``KeyError`` will be raised if the model used
         did not store PSDs in that path.
 
+        Parameters
+        ----------
+        group : str, optional
+            Group that the data group is in. Default (None) is to look in the
+            top-level.
+
         Returns
         -------
         dict :
             Dictionary of detector name -> FrequencySeries.
         """
+        fmt = '{}/{}/psds/0'
+        if group is None or group == '/':
+            path = self.data_group
+        else:
+            path = '/'.join([group, self.data_group])
         psds = {}
-        fmt = 'data/{}/psds/0'
-        for det in self['data'].keys():
-            group = self[fmt.format(det)]
+        for det in self[path].keys():
+            group = self[fmt.format(path, det)]
             psds[det] = FrequencySeries(
                 group[()], delta_f=group.attrs['delta_f'])
         return psds
