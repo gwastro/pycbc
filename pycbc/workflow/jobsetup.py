@@ -907,6 +907,10 @@ class PycbcSplitInspinjExecutable(Executable):
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
 
+    def __init__(self, cp, exe_name, num_splits, ifo=None, out_dir=None):
+        super().__init__(cp, exe_name, ifo, out_dir, tags=[])
+        self.num_splits = int(num_splits)
+
     def create_node(self, parent, tags=None):
         if tags is None:
             tags = []
