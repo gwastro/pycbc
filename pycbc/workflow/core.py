@@ -214,14 +214,6 @@ class Executable(pegasus_workflow.Executable):
         logging.info("Using %s executable "
                      "at %s on site %s" % (name, exe_url.path, exe_site))
 
-        # Determine the condor universe if we aren't given one
-        if self.universe is None:
-            self.universe = 'vanilla'
-
-        if self.universe != 'vanilla':
-            logging.info("%s executable will run as %s universe"
-                         % (name, self.universe))
-
         # FIXME: This hasn't yet been ported to pegasus5 and won't work.
         #        Pegasus describes two ways to work with containers, and I need
         #        to figure out which is most appropriate and use that.
@@ -264,8 +256,8 @@ class Executable(pegasus_workflow.Executable):
             super(Executable, self).__init__(self.pegasus_name,
                                              installed=self.installed)
 
-        self._set_pegasus_profile_options()
-        self.set_universe(self.universe)
+        if self.universe:
+            self.set_universe(self.universe)
 
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
@@ -274,6 +266,10 @@ class Executable(pegasus_workflow.Executable):
         if set_submit_subdir:
             self.add_profile('pegasus', 'relative.submit.dir',
                              self.pegasus_name)
+
+        # Set configurations from the config file, these should override all
+        # other settings
+        self._set_pegasus_profile_options()
 
         self.execution_site = exe_site
         self.executable_url = exe_path
