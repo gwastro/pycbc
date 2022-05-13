@@ -785,7 +785,7 @@ class PyCBCTmpltbankExecutable(Executable):
                  tags=None, write_psd=False, psd_files=None):
         if tags is None:
             tags = []
-        super().__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
+        super().__init__(cp, exe_name, ifo, out_dir, tags=tags)
         self.cp = cp
         self.write_psd = write_psd
         self.psd_files = psd_files
