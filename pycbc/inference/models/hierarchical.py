@@ -77,7 +77,7 @@ class HierarchicalModel(BaseModel):
         # initialize standard attributes
         super().__init__(variable_params, **kwargs)
         # store a map of model labels -> parameters for quick look up later
-        self.param_map = map_params(self.variable_params)
+        self.param_map = map_params(self.hvariable_params)
         # add any parameters created by waveform transforms
         if self.waveform_transforms is not None:
             derived_params = set()
@@ -89,7 +89,7 @@ class HierarchicalModel(BaseModel):
             for lbl, pset in derived_params.items():
                 self.param_map[lbl].update(pset)
         # make sure the static parameters of all submodels are set correctly
-        self.static_param_map = map_params(self.static_params.keys())
+        self.static_param_map = map_params(self.hstatic_params.keys())
         # also create a map of model label -> extra stats created by each model
         # stats are prepended with the model label. We'll include the
         # loglikelihood returned by each submodel in the extra stats.
@@ -116,16 +116,40 @@ class HierarchicalModel(BaseModel):
                                  "handled by the hiearchical model"
                                  .format(lbl))
 
-    @BaseModel.variable_params.setter
+    @property
+    def hvariable_params(self):
+        """The variable params as a tuple of :py:class:`HierarchicalParam`
+        instances.
+        """
+        return self._variable_params
+
+    @property
+    def variable_params(self):
+        # converts variable params back to a set of strings before returning
+        return tuple(p.fullname for p in self._variable_params)
+
+    @variable_params.setter
     def variable_params(self, variable_params):
-        # overrides BaseModel's variable params to use HierarchicalParam
-        # instances for the variable parameters
+        # overrides BaseModel's variable params to store the variable params
+        # as HierarchicalParam instances
         if isinstance(variable_params, str):
             variable_params = [variable_params]
         self._variable_params = tuple(HierarchicalParam(p, self.submodels)
                                       for p in variable_params)
 
-    @BaseModel.static_params.setter
+    @property
+    def hstatic_params(self):
+        """The static params with :py:class:`HierarchicalParam` instances used
+        as dictionary keys.
+        """
+        return self._static_params
+
+    @property
+    def static_params(self):
+        # converts the static param keys back to strings
+        return {p.fullname: val for p, val in self._static_params.items()}
+
+    @static_params.setter
     def static_params(self, static_params):
         if static_params is None:
             static_params = {}
@@ -134,6 +158,11 @@ class HierarchicalModel(BaseModel):
 
     @property
     def _extra_stats(self):
+        return [p.fullname for p in self.__extra_stats]
+
+    @property
+    def _hextra_stats(self):
+        """The extra stats as :py:class:`HierarchicalParam` instances."""
         return self.__extra_stats
 
     def _loglikelihood(self):
