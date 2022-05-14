@@ -161,7 +161,7 @@ class JointDistribution(object):
 
     @staticmethod
     def _return_atomic(params):
-        """Determins if an array or atomic value should be returned given a
+        """Determines if an array or atomic value should be returned given a
         set of input params.
 
         Parameters
