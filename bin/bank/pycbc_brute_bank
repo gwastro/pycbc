@@ -1,8 +1,29 @@
 #!/usr/bin/env python
+
+# Copyright (C) 2017-2020 Alex Nitz, Duncan Macleod
+# Copyright (C) 2022 Shichao Wu, Alex Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 """Generate a bank of templates using a brute force stochastic method.
 """
 import numpy, h5py, logging, argparse, numpy.random, sys
 import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.conversions
+from pycbc.distributions import read_params_from_config
+from pycbc.distributions.utils import draw_samples_from_config
+from pycbc.distributions.bounded import get_param_bounds_from_config
 from scipy.stats import gaussian_kde
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -11,11 +32,13 @@ parser.add_argument('--output-file', required=True,
     help='Output file name for template bank.')
 parser.add_argument('--input-file',
     help='Bank to use as a starting point.')
-parser.add_argument('--params', required=True,
+parser.add_argument('--input-config',
+    help='Draw parameters from the given configure file.')
+parser.add_argument('--params',
     help='list of paramaters to use', nargs='+')
-parser.add_argument('--min', required=True,
+parser.add_argument('--min',
     help='list of the minimum parameter values', nargs='+', type=float)
-parser.add_argument('--max',  required=True,
+parser.add_argument('--max',
     help='list of the maximum parameter values', nargs='+', type=float)
 parser.add_argument('--approximant',  required=True,
     help='The waveform approximant to place')
@@ -45,6 +68,18 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 numpy.random.seed(args.seed)
 
+
+# Read the .ini file if it's in the input.
+if args.input_config is not None:
+    config_parser = pycbc.types.config.InterpolatingConfigParser()
+    file = open(args.input_config, 'r')
+    config_parser.read_file(file)
+    file.close()
+
+    variable_args, static_args = read_params_from_config(
+        config_parser, prior_section='prior',
+        vargs_section='variable_params',
+        sargs_section='static_params')
 
 fdict = {}
 if args.fixed_params:
@@ -123,7 +158,6 @@ class TriangleBank(object):
             d.params = self.waveforms[c].params
             d.s = self.waveforms[c].s
             self.waveforms[c] = d
-
 
     def tau0(self):
         if not hasattr(self, 't0'):
@@ -278,8 +312,16 @@ def draw(rtype):
     params = {}
 
     if rtype == 'uniform':
-        for name, pmin, pmax in zip(args.params, args.min, args.max):
-            params[name] = numpy.random.uniform(pmin, pmax, size=size)
+        if args.input_config is None:
+            for name, pmin, pmax in zip(args.params, args.min, args.max):
+                params[name] = numpy.random.uniform(pmin, pmax, size=size)
+        else:
+            # `draw_samples_from_config` has its own fixed seed, so must overwrite it.
+            random_seed = numpy.random.randint(low=0, high=2**32-1)
+            samples = draw_samples_from_config(args.input_config, size, random_seed)
+            for name in samples.fieldnames:
+                params[name] = samples[name]
+
     elif rtype == 'kde':
         trail = 300
         if trail > len(bank):
@@ -287,6 +329,11 @@ def draw(rtype):
         p = bank.keys()
         p = [k for k in p if k not in fdict]
         p.remove('approximant')
+        if 'q' in static_args:
+            # For the fixed mass ratio, it will encounter `singular matrix` issue
+            # when calculate the covariance matrix in KDE method, so ignore it.
+            p.remove('mass1')
+            p.remove('mass2')
         bdata = numpy.array([bank.key(k)[-trail:] for k in p])
 
         kde = gaussian_kde(bdata)
@@ -294,13 +341,25 @@ def draw(rtype):
         for k, v in zip(p, points):
             params[k] = v
 
+        if 'q' in static_args:
+            params['mass1'] = pycbc.conversions.mass1_from_mtotal_q(params['total_mass'], static_args['q'])
+            params['mass2'] = pycbc.conversions.mass2_from_mtotal_q(params['total_mass'], static_args['q'])
+
     params['approximant'] = numpy.array([args.approximant]*size)
 
-    # Filter out stuff
+    # Filter out stuff (kde method may also generate samples outside boundaries).
     l = None
-    for name, pmin, pmax in zip(args.params, args.min, args.max):
-        nl = (params[name] < pmax) & (params[name] > pmin)
-        l = (nl & l) if l is not None else nl
+    if args.input_config is None:
+        for name, pmin, pmax in zip(args.params, args.min, args.max):
+            nl = (params[name] < pmax) & (params[name] > pmin)
+            l = (nl & l) if l is not None else nl
+    else:
+        for name in variable_args:
+            param_bounds = get_param_bounds_from_config(config_parser, 'prior', name, name)
+            pmin = param_bounds.min
+            pmax = param_bounds.max
+            nl = (params[name] < pmax) & (params[name] > pmin)
+            l = (nl & l) if l is not None else nl
 
     if args.max_q:
         q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
@@ -336,6 +395,7 @@ def cdraw(rtype, ts, te):
 
     i = 0
     while len(p[list(p.keys())[0]]) < size:
+
         tp = draw(rtype)
         for k in p:
             p[k] = numpy.concatenate([p[k], tp[k]])
@@ -349,7 +409,6 @@ def cdraw(rtype, ts, te):
         i += 1
         if i > 1000:
             break
-
 
     if len(p[list(p.keys())[0]]) == 0:
         return None
