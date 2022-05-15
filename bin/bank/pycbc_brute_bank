@@ -329,7 +329,7 @@ def draw(rtype):
         p = bank.keys()
         p = [k for k in p if k not in fdict]
         p.remove('approximant')
-        if 'q' in static_args:
+        if args.input_config is not None and 'q' in static_args:
             # For the fixed mass ratio, it will encounter `singular matrix` issue
             # when calculate the covariance matrix in KDE method, so ignore it.
             p.remove('mass1')
@@ -341,7 +341,7 @@ def draw(rtype):
         for k, v in zip(p, points):
             params[k] = v
 
-        if 'q' in static_args:
+        if args.input_config is not None and 'q' in static_args:
             params['mass1'] = pycbc.conversions.mass1_from_mtotal_q(params['total_mass'], static_args['q'])
             params['mass2'] = pycbc.conversions.mass2_from_mtotal_q(params['total_mass'], static_args['q'])
 
