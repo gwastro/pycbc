@@ -281,7 +281,7 @@ def digest_significance_options(combo_keys, args):
     ----------
 
     combo_keys: list of strings
-        list of detector combinations for which keys are needed
+        list of detector combinations for which options are needed
 
     args: parsed arguments
         from argparse ArgumentParser parse_args()
