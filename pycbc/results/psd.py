@@ -26,13 +26,12 @@
 """
 Module to generate PSD figures
 """
-
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
-import pycbc
 from pycbc.results import ifo_color
+from pycbc import DYN_RANGE_FAC
 
 
 def generate_asd_plot(psddict, output_filename):
@@ -58,7 +57,7 @@ def generate_asd_plot(psddict, output_filename):
         curr_psd = psddict[ifo]
         # Can't plot log(0) so start from point 1
         asd_ax.loglog(curr_psd.sample_frequencies[1:],
-                      curr_psd[1:] ** 0.5 / pycbc.DYN_RANGE_FAC,
+                      curr_psd[1:] ** 0.5 / DYN_RANGE_FAC,
                       c=ifo_color(ifo), label=ifo)
 
     asd_ax.legend()
