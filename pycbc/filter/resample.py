@@ -158,7 +158,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     if not isinstance(timeseries,TimeSeries):
         raise TypeError("Can only resample time series")
 
-    if timeseries.kind is not 'real':
+    if timeseries.kind != 'real':
         raise TypeError("Time series must be real")
 
     if timeseries.sample_rate_close(1.0 / delta_t):
@@ -301,7 +301,7 @@ def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     if not isinstance(timeseries, TimeSeries):
         raise TypeError("Can only resample time series")
 
-    if timeseries.kind is not 'real':
+    if timeseries.kind != 'real':
         raise TypeError("Time series must be real")
 
     lal_data = timeseries.lal()
@@ -343,7 +343,7 @@ def lowpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     if not isinstance(timeseries, TimeSeries):
         raise TypeError("Can only resample time series")
 
-    if timeseries.kind is not 'real':
+    if timeseries.kind != 'real':
         raise TypeError("Time series must be real")
 
     lal_data = timeseries.lal()
