@@ -301,6 +301,7 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
         Templates must pass cuts in all IFOs. This is important
         e.g. for template fit parameter cuts.
 
+
     Returns
     -------
     tids_out: numpy array

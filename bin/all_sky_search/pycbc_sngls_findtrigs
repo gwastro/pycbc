@@ -6,7 +6,7 @@ from pycbc.events import veto, coinc, stat
 import pycbc.conversions as conv
 import pycbc.version
 from pycbc import io
-from pycbc.events import trigger_fits as trfits
+from pycbc.events import cuts, trigger_fits as trfits
 from pycbc.events.veto import indices_outside_times
 from pycbc.types.optparse import MultiDetOptionAction
 from pycbc import init_logging
@@ -46,6 +46,7 @@ parser.add_argument('--cluster-window', type=float,
 parser.add_argument("--output-file",
                     help="File to store the candidate triggers")
 stat.insert_statistic_option_group(parser)
+cuts.insert_cuts_option_group(parser)
 args = parser.parse_args()
 
 trigger_file = args.trigger_files[0]
@@ -61,6 +62,8 @@ args.segment_name = sum(args.segment_name, [])
 args.veto_files = sum(args.veto_files, [])
 
 init_logging(args.verbose)
+
+trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 logging.info('Opening trigger file: %s', trigger_file)
 trigf = io.HFile(trigger_file, 'r')
@@ -85,7 +88,8 @@ if args.randomize_template_order:
     shuffle(template_ids)
     template_ids = template_ids[tmin:tmax]
 else:
-    template_ids = range(tmin, tmax)
+    template_ids = np.array(range(tmin, tmax))
+
 from pycbc.io.hdf import ReadByTemplate
 trigs = ReadByTemplate(trigger_file,
                        args.template_bank,
@@ -99,18 +103,29 @@ trigger_ids_all = []
 template_ids_all = []
 trigger_times_all = []
 
-
 rank_method = stat.get_statistic_from_opts(args, [ifo])
 
+# Apply cuts to templates
+template_ids = cuts.apply_template_cuts(
+    trigs.bank,
+    template_cut_dict,
+    statistic=rank_method,
+    ifos=[ifo],
+    template_ids=template_ids)
+
 for tnum in template_ids:
-    logging.info("checking template %s", tnum)
-    tids_full = trigs.set_template(tnum)
-    logging.info("%d triggers in this template", len(tids_full))
+    tids_uncut = trigs.set_template(tnum)
+
+    trigger_keep_ids = cuts.apply_trigger_cuts(trigs, trigger_cut_dict)
+    tids_full = tids_uncut[trigger_keep_ids]
+    logging.info('%s:%s', tnum, len(tids_uncut))
+    if len(tids_full) < len(tids_uncut):
+        logging.info("%s triggers cut",
+                     len(tids_uncut) - len(tids_full))
 
     n_tot_trigs = tids_full.size
     if not n_tot_trigs: continue
 
-    logging.info('Setting up ranking method')
     # Stat class instance to calculate the ranking statistic
     extra_kwargs = {}
     for inputstr in args.statistic_keywords:
@@ -124,7 +139,6 @@ for tnum in template_ids:
             raise ValueError(err_txt)
 
     sds = rank_method.single(trigs)
-    logging.info("Calculating single-detector statistic")
     stat_t = rank_method.rank_stat_single((ifo, sds),
                                           **extra_kwargs)
     trigger_times = sds['end_time']
