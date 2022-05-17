@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017-2020 Alex Nitz, Duncan Macleod
-# Copyright (C) 2022 Shichao Wu, Alex Nitz
+# Copyright (C) 2017 Alex Nitz, Duncan Macleod
+#               2022 Shichao Wu
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -21,9 +21,10 @@
 """
 import numpy, h5py, logging, argparse, numpy.random, sys
 import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.conversions
-from pycbc.distributions import read_params_from_config
+from pycbc import transforms
+from pycbc.distributions import read_params_from_config, read_distributions_from_config
+from pycbc.distributions import read_constraints_from_config, JointDistribution
 from pycbc.distributions.utils import draw_samples_from_config
-from pycbc.distributions.bounded import get_param_bounds_from_config
 from scipy.stats import gaussian_kde
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -80,6 +81,18 @@ if args.input_config is not None:
         config_parser, prior_section='prior',
         vargs_section='variable_params',
         sargs_section='static_params')
+
+    if any(config_parser.get_subsections('waveform_transforms')):
+        waveform_transforms = transforms.read_transforms_from_config(
+                config_parser, 'waveform_transforms')
+
+    dists = read_distributions_from_config(config_parser)
+    constraints = read_constraints_from_config(
+                    cp=config_parser, transforms=waveform_transforms,
+                    static_args=static_args)
+    dists_joint = JointDistribution(
+                    variable_args, *dists,
+                    **{"constraints": constraints})
 
 fdict = {}
 if args.fixed_params:
@@ -329,11 +342,8 @@ def draw(rtype):
         p = bank.keys()
         p = [k for k in p if k not in fdict]
         p.remove('approximant')
-        if args.input_config is not None and 'q' in static_args:
-            # For the fixed mass ratio, it will encounter `singular matrix` issue
-            # when calculate the covariance matrix in KDE method, so ignore it.
-            p.remove('mass1')
-            p.remove('mass2')
+        if args.input_config is not None:
+            p = variable_args
         bdata = numpy.array([bank.key(k)[-trail:] for k in p])
 
         kde = gaussian_kde(bdata)
@@ -341,9 +351,13 @@ def draw(rtype):
         for k, v in zip(p, points):
             params[k] = v
 
-        if args.input_config is not None and 'q' in static_args:
-            params['mass1'] = pycbc.conversions.mass1_from_mtotal_q(params['total_mass'], static_args['q'])
-            params['mass2'] = pycbc.conversions.mass2_from_mtotal_q(params['total_mass'], static_args['q'])
+        # Apply `waveform_transforms` defined in the .ini file to samples.
+        if waveform_transforms is not None:
+            # Add `static_args` back, some transformations may need them.
+            if static_args is not None:
+                for k in static_args.keys():
+                    params[k] = numpy.array(static_args[k]*size)
+            params = transforms.apply_transforms(params, waveform_transforms)
 
     params['approximant'] = numpy.array([args.approximant]*size)
 
@@ -353,30 +367,26 @@ def draw(rtype):
         for name, pmin, pmax in zip(args.params, args.min, args.max):
             nl = (params[name] < pmax) & (params[name] > pmin)
             l = (nl & l) if l is not None else nl
+
+        if args.max_q:
+            q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
+            l &= q < args.max_q
+
+        if args.max_mtotal:
+            l &= params['mass1'] + params['mass2'] < args.max_mtotal
+
+        if args.max_mchirp:
+            from pycbc.conversions import mchirp_from_mass1_mass2
+            mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
+            l &= mc < args.max_mchirp
+
+        if args.min_mchirp:
+            from pycbc.conversions import mchirp_from_mass1_mass2
+            mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
+            l &= mc > args.min_mchirp
+
     else:
-        for name in variable_args:
-            param_bounds = get_param_bounds_from_config(config_parser, 'prior', name, name)
-            pmin = param_bounds.min
-            pmax = param_bounds.max
-            nl = (params[name] < pmax) & (params[name] > pmin)
-            l = (nl & l) if l is not None else nl
-
-    if args.max_q:
-        q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
-        l &= q < args.max_q
-
-    if args.max_mtotal:
-        l &= params['mass1'] + params['mass2'] < args.max_mtotal
-
-    if args.max_mchirp:
-        from pycbc.conversions import mchirp_from_mass1_mass2
-        mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
-        l &= mc < args.max_mchirp
-
-    if args.min_mchirp:
-        from pycbc.conversions import mchirp_from_mass1_mass2
-        mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
-        l &= mc > args.min_mchirp
+        l = dists_joint.contains(params)
 
     for k in params:
         params[k] = params[k][l]
