@@ -352,11 +352,11 @@ def draw(rtype):
             params[k] = v
 
         # Apply `waveform_transforms` defined in the .ini file to samples.
-        if waveform_transforms is not None:
+        if args.input_config is not None and waveform_transforms is not None:
             # Add `static_args` back, some transformations may need them.
             if static_args is not None:
                 for k in static_args.keys():
-                    params[k] = numpy.array(static_args[k]*size)
+                    params[k] = numpy.array([static_args[k]]*size)
             params = transforms.apply_transforms(params, waveform_transforms)
 
     params['approximant'] = numpy.array([args.approximant]*size)
