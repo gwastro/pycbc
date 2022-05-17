@@ -39,10 +39,10 @@ def load_ns_sequence(eos_name):
 
     Returns
     ----------
-    ns_sequence: 3D-array
+    ns_sequence: numpy.array
         contains the sequence data in the form NS gravitational
-         mass (in solar masses), NS baryonic mass (in solar
-         masses), NS compactness (dimensionless)
+        mass (in solar masses), NS baryonic mass (in solar
+        masses), NS compactness (dimensionless)
     max_ns_g_mass: float
         the maximum NS gravitational mass (in solar masses) in
         the sequence (this is the mass of the most massive stable
@@ -64,22 +64,20 @@ def load_ns_sequence(eos_name):
 def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence):
     """
     Determines the baryonic mass of an NS given its gravitational
-    mass and an NS equilibrium sequence.
+    mass and an NS equilibrium sequence (in solar masses).
 
     Parameters
     -----------
     ns_g_mass: float
         NS gravitational mass (in solar masses)
-    ns_sequence: 3D-array
+    ns_sequence: numpy.array
         contains the sequence data in the form NS gravitational
-         mass (in solar masses), NS baryonic mass (in solar
-         masses), NS compactness (dimensionless)
+        mass (in solar masses), NS baryonic mass (in solar
+        masses), NS compactness (dimensionless)
 
     Returns
     ----------
     float
-        The NS baryonic mass (in solar massesr**3*(r**2*(r-6)+chi**2*(3*r+4))+
-        chi**4*(3*r*(r-2)+chi**2))
     """
     x = ns_sequence[:, 0]
     y = ns_sequence[:, 1]
@@ -90,22 +88,21 @@ def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence):
 
 def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence):
     """
-    Determines the compactness of an NS given its
-    gravitational mass and an NS equilibrium sequence.
+    Determines the dimensionless compactness parameter of an NS given
+    its gravitational mass and an NS equilibrium sequence.
 
     Parameters
     -----------
     ns_g_mass: float
         NS gravitational mass (in solar masses)
-    ns_sequence: 3D-array
+    ns_sequence: numpy.array
         contains the sequence data in the form NS gravitational
-         mass (in solar masses), NS baryonic mass (in solar
-         masses), NS compactness (dimensionless)
+        mass (in solar masses), NS baryonic mass (in solar
+        masses), NS compactness (dimensionless)
 
     Returns
     ----------
     float
-        The NS compactness (dimensionless)
     """
     x = ns_sequence[:, 0]
     y = ns_sequence[:, 2]
@@ -162,10 +159,13 @@ def initialize_eos(ns_mass, eos):
 
 
 def foucart18(
-        eta, ns_compactness, ns_b_mass, bh_spin_mag, bh_spin_pol, solve=False):
+        eta, ns_compactness, ns_b_mass, bh_spin_mag, bh_spin_pol, interp=True):
     """Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
-    Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018).
+    `Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018)`_.
+    
+    .. _Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018):
+        https://doi.org/10.1103/PhysRevD.98.081501
     
     Parameters
     ----------
@@ -180,15 +180,19 @@ def foucart18(
         Dimensionless spin magnitude of the BH.
     bh_spin_pol : float
         The tilt angle of the BH spin.
-    solve: bool, optional
-        Whether to solve for the ISSO radius of each system via the
-        PG_ISSO_solver routine. Otherwise load pre-computed grid of
-        values and interpolate. Default = False.
+    interp: bool, optional
+        Whether to interpolate over a pre-computed grid of values of
+        the ISSO for systems with BH spin magnitude < 0.9. Otherwise
+        solve via the PG_ISSO_solver routine for all systems.
+        Default = True.
     """
-    if solve:
-        isso = PG_ISSO_solver(bh_spin_mag, bh_spin_pol)
+    if interp:
+        isso = np.empty_like(bh_spin_mag)
+        solve = bh_spin_mag > 0.9
+        isso[~solve] = pg_isso_interp(bh_spin_pol[~solve], bh_spin_mag[~solve])
+        isso[solve] = PG_ISSO_solver(bh_spin_mag[solve], bh_spin_pol[solve])
     else:
-        isso = pg_isso_interp(bh_spin_pol, bh_spin_mag)
+        isso = PG_ISSO_solver(bh_spin_mag, bh_spin_pol)
     # Fit parameters and tidal correction
     alpha = 0.406
     beta  = 0.139

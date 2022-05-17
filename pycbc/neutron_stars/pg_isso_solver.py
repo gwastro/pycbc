@@ -16,7 +16,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
 Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz (PG)
-formalism [see Stone, Loeb, Berger, PRD 87, 084053 (2013)].
+formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
+ 
+.. _Stone, Loeb, Berger, PRD 87, 084053 (2013):
+    http://dx.doi.org/10.1103/PhysRevD.87.084053
 """
 import numpy as np
 from scipy.optimize import root_scalar
@@ -25,9 +28,10 @@ from . import NS_DATA_DIRECTORY
 
 
 def ISCO_eq(r, chi):
-    """
-    Polynomial that enables the calculation of the Kerr innermost
-    stable circular orbit (ISCO) radius via its roots.
+    """Polynomial that enables the calculation of the Kerr innermost
+    stable circular orbit (ISCO) radius via its roots,
+
+    .. math:: Z(r) = [r (r-6)]^2 - \chi^2 [2r (3r+14) - 9 \chi^2]\,.
 
     Parameters
     -----------
@@ -39,14 +43,12 @@ def ISCO_eq(r, chi):
     Returns
     ----------
     float
-        ``(r * (r - 6))**2``
-            ``- chi**2 * (2 * r * (3 * r + 14) - 9 * chi**2)``
     """
     return (r * (r - 6))**2 - chi**2 * (2 * r * (3 * r + 14) - 9 * chi**2)
 
 
 def ISCO_eq_dr(r, chi):
-    """Partial derivative of ISCO_eq wrt r
+    """Partial derivative of :func:`ISCO_eq` with respect to r.
 
     Parameters
     ----------
@@ -63,7 +65,7 @@ def ISCO_eq_dr(r, chi):
 
 
 def ISCO_eq_dr2(r, chi):
-    """Double partial derivative of ISCO_eq wrt r
+    """Double partial derivative of :func:`ISCO_eq` with respect to r.
 
     Parameters
     ----------
@@ -80,11 +82,18 @@ def ISCO_eq_dr2(r, chi):
 
 
 def ISSO_eq_at_pole(r, chi):
-    """
-    Polynomial that enables the calculation of the Kerr polar
-    (inclination = +/- pi/2) innermost stable spherical orbit
-    (ISSO) radius via its roots.  Physical solutions are
-    between 6 and 1+sqrt[3]+sqrt[3+2sqrt[3]].
+    r"""Polynomial that enables the calculation of the Kerr polar
+    (:math:`\iota = \pm \pi / 2`) innermost stable spherical orbit
+    (ISSO) radius via the roots of
+
+    .. math::
+
+        P(r) &= r^3 [r^2 (r - 6) + \chi^2 (3 r + 4)] \\
+             &\quad + \chi^4 [3 r (r - 2) + \chi^2] \, ,
+    
+    where :math:`\chi` is the BH dimensionless spin parameter. Physical
+    solutions are between 6 and
+    :math:`1 + \sqrt{3} + \sqrt{3 + 2 \sqrt{3}}`.
 
     Parameters
     ----------
@@ -96,8 +105,6 @@ def ISSO_eq_at_pole(r, chi):
     Returns
     -------
     float
-        ``r**3 * (r**2 * (r - 6) + chi**2 * (3 * r + 4))``
-            ``+ chi**4 * (3 * r * (r - 2) + chi**2)``
     """
     chi2 = chi * chi
     return (
@@ -106,7 +113,7 @@ def ISSO_eq_at_pole(r, chi):
 
 
 def ISSO_eq_at_pole_dr(r, chi):
-    """Partial derivative of ISSO_eq_at_pole wrt r
+    """Partial derivative of :func:`ISSO_eq_at_pole` with respect to r.
 
     Parameters
     ----------
@@ -128,7 +135,8 @@ def ISSO_eq_at_pole_dr(r, chi):
 
 
 def ISSO_eq_at_pole_dr2(r, chi):
-    """Double partial derivative of ISSO_eq_at_pole wrt r
+    """Double partial derivative of :func:`ISSO_eq_at_pole` with
+    respect to r.
 
     Parameters
     ----------
@@ -148,11 +156,35 @@ def ISSO_eq_at_pole_dr2(r, chi):
 
 
 def PG_ISSO_eq(r, chi, incl):
-    """Polynomial that enables the calculation of a generic innermost
-    stable spherical orbit (ISSO) radius via its roots.  Physical
-    solutions are between the equatorial ISSO (aka the ISCO) radius
-    and the polar ISSO radius.
-    See Stone, Loeb, Berger, PRD 87, 084053 (2013).
+    r"""Polynomial that enables the calculation of a generic innermost
+    stable spherical orbit (ISSO) radius via the roots in :math:`r` of
+
+    .. math::
+
+        S(r) &= r^8 Z(r) + \chi^2 (1 - \cos(\iota)^2) \\
+             &\quad * [\chi^2 (1 - \cos(\iota)^2) Y(r) - 2 r^4 X(r)]\,,
+
+    where
+
+    .. math::
+
+        X(r) &= \chi^2 (\chi^2 (3 \chi^2 + 4 r (2 r - 3)) \\
+             &\quad + r^2 (15 r (r - 4) + 28)) - 6 r^4 (r^2 - 4) \, ,
+
+    .. math::
+
+        Y(r) &= \chi^4 (\chi^4 + r^2 [7 r (3 r - 4) + 36]) \\
+             &\quad + 6 r (r - 2) \\
+             &\qquad * (\chi^6 + 2 r^3
+             [\chi^2 (3 r + 2) + 3 r^2 (r - 2)]) \, ,
+
+    and :math:`Z(r) =` :func:`ISCO_eq`. Physical solutions are between
+    the equatorial ISSO (i.e. the ISCO) radius (:func:`ISCO_eq`) and
+    the polar ISSO radius (:func:`ISSO_eq_at_pole`).
+    See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
+ 
+    .. _Stone, Loeb, Berger, PRD 87, 084053 (2013):
+        http://dx.doi.org/10.1103/PhysRevD.87.084053
 
     Parameters
     ----------
@@ -167,17 +199,6 @@ def PG_ISSO_eq(r, chi, incl):
     Returns
     -------
     float
-        ``r**8 * Z + chi**2 * (1 - cos_incl**2)``
-            ``* (chi**2 * (1 - cos_incl**2) * Y - 2 * r**4 * X)``
-        where
-        ``X = chi**2 * (chi**2 * (3 * chi**2 + 4 * r * (2 * r - 3))``
-            ``+ r**2 * (15 * r * (r - 4) + 28))``
-            ``- 6 * r**4 * (r**2 - 4)``
-        ``Y = chi**4 * (chi**4 + r**2 * (7 * r * (3 * r - 4) + 36))``
-            ``+ 6 * r * (r - 2)``
-                ``* (chi**6 + 2 * r**3``
-                    ``* (chi**2 * (3 * r + 2) + 3 * r**2 * (r - 2)))``
-        ``Z = ISCO_eq(r, chi)``
     """
     chi2 = chi * chi
     chi4 = chi2 * chi2
@@ -203,7 +224,7 @@ def PG_ISSO_eq(r, chi, incl):
 
 
 def PG_ISSO_eq_dr(r, chi, incl):
-    """Partial derivative of ISSO equation wrt r.
+    """Partial derivative of :func:`PG_ISSO_eq` with respect to r.
 
     Parameters
     ----------
@@ -244,7 +265,8 @@ def PG_ISSO_eq_dr(r, chi, incl):
 
 
 def PG_ISSO_eq_dr2(r, chi, incl):
-    """Second partial derivative of ISSO equation wrt r.
+    """Second partial derivative of :func:`PG_ISSO_eq` with respect to
+    r.
 
     Parameters
     ----------
@@ -288,7 +310,7 @@ def PG_ISSO_solver(chi, incl):
     """Function that determines the radius of the innermost stable
     spherical orbit (ISSO) for a Kerr BH and a generic inclination
     angle between the BH spin and the orbital angular momentum.
-    This function finds the appropriat root of PG_ISSO_eq.
+    This function finds the appropriate root of :func:`PG_ISSO_eq`.
 
     Parameters
     ----------

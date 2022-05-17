@@ -422,7 +422,7 @@ def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
 
 
 def remnant_mass_from_mass1_mass2_spherical_spin_eos(
-        mass1, mass2, spin1a=0.0, spin1pol=0.0, eos='2H', solve=False):
+        mass1, mass2, spin1a=0.0, spin1pol=0.0, eos='2H', interp=True):
     """
     Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
@@ -446,10 +446,11 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
         The tilt angle of the spin of mass1. Default = 0 (aligned w L).
     eos : str, optional
         Name of the equation of state being adopted. Default is '2H'.
-    solve : bool, optional
-        Whether to solve for the ISSO radius of each system. Otherwise
-        load pre-computed grid of values and interpolate.
-        Default = False.
+    interp: bool, optional
+        Whether to interpolate over a pre-computed grid of values of
+        the ISSO for systems with BH spin magnitude < 0.9. Otherwise
+        solve via the PG_ISSO_solver routine for all systems.
+        Default = True.
 
     Returns
     ----------
@@ -468,13 +469,13 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     ns_compactness, ns_b_mass = ns.initialize_eos(mass2, eos)
     eta = eta_from_mass1_mass2(mass1, mass2)
     remnant_mass = ns.foucart18(
-        eta, ns_compactness, ns_b_mass, spin1a, spin1pol, solve=solve)
+        eta, ns_compactness, ns_b_mass, spin1a, spin1pol, interp=interp)
     return formatreturn(remnant_mass, input_is_array)
 
 
 def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         mass1, mass2, spin1x=0.0, spin1y=0.0, spin1z=0.0, eos='2H',
-        solve=False):
+        interp=True):
     """
     Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
@@ -500,10 +501,11 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         The dimensionless z-component of the spin of mass1. Default = 0.
     eos: str, optional
         Name of the equation of state being adopted. Default is '2H'.
-    solve : bool, optional
-        Whether to solve for the ISSO radius of each system. Otherwise
-        load pre-computed grid of values and interpolate.
-        Default = False.
+    interp: bool, optional
+        Whether to interpolate over a pre-computed grid of values of
+        the ISSO for systems with BH spin magnitude < 0.9. Otherwise
+        solve via the PG_ISSO_solver routine for all systems.
+        Default = True.
 
     Returns
     ----------
@@ -512,7 +514,7 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
     """
     spin1a, _, spin1pol = _cartesian_to_spherical(spin1x, spin1y, spin1z)
     return remnant_mass_from_mass1_mass2_spherical_spin_eos(
-        mass1, mass2, spin1a, spin1pol, eos=eos, solve=solve)
+        mass1, mass2, spin1a, spin1pol, eos=eos, interp=interp)
 
 
 #
