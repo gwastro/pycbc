@@ -39,8 +39,8 @@ def ISCO_eq(r, chi):
     Returns
     ----------
     float
-        ``(r * (r - 6))**2
-            - chi**2 * (2 * r * (3 * r + 14) - 9 * chi**2)``
+        ``(r * (r - 6))**2``
+            ``- chi**2 * (2 * r * (3 * r + 14) - 9 * chi**2)``
     """
     return (r * (r - 6))**2 - chi**2 * (2 * r * (3 * r + 14) - 9 * chi**2)
 
@@ -96,8 +96,8 @@ def ISSO_eq_at_pole(r, chi):
     Returns
     -------
     float
-        ``r**3 * (r**2 * (r - 6) + chi**2 * (3 * r + 4))
-            + chi**4 * (3 * r * (r - 2) + chi**2)
+        ``r**3 * (r**2 * (r - 6) + chi**2 * (3 * r + 4))``
+            ``+ chi**4 * (3 * r * (r - 2) + chi**2)``
     """
     chi2 = chi * chi
     return (
@@ -167,16 +167,16 @@ def PG_ISSO_eq(r, chi, incl):
     Returns
     -------
     float
-        ``r**8 * Z + chi**2 * (1 - cos_incl**2)
-            *(chi**2 * (1 - cos_incl**2) * Y - 2 * r**4 * X)``
+        ``r**8 * Z + chi**2 * (1 - cos_incl**2)``
+            ``* (chi**2 * (1 - cos_incl**2) * Y - 2 * r**4 * X)``
         where
-        ``X = chi**2 * (chi**2 * (3 * chi**2 + 4 * r * (2 * r - 3))
-                + r**2 * (15 * r * (r - 4) + 28))
-            - 6 * r**4 * (r**2 - 4)``
-        ``Y = chi**4 * (chi**4 + r**2 * (7 * r * (3 * r - 4) + 36))
-            + 6 * r * (r - 2)
-                * (chi**6 + 2 * r**3
-                    * (chi**2 * (3 * r + 2) + 3 * r**2 * (r - 2)))``
+        ``X = chi**2 * (chi**2 * (3 * chi**2 + 4 * r * (2 * r - 3))``
+            ``+ r**2 * (15 * r * (r - 4) + 28))``
+            ``- 6 * r**4 * (r**2 - 4)``
+        ``Y = chi**4 * (chi**4 + r**2 * (7 * r * (3 * r - 4) + 36))``
+            ``+ 6 * r * (r - 2)``
+                ``* (chi**6 + 2 * r**3``
+                    ``* (chi**2 * (3 * r + 2) + 3 * r**2 * (r - 2)))``
         ``Z = ISCO_eq(r, chi)``
     """
     chi2 = chi * chi
