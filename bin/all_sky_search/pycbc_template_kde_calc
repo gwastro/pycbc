@@ -5,7 +5,6 @@ import h5py
 import operator
 import argparse
 import logging
-import utils_awkde as awkde
 from awkde import GaussianKDE
 from pycbc import init_logging
 import pycbc.conversions as convert
