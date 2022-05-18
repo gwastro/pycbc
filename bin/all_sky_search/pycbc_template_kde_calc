@@ -1,34 +1,32 @@
-#3dimensional_kde 
-#python3 pycbc_template_kde_calc.py --template-file /home/praveen.kumar/focused_search/kde/sbbh2.hdf --signal-file /home/praveen.kumar/focused_search/kde/3OGC_PEtable.txt_ifar_gt0.5.csv     --make-signal-kde    --verbose
+#!/usr/bin/env python
 
 import numpy as np
-import operator
-import pycbc
 import h5py
-import pycbc.conversions as convert
-from utils_awkde import *
-from awkde import GaussianKDE
-from sklearn.model_selection import KFold
+import operator
 import argparse
 import logging
+import utils_awkde as awkde
+from awkde import GaussianKDE
+from pycbc import init_logging
+import pycbc.conversions as convert
+from sklearn.model_selection import KFold
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--signal-file', required=True)
-parser.add_argument('--template-file', required=True)
-parser.add_argument('--which-kde', choices=['signal','template'])
+parser.add_argument('--signal-file')
+parser.add_argument('--template-file')
 parser.add_argument('--make-signal-kde', action='store_true')
 parser.add_argument('--make-template-kde', action='store_true')
 parser.add_argument('--verbose', action='count')
 args = parser.parse_args()
-pycbc.init_logging(args.verbose)
+init_logging(args.verbose)
 
 def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth='silverman', ret_kde=False):
     kde = GaussianKDE(glob_bw=gl_bandwidth, alpha=alp, diag_cov=True)
-    kde.fit(x)#[:, np.newaxis])
+    kde.fit(x)
     if isinstance(x_grid, (list, tuple, np.ndarray)) == False:
         y = kde.predict(x_grid)
     else:
-        y = kde.predict(x_grid)#[:,np.newaxis])
+        y = kde.predict(x_grid)
     if ret_kde == True:
         return kde, y
     return y
@@ -49,7 +47,6 @@ def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
         bwchoice = float(bwchoice)
     fomlist =[]
 
-    #split data into two subset of equal size [or almost equal (n+1, n) parts]
     kfold = KFold(k, True, None)
     for train_index, test_index in kfold.split(sample):
         train, test = sample[train_index], sample[test_index]
@@ -69,10 +66,8 @@ def kfcv_awkdeOnedim(sample, bwchoice, alphachoice, k=2):
 
 def optimizedparam(sampleval):
     bwgrid = ['scott', 'silverman']+np.logspace(-2,0,10).tolist()
-    alphagrid = [1]#np.linspace(0.1, 1, 10)
+    alphagrid = [1]
     FOM= {}
-    FOMxval = {}
-    FOMyval = {}
     for gbw in bwgrid:
         for alphavals in alphagrid:
             FOM[(gbw, alphavals)] = kfcv_awkde(sampleval, gbw, alphavals)
@@ -111,25 +106,25 @@ if args.make_template_kde:
     hdf.close()
 
 #calling signal data and constructing signal_kde_hdf_file_over_template_params
-data_signal = np.genfromtxt(args.signal_file, dtype = float, delimiter=',', names = True)
-mass2 = data_signal['mass2']
-mass2_threshold = 5
-N_original = len(mass2)
-if mass2_threshold:
-    idx = mass2 > mass2_threshold
-    mass2 = mass2[idx]
-    logging.info('%i triggers out of %i with MASS2 > %s' %
-                         (len(mass2), N_original, str(mass2_threshold)))
-else:
-    idx = np.full(N_original, True)
-mass2_s = mass2
-mass1_s = data_signal['mass1'][idx]
-q_s = data_signal['q'][idx]
-eta_s = data_signal['eta'][idx]
-chi_eff_s  = data_signal['chi_eff'][idx]
-mchirp_s = data_signal['mchirp'][idx]
-
 if args.make_signal_kde:
+    data_signal = np.genfromtxt(args.signal_file, dtype = float, delimiter=',', names = True)
+    mass2 = data_signal['mass2']
+    mass2_threshold = 5
+    N_original = len(mass2)
+    if mass2_threshold:
+        idx = mass2 > mass2_threshold
+        mass2 = mass2[idx]
+        logging.info('%i triggers out of %i with MASS2 > %s' %
+                         (len(mass2), N_original, str(mass2_threshold)))
+    else:
+        idx = np.full(N_original, True)
+    mass2_s = mass2
+    mass1_s = data_signal['mass1'][idx]
+    q_s = data_signal['q'][idx]
+    eta_s = data_signal['eta'][idx]
+    chi_eff_s  = data_signal['chi_eff'][idx]
+    mchirp_s = data_signal['mchirp'][idx]
+
     sample_s = np.vstack((np.log(mchirp_s), eta_s, chi_eff_s)).T
     grid_pts_s = np.array((np.log(mchirp_n), eta_n, chi_eff_n)).T
     optbw_s, optalpha_s = optimizedparam(sample_s)
