@@ -24,7 +24,8 @@ import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.co
 from pycbc import transforms
 from pycbc.distributions import read_params_from_config, read_distributions_from_config
 from pycbc.distributions import read_constraints_from_config, JointDistribution
-from pycbc.distributions.utils import draw_samples_from_config
+from pycbc.distributions.utils import draw_samples_from_config, prior_from_config
+from pycbc.distributions.bounded import get_param_bounds_from_config
 from scipy.stats import gaussian_kde
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -86,13 +87,7 @@ if args.input_config is not None:
         waveform_transforms = transforms.read_transforms_from_config(
                 config_parser, 'waveform_transforms')
 
-    dists = read_distributions_from_config(config_parser)
-    constraints = read_constraints_from_config(
-                    cp=config_parser, transforms=waveform_transforms,
-                    static_args=static_args)
-    dists_joint = JointDistribution(
-                    variable_args, *dists,
-                    **{"constraints": constraints})
+    dists_joint = prior_from_config(cp=config_parser)
 
 fdict = {}
 if args.fixed_params:
@@ -334,6 +329,10 @@ def draw(rtype):
             samples = draw_samples_from_config(args.input_config, size, random_seed)
             for name in samples.fieldnames:
                 params[name] = samples[name]
+            # Add `static_args` back.
+            if static_args is not None:
+                for k in static_args.keys():
+                    params[k] = numpy.array([static_args[k]]*size)
 
     elif rtype == 'kde':
         trail = 300
@@ -386,7 +385,14 @@ def draw(rtype):
             l &= mc > args.min_mchirp
 
     else:
+        # Apply constraints.
         l = dists_joint.contains(params)
+        # Apply boundaries.
+        for name in variable_args:
+            param_bounds = get_param_bounds_from_config(config_parser, 'prior', name, name)
+            pmin = param_bounds.min
+            pmax = param_bounds.max
+            l &= (params[name] < pmax) & (params[name] > pmin)
 
     for k in params:
         params[k] = params[k][l]
