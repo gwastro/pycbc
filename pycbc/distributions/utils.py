@@ -124,6 +124,13 @@ def draw_samples_from_config(path, num=1, seed=150914):
     # Draw samples from prior distribution.
     samples = prior_dists.rvs(size=int(num))
 
+    # Read waveform_transforms to apply to priors from the config file
+    if any(config_parser.get_subsections('waveform_transforms')):
+        waveform_transforms = transforms.read_transforms_from_config(
+                config_parser, 'waveform_transforms')
+    else:
+        waveform_transforms = None
+
     # Apply parameter transformation.
     if waveform_transforms is not None:
         samples = transforms.apply_transforms(samples, waveform_transforms)
