@@ -73,6 +73,7 @@ def prior_from_config(cp, prior_section='prior'):
     return distributions.JointDistribution(variable_params, *dists,
                                            **{"constraints": constraints})
 
+
 def draw_samples_from_config(path, num=1, seed=150914):
     r""" Generate sampling points from a standalone .ini file.
 
@@ -125,11 +126,10 @@ def draw_samples_from_config(path, num=1, seed=150914):
     samples = prior_dists.rvs(size=int(num))
 
     # Read waveform_transforms to apply to priors from the config file
+    waveform_transforms = None
     if any(config_parser.get_subsections('waveform_transforms')):
         waveform_transforms = transforms.read_transforms_from_config(
                 config_parser, 'waveform_transforms')
-    else:
-        waveform_transforms = None
 
     # Apply parameter transformation.
     if waveform_transforms is not None:

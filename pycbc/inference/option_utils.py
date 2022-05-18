@@ -18,10 +18,7 @@
 """
 
 import argparse
-
 from pycbc import waveform
-from pycbc import distributions
-
 
 # -----------------------------------------------------------------------------
 #
