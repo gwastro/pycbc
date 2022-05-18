@@ -12,7 +12,8 @@ from sklearn.model_selection import KFold
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--signal-file')
-parser.add_argument('--template-file')
+parser.add_argument('--template-file', required=True)
+parser.add_argument('--output-file', required=True)
 parser.add_argument('--make-signal-kde', action='store_true')
 parser.add_argument('--make-template-kde', action='store_true')
 parser.add_argument('--verbose', action='count')
@@ -30,37 +31,15 @@ def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth='silverman', ret_kde=False):
         return kde, y
     return y
 
-def kdeOnedim(x, x_grid, alp=0.5, gl_bandwidth='silverman', ret_kde=False):
-    kde = GaussianKDE(glob_bw=gl_bandwidth, alpha=alp, diag_cov=True)
-    kde.fit(x[:, np.newaxis])
-    if isinstance(x_grid, (list, tuple, np.ndarray)) == False:
-        y = kde.predict(x_grid)
-    else:
-        y = kde.predict(x_grid[:, np.newaxis])
-    if ret_kde == True:
-        return kde, y
-    return y
-
 def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
     if bwchoice not in ['silverman', 'scott']:
         bwchoice = float(bwchoice)
     fomlist =[]
-
     kfold = KFold(k, True, None)
     for train_index, test_index in kfold.split(sample):
         train, test = sample[train_index], sample[test_index]
         y = kde_awkde(train, test, alp=alphachoice, gl_bandwidth=bwchoice)
         fomlist.append(np.sum(np.log(y)))
-    return np.mean(fomlist)
-
-def kfcv_awkdeOnedim(sample, bwchoice, alphachoice, k=2):
-    if bwchoice not in ['silverman', 'scott']:
-        bwchoice = float(bwchoice)
-    fomlist =[]
-    kfold = KFold(k,True,None)
-    for train, test in kfold.split(sample):
-        y = kdeOnedim(train, test, alp=alphachoice, gl_bandwidth=bwchoice)
-        fomlist.append(np.log(y))
     return np.mean(fomlist)
 
 def optimizedparam(sampleval):
@@ -91,7 +70,7 @@ if args.make_template_kde:
     optbw_n, optalpha_n = optimizedparam(sample_n)
     kde_data_n = kde_awkde(sample_n, grid_pts_n, alp=optalpha_n, gl_bandwidth=optbw_n)
 
-    hdf = h5py.File('kdevals_template.hdf', 'w')
+    hdf = h5py.File(args.output_file, 'w')
     hdf.create_dataset('kde_template', data=kde_data_n)
     hdf.attrs['bank_kde'] = 'kde_template'
     hdf.create_dataset('mass1', data=mass1_n)
@@ -129,7 +108,7 @@ if args.make_signal_kde:
     optbw_s, optalpha_s = optimizedparam(sample_s)
     kde_data_s = kde_awkde(sample_s, grid_pts_s, alp=optalpha_s, gl_bandwidth=optbw_s)
 
-    hdf = h5py.File('kdevals_signal.hdf', 'w')
+    hdf = h5py.File(args.output_file, 'w')
     hdf.create_dataset('kde_sig', data=kde_data_s)
     hdf.attrs['signal_kde'] = 'kde_sig'
     hdf.create_dataset('mass1', data=mass1_s)
