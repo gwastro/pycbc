@@ -69,6 +69,9 @@ def set_sim_data(inj, field, data):
     if sim_field == 'tc':
         inj.geocent_end_time = int(data)
         inj.geocent_end_time_ns = int(1e9*(data % 1))
+    # for spin1 and spin2 we need data to be an array
+    if sim_field in ['spin1', 'spin2']:
+        setattr(inj, sim_field, [0, 0, data])
     else:
         setattr(inj, sim_field, data)
 
