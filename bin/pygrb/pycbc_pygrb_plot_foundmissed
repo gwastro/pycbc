@@ -23,7 +23,7 @@ parser.add_argument("--x-log", action="store_true",
                     help="Use log horizontal axis")
 # The code includes more y variable options but these are the ones that have
 # been tested to work.
-admitted_yvars = ['distance', 'eff_dist', 'eff_site_dist']
+admitted_yvars = ['distance', 'eff_dist', 'eff_site_dist', 'decisive_optimal_snr']
 parser.add_argument("-y", "--y-variable", default=None, required=True,
                     choices=admitted_yvars,
                     help="Quantity to plot on the vertical axis. "+
