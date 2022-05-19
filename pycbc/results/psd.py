@@ -26,8 +26,6 @@
 """
 Module to generate PSD figures
 """
-import matplotlib
-matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
 from pycbc.results import ifo_color

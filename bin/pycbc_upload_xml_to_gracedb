@@ -28,7 +28,6 @@ import numpy as np
 import h5py
 import matplotlib
 matplotlib.use('agg')
-from matplotlib import pyplot as plt
 
 import pycbc
 import lal
@@ -255,7 +254,7 @@ for event in coinc_table:
             gracedb.writeLog(
             r["graceid"], "PyCBC ASD estimate from the time of event",
             filename=fullpath_psd,
-            tag_name=["asd"], displayName=['ASDs'])
+            tag_name=["psd"], displayName=['ASDs'])
             logging.info("Uploaded file %s to event %s.", psd_png_filename,
                          r["graceid"])
 

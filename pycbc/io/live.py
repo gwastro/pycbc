@@ -421,7 +421,7 @@ class SingleCoincForGraceDB(object):
                 gracedb.writeLog(
                     gid, 'ASD plot upload',
                     filename=asd_series_plot_fname,
-                    tag_name=['asd'], displayName=['ASDs']
+                    tag_name=['psd'], displayName=['ASDs']
                 )
             except Exception as exc:
                 logging.error('Failed to upload plots for %s', gid)
