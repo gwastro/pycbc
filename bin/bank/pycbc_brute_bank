@@ -385,6 +385,8 @@ def draw(rtype):
             l &= mc > args.min_mchirp
 
     else:
+        # Apply boundary conditions.
+        params = dists_joint.apply_boundary_conditions(**params)
         # Apply constraints.
         l = dists_joint.contains(params)
         # Apply boundaries.
@@ -465,6 +467,7 @@ while tau0s < args.tau0_end:
                          region, kloop, r, len(bank), kconv, len(bank) - blen)
             if uconv:
                 logging.info('Ratio of convergences: %2.3f' % (kconv / (uconv)))
+                logging.info('Progress: {:.0%} completed'.format(tau0s/args.tau0_end))
 
             if kloop == 1:
                 okconv = kconv
