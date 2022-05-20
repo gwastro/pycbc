@@ -1,3 +1,10 @@
+set -e
+# Create the injections
+echo "Creating the injections"
+bash make_injections.sh
+echo ""
+
+echo "Running hierarchical pycbc inference"
 for model in  relbin gaussian margphase; do
     echo "========================"
     echo "With ${model}"
