@@ -26,6 +26,7 @@
 
 import shlex
 import logging
+from pycbc import transforms
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
 
@@ -266,6 +267,16 @@ class HierarchicalModel(BaseModel):
                                        submodel_lbls))
         sparam_map = map_params(hpiter(cp.options('static_params'),
                                        submodel_lbls))
+        # we'll need any waveform transforms for the initializing sub-models,
+        # as the underlying models will receive the output of those transforms
+        if any(cp.get_subsections('waveform_transforms')):
+            waveform_transforms = transforms.read_transforms_from_config(
+                cp, 'waveform_transforms')
+            wfoutputs = set.union(*[t.outputs
+                                    for t in waveform_transforms])
+            wfparam_map = map_params(hpiter(wfoutputs, submodel_lbls))
+        else:
+            wfparam_map = {lbl: [] for lbl in submodel_lbls}
         # initialize the models
         submodels = {}
         logging.info("Loading submodels")
@@ -307,7 +318,10 @@ class HierarchicalModel(BaseModel):
             # params after the model is initialized
             subcp.add_section('variable_params')
             for param in vparam_map[lbl]:
-                subcp.set('static_params', param.subname, '0')
+                subcp.set('static_params', param.subname, 'REPLACE')
+            # add the outputs from the waveform transforms
+            for param in wfparam_map[lbl]:
+                subcp.set('static_params', param.subname, 'REPLACE')
             # initialize
             submodel = read_from_config(subcp)
             # move the static params back to variable
@@ -315,6 +329,10 @@ class HierarchicalModel(BaseModel):
                 submodel.static_params.pop(p.subname)
             submodel.variable_params = tuple(p.subname
                                              for p in vparam_map[lbl])
+            # remove the waveform transform parameters
+            for p in wfparam_map[lbl]:
+                submodel.static_params.pop(p.subname)
+            # store
             submodels[lbl] = submodel
             logging.info("")
         # now load the model
