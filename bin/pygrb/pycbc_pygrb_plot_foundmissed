@@ -23,7 +23,8 @@ parser.add_argument("--x-log", action="store_true",
                     help="Use log horizontal axis")
 # The code includes more y variable options but these are the ones that have
 # been tested to work.
-admitted_yvars = ['distance', 'eff_dist', 'eff_site_dist', 'decisive_optimal_snr']
+admitted_yvars = ['distance', 'eff_dist', 'eff_site_dist', 'decisive_optimal_snr',
+                  'decisive_distance']
 parser.add_argument("-y", "--y-variable", default=None, required=True,
                     choices=admitted_yvars,
                     help="Quantity to plot on the vertical axis. "+
@@ -106,8 +107,8 @@ try:
     for ifo in ['H1', 'L1', 'V1']:
         eff_dists.append(Detector(ifo).effective_distance(
                              f['injections/distance'][:],
-                             f['injections/ra'][:],
-                             f['injections/dec'][:],
+                             f['injections/longitude'][:],
+                             f['injections/latitude'][:],
                              f['injections/polarization'][:],
                              f['injections/tc'][:],
                              f['injections/inclination'][:]))
