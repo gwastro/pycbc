@@ -61,6 +61,12 @@ class HierarchicalModel(BaseModel):
     models `event1` and `event2`. For more details on parameter naming see
     :py:class:`HierarchicalParam`.
 
+    All waveform and sampling transforms, as well as prior evaluation, are
+    handled by this model, not the sub-models. Parameters created by waveform
+    transforms should therefore also have sub-model names prepended to them,
+    to indicate which models they should be provided to for likelihood
+    evaluation.
+
     Parameters
     ----------
     variable_params: (tuple of) string(s)
@@ -249,13 +255,22 @@ class HierarchicalModel(BaseModel):
         all transforms, communication with the sampler, file IO, and prior
         calculation. Only sub-model's loglikelihood functions are called.
 
+        Metadata for each sub-model is written to the output hdf file under
+        groups given by the sub-model label. For example, if we have two
+        submodels labelled ``event1`` and ``event2``, there will be groups
+        with the same names in the top level of the output that contain that
+        model's subdata. For instance, if event1 used the ``gaussian_noise``
+        model, the GW data and PSDs will be found in ``event1/data`` and the
+        low frequency cutoff used for that model will be in the ``attrs`` of
+        the ``event1`` group.
+
         Parameters
         ----------
         cp : WorkflowConfigParser
             Config file parser to read.
         \**kwargs :
             All additional keyword arguments are passed to the class. Any
-            provided keyword will over ride what is in the config file.
+            provided keyword will override what is in the config file.
         """
         # we need the read from config function from the init; to prevent
         # circular imports, we import it here
