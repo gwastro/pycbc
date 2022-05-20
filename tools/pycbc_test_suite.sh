@@ -163,6 +163,18 @@ if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     fi
     popd
 
+    ## Run inference using the hierarchical model
+    pushd examples/inference/hierarchical
+    base -e run_test.sh
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!"
+        echo -e "---------------------------------------------------------"
+    else
+        echo -e "    Pass."
+    fi
+    popd
+
     ## Run inference samplers
     pushd examples/inference/samplers
     bash -e run.sh
