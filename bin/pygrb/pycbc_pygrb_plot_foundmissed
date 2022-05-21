@@ -8,6 +8,7 @@ import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
 import pycbc.pnutils
 from pycbc import init_logging
 from pycbc.detector import Detector
+from pycbc.results import pygrb_postprocessing_utils as ppu
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
@@ -31,6 +32,9 @@ parser.add_argument("-y", "--y-variable", default=None, required=True,
                     "(Underscores may be omitted in specifying this option).")
 parser.add_argument("--y-log", action="store_true",
                     help="Use log vertical axis")
+parser.add_argument("-a", "--seg-files", nargs="+", action="store",
+                    default=None, help="The location of the buffer, " +
+                    "onsource and offsource segment files.")
 parser.add_argument('--ifo',default=None,
                    help="Interferometer (used for effective site distance)")
 parser.add_argument('--colormap',default='cividis_r',
@@ -56,8 +60,9 @@ init_logging(args.verbose)
 logging.info('Reading in the data')
 f = h5py.File(args.injection_file, 'r')
 
-# Load basic injection data
+# Load basic data
 time = f['injections/tc'][:]
+grb_time = ppu.get_grb_time(args.seg_files)
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
 
@@ -84,11 +89,13 @@ xvals['eff_spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2)
 xvals['mtotal'] = m1 + m2
 # use convention that q>1
 xvals['mass_ratio'] = numpy.maximum(m1/m2, m2/m1)
+if args.x_variable == 'end_time':
+    xvals['end_time'] = f['injections/end_time'][:] - grb_time
 # If x variable doesn't need calculations, it can be loaded directly 
 # from HDF file
-if args.x_variable not in ['mchirp', 'eff_spin', 'mtotal', 'mass_ratio']:
+elif args.x_variable not in ['mchirp', 'eff_spin', 'mtotal', 'mass_ratio',
+                             'end_time']:
     xvals[args.x_variable] = f['injections/%s' % args.x_variable][:]
-
 
 # Initialize dictionary for y variable
 yvals = {}
@@ -179,7 +186,7 @@ labels={'mchirp': 'Chirp Mass',
         'comb_optimal_snr': 'Combined Optimal SNR',
         'decisive_optimal_snr': 'Decisive Optimal SNR',
         'redshift': 'Redshift',
-        'end_time': 'Time (s)',
+        'end_time': 'Time since %d (s)' % grb_time,
         'eff_spin': 'Weighted Aligned Spin',
         'coa_phase': 'Complex SNR Phase',
         'eff_dist': 'Inverse sum of effective distances (Mpc)',
