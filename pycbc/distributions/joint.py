@@ -247,7 +247,7 @@ class JointDistribution(object):
             conditions, boundaries, and constraints. This method is different
             from `contains`, that method only check the constraints. When you
             have a `JointDistribution` instance "joint_dist" and "params", you
-            can just use `in` operator to check, such as "params in joint_dist".
+            can use `in` operator to check, such as "params in joint_dist".
 
         Parameters
         ----------
@@ -260,20 +260,20 @@ class JointDistribution(object):
             If params was an array, or if params a dictionary and one or more
             of the parameters are arrays, will return an array of booleans.
             Otherwise, a boolean.
-        """     
+        """
         params = self.apply_boundary_conditions(**params)
-        l = True
+        result = True
         for dist in self.distributions:
             param_name = dist._params[0]
             contain_array = numpy.ones(len(params[param_name]), dtype=bool)
-            # `__contains__` in `pycbc.distributions.bounded` 
+            # `__contains__` in `pycbc.distributions.bounded`
             # can't handle array.
             for k in params[param_name]:
-                index = numpy.where(params[param_name]==k)[0][0]
-                contain_array[index] = {param_name:k} in dist
-            l &= numpy.array(contain_array)
-        l &= self.contains(params)
-        return l
+                index = numpy.where(params[param_name] == k)[0][0]
+                contain_array[index] = {param_name: k} in dist
+            result &= numpy.array(contain_array)
+        result &= self.contains(params)
+        return result
 
     def __call__(self, **params):
         """Evaluate joint distribution for parameters.

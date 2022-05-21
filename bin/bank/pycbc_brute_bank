@@ -25,7 +25,6 @@ from pycbc import transforms
 from pycbc.distributions import read_params_from_config, read_distributions_from_config
 from pycbc.distributions import read_constraints_from_config, JointDistribution
 from pycbc.distributions.utils import draw_samples_from_config, prior_from_config
-from pycbc.distributions.bounded import get_param_bounds_from_config
 from scipy.stats import gaussian_kde
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -385,16 +384,7 @@ def draw(rtype):
             l &= mc > args.min_mchirp
 
     else:
-        # Apply boundary conditions.
-        params = dists_joint.apply_boundary_conditions(**params)
-        # Apply constraints.
-        l = dists_joint.contains(params)
-        # Apply boundaries.
-        for name in variable_args:
-            param_bounds = get_param_bounds_from_config(config_parser, 'prior', name, name)
-            pmin = param_bounds.min
-            pmax = param_bounds.max
-            l &= (params[name] < pmax) & (params[name] > pmin)
+        l = dists_joint.__contains__(params)
 
     for k in params:
         params[k] = params[k][l]
