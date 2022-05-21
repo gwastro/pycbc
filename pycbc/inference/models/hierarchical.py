@@ -202,7 +202,7 @@ class HierarchicalModel(BaseModel):
             If provided, the metadata will be written to the attrs specified
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
-        
+
         """
         # write information about self
         super().write_metadata(fp, group=group)
@@ -214,10 +214,10 @@ class HierarchicalModel(BaseModel):
             prefix = group+'/'
         for lbl, model in self.submodels.items():
             model.write_metadata(fp, group=prefix+lbl)
-    
+
     @classmethod
     def from_config(cls, cp, **kwargs):
-        """Initializes an instance of this class from the given config file.
+        r"""Initializes an instance of this class from the given config file.
 
         Sub-models are initialized before initializing this class. The model
         section must have a ``submodels`` argument that lists the names of all
@@ -243,7 +243,7 @@ class HierarchicalModel(BaseModel):
         from the section name. For example, if a sub-model requires a data
         section to be specified, it should be titled ``[{label}__data]``. Upon
         initialization, the `{label}__` will be stripped from the section
-        header and passed to the model. 
+        header and passed to the model.
 
         No model labels should preceed the ``variable_params``,
         ``static_params``, ``waveform_transforms``, or ``sampling_transforms``
@@ -462,8 +462,6 @@ def map_params(params):
     """
     param_map = {}
     for p in params:
-        if not isinstance(p, HierarchicalParam):
-            p = HierarchicalParam(p)
         for lbl in p.models:
             try:
                 param_map[lbl].update([p])

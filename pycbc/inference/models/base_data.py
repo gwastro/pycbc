@@ -151,7 +151,6 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
             If provided, the metadata will be written to the attrs specified
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
-        
         """
         super().write_metadata(fp, group=group)
         if not self.no_save_data:
