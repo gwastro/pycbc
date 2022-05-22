@@ -384,7 +384,7 @@ def draw(rtype):
             l &= mc > args.min_mchirp
 
     else:
-        l = dists_joint.__contains__(params)
+        l = dists_joint.contains(params)
 
     for k in params:
         params[k] = params[k][l]

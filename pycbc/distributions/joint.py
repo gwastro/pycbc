@@ -122,7 +122,7 @@ class JointDistribution(object):
             samples = FieldArray.from_kwargs(**samples)
 
             # evaluate constraints
-            result = self.contains(samples)
+            result = self.within_constraints(samples)
 
             # set new scaling factor for prior to be
             # the fraction of acceptances in random sampling of entire space
@@ -217,7 +217,7 @@ class JointDistribution(object):
             raise ValueError("params must be either dict, FieldArray, "
                              "record, or structured array")
 
-    def contains(self, params):
+    def within_constraints(self, params):
         """Evaluates whether the given parameters satisfy the constraints.
 
         Parameters
@@ -242,12 +242,10 @@ class JointDistribution(object):
             result = result.item()
         return result
 
-    def __contains__(self, params):
+    def contains(self, params):
         """Evaluates whether the given parameters satisfy the boundary
             conditions, boundaries, and constraints. This method is different
-            from `contains`, that method only check the constraints. When you
-            have a `JointDistribution` instance "joint_dist" and "params", you
-            can use `in` operator to check, such as "params in joint_dist".
+            from `within_constraints`, that method only check the constraints.
 
         Parameters
         ----------
@@ -266,13 +264,13 @@ class JointDistribution(object):
         for dist in self.distributions:
             param_name = dist._params[0]
             contain_array = numpy.ones(len(params[param_name]), dtype=bool)
-            # `__contains__` in `pycbc.distributions.bounded`
-            # can't handle array.
+            # TODO: enable `__contains__` in `pycbc.distributions.bounded` 
+            #       to handle array-like input.
             for k in params[param_name]:
                 index = numpy.where(params[param_name] == k)[0][0]
                 contain_array[index] = {param_name: k} in dist
             result &= numpy.array(contain_array)
-        result &= self.contains(params)
+        result &= self.within_constraints(params)
         return result
 
     def __call__(self, **params):
@@ -282,7 +280,7 @@ class JointDistribution(object):
         # check if statisfies constraints
         if len(self._constraints) != 0:
             parray = self._ensure_fieldarray(params)
-            isin = self.contains(parray)
+            isin = self.within_constraints(parray)
             if not isin.any():
                 if return_atomic:
                     out = -numpy.inf
@@ -324,7 +322,7 @@ class JointDistribution(object):
                 for param in dist.params:
                     scratch[param] = draw[param]
             # apply any constraints
-            keep = self.contains(scratch)
+            keep = self.within_constraints(scratch)
             nkeep = keep.sum()
             kmin = size - remaining
             kmax = min(nkeep, remaining)
