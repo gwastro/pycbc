@@ -264,8 +264,8 @@ class JointDistribution(object):
         for dist in self.distributions:
             param_name = dist._params[0]
             contain_array = numpy.ones(len(params[param_name]), dtype=bool)
-            # TODO: enable `__contains__` in `pycbc.distributions.bounded` 
-            #       to handle array-like input.
+            # note: enable `__contains__` in `pycbc.distributions.bounded`
+            # to handle array-like input, it doesn't work now.
             for k in params[param_name]:
                 index = numpy.where(params[param_name] == k)[0][0]
                 contain_array[index] = {param_name: k} in dist
