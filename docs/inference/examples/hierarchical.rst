@@ -16,37 +16,38 @@ The events are assumed to not share the same data, and may not even be
 observations from the same type of detector. What type of data is read for each
 event is determined by the model used for that event. Upon initialization,
 the hierarchical model passes the relevant parameters and sections in the
-config file to each sub-model's `from_config` method. During the analysis, the
+config file to each sub-model's ``from_config`` method. During the analysis, the
 sub-models' loglikelihood functions are called and summed over. In that regard,
 the hierarchical model treats the sub-models as black boxes.
 
 To set up the hierarchical model, you provide a list of sub-model labels in
-the `[model]` section of your config file that represent each event to
-analyze. For each sub-model label provided, you provide a `[{label}__model]`
+the ``[model]`` section of your config file that represent each event to
+analyze. For each sub-model label provided, you provide a ``[{label}__model]``
 section that in turn specifies how to initialize that event's model.
 
-In the `[variable_params]` and `[static_params]` sections you specify
+In the ``[variable_params]`` and ``[static_params]`` sections you specify
 which parameters belong to which event by prepending the parameter name with
-the event's label, followed by a `__`; i.e., `{label}__{param}`. To specify
+the event's label, followed by a ``__``; i.e., ``{label}__{param}``. To specify
 that a parameter is common to a sub-set of events, you prepend each event's
-label (separated by a `_`). Parameters that have no event labels prepended to
+label (separated by a ``_``). Parameters that have no event labels prepended to
 them are treated as common to all events.
 
-For example, say we have three events `a`, `b`, and `c`, who's models take two
-parameters, `foo` and `bar`. Say we want `foo` to be common between `a` and
-`b`, but unique to `c`, and `bar` to common all events. Our analysis would
-therefore have three parameters, `a_b__foo`, `c__foo`, and `bar`.
+For example, say we have three events ``a``, ``b``, and ``c``, who's models
+take two parameters, ``foo`` and ``bar``. Say we want ``foo`` to be common
+between ``a`` and ``b``, but unique to ``c``, and ``bar`` to common all events.
+Our analysis would therefore have three parameters, ``a_b__foo``, ``c__foo``,
+and ``bar``.
 
-Additional sections that are required by each model should have the
-model label prepended to them in the same manner. In the above example, if
-the models for events `a`, `b`, and `c` require a `data` section, then the
-config file should have sections `[a__data]`, `[b__data]`, and `[c__data]`.
+Additional sections that are required by each model should have the model label
+prepended to them in the same manner. In the above example, if the models for
+events ``a``, ``b``, and ``c`` require a ``data`` section, then the config file
+should have sections ``[a__data]``, ``[b__data]``, and ``[c__data]``.
 
 When sub-models are initialized, the event labels are stripped from the
 parameter names (and section headers), then passed to the sub-model. Sub-models
 do not need any special features to be run in a hierarchical analysis; any
-model that inherits from :py:class:`BaseModel <pycbc.inference.base.BaseModel>`
-can be used as a sub-model.
+model that inherits from :py:class:`BaseModel
+<pycbc.inference.models.base.BaseModel>` can be used as a sub-model.
 
 ^^^^^^^^^^^^^^^
 Lensing example
@@ -60,7 +61,7 @@ for illustration purposes). We will analyze the two events allowing them to
 have different sky locations and coalescence times, but sharing the same
 masses.
 
-First, we need to create the simulations using `pycbc_create_injections`.
+First, we need to create the simulations using ``pycbc_create_injections``.
 To create the two injections we'll use the configuration files:
 
 .. literalinclude:: ../../../examples/inference/hierarchical/event1_inj.ini
@@ -81,9 +82,9 @@ Create the injection hdf files by running:
 :download:`Download <../../../examples/inference/hierarchical/make_injections.sh>`
 
 Now we'll setup the configuration files to run the hierarchical analysis on
-these two events. First we'll set the `[model]` section to use the
-|HierarchicalModel|, and tell it to analyze two events called `event1` and
-`event2`:
+these two events. First we'll set the ``[model]`` section to use the
+|HierarchicalModel|, and tell it to analyze two events called ``event1`` and
+``event2``:
 
 .. literalinclude:: ../../../examples/inference/hierarchical/model.ini
     :language: ini

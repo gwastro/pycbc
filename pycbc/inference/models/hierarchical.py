@@ -47,19 +47,20 @@ class HierarchicalModel(BaseModel):
 
     .. math::
 
-        p(\bold{D}|\bold{\vartheta}, \bold{H}) =
-            \prod_{I}^{K} p(\bold{d}_I|\bold{\vartheta}, H_{I})
+        p(\mathbf{D}|\mathbf{\vartheta}, \mathbf{H}) =
+            \prod_{I}^{K} p(\mathbf{d}_I|\mathbf{\vartheta}, H_{I})
 
     Submodels are provided as a dictionary upon initialization with a unique
-    label assigned to each model, e.g.,
-    `{'event1' -> model1, 'event2' -> model2}`. Variable and static parameters
-    that are specific to each submodel should be prepended with `{label}__`,
-    where `{label}__` is the label associated with the given submodel. Shared
-    parameters across multiple models have no labels prepended. To specify
-    shared models over a subset of models, separate models with an underscore.
-    For example, `event1_event2__foo` will result in `foo` being common between
-    models `event1` and `event2`. For more details on parameter naming see
-    :py:class:`HierarchicalParam`.
+    label assigned to each model, e.g., ``{'event1' -> model1, 'event2' ->
+    model2}``. Variable and static parameters that are specific to each
+    submodel should be prepended with ``{label}__``, where ``{label}__`` is the
+    label associated with the given submodel. Shared parameters across multiple
+    models have no labels prepended. To specify shared models over a subset of
+    models, separate models with an underscore.  For example,
+    ``event1_event2__foo`` will result in ``foo`` being common between models
+    ``event1`` and ``event2``. For more details on parameter naming see
+    :py:class:`HierarchicalParam
+    <pycbc.inference.models.hierarchical.HierarchicalParam>`.
 
     All waveform and sampling transforms, as well as prior evaluation, are
     handled by this model, not the sub-models. Parameters created by waveform
@@ -74,7 +75,8 @@ class HierarchicalModel(BaseModel):
     submodels: dict
         Dictionary of model labels -> model instances of all the submodels.
     \**kwargs :
-        All other keyword arguments are passed to :py:class:`base.BaseModel`.
+        All other keyword arguments are passed to
+        :py:class:`BaseModel <pycbc.inference.models.base.BaseModel>`.
     """
     name = 'hierarchical'
 
@@ -242,7 +244,7 @@ class HierarchicalModel(BaseModel):
         be passed to that model's ``from_config`` method with the label removed
         from the section name. For example, if a sub-model requires a data
         section to be specified, it should be titled ``[{label}__data]``. Upon
-        initialization, the `{label}__` will be stripped from the section
+        initialization, the ``{label}__`` will be stripped from the section
         header and passed to the model.
 
         No model labels should preceed the ``variable_params``,
@@ -361,6 +363,21 @@ class HierarchicalParam(str):
     This adds attributes that keep track of the model label(s) the parameter
     is associated with, along with the name that is passed to the models.
 
+    The following conventions are used for parsing parameter names:
+
+      * Model labels and parameter names are separated by the ``delim`` class
+        attribute, which by default is ``__``, e.g., ``event1__mass``.
+      * Multiple model labels can be provided by separating the model labels
+        with the ``model_delim`` class attribute, which by default is ``_``,
+        e.g., ``event1_event2__mass``. Note that this means that individual
+        model labels cannot contain ``_``, else they'll be parsed as separate
+        models.
+      * Parameters that have no model labels prepended to them (i.e., there
+        is no ``__`` in the name) are common to all models.
+
+    These parsing rules are applied by the :py:meth:`HierarchicalParam.parse`
+    method.
+
     Parameters
     ----------
     fullname : str
@@ -369,6 +386,18 @@ class HierarchicalParam(str):
     possible_models : set of str
         The possible sub-models a parameter can belong to. Should a set of
         model labels.
+
+    Attributes
+    ----------
+    fullname : str
+        The full name of the parameter, including model labels. For example,
+        ``e1_e2__foo``.
+    models : set
+        The model labels the parameter is associated with. For example,
+        ``e1_e2__foo`` yields models ``e1, e2``.
+    subname : str
+        The name of the parameter without the model labels prepended to it.
+        For example, ``e1_e2__foo`` yields ``foo``.
     """
     delim = '__'
     model_delim = '_'
