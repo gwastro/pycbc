@@ -8,7 +8,8 @@ import logging
 from awkde import GaussianKDE
 from pycbc import init_logging
 import pycbc.conversions as convert
-from sklearn.model_selection import KFold
+from pycbc import libutils
+kf = libutils.import_optional('sklearn.model_selection')
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--signal-file')
@@ -35,20 +36,20 @@ def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
     if bwchoice not in ['silverman', 'scott']:
         bwchoice = float(bwchoice)
     fomlist =[]
-    kfold = KFold(k, True, None)
+    kfold = kf.KFold(k)
     for train_index, test_index in kfold.split(sample):
         train, test = sample[train_index], sample[test_index]
         y = kde_awkde(train, test, alp=alphachoice, gl_bandwidth=bwchoice)
         fomlist.append(np.sum(np.log(y)))
     return np.mean(fomlist)
 
-def optimizedparam(sampleval):
+def optimizedparam(sampleval, kval):
     bwgrid = ['scott', 'silverman']+np.logspace(-2,0,10).tolist()
     alphagrid = [1]
     FOM= {}
     for gbw in bwgrid:
         for alphavals in alphagrid:
-            FOM[(gbw, alphavals)] = kfcv_awkde(sampleval, gbw, alphavals)
+            FOM[(gbw, alphavals)] = kfcv_awkde(sampleval, gbw, alphavals, k=kval)
     optval = max(FOM.items(), key=operator.itemgetter(1))[0]
     optbw, optalpha  = optval[0], optval[1]
     maxFOM = FOM[(optbw, optalpha)]
@@ -67,7 +68,7 @@ eta_n = convert.eta_from_mass1_mass2(mass1_n, mass2_n)
 if args.make_template_kde:
     sample_n = np.vstack((np.log(mchirp_n), eta_n, chi_eff_n)).T
     grid_pts_n = np.array((np.log(mchirp_n), eta_n, chi_eff_n)).T
-    optbw_n, optalpha_n = optimizedparam(sample_n)
+    optbw_n, optalpha_n = optimizedparam(sample_n, kval=2)
     kde_data_n = kde_awkde(sample_n, grid_pts_n, alp=optalpha_n, gl_bandwidth=optbw_n)
 
     hdf = h5py.File(args.output_file, 'w')
@@ -105,7 +106,7 @@ if args.make_signal_kde:
 
     sample_s = np.vstack((np.log(mchirp_s), eta_s, chi_eff_s)).T
     grid_pts_s = np.array((np.log(mchirp_n), eta_n, chi_eff_n)).T
-    optbw_s, optalpha_s = optimizedparam(sample_s)
+    optbw_s, optalpha_s = optimizedparam(sample_s, kval=2)
     kde_data_s = kde_awkde(sample_s, grid_pts_s, alp=optalpha_s, gl_bandwidth=optbw_s)
 
     hdf = h5py.File(args.output_file, 'w')
