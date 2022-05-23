@@ -9,10 +9,6 @@
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #
 # =============================================================================
@@ -144,8 +140,9 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     fnlouder[fg_above] = trstats.cum_fit(fit_func, fore_stat[fg_above],
                                          alpha, fit_thresh) * bg_above_thresh
 
-    # below the fit threshold, we count the number of louder events,
-    # as things get complicated by clustering below this point
+    # Below the fit threshold, we expect there to be sufficient events
+    # to use the count_n_louder method, and the distribution may deviate
+    # from the fit function
     fg_below = np.logical_not(fg_above)
     bg_below = np.logical_not(bg_above)
 
