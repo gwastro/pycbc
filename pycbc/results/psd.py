@@ -65,4 +65,5 @@ def generate_asd_plot(psddict, output_filename):
     asd_ax.set_ylabel('ASD')
     asd_fig.savefig(output_filename)
 
+
 __all__ = ["generate_asd_plot"]
