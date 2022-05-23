@@ -25,7 +25,7 @@ from scipy import special
 from pycbc.waveform import generator
 from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.detector import Detector
-from .gaussian_noise import (BaseGaussianNoise,
+from .gaussian_noise import (BaseStationaryGaussianNoise,
                              create_waveform_generator,
                              GaussianNoise)
 from .tools import marginalize_likelihood, DistMarg
@@ -194,7 +194,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
         return marginalize_likelihood(hd, hh, phase=True)
 
 
-class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
+class MarginalizedPolarization(BaseStationaryGaussianNoise, DistMarg):
     r""" This likelihood numerically marginalizes over polarization angle
 
     This class implements the Gaussian likelihood with an explicit numerical
@@ -358,7 +358,7 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
         return lr
 
 
-class MarginalizedHMPolPhase(BaseGaussianNoise):
+class MarginalizedHMPolPhase(BaseStationaryGaussianNoise):
     r"""Numerically marginalizes waveforms with higher modes over polarization
     `and` phase.
 
@@ -408,7 +408,8 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         How many points to use in phase. Defaults is 100.
     \**kwargs :
         All other keyword arguments are passed to
-        :py:class:`gaussian_noise.BaseGaussianNoisei <BaseGaussianNoise>`.
+        :py:class:`BaseStationaryGaussianNoise
+        <pycbc.inference.models.gaussian_noise.BaseStationaryGaussianNoise>`.
 
     """
     name = 'marginalized_hmpolphase'

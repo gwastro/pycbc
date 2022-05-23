@@ -34,7 +34,7 @@ from pycbc.waveform import get_fd_waveform_sequence
 from pycbc.detector import Detector
 from pycbc.types import Array
 
-from .gaussian_noise import BaseGaussianNoise
+from .gaussian_noise import BaseStationaryGaussianNoise
 from .relbin_cpu import likelihood_parts, likelihood_parts_v
 from .tools import DistMarg
 
@@ -102,7 +102,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     return nbin, fbin, fbin_ind
 
 
-class Relative(BaseGaussianNoise, DistMarg):
+class Relative(BaseStationaryGaussianNoise, DistMarg):
     r"""Model that assumes the likelihood in a region around the peak
     is slowly varying such that a linear approximation can be made, and
     likelihoods can be calculated at a coarser frequency resolution. For
@@ -114,7 +114,7 @@ class Relative(BaseGaussianNoise, DistMarg):
     the SPAtmplt approximant.
 
     For more details on initialization parameters and definition of terms, see
-    :py:class:`BaseGaussianNoise`.
+    :py:class:`BaseStationaryGaussianNoise`.
 
     Parameters
     ----------
@@ -144,7 +144,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         for the time offsets.
     \**kwargs :
         All other keyword arguments are passed to
-        :py:class:`BaseGaussianNoise`.
+        :py:class:`BaseStationaryGaussianNoise`.
     """
     name = "relative"
 

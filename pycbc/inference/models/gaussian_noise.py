@@ -38,17 +38,24 @@ from .data_utils import (data_opts_from_config, data_from_cli,
 
 
 class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
-    r"""Model for analyzing GW data with assuming a wide-sense stationary
-    Gaussian noise model.
+    r"""Base model for analyzing GW data with assuming a Gaussian noise model.
 
-    This model will load gravitational wave data and calculate the log noise
-    likelihood ``_lognl`` and normalization. It also implements the
-    ``_loglikelihood`` function as the sum of the log likelihood ratio and the
-    ``lognl``. It does not implement a log likelihood ratio function
-    ``_loglr``, however, since that can differ depending on the signal model.
-    Models that analyze GW data assuming it is stationary Gaussian should
-    therefore inherit from this class and implement their own ``_loglr``
-    function.
+    This model adds the concept of waveform generation, PSDs, data whitening,
+    and frequency cutoffs to
+    :py:class:`BaseData <pycbc.inference.models.base_data.BaseData>`. It also
+    will calculate and store the log noise likelihood,
+    :math:`\log p(d|n) \prop -\frac{1}{2}\left<d,d\right>`, where the inner
+    product is the canonical frequency-domain one (see
+    :py:class:`GaussianNoise` for details). In that sense, this model assumes
+    the noise is wide-sense stationary Gaussian. However, the model does not
+    necessarily assume that the log noise likelihood is constant --- meaning a
+    constant PSD --- as you do in a more typical stationsary gaussian noise
+    model. For that, see :py:class:`BaseStationaryGaussianNoise`.
+
+    This model does not implement a ``loglikelihood`` or ``loglr`` function;
+    models that inherit from this must implement these, along with any other
+    abstract method/property required by
+    :py:class:`BaseData <pycbc.inference.models.base_data.BaseData>`.
 
     For more details on the inner product used, the log likelihood of the
     noise, and the normalization factor, see :py:class:`GaussianNoise`.
@@ -351,6 +358,14 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         """The log of the normalization of the log likelihood."""
         return sum(self.det_lognorm(det) for det in self._data)
 
+    def _lognl(self):
+        """Computes the log likelihood assuming the data is noise.
+
+        Since this is a constant for Gaussian noise, this is only computed once
+        then stored.
+        """
+        return sum(self.det_lognl(det) for det in self._data)
+
     def det_lognl(self, det):
         r"""Returns the log likelihood of the noise in the given detector:
 
@@ -381,33 +396,6 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             lognl = lognorm - 0.5 * d[kmin:kmax].inner(d[kmin:kmax]).real
             self._det_lognls[det] = lognl
             return self._det_lognls[det]
-
-    def _lognl(self):
-        """Computes the log likelihood assuming the data is noise.
-
-        Since this is a constant for Gaussian noise, this is only computed once
-        then stored.
-        """
-        return sum(self.det_lognl(det) for det in self._data)
-
-    def _loglikelihood(self):
-        r"""Computes the log likelihood of the paramaters,
-
-        .. math::
-
-            \log p(d|\Theta, h) = \log \alpha -\frac{1}{2}\sum_i
-                \left<d_i - h_i(\Theta) | d_i - h_i(\Theta)\right>,
-
-        at the current parameter values :math:`\Theta`.
-
-        Returns
-        -------
-        float
-            The value of the log likelihood evaluated at the given point.
-        """
-        # since the loglr has fewer terms, we'll call that, then just add
-        # back the noise term that canceled in the log likelihood ratio
-        return self.loglr + self.lognl
 
     def write_metadata(self, fp, group=None):
         """Adds writing the psds and analyzed detectors.
@@ -584,7 +572,78 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         return cls(**args)
 
 
-class GaussianNoise(BaseGaussianNoise):
+class BaseStationaryGaussianNoise(BaseDataModel, metaclass=ABCMeta):
+    r"""Model for analyzing GW data with assuming a wide-sense stationary
+    Gaussian noise model with a constant PSD.
+
+    This model will load gravitational wave data and calculate the log noise
+    likelihood ``_lognl`` and normalization. It also implements the
+    ``_loglikelihood`` function as the sum of the log likelihood ratio and the
+    ``lognl``. It does not implement a log likelihood ratio function
+    ``_loglr``, however, since that can differ depending on the signal model.
+    Models that analyze GW data assuming it is stationary Gaussian with a
+    constant PSD should therefore inherit from this class and implement their
+    own ``_loglr`` function.
+
+    For more details on the inner product used, the log likelihood of the
+    noise, and the normalization factor, see :py:class:`GaussianNoise`.
+    """
+    def _loglikelihood(self):
+        r"""Computes the log likelihood of the paramaters,
+
+        .. math::
+
+            \log p(d|\Theta, h) = \log \alpha -\frac{1}{2}\sum_i
+                \left<d_i - h_i(\Theta) | d_i - h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood evaluated at the given point.
+        """
+        # since the loglr has fewer terms, we'll call that, then just add
+        # back the noise term that canceled in the log likelihood ratio
+        return self.loglr + self.lognl
+
+    def write_metadata(self, fp, group=None):
+        """Adds writing the lognl, since it's a constant.
+
+        The total and each detector's lognl is written to the sample group's
+        ``attrs``. If a group is specified, the group name will be prependend
+        to the lognl labels with ``{group}__``, with any ``/`` in the group
+        path replaced with ``__``. For example, if group is ``/a/b``, the
+        ``lognl`` will be written as ``a__b__lognl`` in the sample's group
+        attrs.
+
+        See :py:class:`BaseGaussianNoise` for other data that's written.
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.BaseInferenceFile instance
+            The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
+        """
+        super().write_metadata(fp, group=group)
+        sampattrs = fp.getattrs(group=fp.samples_group)
+        # if a group is specified, prepend the lognl names with it
+        if group is None or group == '/':
+            prefix = ''
+        else:
+            prefix = group.replace('/', '__')
+            if not prefix.endswith('__'):
+                prefix += '__'
+        sampattrs['{}lognl'.format(prefix)] = self.lognl
+        # also save the lognl in each detector
+        for det in self.detectors:
+            sampattrs['{}{}_lognl'.format(prefix, det)] = self.det_lognl(det)
+
+
+class GaussianNoise(BaseStationaryGaussianNoise):
     r"""Model that assumes data is stationary Gaussian noise.
 
     With Gaussian noise the log likelihood functions for signal
@@ -933,41 +992,6 @@ class GaussianNoise(BaseGaussianNoise):
             self._loglr()
             # now try returning again
             return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
-
-    def write_metadata(self, fp, group=None):
-        """Adds writing the lognl, since it's a constant.
-
-        The total and each detector's lognl is written to the sample group's
-        ``attrs``. If a group is specified, the group name will be prependend
-        to the lognl labels with ``{group}__``, with any ``/`` in the group
-        path replaced with ``__``. For example, if group is ``/a/b``, the
-        ``lognl`` will be written as ``a__b__lognl`` in the sample's group
-        attrs.
-
-        See :py:class:`BaseGaussianNoise` for other data that's written.
-
-        Parameters
-        ----------
-        fp : pycbc.inference.io.BaseInferenceFile instance
-            The inference file to write to.
-        group : str, optional
-            If provided, the metadata will be written to the attrs specified
-            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
-            written to the top-level attrs (``fp.attrs``).
-        """
-        super().write_metadata(fp, group=group)
-        sampattrs = fp.getattrs(group=fp.samples_group)
-        # if a group is specified, prepend the lognl names with it
-        if group is None or group == '/':
-            prefix = ''
-        else:
-            prefix = group.replace('/', '__')
-            if not prefix.endswith('__'):
-                prefix += '__'
-        sampattrs['{}lognl'.format(prefix)] = self.lognl
-        # also save the lognl in each detector
-        for det in self.detectors:
-            sampattrs['{}{}_lognl'.format(prefix, det)] = self.det_lognl(det)
 
 
 #
