@@ -572,7 +572,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         return cls(**args)
 
 
-class BaseStationaryGaussianNoise(BaseDataModel, metaclass=ABCMeta):
+class BaseStationaryGaussianNoise(BaseGaussianNoise, metaclass=ABCMeta):
     r"""Model for analyzing GW data with assuming a wide-sense stationary
     Gaussian noise model with a constant PSD.
 
