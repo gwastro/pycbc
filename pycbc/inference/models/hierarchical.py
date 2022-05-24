@@ -498,3 +498,63 @@ def map_params(params):
             except KeyError:
                 param_map[lbl] = set([p])
     return param_map
+
+class MultiSignalModel(HierarchicalModel):
+    """ Model for multiple signals which share data
+
+    Sub models are treated as if the signals overlap in data. This requires
+    constituent models to implement a specific method to handle this case.
+    All models must be of the same type or the specific model is responsible
+    for implement cross-compatibility with another model. Each model h_i is
+    responsible for calculating its own loglikelihood ratio for itself, and
+    must also implement a method to calculate crossterms of the form
+    <h_i | h_j> which arise from the full calculation of <d - h|d - h>.
+    This model inherits from the HierarchicalModel so the syntax for
+    configuration files is the same. The primary model is used to determine
+    the noise terms <d | d>, which by default will be the first model used.
+    """
+    name = 'multi_signal'
+
+    def __init__(self, variable_params, submodels, **kwargs):
+        super().__init__(variable_params, submodels, **kwargs)
+
+        # Check what models each model supports
+        support = {}
+        ctypes = set() # The set of models we need to completely support
+        for lbl in self.submodels:
+            model = self.submodels[lbl]
+
+            ctypes.add(type(model))
+            if hasattr(model, 'multi_signal_support'):
+                support[lbl] = set(model.multi_signal_support)
+
+        # pick the primary model if it supports the set of constituent models
+        for lbl in support:
+            if ctypes <= support[lbl]:
+                self.primary_model = lbl
+                logging.info('MultiSignalModel: PrimaryModel == %s', lbl)
+                break
+        else:
+            # Oh, no, we don't support this combo!
+            raise RuntimeError("It looks like the combination of models, {},"
+                               "for the MultiSignal model isn't supported by"
+                               "any of the constituent models.".format(ctypes))
+
+    def _loglikelihood(self):
+        # takes the sum of the constitutent models' loglikelihoods
+        loglr = 0.
+        for lbl, model in self.submodels.items():
+            # Update the parameters of each
+            model.update(**{p.subname: self.current_params[p.fullname]
+                            for p in self.param_map[lbl]})
+
+        # Calculate the combined loglikelihood
+        p = self.primary_model
+        logl = self.submodels[p].multi_loglikelihood(self.submodels.values())
+
+        # store any extra stats from the submodels
+        for lbl, model in self.submodels.items():
+            mstats = model.current_stats
+            for stat in self.extra_stats_map[lbl]:
+                setattr(self._current_stats, stat, mstats[stat.subname])
+        return logl

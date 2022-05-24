@@ -30,7 +30,7 @@ from .brute_marg import BruteParallelGaussianMarginalize
 from .gated_gaussian_noise import (GatedGaussianNoise, GatedGaussianMargPol)
 from .single_template import SingleTemplate
 from .relbin import Relative
-from .hierarchical import HierarchicalModel
+from .hierarchical import HierarchicalModel, MultiSignalModel
 
 
 # Used to manage a model instance across multiple cores or MPI
@@ -196,4 +196,5 @@ models = {_cls.name: _cls for _cls in (
     SingleTemplate,
     Relative,
     HierarchicalModel,
+    MultiSignalModel,
 )}

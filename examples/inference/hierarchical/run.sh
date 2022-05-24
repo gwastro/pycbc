@@ -1,7 +1,7 @@
 pycbc_inference \
-    --config-files model.ini model-event1_relbin.ini model-event2_relbin.ini prior.ini data.ini dynesty.ini \
-    --nprocesses 8 \
-    --output-file hierarchical.hdf \
+    --config-files prior.ini \
+    --nprocesses 1 \
+    --output-file multi_signal.hdf \
     --seed 10 \
     --force \
     --verbose

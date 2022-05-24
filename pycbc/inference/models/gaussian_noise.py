@@ -852,7 +852,27 @@ class GaussianNoise(BaseGaussianNoise):
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
         return -numpy.inf
 
-    def _loglr(self):
+    @property
+    def multi_signal_support(self):
+        """ The list of classes that this model supports in a multi-signal
+        likelihood
+        """
+        return [type(self)]
+
+    def multi_loglikelihood(self, models):
+        """ Calculate a multi-model (signal) likelihood
+        """
+        # This could be made somewhat faster by presumming the waveforms
+
+        loglr = 0
+        # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
+        for m in models:
+            loglr += m.loglr
+
+        # finally add in the lognl term from this model
+        return loglr + self.lognl
+
+    def _loglr(self, save_waveforms=False):
         r"""Computes the log likelihood ratio,
 
         .. math::
@@ -870,12 +890,7 @@ class GaussianNoise(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            if self.all_ifodata_same_rate_length:
-                wfs = self.waveform_generator.generate(**params)
-            else:
-                wfs = {}
-                for det in self.data:
-                    wfs.update(self.waveform_generator[det].generate(**params))
+            wfs = self.get_waveforms()
         except NoWaveformError:
             return self._nowaveform_loglr()
         except FailedWaveformError as e:
