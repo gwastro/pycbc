@@ -303,10 +303,10 @@ class HierarchicalModel(BaseModel):
             subcp = WorkflowConfigParser()
             # copy sections over that start with the model label (this should
             # include the [model] section for that model)
-            copy_sections = [HierarchicalParam(sec, submodel_lbls)
-                             for sec in cp.sections()
-                             if lbl in
-                             sec.split(HierarchicalParam.delim, 1)[0]]
+            copy_sections = [
+                HierarchicalParam(sec, submodel_lbls)
+                for sec in cp.sections() if lbl in
+                sec.split('-')[0].split(HierarchicalParam.delim, 1)[0]]
             for sec in copy_sections:
                 # check that the user isn't trying to set variable or static
                 # params for the model (we won't worry about waveform or
