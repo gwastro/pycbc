@@ -865,7 +865,8 @@ class GaussianNoise(BaseGaussianNoise):
         """
         # This could be made somewhat faster by presumming the waveforms
         # to save on all the extra inner products, this implementations
-        # is somehwat overexplicit. It should be OK, for the common case
+        # is somehwat overexplicit. Some checks could also be done once.
+        #It should be OK, for the common case
         # where waveform generation is the dominant cost.
 
         loglr = 0
@@ -875,8 +876,20 @@ class GaussianNoise(BaseGaussianNoise):
 
         # finally add in the lognl term from this model
         for m1, m2 in itertools.combinations(models, 2):
-            pass
+            if not hasattr(m1, 'wfs') or not hasattr(m2, 'wfs'):
+                raise FailedWaveformError
 
+            for det in m1.wfs:
+                h1, slc1 = m1.wfs[det]
+                h2, slc2 = m2.wfs[det]
+
+                if slc1 != slc2:
+                    raise RuntimeError('gaussian noise implementation of multi'
+                                       'signal model requires all frequency'
+                                       'cutoffs to be the same!')
+
+                h1h2 = h1[slc1].inner(h2[slc1]).real  # < h1, h2>
+                loglr += - h1h2 # This is -0.5 * (<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
     def _loglr(self, save_waveforms=False):
@@ -910,8 +923,9 @@ class GaussianNoise(BaseGaussianNoise):
                 return self._nowaveform_loglr()
             else:
                 raise e
+
         if save_waveforms:
-            self.wfs = wfs
+            self.wfs = {}
 
         lr = 0.
         for det, h in wfs.items():
@@ -926,6 +940,10 @@ class GaussianNoise(BaseGaussianNoise):
                 slc = slice(self._kmin[det], kmax)
                 # whiten the waveform
                 h[self._kmin[det]:kmax] *= self._weight[det][slc]
+
+                if save_waveforms:
+                    self.wfs[det] = h, slc
+
                 # the inner products
                 cplx_hd = self._whitened_data[det][slc].inner(h[slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
