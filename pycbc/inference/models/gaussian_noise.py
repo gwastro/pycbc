@@ -17,6 +17,7 @@
 """
 
 import logging
+import itertools
 import shlex
 from abc import ABCMeta
 import numpy
@@ -863,13 +864,19 @@ class GaussianNoise(BaseGaussianNoise):
         """ Calculate a multi-model (signal) likelihood
         """
         # This could be made somewhat faster by presumming the waveforms
+        # to save on all the extra inner products, this implementations
+        # is somehwat overexplicit. It should be OK, for the common case
+        # where waveform generation is the dominant cost.
 
         loglr = 0
         # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
         for m in models:
-            loglr += m.loglr
+            loglr += m._loglr(save_waveforms=True)
 
         # finally add in the lognl term from this model
+        for m1, m2 in itertools.combinations(models, 2):
+            pass
+
         return loglr + self.lognl
 
     def _loglr(self, save_waveforms=False):
@@ -890,7 +897,12 @@ class GaussianNoise(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self.get_waveforms()
+            if self.all_ifodata_same_rate_length:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
         except NoWaveformError:
             return self._nowaveform_loglr()
         except FailedWaveformError as e:
@@ -898,6 +910,9 @@ class GaussianNoise(BaseGaussianNoise):
                 return self._nowaveform_loglr()
             else:
                 raise e
+        if save_waveforms:
+            self.wfs = wfs
+
         lr = 0.
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
