@@ -35,15 +35,15 @@ def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth='silverman', ret_kde=False):
 def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
     if bwchoice not in ['silverman', 'scott']:
         bwchoice = float(bwchoice)
-    fomlist =[]
-    kfold = kf.KFold(k)
+    fomlist = []
+    kfold = kf.KFold(n_splits=k, shuffle=True, random_state=None )
     for train_index, test_index in kfold.split(sample):
         train, test = sample[train_index], sample[test_index]
         y = kde_awkde(train, test, alp=alphachoice, gl_bandwidth=bwchoice)
         fomlist.append(np.sum(np.log(y)))
     return np.mean(fomlist)
 
-def optimizedparam(sampleval, kval):
+def optimizedparam(sampleval, kval=2):
     bwgrid = ['scott', 'silverman']+np.logspace(-2,0,10).tolist()
     alphagrid = [1]
     FOM= {}
