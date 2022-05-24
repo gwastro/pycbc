@@ -6,7 +6,7 @@ coincidences from *any* coincidence type with ifar above a certain threshold
 
 import h5py, numpy as np, argparse, logging, pycbc, pycbc.io
 import pycbc.version
-from pycbc.events import veto, coinc
+from pycbc.events import veto, coinc, significance
 import pycbc.conversions as conv
 
 parser = argparse.ArgumentParser()
@@ -22,8 +22,10 @@ parser.add_argument('--censor-ifar-threshold', type=float, default=0.003,
          "above the threshold [default=0.003yr]")
 parser.add_argument('--veto-window', type=float, default=0.1,
     help="Time around each zerolag trigger to window out [default=.1s]")
+significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file', help="name of output file")
 args = parser.parse_args()
+significance.check_significance_options(args, parser)
 
 pycbc.init_logging(args.verbose)
 
@@ -32,6 +34,10 @@ f_out = h5py.File(args.output_file, "w")
 f_others = [h5py.File(fname,'r') for fname in args.other_statmap_files]
 
 all_ifos = f_in.attrs['ifos'].split(' ')
+all_ifo_key = ''.join(all_ifos)
+
+significance_dict = significance.digest_significance_options([all_ifo_key],
+                                                             args)
 
 logging.info('Copying attributes to %s' % args.output_file)
 for attrk in f_in.attrs.keys():
@@ -88,9 +94,11 @@ for k in filtered_trigs.data:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
 
 logging.info('Recalculating IFARs')
-bnlouder, fnlouder = coinc.calculate_n_louder(filtered_trigs.data['stat'],
-                                    f_in['foreground/stat'][:],
-                                    filtered_trigs.data['decimation_factor'])
+bnlouder, fnlouder = significance.get_n_louder(
+    filtered_trigs.data['stat'],
+    f_in['foreground/stat'][:],
+    filtered_trigs.data['decimation_factor'],
+    **significance_dict[all_ifo_key])
 # In principle exc background time should be recalculated
 # However we expect exclude zerolag to be a (very) small correction
 fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])
