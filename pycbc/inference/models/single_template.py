@@ -16,7 +16,9 @@
 """This module provides model classes that assume the noise is Gaussian.
 """
 
+import logging
 import numpy
+import itertools
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import get_fd_waveform
@@ -83,6 +85,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
 
         # Generate template waveforms
         df = data[self.detectors[0]].delta_f
+        self.df = df
         p = self.static_params.copy()
         if 'distance' in p:
             _ = p.pop('distance')
@@ -116,6 +119,65 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
                 low_frequency_cutoff=flow,
                 high_frequency_cutoff=fhigh)
         self.time = None
+        self.waveform = hp
+        self.htfs = {}  # Waveform phase / distance transformation factors
+        self.dts = {}
+
+    @property
+    def multi_signal_support(self):
+        """ The list of classes that this model supports in a multi-signal
+        likelihood
+        """
+        # Check if this model *can* be included in a multi-signal model.
+        # All marginalizations must currently be disabled to work!
+        if (self.marginalize_vector or
+            self.marginalize_distance or
+            self.marginalize_phase):
+            logging.info("Cannot use single template model inside of"
+                         "multi_signal if marginalizations are enabled")
+        return [type(self)]
+
+    def calculate_hihjs(self, models):
+        """ Pre-calculate the hihj inner products on a grid
+        """
+        self.hihj = {}
+        for m1, m2 in itertools.combinations(models, 2):
+            self.hihj[(m1, m2)] = {}
+            h1 = m1.waveform
+            h2 = m2.waveform
+            for ifo in self.data:
+                flow = self.kmin[ifo] * self.df
+                fhigh = self.kmax[ifo] * self.df
+                h1h2, _, _ = pyfilter.matched_filter_core(
+                h1, h2,
+                psd=self.psds[ifo],
+                low_frequency_cutoff=flow,
+                high_frequency_cutoff=fhigh)
+                self.hihj[(m1, m2)][ifo] = 4 * self.df * h1h2
+
+    def multi_loglikelihood(self, models):
+        """ Calculate a multi-model (signal) likelihood
+        """
+        loglr = 0
+        # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
+        for m in models:
+            loglr += m.loglr
+
+        if not hasattr(self, 'hihj'):
+            self.calculate_hihjs(models)
+
+        # finally add in the lognl term from this model
+        for m1, m2 in itertools.combinations(models, 2):
+            for det in self.data:
+                hihj_vec = self.hihj[(m1, m2)][det]
+                dt = m1.dts[det] - m2.dts[det] + hihj_vec.start_time
+                if dt < hihj_vec.start_time:
+                    dt += hihj_vec.duration
+
+                h1h2 = hihj_vec.at_time(dt, nearest_sample=True)
+                h1h2 *= m1.htfs[det] * m2.htfs[det].conj()
+                loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
+        return loglr + self.lognl
 
     def _loglr(self):
         r"""Computes the log likelihood ratio
@@ -148,8 +210,13 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
                                                             self.time)
             ic = numpy.cos(p['inclination'])
             ip = 0.5 * (1.0 + ic * ic)
+
+            # Note, this includes complex conjugation already
+            # as our stored inner products were hp*xdata
             htf = (fp * ip + 1.0j * fc * ic) / p['distance'] * phase
-            sh = self.sh[ifo].at_time(p['tc'] + dt) * htf
+            self.htfs[ifo] = htf
+            self.dts[ifo] = p['tc'] + dt
+            sh = self.sh[ifo].at_time(self.dts[ifo], nearest_sample=True) * htf
             sh_total += sh
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
