@@ -87,10 +87,14 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         df = data[self.detectors[0]].delta_f
         self.df = df
         p = self.static_params.copy()
+        for k in self.static_params:
+            if p[k] == 'REPLACE':
+                p.pop(k)
         if 'distance' in p:
             _ = p.pop('distance')
         if 'inclination' in p:
             _ = p.pop('inclination')
+
         hp, _ = get_fd_waveform(delta_f=df, distance=1, inclination=0, **p)
 
         # Extend template to high sample rate
@@ -188,8 +192,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             The value of the log likelihood ratio.
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
-        p = self.current_params.copy()
-        p.update(self.static_params)
+        p = self.current_params
         if self.pflag == 0:
             polarization = p['polarization']
         elif self.pflag == 1:
