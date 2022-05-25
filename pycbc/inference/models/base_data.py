@@ -140,17 +140,21 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
         """list: Returns the detectors used."""
         return list(self._data.keys())
 
-    def write_metadata(self, fp):
+    def write_metadata(self, fp, group=None):
         """Adds data to the metadata that's written.
 
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
         """
-        super(BaseDataModel, self).write_metadata(fp)
+        super().write_metadata(fp, group=group)
         if not self.no_save_data:
-            fp.write_stilde(self.data)
+            fp.write_stilde(self.data, group=group)
         # save injection parameters
         if self.injection_file is not None:
-            fp.write_injections(self.injection_file)
+            fp.write_injections(self.injection_file, group=group)

@@ -408,7 +408,8 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         How many points to use in phase. Defaults is 100.
     \**kwargs :
         All other keyword arguments are passed to
-        :py:class:`gaussian_noise.BaseGaussianNoisei <BaseGaussianNoise>`.
+        :py:class:`BaseGaussianNoise
+        <pycbc.inference.models.gaussian_noise.BaseGaussianNoise>`.
 
     """
     name = 'marginalized_hmpolphase'
