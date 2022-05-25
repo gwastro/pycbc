@@ -889,7 +889,7 @@ class GaussianNoise(BaseGaussianNoise):
                                        'cutoffs to be the same!')
 
                 h1h2 = h1[slc1].inner(h2[slc1]).real  # < h1, h2>
-                loglr += - h1h2 # This is -0.5 * (<h1|h2> + <h2|h1>)
+                loglr += - h1h2  # This is -0.5 * (<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
     def _loglr(self, save_waveforms=False):

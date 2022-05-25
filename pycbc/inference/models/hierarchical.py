@@ -499,6 +499,7 @@ def map_params(params):
                 param_map[lbl] = set([p])
     return param_map
 
+
 class MultiSignalModel(HierarchicalModel):
     """ Model for multiple signals which share data
 
@@ -520,7 +521,7 @@ class MultiSignalModel(HierarchicalModel):
 
         # Check what models each model supports
         support = {}
-        ctypes = set() # The set of models we need to completely support
+        ctypes = set()  # The set of models we need to completely support
         for lbl in self.submodels:
             model = self.submodels[lbl]
 
@@ -541,8 +542,6 @@ class MultiSignalModel(HierarchicalModel):
                                "any of the constituent models.".format(ctypes))
 
     def _loglikelihood(self):
-        # takes the sum of the constitutent models' loglikelihoods
-        loglr = 0.
         for lbl, model in self.submodels.items():
             # Update the parameters of each
             model.update(**{p.subname: self.current_params[p.fullname]
