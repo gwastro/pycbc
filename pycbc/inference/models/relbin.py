@@ -419,18 +419,26 @@ class Relative(BaseGaussianNoise, DistMarg):
 
         return self.marginalize_loglr(hd, hh)
 
-    def write_metadata(self, fp):
+    def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
 
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
         """
-        super(Relative, self).write_metadata(fp)
-        fp.attrs["epsilon"] = self.epsilon
+        super().write_metadata(fp, group=group)
+        if group is None:
+            attrs = fp.attrs
+        else:
+            attrs = fp[group].attrs
+        attrs["epsilon"] = self.epsilon
         for p, v in self.fid_params.items():
-            fp.attrs["{}_ref".format(p)] = v
+            attrs["{}_ref".format(p)] = v
 
     @staticmethod
     def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
