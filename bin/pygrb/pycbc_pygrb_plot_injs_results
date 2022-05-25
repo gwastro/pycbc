@@ -15,7 +15,9 @@ parser.add_argument('--injection-file',
                     help="The hdf injection file to plot", required=True)
 # The code includes more x variable options but these are the ones that have
 # been tested to work
-admitted_xvars = ['mchirp', 'end_time']
+admitted_xvars = ['mchirp', 'end_time', 'mtotal', 'mass_ratio', 'coa_phase',
+                  'inclination', 'latitude', 'longitude', 'mass1', 'mass2',
+                  'polarization', 'eff_spin']
 parser.add_argument("-x", "--x-variable", default=None, required=True,
                     choices=admitted_xvars,
                     help="Quantity to plot on the horizontal axis. "+
@@ -25,7 +27,8 @@ parser.add_argument("--x-log", action="store_true",
 # The code includes more y variable options but these are the ones that have
 # been tested to work.
 admitted_yvars = ['distance', 'eff_dist', 'eff_site_dist', 'decisive_optimal_snr',
-                  'decisive_distance', 'chirp_distance']
+                  'decisive_distance', 'chirp_distance', 'comb_optimal_snr', 
+                  'decisive_optimal_snr']
 parser.add_argument("-y", "--y-variable", default=None, required=True,
                     choices=admitted_yvars,
                     help="Quantity to plot on the vertical axis. "+
@@ -189,6 +192,10 @@ labels={'mchirp': 'Chirp Mass',
         'end_time': 'Time since %d (s)' % grb_time,
         'eff_spin': 'Weighted Aligned Spin',
         'coa_phase': 'Complex SNR Phase',
+        'inclination': 'Inclination Angle (radians)',
+        'latitude' : 'Latitude',
+        'longitude' : 'Longitude',
+        'polarization' : 'Polarization',
         'eff_dist': 'Inverse sum of effective distances (Mpc)',
         'eff_site_dist': '%s effective distance (Mpc)' % args.ifo,
        }
