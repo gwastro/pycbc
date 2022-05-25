@@ -19,7 +19,7 @@ using at the likelihood level.
 import numpy
 
 from multiprocessing import Pool
-from .gaussian_noise import BaseStationaryGaussianNoise
+from .gaussian_noise import BaseGaussianNoise
 from scipy.special import logsumexp
 
 _model = None
@@ -34,7 +34,7 @@ class likelihood_wrapper(object):
         loglr = _model.loglr
         return loglr, _model.current_stats
 
-class BruteParallelGaussianMarginalize(BaseStationaryGaussianNoise):
+class BruteParallelGaussianMarginalize(BaseGaussianNoise):
     name = "brute_parallel_gaussian_marginalize"
 
     def __init__(self, variable_params,

@@ -447,6 +447,45 @@ class BaseGatedGaussian(BaseGaussianNoise):
             opts.low_frequency_cutoff = lfs
         return out
 
+    def write_metadata(self, fp, group=None):
+        """Adds writing the psds, and analyzed detectors.
+
+        The analyzed detectors, their analysis segments, and the segments
+        used for psd estimation are written as
+        ``analyzed_detectors``, ``{{detector}}_analysis_segment``, and
+        ``{{detector}}_psd_segment``, respectively. These are either written
+        to the specified ``group``'s attrs, or to the top level attrs if
+        ``group`` is None.
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.BaseInferenceFile instance
+            The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
+        """
+        BaseDataModel.write_metadata(self, fp)
+        attrs = fp.getattrs(group=group)
+        # write the analyzed detectors and times
+        attrs['analyzed_detectors'] = self.detectors
+        for det, data in self.data.items():
+            key = '{}_analysis_segment'.format(det)
+            attrs[key] = [float(data.start_time), float(data.end_time)]
+        if self._psds is not None and not self.no_save_data:
+            fp.write_psd(self._psds, group=group)
+        # write the times used for psd estimation (if they were provided)
+        for det in self.psd_segments:
+            key = '{}_psd_segment'.format(det)
+            attrs[key] = list(map(float, self.psd_segments[det]))
+        # save the frequency cutoffs
+        for det in self.detectors:
+            attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
+            if self._f_upper[det] is not None:
+                attrs['{}_likelihood_high_freq'.format(det)] = \
+                    self._f_upper[det]
+
 
 class GatedGaussianNoise(BaseGatedGaussian):
     r"""Model that applies a time domain gate, assuming stationary Gaussian

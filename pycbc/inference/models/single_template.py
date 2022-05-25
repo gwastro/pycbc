@@ -22,11 +22,11 @@ from pycbc import filter as pyfilter
 from pycbc.waveform import get_fd_waveform
 from pycbc.detector import Detector
 
-from .gaussian_noise import BaseStationaryGaussianNoise
+from .gaussian_noise import BaseGaussianNoise
 from .tools import DistMarg
 
 
-class SingleTemplate(DistMarg, BaseStationaryGaussianNoise):
+class SingleTemplate(DistMarg, BaseGaussianNoise):
     r"""Model that assumes we know all the intrinsic parameters.
 
     This model assumes we know all the intrinsic parameters, and are only
@@ -53,7 +53,7 @@ class SingleTemplate(DistMarg, BaseStationaryGaussianNoise):
         If None, then polarization must be a parameter.
     \**kwargs :
         All other keyword arguments are passed to
-        :py:class:`BaseStationaryGaussianNoise`; see that class for details.
+        :py:class:`BaseGaussianNoise`; see that class for details.
     """
     name = 'single_template'
 
