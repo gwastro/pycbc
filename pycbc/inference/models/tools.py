@@ -12,7 +12,6 @@ from scipy.special import logsumexp, i0e
 from scipy.interpolate import RectBivariateSpline, interp1d
 from pycbc.distributions import JointDistribution
 
-
 def str_to_tuple(sval, ftype):
     """ Convenience parsing to convert str to tuple"""
     return tuple(ftype(x) for x in sval.split(','))
@@ -24,6 +23,141 @@ def str_to_bool(sval):
         return strtobool(sval)
     return sval
 
+
+class ReferenceAbort():
+    """ Helper class for CBC likelihoods using a reference waveform
+    """
+    def __init__(self, *args, fiducial_params={},
+                 peak_time_abort=None,
+                 peak_time_min_snr=6.0,
+                 match_abort=None,
+                 **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # store fiducial waveform params
+        self.fid_params = self.static_params.copy()
+        self.fid_params.update(fiducial_params)
+
+        if match_abort:
+            self.match_abort = float(match_abort)
+            self.setup_match()
+
+        if peak_time_abort is not None:
+            self.peak_time_abort = float(peak_time_abort)
+            self.peak_time_min_snr = float(peak_time_min_snr)
+            self.setup_time()
+
+    def setup_match(self):
+        from pycbc.waveform import get_fd_waveform
+        self.ref_hs = get_fd_waveform(**self.fid_params, delta_f=1.0)
+
+    def fail_match(self):
+        from pycbc.waveform import get_fd_waveform
+        p = self.current_params
+        hp, hc = get_fd_waveform(**p, delta_f=1.0)
+        m = hp.match(self.ref_hs[0])
+        return m
+
+    def fail_time(self):
+        if not hasattr(self, 'peak_time_abort'):
+            return False
+
+        p = self.current_params
+        for ifo in self.stimes:
+            dtime = self.sdets[ifo].time_delay_from_earth_center(
+                        p['ra'], p['dec'], p['tc']) + p['tc']
+            if self.stimes[ifo][0] < dtime < self.stimes[ifo][1]:
+                continue
+            else:
+                c, w = self.atimes[ifo]
+                loglr = - 10000 + -1000 * abs(dtime - c) / w
+                return loglr
+        return False
+
+    def setup_time(self):
+        """Estimate the time intervals to expect the signal in each detector
+        """
+        logging.info("Precalculating reference signal SNRs")
+        from pycbc.waveform import get_fd_waveform
+        from pycbc.filter import matched_filter
+        from pycbc.detector import Detector
+
+        self.stimes = {}
+        self.atimes = {}
+        self.sdets = {}
+        for ifo in self.data:
+            df = self.data[ifo].delta_f
+            flow = self.kmin[ifo] * df
+            fhigh = self.kmax[ifo] * df
+            hp, hc = get_fd_waveform(**self.fid_params, delta_f=df)
+
+            tbound = [self.data[ifo].start_time, self.data[ifo].end_time]
+            if 'tc' in self.prior_distribution.bounds:
+                tbound = self.prior_distribution.bounds['tc']
+
+            logging.info('%s: using time range %s-%s',
+                         ifo, tbound[0], tbound[1])
+
+            tmin, tmax = None, None
+            keep = False
+            for h in [hp, hc]:
+                h.resize(len(self.data[ifo]))
+                snr = matched_filter(h, self.data[ifo], psd=self.psds[ifo],
+                                     low_frequency_cutoff=flow,
+                                     high_frequency_cutoff=fhigh)
+                z = snr.time_slice(tbound[0], tbound[1])
+                ipeak = z.abs_arg_max()
+                speak = abs(z[ipeak])
+                tpeak = z.sample_times[ipeak]
+                logging.info('%s: peak of %s at %s', ifo, speak, tpeak)
+
+                if speak > self.peak_time_min_snr:
+                    keep = True
+
+                ts = tpeak - self.peak_time_abort
+                te = tpeak + self.peak_time_abort
+
+                tmin = ts if tmin is None else min(ts, tmin)
+                tmax = te if tmax is None else max(te, tmax)
+
+            if keep:
+                self.sdets[ifo] = Detector(ifo)
+                logging.info('%s: will limit to %s-%s', ifo, tmin, tmax)
+                self.stimes[ifo] = tmin, tmax
+                self.atimes[ifo] = (tmax + tmin) / 2.0, tmax - tmin
+
+
+    @classmethod
+    def extra_args_from_config(cls, cp, section, skip_args=None, dtypes=None):
+        """Adds reading fiducial waveform parameters from config file."""
+        # add fiducial params to skip list
+        skip_args += [
+            option for option in cp.options(section) if option.endswith("_ref")
+        ]
+
+        args = super().extra_args_from_config(
+            cp, section, skip_args=skip_args, dtypes=dtypes
+        )
+
+        # get fiducial params from config
+        fid_params = {
+            p.replace("_ref", ""): float(cp.get("model", p))
+            for p in cp.options("model")
+            if p.endswith("_ref")
+        }
+        # add optional params with default values if not specified
+        # add optional params with default values if not specified
+        opt_params = {
+            "ra": numpy.pi,
+            "dec": 0.0,
+            "inclination": 0.0,
+            "polarization": numpy.pi,
+        }
+        fid_params.update(
+            {p: opt_params[p] for p in opt_params if p not in fid_params}
+        )
+        args.update({"fiducial_params": fid_params})
+        return args
 
 class DistMarg():
     """Help class to add bookkeeping for distance marginalization"""
