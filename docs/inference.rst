@@ -90,7 +90,11 @@ model on a BBH injection and on GW150914 are given below.) Other arguments to
 configure the model may also be set in this section. The recognized arguments
 depend on the model. The currently available models are:
 
-.. include:: _include/models-table.rst
+.. dropdown:: List of Models
+    :animate: fade-in-slide-down
+
+    .. include:: _include/models-table.rst
+
 
 Refer to the models' ``from_config`` method to see what configuration arguments
 are available.
@@ -108,7 +112,10 @@ The ``[sampler]`` section sets up what sampler to use for the analysis. As
 with the ``[model]`` section, a ``name`` must be provided to specify which
 sampler to use. The currently available samplers are:
 
-.. include:: _include/samplers-table.rst
+.. dropdown:: List of Supported Samplers
+    :animate: fade-in-slide-down
+
+    .. include:: _include/samplers-table.rst
 
 See :ref:`example of trying different samplers<inference_example_samplers>`
 
@@ -235,7 +242,10 @@ identifies the distribution to use. Distributions are defined in the
 :py:mod:`pycbc.distributions` module. The currently available distributions
 are:
 
-.. include:: _include/distributions-table.rst
+.. dropdown:: List of Statistical Distributions
+    :animate: fade-in-slide-down
+
+    .. include:: _include/distributions-table.rst
 
 ^^^^^^^^^^^^^^^^^
 Static parameters
@@ -269,12 +279,18 @@ typical case), one will need to load gravitational-wave data.  This is
 accomplished using tools provided in the :py:mod:`pycbc.strain` module. The
 full set of options are:
 
-.. include:: _include/inference_data_opts-table.rst
+.. dropdown:: Options for reading / configuring GW data
+    :animate: fade-in-slide-down
+
+    .. include:: _include/inference_data_opts-table.rst
 
 As indicated in the table, the ``psd-model`` and ``fake-strain`` options can
 accept an analytical PSD as an argument. The available PSD models are:
 
-.. include:: _include/psd_models-table.rst
+.. dropdown:: Options for reading or estimating PSDs
+    :animate: fade-in-slide-down
+
+    .. include:: _include/psd_models-table.rst
 
 -------------------------------
 Advanced configuration settings
@@ -283,9 +299,9 @@ Advanced configuration settings
 The following are additional settings that may be provided in the configuration
 file, in order to do more sophisticated analyses.
 
-^^^^^^^^^^^^^^^^^^^
-Sampling transforms
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Sampling transforms (for MCMC samplers)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 One or more of the ``variable_params`` may be transformed to a different
 parameter space for purposes of sampling. This is done by specifying a
@@ -307,7 +323,10 @@ of ``mass1`` and ``mass2``:
 Transforms are provided by the :py:mod:`pycbc.transforms` module. The currently
 available transforms are:
 
-.. include:: _include/transforms-table.rst
+.. dropdown:: List of Sampling Transformations
+    :animate: fade-in-slide-down
+
+    .. include:: _include/transforms-table.rst
 
 
 .. note::
@@ -328,7 +347,10 @@ However, when doing parameter estimation with CBC waveforms, certain parameter
 names must be provided for waveform generation. The parameter names recognized
 by the CBC waveform generators are:
 
-.. include:: _include/waveform-parameters.rst
+.. dropdown:: List of CBCs signal parameters
+    :animate: fade-in-slide-down
+
+    .. include:: _include/waveform-parameters.rst
 
 It is possible to specify a ``variable_param`` that is not one of these
 parameters. To do so, you must provide one or more

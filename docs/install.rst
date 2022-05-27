@@ -91,6 +91,16 @@ recommended for IGWN users:
 Other scenarios
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+===========
+Docker
+===========
+For more details, including instructions on starting a docker container  see:
+
+    .. toctree::
+       :maxdepth: 1
+
+       docker
+
 =====================================
 Building the Documentation
 =====================================
